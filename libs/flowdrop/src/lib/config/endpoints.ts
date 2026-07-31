@@ -36,6 +36,17 @@ export interface EndpointConfig {
       validate: string;
       export: string;
       import: string;
+      /**
+       * Launch a run with schema-resolved named inputs, returning the new
+       * pipeline id.
+       *
+       * The semantically correct verb for "start this workflow" — as opposed to
+       * posting a chat message and relying on the side effect of a run starting.
+       *
+       * Optional: a backend without an explicit launch verb omits it, and the
+       * `/run` command is not offered.
+       */
+      run?: string;
     };
 
     // Execution endpoints
@@ -76,6 +87,43 @@ export interface EndpointConfig {
       sendMessage: string;
       /** Stop execution in a session */
       stopExecution: string;
+      /**
+       * Reset a stuck session to idle.
+       *
+       * Optional: a backend that cannot reset a session simply omits this key,
+       * and the `/reset` command is not offered. Absence of an endpoint is
+       * absence of a capability — see the slash-command registry.
+       */
+      resetSession?: string;
+    };
+
+    /**
+     * Operator signals into a *running* pipeline — pause, resume, cancel.
+     *
+     * Distinct from `interrupts`, which are raised *by* a pipeline and awaited
+     * (human-in-the-loop). These travel the other way: an external party acting
+     * on a run that never asked.
+     *
+     * Optional as a whole: a backend with no signal plane omits the block, and
+     * the corresponding commands are not offered.
+     */
+    signals?: {
+      /**
+       * Root for signal routes, when the backend serves them from a different
+       * prefix than {@link EndpointConfig.baseUrl}.
+       *
+       * Needed because API roots are not always uniform — the reference backend
+       * serves signals from `/flowdrop/api` while everything else lives under
+       * `/api/flowdrop`, and a single base cannot express both. Omit to use the
+       * global `baseUrl`.
+       */
+      baseUrl?: string;
+      /** Pause a running pipeline */
+      pause: string;
+      /** Resume a paused pipeline */
+      resume: string;
+      /** Cancel a running pipeline */
+      cancel: string;
     };
 
     // Interrupt endpoints (Human-in-the-Loop)
@@ -195,7 +243,9 @@ export const defaultEndpointConfig: EndpointConfig = {
       delete: '/workflows/{id}',
       validate: '/workflows/validate',
       export: '/workflows/{id}/export',
-      import: '/workflows/import'
+      import: '/workflows/import',
+      // Singular `workflow` here is the reference backend's spelling, not a typo.
+      run: '/workflow/{workflowId}/run'
     },
     executions: {
       execute: '/workflows/{id}/execute',
@@ -222,7 +272,15 @@ export const defaultEndpointConfig: EndpointConfig = {
       deleteSession: '/playground/sessions/{sessionId}',
       getMessages: '/playground/sessions/{sessionId}/messages',
       sendMessage: '/playground/sessions/{sessionId}/messages',
-      stopExecution: '/playground/sessions/{sessionId}/stop'
+      stopExecution: '/playground/sessions/{sessionId}/stop',
+      resetSession: '/playground/sessions/{sessionId}/reset'
+    },
+    signals: {
+      // The reference backend transposes its prefix for these routes.
+      baseUrl: '/flowdrop/api',
+      pause: '/pipelines/{pipelineId}/pause',
+      resume: '/pipelines/{pipelineId}/resume',
+      cancel: '/pipelines/{pipelineId}/cancel'
     },
     interrupts: {
       get: '/interrupts/{interruptId}',
@@ -285,7 +343,8 @@ export function createEndpointConfig(
 export function buildEndpointUrl(
   config: EndpointConfig,
   endpointPath: string,
-  params?: Record<string, string>
+  params?: Record<string, string>,
+  baseUrlOverride?: string
 ): string {
   let url = endpointPath;
 
@@ -296,9 +355,12 @@ export function buildEndpointUrl(
     });
   }
 
-  // Ensure URL starts with base URL
+  // Ensure URL starts with base URL. `baseUrlOverride` lets a group of
+  // endpoints hang off a different root than the global one — backends do not
+  // always serve every API from a single prefix.
+  const base = baseUrlOverride ?? config.baseUrl;
   if (!url.startsWith('http') && !url.startsWith('//')) {
-    url = `${config.baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
+    url = `${base}${url.startsWith('/') ? url : `/${url}`}`;
   }
 
   return url;

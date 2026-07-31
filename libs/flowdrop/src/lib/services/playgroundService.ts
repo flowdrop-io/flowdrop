@@ -368,6 +368,41 @@ export class PlaygroundService {
     );
   }
 
+  /**
+   * Reset a stuck session to idle, cancelling pending messages and clearing
+   * interrupt state.
+   *
+   * The endpoint is optional in {@link EndpointConfig} — a backend that cannot
+   * reset omits it. Callers should check availability first (the slash-command
+   * registry does); calling without a configured endpoint throws rather than
+   * silently hitting a wrong URL.
+   *
+   * @param sessionId - The session UUID
+   */
+  async resetSession(
+    endpointConfig: EndpointConfig | null,
+    sessionId: string,
+    authProvider?: AuthProvider
+  ): Promise<void> {
+    const config = this.getConfig(endpointConfig);
+    const endpoint = config.endpoints.playground.resetSession;
+
+    if (!endpoint) {
+      throw new Error('Session reset is not supported by this backend');
+    }
+
+    const url = buildEndpointUrl(config, endpoint, { sessionId });
+
+    await this.request<{ success: boolean }>(
+      config,
+      url,
+      {
+        method: 'POST'
+      },
+      authProvider
+    );
+  }
+
   // =========================================================================
   // Polling
   // =========================================================================
