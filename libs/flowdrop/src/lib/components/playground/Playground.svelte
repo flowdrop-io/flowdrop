@@ -25,10 +25,20 @@
   } from '../../types/playground.js';
   import { playgroundService } from '../../services/playgroundService.js';
   import { interruptService } from '../../services/interruptService.js';
+  import { pipelineSignalService } from '../../services/pipelineSignalService.js';
+  import { workflowLaunchService } from '../../services/workflowLaunchService.js';
   import { provideInstance } from '../../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
   import type { PlaygroundMessagesApiResponse } from '../../types/playground.js';
   import { logger } from '../../utils/logger.js';
+  import { m } from '$lib/messages/index.js';
+  import {
+    parseSlashCommand,
+    dispatchCommand,
+    describeLaunchResult,
+    type CommandOutcome
+  } from '../../playground/commands/index.js';
+  import { resolveRunAction } from '../../playground/runAction.js';
 
   interface Props {
     workflowId: string;
@@ -68,6 +78,20 @@
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
   let isRefreshing = $state(false);
+  /**
+   * Transient result of the last slash command. Deliberately component state,
+   * not a session message — see runCommand.
+   */
+  let commandFeedback = $state<CommandOutcome | null>(null);
+  /**
+   * A signal accepted but not yet observed as effective.
+   *
+   * Backends refuse a second signal on the same pipeline, so we hold this to
+   * disable rather than fire a request guaranteed to be rejected. Cleared when
+   * the session status changes — that transition is the signal taking effect
+   * (or the run ending on its own).
+   */
+  let pendingSignal = $state<{ pipelineId: string; signal: string } | null>(null);
   // Monotonic token so a slow session load can't overwrite a newer one when the
   // user switches sessions faster than the network responds (last-load wins).
   let loadToken = 0;
@@ -187,9 +211,8 @@
 
       if (config.autoRun && !autoRunTriggered) {
         autoRunTriggered = true;
-        const predefinedMessage = config.predefinedMessage ?? 'Run workflow';
-        logger.debug('[Playground] Auto-run triggered with message:', predefinedMessage);
-        await handleSendMessage(predefinedMessage);
+        logger.debug('[Playground] Auto-run triggered');
+        await startRun();
       }
     } catch (err) {
       logger.error('[Playground] Initialization error:', err);
@@ -396,8 +419,194 @@
     }
   }
 
+  /**
+   * Reset a stuck session to idle.
+   *
+   * Mirrors handleStopExecution: tear down polling and force the local status
+   * back to idle even on failure, since the point of reset is to escape a state
+   * the client and server disagree about.
+   */
+  async function handleResetSession(): Promise<void> {
+    const sessionId = fd.playground.currentSession?.id;
+    if (!sessionId) return;
+
+    try {
+      await playgroundService.resetSession(fd.api.config, sessionId, fd.api.authProvider);
+      playgroundService.stopPolling();
+      fd.playground.updateSessionStatus('idle');
+      fd.playground.setError(null);
+    } catch (err) {
+      playgroundService.stopPolling();
+      fd.playground.updateSessionStatus('idle');
+      logger.error('Failed to reset session:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Launch a run with named inputs and no chat message.
+   *
+   * Creates a session first when there is none, so the run has a conversation
+   * to report into — the launch endpoint accepts a session id precisely so its
+   * messages land somewhere the user is looking.
+   */
+  async function handleLaunchWorkflow(inputs: Record<string, string>) {
+    if (!fd.playground.currentSession) {
+      await handleCreateSession();
+    }
+
+    const sessionId = fd.playground.currentSession?.id;
+
+    const result = await workflowLaunchService.launch(
+      fd.api.config,
+      workflowId,
+      { inputs, sessionId },
+      fd.api.authProvider
+    );
+
+    if (result.status === 'launched' && sessionId) {
+      // Mirror handleSendMessage: reflect the run optimistically and tail it.
+      fd.playground.updateSessionStatus('running');
+      fd.playground.pinExecution(null);
+      fd.playground.setError(null);
+      if (!playgroundService.isPolling()) {
+        startPolling(sessionId, true);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Start a run from a button or auto-run, without posting a chat message.
+   *
+   * Falls back to sending `predefinedMessage` only where the backend has no
+   * launch verb — there a message is genuinely the only way to start a run, so
+   * the fabricated turn is the lesser evil. Everywhere else this is what stops
+   * "Run workflow" appearing in the conversation as though a user typed it.
+   */
+  async function startRun(): Promise<void> {
+    const action = resolveRunAction({
+      canLaunch: workflowLaunchService.isSupported(fd.api.config),
+      predefinedMessage: config.predefinedMessage,
+      defaultMessage: m().playground.chat.predefinedRun
+    });
+
+    if (action.kind === 'message') {
+      logger.debug('[Playground] Starting run by message:', action.content);
+      await handleSendMessage(action.content);
+      return;
+    }
+
+    const result = await handleLaunchWorkflow({});
+
+    // Only failures need reporting: a successful launch is evident from the run
+    // itself appearing in the console.
+    if (result.status !== 'launched') {
+      commandFeedback = describeLaunchResult(result, m().playground.commands);
+    }
+  }
+
+  /**
+   * Send an operator signal to a specific pipeline.
+   *
+   * Records the signal as pending on acceptance so a second one is refused
+   * client-side rather than by the backend.
+   */
+  async function handleSendSignal(
+    signal: 'pause' | 'resume' | 'cancel',
+    pipelineId: string,
+    reason?: string
+  ) {
+    const result = await pipelineSignalService[signal](
+      fd.api.config,
+      pipelineId,
+      { reason },
+      fd.api.authProvider
+    );
+
+    if (result.status === 'accepted') {
+      pendingSignal = { pipelineId, signal };
+    }
+
+    return result;
+  }
+
+  /**
+   * Clear a pending signal once the session status moves.
+   *
+   * The status transition is the observable consequence of the signal landing
+   * — or of the run ending by itself, which equally means the signal is moot.
+   */
+  $effect(() => {
+    // Track the status so this re-runs on every change.
+    void fd.playground.currentSession?.status;
+    untrack(() => {
+      if (pendingSignal) pendingSignal = null;
+    });
+  });
+
+  /**
+   * Run a slash command and surface its outcome as transient composer feedback.
+   *
+   * Commands are never posted as session messages — control traffic must not
+   * enter conversation history, or it returns as the next turn's chat input.
+   */
+  async function runCommand(input: string): Promise<void> {
+    const parsed = parseSlashCommand(input);
+    const msgs = m().playground.commands;
+
+    if (parsed.kind === 'unknown') {
+      commandFeedback = {
+        status: 'error',
+        message: parsed.suggestions.length
+          ? msgs.unknownWithSuggestions({
+              name: parsed.name,
+              suggestions: parsed.suggestions.map((s) => `/${s}`).join(', ')
+            })
+          : msgs.unknown({ name: parsed.name })
+      };
+      return;
+    }
+
+    if (parsed.kind !== 'command') return;
+
+    commandFeedback = await dispatchCommand(parsed.command, {
+      config: fd.api.config,
+      sessionId: fd.playground.currentSession?.id ?? null,
+      // The active run: pinned if the user pinned one, else the latest main
+      // run. Sub-flows are excluded upstream, so `/pause` targets the run the
+      // user means rather than whichever inner iteration is on screen.
+      pipelineId: fd.playground.activeExecutionId,
+      pendingSignal,
+      handlers: {
+        createSession: handleCreateSession,
+        deleteSession: handleDeleteSession,
+        stopExecution: handleStopExecution,
+        resetSession: handleResetSession,
+        sendSignal: handleSendSignal,
+        launchWorkflow: handleLaunchWorkflow
+      },
+      messages: msgs
+    });
+  }
+
   async function handleSendMessage(content: string): Promise<void> {
+    // Commands are intercepted *before* the executing guard: /stop is only
+    // useful while a run is in flight, which is exactly when plain text is
+    // refused.
+    const parsed = parseSlashCommand(content);
+    if (parsed.kind === 'command' || parsed.kind === 'unknown') {
+      await runCommand(content);
+      return;
+    }
+
+    commandFeedback = null;
+
     if (fd.playground.isExecuting) return;
+
+    // An escaped message (`//foo`) is sent as its literal text (`/foo`).
+    const messageContent = parsed.kind === 'message' ? parsed.content : content;
 
     if (!fd.playground.currentSession) {
       await handleCreateSession();
@@ -414,7 +623,7 @@
       const message = await playgroundService.sendMessage(
         fd.api.config,
         sessionId,
-        content,
+        messageContent,
         {},
         fd.api.authProvider
       );
@@ -592,7 +801,11 @@
           onDeleteSession={handleDeleteSession}
           onSendMessage={handleSendMessage}
           onStopExecution={handleStopExecution}
+          onRunWorkflow={startRun}
           onRefresh={refreshFromServer}
+          enableCommands
+          {commandFeedback}
+          onDismissCommandFeedback={() => (commandFeedback = null)}
           showChatInput={config.showChatInput ?? true}
           showRunButton={config.showRunButton ?? true}
           predefinedMessage={config.predefinedMessage}

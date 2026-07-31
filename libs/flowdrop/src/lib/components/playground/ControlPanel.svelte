@@ -12,6 +12,7 @@
   import ChatInput from './ChatInput.svelte';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
+  import type { CommandOutcome } from '../../playground/commands/index.js';
 
   const fd = getInstance();
 
@@ -24,6 +25,19 @@
     // Orchestration
     onSendMessage: (content: string) => void;
     onStopExecution: () => void;
+    /** Start a run without posting a chat message. See ChatInput. */
+    onRunWorkflow?: () => void;
+    /**
+     * Enable the slash-command lane (default: false).
+     *
+     * Only safe when `onSendMessage` dispatches commands rather than forwarding
+     * them to the backend as text — Playground opts in; a host wiring
+     * ControlPanel to its own handler should not.
+     */
+    enableCommands?: boolean;
+    // Slash-command feedback (transient; never a session message)
+    commandFeedback?: CommandOutcome | null;
+    onDismissCommandFeedback?: () => void;
     // Header actions
     onTogglePanel?: () => void;
     isPipelinePanelOpen?: boolean;
@@ -48,6 +62,10 @@
     onSessionNavigate,
     onSendMessage,
     onStopExecution,
+    onRunWorkflow,
+    enableCommands = false,
+    commandFeedback = null,
+    onDismissCommandFeedback,
     onTogglePanel,
     isPipelinePanelOpen = false,
     onRefresh,
@@ -256,6 +274,10 @@
     {predefinedMessage}
     {onSendMessage}
     {onStopExecution}
+    {onRunWorkflow}
+    {enableCommands}
+    {commandFeedback}
+    {onDismissCommandFeedback}
   />
 </section>
 
