@@ -11,6 +11,8 @@
 -->
 
 <script lang="ts">
+  import { untrack } from 'svelte';
+
   interface Props {
     /** Field identifier */
     id: string;
@@ -78,15 +80,15 @@
    * instant the user drags onto a whole number (e.g. 1.0), stranding the slider
    * on integer increments.
    */
-  const initialNumeric = typeof value === 'number' ? value : Number(value);
-  const inferredStep = ((): number => {
+  const inferredStep = untrack((): number => {
+    const initialNumeric = typeof value === 'number' ? value : Number(value);
     const places = Math.max(
       decimalPlaces(Number.isNaN(initialNumeric) ? min : initialNumeric),
       decimalPlaces(min),
       decimalPlaces(max)
     );
     return places > 0 ? Math.pow(10, -places) : 1;
-  })();
+  });
 
   const effectiveStep = $derived(typeof step === 'number' && step > 0 ? step : inferredStep);
 
