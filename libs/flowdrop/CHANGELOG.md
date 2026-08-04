@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-04
+
+**FlowDrop 2.0 GA.** The `latest` dist-tag moves from 1.15.0 to 2.0.0; `npm install @flowdrop/flowdrop` now installs 2.x. Upgrading from 1.x is a breaking change — read [MIGRATION-2.0.md](./MIGRATION-2.0.md) first.
+
+Code-identical to `2.0.0-beta.11` apart from a lint-hygiene fix (two `svelte-ignore` comments that no longer suppressed anything). The eleven betas published between 2026-06-07 and 2026-07-31 are the release notes for this version — each is kept below, and the full breaking-change list with per-item migration steps is in [2.0.0-beta.1](#200-beta1---2026-06-07).
+
+### What 2.0 is
+
+- **The explicit-instance era.** Every mount creates an isolated `FlowDropInstance` — workflow, history, playground, interrupts, categories, API config, registries, port compatibility. Multiple editors coexist on one page without clobbering each other, and SSR no longer leaks state across requests. The ~95 module-level delegates that made a page-default singleton the de-facto API are gone; state comes from `mountFlowDropApp(...).instance` or `getInstance()`.
+- **An API surface that tells the truth.** Props the components never read are deleted rather than silently ignored, documented options that did nothing (`height`/`width`, `workflow` on `mountWorkflowEditor`, `spellChecker`, `required`, `placeholder`) now work, the main entry is a minimal front door instead of an `export *`, and each name has exactly one home.
+- **A playground you can operate.** Slash commands, pipeline signals (`pause`/`resume`/`cancel`), message-free run launches, session reset, µs-precision job durations, and full job-detail expansion — added across the beta line.
+- **Authentication through providers.** `EndpointConfig.auth` is replaced by an `AuthProvider` (`StaticAuthProvider`, `CallbackAuthProvider`, `NoAuthProvider`), and draft storage is configurable (`draftStorage`) with an end-user opt-out.
+
+### Breaking Changes since 1.15.0
+
+Summarized here; each item is documented in full under [2.0.0-beta.1](#200-beta1---2026-06-07) with its migration path.
+
+- Module-level store APIs removed — instances are the API.
+- API access, registries, and port compatibility are instance-scoped (`fd.api`, `fd.nodes`/`fd.fields`/`fd.formats`, `fd.portCompatibility`).
+- `EndpointConfig.auth` removed — use an `AuthProvider`.
+- The main entry exports only the bootstrap surface; barrels no longer re-export each other's names.
+- `mode` prop replaces `readOnly` + `lockWorkflow`; `<App>` event handlers are flat `on*` props.
+- v1.8-deprecated message props and the `ChatPanel` `showChatInput`/`showRunButton`/`showLogs` flags are removed.
+- Workflow `metadata` is required and `metadata.version` is now `metadata.schemaVersion` (1.x JSON heals on load).
+- localStorage keys are instance-scoped (existing drafts migrate on first read).
+- `mountWorkflowEditor` drops `nodes`; `WorkflowEditor` drops six never-read props.
+
+### Fixed
+
+- Two `svelte-ignore a11y_click_events_have_key_events` comments in `ConfigPanel` and `SurfaceOverlay` suppressed a warning that no longer fires (both backdrops handle `onkeydown`), tripping `svelte/no-unused-svelte-ignore`. Removed; no runtime change.
+
 ## [2.0.0-beta.11] - 2026-07-31
 
 Eleventh 2.0 beta, published under the npm `beta` dist-tag (`npm install @flowdrop/flowdrop@beta`). `latest` remains 1.15.0 until 2.0.0 GA. This release gives the playground an **operator control lane**: slash commands typed in the composer act on a session or on a running pipeline without entering the conversation as chat turns, and a run can now be started without fabricating a user message. It also stops the AI assistant re-arranging hand-made layouts unasked, tells it what actually happened to the commands it emitted, and fixes an empty config panel for node types that contribute no schema.
