@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-08-14
+
+### Fixed
+
+- `dynamicPortToNodePort()` rendered a blank port label when a dynamic port was supplied without a `label`; it now falls back to the port's `name`. `DynamicPort.label` is accordingly now optional in the type definition.
+
 ## [2.0.0] - 2026-08-04
 
 **FlowDrop 2.0 GA.** The `latest` dist-tag moves from 1.15.0 to 2.0.0; `npm install @flowdrop/flowdrop` now installs 2.x. Upgrading from 1.x is a breaking change — read [MIGRATION-2.0.md](./MIGRATION-2.0.md) first.
