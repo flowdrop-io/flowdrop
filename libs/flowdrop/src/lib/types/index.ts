@@ -230,8 +230,8 @@ export type PortCoordinateMap = Map<string, PortCoordinate>;
 export interface DynamicPort {
   /** Unique identifier for the port (used for handle IDs and connections) */
   name: string;
-  /** Display label shown in the UI */
-  label: string;
+  /** Display label shown in the UI (optional, defaults to name) */
+  label?: string;
   /** Description of what this port accepts/provides */
   description?: string;
   /** Data type for the port (affects color and connection validation) */
@@ -281,7 +281,7 @@ export interface Branch {
 export function dynamicPortToNodePort(port: DynamicPort, portType: 'input' | 'output'): NodePort {
   return {
     id: port.name,
-    name: port.label,
+    name: port.label ?? port.name,
     type: portType,
     dataType: port.dataType,
     required: port.required ?? false,
