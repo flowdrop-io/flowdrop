@@ -275,6 +275,60 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
   return issues;
 }
 
+/** One pre-launch input problem, mirroring the server's refusal semantics. */
+export interface LaunchInputIssue {
+  /** The offending input key, when attributable to one. */
+  key?: string;
+  code: 'unknown-key' | 'missing-required';
+  message: string;
+}
+
+/**
+ * Pre-validate launch inputs against a declared interface, mirroring what the
+ * server's manifest check refuses: an unknown key (named against the accepted
+ * set) and a missing required input. Value type/enum checking stays with the
+ * server — the client does not re-implement schema validation.
+ *
+ * A workflow with no declared interface returns no issues: there is nothing
+ * to pre-validate against and the server remains the authority.
+ */
+export function validateLaunchInputs(
+  workflowInterface: WorkflowInterface | undefined,
+  inputs: Record<string, unknown>
+): LaunchInputIssue[] {
+  const entries = workflowInterface?.inputs;
+  if (!entries) return [];
+
+  const issues: LaunchInputIssue[] = [];
+  const accepted = entries.map((entry) => entry.id);
+
+  for (const key of Object.keys(inputs)) {
+    if (!accepted.includes(key)) {
+      issues.push({
+        key,
+        code: 'unknown-key',
+        message:
+          accepted.length > 0
+            ? `Unknown input "${key}". Accepted inputs: ${accepted.join(', ')}.`
+            : `Unknown input "${key}". This workflow declares no inputs.`
+      });
+    }
+  }
+
+  for (const entry of entries) {
+    const supplied = entry.id in inputs && inputs[entry.id] !== undefined;
+    if (entry.required && !supplied && entry.defaultValue === undefined) {
+      issues.push({
+        key: entry.id,
+        code: 'missing-required',
+        message: `Missing required input "${entry.id}".`
+      });
+    }
+  }
+
+  return issues;
+}
+
 // Re-export the precedence order for callers/tests that want to assert it
 // without duplicating the literal array.
 export { STATUS_PRECEDENCE };

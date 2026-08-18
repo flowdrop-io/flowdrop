@@ -9,6 +9,7 @@ import {
   resolveBinding,
   resolveInterface,
   validateWorkflowInterface,
+  validateLaunchInputs,
   rewriteInterfaceBindings
 } from '$lib/utils/workflowInterface.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
@@ -533,5 +534,54 @@ describe('rewriteInterfaceBindings', () => {
       defaultValue: 'x',
       meta: { 'fd.reserved': true, arbitrary: 'passthrough' }
     });
+  });
+});
+
+// =========================================================================
+// validateLaunchInputs
+// =========================================================================
+
+describe('validateLaunchInputs', () => {
+  const iface = {
+    inputs: [
+      { id: 'text', dataType: 'string', required: true, bindings: [] },
+      { id: 'limit', dataType: 'number', defaultValue: 10, required: true, bindings: [] },
+      { id: 'verbose', dataType: 'boolean', bindings: [] }
+    ]
+  };
+
+  it('returns no issues without a declared interface — the server stays the authority', () => {
+    expect(validateLaunchInputs(undefined, { anything: 1 })).toEqual([]);
+  });
+
+  it('accepts a complete, known input set', () => {
+    expect(validateLaunchInputs(iface, { text: 'hi', verbose: false })).toEqual([]);
+  });
+
+  it('refuses an unknown key, naming the accepted set', () => {
+    const issues = validateLaunchInputs(iface, { text: 'hi', bogus: 1 });
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ key: 'bogus', code: 'unknown-key' });
+    expect(issues[0].message).toContain('text, limit, verbose');
+  });
+
+  it('refuses a missing required input', () => {
+    const issues = validateLaunchInputs(iface, {});
+    expect(issues).toEqual([expect.objectContaining({ key: 'text', code: 'missing-required' })]);
+  });
+
+  it('treats an explicit undefined as missing', () => {
+    const issues = validateLaunchInputs(iface, { text: undefined });
+    expect(issues.map((issue) => issue.code)).toEqual(['missing-required']);
+  });
+
+  it('lets a defaultValue satisfy a required input', () => {
+    // "limit" is required but carries a default — omitting it is fine.
+    expect(validateLaunchInputs(iface, { text: 'hi' })).toEqual([]);
+  });
+
+  it('says so when the workflow declares no inputs at all', () => {
+    const issues = validateLaunchInputs({ inputs: [] }, { stray: 1 });
+    expect(issues[0].message).toContain('declares no inputs');
   });
 });

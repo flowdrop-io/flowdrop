@@ -20,6 +20,8 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl } from '../config/endpoints.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import type { AuthProvider } from '../types/auth.js';
+import type { Workflow } from '../types/index.js';
+import { validateLaunchInputs } from '../utils/workflowInterface.js';
 import { logger } from '../utils/logger.js';
 
 /** A single per-input validation failure reported by the backend. */
@@ -46,10 +48,21 @@ export type LaunchResult =
   | { status: 'unsupported' };
 
 export interface LaunchOptions {
-  /** Named inputs, resolved server-side against the workflow's declared manifest. */
+  /**
+   * Named inputs, resolved server-side against the workflow's declared
+   * manifest. Keys are `WorkflowInterfaceEntry.id`s — the same identity the
+   * server matches on as the manifest's `name`.
+   */
   inputs?: Record<string, unknown>;
   /** Attribute the run to a session, so its messages land in that conversation. */
   sessionId?: string;
+  /**
+   * The workflow being launched. When it declares an `interface`, inputs are
+   * pre-validated against it client-side — unknown keys and missing required
+   * inputs return `invalid-input` without a network round-trip, mirroring the
+   * server's own refusal. Value type/schema checking stays with the server.
+   */
+  workflow?: Workflow;
 }
 
 class WorkflowLaunchService {
@@ -72,6 +85,14 @@ class WorkflowLaunchService {
   ): Promise<LaunchResult> {
     const endpoint = config?.endpoints?.workflows?.run;
     if (!config || !endpoint) return { status: 'unsupported' };
+
+    const preflight = validateLaunchInputs(options.workflow?.interface, options.inputs ?? {});
+    if (preflight.length > 0) {
+      return {
+        status: 'invalid-input',
+        message: preflight.map((issue) => issue.message).join(' ')
+      };
+    }
 
     const url = buildEndpointUrl(config, endpoint, { workflowId });
 
