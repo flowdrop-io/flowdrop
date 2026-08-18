@@ -134,6 +134,69 @@ describe('WorkflowInterfaceEditor', () => {
     expect(body).toContain('fd.reserved');
   });
 
+  it('renders each fact once — the unbound status is not echoed by the issue list', () => {
+    const workflow = makeWorkflow([], {
+      inputs: [{ id: 'draft-in', dataType: 'string', bindings: [] }]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    // The status dot repeats the prose in its title tooltip; count visible text only.
+    const visible = body.replace(/title="[^"]*"/g, '');
+    expect(visible.split('has no bindings yet').length - 1).toBe(1);
+  });
+
+  it('renders a type mismatch inline under the Data type field with a quick fix, not as footer prose', () => {
+    const port = makePort('in-a', 'number', { type: 'input' });
+    const node = makeNode('node-1', [port], []);
+    const workflow = makeWorkflow([node], {
+      inputs: [
+        { id: 'typed-in', dataType: 'string', bindings: [{ nodeId: 'node-1', portId: 'in-a' }] }
+      ]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).toContain("Doesn't match the bound port's type (number).");
+    expect(body).toContain('Use port type');
+    // The long-form sentence must not also render in the card footer (the dot's
+    // title tooltip is the one allowed carrier of it).
+    const visible = body.replace(/title="[^"]*"/g, '');
+    expect(visible).not.toContain('declares a data type that does not match');
+  });
+
+  it('names the competing source inline when a bound input port already has an incoming edge', () => {
+    const inPort = makePort('in-a', 'string', { type: 'input' });
+    const outPort = makePort('out-a', 'string', { type: 'output' });
+    const target = makeNode('node-1', [inPort], []);
+    const feeder = makeNode('feeder-1', [], [outPort]);
+    const base = makeWorkflow([target, feeder], {
+      inputs: [
+        { id: 'busy-in', dataType: 'string', bindings: [{ nodeId: 'node-1', portId: 'in-a' }] }
+      ]
+    });
+    const workflow: Workflow = {
+      ...base,
+      edges: [
+        {
+          id: 'e1',
+          source: 'feeder-1',
+          target: 'node-1',
+          sourceHandle: 'feeder-1-output-out-a',
+          targetHandle: 'node-1-input-in-a'
+        }
+      ]
+    };
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).toContain('This port already receives a value from "feeder-1".');
+    expect(body).not.toContain('two sources for one value');
+  });
+
   it('offers the configured data-type vocabulary as select options', () => {
     const workflow = makeWorkflow([], {
       inputs: [{ id: 'typed-in', dataType: 'string', bindings: [] }]

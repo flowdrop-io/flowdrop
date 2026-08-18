@@ -775,6 +775,17 @@ describe('listBindablePorts', () => {
     expect(listBindablePorts(workflow, 'input').map((b) => b.port.id)).toEqual(['in-a']);
   });
 
+  it('excludes control-flow ports — trigger/tool dataTypes and the loop_back port', () => {
+    const dataPort = makePort('in-a', 'string', { type: 'input' });
+    const triggerPort = makePort('start', 'trigger', { type: 'input' });
+    const toolPort = makePort('tools', 'tool', { type: 'input' });
+    const loopbackPort = makePort('loop_back', 'mixed', { type: 'input' });
+    const node = makeNode('node-1', [dataPort, triggerPort, toolPort, loopbackPort], []);
+    const workflow = makeWorkflow([node]);
+
+    expect(listBindablePorts(workflow, 'input').map((b) => b.port.id)).toEqual(['in-a']);
+  });
+
   it('falls back to the node id as a label when the node has no data.label', () => {
     const port = makePort('in-a', 'string', { type: 'input' });
     const node = makeNode('node-1', [port], []);

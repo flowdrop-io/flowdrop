@@ -25,6 +25,7 @@ import type {
 } from '$lib/types/index.js';
 import { dynamicPortToNodePort } from '$lib/types/index.js';
 import { isPortExposed } from '$lib/utils/portUtils.js';
+import { LOOPBACK_PORT_NAME } from '$lib/utils/connections.js';
 import { PORTS_CONFIG_KEY } from '$lib/utils/nodeFormSchema.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
@@ -442,6 +443,15 @@ export function describeInterfaceEntryStatus(resolved: ResolvedInterfaceEntry): 
   return STATUS_MESSAGE[status](entry.id);
 }
 
+/**
+ * Whether a port is intra-graph control flow — the reserved `trigger`/`tool`
+ * dataTypes or the loopback input — and therefore never publishable in a
+ * workflow's interface.
+ */
+function isControlFlowPort(port: NodePort): boolean {
+  return port.dataType === 'trigger' || port.dataType === 'tool' || port.id === LOOPBACK_PORT_NAME;
+}
+
 /** One inner port a `WorkflowInterfaceEntry` could bind to, plus its owning node. */
 export interface BindablePort {
   nodeId: string;
@@ -457,6 +467,11 @@ export interface BindablePort {
  *
  * Mirrors `FormPorts.svelte`'s port list: a node's static metadata ports plus
  * its user-defined dynamic ports, filtered by `isPortExposed`.
+ *
+ * Control-flow ports are excluded: the reserved `trigger`/`tool` dataTypes and
+ * the `loop_back` port are intra-graph control flow, not an external surface
+ * (DN1's grounded fact). The model and validation stay permissive — this only
+ * constrains what the authoring picker offers.
  */
 export function listBindablePorts(
   workflow: Workflow,
@@ -480,6 +495,7 @@ export function listBindablePorts(
     const entries = portsConfig?.[portsConfigDirection];
 
     for (const port of [...staticPorts, ...dynamicPorts]) {
+      if (isControlFlowPort(port)) continue;
       if (isPortExposed(port, entries)) {
         result.push({ nodeId: node.id, nodeLabel: node.data?.label ?? node.id, port });
       }

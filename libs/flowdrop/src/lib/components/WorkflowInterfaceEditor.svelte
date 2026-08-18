@@ -27,6 +27,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import { m } from '$lib/messages/index.js';
+  import { buildHandleId } from '$lib/utils/handleIds.js';
   import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
   import type {
     PortDataTypeConfig,
@@ -102,6 +103,57 @@
     const dir = entryDirectionOf(direction);
     return issues.filter((i) => i.direction === dir && i.entryId === entryId);
   }
+
+  /**
+   * Issues rendered in the card's footer. Excludes what is already shown
+   * elsewhere in the card: the resolved status (validation re-emits every
+   * non-ok status as an `interface-<status>` issue — rendering both printed
+   * the same sentence twice) and the two issues that render inline next to
+   * their own field (type mismatch under Data type, already-connected under
+   * Bound port).
+   */
+  const INLINE_ISSUE_CODES = new Set([
+    'interface-type-mismatch',
+    'interface-input-already-connected'
+  ]);
+
+  function footerIssues(
+    direction: Direction,
+    entryId: string,
+    status: ResolvedInterfaceEntry | undefined
+  ): InterfaceIssue[] {
+    const statusEcho = status ? `interface-${status.status}` : '';
+    return issuesFor(direction, entryId).filter(
+      (issue) => issue.code !== statusEcho && !INLINE_ISSUE_CODES.has(issue.code)
+    );
+  }
+
+  /** The bound port's own dataType, when the single binding resolves. */
+  function boundPortType(status: ResolvedInterfaceEntry | undefined): string | undefined {
+    return status?.targets[0]?.port.dataType;
+  }
+
+  function hasIssue(direction: Direction, entryId: string, code: string): boolean {
+    return issuesFor(direction, entryId).some((issue) => issue.code === code);
+  }
+
+  /**
+   * For an input whose bound port already has an incoming edge: the label of
+   * the node feeding that edge, so the conflict message can name the actual
+   * competing source instead of describing it abstractly.
+   */
+  function conflictingSourceLabel(entry: WorkflowInterfaceEntry): string | undefined {
+    const binding = entry.bindings[0];
+    if (!binding) return undefined;
+    const handleId = buildHandleId(binding.nodeId, 'input', binding.portId);
+    const edge = workflow.edges.find((e) => e.targetHandle === handleId);
+    if (!edge) return undefined;
+    const source = workflow.nodes.find((n) => n.id === edge.source);
+    return source?.data?.label ?? edge.source;
+  }
+
+  /** Statuses still explained in the card footer (the rest render inline or as the dot). */
+  const FOOTER_STATUSES = new Set(['unbound', 'dangling', 'hidden', 'over-bound']);
 
   function bindablePorts(direction: Direction) {
     return listBindablePorts(workflow, entryDirectionOf(direction));
@@ -240,13 +292,18 @@
         <ul class="wf-interface__list">
           {#each list as entry, index (index)}
             {@const status = statusFor(section.key, entry.id)}
-            {@const entryIssues = issuesFor(section.key, entry.id)}
             <li
               class="wf-interface__entry"
               class:wf-interface__entry--error={status?.status &&
                 status.status !== 'ok' &&
                 status.status !== 'unbound'}
             >
+              {#if status}
+                <span
+                  class="wf-interface__dot wf-interface__dot--{status.status}"
+                  title={describeInterfaceEntryStatus(status)}
+                ></span>
+              {/if}
               <div class="wf-interface__reorder">
                 <button
                   type="button"
@@ -282,6 +339,7 @@
                     <input
                       type="text"
                       value={entry.name ?? ''}
+                      placeholder={m().workflowInterface.namePlaceholder}
                       onchange={(e) =>
                         patchEntry(section.key, index, {
                           name: e.currentTarget.value || undefined
@@ -304,6 +362,23 @@
                         <option value={option.id}>{option.name}</option>
                       {/each}
                     </select>
+                    {#if status?.status === 'type-mismatch' && boundPortType(status)}
+                      <span class="wf-interface__inline wf-interface__inline--warning">
+                        {m().workflowInterface.typeMismatchInline({
+                          portType: boundPortType(status) ?? ''
+                        })}
+                        <button
+                          type="button"
+                          class="wf-interface__quickfix"
+                          onclick={() =>
+                            patchEntry(section.key, index, {
+                              dataType: boundPortType(status) ?? entry.dataType
+                            })}
+                        >
+                          {m().workflowInterface.useMatchPortType}
+                        </button>
+                      </span>
+                    {/if}
                   </label>
                   {#if section.key === 'inputs'}
                     <label class="wf-interface__field wf-interface__field--checkbox">
@@ -363,17 +438,27 @@
                         </option>
                       {/each}
                     </select>
+                    {#if section.key === 'inputs' && hasIssue(section.key, entry.id, 'interface-input-already-connected')}
+                      <span class="wf-interface__inline wf-interface__inline--error">
+                        {m().workflowInterface.alreadyConnectedInline({
+                          source: conflictingSourceLabel(entry) ?? ''
+                        })}
+                      </span>
+                    {/if}
                   </label>
                 </div>
 
-                <!-- Every resolveInterface status renders here, in words — the
-                     obligation that makes this surface canonical. -->
-                {#if status}
+                <!-- Every resolveInterface status renders in words somewhere in
+                     this card — the obligation that makes this surface
+                     canonical. `ok` lives on the header dot; type-mismatch and
+                     already-connected render inline next to their own field;
+                     the rest are explained here. -->
+                {#if status && FOOTER_STATUSES.has(status.status)}
                   <p class="wf-interface__status wf-interface__status--{status.status}">
                     {describeInterfaceEntryStatus(status)}
                   </p>
                 {/if}
-                {#each entryIssues as issue (issue.code)}
+                {#each footerIssues(section.key, entry.id, status) as issue (issue.code)}
                   <p class="wf-interface__status wf-interface__status--{issue.severity}">
                     {issue.message}
                   </p>
@@ -549,6 +634,69 @@
     background-color: var(--fd-background);
     color: var(--fd-foreground);
     font-size: var(--fd-text-xs);
+  }
+
+  /* Selects size to their longest option instead of truncating it. */
+  .wf-interface__field select {
+    min-width: 8rem;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  /* Entry health at a glance; the title tooltip carries the words. */
+  .wf-interface__dot {
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-top: 0.5rem;
+    border-radius: 50%;
+    background-color: var(--fd-muted-foreground);
+  }
+
+  .wf-interface__dot--ok {
+    background-color: var(--fd-success);
+  }
+
+  .wf-interface__dot--type-mismatch,
+  .wf-interface__dot--unbound {
+    background-color: var(--fd-warning);
+  }
+
+  .wf-interface__dot--dangling,
+  .wf-interface__dot--hidden,
+  .wf-interface__dot--over-bound {
+    background-color: var(--fd-error);
+  }
+
+  /* Field-anchored feedback: one short line under the field it belongs to. */
+  .wf-interface__inline {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.375rem;
+    font-size: var(--fd-text-xs);
+    line-height: 1.4;
+  }
+
+  .wf-interface__inline--warning {
+    color: var(--fd-warning);
+  }
+
+  .wf-interface__inline--error {
+    color: var(--fd-error);
+  }
+
+  .wf-interface__quickfix {
+    padding: 0 0.25rem;
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-sm);
+    background-color: var(--fd-background);
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-xs);
+    cursor: pointer;
+  }
+
+  .wf-interface__quickfix:hover {
+    background-color: var(--fd-muted);
   }
 
   .wf-interface__status {

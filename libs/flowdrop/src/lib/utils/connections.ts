@@ -16,7 +16,7 @@ import type {
  * Loopback port name constant
  * This is the standard input port name used for loop iteration triggers
  */
-const LOOPBACK_PORT_NAME = 'loop_back';
+export const LOOPBACK_PORT_NAME = 'loop_back';
 
 /**
  * Determines if an edge is a loopback edge.

@@ -497,6 +497,12 @@ export const defaultMessages = {
     descriptionLabel: 'Description',
     dataTypeLabel: 'Data type',
     dataTypePlaceholder: 'Select a data type…',
+    namePlaceholder: 'Defaults to ID',
+    typeMismatchInline: ({ portType }: { portType: string }) =>
+      `Doesn't match the bound port's type (${portType}).`,
+    useMatchPortType: 'Use port type',
+    alreadyConnectedInline: ({ source }: { source: string }) =>
+      `This port already receives a value from "${source}".`,
     requiredLabel: 'Required',
     defaultValueLabel: 'Default value',
     bindingLabel: 'Bound port',
