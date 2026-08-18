@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-08-18
+
+**The workflow interface release.** A workflow can now declare its public call signature — named inputs and outputs bound to internal node ports — and author it in a dedicated settings panel. Entirely additive: workflows without an `interface` behave exactly as before.
+
+### Added
+
+- **`Workflow.interface`** — the workflow's public contract. New `/core` types `WorkflowInterface`, `WorkflowInterfaceEntry`, and `PortBinding`: each entry maps a stable public `id` (plus optional `name`, `description`, `dataType`, `required`, `defaultValue`, `examples`, `schema`, and server-owned `meta`) to exactly one internal port binding. Control-flow ports (`trigger`/`tool` data types and the loop-back port) are not bindable — they are orchestration, not call signature.
+- **Interface panel in workflow settings.** The workflow settings dialog gains an Interface tab powered by the new `WorkflowInterfaceEditor`: per-entry status dot (ok, unbound, dangling, hidden, over-bound, type mismatch) with plain-language explanations, a binding picker limited to exposed ports, and an inline "already receives a value from …" conflict message when a bound input port also has an incoming edge.
+- **Progressive disclosure + "Pull from port".** An entry's resting state is just its public id and binding; name, data type (with a one-click "Use port type" mismatch fix), required, description, default value, and examples sit behind a "More options" disclosure that auto-opens on a type mismatch. A "Pull from port" button copies the bound port's declared fields into the entry — it never derives the public `id` from the internal port name.
+- **Example values for callers.** `WorkflowInterfaceEntry.examples` (inputs only, never validated against `schema`) with add/remove editing in the panel.
+- **Launch preflight.** `workflowLaunchService` accepts the `workflow` in its launch options and validates the provided inputs against the declared interface before any network call — unknown input keys and missing required inputs (honoring `defaultValue`) return an `invalid-input` result locally.
+- **Canvas marker for bound ports.** Port handles referenced by an interface binding render a ring (themeable via `--fd-ring`), so the workflow's public surface is visible on the canvas itself.
+- **Data types from the instance vocabulary.** The panel's data-type select is sourced from the instance's port configuration (`fd.portCompatibility.getEnabledDataTypes()`); a stored value outside the vocabulary is kept as an extra option instead of being silently dropped.
+- **API surface.** `interface` schemas in the OpenAPI spec and the generated workflow JSON schema; the `demo_tool_workflow` mock fixture exercises the full contract. New `workflowInterface` message-catalog domain for every string in the panel.
+
+### Changed
+
+- **Node swap preserves the interface.** Swapping a node rewrites interface bindings to the replacement node's mapped ports in the same history entry, so undo restores both the graph and the contract together.
+
 ## [2.0.1] - 2026-08-14
 
 ### Fixed
