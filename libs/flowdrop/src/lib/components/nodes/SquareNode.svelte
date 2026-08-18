@@ -26,6 +26,8 @@
   import { getNodeIcon } from '../../utils/icons.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, getPortTop, isPortVisible } from '../../utils/portUtils.js';
+  import { buildHandleId } from '$lib/utils/handleIds.js';
+  import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
@@ -51,6 +53,9 @@
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
+
+  /** Handle ids bound to a `workflow.interface` entry — see workflowStore. */
+  const boundHandles = $derived(fd.workflow.interfaceBoundHandles);
 
   /**
    * Per-instance port order + exposure, in config. Order overrides the metadata
@@ -142,9 +147,12 @@
 
 <!-- Input Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
 {#each visibleInputPorts as port, index (port.id)}
+  {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
   <Handle
     type="target"
     position={Position.Left}
+    class={boundEntry ? 'flowdrop-handle--bound' : undefined}
+    title={interfaceBoundTooltip(boundEntry)}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
       port
@@ -208,9 +216,12 @@
 
 <!-- Output Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
 {#each visibleOutputPorts as port, index (port.id)}
+  {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
   <Handle
     type="source"
     position={Position.Right}
+    class={boundEntry ? 'flowdrop-handle--bound' : undefined}
+    title={interfaceBoundTooltip(boundEntry)}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
       port

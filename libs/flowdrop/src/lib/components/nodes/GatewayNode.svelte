@@ -23,6 +23,8 @@
   } from '../../utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
+  import { buildHandleId } from '$lib/utils/handleIds.js';
+  import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -37,6 +39,14 @@
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
+
+  /**
+   * Handle ids bound to a `workflow.interface` entry — see workflowStore.
+   * Only input ports can be bound here: a gateway's outputs are branches
+   * (authored control-flow paths), not `NodePort`s, so they can never be an
+   * interface binding's target.
+   */
+  const boundHandles = $derived(fd.workflow.interfaceBoundHandles);
 
   // Hoist the graph branch — three reads in the template, two inside
   // {#each port} / {#each branch} loops. One getter walk per render.
@@ -147,13 +157,15 @@
     <div class="flowdrop-workflow-node__ports">
       <div class="flowdrop-workflow-node__ports-list">
         {#each visibleInputPorts as port (port.id)}
+          {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
           <div class="flowdrop-workflow-node__port">
             <!-- Input Handle: one grid row (20px) from the top so it aligns with the label, at node edge -->
             <Handle
               type="target"
               position={Position.Left}
               id={`${props.id}-input-${port.id}`}
-              class="flowdrop-workflow-node__handle"
+              class="flowdrop-workflow-node__handle {boundEntry ? 'flowdrop-handle--bound' : ''}"
+              title={interfaceBoundTooltip(boundEntry)}
               style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
                 checker,
                 port.dataType

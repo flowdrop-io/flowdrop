@@ -28,6 +28,8 @@
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { getPortColorToken, getPortBackgroundColorForPort } from '$lib/utils/colors.js';
   import { byDefaultOrder, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
+  import { buildHandleId } from '$lib/utils/handleIds.js';
+  import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import FormToggle from './FormToggle.svelte';
   import Icon from '@iconify/svelte';
 
@@ -47,6 +49,9 @@
   const checker = fd.portCompatibility;
 
   const portsConfig = $derived((value as PortsConfig | undefined) ?? {});
+
+  /** Handle ids bound to a `workflow.interface` entry — see workflowStore. */
+  const boundHandles = $derived(fd.workflow.interfaceBoundHandles);
 
   // Mirror the canvas: static metadata ports plus user-defined dynamic ports.
   const inputPorts = $derived<NodePort[]>([
@@ -134,6 +139,11 @@
         <ul class="fd-ports__list">
           {#each ordered as port, i (port.id)}
             {@const exposed = isPortExposed(port, portsConfig[direction])}
+            {@const boundEntry = node
+              ? boundHandles.get(
+                  buildHandleId(node.id, direction === 'inputs' ? 'input' : 'output', port.id)
+                )
+              : undefined}
             <li class="fd-ports__item" class:fd-ports__item--hidden={!exposed}>
               <div class="fd-ports__reorder">
                 <button
@@ -170,6 +180,15 @@
               >
                 {port.dataType}
               </span>
+              {#if boundEntry}
+                <span
+                  class="fd-ports__bound"
+                  title={interfaceBoundTooltip(boundEntry)}
+                  aria-label={interfaceBoundTooltip(boundEntry)}
+                >
+                  <Icon icon="heroicons:link" />
+                </span>
+              {/if}
               <FormToggle
                 id={`${id}-${direction}-${port.id}`}
                 value={exposed}
@@ -274,5 +293,20 @@
     max-width: 10ch;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  /* Interface-bound marker: same --fd-ring token as the canvas handle ring
+     (see styles/base.css .flowdrop-handle--bound), so the two affordances
+     read as one system in both light and dark skins. */
+  .fd-ports__bound {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.25em;
+    height: 1.25em;
+    border-radius: 50%;
+    color: var(--fd-ring);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--fd-ring) 55%, transparent);
   }
 </style>

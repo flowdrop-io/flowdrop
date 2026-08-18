@@ -130,6 +130,16 @@ p {
   outline-offset: var(--fd-ring-offset);
 }
 
+/* Interface-bound marker: a port bound to a `workflow.interface` entry
+   (see utils/workflowInterface.ts#interfaceBoundHandles) gets a subtle ring
+   around its visible dot. One shared class, applied by every node component
+   that renders a Handle, rather than five per-component styles. Reuses the
+   same --fd-ring token as the focus ring so it reads consistently — and
+   stays correct automatically — in both light and dark skins. */
+.svelte-flow .svelte-flow__handle.flowdrop-handle--bound::before {
+  box-shadow: 0 0 0 var(--fd-ring-width) color-mix(in srgb, var(--fd-ring) 55%, transparent);
+}
+
 /* Centralized handle edge positioning — offset derived from --fd-handle-size */
 .svelte-flow .svelte-flow__handle-left {
   left: var(--fd-handle-offset);

@@ -17,7 +17,8 @@ import type { WorkflowChangeType } from '$lib/types/events.js';
 import type { HistoryService } from '../services/historyService.js';
 import { WORKFLOW_SCHEMA_VERSION } from '$lib/schemas/index.js';
 import type { PortMapping } from '../utils/nodeSwap.js';
-import { rewriteInterfaceBindings } from '../utils/workflowInterface.js';
+import type { WorkflowInterfaceEntry } from '$lib/types/index.js';
+import { interfaceBoundHandles, rewriteInterfaceBindings } from '../utils/workflowInterface.js';
 
 type WorkflowMetadata = Workflow['metadata'];
 
@@ -379,6 +380,17 @@ export class WorkflowStore {
     });
 
     return handles;
+  }
+
+  /**
+   * Handle IDs bound to a `workflow.interface` entry, mapped to the entry
+   * itself — one memoized pass over `resolveInterface`, shared by every node
+   * component and `FormPorts` instead of each re-deriving it per port. See
+   * `utils/workflowInterface.ts#interfaceBoundHandles` for what counts as
+   * "bound" (only bindings that resolve to a live port).
+   */
+  get interfaceBoundHandles(): Map<string, WorkflowInterfaceEntry> {
+    return this.#workflow ? interfaceBoundHandles(this.#workflow) : new Map();
   }
 
   /**

@@ -23,6 +23,8 @@
   import { getNodeIcon } from '../../utils/icons.js';
   import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
+  import { buildHandleId } from '$lib/utils/handleIds.js';
+  import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
 
   /**
@@ -95,6 +97,9 @@
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
+
+  /** Handle ids bound to a `workflow.interface` entry — see workflowStore. */
+  const boundHandles = $derived(fd.workflow.interfaceBoundHandles);
 
   /**
    * Determine terminal variant from config or metadata
@@ -335,9 +340,12 @@
     {#if showInputs}
       {#each visibleInputPorts as port, index (`${port.id}-${visibleInputPorts.length}`)}
         {@const pos = getCircleHandlePosition(index, visibleInputPorts.length, 'left')}
+        {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
         <Handle
           type="target"
           position={Position.Left}
+          class={boundEntry ? 'flowdrop-handle--bound' : undefined}
+          title={interfaceBoundTooltip(boundEntry)}
           style="--fd-handle-fill: {getPortColorToken(
             checker,
             port
@@ -358,10 +366,13 @@
     {#if showOutputs}
       {#each visibleOutputPorts as port, index (`${port.id}-${visibleOutputPorts.length}`)}
         {@const pos = getCircleHandlePosition(index, visibleOutputPorts.length, 'right')}
+        {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
         <Handle
           type="source"
           position={Position.Right}
           id={`${props.id}-output-${port.id}`}
+          class={boundEntry ? 'flowdrop-handle--bound' : undefined}
+          title={interfaceBoundTooltip(boundEntry)}
           style="--fd-handle-fill: {getPortColorToken(
             checker,
             port

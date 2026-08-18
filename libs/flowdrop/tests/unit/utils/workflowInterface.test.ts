@@ -10,7 +10,9 @@ import {
   resolveInterface,
   validateWorkflowInterface,
   validateLaunchInputs,
-  rewriteInterfaceBindings
+  rewriteInterfaceBindings,
+  interfaceBoundHandles,
+  interfaceBoundTooltip
 } from '$lib/utils/workflowInterface.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
@@ -583,5 +585,101 @@ describe('validateLaunchInputs', () => {
   it('says so when the workflow declares no inputs at all', () => {
     const issues = validateLaunchInputs({ inputs: [] }, { stray: 1 });
     expect(issues[0].message).toContain('declares no inputs');
+  });
+});
+
+// =========================================================================
+// interfaceBoundHandles
+// =========================================================================
+
+describe('interfaceBoundHandles', () => {
+  it('maps a bound, exposed input port to its entry', () => {
+    const port = makePort('in-1', 'string', { type: 'input' });
+    const node = makeNode('node-1', [port], []);
+    const entry = makeEntry({
+      id: 'article_text',
+      name: 'Article Text',
+      bindings: [{ nodeId: 'node-1', portId: 'in-1' }]
+    });
+    const workflow = makeWorkflow([node], [], { inputs: [entry] });
+
+    const bound = interfaceBoundHandles(workflow);
+    expect(bound.get(buildHandleId('node-1', 'input', 'in-1'))).toBe(entry);
+    expect(bound.size).toBe(1);
+  });
+
+  it("maps a bound output port using the port's own direction", () => {
+    const port = makePort('out-1', 'string', { type: 'output' });
+    const node = makeNode('node-1', [], [port]);
+    const entry = makeEntry({ bindings: [{ nodeId: 'node-1', portId: 'out-1' }] });
+    const workflow = makeWorkflow([node], [], { outputs: [entry] });
+
+    const bound = interfaceBoundHandles(workflow);
+    expect(bound.get(buildHandleId('node-1', 'output', 'out-1'))).toBe(entry);
+  });
+
+  it('excludes an unbound entry (no bindings) — nothing to mark', () => {
+    const entry = makeEntry({ bindings: [] });
+    const workflow = makeWorkflow([], [], { inputs: [entry] });
+    expect(interfaceBoundHandles(workflow).size).toBe(0);
+  });
+
+  it('excludes a dangling binding — the node/port no longer exists, so there is no live handle to ring', () => {
+    const entry = makeEntry({ bindings: [{ nodeId: 'ghost', portId: 'in-1' }] });
+    const workflow = makeWorkflow([], [], { inputs: [entry] });
+    expect(interfaceBoundHandles(workflow).size).toBe(0);
+  });
+
+  it("still includes a hidden binding's handle id (the node component filters it out of render, not this map)", () => {
+    const port = makePort('in-1', 'string', { type: 'input', exposedByDefault: false });
+    const node = makeNode('node-1', [port], []);
+    const entry = makeEntry({ bindings: [{ nodeId: 'node-1', portId: 'in-1' }] });
+    const workflow = makeWorkflow([node], [], { inputs: [entry] });
+
+    const bound = interfaceBoundHandles(workflow);
+    expect(bound.get(buildHandleId('node-1', 'input', 'in-1'))).toBe(entry);
+  });
+
+  it('maps every resolved target of an over-bound entry to the same entry', () => {
+    const outA = makePort('out-a', 'string', { type: 'output' });
+    const outB = makePort('out-b', 'string', { type: 'output' });
+    const node = makeNode('node-1', [], [outA, outB]);
+    const entry = makeEntry({
+      bindings: [
+        { nodeId: 'node-1', portId: 'out-a' },
+        { nodeId: 'node-1', portId: 'out-b' }
+      ]
+    });
+    const workflow = makeWorkflow([node], [], { outputs: [entry] });
+
+    const bound = interfaceBoundHandles(workflow);
+    expect(bound.get(buildHandleId('node-1', 'output', 'out-a'))).toBe(entry);
+    expect(bound.get(buildHandleId('node-1', 'output', 'out-b'))).toBe(entry);
+    expect(bound.size).toBe(2);
+  });
+
+  it('returns an empty map for a workflow with no interface key', () => {
+    const workflow = makeWorkflow([makeNode('node-1', [makePort('in-1')], [])]);
+    expect(interfaceBoundHandles(workflow).size).toBe(0);
+  });
+});
+
+// =========================================================================
+// interfaceBoundTooltip
+// =========================================================================
+
+describe('interfaceBoundTooltip', () => {
+  it('returns undefined for an unbound port', () => {
+    expect(interfaceBoundTooltip(undefined)).toBeUndefined();
+  });
+
+  it("uses the entry's display name when set", () => {
+    const entry = makeEntry({ id: 'article_text', name: 'Article Text' });
+    expect(interfaceBoundTooltip(entry)).toBe('Published as: Article Text');
+  });
+
+  it('falls back to the entry id when no display name is set', () => {
+    const entry = makeEntry({ id: 'article_text' });
+    expect(interfaceBoundTooltip(entry)).toBe('Published as: article_text');
   });
 });

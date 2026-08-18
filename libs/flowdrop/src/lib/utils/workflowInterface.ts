@@ -334,6 +334,56 @@ export function validateLaunchInputs(
 export { STATUS_PRECEDENCE };
 
 /**
+ * Handle IDs bound to a workflow interface entry, mapped to the entry itself
+ * (so a caller can render the entry's public name — e.g. in a tooltip —
+ * without a second lookup).
+ *
+ * Built from `resolveInterface`, so it inherits the same resolution rules:
+ * only bindings that resolve to a *live* port contribute a handle id. A
+ * `dangling` binding has no live handle to mark, and an `unbound` entry has
+ * no bindings at all — neither appears here. A `hidden` binding does resolve
+ * (its handle id is included), but the node components filter not-exposed
+ * ports out of render entirely, so no handle ever exists for it to mark in
+ * practice. Every other status (`ok`, `type-mismatch`, `over-bound`)
+ * contributes its resolved target(s) — the ring is a "this port is part of
+ * the public contract" marker, not a "this entry is fully healthy" one; the
+ * canonical editor (Phase 3) is where health is explained in words.
+ *
+ * When a binding's target resolves to more than one caller (an `over-bound`
+ * output), each target's handle id maps to the same entry.
+ *
+ * Handle ids use the target *port's* own direction (`ResolvedBinding.direction`),
+ * matching the id every node component actually renders
+ * (`buildHandleId(nodeId, direction, portId)`) — not the entry's direction,
+ * which can differ from the bound port's for a misdirected binding.
+ */
+export function interfaceBoundHandles(workflow: Workflow): Map<string, WorkflowInterfaceEntry> {
+  const bound = new Map<string, WorkflowInterfaceEntry>();
+
+  for (const resolvedEntry of resolveInterface(workflow)) {
+    for (const target of resolvedEntry.targets) {
+      const handleId = buildHandleId(target.node.id, target.direction, target.port.id);
+      if (!bound.has(handleId)) bound.set(handleId, resolvedEntry.entry);
+    }
+  }
+
+  return bound;
+}
+
+/**
+ * Tooltip text for a handle bound to an interface entry — `undefined` when
+ * `entry` is `undefined` (the port isn't bound), so callers can pass
+ * `interfaceBoundHandles(workflow).get(handleId)` straight through without an
+ * intermediate check. The single home for this string so all five node
+ * components and `FormPorts` render identical wording.
+ */
+export function interfaceBoundTooltip(
+  entry: WorkflowInterfaceEntry | undefined
+): string | undefined {
+  return entry ? `Published as: ${entry.name ?? entry.id}` : undefined;
+}
+
+/**
  * Rewrite `workflow.interface` bindings that point at a node swapped out by
  * `nodeSwap.ts` — the one place bindings actively move (see
  * `.claude/plans/workflow-interface.md` Phase 2). Every other mutation
