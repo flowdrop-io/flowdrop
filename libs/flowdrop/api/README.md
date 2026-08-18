@@ -143,6 +143,27 @@ When `display` is omitted, the client picks a default from the role: `log` → `
 - `tags` is authoritative — there is no merge with client-derived chips. To suppress
   any chip rendering, send `tags: []` (or omit the field entirely).
 
+## Workflow Interface Contract
+
+A `Workflow` may carry an optional `interface` (`WorkflowInterface`): named `inputs`
+and `outputs` that make up its public contract for external callers, independent of
+its internal node graph.
+
+Each entry (`WorkflowInterfaceEntry`) owns a stable `id`, unique within its
+direction (inputs and outputs are scoped separately). On export toward a server
+manifest, the `id` becomes the manifest's `name` — its wire identity — so renaming
+an `id` is a breaking change for callers, not a cosmetic one.
+
+An entry points at exactly one inner node port via `bindings` (`PortBinding[]`,
+`{nodeId, portId}`). An empty `bindings` list is a valid _draft_ state; more than
+one binding is invalid. The bound port must also be canvas-exposed — a bound but
+hidden port does not satisfy the contract.
+
+`meta` is opaque, free-form consumer metadata (`additionalProperties: true`). The
+library never reads or interprets it — it round-trips verbatim. Servers use it to
+declare what "external" means for them (e.g. `{"http": {"in": "query"}}`). Keys
+under the `fd.` prefix are reserved for future library use.
+
 ## CI/CD
 
 The API spec is validated in CI:

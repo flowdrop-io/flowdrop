@@ -271,6 +271,12 @@ components:
       $ref: './components/schemas/workflow.yaml#/WorkflowEdge'
     WorkflowMetadata:
       $ref: './components/schemas/workflow.yaml#/WorkflowMetadata'
+    PortBinding:
+      $ref: './components/schemas/workflow.yaml#/PortBinding'
+    WorkflowInterfaceEntry:
+      $ref: './components/schemas/workflow.yaml#/WorkflowInterfaceEntry'
+    WorkflowInterface:
+      $ref: './components/schemas/workflow.yaml#/WorkflowInterface'
     Workflow:
       $ref: './components/schemas/workflow.yaml#/Workflow'
     CreateWorkflowRequest:

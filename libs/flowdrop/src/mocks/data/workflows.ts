@@ -717,6 +717,35 @@ export const demoAIContentWorkflow: Workflow = {
     schemaVersion: '1.0.0',
     createdAt: '2025-11-12T21:29:32.473Z',
     updatedAt: '2025-11-12T21:29:32.473Z'
+  },
+  interface: {
+    inputs: [
+      {
+        id: 'contentFilters',
+        name: 'Content Filters',
+        description: 'Additional filtering criteria applied when loading content.',
+        dataType: 'json',
+        required: false,
+        bindings: [{ nodeId: 'content_loader.1', portId: 'filters' }],
+        meta: { unknownConsumerKey: { foo: 'bar' } }
+      }
+    ],
+    outputs: [
+      {
+        id: 'loadedItems',
+        name: 'Loaded Items',
+        description: 'Content items loaded by the workflow.',
+        dataType: 'array',
+        bindings: [{ nodeId: 'content_loader.1', portId: 'content_items' }]
+      },
+      {
+        id: 'summary',
+        name: 'Summary',
+        description: 'Draft output reserved for a future summary field; not yet wired to a node.',
+        dataType: 'string',
+        bindings: []
+      }
+    ]
   }
 };
 

@@ -3978,6 +3978,101 @@ components:
         - schemaVersion
         - createdAt
         - updatedAt
+    PortBinding:
+      type: object
+      description: |
+        A resolved pointer to one inner node port, used by `WorkflowInterfaceEntry.bindings`.
+      properties:
+        nodeId:
+          type: string
+          format: uuid
+          description: Node instance UUID (references `WorkflowNode.id`)
+        portId:
+          type: string
+          description: Port ID on that node (references a `NodePort.id` in the node's metadata)
+      required:
+        - nodeId
+        - portId
+    WorkflowInterfaceEntry:
+      type: object
+      description: |
+        One entry in a workflow's public contract (see `WorkflowInterface`). Owns its own
+        identity: `id` is stable and unique within its direction (inputs and outputs are
+        scoped separately), independent of whichever inner port it currently binds to —
+        swapping or renaming a node does not silently break callers.
+
+        On export toward a server manifest the entry's `id` maps to the manifest's `name`
+        — the server's wire identity. Renaming an `id` is therefore a breaking change for
+        callers, not a cosmetic one.
+
+        Every entry — input or output — must resolve to exactly one binding; more than
+        one is reported as `over-bound`. An empty `bindings` list is a valid *draft*
+        state, reported as `unbound`.
+      properties:
+        id:
+          type: string
+          description: Stable public name. Unique within its direction (inputs vs outputs).
+          example: customerName
+        name:
+          type: string
+          description: Display label for callers and UI. Defaults to `id` when absent.
+        description:
+          type: string
+          description: Help text describing what this entry represents to external callers.
+        dataType:
+          $ref: '#/components/schemas/NodeDataType'
+        required:
+          type: boolean
+          description: Whether callers must supply a value. Inputs only; ignored on outputs.
+        defaultValue:
+          description: Default value used when no external value is supplied. Inputs only.
+        schema:
+          $ref: '#/components/schemas/PortDataSchema'
+          description: JSON Schema describing the structure of data carried by this entry.
+        bindings:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortBinding'
+          description: |
+            Inner ports this entry maps to. Every entry must resolve to exactly one
+            binding; more than one is reported as `over-bound` (the list shape is kept
+            so input fan-out can become additive later). An empty list is a valid
+            draft state, reported as `unbound`. The bound port must also be
+            canvas-exposed (see `NodePort.exposedByDefault` / `config.ports`) — a
+            bound-but-hidden port is reported as `hidden`.
+        meta:
+          type: object
+          additionalProperties: true
+          description: |
+            Opaque consumer metadata. The library never reads or interprets this field
+            — it round-trips verbatim on every read/write. Servers use it to say what
+            "external" means for them, e.g. `{"http": {"in": "query"}}` or
+            `{"mcp": {"toolParam": true}}`.
+
+            Keys under the `fd.` prefix are reserved for future library use — consumers
+            must not write keys starting with `fd.`.
+      required:
+        - id
+        - dataType
+        - bindings
+    WorkflowInterface:
+      type: object
+      description: |
+        A workflow's public contract: named inputs/outputs that external callers supply
+        or receive, each pointing at an inner node port via a binding. Array order is
+        the caller-facing order. Absent on a `Workflow` means the workflow declares no
+        interface, not an empty one.
+      properties:
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowInterfaceEntry'
+          description: Named inputs external callers supply.
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowInterfaceEntry'
+          description: Named outputs external callers receive.
     Workflow:
       type: object
       properties:
@@ -4010,6 +4105,9 @@ components:
           type: object
           description: Custom workflow-level configuration values. Populated when a workflowSettingsSchema is provided to the editor.
           additionalProperties: true
+        interface:
+          $ref: '#/components/schemas/WorkflowInterface'
+          description: Public contract for callers. Absent = the workflow declares no interface.
       required:
         - id
         - name

@@ -41,6 +41,16 @@
       "type": "object",
       "description": "Custom workflow-level configuration values. Populated when a workflowSettingsSchema is provided to the editor.",
       "additionalProperties": true
+    },
+    "interface": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/WorkflowInterface"
+        },
+        {
+          "description": "Public contract for callers. Absent = the workflow declares no interface."
+        }
+      ]
     }
   },
   "required": [
@@ -784,6 +794,25 @@
         "const"
       ]
     },
+    "PortBinding": {
+      "type": "object",
+      "description": "A resolved pointer to one inner node port, used by `WorkflowInterfaceEntry.bindings`.\n",
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Node instance UUID (references `WorkflowNode.id`)"
+        },
+        "portId": {
+          "type": "string",
+          "description": "Port ID on that node (references a `NodePort.id` in the node's metadata)"
+        }
+      },
+      "required": [
+        "nodeId",
+        "portId"
+      ]
+    },
     "PortDataSchema": {
       "type": "object",
       "description": "JSON Schema describing the structure of data on an output port.\nFollows JSON Schema draft-07 specification.\n\n## Purpose\n\nEnables template variable autocomplete in downstream nodes by describing\nthe shape of data that flows through the port.\n\n## Supported Features\n\n- **Objects**: Define `properties` to enable dot notation drilling\n- **Arrays**: Define `items` to enable index access and item property drilling\n- **Nested structures**: Combine objects and arrays for deep drilling\n- **Metadata**: Use `title` and `description` for autocomplete tooltips\n\n## Example\n\nA schema describing an API response with user data and orders:\n\n```yaml\ntype: object\nproperties:\n  user:\n    type: object\n    title: User\n    description: The authenticated user\n    properties:\n      id: { type: integer }\n      name: { type: string, description: \"User's full name\" }\n      email: { type: string }\n      address:\n        type: object\n        properties:\n          city: { type: string }\n          country: { type: string }\n  orders:\n    type: array\n    title: Orders\n    description: User's order history\n    items:\n      type: object\n      properties:\n        order_id: { type: string }\n        total: { type: number }\n        status: { type: string }\n```\n\nThis enables template patterns like:\n- `{{ user.name }}` - Access user's name\n- `{{ user.address.city }}` - Nested property access\n- `{{ orders[0].total }}` - First order's total\n- `{{ orders[0].status }}` - First order's status\n",
@@ -1054,6 +1083,81 @@
         "id",
         "source",
         "target"
+      ]
+    },
+    "WorkflowInterface": {
+      "type": "object",
+      "description": "A workflow's public contract: named inputs/outputs that external callers supply\nor receive, each pointing at an inner node port via a binding. Array order is\nthe caller-facing order. Absent on a `Workflow` means the workflow declares no\ninterface, not an empty one.\n",
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WorkflowInterfaceEntry"
+          },
+          "description": "Named inputs external callers supply."
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/WorkflowInterfaceEntry"
+          },
+          "description": "Named outputs external callers receive."
+        }
+      }
+    },
+    "WorkflowInterfaceEntry": {
+      "type": "object",
+      "description": "One entry in a workflow's public contract (see `WorkflowInterface`). Owns its own\nidentity: `id` is stable and unique within its direction (inputs and outputs are\nscoped separately), independent of whichever inner port it currently binds to —\nswapping or renaming a node does not silently break callers.\n\nOn export toward a server manifest the entry's `id` maps to the manifest's `name`\n— the server's wire identity. Renaming an `id` is therefore a breaking change for\ncallers, not a cosmetic one.\n\nEvery entry — input or output — must resolve to exactly one binding; more than\none is reported as `over-bound`. An empty `bindings` list is a valid *draft*\nstate, reported as `unbound`.\n",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable public name. Unique within its direction (inputs vs outputs)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display label for callers and UI. Defaults to `id` when absent."
+        },
+        "description": {
+          "type": "string",
+          "description": "Help text describing what this entry represents to external callers."
+        },
+        "dataType": {
+          "$ref": "#/$defs/NodeDataType"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether callers must supply a value. Inputs only; ignored on outputs."
+        },
+        "defaultValue": {
+          "description": "Default value used when no external value is supplied. Inputs only."
+        },
+        "schema": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/PortDataSchema"
+            },
+            {
+              "description": "JSON Schema describing the structure of data carried by this entry."
+            }
+          ]
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PortBinding"
+          },
+          "description": "Inner ports this entry maps to. Every entry must resolve to exactly one\nbinding; more than one is reported as `over-bound` (the list shape is kept\nso input fan-out can become additive later). An empty list is a valid\ndraft state, reported as `unbound`. The bound port must also be\ncanvas-exposed (see `NodePort.exposedByDefault` / `config.ports`) — a\nbound-but-hidden port is reported as `hidden`.\n"
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Opaque consumer metadata. The library never reads or interprets this field\n— it round-trips verbatim on every read/write. Servers use it to say what\n\"external\" means for them, e.g. `{\"http\": {\"in\": \"query\"}}` or\n`{\"mcp\": {\"toolParam\": true}}`.\n\nKeys under the `fd.` prefix are reserved for future library use — consumers\nmust not write keys starting with `fd.`.\n"
+        }
+      },
+      "required": [
+        "id",
+        "dataType",
+        "bindings"
       ]
     },
     "WorkflowMetadata": {
