@@ -27,7 +27,13 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import { m } from '$lib/messages/index.js';
-  import type { Workflow, WorkflowInterface, WorkflowInterfaceEntry } from '$lib/types/index.js';
+  import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
+  import type {
+    PortDataTypeConfig,
+    Workflow,
+    WorkflowInterface,
+    WorkflowInterfaceEntry
+  } from '$lib/types/index.js';
   import {
     describeInterfaceEntryStatus,
     listBindablePorts,
@@ -40,9 +46,32 @@
   interface Props {
     workflow: Workflow;
     onChange: (next: WorkflowInterface | undefined) => void;
+    /**
+     * The data-type vocabulary offered by the dataType picker — the host's
+     * live `PortConfig.dataTypes` (pass `portCompatibility.getEnabledDataTypes()`).
+     * The wire format stays an open string; this only constrains *authoring*.
+     */
+    dataTypes?: PortDataTypeConfig[];
   }
 
-  const { workflow, onChange }: Props = $props();
+  const {
+    workflow,
+    onChange,
+    dataTypes = DEFAULT_PORT_CONFIG.dataTypes.filter((dt) => dt.enabled !== false)
+  }: Props = $props();
+
+  /**
+   * Options for one entry's dataType select: the configured vocabulary, plus
+   * the entry's current value when it isn't in it (a host-custom or legacy
+   * type) — a select must never silently rewrite a stored value it can't list.
+   */
+  function dataTypeOptions(current: string): Array<{ id: string; name: string }> {
+    const options = dataTypes.map((dt) => ({ id: dt.id, name: dt.name }));
+    if (current && !dataTypes.some((dt) => dt.id === current || dt.aliases?.includes(current))) {
+      options.push({ id: current, name: current });
+    }
+    return options;
+  }
 
   type Direction = 'inputs' | 'outputs';
 
@@ -261,12 +290,20 @@
                   </label>
                   <label class="wf-interface__field">
                     <span class="wf-interface__label">{m().workflowInterface.dataTypeLabel}</span>
-                    <input
-                      type="text"
+                    <select
                       value={entry.dataType}
                       onchange={(e) =>
                         patchEntry(section.key, index, { dataType: e.currentTarget.value })}
-                    />
+                    >
+                      {#if !entry.dataType}
+                        <option value="" disabled selected>
+                          {m().workflowInterface.dataTypePlaceholder}
+                        </option>
+                      {/if}
+                      {#each dataTypeOptions(entry.dataType) as option (option.id)}
+                        <option value={option.id}>{option.name}</option>
+                      {/each}
+                    </select>
                   </label>
                   {#if section.key === 'inputs'}
                     <label class="wf-interface__field wf-interface__field--checkbox">

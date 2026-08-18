@@ -133,4 +133,52 @@ describe('WorkflowInterfaceEditor', () => {
     expect(body).toContain('Server metadata (read-only)');
     expect(body).toContain('fd.reserved');
   });
+
+  it('offers the configured data-type vocabulary as select options', () => {
+    const workflow = makeWorkflow([], {
+      inputs: [{ id: 'typed-in', dataType: 'string', bindings: [] }]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: {
+        workflow,
+        onChange: () => {},
+        dataTypes: [
+          { id: 'string', name: 'String' },
+          { id: 'number', name: 'Number' }
+        ]
+      }
+    }).body;
+
+    // The current value renders with selected="", so match tolerantly.
+    expect(body).toMatch(/<option value="string"[^>]*>String<\/option>/);
+    expect(body).toMatch(/<option value="number"[^>]*>Number<\/option>/);
+  });
+
+  it('keeps a stored dataType outside the vocabulary as an extra option instead of dropping it', () => {
+    const workflow = makeWorkflow([], {
+      inputs: [{ id: 'custom-in', dataType: 'drupal_entity', bindings: [] }]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: {
+        workflow,
+        onChange: () => {},
+        dataTypes: [{ id: 'string', name: 'String' }]
+      }
+    }).body;
+
+    expect(body).toMatch(/<option value="drupal_entity"[^>]*>drupal_entity<\/option>/);
+  });
+
+  it('falls back to the default port-config vocabulary when no dataTypes prop is given', () => {
+    const workflow = makeWorkflow([], {
+      inputs: [{ id: 'plain-in', dataType: '', bindings: [] }]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    // A built-in from DEFAULT_PORT_CONFIG plus the empty-value placeholder.
+    expect(body).toContain('<option value="string">String</option>');
+    expect(body).toContain('Select a data type…');
+  });
 });

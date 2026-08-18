@@ -496,6 +496,7 @@ export const defaultMessages = {
     nameLabel: 'Name',
     descriptionLabel: 'Description',
     dataTypeLabel: 'Data type',
+    dataTypePlaceholder: 'Select a data type…',
     requiredLabel: 'Required',
     defaultValueLabel: 'Default value',
     bindingLabel: 'Bound port',
