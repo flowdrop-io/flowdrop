@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-08-18
+
+### Added
+
+- **`workflowFormats` mount option.** Pass the format ids a host actually supports (e.g. `['flowdrop']`) to scope the "Workflow Format" select in Workflow Settings to that set. With one or zero options remaining the field is hidden entirely rather than rendered as a single-choice select, and an unknown id filters to nothing instead of erroring. Omit the option to keep offering every registered format.
+
+### Fixed
+
+- **Applying workflow settings could rewrite a non-default format.** When the format field is absent from the settings form the applied config carries no `format` key, and the handler fell back to `DEFAULT_WORKFLOW_FORMAT` — silently rewriting a workflow's stored format on an unrelated name or description edit. It now falls back to the workflow's current format.
+
 ## [2.1.1] - 2026-08-18
 
 ### Fixed
