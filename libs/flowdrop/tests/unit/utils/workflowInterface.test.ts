@@ -141,6 +141,35 @@ describe('resolveBinding', () => {
     const result = resolveBinding(workflow, { nodeId: 'node-1', portId: 'missing' });
     expect(result).toBeNull();
   });
+
+  // A node whose input and output share a portId — `chat_output` ships exactly
+  // this shape (input `message`, output `message`), so the preferred direction
+  // is what decides which port a binding means.
+  describe('when an input and an output share a portId', () => {
+    const sharedIn = makePort('message', 'string', { type: 'input' });
+    const sharedOut = makePort('message', 'string', { type: 'output' });
+    const shared = makeNode('chat', [sharedIn], [sharedOut]);
+    const sharedWorkflow = makeWorkflow([shared]);
+
+    it('prefers the input port for an input entry', () => {
+      const result = resolveBinding(sharedWorkflow, { nodeId: 'chat', portId: 'message' }, 'input');
+      expect(result).toEqual({ node: shared, port: sharedIn, direction: 'input' });
+    });
+
+    it('prefers the output port for an output entry', () => {
+      const result = resolveBinding(
+        sharedWorkflow,
+        { nodeId: 'chat', portId: 'message' },
+        'output'
+      );
+      expect(result).toEqual({ node: shared, port: sharedOut, direction: 'output' });
+    });
+
+    it('falls back to the other side when the preferred side lacks the port', () => {
+      const result = resolveBinding(workflow, { nodeId: 'node-1', portId: 'out-1' }, 'input');
+      expect(result).toEqual({ node, port: outputPort, direction: 'output' });
+    });
+  });
 });
 
 // =========================================================================
@@ -377,6 +406,26 @@ describe('validateWorkflowInterface', () => {
     expect(
       issues.some((i) => i.code === 'interface-direction-mismatch' && i.direction === 'output')
     ).toBe(true);
+  });
+
+  it('does not report a direction mismatch when an input and an output share a portId', () => {
+    const node = makeNode(
+      'chat',
+      [makePort('message', 'string', { type: 'input' })],
+      [makePort('message', 'string', { type: 'output' })]
+    );
+    const outputEntry = makeEntry({
+      id: 'output_1',
+      bindings: [{ nodeId: 'chat', portId: 'message' }]
+    });
+    const inputEntry = makeEntry({
+      id: 'input_1',
+      bindings: [{ nodeId: 'chat', portId: 'message' }]
+    });
+    const workflow = makeWorkflow([node], [], { inputs: [inputEntry], outputs: [outputEntry] });
+
+    const issues = validateWorkflowInterface(workflow);
+    expect(issues.some((i) => i.code === 'interface-direction-mismatch')).toBe(false);
   });
 
   it('surfaces every non-ok resolveInterface status as an issue', () => {

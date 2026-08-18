@@ -104,19 +104,33 @@ export interface InterfaceIssue {
  * metadata ports (inputs and outputs) for the bound port. Returns `null` if
  * the node no longer exists, or the port isn't among that node's metadata
  * ports — the two ways a binding goes dangling.
+ *
+ * `PortBinding` carries no direction of its own, and a `portId` is only unique
+ * within one side of a node: plenty of node types name an input and an output
+ * the same thing (`chat_output` has both an input `message` and an output
+ * `message`). `prefer` — the owning entry's direction — decides which side is
+ * searched first, so such a binding resolves to the port the author actually
+ * picked. The other side is still searched as a fallback, so a genuinely
+ * misdirected binding (a port that exists only on the opposite side) still
+ * resolves and gets reported by `validateWorkflowInterface`.
  */
-export function resolveBinding(workflow: Workflow, binding: PortBinding): ResolvedBinding | null {
+export function resolveBinding(
+  workflow: Workflow,
+  binding: PortBinding,
+  prefer: 'input' | 'output' = 'input'
+): ResolvedBinding | null {
   const node = workflow.nodes.find((candidate) => candidate.id === binding.nodeId);
   if (!node) return null;
 
   const metadata = node.data?.metadata;
-  const inputPort = metadata?.inputs?.find((port) => port.id === binding.portId);
-  if (inputPort) return { node, port: inputPort, direction: 'input' };
+  const find = (direction: 'input' | 'output'): ResolvedBinding | null => {
+    const ports = direction === 'input' ? metadata?.inputs : metadata?.outputs;
+    const port = ports?.find((candidate) => candidate.id === binding.portId);
+    return port ? { node, port, direction } : null;
+  };
 
-  const outputPort = metadata?.outputs?.find((port) => port.id === binding.portId);
-  if (outputPort) return { node, port: outputPort, direction: 'output' };
-
-  return null;
+  const other = prefer === 'input' ? 'output' : 'input';
+  return find(prefer) ?? find(other);
 }
 
 /** The instance's `config.ports` entries for a resolved binding's own direction. */
@@ -139,7 +153,7 @@ function resolveEntry(
     return { entry, direction, targets: [], status: 'unbound' };
   }
 
-  const resolved = entry.bindings.map((binding) => resolveBinding(workflow, binding));
+  const resolved = entry.bindings.map((binding) => resolveBinding(workflow, binding, direction));
   const targets = resolved.filter((target): target is ResolvedBinding => target !== null);
   const isDangling = targets.length !== resolved.length;
 
