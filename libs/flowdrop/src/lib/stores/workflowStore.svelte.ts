@@ -158,6 +158,8 @@ export interface WorkflowStoreActions {
     description?: string;
     metadata?: Partial<Workflow['metadata']>;
     config?: Record<string, unknown>;
+    /** The workflow's public contract. Omit to leave it untouched. */
+    interface?: Workflow['interface'];
   }) => void;
   swapNode: (updates: {
     nodes: WorkflowNode[];
@@ -813,6 +815,7 @@ export class WorkflowStore {
     description?: string;
     metadata?: Partial<Workflow['metadata']>;
     config?: Record<string, unknown>;
+    interface?: Workflow['interface'];
   }): void {
     if (!this.#workflow) return;
     this.#workflow = {
@@ -824,6 +827,7 @@ export class WorkflowStore {
         description: updates.description
       }),
       ...(updates.config !== undefined && { config: updates.config }),
+      ...(updates.interface !== undefined && { interface: updates.interface }),
       metadata: buildMetadata(this.#workflow.metadata, updates.metadata ?? undefined)
     };
     this.#pushToHistory('Batch update');

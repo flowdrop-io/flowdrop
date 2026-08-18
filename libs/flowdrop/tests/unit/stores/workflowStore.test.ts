@@ -747,6 +747,31 @@ describe('WorkflowStore', () => {
 
       expect(fd.workflow.current?.interface).toEqual(workflowInterface);
     });
+
+    it('batchUpdate sets workflow.interface when passed explicitly, pushing one history entry', () => {
+      const node = createTestNode({ id: 'node-1' });
+      const workflow = createTestWorkflow({ nodes: [node] });
+      fd.workflow.initialize(workflow);
+      expect(fd.workflow.current?.interface).toBeUndefined();
+
+      const nextInterface = interfaceFixture();
+      const versionBefore = fd.workflow.editVersion;
+      fd.workflow.batchUpdate({ interface: nextInterface });
+
+      expect(fd.workflow.current?.interface).toEqual(nextInterface);
+      expect(fd.workflow.editVersion).toBe(versionBefore + 1);
+    });
+
+    it('batchUpdate leaves workflow.interface untouched when the key is omitted', () => {
+      const node = createTestNode({ id: 'node-1' });
+      const workflowInterface = interfaceFixture();
+      const workflow = createTestWorkflow({ nodes: [node], interface: workflowInterface });
+      fd.workflow.initialize(workflow);
+
+      fd.workflow.batchUpdate({ name: 'renamed-again' });
+
+      expect(fd.workflow.current?.interface).toEqual(workflowInterface);
+    });
   });
 
   describe('node swap rewrites interface bindings', () => {

@@ -227,6 +227,7 @@ export const defaultMessages = {
     // Right-sidebar workflow settings panel (distinct from the navbar action label above).
     workflowSettingsPanelTitle: 'Workflow Settings',
     workflowSettingsPanelSubtitle: 'Settings',
+    workflowSettingsInterfaceTab: 'Interface',
     nodeConfigDescription: 'Node configuration',
     closeSettings: 'Close settings',
     closeConfigModal: 'Close configuration modal',
@@ -480,5 +481,28 @@ export const defaultMessages = {
       errorLabel: 'Error:',
       historyLabel: 'Runs:'
     }
+  },
+
+  // WorkflowInterfaceEditor — the canonical panel for authoring a workflow's
+  // public contract (`Workflow.interface`). See `.claude/plans/workflow-interface.md`.
+  workflowInterface: {
+    inputsHeading: 'Inputs',
+    outputsHeading: 'Outputs',
+    addInput: 'Add input',
+    addOutput: 'Add output',
+    noInputs: 'No inputs declared yet.',
+    noOutputs: 'No outputs declared yet.',
+    idLabel: 'ID',
+    nameLabel: 'Name',
+    descriptionLabel: 'Description',
+    dataTypeLabel: 'Data type',
+    requiredLabel: 'Required',
+    defaultValueLabel: 'Default value',
+    bindingLabel: 'Bound port',
+    bindingUnbound: 'Not bound',
+    removeEntry: ({ id }: { id: string }) => `Remove interface entry "${id}"`,
+    moveUp: ({ id }: { id: string }) => `Move "${id}" up`,
+    moveDown: ({ id }: { id: string }) => `Move "${id}" down`,
+    metaDisclosure: 'Server metadata (read-only)'
   }
 } as const;

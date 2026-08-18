@@ -15,6 +15,7 @@
   import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
   import ConfigForm from '$lib/components/ConfigForm.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
+  import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
   import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
   import AIChatPanel from '$lib/components/chat/AIChatPanel.svelte';
@@ -350,6 +351,10 @@
 
   // Workflow settings sidebar state
   let isWorkflowSettingsOpen = $state(false);
+  // Inner tab within the workflow-settings surface — see Phase 3 of
+  // `.claude/plans/workflow-interface.md`. Settings and the interface editor
+  // are two tabs of one surface, not a field inside the settings form.
+  let workflowSettingsTab = $state<'settings' | 'interface'>('settings');
 
   // Which surface (`config` | `console` | `chat`) is focused in its host. A
   // single selector across hosts: each TabbedSurface highlights this id when it
@@ -362,7 +367,9 @@
   let swapInteractiveState = $state<InteractiveSwapState | null>(null);
 
   // Built-in workflow settings field names — consumer schemas must not reuse these.
-  const WORKFLOW_SETTINGS_RESERVED = new Set(['name', 'description', 'format']);
+  // 'interface' is reserved too: it names `Workflow.interface`'s own tab, not a
+  // workflowSettingsSchema field, but a consumer schema could still collide.
+  const WORKFLOW_SETTINGS_RESERVED = new Set(['name', 'description', 'format', 'interface']);
 
   // Workflow configuration schema (derived to pick up dynamic format options)
   let workflowConfigSchema: ConfigSchema = $derived.by(() => {
@@ -1210,6 +1217,65 @@
 {/snippet}
 
 <!--
+  The canonical Workflow.interface editor (Phase 3 of
+  `.claude/plans/workflow-interface.md`). Edits route through
+  `fd.workflow.batchUpdate`, so history covers them like any other workflow
+  mutation.
+-->
+{#snippet workflowInterfaceEl()}
+  {#if fd.workflow.current}
+    <WorkflowInterfaceEditor
+      workflow={fd.workflow.current}
+      onChange={(next) => fd.workflow.batchUpdate({ interface: next })}
+    />
+  {/if}
+{/snippet}
+
+<!--
+  Two tabs of the workflow-settings surface: the schema-driven settings form,
+  and the interface editor. A tab, not a field in the settings form — see
+  Phase 3's rationale (`ConfigForm` cannot express a bindings list).
+-->
+{#snippet workflowSettingsTabs()}
+  <div class="workflow-settings-tabs">
+    <div class="workflow-settings-tabs__bar" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={workflowSettingsTab === 'settings'}
+        class="workflow-settings-tabs__tab"
+        class:workflow-settings-tabs__tab--active={workflowSettingsTab === 'settings'}
+        onclick={() => (workflowSettingsTab = 'settings')}
+      >
+        {mergedMessages.navigation.workflowSettingsPanelSubtitle}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={workflowSettingsTab === 'interface'}
+        class="workflow-settings-tabs__tab"
+        class:workflow-settings-tabs__tab--active={workflowSettingsTab === 'interface'}
+        onclick={() => (workflowSettingsTab = 'interface')}
+      >
+        {mergedMessages.navigation.workflowSettingsInterfaceTab}
+      </button>
+    </div>
+    <div
+      class="workflow-settings-tabs__panel"
+      style:display={workflowSettingsTab === 'settings' ? 'block' : 'none'}
+    >
+      {@render workflowConfigFormEl()}
+    </div>
+    <div
+      class="workflow-settings-tabs__panel"
+      style:display={workflowSettingsTab === 'interface' ? 'block' : 'none'}
+    >
+      {@render workflowInterfaceEl()}
+    </div>
+  </div>
+{/snippet}
+
+<!--
   Chromeless config body for tabbed/overlay hosts. `showHeader` draws a slim
   title + close bar when the host doesn't provide one (bottom / shared sidebar);
   the modal host supplies its own header, so it passes `false`.
@@ -1239,16 +1305,16 @@
         </div>
       {/if}
       <div class="config-surface__content">
-        <div class="config-surface__section">
-          <h3 class="config-surface__section-title">
-            {activeConfig.configTitle ?? 'Configuration'}
-          </h3>
-          {#if activeConfig.kind === 'node'}
+        {#if activeConfig.kind === 'node'}
+          <div class="config-surface__section">
+            <h3 class="config-surface__section-title">
+              {activeConfig.configTitle ?? 'Configuration'}
+            </h3>
             {@render nodeConfigFormEl(activeConfig.node)}
-          {:else}
-            {@render workflowConfigFormEl()}
-          {/if}
-        </div>
+          </div>
+        {:else}
+          {@render workflowSettingsTabs()}
+        {/if}
       </div>
     </div>
   {/if}
@@ -1316,7 +1382,7 @@
       {#if activeConfig.kind === 'node'}
         {@render nodeConfigFormEl(activeConfig.node)}
       {:else}
-        {@render workflowConfigFormEl()}
+        {@render workflowSettingsTabs()}
       {/if}
     </ConfigPanel>
   {/if}
@@ -1669,5 +1735,45 @@
     color: var(--fd-muted-foreground);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  /*
+    Inner tab strip for the workflow-settings surface — Settings vs. Interface
+    (Phase 3 of `.claude/plans/workflow-interface.md`). Deliberately not the
+    `TabbedSurface` component: that one governs which *host* a surface lives in
+    (sidebar/modal/below); this is a surface's own internal navigation, sitting
+    inside whichever host already scrolls it.
+  */
+  .workflow-settings-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-xs, 0.5rem);
+  }
+
+  .workflow-settings-tabs__bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--fd-border);
+  }
+
+  .workflow-settings-tabs__tab {
+    padding: 0.375rem 0.75rem;
+    font-size: var(--fd-text-xs);
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    transition: all var(--fd-transition-fast);
+  }
+
+  .workflow-settings-tabs__tab:hover {
+    color: var(--fd-foreground);
+  }
+
+  .workflow-settings-tabs__tab--active {
+    color: var(--fd-foreground);
+    border-bottom-color: var(--fd-primary);
   }
 </style>

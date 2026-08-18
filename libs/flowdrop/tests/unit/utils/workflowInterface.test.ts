@@ -12,7 +12,9 @@ import {
   validateLaunchInputs,
   rewriteInterfaceBindings,
   interfaceBoundHandles,
-  interfaceBoundTooltip
+  interfaceBoundTooltip,
+  describeInterfaceEntryStatus,
+  listBindablePorts
 } from '$lib/utils/workflowInterface.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
@@ -681,5 +683,106 @@ describe('interfaceBoundTooltip', () => {
   it('falls back to the entry id when no display name is set', () => {
     const entry = makeEntry({ id: 'article_text' });
     expect(interfaceBoundTooltip(entry)).toBe('Published as: article_text');
+  });
+});
+
+// =========================================================================
+// describeInterfaceEntryStatus
+// =========================================================================
+
+describe('describeInterfaceEntryStatus', () => {
+  it('describes every status in words, including ok', () => {
+    const port = makePort('in-1', 'string', { type: 'input' });
+    const node = makeNode('node-1', [port], []);
+    const okEntry = makeEntry({
+      id: 'ok-entry',
+      bindings: [{ nodeId: 'node-1', portId: 'in-1' }]
+    });
+    const workflow = makeWorkflow([node], [], { inputs: [okEntry] });
+
+    const [resolvedOk] = resolveInterface(workflow);
+    expect(resolvedOk.status).toBe('ok');
+    expect(describeInterfaceEntryStatus(resolvedOk)).toMatch(/ok-entry/);
+
+    for (const status of [
+      'unbound',
+      'dangling',
+      'hidden',
+      'type-mismatch',
+      'over-bound'
+    ] as const) {
+      const entry = makeEntry({ id: `${status}-entry` });
+      const resolved = { entry, direction: 'input' as const, targets: [], status };
+      const message = describeInterfaceEntryStatus(resolved);
+      expect(message).toMatch(new RegExp(`${status}-entry`));
+      expect(message.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+// =========================================================================
+// listBindablePorts
+// =========================================================================
+
+describe('listBindablePorts', () => {
+  it('returns [] for a workflow with no nodes', () => {
+    const workflow = makeWorkflow([]);
+    expect(listBindablePorts(workflow, 'input')).toEqual([]);
+  });
+
+  it('lists exposed input ports across all nodes, carrying the owning node', () => {
+    const portA = makePort('in-a', 'string', { type: 'input' });
+    const portB = makePort('in-b', 'number', { type: 'input' });
+    const nodeA = makeNode('node-a', [portA], []);
+    const nodeB = makeNode('node-b', [portB], []);
+    const workflow = makeWorkflow([nodeA, nodeB]);
+
+    const bindable = listBindablePorts(workflow, 'input');
+    expect(bindable).toEqual([
+      { nodeId: 'node-a', nodeLabel: 'node-a', port: portA },
+      { nodeId: 'node-b', nodeLabel: 'node-b', port: portB }
+    ]);
+  });
+
+  it('excludes a port that is not canvas-exposed', () => {
+    const exposedPort = makePort('in-a', 'string', { type: 'input' });
+    const hiddenPort = makePort('in-b', 'string', {
+      type: 'input',
+      exposedByDefault: false
+    });
+    const node = makeNode('node-1', [exposedPort, hiddenPort], []);
+    const workflow = makeWorkflow([node]);
+
+    const bindable = listBindablePorts(workflow, 'input');
+    expect(bindable.map((b) => b.port.id)).toEqual(['in-a']);
+  });
+
+  it('respects an explicit ports-config override that un-exposes a port', () => {
+    const port = makePort('in-a', 'string', { type: 'input' });
+    const node = makeNode('node-1', [port], [], { inputs: [{ id: 'in-a', exposed: false }] });
+    const workflow = makeWorkflow([node]);
+
+    expect(listBindablePorts(workflow, 'input')).toEqual([]);
+  });
+
+  it('only lists output ports for direction "output", not inputs', () => {
+    const inPort = makePort('in-a', 'string', { type: 'input' });
+    const outPort = makePort('out-a', 'string', { type: 'output' });
+    const node = makeNode('node-1', [inPort], [outPort]);
+    const workflow = makeWorkflow([node]);
+
+    expect(listBindablePorts(workflow, 'output').map((b) => b.port.id)).toEqual(['out-a']);
+    expect(listBindablePorts(workflow, 'input').map((b) => b.port.id)).toEqual(['in-a']);
+  });
+
+  it('falls back to the node id as a label when the node has no data.label', () => {
+    const port = makePort('in-a', 'string', { type: 'input' });
+    const node = makeNode('node-1', [port], []);
+    delete (node.data as { label?: string }).label;
+    const workflow = makeWorkflow([node]);
+
+    expect(listBindablePorts(workflow, 'input')).toEqual([
+      { nodeId: 'node-1', nodeLabel: 'node-1', port }
+    ]);
   });
 });

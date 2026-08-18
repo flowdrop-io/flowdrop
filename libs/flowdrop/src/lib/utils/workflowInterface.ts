@@ -14,6 +14,7 @@
  */
 
 import type {
+  DynamicPort,
   NodePort,
   PortBinding,
   PortsConfig,
@@ -22,6 +23,7 @@ import type {
   WorkflowInterfaceEntry,
   WorkflowNode
 } from '$lib/types/index.js';
+import { dynamicPortToNodePort } from '$lib/types/index.js';
 import { isPortExposed } from '$lib/utils/portUtils.js';
 import { PORTS_CONFIG_KEY } from '$lib/utils/nodeFormSchema.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
@@ -429,4 +431,60 @@ export function rewriteInterfaceBindings(
     inputs: rewriteEntries(workflowInterface.inputs, 'input'),
     outputs: rewriteEntries(workflowInterface.outputs, 'output')
   };
+}
+
+/** Plain-prose explanation for a resolved entry's health, covering every status. */
+export function describeInterfaceEntryStatus(resolved: ResolvedInterfaceEntry): string {
+  const { entry, status } = resolved;
+  if (status === 'ok') {
+    return `Interface entry "${entry.id}" is bound to an exposed port with a matching type — ready for callers.`;
+  }
+  return STATUS_MESSAGE[status](entry.id);
+}
+
+/** One inner port a `WorkflowInterfaceEntry` could bind to, plus its owning node. */
+export interface BindablePort {
+  nodeId: string;
+  /** The node's display label, for a human-readable option list. */
+  nodeLabel: string;
+  port: NodePort;
+}
+
+/**
+ * Every canvas-exposed port of a workflow, for one direction — the candidate
+ * set a binding picker offers (design decision 3: external ⊂ internal, so an
+ * entry may only bind to a port that is already exposed).
+ *
+ * Mirrors `FormPorts.svelte`'s port list: a node's static metadata ports plus
+ * its user-defined dynamic ports, filtered by `isPortExposed`.
+ */
+export function listBindablePorts(
+  workflow: Workflow,
+  direction: 'input' | 'output'
+): BindablePort[] {
+  const result: BindablePort[] = [];
+
+  for (const node of workflow.nodes) {
+    const metadata = node.data?.metadata;
+    if (!metadata) continue;
+
+    const staticPorts = direction === 'input' ? (metadata.inputs ?? []) : (metadata.outputs ?? []);
+    const dynamicRaw =
+      direction === 'input' ? node.data?.config?.dynamicInputs : node.data?.config?.dynamicOutputs;
+    const dynamicPorts = ((dynamicRaw as DynamicPort[] | undefined) ?? []).map((port) =>
+      dynamicPortToNodePort(port, direction)
+    );
+
+    const portsConfigDirection = direction === 'input' ? 'inputs' : 'outputs';
+    const portsConfig = node.data?.config?.[PORTS_CONFIG_KEY] as PortsConfig | undefined;
+    const entries = portsConfig?.[portsConfigDirection];
+
+    for (const port of [...staticPorts, ...dynamicPorts]) {
+      if (isPortExposed(port, entries)) {
+        result.push({ nodeId: node.id, nodeLabel: node.data?.label ?? node.id, port });
+      }
+    }
+  }
+
+  return result;
 }
