@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-08-18
+
+### Fixed
+
+- **Authoring examples on a workflow interface input was impossible.** The entry card rendered its "More options" disclosure as a reactive attribute, so every edit inside the card — adding an example, committing one — re-ran it and forced the disclosure shut. Because the examples list lives inside that disclosure, the fields collapsed out from under the author mid-edit: focus fell to `<body>` and every keystroke after it was silently dropped. The disclosure is now state, seeded once from whether the entry needs attention and owned by the author from then on.
+- **A card's open fields stayed behind when entries were reordered.** Interface entries had no identity to key on, so the entry list was keyed by position and per-row state belonged to the slot rather than to the entry. Reordering two entries left the open card behind, and removing an entry handed its open state to a neighbour. Rows now carry a client-side identity, kept out of the wire format, that moves with the entry.
+
 ## [2.2.0] - 2026-08-18
 
 ### Added
