@@ -1,22 +1,28 @@
 /**
- * E2E Test: authoring examples on a workflow interface input.
+ * E2E Test: editing a workflow's interface entries.
  *
- * Regression guard for the examples list being unusable. `WorkflowInterfaceEditor`
- * rendered each card's `<details>` as `open={status?.status === 'type-mismatch'}` —
- * a plain reactive attribute. Every edit inside the card routes through
- * `onChange` and returns as a new `workflow`, which re-ran that attribute update
- * and forced the disclosure shut. Since the examples list lives inside the
- * disclosure, adding or committing an example collapsed the fields out from
- * under the author: focus fell to `<body>` and the keystrokes that followed
- * were silently dropped.
+ * Regression guard for two ways this surface could not be edited at all, both
+ * caused by an edit failing to survive its own round trip through the store.
+ *
+ * 1. **Examples could not be authored.** Each card's `<details>` was rendered as
+ *    `open={status?.status === 'type-mismatch'}`, a plain reactive attribute.
+ *    Every edit inside the card comes back as a new `workflow`, which re-ran
+ *    that attribute and forced the disclosure shut. The examples list lives
+ *    inside it, so adding or committing an example collapsed the fields out from
+ *    under the author: focus fell to `<body>` and the keystrokes that followed
+ *    were silently dropped.
+ * 2. **The interface's last entry could not be removed.** `commit` reported an
+ *    emptied interface as `undefined`, which the store reads as "no interface
+ *    supplied, leave it alone", so the removal never landed and the row stayed.
+ *    Reported from a real workflow as "I cannot delete the output entry".
  *
  * These assert the user-facing contract — the field stays on screen, keeps
- * focus, and keeps what was typed — rather than the `open` attribute that
- * happens to implement it.
+ * focus, keeps what was typed, and the row actually goes away — rather than the
+ * attributes that happen to implement it.
  *
- * This has to be an e2e test. The collapse only appears when a real edit round
- * trips through the store and back as a new prop, and only a real browser has
- * `<details>` toggle and focus semantics; the SSR render tests see neither.
+ * This has to be e2e. Both bugs need a real edit to round trip through the
+ * store and back as a new prop, and the first also needs a real browser's
+ * `<details>` and focus semantics; the SSR render tests see neither.
  */
 
 import { test, expect } from '@playwright/test';
@@ -48,7 +54,7 @@ async function addInputWithFieldsOpen(page: Page, nth = 0): Promise<void> {
   await expect(page.locator('.wf-interface__example-add').nth(nth)).toBeVisible();
 }
 
-test.describe('Interface editor — examples', () => {
+test.describe('Interface editor', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
   });
@@ -128,6 +134,28 @@ test.describe('Interface editor — examples', () => {
       .getByLabel(/Move .* up/i)
       .click();
     await expect.poll(isOpen).toEqual([true, false]);
+  });
+
+  test('the interface last entry can be removed', async ({ page }) => {
+    await gotoEditor(page, 'simple');
+    await openInterfaceTab(page);
+
+    // One entry on one side, nothing on the other: removing it empties the
+    // whole interface. That used to be unremovable — `commit` reported the
+    // emptied interface as `undefined`, which the store reads as "no interface
+    // key supplied, leave it alone", so the row never left. Reproduced from a
+    // real workflow as "I cannot delete the output entry".
+    await page.getByRole('button', { name: 'Add output' }).click();
+    await expect(page.locator('.wf-interface__entry')).toHaveCount(1);
+
+    await page
+      .locator('.wf-interface__entry')
+      .first()
+      .getByLabel(/^Remove interface entry/)
+      .click();
+
+    await expect(page.locator('.wf-interface__entry')).toHaveCount(0);
+    await expect(page.getByText('No outputs declared yet.')).toBeVisible();
   });
 
   test('removing an entry does not hand its open fields to a neighbour', async ({ page }) => {

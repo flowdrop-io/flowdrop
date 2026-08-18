@@ -726,6 +726,37 @@ describe('WorkflowStore', () => {
       expect(fd.workflow.current?.interface).toEqual(workflowInterface);
     });
 
+    it('clears the interface when batchUpdate is given an explicit undefined', () => {
+      // `undefined` is a meaningful interface — "declares no contract" — so a
+      // caller that passes the key must be able to clear it. Keying the update
+      // on the value instead of on the key's presence dropped this silently,
+      // which made removing the interface's last entry impossible: the row
+      // never left the editor because the store never changed.
+      const workflow = createTestWorkflow({
+        nodes: [createTestNode({ id: 'node-1' })],
+        interface: interfaceFixture()
+      });
+      fd.workflow.initialize(workflow);
+
+      fd.workflow.batchUpdate({ interface: undefined });
+
+      expect(fd.workflow.current?.interface).toBeUndefined();
+    });
+
+    it('leaves the interface alone when batchUpdate omits the key', () => {
+      const workflowInterface = interfaceFixture();
+      const workflow = createTestWorkflow({
+        nodes: [createTestNode({ id: 'node-1' })],
+        interface: workflowInterface
+      });
+      fd.workflow.initialize(workflow);
+
+      // Partial update: an absent key must not disturb the stored contract.
+      fd.workflow.batchUpdate({ name: 'renamed' });
+
+      expect(fd.workflow.current?.interface).toEqual(workflowInterface);
+    });
+
     it('survives a swap that does not touch the bound node', () => {
       const boundNode = createTestNode({ id: 'node-1' });
       const otherNode = createTestNode({ id: 'node-2' });

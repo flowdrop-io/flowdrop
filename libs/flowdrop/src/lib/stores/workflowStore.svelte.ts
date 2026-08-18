@@ -827,7 +827,11 @@ export class WorkflowStore {
         description: updates.description
       }),
       ...(updates.config !== undefined && { config: updates.config }),
-      ...(updates.interface !== undefined && { interface: updates.interface }),
+      // Keyed on presence, not on value: `undefined` is a meaningful interface —
+      // "this workflow declares no contract" — so a caller clearing it must be
+      // able to say so. Testing `!== undefined` silently dropped that update and
+      // left the old contract in place.
+      ...('interface' in updates && { interface: updates.interface }),
       metadata: buildMetadata(this.#workflow.metadata, updates.metadata ?? undefined)
     };
     this.#pushToHistory('Batch update');

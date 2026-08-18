@@ -197,20 +197,30 @@
   }
 
   /**
-   * Commit a direction's entry list back to the workflow, collapsing to
-   * `undefined` when the whole interface ends up empty (decision 5: additive
-   * and optional — an interface nobody populated should not linger as `{}`).
+   * Commit a direction's entry list back to the workflow, dropping a side that
+   * ends up empty so it reads as "declares nothing on this side".
+   *
+   * Always reports an interface *object*, even when the author has emptied both
+   * sides. Reporting `undefined` there — as this did — made removing the last
+   * entry impossible: the store treats `interface: undefined` as "no interface
+   * key supplied, leave it alone", so the removal never landed and the row
+   * stayed on screen. The server draws the same distinction, and for the same
+   * reason: an absent `interface` is a partial update that must not disturb
+   * port exposures authored elsewhere (the Drupal admin form), while a present
+   * one rewrites both sides — so `{}` is what "the author emptied this" has to
+   * look like on the wire.
+   *
+   * Decision 5 (additive and optional — an interface nobody populated should
+   * not linger as `{}`) still holds: a workflow nobody has authored an
+   * interface for never reaches this function, and keeps its absent key.
    */
   function commit(direction: Direction, next: WorkflowInterfaceEntry[]): void {
     const inputs = direction === 'inputs' ? next : (workflow.interface?.inputs ?? []);
     const outputs = direction === 'outputs' ? next : (workflow.interface?.outputs ?? []);
-    const cleanedInputs = inputs.length > 0 ? inputs : undefined;
-    const cleanedOutputs = outputs.length > 0 ? outputs : undefined;
-    if (!cleanedInputs && !cleanedOutputs) {
-      onChange(undefined);
-      return;
-    }
-    onChange({ inputs: cleanedInputs, outputs: cleanedOutputs });
+    onChange({
+      inputs: inputs.length > 0 ? inputs : undefined,
+      outputs: outputs.length > 0 ? outputs : undefined
+    });
   }
 
   function addEntry(direction: Direction): void {
