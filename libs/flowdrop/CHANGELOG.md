@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-08-18
+
+### Fixed
+
+- **Interface bindings resolved against the wrong side of a node.** A `PortBinding` carries no direction, and resolution re-derived one by searching a node's inputs first. Because a `portId` is only unique within one side of a node, any node declaring an input and an output under the same id resolved to the wrong port — `chat_output` ships exactly that shape (input `message`, output `message`), so every output entry bound to it reported a spurious direction mismatch against a port the binding picker never offered. Resolution now prefers the owning entry's own direction and falls back to the other side, so a genuinely misdirected binding is still reported. This also corrects the `hidden` exposure check, the `type-mismatch` check, and the bound-port ring, all of which were reading the opposite port for such nodes.
+- **Saving or exporting a workflow stripped its declared interface.** `globalSaveWorkflow` and `globalExportWorkflow` rebuild the workflow from an explicit key list and neither named `interface`; since an absent `interface` means "declares no contract," a save dropped the contract and an export/re-import round trip lost it.
+
 ## [2.1.0] - 2026-08-18
 
 **The workflow interface release.** A workflow can now declare its public call signature — named inputs and outputs bound to internal node ports — and author it in a dedicated settings panel. Entirely additive: workflows without an `interface` behave exactly as before.
