@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-08-18
+
+### Fixed
+
+- **The interface's last entry could not be removed.** Removing the only remaining entry did nothing — the row stayed on screen. It surfaced most often as "I cannot delete the output entry", since that is usually the last one standing. An emptied interface was reported as `undefined`, which is indistinguishable from "no interface supplied, leave it alone", so the removal was dropped before it reached the store — and, because the save omitted the key for the same reason, a cleared interface came back on reload even once the row had gone.
+
 ## [2.2.1] - 2026-08-18
 
 ### Fixed
