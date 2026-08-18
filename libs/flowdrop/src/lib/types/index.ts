@@ -1378,6 +1378,57 @@ export interface WorkflowEdge extends Edge {
 }
 
 /**
+ * A resolved pointer to one inner node port. Mirrors the handle-id triple in
+ * `utils/handleIds.ts` without depending on its string encoding.
+ */
+export interface PortBinding {
+  nodeId: string;
+  portId: string;
+}
+
+/**
+ * One entry in a workflow's public contract. Owns its own identity: `id` is
+ * stable and workflow-scoped, independent of whichever inner port it currently
+ * binds to, so swapping or renaming a node does not silently break callers.
+ *
+ * On export toward a server manifest the entry's `id` maps to the manifest's
+ * `name` — the server's wire identity. Renaming an `id` is therefore a breaking
+ * change for callers, not a cosmetic one.
+ */
+export interface WorkflowInterfaceEntry {
+  /** Stable public name. Unique within its direction. */
+  id: string;
+  /** Display label for callers and UI. Defaults to `id` when absent. */
+  name?: string;
+  description?: string;
+  dataType: NodeDataType;
+  /** Inputs only; ignored on outputs. */
+  required?: boolean;
+  defaultValue?: unknown;
+  schema?: InputSchema | OutputSchema;
+  /**
+   * Inner ports this entry maps to. Every entry — input or output — must
+   * resolve to exactly one binding; more than one is reported as `over-bound`.
+   * (The list shape is kept so input fan-out can become additive later.) An
+   * empty list is a valid *draft* state, reported as `unbound`.
+   */
+  bindings: PortBinding[];
+  /**
+   * Opaque consumer metadata. The library never reads or interprets this — it
+   * round-trips verbatim. Servers use it to say what "external" means for them
+   * (`{"http": {"in": "query"}}`, `{"mcp": {"toolParam": true}}`, …).
+   * Keys under the `fd.` prefix are reserved for future library use.
+   */
+  meta?: Record<string, unknown>;
+}
+
+/** A workflow's public contract. Array order is the caller-facing order. */
+export interface WorkflowInterface {
+  inputs?: WorkflowInterfaceEntry[];
+  outputs?: WorkflowInterfaceEntry[];
+}
+
+/**
  * Complete workflow definition
  */
 export interface Workflow {
@@ -1400,6 +1451,8 @@ export interface Workflow {
   };
   /** Custom workflow-level configuration values, populated via workflowSettingsSchema. */
   config?: Record<string, unknown>;
+  /** Public contract for callers. Absent = the workflow declares no interface. */
+  interface?: WorkflowInterface;
 }
 
 /**
