@@ -221,6 +221,53 @@ describe('WorkflowInterfaceEditor', () => {
     expect(body.split('Add example').length - 1).toBe(1);
   });
 
+  it('keeps identity + binding primary and tucks the rest behind a More options disclosure', () => {
+    const port = makePort('in-a', 'string', { type: 'input' });
+    const node = makeNode('node-1', [port], []);
+    const workflow = makeWorkflow([node], {
+      inputs: [
+        { id: 'bound-in', dataType: 'string', bindings: [{ nodeId: 'node-1', portId: 'in-a' }] }
+      ]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).toContain('More options');
+    // The secondary fields live inside the disclosure, after its summary.
+    const summaryAt = body.indexOf('More options');
+    expect(body.indexOf('Data type')).toBeGreaterThan(summaryAt);
+    expect(body.indexOf('Description')).toBeGreaterThan(summaryAt);
+    // A resolved binding offers the pull-from-port affordance.
+    expect(body).toContain('Pull from port');
+  });
+
+  it('offers no pull button for an unbound entry', () => {
+    const workflow = makeWorkflow([], {
+      inputs: [{ id: 'draft-in', dataType: 'string', bindings: [] }]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).not.toContain('Pull from port');
+  });
+
+  it('opens the disclosure automatically on a type mismatch so the inline fix is visible', () => {
+    const port = makePort('in-a', 'number', { type: 'input' });
+    const node = makeNode('node-1', [port], []);
+    const workflow = makeWorkflow([node], {
+      inputs: [
+        { id: 'typed-in', dataType: 'string', bindings: [{ nodeId: 'node-1', portId: 'in-a' }] }
+      ]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).toMatch(/<details[^>]*class="wf-interface__more[^"]*"[^>]*open/);
+  });
+
   it('offers the configured data-type vocabulary as select options', () => {
     const workflow = makeWorkflow([], {
       inputs: [{ id: 'typed-in', dataType: 'string', bindings: [] }]

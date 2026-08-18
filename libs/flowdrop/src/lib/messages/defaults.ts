@@ -510,6 +510,10 @@ export const defaultMessages = {
     removeExample: 'Remove example',
     bindingLabel: 'Bound port',
     bindingUnbound: 'Not bound',
+    moreOptions: 'More options',
+    pullFromPort: 'Pull from port',
+    pullFromPortTitle:
+      "Fill name, data type, description, required and default from the bound port's own declaration",
     removeEntry: ({ id }: { id: string }) => `Remove interface entry "${id}"`,
     moveUp: ({ id }: { id: string }) => `Move "${id}" up`,
     moveDown: ({ id }: { id: string }) => `Move "${id}" down`,

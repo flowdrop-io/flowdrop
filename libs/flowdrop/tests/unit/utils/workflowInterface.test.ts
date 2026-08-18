@@ -11,6 +11,7 @@ import {
   validateWorkflowInterface,
   validateLaunchInputs,
   rewriteInterfaceBindings,
+  pullEntryFieldsFromPort,
   interfaceBoundHandles,
   interfaceBoundTooltip,
   describeInterfaceEntryStatus,
@@ -683,6 +684,45 @@ describe('interfaceBoundTooltip', () => {
   it('falls back to the entry id when no display name is set', () => {
     const entry = makeEntry({ id: 'article_text' });
     expect(interfaceBoundTooltip(entry)).toBe('Published as: article_text');
+  });
+});
+
+// =========================================================================
+// pullEntryFieldsFromPort
+// =========================================================================
+
+describe('pullEntryFieldsFromPort', () => {
+  it('copies name, dataType and the optional fields the port declares', () => {
+    const port = makePort('in-a', 'number', {
+      type: 'input',
+      name: 'Item Count',
+      description: 'How many items to load',
+      required: true,
+      defaultValue: 10
+    });
+
+    expect(pullEntryFieldsFromPort(port)).toEqual({
+      name: 'Item Count',
+      dataType: 'number',
+      description: 'How many items to load',
+      required: true,
+      defaultValue: 10
+    });
+  });
+
+  it('omits fields the port is silent about, so applying the patch never blanks them', () => {
+    const port = makePort('in-a', 'string', { type: 'input', name: 'Text' });
+    const patch = pullEntryFieldsFromPort(port);
+
+    expect(patch).toEqual({ name: 'Text', dataType: 'string' });
+    expect('description' in patch).toBe(false);
+    expect('required' in patch).toBe(false);
+    expect('defaultValue' in patch).toBe(false);
+  });
+
+  it('never derives the public id from the port', () => {
+    const port = makePort('inner_port_name', 'string', { type: 'input' });
+    expect('id' in pullEntryFieldsFromPort(port)).toBe(false);
   });
 });
 

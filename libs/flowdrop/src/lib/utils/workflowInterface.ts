@@ -444,6 +444,24 @@ export function describeInterfaceEntryStatus(resolved: ResolvedInterfaceEntry): 
 }
 
 /**
+ * Entry fields derivable from a bound port — the "pull details from port"
+ * convenience. Copies the port's display name, dataType, and (when the port
+ * declares them) description, required and defaultValue. Only fields the port
+ * actually provides appear in the patch, so applying it never blanks a value
+ * the author already wrote for a field the port is silent about.
+ *
+ * The public `id` is deliberately NOT derived — a contract keyed on internal
+ * port names is the failure mode DN1 exists to prevent.
+ */
+export function pullEntryFieldsFromPort(port: NodePort): Partial<WorkflowInterfaceEntry> {
+  const patch: Partial<WorkflowInterfaceEntry> = { name: port.name, dataType: port.dataType };
+  if (port.description !== undefined) patch.description = port.description;
+  if (port.required !== undefined) patch.required = port.required;
+  if (port.defaultValue !== undefined) patch.defaultValue = port.defaultValue;
+  return patch;
+}
+
+/**
  * Whether a port is intra-graph control flow — the reserved `trigger`/`tool`
  * dataTypes or the loopback input — and therefore never publishable in a
  * workflow's interface.

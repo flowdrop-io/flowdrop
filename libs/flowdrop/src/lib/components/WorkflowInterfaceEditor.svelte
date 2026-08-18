@@ -38,6 +38,7 @@
   import {
     describeInterfaceEntryStatus,
     listBindablePorts,
+    pullEntryFieldsFromPort,
     resolveInterface,
     validateWorkflowInterface,
     type InterfaceIssue,
@@ -365,136 +366,6 @@
                         patchEntry(section.key, index, { id: e.currentTarget.value })}
                     />
                   </label>
-                  <label class="wf-interface__field">
-                    <span class="wf-interface__label">{m().workflowInterface.nameLabel}</span>
-                    <input
-                      type="text"
-                      value={entry.name ?? ''}
-                      placeholder={m().workflowInterface.namePlaceholder}
-                      onchange={(e) =>
-                        patchEntry(section.key, index, {
-                          name: e.currentTarget.value || undefined
-                        })}
-                    />
-                  </label>
-                  <label class="wf-interface__field">
-                    <span class="wf-interface__label">{m().workflowInterface.dataTypeLabel}</span>
-                    <select
-                      value={entry.dataType}
-                      onchange={(e) =>
-                        patchEntry(section.key, index, { dataType: e.currentTarget.value })}
-                    >
-                      {#if !entry.dataType}
-                        <option value="" disabled selected>
-                          {m().workflowInterface.dataTypePlaceholder}
-                        </option>
-                      {/if}
-                      {#each dataTypeOptions(entry.dataType) as option (option.id)}
-                        <option value={option.id}>{option.name}</option>
-                      {/each}
-                    </select>
-                    {#if status?.status === 'type-mismatch' && boundPortType(status)}
-                      <span class="wf-interface__inline wf-interface__inline--warning">
-                        {m().workflowInterface.typeMismatchInline({
-                          portType: boundPortType(status) ?? ''
-                        })}
-                        <button
-                          type="button"
-                          class="wf-interface__quickfix"
-                          onclick={() =>
-                            patchEntry(section.key, index, {
-                              dataType: boundPortType(status) ?? entry.dataType
-                            })}
-                        >
-                          {m().workflowInterface.useMatchPortType}
-                        </button>
-                      </span>
-                    {/if}
-                  </label>
-                  {#if section.key === 'inputs'}
-                    <label class="wf-interface__field wf-interface__field--checkbox">
-                      <input
-                        type="checkbox"
-                        checked={entry.required ?? false}
-                        onchange={(e) =>
-                          patchEntry(section.key, index, {
-                            required: e.currentTarget.checked || undefined
-                          })}
-                      />
-                      <span class="wf-interface__label">{m().workflowInterface.requiredLabel}</span>
-                    </label>
-                  {/if}
-                </div>
-
-                <div class="wf-interface__row">
-                  <label class="wf-interface__field wf-interface__field--wide">
-                    <span class="wf-interface__label">{m().workflowInterface.descriptionLabel}</span
-                    >
-                    <input
-                      type="text"
-                      value={entry.description ?? ''}
-                      onchange={(e) =>
-                        patchEntry(section.key, index, {
-                          description: e.currentTarget.value || undefined
-                        })}
-                    />
-                  </label>
-                  <label class="wf-interface__field">
-                    <span class="wf-interface__label"
-                      >{m().workflowInterface.defaultValueLabel}</span
-                    >
-                    <input
-                      type="text"
-                      value={formatDefaultValue(entry.defaultValue)}
-                      onchange={(e) =>
-                        patchEntry(section.key, index, {
-                          defaultValue: parseDefaultValue(e.currentTarget.value)
-                        })}
-                    />
-                  </label>
-                </div>
-
-                {#if section.key === 'inputs'}
-                  <div class="wf-interface__examples">
-                    <span class="wf-interface__label">
-                      {m().workflowInterface.examplesLabel}
-                    </span>
-                    {#each entry.examples ?? [] as example, exampleIndex (exampleIndex)}
-                      <div class="wf-interface__example-row">
-                        <input
-                          type="text"
-                          value={formatDefaultValue(example)}
-                          onchange={(e) =>
-                            patchExample(
-                              section.key,
-                              index,
-                              entry,
-                              exampleIndex,
-                              e.currentTarget.value
-                            )}
-                        />
-                        <button
-                          type="button"
-                          class="wf-interface__example-remove"
-                          onclick={() => removeExample(section.key, index, entry, exampleIndex)}
-                          aria-label={m().workflowInterface.removeExample}
-                        >
-                          <Icon icon="heroicons:x-mark" />
-                        </button>
-                      </div>
-                    {/each}
-                    <button
-                      type="button"
-                      class="wf-interface__example-add"
-                      onclick={() => addExample(section.key, index, entry)}
-                    >
-                      <Icon icon="heroicons:plus" />
-                      {m().workflowInterface.addExample}
-                    </button>
-                  </div>
-                {/if}
-
-                <div class="wf-interface__row">
                   <label class="wf-interface__field wf-interface__field--wide">
                     <span class="wf-interface__label">{m().workflowInterface.bindingLabel}</span>
                     <select
@@ -517,7 +388,162 @@
                       </span>
                     {/if}
                   </label>
+                  {#if status?.targets[0]}
+                    <button
+                      type="button"
+                      class="wf-interface__pull"
+                      title={m().workflowInterface.pullFromPortTitle}
+                      onclick={() =>
+                        patchEntry(
+                          section.key,
+                          index,
+                          pullEntryFieldsFromPort(status.targets[0].port)
+                        )}
+                    >
+                      <Icon icon="heroicons:arrow-down-tray" />
+                      {m().workflowInterface.pullFromPort}
+                    </button>
+                  {/if}
                 </div>
+
+                <details
+                  class="wf-interface__more"
+                  open={status?.status === 'type-mismatch' || undefined}
+                >
+                  <summary>{m().workflowInterface.moreOptions}</summary>
+                  <div class="wf-interface__row">
+                    <label class="wf-interface__field">
+                      <span class="wf-interface__label">{m().workflowInterface.nameLabel}</span>
+                      <input
+                        type="text"
+                        value={entry.name ?? ''}
+                        placeholder={m().workflowInterface.namePlaceholder}
+                        onchange={(e) =>
+                          patchEntry(section.key, index, {
+                            name: e.currentTarget.value || undefined
+                          })}
+                      />
+                    </label>
+                    <label class="wf-interface__field">
+                      <span class="wf-interface__label">{m().workflowInterface.dataTypeLabel}</span>
+                      <select
+                        value={entry.dataType}
+                        onchange={(e) =>
+                          patchEntry(section.key, index, { dataType: e.currentTarget.value })}
+                      >
+                        {#if !entry.dataType}
+                          <option value="" disabled selected>
+                            {m().workflowInterface.dataTypePlaceholder}
+                          </option>
+                        {/if}
+                        {#each dataTypeOptions(entry.dataType) as option (option.id)}
+                          <option value={option.id}>{option.name}</option>
+                        {/each}
+                      </select>
+                      {#if status?.status === 'type-mismatch' && boundPortType(status)}
+                        <span class="wf-interface__inline wf-interface__inline--warning">
+                          {m().workflowInterface.typeMismatchInline({
+                            portType: boundPortType(status) ?? ''
+                          })}
+                          <button
+                            type="button"
+                            class="wf-interface__quickfix"
+                            onclick={() =>
+                              patchEntry(section.key, index, {
+                                dataType: boundPortType(status) ?? entry.dataType
+                              })}
+                          >
+                            {m().workflowInterface.useMatchPortType}
+                          </button>
+                        </span>
+                      {/if}
+                    </label>
+                    {#if section.key === 'inputs'}
+                      <label class="wf-interface__field wf-interface__field--checkbox">
+                        <input
+                          type="checkbox"
+                          checked={entry.required ?? false}
+                          onchange={(e) =>
+                            patchEntry(section.key, index, {
+                              required: e.currentTarget.checked || undefined
+                            })}
+                        />
+                        <span class="wf-interface__label"
+                          >{m().workflowInterface.requiredLabel}</span
+                        >
+                      </label>
+                    {/if}
+                  </div>
+
+                  <div class="wf-interface__row">
+                    <label class="wf-interface__field wf-interface__field--wide">
+                      <span class="wf-interface__label"
+                        >{m().workflowInterface.descriptionLabel}</span
+                      >
+                      <input
+                        type="text"
+                        value={entry.description ?? ''}
+                        onchange={(e) =>
+                          patchEntry(section.key, index, {
+                            description: e.currentTarget.value || undefined
+                          })}
+                      />
+                    </label>
+                    <label class="wf-interface__field">
+                      <span class="wf-interface__label"
+                        >{m().workflowInterface.defaultValueLabel}</span
+                      >
+                      <input
+                        type="text"
+                        value={formatDefaultValue(entry.defaultValue)}
+                        onchange={(e) =>
+                          patchEntry(section.key, index, {
+                            defaultValue: parseDefaultValue(e.currentTarget.value)
+                          })}
+                      />
+                    </label>
+                  </div>
+
+                  {#if section.key === 'inputs'}
+                    <div class="wf-interface__examples">
+                      <span class="wf-interface__label">
+                        {m().workflowInterface.examplesLabel}
+                      </span>
+                      {#each entry.examples ?? [] as example, exampleIndex (exampleIndex)}
+                        <div class="wf-interface__example-row">
+                          <input
+                            type="text"
+                            value={formatDefaultValue(example)}
+                            onchange={(e) =>
+                              patchExample(
+                                section.key,
+                                index,
+                                entry,
+                                exampleIndex,
+                                e.currentTarget.value
+                              )}
+                          />
+                          <button
+                            type="button"
+                            class="wf-interface__example-remove"
+                            onclick={() => removeExample(section.key, index, entry, exampleIndex)}
+                            aria-label={m().workflowInterface.removeExample}
+                          >
+                            <Icon icon="heroicons:x-mark" />
+                          </button>
+                        </div>
+                      {/each}
+                      <button
+                        type="button"
+                        class="wf-interface__example-add"
+                        onclick={() => addExample(section.key, index, entry)}
+                      >
+                        <Icon icon="heroicons:plus" />
+                        {m().workflowInterface.addExample}
+                      </button>
+                    </div>
+                  {/if}
+                </details>
 
                 <!-- Every resolveInterface status renders in words somewhere in
                      this card — the obligation that makes this surface
@@ -767,6 +793,46 @@
   }
 
   .wf-interface__quickfix:hover {
+    background-color: var(--fd-muted);
+  }
+
+  /* The secondary fields live behind a disclosure so a card's resting state
+     is just identity + binding. Auto-opened when a field inside needs eyes. */
+  .wf-interface__more {
+    font-size: var(--fd-text-xs);
+  }
+
+  .wf-interface__more > summary {
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .wf-interface__more[open] > summary {
+    margin-bottom: var(--fd-space-xs);
+  }
+
+  .wf-interface__more > :global(.wf-interface__row + .wf-interface__row),
+  .wf-interface__more .wf-interface__examples {
+    margin-top: var(--fd-space-xs);
+  }
+
+  .wf-interface__pull {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    align-self: flex-end;
+    padding: 0.25rem 0.375rem;
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-sm);
+    background-color: var(--fd-background);
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-xs);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .wf-interface__pull:hover {
     background-color: var(--fd-muted);
   }
 
