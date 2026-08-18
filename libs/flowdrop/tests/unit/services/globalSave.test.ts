@@ -309,4 +309,54 @@ describe('globalSaveWorkflow', () => {
       expect(callOrder).toEqual(['markAsSaved', 'onSaved']);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // interface round-trip (the payload is an explicit key list — a contract
+  // field missing from it is silently stripped on every save)
+  // -------------------------------------------------------------------------
+
+  describe('workflow interface serialization', () => {
+    const iface = {
+      inputs: [
+        {
+          id: 'customer_name',
+          dataType: 'string',
+          required: true,
+          bindings: [{ nodeId: 'node-1', portId: 'name' }]
+        }
+      ],
+      outputs: []
+    };
+
+    it('sends interface on update when the workflow declares one', async () => {
+      mockGetWorkflowStore.mockReturnValue({ ...storeWorkflow('wf-1'), interface: iface });
+      mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+
+      await globalSaveWorkflow();
+
+      expect(mockClientUpdate).toHaveBeenCalledWith(
+        'wf-1',
+        expect.objectContaining({ interface: iface })
+      );
+    });
+
+    it('sends interface on create when the workflow declares one', async () => {
+      mockGetWorkflowStore.mockReturnValue({ ...storeWorkflow(''), interface: iface });
+      mockClientSave.mockResolvedValue(backendWorkflow('new-id'));
+
+      await globalSaveWorkflow();
+
+      expect(mockClientSave).toHaveBeenCalledWith(expect.objectContaining({ interface: iface }));
+    });
+
+    it('omits the interface key entirely when the workflow declares none', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow('wf-1'));
+      mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+
+      await globalSaveWorkflow();
+
+      const payload = mockClientUpdate.mock.calls[0][1] as Record<string, unknown>;
+      expect('interface' in payload).toBe(false);
+    });
+  });
 });

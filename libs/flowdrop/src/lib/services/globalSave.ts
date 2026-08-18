@@ -187,7 +187,11 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
         format: currentWorkflow.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
         createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      }
+      },
+      // Explicit key list, so every contract field must be named here:
+      // omitting `interface` silently strips the declared contract on save
+      // (absent means "declares no interface" to the server).
+      ...(currentWorkflow.interface !== undefined && { interface: currentWorkflow.interface })
     };
 
     // Step 4 — Persist via this instance's API client.
@@ -295,7 +299,10 @@ export async function globalExportWorkflow(options: GlobalExportOptions = {}): P
         format: currentWorkflow.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
         createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      }
+      },
+      // Same rule as the save path: the export must carry the declared
+      // contract, or a re-import round-trip loses `interface`.
+      ...(currentWorkflow.interface !== undefined && { interface: currentWorkflow.interface })
     };
 
     // Trigger browser download
