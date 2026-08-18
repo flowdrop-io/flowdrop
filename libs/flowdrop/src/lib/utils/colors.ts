@@ -530,8 +530,7 @@ export function getPortBorderColor(checker: PortCompatibilityChecker, dataType: 
  * Whether a port is the reserved `error` output port.
  *
  * The reserved error output carries an arbitrary data type (json) but should
- * read as an error affordance (red) wherever it surfaces. See
- * `.claude/plans/exposed-ports.md`.
+ * read as an error affordance (red) wherever it surfaces.
  */
 export function isErrorPort(port: { id: string; type?: string }): boolean {
   return port.id === 'error' && port.type !== 'input';

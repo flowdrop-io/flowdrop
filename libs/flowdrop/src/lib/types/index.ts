@@ -150,8 +150,7 @@ export interface NodePort {
    * Whether this port is exposed when the instance sets no explicit exposure
    * for it. Defaults to `true` (a missing flag reads as exposed). Reserved ports
    * that ship hidden until an author opts in (e.g. the `error` output) carry
-   * `false`. The instance's `ports` config can override it per port. See
-   * `.claude/plans/exposed-ports.md`.
+   * `false`. The instance's `ports` config can override it per port.
    */
   exposedByDefault?: boolean;
   /**
@@ -192,8 +191,7 @@ export interface PortConfigEntry {
  * order relative to the metadata default, and the optional `exposed` flag
  * overrides the port's `exposedByDefault`. A port the author never touched is
  * absent from the list; an untouched node stores no `ports` key at all. Order
- * is cosmetic (the engine ignores it); exposure is semantic. See
- * `.claude/plans/exposed-ports.md`.
+ * is cosmetic (the engine ignores it); exposure is semantic.
  */
 export interface PortsConfig {
   inputs?: PortConfigEntry[];

@@ -99,8 +99,6 @@ export function getPortTop(index: number, count: number): number {
  * wireable, and not runtime-overridable. Effective exposure is the instance's
  * explicit `data.config.ports` override for the port, falling back to the port's
  * metadata `exposedByDefault` (which itself defaults to exposed).
- *
- * @see .claude/plans/exposed-ports.md
  */
 export function isPortVisible(
   port: NodePort,

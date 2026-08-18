@@ -14,8 +14,6 @@
   (so order + exposure stay independent inside one positional array), and reset
   to `undefined` when it lands back on the metadata default order with no
   exposure override.
-
-  @see .claude/plans/exposed-ports.md
 -->
 
 <script lang="ts">
