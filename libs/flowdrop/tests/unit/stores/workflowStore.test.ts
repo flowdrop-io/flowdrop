@@ -14,7 +14,10 @@ import {
 import { createTestWorkflow, createTestNode, createTestEdge } from '../../utils/index.js';
 import { normalizeWorkflowMetadata } from '$lib/stores/workflowStore.svelte.js';
 import { WORKFLOW_SCHEMA_VERSION } from '$lib/schemas/index.js';
-import type { Workflow } from '$lib/types';
+import type { Workflow, WorkflowInterface, WorkflowNode } from '$lib/types';
+import { resolveInterface } from '$lib/utils/workflowInterface.js';
+import { computeSwapPreview, executeSwap } from '$lib/utils/nodeSwap.js';
+import { calculatorNode, advancedCalculatorNode, isolatedNode } from '../../fixtures/nodes.js';
 
 describe('WorkflowStore', () => {
   let fd: FlowDropInstance;
@@ -240,6 +243,32 @@ describe('WorkflowStore', () => {
 
       expect(fd.workflow.nodes).toHaveLength(1);
       expect(fd.workflow.edges).toHaveLength(0);
+    });
+
+    it('leaves interface bindings dangling (not pruned) when their node is deleted', () => {
+      // Design decision: deleting a node must not silently shrink a public
+      // contract — the entry survives, reported as `dangling`.
+      const node = createTestNode({ id: 'node-1' });
+      const workflowInterface: WorkflowInterface = {
+        outputs: [
+          {
+            id: 'public-out',
+            dataType: 'string',
+            bindings: [{ nodeId: 'node-1', portId: 'output' }]
+          }
+        ]
+      };
+      const workflow = createTestWorkflow({ nodes: [node], interface: workflowInterface });
+      fd.workflow.initialize(workflow);
+
+      fd.workflow.removeNode('node-1');
+
+      const current = fd.workflow.current as Workflow;
+      // Entry is untouched — same binding, still pointing at the deleted node.
+      expect(current.interface).toEqual(workflowInterface);
+
+      const [resolved] = resolveInterface(current);
+      expect(resolved.status).toBe('dangling');
     });
   });
 
@@ -654,6 +683,152 @@ describe('WorkflowStore', () => {
 
       fd.workflow.restoreFromHistory(workflow);
       expect(fd.workflow.editVersion).toBe(++v);
+    });
+  });
+
+  describe('workflow.interface round-trip', () => {
+    /** An interface carrying an unrecognized `meta` key — the passthrough guarantee. */
+    function interfaceFixture(): WorkflowInterface {
+      return {
+        inputs: [
+          {
+            id: 'public-in',
+            name: 'Display Name',
+            dataType: 'string',
+            required: true,
+            bindings: [{ nodeId: 'node-1', portId: 'input' }],
+            meta: { 'fd.reserved': true, unknownVendorKey: { nested: 'value' } }
+          }
+        ],
+        outputs: [
+          {
+            id: 'public-out',
+            dataType: 'string',
+            bindings: [{ nodeId: 'node-1', portId: 'output' }]
+          }
+        ]
+      };
+    }
+
+    it('survives addNode/updateNode/batchUpdate byte-identical', () => {
+      const node = createTestNode({ id: 'node-1' });
+      const workflowInterface = interfaceFixture();
+      const workflow = createTestWorkflow({ nodes: [node], interface: workflowInterface });
+      fd.workflow.initialize(workflow);
+
+      fd.workflow.addNode(createTestNode({ id: 'node-2' }));
+      expect(fd.workflow.current?.interface).toEqual(workflowInterface);
+
+      fd.workflow.updateNode('node-2', { position: { x: 5, y: 5 } });
+      expect(fd.workflow.current?.interface).toEqual(workflowInterface);
+
+      fd.workflow.batchUpdate({ name: 'renamed' });
+      expect(fd.workflow.current?.interface).toEqual(workflowInterface);
+    });
+
+    it('survives a swap that does not touch the bound node', () => {
+      const boundNode = createTestNode({ id: 'node-1' });
+      const otherNode = createTestNode({ id: 'node-2' });
+      const workflowInterface = interfaceFixture();
+      const workflow = createTestWorkflow({
+        nodes: [boundNode, otherNode],
+        interface: workflowInterface
+      });
+      fd.workflow.initialize(workflow);
+
+      // Swap node-2 (unrelated to the interface) — node-1's bindings must be untouched.
+      fd.workflow.swapNode({
+        nodes: [boundNode, otherNode],
+        edges: [],
+        oldNodeId: 'node-2',
+        newNodeId: 'node-2-swapped',
+        portMappings: []
+      });
+
+      expect(fd.workflow.current?.interface).toEqual(workflowInterface);
+    });
+  });
+
+  describe('node swap rewrites interface bindings', () => {
+    function calcNode(id: string): WorkflowNode {
+      return createTestNode({
+        id,
+        data: { label: calculatorNode.name, config: {}, metadata: calculatorNode }
+      });
+    }
+
+    it('follows the PortMapping to the new node, keeping the entry id', () => {
+      const oldNode = calcNode('calc-1');
+      const workflowInterface: WorkflowInterface = {
+        outputs: [
+          {
+            id: 'public-result',
+            dataType: 'number',
+            bindings: [{ nodeId: 'calc-1', portId: 'result' }]
+          }
+        ]
+      };
+      const workflow = createTestWorkflow({ nodes: [oldNode], interface: workflowInterface });
+      fd.workflow.initialize(workflow);
+
+      const preview = computeSwapPreview(oldNode, advancedCalculatorNode, [], [oldNode], null);
+      const result = executeSwap(oldNode, advancedCalculatorNode, preview, [oldNode], []);
+
+      fd.workflow.swapNode({
+        nodes: result.updatedNodes,
+        edges: result.updatedEdges,
+        oldNodeId: oldNode.id,
+        newNodeId: preview.newNodeId,
+        portMappings: preview.portMappings
+      });
+
+      const current = fd.workflow.current as Workflow;
+      expect(current.interface?.outputs).toEqual([
+        {
+          id: 'public-result',
+          dataType: 'number',
+          bindings: [{ nodeId: preview.newNodeId, portId: 'result' }]
+        }
+      ]);
+
+      const [resolved] = resolveInterface(current);
+      expect(resolved.status).toBe('ok');
+    });
+
+    it('leaves a dropped port dangling instead of rewriting it', () => {
+      const oldNode = calcNode('calc-1');
+      const workflowInterface: WorkflowInterface = {
+        outputs: [
+          {
+            id: 'public-result',
+            dataType: 'number',
+            bindings: [{ nodeId: 'calc-1', portId: 'result' }]
+          }
+        ]
+      };
+      const workflow = createTestWorkflow({ nodes: [oldNode], interface: workflowInterface });
+      fd.workflow.initialize(workflow);
+
+      // isolatedNode declares no ports at all — the mapping drops "result".
+      const preview = computeSwapPreview(oldNode, isolatedNode, [], [oldNode], null);
+      const result = executeSwap(oldNode, isolatedNode, preview, [oldNode], []);
+
+      fd.workflow.swapNode({
+        nodes: result.updatedNodes,
+        edges: result.updatedEdges,
+        oldNodeId: oldNode.id,
+        newNodeId: preview.newNodeId,
+        portMappings: preview.portMappings
+      });
+
+      const current = fd.workflow.current as Workflow;
+      // Binding untouched — still points at the now-gone old node id.
+      expect(current.interface?.outputs?.[0].bindings).toEqual([
+        { nodeId: 'calc-1', portId: 'result' }
+      ]);
+
+      const [resolved] = resolveInterface(current);
+      expect(resolved.status).toBe('dangling');
     });
   });
 });

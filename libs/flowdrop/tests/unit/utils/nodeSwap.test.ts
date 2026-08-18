@@ -587,6 +587,44 @@ describe('computeSwapPreview', () => {
 });
 
 // =========================================================================
+// portMappings — the data workflowInterface.rewriteInterfaceBindings consumes
+// =========================================================================
+
+describe('computeSwapPreview / portMappings', () => {
+  it('maps every declared port, not just ones touched by a connected edge', () => {
+    // No edges at all — calculator's ports (a, b, result) are all
+    // exposed-but-unconnected, the case an interface binding would hit.
+    const calcNode = makeNode('calculator.1', calculatorNode);
+    const preview = computeSwapPreview(calcNode, advancedCalculatorNode, [], [calcNode], null);
+
+    const byOldPortId = new Map(preview.portMappings.map((m) => [m.oldPortId, m]));
+    expect(byOldPortId.get('a')).toMatchObject({ newPortId: 'a', direction: 'input' });
+    expect(byOldPortId.get('b')).toMatchObject({ newPortId: 'b', direction: 'input' });
+    expect(byOldPortId.get('result')).toMatchObject({ newPortId: 'result', direction: 'output' });
+  });
+
+  it('maps ports by name when the new node renames the port id', () => {
+    // mathProcessor renames calculator's a/b/result to num_a/num_b/answer,
+    // matched by name (Pass 2) rather than id.
+    const calcNode = makeNode('calculator.1', calculatorNode);
+    const preview = computeSwapPreview(calcNode, mathProcessorNode, [], [calcNode], null);
+
+    const byOldPortId = new Map(preview.portMappings.map((m) => [m.oldPortId, m]));
+    expect(byOldPortId.get('a')).toMatchObject({ newPortId: 'num_a', direction: 'input' });
+    expect(byOldPortId.get('b')).toMatchObject({ newPortId: 'num_b', direction: 'input' });
+    expect(byOldPortId.get('result')).toMatchObject({ newPortId: 'answer', direction: 'output' });
+  });
+
+  it('has no mapping for a port the new node has no match for', () => {
+    // isolatedNode declares no ports at all — every calculator port is dropped.
+    const calcNode = makeNode('calculator.1', calculatorNode);
+    const preview = computeSwapPreview(calcNode, isolatedNode, [], [calcNode], null);
+
+    expect(preview.portMappings).toEqual([]);
+  });
+});
+
+// =========================================================================
 // executeSwap
 // =========================================================================
 

@@ -18,12 +18,14 @@ import type {
   PortBinding,
   PortsConfig,
   Workflow,
+  WorkflowInterface,
   WorkflowInterfaceEntry,
   WorkflowNode
 } from '$lib/types/index.js';
 import { isPortExposed } from '$lib/utils/portUtils.js';
 import { PORTS_CONFIG_KEY } from '$lib/utils/nodeFormSchema.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
+import type { PortMapping } from '$lib/utils/nodeSwap.js';
 
 /**
  * A binding resolved against the live node graph: the node and port it
@@ -276,3 +278,51 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
 // Re-export the precedence order for callers/tests that want to assert it
 // without duplicating the literal array.
 export { STATUS_PRECEDENCE };
+
+/**
+ * Rewrite `workflow.interface` bindings that point at a node swapped out by
+ * `nodeSwap.ts` — the one place bindings actively move (see
+ * `.claude/plans/workflow-interface.md` Phase 2). Every other mutation
+ * (including node deletion) leaves bindings untouched by design.
+ *
+ * A binding `{ nodeId: oldNodeId, portId }` on an input entry is rewritten
+ * when `portMappings` has a `direction: 'input'` mapping for that `portId`;
+ * output entries match against `direction: 'output'` mappings the same way —
+ * an entry's own direction (which array it lives in) picks which side of the
+ * mapping applies. A port the mapping drops (no matching entry) is left
+ * untouched; it resolves as `dangling` once the old node is gone, the same
+ * as any other dangling binding — no silent pruning.
+ *
+ * Pure: returns a new `WorkflowInterface`, never mutates its argument.
+ * Returns the input unchanged when there is no interface to rewrite.
+ */
+export function rewriteInterfaceBindings(
+  workflowInterface: WorkflowInterface | undefined,
+  oldNodeId: string,
+  newNodeId: string,
+  portMappings: PortMapping[]
+): WorkflowInterface | undefined {
+  if (!workflowInterface) return workflowInterface;
+
+  const rewriteEntries = (
+    entries: WorkflowInterfaceEntry[] | undefined,
+    direction: 'input' | 'output'
+  ): WorkflowInterfaceEntry[] | undefined => {
+    if (!entries) return entries;
+    return entries.map((entry) => ({
+      ...entry,
+      bindings: entry.bindings.map((binding): PortBinding => {
+        if (binding.nodeId !== oldNodeId) return binding;
+        const mapping = portMappings.find(
+          (candidate) => candidate.direction === direction && candidate.oldPortId === binding.portId
+        );
+        return mapping ? { nodeId: newNodeId, portId: mapping.newPortId } : binding;
+      })
+    }));
+  };
+
+  return {
+    inputs: rewriteEntries(workflowInterface.inputs, 'input'),
+    outputs: rewriteEntries(workflowInterface.outputs, 'output')
+  };
+}

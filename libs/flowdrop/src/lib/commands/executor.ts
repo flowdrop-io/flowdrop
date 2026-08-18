@@ -1093,7 +1093,10 @@ function executeSwapNode(
   if (context.dispatch.swapNode) {
     context.dispatch.swapNode({
       nodes: swapResult.updatedNodes,
-      edges: swapResult.updatedEdges
+      edges: swapResult.updatedEdges,
+      oldNodeId: node.id,
+      newNodeId: preview.newNodeId,
+      portMappings: preview.portMappings
     });
   } else {
     context.dispatch.batchUpdate({

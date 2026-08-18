@@ -685,7 +685,10 @@
     fd.workflow.swapNode({
       nodes: result.updatedNodes,
       edges: result.updatedEdges,
-      description: `Swap node: ${oldLabel} → ${newLabel}`
+      description: `Swap node: ${oldLabel} → ${newLabel}`,
+      oldNodeId: state.oldNode.id,
+      newNodeId: state.newNodeId,
+      portMappings: preview.portMappings
     });
 
     // onAfterSwap hook (fire-and-forget — swap is already applied)

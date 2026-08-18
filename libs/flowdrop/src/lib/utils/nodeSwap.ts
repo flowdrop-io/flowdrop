@@ -60,6 +60,15 @@ export interface SwapPreview {
   configCarriedOver: string[];
   /** Config keys reset to defaults on the new node */
   configReset: string[];
+  /**
+   * Old-port → new-port resolution for every declared port on the old node,
+   * not just the ones a connected edge happens to touch — an interface
+   * binding can point at an exposed-but-unconnected port. Used to rewrite
+   * `workflow.interface` bindings through the swap (see
+   * `utils/workflowInterface.ts#rewriteInterfaceBindings`). A port the
+   * cascade drops has no entry here.
+   */
+  portMappings: PortMapping[];
 }
 
 /**
@@ -614,6 +623,36 @@ export function computeSwapPreviewWithOptions(
     keptEdges.push({ edge, newEdge });
   }
 
+  // Resolve every declared port on the old node — not just the ones touched
+  // by a connected edge above — through the same override/strategy/matching
+  // cascade, reusing cached resolutions so an edge-driven port isn't matched
+  // twice. This is what workflow.interface bindings rewrite through; an
+  // interface binding may point at a port with no edge at all.
+  const portMappings: PortMapping[] = [];
+  for (const direction of ['input', 'output'] as const) {
+    const oldPorts =
+      direction === 'input' ? oldNode.data.metadata.inputs : oldNode.data.metadata.outputs;
+    const usedPorts = direction === 'input' ? usedInputPortIds : usedOutputPortIds;
+    for (const oldPort of oldPorts) {
+      const matchKey = `${direction}:${oldPort.id}`;
+      let resolved = portResolutions.get(matchKey);
+      if (!resolved) {
+        resolved = resolveNewPort(oldPort, direction, usedPorts);
+        portResolutions.set(matchKey, resolved);
+        if (resolved.port) usedPorts.add(resolved.port.id);
+      }
+      if (resolved.port) {
+        portMappings.push({
+          oldHandleId: buildHandleId(oldNodeId, direction, oldPort.id),
+          newHandleId: buildHandleId(newNodeId, direction, resolved.port.id),
+          oldPortId: oldPort.id,
+          newPortId: resolved.port.id,
+          direction
+        });
+      }
+    }
+  }
+
   // Config mapping — apply strategy then overrides
   const { carriedOver, reset } = mapConfig(
     oldNode.data.config,
@@ -659,7 +698,8 @@ export function computeSwapPreviewWithOptions(
     hasDataLoss: droppedEdges.length > 0,
     newNodeId,
     configCarriedOver: carriedOver,
-    configReset: reset
+    configReset: reset,
+    portMappings
   };
 }
 
@@ -821,13 +861,31 @@ export function buildSwapPreviewFromState(
     }
   }
 
+  // Port mappings for interface-binding rewrite. Unlike
+  // computeSwapPreviewWithOptions, this only covers ports the interactive
+  // editor surfaced — i.e. ports with a connected edge — since that is the
+  // full extent of what the user reviewed; an exposed-but-unconnected bound
+  // port isn't part of this state and its binding goes dangling on swap.
+  const portMappings: PortMapping[] = [];
+  for (const mapping of state.portMappings) {
+    if (!mapping.selectedNewPortId) continue;
+    portMappings.push({
+      oldHandleId: buildHandleId(state.oldNode.id, mapping.direction, mapping.oldPort.id),
+      newHandleId: buildHandleId(state.newNodeId, mapping.direction, mapping.selectedNewPortId),
+      oldPortId: mapping.oldPort.id,
+      newPortId: mapping.selectedNewPortId,
+      direction: mapping.direction
+    });
+  }
+
   return {
     keptEdges,
     droppedEdges,
     hasDataLoss: droppedEdges.length > 0,
     newNodeId: state.newNodeId,
     configCarriedOver,
-    configReset
+    configReset,
+    portMappings
   };
 }
 

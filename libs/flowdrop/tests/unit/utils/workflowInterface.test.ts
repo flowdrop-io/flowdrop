@@ -8,9 +8,11 @@ import { describe, it, expect } from 'vitest';
 import {
   resolveBinding,
   resolveInterface,
-  validateWorkflowInterface
+  validateWorkflowInterface,
+  rewriteInterfaceBindings
 } from '$lib/utils/workflowInterface.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
+import type { PortMapping } from '$lib/utils/nodeSwap.js';
 import type {
   NodeMetadata,
   NodePort,
@@ -421,5 +423,115 @@ describe('validateWorkflowInterface', () => {
     const entry = makeEntry({ bindings: [{ nodeId: 'nope', portId: 'nope' }] });
     const workflow = makeWorkflow([], [], { inputs: [entry], outputs: [entry] });
     expect(() => validateWorkflowInterface(workflow)).not.toThrow();
+  });
+});
+
+// =========================================================================
+// rewriteInterfaceBindings
+// =========================================================================
+
+describe('rewriteInterfaceBindings', () => {
+  function inputMapping(overrides: Partial<PortMapping> = {}): PortMapping {
+    return {
+      oldHandleId: buildHandleId('old-node', 'input', 'in-1'),
+      newHandleId: buildHandleId('new-node', 'input', 'in-1'),
+      oldPortId: 'in-1',
+      newPortId: 'in-1',
+      direction: 'input',
+      ...overrides
+    };
+  }
+
+  it('returns undefined unchanged when the workflow has no interface', () => {
+    expect(rewriteInterfaceBindings(undefined, 'old-node', 'new-node', [])).toBeUndefined();
+  });
+
+  it('rewrites a binding whose port follows the mapping, keeping the entry id', () => {
+    const entry = makeEntry({
+      id: 'public-in',
+      bindings: [{ nodeId: 'old-node', portId: 'in-1' }]
+    });
+    const mapping = inputMapping({ newPortId: 'renamed-in' });
+
+    const result = rewriteInterfaceBindings({ inputs: [entry] }, 'old-node', 'new-node', [
+      { ...mapping, newPortId: 'renamed-in' }
+    ]);
+
+    expect(result?.inputs).toEqual([
+      { ...entry, bindings: [{ nodeId: 'new-node', portId: 'renamed-in' }] }
+    ]);
+  });
+
+  it('leaves a binding untouched when its port was dropped by the mapping', () => {
+    const entry = makeEntry({
+      id: 'public-in',
+      bindings: [{ nodeId: 'old-node', portId: 'in-1' }]
+    });
+
+    // No mapping at all for this port — the swap dropped it.
+    const result = rewriteInterfaceBindings({ inputs: [entry] }, 'old-node', 'new-node', []);
+
+    expect(result?.inputs).toEqual([entry]);
+    // Still points at the node that's gone — resolves as dangling, not pruned.
+    const resolved = resolveInterface(makeWorkflow([], [], result));
+    expect(resolved[0].status).toBe('dangling');
+  });
+
+  it('leaves a binding to a different node untouched', () => {
+    const entry = makeEntry({ bindings: [{ nodeId: 'unrelated-node', portId: 'in-1' }] });
+    const result = rewriteInterfaceBindings({ inputs: [entry] }, 'old-node', 'new-node', [
+      inputMapping()
+    ]);
+    expect(result?.inputs).toEqual([entry]);
+  });
+
+  it('matches an output entry only against output-direction mappings', () => {
+    const entry = makeEntry({
+      id: 'public-out',
+      bindings: [{ nodeId: 'old-node', portId: 'shared-id' }]
+    });
+    // An input mapping sharing the same portId must not apply to an output entry.
+    const inputSideMapping = inputMapping({ oldPortId: 'shared-id', newPortId: 'wrong' });
+    const outputSideMapping: PortMapping = {
+      oldHandleId: buildHandleId('old-node', 'output', 'shared-id'),
+      newHandleId: buildHandleId('new-node', 'output', 'right'),
+      oldPortId: 'shared-id',
+      newPortId: 'right',
+      direction: 'output'
+    };
+
+    const result = rewriteInterfaceBindings({ outputs: [entry] }, 'old-node', 'new-node', [
+      inputSideMapping,
+      outputSideMapping
+    ]);
+
+    expect(result?.outputs).toEqual([
+      { ...entry, bindings: [{ nodeId: 'new-node', portId: 'right' }] }
+    ]);
+  });
+
+  it('preserves every other entry field untouched', () => {
+    const entry = makeEntry({
+      id: 'public-in',
+      name: 'Display Name',
+      description: 'Some description',
+      required: true,
+      defaultValue: 'x',
+      meta: { 'fd.reserved': true, arbitrary: 'passthrough' },
+      bindings: [{ nodeId: 'old-node', portId: 'in-1' }]
+    });
+
+    const result = rewriteInterfaceBindings({ inputs: [entry] }, 'old-node', 'new-node', [
+      inputMapping()
+    ]);
+
+    expect(result?.inputs?.[0]).toMatchObject({
+      id: 'public-in',
+      name: 'Display Name',
+      description: 'Some description',
+      required: true,
+      defaultValue: 'x',
+      meta: { 'fd.reserved': true, arbitrary: 'passthrough' }
+    });
   });
 });

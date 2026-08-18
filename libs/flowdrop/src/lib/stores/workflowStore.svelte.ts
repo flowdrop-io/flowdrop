@@ -16,6 +16,8 @@ import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
 import type { WorkflowChangeType } from '$lib/types/events.js';
 import type { HistoryService } from '../services/historyService.js';
 import { WORKFLOW_SCHEMA_VERSION } from '$lib/schemas/index.js';
+import type { PortMapping } from '../utils/nodeSwap.js';
+import { rewriteInterfaceBindings } from '../utils/workflowInterface.js';
 
 type WorkflowMetadata = Workflow['metadata'];
 
@@ -160,6 +162,12 @@ export interface WorkflowStoreActions {
     nodes: WorkflowNode[];
     edges: WorkflowEdge[];
     description?: string;
+    /** The swapped-out node's id and its replacement — together with
+     *  `portMappings`, drives the `workflow.interface` binding rewrite. Omit
+     *  either to leave `interface` untouched. */
+    oldNodeId?: string;
+    newNodeId?: string;
+    portMappings?: PortMapping[];
   }) => void;
   pushHistory: (description?: string, workflow?: Workflow) => void;
 }
@@ -817,12 +825,31 @@ export class WorkflowStore {
    * Unlike batchUpdate, this uses `"node_swap"` as the change type and
    * records a meaningful description for the undo history.
    */
-  swapNode(updates: { nodes: WorkflowNode[]; edges: WorkflowEdge[]; description?: string }): void {
+  swapNode(updates: {
+    nodes: WorkflowNode[];
+    edges: WorkflowEdge[];
+    description?: string;
+    oldNodeId?: string;
+    newNodeId?: string;
+    portMappings?: PortMapping[];
+  }): void {
     if (!this.#workflow) return;
+    // Node swap is the one mutation that actively moves interface bindings —
+    // every other mutation (including delete) leaves them untouched.
+    const interfaceAfterSwap =
+      updates.oldNodeId && updates.newNodeId
+        ? rewriteInterfaceBindings(
+            this.#workflow.interface,
+            updates.oldNodeId,
+            updates.newNodeId,
+            updates.portMappings ?? []
+          )
+        : this.#workflow.interface;
     this.#workflow = {
       ...this.#workflow,
       nodes: updates.nodes,
       edges: updates.edges,
+      interface: interfaceAfterSwap,
       metadata: buildMetadata(this.#workflow.metadata)
     };
     this.#pushToHistory(updates.description ?? 'Swap node');

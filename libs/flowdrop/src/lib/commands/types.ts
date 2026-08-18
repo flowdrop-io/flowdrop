@@ -8,6 +8,7 @@
  */
 
 import type { NodeMetadata, Workflow, WorkflowNode, WorkflowEdge } from '../types/index.js';
+import type { PortMapping } from '../utils/nodeSwap.js';
 
 // ============================================================================
 // Command Types (Discriminated Union)
@@ -399,7 +400,13 @@ export interface CommandDispatch {
   /** Optional callback for UI-side actions (open config panel, select node) */
   emitUIAction?: (action: UIAction) => void;
   /** Optional swap operation for swap command */
-  swapNode?: (updates: { nodes: WorkflowNode[]; edges: WorkflowEdge[] }) => void;
+  swapNode?: (updates: {
+    nodes: WorkflowNode[];
+    edges: WorkflowEdge[];
+    oldNodeId?: string;
+    newNodeId?: string;
+    portMappings?: PortMapping[];
+  }) => void;
 }
 
 // ============================================================================
