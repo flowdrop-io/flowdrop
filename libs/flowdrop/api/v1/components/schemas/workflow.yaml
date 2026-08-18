@@ -233,6 +233,13 @@ WorkflowInterfaceEntry:
       description: Whether callers must supply a value. Inputs only; ignored on outputs.
     defaultValue:
       description: Default value used when no external value is supplied. Inputs only.
+    examples:
+      type: array
+      items: {}
+      description: |
+        Example values a caller could supply — author metadata for documentation
+        and launch forms, mirroring the server manifest's `examples`. Inputs
+        only; ignored on outputs. Never validated against `schema`.
     schema:
       $ref: './node.yaml#/PortDataSchema'
       description: JSON Schema describing the structure of data carried by this entry.

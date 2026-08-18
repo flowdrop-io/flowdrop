@@ -165,15 +165,18 @@ describe('Workflow JSON Schema', () => {
   });
 
   describe('no OpenAPI-only properties', () => {
-    function findExamples(obj: unknown, path = ''): string[] {
+    function findExamples(obj: unknown, path = '', inProperties = false): string[] {
       const found: string[] = [];
       if (obj == null || typeof obj !== 'object') return found;
       for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-        if (key === 'example' || key === 'examples') {
+        // Keys directly under a `properties` map are data-field names, not
+        // OpenAPI annotations — a schema may legitimately declare a property
+        // named "examples" (WorkflowInterfaceEntry does).
+        if (!inProperties && (key === 'example' || key === 'examples')) {
           found.push(`${path}.${key}`);
         }
         if (typeof value === 'object' && value !== null) {
-          found.push(...findExamples(value, `${path}.${key}`));
+          found.push(...findExamples(value, `${path}.${key}`, key === 'properties'));
         }
       }
       return found;

@@ -249,6 +249,37 @@
     patchEntry(direction, index, patch);
   }
 
+  /**
+   * Write one example slot back, dropping empties and collapsing an empty
+   * list to `undefined` so an untouched entry stores no `examples` key.
+   */
+  function patchExample(
+    direction: Direction,
+    index: number,
+    entry: WorkflowInterfaceEntry,
+    exampleIndex: number,
+    raw: string
+  ): void {
+    const next = [...(entry.examples ?? [])];
+    if (raw === '') next.splice(exampleIndex, 1);
+    else next[exampleIndex] = parseDefaultValue(raw);
+    patchEntry(direction, index, { examples: next.length > 0 ? next : undefined });
+  }
+
+  function addExample(direction: Direction, index: number, entry: WorkflowInterfaceEntry): void {
+    patchEntry(direction, index, { examples: [...(entry.examples ?? []), ''] });
+  }
+
+  function removeExample(
+    direction: Direction,
+    index: number,
+    entry: WorkflowInterfaceEntry,
+    exampleIndex: number
+  ): void {
+    const next = (entry.examples ?? []).filter((_, i) => i !== exampleIndex);
+    patchEntry(direction, index, { examples: next.length > 0 ? next : undefined });
+  }
+
   function parseDefaultValue(raw: string): unknown {
     if (raw === '') return undefined;
     try {
@@ -422,6 +453,46 @@
                     />
                   </label>
                 </div>
+
+                {#if section.key === 'inputs'}
+                  <div class="wf-interface__examples">
+                    <span class="wf-interface__label">
+                      {m().workflowInterface.examplesLabel}
+                    </span>
+                    {#each entry.examples ?? [] as example, exampleIndex (exampleIndex)}
+                      <div class="wf-interface__example-row">
+                        <input
+                          type="text"
+                          value={formatDefaultValue(example)}
+                          onchange={(e) =>
+                            patchExample(
+                              section.key,
+                              index,
+                              entry,
+                              exampleIndex,
+                              e.currentTarget.value
+                            )}
+                        />
+                        <button
+                          type="button"
+                          class="wf-interface__example-remove"
+                          onclick={() => removeExample(section.key, index, entry, exampleIndex)}
+                          aria-label={m().workflowInterface.removeExample}
+                        >
+                          <Icon icon="heroicons:x-mark" />
+                        </button>
+                      </div>
+                    {/each}
+                    <button
+                      type="button"
+                      class="wf-interface__example-add"
+                      onclick={() => addExample(section.key, index, entry)}
+                    >
+                      <Icon icon="heroicons:plus" />
+                      {m().workflowInterface.addExample}
+                    </button>
+                  </div>
+                {/if}
 
                 <div class="wf-interface__row">
                   <label class="wf-interface__field wf-interface__field--wide">
@@ -697,6 +768,58 @@
 
   .wf-interface__quickfix:hover {
     background-color: var(--fd-muted);
+  }
+
+  .wf-interface__examples {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .wf-interface__example-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .wf-interface__example-row input {
+    flex: 1;
+    padding: 0.25rem 0.375rem;
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-sm);
+    background-color: var(--fd-background);
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-xs);
+  }
+
+  .wf-interface__example-remove {
+    display: inline-flex;
+    padding: 0.125rem;
+    border: none;
+    background: none;
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+  }
+
+  .wf-interface__example-remove:hover {
+    color: var(--fd-error);
+  }
+
+  .wf-interface__example-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    align-self: flex-start;
+    padding: 0.125rem 0.25rem;
+    border: none;
+    background: none;
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
+    cursor: pointer;
+  }
+
+  .wf-interface__example-add:hover {
+    color: var(--fd-foreground);
   }
 
   .wf-interface__status {

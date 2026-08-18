@@ -1405,6 +1405,12 @@ export interface WorkflowInterfaceEntry {
   /** Inputs only; ignored on outputs. */
   required?: boolean;
   defaultValue?: unknown;
+  /**
+   * Example values a caller could supply — author metadata for docs and launch
+   * forms, mirroring the server manifest's `examples`. Inputs only; ignored on
+   * outputs. Never validated against `schema`.
+   */
+  examples?: unknown[];
   schema?: InputSchema | OutputSchema;
   /**
    * Inner ports this entry maps to. Every entry — input or output — must

@@ -197,6 +197,30 @@ describe('WorkflowInterfaceEditor', () => {
     expect(body).not.toContain('two sources for one value');
   });
 
+  it('renders example values on input entries with add/remove affordances', () => {
+    const workflow = makeWorkflow([], {
+      inputs: [
+        {
+          id: 'with-examples',
+          dataType: 'string',
+          bindings: [],
+          examples: ['hello', 42]
+        }
+      ],
+      outputs: [{ id: 'out-plain', dataType: 'string', bindings: [] }]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).toContain('Examples');
+    expect(body).toContain('value="hello"');
+    expect(body).toContain('value="42"');
+    expect(body).toContain('Add example');
+    // Outputs carry no examples editor — exactly one "Add example" affordance.
+    expect(body.split('Add example').length - 1).toBe(1);
+  });
+
   it('offers the configured data-type vocabulary as select options', () => {
     const workflow = makeWorkflow([], {
       inputs: [{ id: 'typed-in', dataType: 'string', bindings: [] }]

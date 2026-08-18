@@ -726,6 +726,7 @@ export const demoAIContentWorkflow: Workflow = {
         description: 'Additional filtering criteria applied when loading content.',
         dataType: 'json',
         required: false,
+        examples: [{ status: 'published' }, { bundle: 'article', limit: 10 }],
         bindings: [{ nodeId: 'content_loader.1', portId: 'filters' }],
         meta: { unknownConsumerKey: { foo: 'bar' } }
       }

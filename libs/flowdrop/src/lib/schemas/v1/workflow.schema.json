@@ -1131,6 +1131,11 @@
         "defaultValue": {
           "description": "Default value used when no external value is supplied. Inputs only."
         },
+        "examples": {
+          "type": "array",
+          "items": {},
+          "description": "Example values a caller could supply — author metadata for documentation\nand launch forms, mirroring the server manifest's `examples`. Inputs\nonly; ignored on outputs. Never validated against `schema`.\n"
+        },
         "schema": {
           "allOf": [
             {
