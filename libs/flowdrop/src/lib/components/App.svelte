@@ -164,6 +164,13 @@
     /** Additional JSON Schema properties to show in the Workflow Settings panel. Values are persisted in workflow.config. */
     workflowSettingsSchema?: ConfigSchema;
     /**
+     * Format ids this host supports (e.g. `['flowdrop']`). Filters the
+     * "Workflow Format" options in the Workflow Settings panel; when one or
+     * zero options remain the field is hidden entirely and the stored format
+     * is left untouched. Omit to offer every registered format.
+     */
+    workflowFormats?: string[];
+    /**
      * Override user-facing strings. Pass either a partial of the `Messages`
      * tree directly, or a callback that returns one. Missing keys fall through
      * to English defaults.
@@ -212,6 +219,7 @@
     showSettingsResetButton,
     swapStrategies,
     workflowSettingsSchema,
+    workflowFormats,
     messages: messagesOverride,
     instance
   }: Props = $props();
@@ -371,6 +379,15 @@
   // workflowSettingsSchema field, but a consumer schema could still collide.
   const WORKFLOW_SETTINGS_RESERVED = new Set(['name', 'description', 'format', 'interface']);
 
+  // Registered formats this host offers — the mount-level `workflowFormats`
+  // allowlist filters the registry (an unknown id filters to nothing rather
+  // than erroring; the field simply hides).
+  let workflowFormatOptions = $derived(
+    fd.formats
+      .getOneOfOptions()
+      .filter((option) => !workflowFormats || workflowFormats.includes(option.const))
+  );
+
   // Workflow configuration schema (derived to pick up dynamic format options)
   let workflowConfigSchema: ConfigSchema = $derived.by(() => {
     const extraProps = Object.fromEntries(
@@ -403,13 +420,18 @@
           format: 'multiline',
           default: ''
         },
-        format: {
-          type: 'string',
-          title: 'Workflow Format',
-          description: 'The specification format for this workflow',
-          oneOf: fd.formats.getOneOfOptions(),
-          default: 'flowdrop'
-        },
+        // A format choice is only real when the host supports more than one
+        // format: with a single (or empty) filtered option set the field is
+        // hidden, and the stored format is preserved on apply (see onChange).
+        ...(workflowFormatOptions.length > 1 && {
+          format: {
+            type: 'string' as const,
+            title: 'Workflow Format',
+            description: 'The specification format for this workflow',
+            oneOf: workflowFormatOptions,
+            default: 'flowdrop'
+          }
+        }),
         ...extraProps
       },
       required: ['name', ...extraRequired]
@@ -420,7 +442,9 @@
   let workflowConfigValues = $derived({
     name: fd.workflow.name || '',
     description: fd.workflow.current?.description || '',
-    format: fd.workflow.current?.metadata?.format || 'flowdrop',
+    ...(workflowFormatOptions.length > 1 && {
+      format: fd.workflow.current?.metadata?.format || 'flowdrop'
+    }),
     ...(fd.workflow.current?.config ?? {})
   });
 
@@ -1183,8 +1207,11 @@
       // Sync workflow settings changes immediately on field blur
       const wf = fd.workflow.current;
       if (wf) {
-        const newFormat = (config.format as string) || DEFAULT_WORKFLOW_FORMAT;
         const currentFormat = wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
+        // Fall back to the CURRENT format, not the default: when the field is
+        // hidden (host supports one format) config.format is absent, and
+        // applying name/description must not silently rewrite the format.
+        const newFormat = (config.format as string) || currentFormat;
 
         // Warn about incompatible nodes when format changes
         if (newFormat !== currentFormat) {

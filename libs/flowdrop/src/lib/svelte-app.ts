@@ -152,6 +152,13 @@ export interface FlowDropMountOptions {
   // NEW: Workflow format adapters
   /** Custom workflow format adapters to register */
   formatAdapters?: WorkflowFormatAdapter[];
+  /**
+   * Format ids this host supports (e.g. `['flowdrop']`). Filters the
+   * "Workflow Format" options in the Workflow Settings panel; when one or
+   * zero options remain the field is hidden entirely and the stored format
+   * is left untouched. Omit to offer every registered format.
+   */
+  workflowFormats?: string[];
 
   // NEW: Visual theme
   /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
@@ -405,6 +412,7 @@ export async function mountFlowDropApp(
     draftStorageKey: customDraftKey,
     draftStorage,
     formatAdapters,
+    workflowFormats,
     theme,
     settingsCategories,
     showSettingsSyncButton,
@@ -493,7 +501,8 @@ export async function mountFlowDropApp(
       theme,
       settingsCategories,
       showSettingsSyncButton,
-      showSettingsResetButton
+      showSettingsResetButton,
+      workflowFormats
     }
   });
 
