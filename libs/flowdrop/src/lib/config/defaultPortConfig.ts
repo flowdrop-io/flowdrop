@@ -1,13 +1,56 @@
 /**
- * Default port configuration for FlowDrop
- * Provides backward compatibility and serves as an example configuration
+ * Default port configuration for FlowDrop.
+ *
+ * The fallback the editor uses before (or instead of) the backend's
+ * `getPortConfiguration()` payload. It is a HAND MIRROR of that payload, and
+ * every id and rule missing from it is a lane the editor treats as unknown —
+ * compatible with nothing, not even another port of its own lane. It was
+ * missing three (`any`, `mixed`, `messages`), which is why a `messages` port
+ * on library defaults would not connect to anything at all.
+ *
+ * Generating this from the backend's single declaration site is the
+ * workflow-contract axis's job; until then, a lane added on the Drupal side
+ * must be added here in the same change.
  */
 
 import type { PortConfig } from '../types/index.js';
 
+/**
+ * Every lane a sink rule fans out over: all of them but `tool`.
+ *
+ * A capability wire into a sink says nothing and a sink value is not a
+ * callable, so `tool` stays self-compatible only.
+ */
+const SINK_LANES = [
+  'trigger',
+  'mixed',
+  'string',
+  'number',
+  'boolean',
+  'array',
+  'string[]',
+  'number[]',
+  'boolean[]',
+  'json[]',
+  'file[]',
+  'image[]',
+  'json',
+  'messages',
+  'file',
+  'image',
+  'audio',
+  'video',
+  'url',
+  'email',
+  'date',
+  'datetime',
+  'time'
+] as const;
+
 export const DEFAULT_PORT_CONFIG: PortConfig = {
   version: '1.0.0',
-  defaultDataType: 'string',
+  // The sink, not `string`: a port with no declared lane constrains nothing.
+  defaultDataType: 'mixed',
 
   dataTypes: [
     // Control flow types
@@ -16,6 +59,17 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
       name: 'Trigger',
       description: 'Control flow of the workflow',
       color: 'var(--fd-node-purple)',
+      category: 'basic',
+      enabled: true
+    },
+    // The sink: what a port declares when its schema declares no shape.
+    // Wire anything in, wire it anywhere. `any` was its second spelling and
+    // is retired.
+    {
+      id: 'mixed',
+      name: 'Mixed',
+      description: 'A value of any type',
+      color: 'var(--fd-node-teal)',
       category: 'basic',
       enabled: true
     },
@@ -205,11 +259,44 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
       color: 'var(--fd-node-lime)',
       category: 'temporal',
       enabled: true
+    },
+
+    // A list of provider-shaped chat messages. JSON-Schema `array`
+    // underneath, but not an arbitrary array — which is the whole reason it
+    // is its own lane.
+    {
+      id: 'messages',
+      name: 'Messages',
+      description: 'A conversation: a list of provider-shaped chat messages',
+      color: 'var(--fd-node-fuchsia)',
+      category: 'complex',
+      enabled: true
     }
   ],
 
   compatibilityRules: [
-    // Pure same-type compatibility: string connects to string, number to number, etc.
-    // No additional rules needed - the system handles same-type connections automatically
+    // buildCompatibilityMap() seeds exact-match only, so a lane accepts
+    // another lane ONLY through a rule here. Same-type connections need no
+    // rule; everything below is a deliberate widening.
+    //
+    // The sink both ways. `mixed` is worn by outputs as well as inputs, so
+    // the incoming direction alone would leave those outputs wireable into
+    // nothing. Aliases would not have done it either — they copy the
+    // outgoing set only.
+    ...SINK_LANES.flatMap((id) => [
+      { from: id, to: 'mixed' },
+      { from: 'mixed', to: id }
+    ]),
+    // The control sink. What a loopback or trigger input accepts; this is
+    // the rule set `any` used to carry.
+    ...SINK_LANES.map((id) => ({ from: id, to: 'trigger' })),
+    // `messages` flows one way into `array` and `json`: existing consumers
+    // typed one of those must keep accepting a message list without being
+    // rewired. The reverse is deliberately absent — an `array`/`json` port
+    // carries no guarantee of provider-message shape, and accepting one into
+    // a `messages` input is exactly the silent mistyping the lane exists to
+    // catch.
+    { from: 'messages', to: 'array' },
+    { from: 'messages', to: 'json' }
   ]
 };

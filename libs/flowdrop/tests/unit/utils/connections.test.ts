@@ -11,6 +11,7 @@ import {
   hasCycles,
   getExecutionOrder
 } from '$lib/utils/connections.js';
+import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
 import { createTestNode, createTestWorkflow } from '../../utils/index.js';
 import { testNodes } from '../../fixtures/index.js';
 import type { PortConfig } from '$lib/types';
@@ -61,6 +62,60 @@ describe('Connection Utilities', () => {
       { from: 'number', to: 'string' } // Numbers can convert to strings
     ]
   };
+
+  // The SHIPPED defaults, not a fixture. The mock above proves the checker
+  // honours whatever rules it is given; this proves the rules FlowDrop
+  // actually ships say what they are meant to. The two are different
+  // questions and only the second one caught the bug: `mixed` shipped with
+  // no rules in either direction, so a `mixed` port refused a `string` wire
+  // — on library defaults, on every port in the nineteen backend files that
+  // declared the lane, and on every dynamic port left at its default.
+  describe('DEFAULT_PORT_CONFIG', () => {
+    const checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG);
+    const lanes = DEFAULT_PORT_CONFIG.dataTypes.map((t) => t.id);
+    const dataLanes = lanes.filter((id) => id !== 'tool');
+
+    it('declares the sink and has retired `any`', () => {
+      expect(lanes).toContain('mixed');
+      expect(lanes).not.toContain('any');
+      expect(DEFAULT_PORT_CONFIG.defaultDataType).toBe('mixed');
+    });
+
+    it('declares every lane the editor can be handed', () => {
+      // A lane absent here is not "unstyled" — buildCompatibilityMap() seeds
+      // itself from this list, so an absent lane is compatible with nothing,
+      // not even another port of its own lane. `messages` was absent.
+      expect(lanes).toContain('messages');
+      expect(lanes).toContain('trigger');
+      expect(lanes).toContain('tool');
+    });
+
+    it.each(dataLanes)('wires %s into the sink and back out of it', (id) => {
+      expect(checker.areDataTypesCompatible(id, 'mixed')).toBe(true);
+      expect(checker.areDataTypesCompatible('mixed', id)).toBe(true);
+    });
+
+    it.each(dataLanes)('wires %s into the control sink', (id) => {
+      // What a loopback or trigger input accepts.
+      expect(checker.areDataTypesCompatible(id, 'trigger')).toBe(true);
+    });
+
+    it('keeps `tool` self-compatible only', () => {
+      expect(checker.areDataTypesCompatible('tool', 'tool')).toBe(true);
+      expect(checker.areDataTypesCompatible('tool', 'mixed')).toBe(false);
+      expect(checker.areDataTypesCompatible('mixed', 'tool')).toBe(false);
+      expect(checker.areDataTypesCompatible('tool', 'trigger')).toBe(false);
+    });
+
+    it('lets `messages` flow one way into array and json', () => {
+      expect(checker.areDataTypesCompatible('messages', 'array')).toBe(true);
+      expect(checker.areDataTypesCompatible('messages', 'json')).toBe(true);
+      // The reverse is deliberately absent: an array/json port carries no
+      // guarantee of provider-message shape.
+      expect(checker.areDataTypesCompatible('array', 'messages')).toBe(false);
+      expect(checker.areDataTypesCompatible('json', 'messages')).toBe(false);
+    });
+  });
 
   describe('PortCompatibilityChecker', () => {
     let checker: PortCompatibilityChecker;
