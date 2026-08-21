@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Pipeline signal refusals are classified by the backend's `error_code`, not by its prose**
+  - All three of the reference backend's signal refusals answer `409`, so `classifyRefusal()` told them apart by matching substrings of the human `error` string — `terminal`, `already pending`, `no active pause`. That made the server's wording load-bearing across a repository boundary: a reword that dropped a substring silently reclassified the refusal, the operator was shown the wrong explanation, and nothing errored on either side. The backend now publishes a stable `error_code` beside `error` (`PIPELINE_TERMINAL`, `INWARD_SIGNAL_ALREADY_PENDING`, `NO_ACTIVE_PAUSE`), and it is preferred whenever present.
+  - **The substring path stays as the fallback**, because this client talks to backends it does not ship with and one predating the codes still answers a 409 with nothing but prose. It is removed when the oldest supported backend emits codes, not when the newest does.
+  - An `error_code` this client does not recognise now yields `rejected` rather than falling through to the substring guess: an unmapped code still proves the backend classified the refusal deliberately, so guessing from its wording would override a considered answer.
+
+### Added
+
+- **`pipelineSignalService` has tests** — it had none. Every refusal it returns drives a different user-visible explanation, and the mapping was entirely unasserted. Both classification paths are now pinned, along with accepted-is-not-applied, the unsupported-backend case, and the synthesized-message fallback.
+
 ## [2.2.2] - 2026-08-18
 
 ### Fixed
