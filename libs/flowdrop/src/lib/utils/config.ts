@@ -10,6 +10,7 @@ import type {
   ExecutionConfig,
   StorageConfig
 } from '../types/config.js';
+import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
 import { createEndpointConfig } from '../config/endpoints.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 
@@ -124,11 +125,13 @@ export function createDefaultConfig(endpointConfig?: EndpointConfig): WorkflowEd
       ...createDefaultAPIConfig(),
       endpoints: endpointConfig || createEndpointConfig('/api/flowdrop')
     },
-    ports: {
-      dataTypes: [],
-      compatibilityRules: [],
-      defaultDataType: 'mixed'
-    },
+    // Not `{dataTypes: [], compatibilityRules: [], defaultDataType: 'mixed'}`:
+    // an empty type list is not a permissive default, it is a config in which
+    // NOTHING is compatible with anything — buildCompatibilityMap() seeds
+    // itself from `dataTypes`, so a `mixed` default naming a lane the list
+    // never declares leaves every port refusing every edge. The shipped
+    // defaults are the default.
+    ports: DEFAULT_PORT_CONFIG,
     execution: createDefaultExecutionConfig(),
     storage: createDefaultStorageConfig()
   };
