@@ -239,6 +239,26 @@ export {
 } from '../utils/connections.js';
 
 // ============================================================================
+// Port Shape Symbols
+// ============================================================================
+
+// A port's JSON-Schema shape and its semantic lane are two separate marks on
+// the canvas: a small coloured glyph for the shape, a quiet outlined chip for
+// the lane's name. `PortTypeBadge` draws one port's whole label row; the rest
+// is for a custom node component that wants the same glyph vocabulary. Both
+// functions take the instance's port-compatibility checker, the same source
+// colour reads, so a served or aliased lane shapes the way it colours. See
+// utils/portShape.ts for where the shape comes from.
+//
+// Deliberately small: the lane table, the shape labels and the two-component
+// split behind `PortTypeBadge` are implementation, and stay so until something
+// outside the library needs them.
+export { SHAPE_GLYPH, portShape, portGlyph } from '../utils/portShape.js';
+export type { PortShape } from '../utils/portShape.js';
+
+export { default as PortTypeBadge } from '../components/ports/PortTypeBadge.svelte';
+
+// ============================================================================
 // Runtime Configuration
 // ============================================================================
 

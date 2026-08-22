@@ -571,6 +571,62 @@ p {
   color: var(--fd-error-hover);
 }
 
+/* Small badge — the node/port scale. */
+.flowdrop-badge--sm {
+  font-size: 10px;
+  padding: 2px 4px;
+}
+
+/* Outlined badge: readable, copyable, and not competing for attention. Used by
+   the port lane chip, where the row's one saturated mark is the shape symbol
+   beside it — so the two sit side by side and must agree on box metrics. */
+.flowdrop-badge--outline {
+  box-sizing: border-box;
+  height: 17px;
+  padding: 0 4px;
+  border: 1px solid var(--fd-border);
+  border-radius: var(--fd-radius-sm);
+  background-color: transparent;
+  color: var(--fd-muted-foreground);
+  line-height: 1;
+}
+
+/* Port shape symbol: the glyph chip that says what SHAPE a port carries
+   (`S` text, `#` number, `[]` list, `{}` object, `?` unknown, `T` trigger,
+   `()` callable). See components/ports/PortShapeSymbol.svelte.
+
+   The component sets only `--fd-port-symbol-color`, the port's lane colour, so
+   everything else here — including the tint ratios — stays overridable by a
+   consumer stylesheet instead of being locked behind an inline declaration.
+   `--fd-port-skin-color` is the same per-instance override the handles honour.
+
+   19x17 is one glyph of the 10px mono face plus its padding: wide enough that
+   the two-character glyphs (`[]`, `{}`, `()`) do not set a wider box than the
+   one-character ones, so the chips form an even column down a dense node. */
+.flowdrop-port-symbol {
+  --_fd-symbol-color: var(--fd-port-skin-color, var(--fd-port-symbol-color, var(--fd-node-slate)));
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  min-width: 19px;
+  height: 17px;
+  padding: 0 3px;
+  border: 1px solid color-mix(in srgb, var(--_fd-symbol-color) 30%, transparent);
+  border-radius: var(--fd-radius-sm);
+  background-color: color-mix(in srgb, var(--_fd-symbol-color) 15%, transparent);
+  color: var(--_fd-symbol-color);
+  font-family: var(--fd-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  user-select: none;
+}
+
 /* Navbar styles */
 .flowdrop-navbar {
   display: flex;

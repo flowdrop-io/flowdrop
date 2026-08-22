@@ -7,6 +7,7 @@
 import type { NodeCategory, PortDataTypeConfig } from '../types/index.js';
 import type { PortCompatibilityChecker } from './connections.js';
 import type { CategoriesStore } from '../stores/categoriesStore.svelte.js';
+import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
 
 /**
  * Category color mapping to design tokens (CSS variables)
@@ -34,37 +35,49 @@ export const CATEGORY_COLOR_TOKENS: Record<string, string> = {
 };
 
 /**
- * Default data type colors for fallback when port configuration is not available
- * Uses --fd-node-* tokens from tokens.css
+ * Legacy data-type spellings that were never lane ids: alternative words older
+ * workflows and third-party payloads use. Kept as an alias layer so they still
+ * colour, but they are NOT part of the shipped vocabulary — that comes from
+ * DEFAULT_PORT_CONFIG below.
+ *
+ * **This list is closed.** It is the last hand-maintained colour list in the
+ * library and it has no upstream source to drift from, which is exactly why
+ * nothing new goes in it: a new lane belongs in the port config, and a new
+ * spelling of an existing lane belongs in that lane's `aliases`.
+ *
+ * Exported for the test suite only (not re-exported from any entry point): it
+ * is what `portShape.test.ts` asserts the lane→shape table is total over, so a
+ * spelling can never have a colour and no shape.
  */
-const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
-  string: 'var(--fd-node-emerald)',
+export const LEGACY_DATA_TYPE_COLORS: Record<string, string> = {
   text: 'var(--fd-node-emerald)',
-  number: 'var(--fd-node-blue)',
   integer: 'var(--fd-node-blue)',
   float: 'var(--fd-node-blue)',
-  boolean: 'var(--fd-node-purple)',
-  array: 'var(--fd-node-amber)',
   list: 'var(--fd-node-amber)',
   object: 'var(--fd-node-orange)',
-  json: 'var(--fd-node-orange)',
-  mixed: 'var(--fd-node-orange)',
-  file: 'var(--fd-node-red)',
   document: 'var(--fd-node-red)',
-  image: 'var(--fd-node-pink)',
   picture: 'var(--fd-node-pink)',
-  audio: 'var(--fd-node-indigo)',
   sound: 'var(--fd-node-indigo)',
-  video: 'var(--fd-node-teal)',
   movie: 'var(--fd-node-teal)',
-  url: 'var(--fd-node-cyan)',
-  email: 'var(--fd-node-cyan)',
-  date: 'var(--fd-node-lime)',
-  datetime: 'var(--fd-node-lime)',
-  time: 'var(--fd-node-lime)',
-  tool: 'var(--fd-node-amber)',
-  trigger: 'var(--fd-edge-trigger)',
   branch: 'var(--fd-node-purple)'
+};
+
+/**
+ * Fallback lane colours for when no port configuration has loaded yet — which
+ * is exactly when the first render happens, so these are seen.
+ *
+ * Derived from DEFAULT_PORT_CONFIG rather than hand-written. It used to be a
+ * third, independently maintained colour list, and it had drifted: `mixed` was
+ * orange against the payload's teal, and the typed-array lanes (`string[]`,
+ * `json[]`, …) and `messages` were missing entirely, so a first render painted
+ * them slate. Deriving makes that class of drift unrepresentable — a lane added
+ * to the shipped config is coloured here by construction.
+ */
+const DEFAULT_DATA_TYPE_COLORS: Record<string, string> = {
+  ...LEGACY_DATA_TYPE_COLORS,
+  ...Object.fromEntries(
+    DEFAULT_PORT_CONFIG.dataTypes.map((dataType) => [dataType.id.toLowerCase(), dataType.color])
+  )
 };
 
 /**
@@ -532,7 +545,7 @@ export function getPortBorderColor(checker: PortCompatibilityChecker, dataType: 
  * The reserved error output carries an arbitrary data type (json) but should
  * read as an error affordance (red) wherever it surfaces.
  */
-export function isErrorPort(port: { id: string; type?: string }): boolean {
+export function isErrorPort(port: { id?: string; type?: string }): boolean {
   return port.id === 'error' && port.type !== 'input';
 }
 
@@ -541,7 +554,7 @@ export function isErrorPort(port: { id: string; type?: string }): boolean {
  */
 export function getPortColorToken(
   checker: PortCompatibilityChecker,
-  port: { id: string; type?: string; dataType: string }
+  port: { id?: string; type?: string; dataType: string }
 ): string {
   return isErrorPort(port) ? 'var(--fd-node-red)' : getDataTypeColorToken(checker, port.dataType);
 }
@@ -551,7 +564,7 @@ export function getPortColorToken(
  */
 export function getPortBackgroundColorForPort(
   checker: PortCompatibilityChecker,
-  port: { id: string; type?: string; dataType: string },
+  port: { id?: string; type?: string; dataType: string },
   opacity: number = 25
 ): string {
   const colorToken = getPortColorToken(checker, port);

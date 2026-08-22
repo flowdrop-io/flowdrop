@@ -16,11 +16,8 @@
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import { getNodeIcon } from '../../utils/icons.js';
-  import {
-    getDataTypeColorToken,
-    getCategoryColorToken,
-    getPortBackgroundColor
-  } from '../../utils/colors.js';
+  import { getDataTypeColorToken, getCategoryColorToken } from '../../utils/colors.js';
+  import PortTypeBadge from '../ports/PortTypeBadge.svelte';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
@@ -57,6 +54,17 @@
    * Falls back to the original label if not set.
    * This allows users to customize the node title per-instance via config.
    */
+  /**
+   * What the shape/lane chips need to draw a branch row.
+   *
+   * A branch is an authored control-flow path, not a `NodePort`: it has no port
+   * id, and it always carries the trigger lane. So this is one frozen literal
+   * for every branch on every gateway, rather than a fabricated port per row —
+   * and with no id, a branch named `error` cannot trip the reserved-error
+   * colour exception the way a real `error` output does.
+   */
+  const BRANCH_LANE = { type: 'output', dataType: 'trigger' } as const;
+
   const displayTitle = $derived((props.data.config?.instanceTitle as string) || props.data.label);
 
   /**
@@ -175,27 +183,7 @@
 
             <!-- Port Info: padding lives here so handle position is simple -->
             <div class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0">
-              <div class="flowdrop-flex flowdrop-gap--2">
-                <span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
-                <span
-                  class="flowdrop-badge flowdrop-badge--sm"
-                  style="background-color: {getPortBackgroundColor(
-                    checker,
-                    port.dataType,
-                    15
-                  )}; color: {getDataTypeColorToken(
-                    checker,
-                    port.dataType
-                  )}; border: 1px solid {getPortBackgroundColor(checker, port.dataType, 30)};"
-                >
-                  {port.dataType}
-                </span>
-                {#if port.required}
-                  <span class="flowdrop-badge flowdrop-badge--error flowdrop-badge--sm"
-                    >Required</span
-                  >
-                {/if}
-              </div>
+              <PortTypeBadge {checker} {port} showRequired />
               {#if port.description}
                 <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
                   {port.description}
@@ -219,34 +207,21 @@
             <div
               class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right"
             >
-              <div
-                class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end flowdrop-items--center"
+              <PortTypeBadge
+                {checker}
+                port={BRANCH_LANE}
+                align="right"
+                label={branch.label || branch.name}
+                active={isActive}
               >
-                {#if isActive}
-                  <span style="color: {getDataTypeColorToken(checker, 'trigger')};">
-                    <Icon icon="mdi:check-circle" />
-                  </span>
-                {/if}
-                <span
-                  class="flowdrop-text--xs flowdrop-font--medium"
-                  class:flowdrop-text--active={isActive}
-                >
-                  {branch.label || branch.name}
-                </span>
-                <span
-                  class="flowdrop-badge flowdrop-badge--sm"
-                  style="background-color: {getPortBackgroundColor(
-                    checker,
-                    'trigger',
-                    15
-                  )}; color: {getDataTypeColorToken(
-                    checker,
-                    'trigger'
-                  )}; border: 1px solid {getPortBackgroundColor(checker, 'trigger', 30)};"
-                >
-                  trigger
-                </span>
-              </div>
+                {#snippet leading()}
+                  {#if isActive}
+                    <span style="color: {getDataTypeColorToken(checker, 'trigger')};">
+                      <Icon icon="mdi:check-circle" />
+                    </span>
+                  {/if}
+                {/snippet}
+              </PortTypeBadge>
             </div>
 
             <!-- Output Handle: one grid row (20px) from the top so it aligns with the label, at node edge -->
@@ -449,34 +424,13 @@
   }
 
   /* Each line in a port occupies one 20px grid row: a label-only port
-     centers its single row, a label + description fills both. */
-  .flowdrop-workflow-node__port-content > div {
-    min-height: var(--fd-node-port-row-height);
-    align-items: center;
-  }
+     centers its single row, a label + description fills both. The label row
+     is <PortTypeBadge>, which owns that row height itself — scoped CSS does
+     not reach into a child component. */
 
   .flowdrop-workflow-node__port-content > p {
     min-height: var(--fd-node-port-row-height);
     line-height: var(--fd-node-port-row-height);
-  }
-
-  .flowdrop-badge {
-    padding: 2px 4px;
-    border-radius: var(--fd-radius-sm);
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .flowdrop-badge--error {
-    background-color: var(--fd-error);
-    color: var(--fd-error-foreground);
-  }
-
-  .flowdrop-badge--sm {
-    font-size: 10px;
-    padding: 2px 4px;
   }
 
   .workflow-node__no-branches {
@@ -502,24 +456,8 @@
   }
 
   /* Utility classes */
-  .flowdrop-flex {
-    display: flex;
-  }
-
   .flowdrop-flex--1 {
     flex: 1;
-  }
-
-  .flowdrop-gap--2 {
-    gap: var(--fd-space-xs);
-  }
-
-  .flowdrop-items--center {
-    align-items: center;
-  }
-
-  .flowdrop-justify--end {
-    justify-content: flex-end;
   }
 
   .flowdrop-min-w--0 {
@@ -538,11 +476,6 @@
 
   .flowdrop-text--gray {
     color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-text--active {
-    color: var(--fd-success);
-    font-weight: 600;
   }
 
   .flowdrop-font--medium {

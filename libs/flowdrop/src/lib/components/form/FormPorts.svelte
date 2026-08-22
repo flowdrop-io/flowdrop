@@ -26,10 +26,11 @@
   } from '../../types/index.js';
   import { dynamicPortToNodePort } from '../../types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { getPortColorToken, getPortBackgroundColorForPort } from '$lib/utils/colors.js';
   import { byDefaultOrder, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
+  import PortShapeSymbol from '../ports/PortShapeSymbol.svelte';
+  import PortLaneChip from '../ports/PortLaneChip.svelte';
   import FormToggle from './FormToggle.svelte';
   import Icon from '@iconify/svelte';
 
@@ -165,21 +166,9 @@
                   <Icon icon="heroicons:chevron-down" />
                 </button>
               </div>
+              <PortShapeSymbol {checker} {port} />
               <span class="fd-ports__name" title={port.name}>{port.name}</span>
-              <span
-                class="fd-ports__badge"
-                title={port.dataType}
-                style="background-color:{getPortBackgroundColorForPort(
-                  checker,
-                  port,
-                  15
-                )};color:{getPortColorToken(
-                  checker,
-                  port
-                )};border:1px solid {getPortBackgroundColorForPort(checker, port, 30)}"
-              >
-                {port.dataType}
-              </span>
+              <PortLaneChip {checker} {port} />
               {#if boundEntry}
                 <span
                   class="fd-ports__bound"
@@ -246,9 +235,11 @@
   }
 
   /* The switch alone carries the state now that its label is screen-reader
-     only, so dim the row to keep "hidden" legible at a glance. */
+     only, so dim the row to keep "hidden" legible at a glance. The chips are
+     child components, so their halves of the rule have to be :global. */
   .fd-ports__item--hidden .fd-ports__name,
-  .fd-ports__item--hidden .fd-ports__badge {
+  .fd-ports__item--hidden :global(.flowdrop-port-symbol),
+  .fd-ports__item--hidden :global(.flowdrop-badge) {
     opacity: 0.55;
   }
 
@@ -285,14 +276,14 @@
     white-space: nowrap;
   }
 
-  .fd-ports__badge {
-    font-size: var(--fd-text-2xs, 0.625rem);
-    padding: 0 var(--fd-space-1, 0.25rem);
-    border-radius: var(--fd-radius-sm, 4px);
-    white-space: nowrap;
-    max-width: 10ch;
+  /* Keep a long lane name from pushing the toggle off the row — "String Array"
+     is already 12ch, and a site may name a lane anything. The chip is a child
+     component, so the rule has to be :global. */
+  .fd-ports__item :global(.flowdrop-badge) {
+    max-width: 12ch;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* Interface-bound marker: same --fd-ring token as the canvas handle ring

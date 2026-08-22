@@ -18,11 +18,8 @@
   import Icon from '@iconify/svelte';
   import { getNodeIcon } from '../../utils/icons.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
-  import {
-    getCategoryColorToken,
-    getPortColorToken,
-    getPortBackgroundColorForPort
-  } from '../../utils/colors.js';
+  import { getCategoryColorToken, getPortColorToken } from '../../utils/colors.js';
+  import PortTypeBadge from '../ports/PortTypeBadge.svelte';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
@@ -217,27 +214,7 @@
 
             <!-- Port Info: padding lives here so handle position is simple -->
             <div class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0">
-              <div class="flowdrop-flex flowdrop-gap--2">
-                <span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
-                <span
-                  class="flowdrop-badge flowdrop-badge--sm"
-                  style="background-color: {getPortBackgroundColorForPort(
-                    checker,
-                    port,
-                    15
-                  )}; color: {getPortColorToken(
-                    checker,
-                    port
-                  )}; border: 1px solid {getPortBackgroundColorForPort(checker, port, 30)};"
-                >
-                  {port.dataType}
-                </span>
-                {#if port.required}
-                  <span class="flowdrop-badge flowdrop-badge--error flowdrop-badge--sm"
-                    >Required</span
-                  >
-                {/if}
-              </div>
+              <PortTypeBadge {checker} {port} showRequired />
               {#if port.description}
                 <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
                   {port.description}
@@ -261,22 +238,7 @@
             <div
               class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right"
             >
-              <div class="flowdrop-flex flowdrop-gap--2 flowdrop-justify--end">
-                <span class="flowdrop-text--xs flowdrop-font--medium">{port.name}</span>
-                <span
-                  class="flowdrop-badge flowdrop-badge--sm"
-                  style="background-color: {getPortBackgroundColorForPort(
-                    checker,
-                    port,
-                    15
-                  )}; color: {getPortColorToken(
-                    checker,
-                    port
-                  )}; border: 1px solid {getPortBackgroundColorForPort(checker, port, 30)};"
-                >
-                  {port.dataType}
-                </span>
-              </div>
+              <PortTypeBadge {checker} {port} align="right" />
               {#if port.description}
                 <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
                   {port.description}
@@ -488,34 +450,13 @@
   }
 
   /* Each line in a port occupies one 20px grid row: a label-only port
-     centers its single row, a label + description fills both. */
-  .flowdrop-workflow-node__port-content > div {
-    min-height: var(--fd-node-port-row-height);
-    align-items: center;
-  }
+     centers its single row, a label + description fills both. The label row
+     is <PortTypeBadge>, which owns that row height itself — scoped CSS does
+     not reach into a child component. */
 
   .flowdrop-workflow-node__port-content > p {
     min-height: var(--fd-node-port-row-height);
     line-height: var(--fd-node-port-row-height);
-  }
-
-  .flowdrop-badge {
-    padding: 2px 4px;
-    border-radius: var(--fd-radius-sm);
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .flowdrop-badge--error {
-    background-color: var(--fd-error);
-    color: var(--fd-error-foreground);
-  }
-
-  .flowdrop-badge--sm {
-    font-size: 10px;
-    padding: 2px 4px;
   }
 
   /* Handle overrides: hover scale (base 20px/12px from base.css) */
@@ -538,10 +479,6 @@
 
   .flowdrop-items--center {
     align-items: center;
-  }
-
-  .flowdrop-justify--end {
-    justify-content: flex-end;
   }
 
   .flowdrop-min-w--0 {
