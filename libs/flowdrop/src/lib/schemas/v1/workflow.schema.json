@@ -1122,7 +1122,14 @@
           "description": "Help text describing what this entry represents to external callers."
         },
         "dataType": {
-          "$ref": "#/$defs/NodeDataType"
+          "allOf": [
+            {
+              "$ref": "#/$defs/NodeDataType"
+            },
+            {
+              "description": "The port's LANE — what it is and what it may connect to — not the JSON\nSchema type of its value, which is `schema.type`. The two vocabularies\noverlap on `string`/`number`/`boolean`/`array` and diverge where it\nmatters: a `messages` port is a JSON `array`, an `error` port a JSON\n`object`. Derived by the server from the bound inner port and ignored\non write.\n"
+            }
+          ]
         },
         "required": {
           "type": "boolean",
@@ -1142,7 +1149,7 @@
               "$ref": "#/$defs/PortDataSchema"
             },
             {
-              "description": "JSON Schema describing the structure of data carried by this entry."
+              "description": "The JSON Schema fragment for this one port — a single property's\nschema (`{\"type\": \"array\"}`), not a whole object schema. Carries the\nstructural contract only: whatever the entry states itself (the lane,\n`name`, `description`, `examples`, `required`) is not repeated inside\nit. Derived by the server from the bound inner port and ignored on\nwrite; absent when the bound port declares no structural contract.\n"
             }
           ]
         },

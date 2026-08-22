@@ -228,6 +228,13 @@ WorkflowInterfaceEntry:
       description: Help text describing what this entry represents to external callers.
     dataType:
       $ref: './common.yaml#/NodeDataType'
+      description: |
+        The port's LANE — what it is and what it may connect to — not the JSON
+        Schema type of its value, which is `schema.type`. The two vocabularies
+        overlap on `string`/`number`/`boolean`/`array` and diverge where it
+        matters: a `messages` port is a JSON `array`, an `error` port a JSON
+        `object`. Derived by the server from the bound inner port and ignored
+        on write.
     required:
       type: boolean
       description: Whether callers must supply a value. Inputs only; ignored on outputs.
@@ -242,7 +249,13 @@ WorkflowInterfaceEntry:
         only; ignored on outputs. Never validated against `schema`.
     schema:
       $ref: './node.yaml#/PortDataSchema'
-      description: JSON Schema describing the structure of data carried by this entry.
+      description: |
+        The JSON Schema fragment for this one port — a single property's
+        schema (`{"type": "array"}`), not a whole object schema. Carries the
+        structural contract only: whatever the entry states itself (the lane,
+        `name`, `description`, `examples`, `required`) is not repeated inside
+        it. Derived by the server from the bound inner port and ignored on
+        write; absent when the bound port declares no structural contract.
     bindings:
       type: array
       items:

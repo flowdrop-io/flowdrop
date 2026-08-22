@@ -1427,6 +1427,16 @@ export interface PortBinding {
 }
 
 /**
+ * A single port's JSON Schema fragment as it rides a workflow's contract.
+ *
+ * Derived from {@link InputProperty} rather than restated, so the fragment
+ * vocabulary has one definition; every key is optional because an interface
+ * entry states its own annotations one level up and the server strips them
+ * from the fragment on the way out.
+ */
+export type WorkflowInterfaceSchema = Partial<InputProperty>;
+
+/**
  * One entry in a workflow's public contract. Owns its own identity: `id` is
  * stable and workflow-scoped, independent of whichever inner port it currently
  * binds to, so swapping or renaming a node does not silently break callers.
@@ -1451,7 +1461,23 @@ export interface WorkflowInterfaceEntry {
    * outputs. Never validated against `schema`.
    */
   examples?: unknown[];
-  schema?: InputSchema | OutputSchema;
+  /**
+   * The port's JSON Schema fragment — the shape of the value, as opposed to
+   * `dataType`, which is the lane it travels in. These are two vocabularies
+   * that overlap on `string`/`number`/`boolean`/`array` and diverge exactly
+   * where it matters: a `messages` port is an `array`, an `error` port is an
+   * `object`, and a named shape is whatever its schema says.
+   *
+   * A single PROPERTY fragment, not an object schema — this was typed
+   * `InputSchema | OutputSchema` (a whole `{properties: {...}}` object) while
+   * nothing populated it, which would have been wrong the moment something
+   * did. Every key is optional because the server strips what the entry
+   * already states: no `title`/`description`/`examples`/`required`, and no
+   * lane, since that is `dataType`.
+   *
+   * Absent when the bound port declares no structural contract at all.
+   */
+  schema?: WorkflowInterfaceSchema;
   /**
    * Inner ports this entry maps to. Every entry — input or output — must
    * resolve to exactly one binding; more than one is reported as `over-bound`.

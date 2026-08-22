@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`WorkflowInterfaceEntry.schema` is a property fragment, not an object schema.** It was typed `InputSchema | OutputSchema` — a whole `{properties: {…}}` object — while nothing in the library populated it, which would have been wrong the moment something did. It is now `WorkflowInterfaceSchema` (`Partial<InputProperty>`): one port's JSON Schema fragment, every key optional, derived from the existing property type rather than restated. No runtime behaviour changes; nothing read or wrote this key.
+
+- **The server's `dataType` on an interface entry is now the port's lane.** This library has always typed `WorkflowInterfaceEntry.dataType` as `NodeDataType` and rendered it through the lane-vocabulary picker, but fddo filled it with the fragment's JSON Schema `type` — so an `error` port arrived as `object` and a `messages` port as `array`, and the panel's lane chip contradicted the port the entry was bound to. fddo now sends the lane there and the JSON Schema fragment in `schema`. Nothing changes on this side of the wire; the values simply stop lying. **Needs a backend that serves it** — an older fddo still sends the JSON Schema word.
+  - Unchanged, and worth knowing: the server derives both keys from the bound inner port and **ignores them on write**. An author picking a lane in the interface panel is choosing a value the next read replaces. Persisting an author-chosen lane needs a server column that does not exist yet.
+
 ## [2.4.0] - 2026-08-23
 
 ### Added
