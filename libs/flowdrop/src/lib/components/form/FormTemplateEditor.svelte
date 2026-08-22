@@ -149,9 +149,7 @@
           nodes,
           edges,
           variables,
-          workflowId,
-          authProvider,
-          fd.portCompatibility
+          { workflowId, authProvider, portCompatibility: fd.portCompatibility }
         );
       } catch (error) {
         logger.error('Failed to load variable schema:', error);

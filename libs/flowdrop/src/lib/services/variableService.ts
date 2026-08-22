@@ -13,7 +13,6 @@ import type {
   TemplateVariable,
   TemplateVariableType,
   NodePort,
-  PortSchema,
   OutputProperty,
   InputProperty,
   BaseProperty,
@@ -103,6 +102,22 @@ function propertyToTemplateVariable(
 }
 
 /**
+ * What a reader needs from whichever schema is in force.
+ *
+ * The two sources are typed differently and neither is wrong: a port declares
+ * an `OutputSchema`/`InputSchema` (always an object, properties required), a
+ * lane declares a `PortSchema` (may be a top-level array, and open-ended
+ * because a JSON Schema's keyword space is not ours to enumerate). Returning
+ * the union of the two meant every reader casting its way back out to
+ * `BaseProperty`. This is the intersection they actually read instead, so both
+ * flow in and nothing casts.
+ */
+interface SchemaInForce {
+  type?: string;
+  properties?: Record<string, BaseProperty>;
+}
+
+/**
  * The schema in force for a port: its own if it has one, else its lane's.
  *
  * A port's own schema is the refinement — narrower, and specific to this port —
@@ -121,7 +136,7 @@ function propertyToTemplateVariable(
 function resolvePortSchema(
   port: NodePort,
   checker?: PortCompatibilityChecker
-): NodePort['schema'] | PortSchema | undefined {
+): SchemaInForce | undefined {
   if (port.schema) return port.schema;
   if (!checker || !port.dataType) return undefined;
   return checker.getDataTypeConfig(port.dataType)?.schema;
@@ -140,7 +155,7 @@ function resolvePortSchema(
 function portToTemplateVariable(
   port: NodePort,
   sourceNode: string,
-  schema?: NodePort['schema'] | PortSchema
+  schema?: SchemaInForce
 ): TemplateVariable {
   // If a schema is in force, use it to build a detailed variable
   if (schema && schema.properties) {
@@ -157,7 +172,7 @@ function portToTemplateVariable(
     for (const [propName, propValue] of Object.entries(schema.properties)) {
       variable.properties![propName] = propertyToTemplateVariable(
         propName,
-        propValue as BaseProperty,
+        propValue,
         port.id,
         sourceNode
       );
@@ -545,36 +560,67 @@ export function mergeVariableSchemas(
 }
 
 /**
+ * The optional context {@link getVariableSchema} resolves variables against.
+ *
+ * A bag rather than three more positional parameters: the required five say
+ * WHAT to resolve, and everything here says what is available while doing it.
+ * The signature had grown to eight positionals, of which the last three were
+ * optional and one was a service — a call site read
+ * `..., workflowId, authProvider, fd.portCompatibility)` and there was no
+ * reading it without counting commas.
+ */
+export interface GetVariableSchemaContext {
+  /** Workflow id, for the API mode's endpoint interpolation. */
+  workflowId?: string;
+
+  /** Auth provider for the API-mode request. */
+  authProvider?: AuthProvider;
+
+  /**
+   * The instance's port compatibility checker, used to read the schema a port's
+   * LANE declares when the port declares none of its own. Omitting it costs
+   * only depth — see {@link GetAvailableVariablesOptions.portCompatibility}.
+   */
+  portCompatibility?: PortCompatibilityChecker;
+}
+
+/**
  * Gets variable schema using the appropriate mode (API, schema-based, or hybrid).
  * This is the main orchestration function that determines how to fetch variables
  * based on the configuration.
  *
+ * @param endpointConfig - API endpoint configuration, or null when there is none
  * @param node - The current node being configured
  * @param nodes - All nodes in the workflow
  * @param edges - All edges in the workflow
  * @param config - Template variables configuration
- * @param workflowId - Optional workflow ID for API context
- * @param authProvider - Optional auth provider for API requests
- * @param portCompatibility - Optional checker, used to read the schema a
- *   port's lane declares so variables can drill into its fields
+ * @param context - Optional resolution context: workflow id, auth provider, and
+ *   the port compatibility checker
  * @returns A promise that resolves to the variable schema
  *
  * @example
  * ```typescript
  * // Schema-based mode (existing behavior)
  * const config = { ports: ["data"], schema: {...} };
- * const schema = await getVariableSchema(node, nodes, edges, config);
+ * const schema = await getVariableSchema(null, node, nodes, edges, config);
  *
  * // API mode
  * const config = { api: { endpoint: { url: "/api/variables/{workflowId}/{nodeId}" } } };
- * const schema = await getVariableSchema(node, nodes, edges, config, workflowId, authProvider);
+ * const schema = await getVariableSchema(endpointConfig, node, nodes, edges, config, {
+ *   workflowId,
+ *   authProvider
+ * });
  *
- * // Hybrid mode (API + static schema)
+ * // Hybrid mode (API + static schema), drilling into each port's lane schema
  * const config = {
  *   schema: {...},
  *   api: { endpoint: {...}, mergeWithSchema: true }
  * };
- * const schema = await getVariableSchema(node, nodes, edges, config, workflowId, authProvider);
+ * const schema = await getVariableSchema(endpointConfig, node, nodes, edges, config, {
+ *   workflowId,
+ *   authProvider,
+ *   portCompatibility: fd.portCompatibility
+ * });
  * ```
  */
 export async function getVariableSchema(
@@ -583,10 +629,9 @@ export async function getVariableSchema(
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
   config: TemplateVariablesConfig,
-  workflowId?: string,
-  authProvider?: AuthProvider,
-  portCompatibility?: PortCompatibilityChecker
+  context?: GetVariableSchemaContext
 ): Promise<VariableSchema> {
+  const { workflowId, authProvider, portCompatibility } = context ?? {};
   let resultSchema: VariableSchema = { variables: {} };
 
   // Try API mode first (if configured)

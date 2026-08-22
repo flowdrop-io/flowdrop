@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Template variables drill into the fields a port's lane declares.** A template author could reach an `error` port and nothing inside it. A port with no schema of its own now resolves one from its lane, so the four fields of an error payload are offered as `error.message`, `error.code`, `error.node_id` and `error.retryable` — declared once on the lane, restated nowhere. `NodePort.schema` stays empty and stays the per-port refinement slot: what wants it is the narrower schema a run observed for this port on this node, which is per-instance information and could never travel on a payload cached per node type.
   - **This needs a backend that serves it.** fddo serves lane schemas on `2.x`; anything older serves none, and autocomplete then stops at the port exactly as it did before. One caveat worth knowing: a site with a stored `port_config` entry for a lane replaces the composed entry outright, `schema` included — so a site that once customised the `error` lane sees no field list until it re-adds one. That is the port-config overlay's existing whole-entry merge semantics, not a new rule.
 
+### Changed
+
+- **`getVariableSchema()`'s trailing arguments became one context object.** It had grown to eight positionals, the last three optional and one of them a service, so a call site read `..., workflowId, authProvider, fd.portCompatibility)` and could not be read without counting commas. It is now `(endpointConfig, node, nodes, edges, config, {workflowId, authProvider, portCompatibility})`. **Not a public break** — `variableService` is not exported from any package entry point; the change is listed because its docblock's examples were wrong in the released source (they omitted the first argument entirely) and are now correct.
+
 ### Deprecated
 
 - **`portGlyph()`** — use `SHAPE_GLYPH[portShape(checker, port)]`, which is what it does. Both it and the map shipped in 2.3.0's public surface and only one of them needed to. It keeps working until 3.0.0.
