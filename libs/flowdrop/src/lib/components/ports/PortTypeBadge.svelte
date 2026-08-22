@@ -104,8 +104,12 @@
     justify-content: flex-end;
   }
 
-  /* Ellipsize a long port name rather than widen the node. */
+  /* Ellipsize a long port name rather than widen the node. The name absorbs
+     the row's slack, which is what puts the shape symbol and the lane chip at
+     opposite ends: the symbols read as one column against the node edge beside
+     their handles, the chips as a second column against the node's inside. */
   .fd-port-label__name {
+    flex: 1 1 auto;
     min-width: 0;
     font-size: var(--fd-text-xs);
     line-height: 16px;
