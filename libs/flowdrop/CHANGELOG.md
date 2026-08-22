@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The sink `mixed` is slate, not teal** — a port that constrains nothing has nothing to claim, and slate is already the colour an unrecognised lane falls back to. On teal it sat in the media family beside `video`, sharing a hue with the one thing it is definitionally not. Its glyph was already `?`; now the colour agrees. **The served port config decides this at runtime** — a backend still serving teal for `mixed` still renders teal, so fddo moves with it.
+
 - **Pipeline signal refusals are classified by the backend's `error_code`, not by its prose**
   - All three of the reference backend's signal refusals answer `409`, so `classifyRefusal()` told them apart by matching substrings of the human `error` string — `terminal`, `already pending`, `no active pause`. That made the server's wording load-bearing across a repository boundary: a reword that dropped a substring silently reclassified the refusal, the operator was shown the wrong explanation, and nothing errored on either side. The backend now publishes a stable `error_code` beside `error` (`PIPELINE_TERMINAL`, `INWARD_SIGNAL_ALREADY_PENDING`, `NO_ACTIVE_PAUSE`), and it is preferred whenever present.
   - **The substring path stays as the fallback**, because this client talks to backends it does not ship with and one predating the codes still answers a 409 with nothing but prose. It is removed when the oldest supported backend emits codes, not when the newest does.

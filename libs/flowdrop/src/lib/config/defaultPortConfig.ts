@@ -65,11 +65,15 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
     // The sink: what a port declares when its schema declares no shape.
     // Wire anything in, wire it anywhere. `any` was its second spelling and
     // is retired.
+    //
+    // Slate, not a lane hue: a port that constrains nothing has nothing to
+    // claim, and slate is already what an unrecognised lane falls back to. It
+    // sat on teal, which put the sink in the media family beside `video`.
     {
       id: 'mixed',
       name: 'Mixed',
       description: 'A value of any type',
-      color: 'var(--fd-node-teal)',
+      color: 'var(--fd-node-slate)',
       category: 'basic',
       enabled: true
     },
