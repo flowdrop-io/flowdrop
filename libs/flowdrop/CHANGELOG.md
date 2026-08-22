@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.3.0] - 2026-08-22
 
 ### Added
 
@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`pipelineSignalService` has tests** — it had none. Every refusal it returns drives a different user-visible explanation, and the mapping was entirely unasserted. Both classification paths are now pinned, along with accepted-is-not-applied, the unsupported-backend case, and the synthesized-message fallback.
 
 ### Fixed
+
+- **On library defaults, no port could connect to anything** — `createDefaultConfig()` shipped `ports` as `{dataTypes: [], compatibilityRules: [], defaultDataType: 'mixed'}`. That reads as a permissive default and is the exact opposite of one: `buildCompatibilityMap()` seeds itself from `dataTypes`, so an empty list means every port refuses every edge, and the `mixed` default named a lane the list never declared. It points at `DEFAULT_PORT_CONFIG` now — the shipped defaults are the default.
+
+- **`DEFAULT_PORT_CONFIG` was missing three lanes** — `any`, `mixed` and `messages`. Absent is not "unstyled": a lane the list never declares is compatible with nothing, not even another port of its own lane, so a `messages` port on library defaults would not wire up at all. `mixed` is now the sink and carries rules in both directions — it is worn by outputs as much as inputs, so letting things in is only half the job, and an alias of `trigger` would not have covered the other half because aliases copy the outgoing set only. `defaultDataType` becomes `mixed`: a port with no declared lane constrains nothing. The ids now match the backend's `PortDataType` enum exactly, and nothing enforces that they keep matching — until the port config is generated, a lane added server-side has to be added here in the same change.
 
 - **The `messages` lane had no colour at all** — its config named `var(--fd-node-fuchsia)`, a token referenced in exactly one place in the library and defined in none. Every use resolved to nothing: the chip tint, the shape symbol and the port handle all fell out as invalid at computed-value time, and the `--fd-node-slate` fallback could not catch it (the property _was_ set — to a string naming an undefined property). The token is now defined in both themes, `#d946ef` light and `#e879f9` dark, following the ramp's own construction. It also stopped being survivable: deriving the fallback colour map from the shipped config (below) copies the broken value into the pre-load path, where `messages` previously fell through to a valid slate.
 
