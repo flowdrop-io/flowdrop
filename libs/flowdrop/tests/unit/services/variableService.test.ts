@@ -14,7 +14,14 @@ import {
   hasChildren,
   mergeVariableSchemas
 } from '$lib/services/variableService.js';
-import type { WorkflowNode, WorkflowEdge, VariableSchema, NodePort } from '$lib/types/index.js';
+import type {
+  WorkflowNode,
+  WorkflowEdge,
+  VariableSchema,
+  NodePort,
+  PortConfig
+} from '$lib/types/index.js';
+import { PortCompatibilityChecker } from '$lib/utils/connections.js';
 
 vi.mock('$lib/utils/logger.js', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() }
@@ -68,6 +75,37 @@ function makeEdge(
     sourceHandle: `${source}-output-${sourcePortId}`,
     targetHandle: `${target}-input-${targetPortId}`
   };
+}
+
+/**
+ * A checker over a served vocabulary where the `error` lane declares a schema,
+ * as the backend now serves it, plus a shapeless lane and an alias of the
+ * shaped one.
+ */
+function makeChecker(): PortCompatibilityChecker {
+  const portConfig: PortConfig = {
+    dataTypes: [
+      {
+        id: 'error',
+        name: 'Error',
+        color: 'var(--fd-node-red)',
+        category: 'complex',
+        aliases: ['failure'],
+        schema: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', description: 'The failure, in one sentence.' },
+            retryable: { type: 'boolean', description: 'Whether a retry could help.' }
+          }
+        }
+      },
+      { id: 'ticket', name: 'Ticket', color: 'var(--fd-node-slate)' },
+      { id: 'string', name: 'String', color: 'var(--fd-node-blue)' }
+    ],
+    compatibilityRules: [],
+    defaultDataType: 'mixed'
+  };
+  return new PortCompatibilityChecker(portConfig);
 }
 
 // --- Tests ---
@@ -144,6 +182,90 @@ describe('variableService', () => {
 
       expect(Object.keys(result.variables)).toContain('data');
       expect(result.variables.data.type).toBe('string');
+    });
+
+    it("drills into the fields the port's LANE declares", () => {
+      // The payoff: `error` carries a shape, no port restates it, and an
+      // author writing a template gets the fields rather than only the port.
+      const outputPort = makePort({ id: 'error', name: 'Error', dataType: 'error' });
+      const upstream = makeNode('upstream', [outputPort]);
+      const downstream = makeNode('downstream', [], [makePort({ id: 'input', type: 'input' })]);
+      const edge = makeEdge('upstream', 'downstream', 'error', 'input');
+
+      const result = getAvailableVariables(downstream, [upstream, downstream], [edge], {
+        portCompatibility: makeChecker()
+      });
+
+      expect(Object.keys(result.variables)).toContain('message');
+      expect(Object.keys(result.variables)).toContain('retryable');
+      expect(result.variables.message.type).toBe('string');
+      expect(result.variables.retryable.type).toBe('boolean');
+    });
+
+    it('resolves the lane through an alias rather than a private lookup', () => {
+      // A table of its own could not follow `failure` back to `error`, and the
+      // same lane would come back styled and schemaless at once.
+      const outputPort = makePort({ id: 'err', name: 'Error', dataType: 'failure' });
+      const upstream = makeNode('upstream', [outputPort]);
+      const downstream = makeNode('downstream', [], [makePort({ id: 'input', type: 'input' })]);
+      const edge = makeEdge('upstream', 'downstream', 'err', 'input');
+
+      const result = getAvailableVariables(downstream, [upstream, downstream], [edge], {
+        portCompatibility: makeChecker()
+      });
+
+      expect(Object.keys(result.variables)).toContain('message');
+    });
+
+    it("prefers the port's own schema over its lane's", () => {
+      // The port slot is the refinement — the narrower schema a run observed
+      // for this node in this workflow — so it wins over the lane's.
+      const outputPort = makePort({
+        id: 'error',
+        name: 'Error',
+        dataType: 'error',
+        schema: {
+          type: 'object',
+          properties: { observed_field: { type: 'string', description: 'Seen in a run.' } }
+        }
+      });
+      const upstream = makeNode('upstream', [outputPort]);
+      const downstream = makeNode('downstream', [], [makePort({ id: 'input', type: 'input' })]);
+      const edge = makeEdge('upstream', 'downstream', 'error', 'input');
+
+      const result = getAvailableVariables(downstream, [upstream, downstream], [edge], {
+        portCompatibility: makeChecker()
+      });
+
+      expect(Object.keys(result.variables)).toContain('observed_field');
+      expect(Object.keys(result.variables)).not.toContain('message');
+    });
+
+    it('falls back to the port itself for a lane that promises nothing', () => {
+      const outputPort = makePort({ id: 'ticket', name: 'Ticket', dataType: 'ticket' });
+      const upstream = makeNode('upstream', [outputPort]);
+      const downstream = makeNode('downstream', [], [makePort({ id: 'ticket', type: 'input' })]);
+      const edge = makeEdge('upstream', 'downstream', 'ticket', 'ticket');
+
+      const result = getAvailableVariables(downstream, [upstream, downstream], [edge], {
+        portCompatibility: makeChecker()
+      });
+
+      expect(Object.keys(result.variables)).toEqual(['ticket']);
+    });
+
+    it('resolves variables unchanged when no checker is passed', () => {
+      // Omitting the checker costs depth, never correctness: this is exactly
+      // the pre-shape behaviour, so an embedder that never passes one sees no
+      // change.
+      const outputPort = makePort({ id: 'error', name: 'Error', dataType: 'error' });
+      const upstream = makeNode('upstream', [outputPort]);
+      const downstream = makeNode('downstream', [], [makePort({ id: 'error', type: 'input' })]);
+      const edge = makeEdge('upstream', 'downstream', 'error', 'error');
+
+      const result = getAvailableVariables(downstream, [upstream, downstream], [edge]);
+
+      expect(Object.keys(result.variables)).toEqual(['error']);
     });
 
     it('respects targetPortIds filter — excludes unspecified ports', () => {

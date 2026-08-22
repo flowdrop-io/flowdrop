@@ -577,7 +577,10 @@
       // Compute the variable schema with optional port filtering and port name prefixing
       const computedSchema = getAvailableVariables(node, workflowNodes, workflowEdges, {
         targetPortIds: variablesConfig?.ports,
-        includePortName: variablesConfig?.includePortName
+        includePortName: variablesConfig?.includePortName,
+        // Lets a variable drill into the fields its port's LANE declares —
+        // `error.message` rather than only `error`.
+        portCompatibility: fd.portCompatibility
       });
 
       // Merge computed schema with any pre-defined schema

@@ -13,6 +13,7 @@ import type {
   TemplateVariable,
   TemplateVariableType,
   NodePort,
+  PortSchema,
   OutputProperty,
   InputProperty,
   BaseProperty,
@@ -20,6 +21,7 @@ import type {
   AuthProvider
 } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
+import type { PortCompatibilityChecker } from '../utils/connections.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -101,16 +103,47 @@ function propertyToTemplateVariable(
 }
 
 /**
+ * The schema in force for a port: its own if it has one, else its lane's.
+ *
+ * A port's own schema is the refinement — narrower, and specific to this port —
+ * so it wins. The lane's schema is what a port shape declares, served once on
+ * the lane entry for every port that declares the lane, which is how the
+ * `error` port comes to know it carries `{message, code, node_id, retryable}`.
+ *
+ * Resolved through the checker rather than a private lookup, for the reason
+ * `portShape()` is: a table of its own cannot follow an alias, so the same
+ * lane could come back styled and schemaless at once.
+ *
+ * @param port - The port to resolve a schema for
+ * @param checker - The instance's compatibility checker, when one is available
+ * @returns The schema in force, or undefined when neither declares one
+ */
+function resolvePortSchema(
+  port: NodePort,
+  checker?: PortCompatibilityChecker
+): NodePort['schema'] | PortSchema | undefined {
+  if (port.schema) return port.schema;
+  if (!checker || !port.dataType) return undefined;
+  return checker.getDataTypeConfig(port.dataType)?.schema;
+}
+
+/**
  * Creates a TemplateVariable from a NodePort.
- * Uses the port's schema if available, otherwise creates a basic variable.
+ * Uses the schema in force for the port if there is one, otherwise creates a
+ * basic variable from the port's lane.
  *
  * @param port - The output port to convert
  * @param sourceNode - The source node ID
+ * @param schema - The schema in force, from {@link resolvePortSchema}
  * @returns A TemplateVariable representing the port's data
  */
-function portToTemplateVariable(port: NodePort, sourceNode: string): TemplateVariable {
-  // If the port has a schema, use it to build a detailed variable
-  if (port.schema && port.schema.properties) {
+function portToTemplateVariable(
+  port: NodePort,
+  sourceNode: string,
+  schema?: NodePort['schema'] | PortSchema
+): TemplateVariable {
+  // If a schema is in force, use it to build a detailed variable
+  if (schema && schema.properties) {
     const variable: TemplateVariable = {
       name: port.id,
       label: port.name,
@@ -121,7 +154,7 @@ function portToTemplateVariable(port: NodePort, sourceNode: string): TemplateVar
       properties: {}
     };
 
-    for (const [propName, propValue] of Object.entries(port.schema.properties)) {
+    for (const [propName, propValue] of Object.entries(schema.properties)) {
       variable.properties![propName] = propertyToTemplateVariable(
         propName,
         propValue as BaseProperty,
@@ -247,6 +280,16 @@ export interface GetAvailableVariablesOptions {
    * When false (default), schema properties are unpacked as top-level variables.
    */
   includePortName?: boolean;
+
+  /**
+   * The instance's port compatibility checker, used to read the schema a
+   * port's LANE declares when the port declares none of its own.
+   *
+   * Optional, and omitting it costs only depth: variables still resolve, they
+   * just stop at the port instead of drilling into its fields. That is the
+   * pre-shape behaviour, so an embedder that never passes it sees no change.
+   */
+  portCompatibility?: PortCompatibilityChecker;
 }
 
 /**
@@ -278,7 +321,7 @@ export function getAvailableVariables(
   options?: GetAvailableVariablesOptions
 ): VariableSchema {
   const variables: Record<string, TemplateVariable> = {};
-  const { targetPortIds, includePortName } = options ?? {};
+  const { targetPortIds, includePortName, portCompatibility } = options ?? {};
 
   // Find all upstream connections
   const connections = findUpstreamConnections(node, nodes, edges);
@@ -300,11 +343,15 @@ export function getAvailableVariables(
 
     if (!sourcePort) continue;
 
-    // If the source port has a schema with top-level properties,
-    // unpack them as top-level variables (unless includePortName is true)
-    if (sourcePort.schema?.properties && !includePortName) {
+    // The schema in force for this port: its own, else the one its lane
+    // declares. Resolved once, because both branches below read it.
+    const sourceSchema = resolvePortSchema(sourcePort, portCompatibility);
+
+    // If the schema has top-level properties, unpack them as top-level
+    // variables (unless includePortName is true)
+    if (sourceSchema?.properties && !includePortName) {
       // Unpack schema properties as top-level variables
-      for (const [propName, propValue] of Object.entries(sourcePort.schema.properties)) {
+      for (const [propName, propValue] of Object.entries(sourceSchema.properties)) {
         // Skip if we already have a variable with this name
         if (variables[propName]) continue;
 
@@ -322,7 +369,7 @@ export function getAvailableVariables(
       // Skip if we already have a variable with this name
       if (variables[variableName]) continue;
 
-      const variable = portToTemplateVariable(sourcePort, sourceNode.id);
+      const variable = portToTemplateVariable(sourcePort, sourceNode.id, sourceSchema);
       variable.name = variableName;
       variable.label = targetPort?.name ?? sourcePort.name;
       variables[variableName] = variable;
@@ -508,6 +555,8 @@ export function mergeVariableSchemas(
  * @param config - Template variables configuration
  * @param workflowId - Optional workflow ID for API context
  * @param authProvider - Optional auth provider for API requests
+ * @param portCompatibility - Optional checker, used to read the schema a
+ *   port's lane declares so variables can drill into its fields
  * @returns A promise that resolves to the variable schema
  *
  * @example
@@ -535,7 +584,8 @@ export async function getVariableSchema(
   edges: WorkflowEdge[],
   config: TemplateVariablesConfig,
   workflowId?: string,
-  authProvider?: AuthProvider
+  authProvider?: AuthProvider,
+  portCompatibility?: PortCompatibilityChecker
 ): Promise<VariableSchema> {
   let resultSchema: VariableSchema = { variables: {} };
 
@@ -565,7 +615,8 @@ export async function getVariableSchema(
         if (config.api.mergeWithPorts) {
           const portSchema = getAvailableVariables(node, nodes, edges, {
             targetPortIds: config.ports,
-            includePortName: config.includePortName
+            includePortName: config.includePortName,
+            portCompatibility
           });
           resultSchema = mergeVariableSchemas(resultSchema, portSchema);
         }
@@ -594,7 +645,8 @@ export async function getVariableSchema(
   if (config.ports !== undefined || !config.api) {
     const portSchema = getAvailableVariables(node, nodes, edges, {
       targetPortIds: config.ports,
-      includePortName: config.includePortName
+      includePortName: config.includePortName,
+      portCompatibility
     });
     resultSchema = portSchema;
   }

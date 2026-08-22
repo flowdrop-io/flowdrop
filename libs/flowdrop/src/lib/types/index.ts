@@ -100,6 +100,39 @@ export interface PortDataTypeConfig {
   aliases?: string[];
   /** Whether this data type is enabled */
   enabled?: boolean;
+  /**
+   * The JSON Schema this lane promises, when a port shape declares one.
+   *
+   * This is what lets template autocomplete offer `error.message` rather than
+   * only `error`: the lane says what fields travel on it, once, for every port
+   * that declares the lane. Absent — not empty — when the lane promises
+   * nothing beyond its name, so "no promise" stays distinguishable from
+   * "an object with no properties".
+   *
+   * Authoring information only. Nothing validates a value against it, and a
+   * port may still carry a NARROWER {@link NodePort.schema} of its own, which
+   * wins.
+   */
+  schema?: PortSchema;
+}
+
+/**
+ * A JSON Schema as served on a lane entry or a port.
+ *
+ * Deliberately looser than {@link OutputSchema}: a lane may promise something
+ * that is not an object at all (the `messages` lane is a top-level `array`),
+ * and a JSON Schema's keyword space is not ours to enumerate — the backend
+ * stores it untyped for exactly that reason. Readers take `properties` when
+ * there is one and fall back to the port itself when there is not.
+ */
+export interface PortSchema {
+  type?: string;
+  title?: string;
+  description?: string;
+  required?: string[];
+  properties?: Record<string, BaseProperty>;
+  items?: BaseProperty;
+  [key: string]: unknown;
 }
 
 /**
@@ -165,6 +198,13 @@ export interface NodePort {
   /**
    * Optional JSON Schema describing the structure of data on this port.
    * Used for template variable autocomplete to drill into nested properties.
+   *
+   * This is the per-port REFINEMENT slot, and it wins over the schema the
+   * port's lane declares ({@link PortDataTypeConfig.schema}), which is where a
+   * shape's own field list travels. It is left for the narrower thing: a
+   * schema that applies to this port on this node in this workflow rather than
+   * to the lane in general — a lane promising `object` whose values turn out
+   * to carry `{title, description}`. Nothing populates it yet.
    */
   schema?: OutputSchema | InputSchema;
 }
