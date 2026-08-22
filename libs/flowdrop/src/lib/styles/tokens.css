@@ -321,6 +321,7 @@
   --fd-node-lime: #84cc16; /* @public */
   --fd-node-slate: #64748b; /* @public */
   --fd-node-purple: #9333ea; /* @public */
+  --fd-node-fuchsia: #d946ef; /* @public */
 
   /** Icon on node squircle: dark in light theme, white in dark theme */
   --fd-node-icon: var(--_gray-9); /* @public */
@@ -466,6 +467,7 @@
   --fd-node-lime: #a3e635;
   --fd-node-slate: #94a3b8;
   --fd-node-purple: #c084fc;
+  --fd-node-fuchsia: #e879f9;
 
   /** Icon on node squircle: white in dark theme */
   --fd-node-icon: #ffffff;

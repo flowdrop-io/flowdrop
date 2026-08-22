@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **The `messages` lane had no colour at all** — its config named `var(--fd-node-fuchsia)`, a token referenced in exactly one place in the library and defined in none. Every use resolved to nothing: the chip tint, the port handle and the badge all fell out as invalid at computed-value time, and the `--fd-node-slate` fallback could not catch it (the property _was_ set — to a string naming an undefined property). The token is now defined in both themes, `#d946ef` light and `#e879f9` dark, following the ramp's own construction.
+
 ### Changed
 
 - **Pipeline signal refusals are classified by the backend's `error_code`, not by its prose**
