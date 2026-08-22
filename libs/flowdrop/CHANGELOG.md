@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **The reserved `error` port drew `?` on every node.** fddo declares the `error` lane as `type: object` and has since its shape registry shipped; the client's lane table has no `error` entry, so the shape fell through to `unknown` while the lane chip beside it was correctly coloured red and — after the change above — while autocomplete was offering the payload's four fields. It draws `{}` now. Same class of disagreement for any served lane the table does not name.
 
+- **Six responsive utility classes had never matched anything.** `.flowdrop-sm\:flex`, `.flowdrop-md\:hidden` and their siblings escaped the colon twice, so the selectors were never valid; nothing in the library or the demo apps used them, and this repo lints no CSS, so nothing was ever going to say so. Removed rather than repaired — two display utilities across three breakpoints is not a responsive system, and a consumer needing one can write it against their own breakpoints.
+
 ## [2.3.0] - 2026-08-22
 
 ### Added

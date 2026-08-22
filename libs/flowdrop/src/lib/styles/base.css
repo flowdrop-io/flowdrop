@@ -1026,37 +1026,6 @@ p {
   opacity: 0.6;
 }
 
-/* Responsive utilities */
-@media (min-width: 640px) {
-  .flowdrop-sm\:flex {
-    display: flex;
-  }
-
-  .flowdrop-sm\:hidden {
-    display: none;
-  }
-}
-
-@media (min-width: 768px) {
-  .flowdrop-md\:flex {
-    display: flex;
-  }
-
-  .flowdrop-md\:hidden {
-    display: none;
-  }
-}
-
-@media (min-width: 1024px) {
-  .flowdrop-lg\:flex {
-    display: flex;
-  }
-
-  .flowdrop-lg\:hidden {
-    display: none;
-  }
-}
-
 /* Color system - Category colors */
 .flowdrop-color--primary {
   background-color: var(--fd-primary);
