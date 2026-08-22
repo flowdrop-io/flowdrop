@@ -8,8 +8,11 @@
  *
  * The two totality blocks are the point: a lane that has a colour and no shape
  * renders a coloured `?`, which is the disagreement this file exists to make
- * impossible. When a server starts declaring shapes, `portShape` reads them
- * from the checker it already takes and this file grows a block.
+ * impossible.
+ *
+ * The block that block predicted is now here — `a served lane schema outranks
+ * the table` — because fddo serves `PortDataTypeConfig.schema` and its `type`
+ * is the shape, said by the side that declares it.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -20,7 +23,6 @@ import {
   laneShape,
   portShape,
   portGlyph,
-  portShapeLabel,
   type PortShape
 } from '$lib/utils/portShape.js';
 import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
@@ -169,16 +171,112 @@ describe('unknown lanes', () => {
   });
 });
 
-describe('portShapeLabel', () => {
+describe('shape labels', () => {
+  /** What PortShapeSymbol does for its tooltip: one shape, two readings. */
+  const labelFor = (port: { dataType?: string }) => SHAPE_LABEL[portShape(checker, port)];
+
   it.each(SHAPES)('shape `%s` has a non-empty human label', (shape) => {
     expect(SHAPE_LABEL[shape]).toBeTruthy();
     expect(SHAPE_LABEL[shape].trim().length).toBeGreaterThan(0);
   });
 
   it('labels a port through its lane', () => {
-    expect(portShapeLabel(checker, { dataType: 'messages' })).toBe('list');
-    expect(portShapeLabel(checker, { dataType: 'tool' })).toBe('callable');
-    expect(portShapeLabel(checker, { dataType: 'order' })).toBe('unknown shape');
-    expect(portShapeLabel(checker, {})).toBe('unknown shape');
+    expect(labelFor({ dataType: 'messages' })).toBe('list');
+    expect(labelFor({ dataType: 'tool' })).toBe('callable');
+    expect(labelFor({ dataType: 'order' })).toBe('unknown shape');
+    expect(labelFor({})).toBe('unknown shape');
+  });
+});
+
+describe('a served lane schema outranks the table', () => {
+  /**
+   * A payload shaped like fddo 2.x's: `error` and `messages` carry the schema
+   * their shape plugin declares, `url` carries one that disagrees with the
+   * table on purpose, and `note` carries a schema with no `type` at all.
+   */
+  const served = new PortCompatibilityChecker({
+    ...DEFAULT_PORT_CONFIG,
+    dataTypes: [
+      ...DEFAULT_PORT_CONFIG.dataTypes.map((dt) =>
+        dt.id === 'messages'
+          ? { ...dt, schema: { type: 'array', items: { type: 'object' as const } } }
+          : dt.id === 'url'
+            ? { ...dt, schema: { type: 'array' } }
+            : dt
+      ),
+      {
+        id: 'error',
+        name: 'Error',
+        color: 'var(--fd-node-red)',
+        schema: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' as const },
+            code: { type: 'string' as const },
+            node_id: { type: 'string' as const },
+            retryable: { type: 'boolean' as const }
+          }
+        }
+      },
+      { id: 'count', name: 'Count', color: 'var(--fd-node-blue)', schema: { type: 'integer' } },
+      {
+        id: 'note',
+        name: 'Note',
+        color: 'var(--fd-node-lime)',
+        schema: { properties: { body: { type: 'string' as const } } }
+      },
+      { id: 'nothing', name: 'Nothing', color: 'var(--fd-node-slate)', schema: { type: 'null' } }
+    ]
+  });
+
+  it('shapes the reserved `error` lane, which is in no client table', () => {
+    // The regression this block exists for: fddo declares `error` as
+    // `type: object` and the client drew `?` on every node's error port.
+    expect(laneShape('error')).toBe('unknown');
+    expect(portShape(served, { dataType: 'error' })).toBe('object');
+    expect(portGlyph(served, { dataType: 'error' })).toBe('{}');
+  });
+
+  it('shapes a site lane the client has never heard of', () => {
+    expect(portGlyph(served, { dataType: 'count' })).toBe('#');
+  });
+
+  it('lets a served schema disagree with the table and win', () => {
+    expect(laneShape('url')).toBe('string');
+    expect(portGlyph(served, { dataType: 'url' })).toBe('[]');
+  });
+
+  it('agrees with the table where fddo and the table already agreed', () => {
+    expect(portGlyph(served, { dataType: 'messages' })).toBe('[]');
+  });
+
+  it('falls back to the table when the schema declares no `type`', () => {
+    expect(portShape(served, { dataType: 'note' })).toBe('unknown');
+  });
+
+  it('falls back to the table for a schema type with no glyph', () => {
+    // `null` is deliberately absent from SCHEMA_TYPE_SHAPE.
+    expect(portShape(served, { dataType: 'nothing' })).toBe('unknown');
+  });
+
+  it('reads the schema of the lane an alias resolves to', () => {
+    const aliased = new PortCompatibilityChecker({
+      ...DEFAULT_PORT_CONFIG,
+      dataTypes: [
+        {
+          id: 'error',
+          name: 'Error',
+          color: 'var(--fd-node-red)',
+          aliases: ['failure'],
+          schema: { type: 'object' }
+        }
+      ]
+    });
+
+    expect(portGlyph(aliased, { dataType: 'failure' })).toBe('{}');
+  });
+
+  it('still answers `?` for a lane served without a schema', () => {
+    expect(portGlyph(checker, { dataType: 'file' })).toBe('?');
   });
 });

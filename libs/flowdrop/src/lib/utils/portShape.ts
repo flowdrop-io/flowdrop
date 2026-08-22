@@ -10,23 +10,33 @@
  *
  * ## Where the shape comes from
  *
- * The server's `NodePort` DTO carries no JSON Schema type today (`schema?` is
- * declared for template autocomplete and no producer populates it), so the
- * shape is derived client-side from the lane. Every lane FlowDrop ships implies
- * exactly one shape, so the map below answers the question against every
- * backend — including older fddo and third-party servers that only implement
- * the port-config endpoint.
+ * Two sources, in this order:
  *
- * Two things the derivation cannot do, both known and accepted:
+ * 1. **The lane's served schema** (`PortDataTypeConfig.schema`) — a JSON Schema
+ *    the backend's shape registry declares for the lane. Its `type` IS the
+ *    shape, said by the side that knows: fddo's `error` shape declares
+ *    `type: object`, `messages` declares `type: array`, and a site's own
+ *    `Order` shape answers for itself without the client having heard of it.
+ * 2. **The lane table below**, when no schema is served — which is every lane
+ *    on an older fddo, on a third-party server implementing only the
+ *    port-config endpoint, and on the library's offline defaults (which stay
+ *    presentation-only on purpose and carry no schemas).
+ *
+ * The table was the whole answer before shapes reached the wire, and the
+ * ordering above is why the fallback stays: it is what draws a glyph when
+ * nothing declares one, not a second opinion competing with a served answer.
+ *
+ * Two things the fallback cannot do, both known and accepted:
  * - **`integer` vs `number` collapse.** The server already maps both onto lane
- *   `number`, so nothing is lost that the client ever had.
- * - **A site-defined lane resolves to `unknown` (`?`).** A lane added through
- *   the `port_config` overlay has no shape the client can know. `?` is the
- *   honest answer.
+ *   `number`, so nothing is lost that the client ever had. A served schema
+ *   saying `integer` collapses the same way, for the same reason.
+ * - **A site-defined lane with no shape resolves to `unknown` (`?`).** A lane
+ *   added through the `port_config` overlay alone has nothing to read. `?` is
+ *   the honest answer, and declaring a shape for the lane is how a site
+ *   improves it.
  *
- * {@link portShape} is the seam where that improves: a later release that
- * serves a shape per lane, or populates `NodePort.schema`, changes this one
- * function and no caller.
+ * {@link portShape} is the one function either source is read in, which is what
+ * kept adding the first source to a single place.
  *
  * It takes the **checker** for exactly that reason. Colour has always asked the
  * checker, which resolves an alias to its canonical lane and sees whatever the
@@ -37,6 +47,7 @@
  */
 
 import type { PortCompatibilityChecker } from './connections.js';
+import type { PortSchema } from '../types/index.js';
 
 /**
  * The closed shape vocabulary. One glyph each, and every lane resolves to
@@ -102,8 +113,9 @@ export const SHAPE_LABEL: Record<PortShape, string> = {
  * zero declaring ports, the schema-type→lane resolver
  * (`NodeMetadataResolver::mapSchemaTypeToDataType`) can never emit them, and no
  * fddo plan schedules a shape for them. "URI string" was a plausible guess with
- * nothing behind it, and a wrong glyph is worse than an honest `?`. Phase 2's
- * server-declared shape is how a site that does use them answers this.
+ * nothing behind it, and a wrong glyph is worse than an honest `?`. A site that
+ * does use them declares a shape for the lane, which {@link portShape} reads
+ * ahead of this table.
  *
  * The legacy spellings (`text`, `list`, `integer`, `float`, `object`,
  * `document`, `picture`, `sound`, `movie`, `branch`) are here because
@@ -178,6 +190,35 @@ const LANE_SHAPE: Record<string, PortShape> = {
  */
 export const LANE_SHAPES: Readonly<Record<string, PortShape>> = LANE_SHAPE;
 
+/**
+ * JSON Schema `type` → shape, for reading a lane's served schema.
+ *
+ * `integer` collapses onto `number` exactly as the server's own lane mapping
+ * does, so a shape declaring `integer` and a port on lane `number` draw the same
+ * `#`. `null` is deliberately absent: a lane whose schema promises only `null`
+ * has no shape worth a glyph, and falling through to the table is the better
+ * answer than inventing one.
+ */
+const SCHEMA_TYPE_SHAPE: Record<string, PortShape> = {
+  string: 'string',
+  number: 'number',
+  integer: 'number',
+  boolean: 'boolean',
+  array: 'array',
+  object: 'object'
+};
+
+/**
+ * The shape a served schema declares, or `undefined` when it declares none —
+ * which includes a schema with no `type` at all (`{properties: {…}}` alone, or
+ * a bare `$ref`), because the shape is the `type` and nothing else in the
+ * keyword space is being guessed at.
+ */
+function schemaShape(schema: PortSchema | undefined): PortShape | undefined {
+  if (!schema?.type) return undefined;
+  return SCHEMA_TYPE_SHAPE[schema.type.toLowerCase()];
+}
+
 /** The port fields shape derivation reads. */
 interface ShapedPort {
   dataType?: string;
@@ -199,27 +240,26 @@ export function laneShape(dataType: string | undefined): PortShape {
 }
 
 /**
- * The shape to draw for a port — the seam described at the top of this file.
+ * The shape to draw for a port — both sources, in the order the top of this
+ * file states: the lane's served schema, then the table.
  *
- * Resolves the lane through the checker before consulting the table, so an
- * alias (`text` declared as an alias of `string`) is shaped as the lane it
- * aliases rather than as an unknown of its own.
+ * The lane is resolved through the checker either way, so an alias (`text`
+ * declared as an alias of `string`) reads the schema and the table of the lane
+ * it aliases rather than answering as an unknown of its own.
  */
 export function portShape(checker: PortCompatibilityChecker, port: ShapedPort): PortShape {
-  const canonical = port.dataType ? checker.getDataTypeConfig(port.dataType)?.id : undefined;
-  return laneShape(canonical ?? port.dataType);
+  const lane = port.dataType ? checker.getDataTypeConfig(port.dataType) : undefined;
+  return schemaShape(lane?.schema) ?? laneShape(lane?.id ?? port.dataType);
 }
 
 /**
- * The glyph to draw for a port — the single entry point components call.
+ * The glyph to draw for a port.
+ *
+ * @deprecated since 2.4.0 — `SHAPE_GLYPH[portShape(checker, port)]`, which is
+ * what this is. Both it and the map went out in 2.3.0's public surface and only
+ * one of them needs to be there: the map is the vocabulary, and composing it is
+ * a lookup. Kept until 3.0.0 because removing a released export is not a minor.
  */
 export function portGlyph(checker: PortCompatibilityChecker, port: ShapedPort): string {
   return SHAPE_GLYPH[portShape(checker, port)];
-}
-
-/**
- * A human name for a port's shape, for the symbol's tooltip.
- */
-export function portShapeLabel(checker: PortCompatibilityChecker, port: ShapedPort): string {
-  return SHAPE_LABEL[portShape(checker, port)];
 }

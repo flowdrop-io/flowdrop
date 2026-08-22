@@ -245,14 +245,17 @@ export {
 // A port's JSON-Schema shape and its semantic lane are two separate marks on
 // the canvas: a small coloured glyph for the shape, a quiet outlined chip for
 // the lane's name. `PortTypeBadge` draws one port's whole label row; the rest
-// is for a custom node component that wants the same glyph vocabulary. Both
-// functions take the instance's port-compatibility checker, the same source
+// is for a custom node component that wants the same glyph vocabulary.
+// `portShape` takes the instance's port-compatibility checker, the same source
 // colour reads, so a served or aliased lane shapes the way it colours. See
 // utils/portShape.ts for where the shape comes from.
 //
 // Deliberately small: the lane table, the shape labels and the two-component
 // split behind `PortTypeBadge` are implementation, and stay so until something
-// outside the library needs them.
+// outside the library needs them. `portGlyph` is the one name here that fails
+// that test — it is `SHAPE_GLYPH[portShape(…)]`, and shipping both it and the
+// map was a surface we did not need. Deprecated rather than deleted: it went
+// out in 2.3.0, so it leaves in 3.0.0.
 export { SHAPE_GLYPH, portShape, portGlyph } from '../utils/portShape.js';
 export type { PortShape } from '../utils/portShape.js';
 

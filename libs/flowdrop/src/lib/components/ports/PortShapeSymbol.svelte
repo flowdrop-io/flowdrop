@@ -20,7 +20,7 @@
 <script lang="ts">
   import type { PortCompatibilityChecker } from '../../utils/connections.js';
   import { getPortColorToken } from '../../utils/colors.js';
-  import { portGlyph, portShapeLabel } from '../../utils/portShape.js';
+  import { portShape, SHAPE_GLYPH, SHAPE_LABEL } from '../../utils/portShape.js';
 
   interface Props {
     /** The instance's port-compatibility checker — the source of lane colour. */
@@ -38,8 +38,10 @@
 
   /** Lane colour, or the reserved error output's red. */
   const color = $derived(getPortColorToken(checker, port));
-  const glyph = $derived(portGlyph(checker, port));
-  const label = $derived(portShapeLabel(checker, port));
+  /** Resolved once — the glyph and its tooltip are two readings of one shape. */
+  const shape = $derived(portShape(checker, port));
+  const glyph = $derived(SHAPE_GLYPH[shape]);
+  const label = $derived(SHAPE_LABEL[shape]);
 </script>
 
 <span

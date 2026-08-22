@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **A port's shape now comes from the server when the server declares one.** fddo 2.x serves a JSON Schema per lane (`PortDataTypeConfig.schema`, from its port-shape registry), and `portShape()` reads that schema's `type` ahead of the client's static lane table. The table stays as the fallback — it is what answers on an older fddo, on a third-party server implementing only the port-config endpoint, and on the library's offline defaults, which carry no schemas on purpose. A site's own shape now shapes its own lane: declare `Order` as `type: object` and its ports draw `{}` without this library having heard of it.
+
+### Deprecated
+
+- **`portGlyph()`** — use `SHAPE_GLYPH[portShape(checker, port)]`, which is what it does. Both it and the map shipped in 2.3.0's public surface and only one of them needed to. It keeps working until 3.0.0.
+
+### Fixed
+
+- **The reserved `error` port drew `?` on every node.** fddo declares the `error` lane as `type: object` and has since its shape registry shipped; the client's lane table has no `error` entry, so the shape fell through to `unknown` while the lane chip beside it was correctly coloured red and — after the change above — while autocomplete was offering the payload's four fields. It draws `{}` now. Same class of disagreement for any served lane the table does not name.
+
 ## [2.3.0] - 2026-08-22
 
 ### Added
