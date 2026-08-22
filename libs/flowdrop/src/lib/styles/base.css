@@ -1028,31 +1028,31 @@ p {
 
 /* Responsive utilities */
 @media (min-width: 640px) {
-  .flowdrop-sm\\:flex {
+  .flowdrop-sm\:flex {
     display: flex;
   }
 
-  .flowdrop-sm\\:hidden {
+  .flowdrop-sm\:hidden {
     display: none;
   }
 }
 
 @media (min-width: 768px) {
-  .flowdrop-md\\:flex {
+  .flowdrop-md\:flex {
     display: flex;
   }
 
-  .flowdrop-md\\:hidden {
+  .flowdrop-md\:hidden {
     display: none;
   }
 }
 
 @media (min-width: 1024px) {
-  .flowdrop-lg\\:flex {
+  .flowdrop-lg\:flex {
     display: flex;
   }
 
-  .flowdrop-lg\\:hidden {
+  .flowdrop-lg\:hidden {
     display: none;
   }
 }
