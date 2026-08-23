@@ -208,22 +208,43 @@ Handle positions are **center-based**: `top`/`left` values (in px) define the ha
 
 ### Node Colors (Workflow Editor)
 
-| Token               | Color     |
-| ------------------- | --------- |
-| `--fd-node-emerald` | `#10b981` |
-| `--fd-node-blue`    | `#2563eb` |
-| `--fd-node-amber`   | `#f59e0b` |
-| `--fd-node-orange`  | `#f97316` |
-| `--fd-node-red`     | `#ef4444` |
-| `--fd-node-pink`    | `#ec4899` |
-| `--fd-node-indigo`  | `#6366f1` |
-| `--fd-node-teal`    | `#14b8a6` |
-| `--fd-node-cyan`    | `#06b6d4` |
-| `--fd-node-lime`    | `#84cc16` |
-| `--fd-node-slate`   | `#64748b` |
-| `--fd-node-purple`  | `#9333ea` |
+| Token               | Color            | Lanes that wear it           |
+| ------------------- | ---------------- | ---------------------------- |
+| `--fd-node-emerald` | `#10b981`        | `string`, `string[]`         |
+| `--fd-node-blue`    | `#2563eb`        | `number`, `number[]`         |
+| `--fd-node-purple`  | `#9333ea`        | `boolean`, `boolean[]`       |
+| `--fd-node-orange`  | `#f97316`        | `json`, `json[]`, `messages` |
+| `--fd-node-violet`  | `#7c3aed`        | `array` (the untyped one)    |
+| `--fd-node-teal`    | `#14b8a6`        | `file`, `file[]`             |
+| `--fd-node-pink`    | `#ec4899`        | `image`, `image[]`           |
+| `--fd-node-fuchsia` | `#d946ef`        | `video`                      |
+| `--fd-node-indigo`  | `#6366f1`        | `audio`                      |
+| `--fd-node-cyan`    | `#06b6d4`        | `url`, `email`               |
+| `--fd-node-lime`    | `#84cc16`        | `date`, `datetime`, `time`   |
+| `--fd-node-slate`   | `#64748b`        | `mixed` (the sink), `any`    |
+| `--fd-node-amber`   | `#f59e0b`        | `tool` — **reserved**        |
+| `--fd-node-red`     | `#ef4444`        | `error` — **reserved**       |
+| `--fd-node-ink`     | `var(--_gray-9)` | `trigger`                    |
 
-In **dark mode** (`data-theme="dark"`), all `--fd-node-*` colors above are overridden to lighter variants so port type labels and badges stay readable on dark node surfaces. You can override any of them again in your theme.
+Three of these carry rules worth knowing before you re-theme:
+
+- **`red` is reserved for `error`, and `amber` for `tool`.** Point a data lane at
+  either and you undo the one distinction the palette exists to carry — a failed
+  run reading differently from a payload, a capability from a value.
+- **`amber` and `ink` must track their wires.** A `tool` handle matches
+  `--fd-edge-tool` and a `trigger` handle matches `--fd-edge-trigger`; change one
+  side and an edge changes colour halfway along its length.
+- **`ink` is not a hue and not a fixed black.** It resolves to `--_gray-9` in
+  light and `--_gray-3` in dark, exactly like `--fd-edge-trigger`. A literal
+  `#18181c` here disappears against the dark canvas.
+
+A **typed** array inherits its element's hue — `string[]` is emerald, `file[]` is
+teal — which is why only the untyped `array` needs a token of its own. Apply the
+same rule to a complex lane you add: wear the hue of the shape you are made of
+(`messages` is orange because a message list is an array of objects), and fall
+back to the sink's slate when that shape is genuinely unclear.
+
+In **dark mode** (`data-theme="dark"`), every `--fd-node-*` colour above is overridden to a lighter variant so handles and port badges stay readable on dark node surfaces. You can override any of them again in your theme — but if you redeclare them in a stylesheet that loads **after** this one, redeclare the dark block too. A bare `:root` override loading later wins in both themes at equal specificity and silently flattens dark mode back to the light values.
 
 ## Theming Examples
 

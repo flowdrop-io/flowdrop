@@ -323,6 +323,22 @@
   --fd-node-purple: #9333ea; /* @public */
   --fd-node-fuchsia: #d946ef; /* @public */
 
+  /**
+   * The control lane's ink. Deliberately NOT a hue: a trigger handle must read
+   * as the same thing as the trigger WIRE, and `--fd-edge-trigger` is ink that
+   * flips with the theme rather than a fixed black. Keep the two in step — a
+   * literal #18181c handle disappears against the dark canvas.
+   */
+  --fd-node-ink: var(--_gray-9); /* @public */
+
+  /**
+   * Worn by the untyped `array` lane, and by nothing else. A TYPED array
+   * inherits its element's hue (`string[]` is emerald, `file[]` is teal), so
+   * the one array with no element shape needs a hue of its own. It had amber
+   * until `tool` took that to match `--fd-edge-tool`.
+   */
+  --fd-node-violet: #7c3aed; /* @public */
+
   /** Icon on node squircle: dark in light theme, white in dark theme */
   --fd-node-icon: var(--_gray-9); /* @public */
   /** Opacity of the icon squircle background (color-mix percentage). Light mode: 15% / 22% hover; dark mode uses higher values. */
@@ -468,6 +484,10 @@
   --fd-node-slate: #94a3b8;
   --fd-node-purple: #c084fc;
   --fd-node-fuchsia: #e879f9;
+
+  /* Mirrors --fd-edge-trigger's dark value, so handle and wire stay one colour. */
+  --fd-node-ink: var(--_gray-3);
+  --fd-node-violet: #a78bfa;
 
   /** Icon on node squircle: white in dark theme */
   --fd-node-icon: #ffffff;

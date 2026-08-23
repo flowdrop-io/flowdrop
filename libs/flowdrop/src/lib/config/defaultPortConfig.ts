@@ -53,12 +53,17 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
   defaultDataType: 'mixed',
 
   dataTypes: [
-    // Control flow types
+    // Control flow types.
+    //
+    // Ink, not a hue: the handle must read as the same thing as the trigger
+    // WIRE, which is `--fd-edge-trigger` — ink that flips with the theme. It
+    // sat on purple, sharing that hue with `boolean`, and matched neither the
+    // wire nor the served payload's cyan.
     {
       id: 'trigger',
       name: 'Trigger',
       description: 'Control flow of the workflow',
-      color: 'var(--fd-node-purple)',
+      color: 'var(--fd-node-ink)',
       category: 'basic',
       enabled: true
     },
@@ -107,12 +112,15 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
       enabled: true
     },
 
-    // Collection types
+    // Collection types.
+    //
+    // Violet: the untyped array is the one array with no element hue to
+    // inherit. It had amber until `tool` took that to match its wire.
     {
       id: 'array',
       name: 'Array',
       description: 'Ordered list of items',
-      color: 'var(--fd-node-amber)',
+      color: 'var(--fd-node-violet)',
       category: 'collection',
       enabled: true
     },
@@ -154,7 +162,7 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
       id: 'file[]',
       name: 'File Array',
       description: 'Array of files',
-      color: 'var(--fd-node-red)',
+      color: 'var(--fd-node-teal)',
       category: 'collection',
       enabled: true
     },
@@ -177,12 +185,15 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
       enabled: true
     },
 
-    // File types
+    // File types.
+    //
+    // Teal, vacated by `video`. Red is reserved for `error` alone — a failed
+    // run and a PDF are not the same kind of thing and must not share a hue.
     {
       id: 'file',
       name: 'File',
       description: 'File data',
-      color: 'var(--fd-node-red)',
+      color: 'var(--fd-node-teal)',
       category: 'file',
       enabled: true
     },
@@ -204,11 +215,14 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
       category: 'media',
       enabled: true
     },
+    // Fuchsia, freed by `messages`. Landing beside `image`'s pink is wanted:
+    // the two are both visual media, so the near-adjacency reads as a family
+    // rather than as a collision.
     {
       id: 'video',
       name: 'Video',
       description: 'Video data',
-      color: 'var(--fd-node-teal)',
+      color: 'var(--fd-node-fuchsia)',
       category: 'media',
       enabled: true
     },
@@ -268,11 +282,15 @@ export const DEFAULT_PORT_CONFIG: PortConfig = {
     // A list of provider-shaped chat messages. JSON-Schema `array`
     // underneath, but not an arbitrary array — which is the whole reason it
     // is its own lane.
+    //
+    // Orange, with `json` and `json[]`: a complex lane wears the hue of the
+    // shape it is made of, and a message list is an array of objects. It sat
+    // alone on fuchsia, which said nothing about what it carries.
     {
       id: 'messages',
       name: 'Messages',
       description: 'A conversation: a list of provider-shaped chat messages',
-      color: 'var(--fd-node-fuchsia)',
+      color: 'var(--fd-node-orange)',
       category: 'complex',
       enabled: true
     }
