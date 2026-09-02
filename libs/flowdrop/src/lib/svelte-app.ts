@@ -45,7 +45,9 @@ import { logger } from './utils/logger.js';
 import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
 
 import type { NavbarAction } from './types/navbar.js';
+import type { WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
 export type { NavbarAction };
+export type { WebMCPHandle, WebMCPMountOptions };
 
 /**
  * Mount options for FlowDrop App
@@ -186,6 +188,17 @@ export interface FlowDropMountOptions {
    * enabled, so keys stay stable across page loads.
    */
   instanceId?: string;
+
+  /**
+   * Expose the editor's commands as WebMCP **editor tools** for a
+   * browser-resident agent (Chrome 149+ / Edge 150+ origin trial, Brave Leo,
+   * ChatGPT Desktop). `true` uses the defaults — prefix `flowdrop`, mutations
+   * behind a confirm dialog; pass a {@link WebMCPMountOptions} to change them.
+   * The adapter is loaded on demand (`@flowdrop/flowdrop/webmcp`), so the
+   * core bundle is unchanged when this is off. No-op in browsers without the
+   * API. Default off.
+   */
+  webmcp?: boolean | WebMCPMountOptions;
 }
 
 /**
@@ -243,6 +256,13 @@ export interface MountedFlowDropApp {
    * @returns The number of entries removed.
    */
   clearAllDrafts: () => number;
+
+  /**
+   * The WebMCP registration when the `webmcp` mount option was set and the
+   * browser has the API; `undefined` otherwise. Detached automatically on
+   * `destroy()`.
+   */
+  webmcp?: WebMCPHandle;
 }
 
 /**
@@ -360,6 +380,41 @@ async function configureInstance(
 }
 
 /**
+ * Attach the WebMCP adapter for a `mountFlowDropApp` mount.
+ *
+ * Node types come from the mount's `nodes` option when given, else from this
+ * instance's API client — the same source `App` fetches from — merged with the
+ * format-provided nodes exactly as `App` merges them. Returns `undefined` when
+ * the browser has no WebMCP runtime.
+ */
+async function attachWebMCPToMount(
+  fd: FlowDropInstance,
+  options: WebMCPMountOptions,
+  propNodes: NodeMetadata[] | undefined
+): Promise<WebMCPHandle | undefined> {
+  const { attachWebMCP } = await import('./webmcp/index.js');
+
+  let nodeTypes = options.nodeTypes;
+  if (!nodeTypes) {
+    let fetched: NodeMetadata[] = [];
+    if (propNodes && propNodes.length > 0) {
+      fetched = propNodes;
+    } else {
+      try {
+        fetched = await fd.api.client.getAvailableNodes();
+      } catch (error) {
+        logger.warn('WebMCP: failed to fetch node types; list_types will be empty:', error);
+      }
+    }
+    const known = new Set(fetched.map((n) => n.node_type_id));
+    const formatNodes = fd.formats.getAllFormatNodes().filter((n) => !known.has(n.node_type_id));
+    nodeTypes = [...fetched, ...formatNodes];
+  }
+
+  return attachWebMCP(fd, { ...options, nodeTypes }) ?? undefined;
+}
+
+/**
  * Mount the full FlowDrop App with navbar, sidebars, and workflow editor
  *
  * Use this for a complete workflow editing experience with all UI components.
@@ -417,7 +472,8 @@ export async function mountFlowDropApp(
     settingsCategories,
     showSettingsSyncButton,
     showSettingsResetButton,
-    instanceId
+    instanceId,
+    webmcp
   } = options;
 
   // Per-instance state container — this is what allows multiple FlowDrop
@@ -560,11 +616,22 @@ export async function mountFlowDropApp(
     unsubscribeDraftSettings
   };
 
+  // WebMCP editor tools, opt-in. Dynamic import keeps the adapter out of the
+  // core entry's static graph (see scripts/check-bundle.mjs).
+  let webmcpHandle: WebMCPHandle | undefined;
+  if (webmcp) {
+    webmcpHandle = await attachWebMCPToMount(fd, webmcp === true ? {} : webmcp, nodes);
+  }
+
   // Create the mounted app interface
   const mountedApp: MountedFlowDropApp = {
     instance: fd,
+    webmcp: webmcpHandle,
 
     destroy: () => {
+      // Remove the agent-facing tools before anything else goes away.
+      webmcpHandle?.detach();
+
       // Call onBeforeUnmount if provided
       if (state.eventHandlers?.onBeforeUnmount) {
         const currentWorkflow = fd.workflow.current;

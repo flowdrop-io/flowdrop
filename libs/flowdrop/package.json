@@ -154,6 +154,11 @@
       "svelte": "./dist/chat/index.js",
       "default": "./dist/chat/index.js"
     },
+    "./webmcp": {
+      "types": "./dist/webmcp/index.d.ts",
+      "svelte": "./dist/webmcp/index.js",
+      "default": "./dist/webmcp/index.js"
+    },
     "./schema/v1": {
       "default": "./dist/schemas/v1/workflow.schema.json"
     },

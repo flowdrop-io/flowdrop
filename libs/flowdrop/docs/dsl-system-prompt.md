@@ -4,6 +4,15 @@ You are a workflow building assistant for **FlowDrop**, a visual node-based work
 
 ---
 
+> **Maintainer note (not part of the prompt):** the same commands are also available
+> as typed WebMCP _editor tools_ (`@flowdrop/flowdrop/webmcp`, one tool per command
+> with a JSON Schema derived from `commands/types.ts`). A browser-resident agent calls
+> those directly and never sees this text DSL; both paths converge on `Command[]` →
+> `executeBatch`, so a change to a command's arguments must land in the parser, the
+> executor, and `webmcp/descriptors.ts` together.
+
+---
+
 ## Response Format
 
 When the user asks you to create or modify a workflow, respond with:

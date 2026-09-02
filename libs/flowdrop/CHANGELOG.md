@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-09-02
+
+### Added
+
+- **The editor's commands are now WebMCP editor tools.** A browser-resident agent — Chrome 149+ and Edge 150+ behind the WebMCP origin trial, Brave Leo, ChatGPT Desktop — can discover the open editor's tools on the page and drive it: `flowdrop_list_types`, `flowdrop_add_node`, `flowdrop_connect`, `flowdrop_set_config`, `flowdrop_info`, `flowdrop_undo`, a `flowdrop_batch` that runs several as one transaction, and the rest of the command layer; one tool per command, each with a JSON Schema derived from the `Command` union, so the agent gets structured errors and argument completion rather than a text grammar to guess at. New subpath **`@flowdrop/flowdrop/webmcp`**: `attachWebMCP(instance, { nodeTypes, … })` for Svelte hosts, and a **`webmcp: true | WebMCPMountOptions`** option on `mountFlowDropApp` for vanilla and Drupal hosts, which loads the adapter on demand so the core entry is unchanged. No-op in a browser without the API.
+  - **These are tools for editing a workflow in the browser.** They are unrelated to the tools a running workflow hands to an LLM node; the docs call them _editor tools_ and nothing else.
+  - **Reads run; changes ask.** Classification is the chat panel's `isMutatingCommand`, unchanged. A mutating call opens a confirm dialog inside the page listing exactly what will run, and nothing touches the workflow until the person at the keyboard clicks Apply. `approval: 'auto'` turns that off for hosts that already trust every agent on the page; `approval: (commands) => Promise<boolean>` plugs in your own gate. While one decision is pending a second mutating call is refused with `BUSY` — dialogs never stack. This matters because WebMCP's permission model is about which origins may _see_ tools, not whether a given call may change the user's document: any agent or extension on the page can call them.
+  - **Every call is one transaction and one undo step**, like an approved chat batch; a batch whose third command fails leaves the workflow exactly as it was and says so. The layout opt-out (`chatAllowLayoutChanges`) is honoured with the chat panel's wording — same setting, no new one.
+  - **`clear` is never exposed.** An agent can delete nodes one at a time and each deletion is gated. `help` is not exposed either; the schemas are the help. A test asserts every literal in the `Command` union is either mapped or on that exclusion list, so the next DSL verb cannot slip through unclassified.
+  - **Two editors on one page** need distinct `prefix`es; the second `attachWebMCP` with the same prefix throws rather than silently shadowing. Every tool description carries the workflow's name so an agent facing two editors can tell them apart.
+  - **`view` needs a host.** The `flowdrop_view` tool (select node, open config, zoom, pan) is registered only when `onUIAction` is supplied, because the mount path has no handler for it; the `webmcp` mount option therefore registers everything except `view`.
+  - The spec is an origin trial and has changed shape once already. The adapter probes `document.modelContext` and, structurally, the earlier `navigator.modelContext`; registers under an `AbortSignal` (the spec's only removal path) and also calls `unregisterTool` where a pre-spec runtime has one; and touches the runtime from one file. `createFakeModelContext()` is exported for hosts' own tests — CI has no browser agent, and neither does the storybook, which drives the tools from a fake-agent side panel instead.
+
+### Changed
+
+- **Unit tests resolve Svelte's client build.** `vite.config.ts` sets `resolve.conditions: ['browser']` under Vitest, as the Svelte testing docs recommend; without it `mount()` resolved to the server build and threw `lifecycle_function_unavailable`. Existing suites are unaffected (1716 tests, all green); it is listed because it changes what a new component test can do.
+
 ## [2.5.0] - 2026-08-23
 
 ### Changed

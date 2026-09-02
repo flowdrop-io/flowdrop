@@ -3,6 +3,10 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [sveltekit()],
+  // Unit tests that mount components need the client build of `svelte`; without
+  // this Node resolves the server build and `mount()` throws
+  // `lifecycle_function_unavailable`. Recommended by the Svelte testing docs.
+  resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
   test: {
     // Global test configuration
     globals: true,
