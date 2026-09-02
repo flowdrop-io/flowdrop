@@ -9,6 +9,8 @@
   } from '$lib/config/endpoints.js';
   import { apiToasts, dismissToast } from '$lib/services/toastService.js';
   import type { Workflow, WorkflowNode, NodeMetadata } from '$lib/types/index.js';
+  import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
+  import { attachWebMCP, type WebMCPHandle } from '$lib/webmcp/index.js';
 
   /**
    * Workflow edit type — the editable Workflow plus API bookkeeping fields
@@ -32,6 +34,14 @@
     ...defaultEndpointConfig,
     baseUrl: data.runtimeConfig.apiBaseUrl
   });
+
+  // Explicit instance so the WebMCP adapter can target this editor.
+  const fd = createFlowDropInstance({ id: 'dev-edit' });
+
+  // WebMCP editor tools (Chrome: chrome://flags/#enable-webmcp-testing). Node
+  // types come from the same endpoint App fetches; captured during fetchWorkflow.
+  let availableNodeTypes: NodeMetadata[] = [];
+  let webmcp: WebMCPHandle | null = null;
 
   // Workflow data state
   let workflow = $state<WorkflowEdit | null>(null);
@@ -89,13 +99,20 @@
 
       // Fetch fresh node metadata from the API
       let refreshedNodes: WorkflowNode[] = workflowData.nodes || [];
-      if (refreshedNodes.length > 0) {
+      try {
+        const nodesUrl = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.nodes.list);
+        const nodesResponse = await fetch(nodesUrl);
+        if (nodesResponse.ok) {
+          const nodesData = await nodesResponse.json();
+          availableNodeTypes = nodesData.data || [];
+        }
+      } catch (nodesErr) {
+        console.warn('Failed to fetch node types:', nodesErr);
+      }
+      if (refreshedNodes.length > 0 && availableNodeTypes.length > 0) {
         try {
-          const nodesUrl = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.nodes.list);
-          const nodesResponse = await fetch(nodesUrl);
-          if (nodesResponse.ok) {
-            const nodesData = await nodesResponse.json();
-            const availableNodes: NodeMetadata[] = nodesData.data || [];
+          {
+            const availableNodes = availableNodeTypes;
 
             // Refresh metadata for each node
             refreshedNodes = refreshedNodes.map((node) => {
@@ -119,6 +136,21 @@
           console.warn('Failed to refresh node metadata:', nodesErr);
           // Continue with original nodes if refresh fails
         }
+      }
+
+      // Register the editor tools for the browser's agent once the workflow is
+      // known. Silent no-op when the browser has no document.modelContext.
+      webmcp?.detach();
+      webmcp = attachWebMCP(fd, { nodeTypes: () => availableNodeTypes });
+      if (webmcp) {
+        console.info(
+          `[flowdrop] WebMCP: ${webmcp.tools.length} editor tools registered`,
+          webmcp.tools
+        );
+      } else {
+        console.info(
+          '[flowdrop] WebMCP: no document.modelContext — enable chrome://flags/#enable-webmcp-testing'
+        );
       }
 
       // Map API response to workflow data
@@ -164,6 +196,7 @@
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      webmcp?.detach();
     };
   });
 </script>
@@ -186,7 +219,7 @@
       <button onclick={fetchWorkflow} class="retry-button">Retry</button>
     </div>
   {:else if workflow}
-    <App {workflow} height={canvasHeight} width={canvasWidth} showNavbar={false} />
+    <App instance={fd} {workflow} height={canvasHeight} width={canvasWidth} showNavbar={false} />
   {:else}
     <div class="no-workflow">
       <h3>Workflow Not Found</h3>
