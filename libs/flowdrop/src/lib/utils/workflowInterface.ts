@@ -476,12 +476,21 @@ export function pullEntryFieldsFromPort(port: NodePort): Partial<WorkflowInterfa
 }
 
 /**
- * Whether a port is intra-graph control flow — the reserved `trigger`/`tool`
- * dataTypes or the loopback input — and therefore never publishable in a
- * workflow's interface.
+ * Whether a port is intra-graph control flow — the reserved `trigger`
+ * dataType, the loopback input, or a `tool` *output* — and therefore never
+ * publishable in a workflow's interface.
+ *
+ * A `tool` **input** is deliberately not control flow here. Tools are a typed
+ * argument of a workflow's execution (fddo DF9): exposing a consumer's `tool`
+ * input (a ToolBox's `tools`, an LLM node's `tools`) in the interface is how a
+ * parent hands its tools to a sub-workflow, so the picker must offer it. A
+ * `tool` output is the inverse — a workflow *producing* a tool — which is not
+ * a composition the runtime supports through the interface (a workflow is
+ * made a tool by a different mechanism), so it stays excluded.
  */
-function isControlFlowPort(port: NodePort): boolean {
-  return port.dataType === 'trigger' || port.dataType === 'tool' || port.id === LOOPBACK_PORT_NAME;
+function isControlFlowPort(port: NodePort, direction: 'input' | 'output'): boolean {
+  if (port.dataType === 'trigger' || port.id === LOOPBACK_PORT_NAME) return true;
+  return port.dataType === 'tool' && direction === 'output';
 }
 
 /** One inner port a `WorkflowInterfaceEntry` could bind to, plus its owning node. */
@@ -500,9 +509,10 @@ export interface BindablePort {
  * Mirrors `FormPorts.svelte`'s port list: a node's static metadata ports plus
  * its user-defined dynamic ports, filtered by `isPortExposed`.
  *
- * Control-flow ports are excluded: the reserved `trigger`/`tool` dataTypes and
- * the `loop_back` port are intra-graph control flow, not an external surface
- * (DN1's grounded fact). The model and validation stay permissive — this only
+ * Control-flow ports are excluded: the reserved `trigger` dataType, the
+ * `loop_back` port and `tool` outputs are intra-graph control flow, not an
+ * external surface (DN1's grounded fact). `tool` inputs are offered — see
+ * `isControlFlowPort`. The model and validation stay permissive — this only
  * constrains what the authoring picker offers.
  */
 export function listBindablePorts(
@@ -527,7 +537,7 @@ export function listBindablePorts(
     const entries = portsConfig?.[portsConfigDirection];
 
     for (const port of [...staticPorts, ...dynamicPorts]) {
-      if (isControlFlowPort(port)) continue;
+      if (isControlFlowPort(port, direction)) continue;
       if (isPortExposed(port, entries)) {
         result.push({ nodeId: node.id, nodeLabel: node.data?.label ?? node.id, port });
       }

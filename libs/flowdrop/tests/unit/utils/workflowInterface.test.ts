@@ -864,15 +864,32 @@ describe('listBindablePorts', () => {
     expect(listBindablePorts(workflow, 'input').map((b) => b.port.id)).toEqual(['in-a']);
   });
 
-  it('excludes control-flow ports — trigger/tool dataTypes and the loop_back port', () => {
+  it('excludes control-flow ports — the trigger dataType and the loop_back port', () => {
     const dataPort = makePort('in-a', 'string', { type: 'input' });
     const triggerPort = makePort('start', 'trigger', { type: 'input' });
-    const toolPort = makePort('tools', 'tool', { type: 'input' });
     const loopbackPort = makePort('loop_back', 'mixed', { type: 'input' });
-    const node = makeNode('node-1', [dataPort, triggerPort, toolPort, loopbackPort], []);
+    const node = makeNode('node-1', [dataPort, triggerPort, loopbackPort], []);
     const workflow = makeWorkflow([node]);
 
     expect(listBindablePorts(workflow, 'input').map((b) => b.port.id)).toEqual(['in-a']);
+  });
+
+  it('offers a tool input so a parent can hand its tools to the sub-workflow (DF9)', () => {
+    const dataPort = makePort('in-a', 'string', { type: 'input' });
+    const toolPort = makePort('tools', 'tool', { type: 'input' });
+    const node = makeNode('node-1', [dataPort, toolPort], []);
+    const workflow = makeWorkflow([node]);
+
+    expect(listBindablePorts(workflow, 'input').map((b) => b.port.id)).toEqual(['in-a', 'tools']);
+  });
+
+  it('still excludes a tool output — a workflow does not produce a tool through its interface', () => {
+    const dataPort = makePort('out-a', 'string', { type: 'output' });
+    const toolPort = makePort('tool', 'tool', { type: 'output' });
+    const node = makeNode('node-1', [], [dataPort, toolPort]);
+    const workflow = makeWorkflow([node]);
+
+    expect(listBindablePorts(workflow, 'output').map((b) => b.port.id)).toEqual(['out-a']);
   });
 
   it('falls back to the node id as a label when the node has no data.label', () => {

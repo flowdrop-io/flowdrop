@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **A `tool` input can now be published in the workflow interface.** The binding picker in the interface editor offers a consumer node's `tool`-typed input (a ToolBox's or LLM node's `tools`) alongside data ports, so a parent workflow can hand its tools to a sub-workflow through the child's declared contract instead of the child carrying its own copy of every tool node. Tools are a typed argument of a workflow's execution (fddo DF9); the server decides what binding them means. `trigger` ports, the `loop_back` port and `tool` _outputs_ remain intra-graph control flow and stay out of the picker.
+
 ## [2.6.0] - 2026-09-02
 
 ### Added
