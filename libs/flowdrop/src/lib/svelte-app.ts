@@ -46,6 +46,7 @@ import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.
 
 import type { NavbarAction } from './types/navbar.js';
 import type { WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
+import { whenWorkflowLoaded } from './utils/whenWorkflowLoaded.svelte.js';
 export type { NavbarAction };
 export type { WebMCPHandle, WebMCPMountOptions };
 
@@ -259,10 +260,12 @@ export interface MountedFlowDropApp {
 
   /**
    * The WebMCP registration when the `webmcp` mount option was set and the
-   * browser has the API; `undefined` otherwise. Detached automatically on
+   * browser has the API; `undefined` otherwise. The adapter attaches in the
+   * background once the workflow is loaded, so this is `undefined` for a
+   * moment after mount even when the API exists. Detached automatically on
    * `destroy()`.
    */
-  webmcp?: WebMCPHandle;
+  readonly webmcp?: WebMCPHandle;
 }
 
 /**
@@ -382,36 +385,28 @@ async function configureInstance(
 /**
  * Attach the WebMCP adapter for a `mountFlowDropApp` mount.
  *
- * Node types come from the mount's `nodes` option when given, else from this
- * instance's API client — the same source `App` fetches from — merged with the
- * format-provided nodes exactly as `App` merges them. Returns `undefined` when
- * the browser has no WebMCP runtime.
+ * Adds no request and no mount latency: node types are read lazily from the
+ * instance, which `App` fills from the same fetch it already makes (or from
+ * the mount's `nodes` option, seeded below), and attachment waits for the
+ * workflow to be known so every tool description names it. Resolves
+ * `undefined` when the browser has no WebMCP runtime or the mount was
+ * destroyed first.
  */
-async function attachWebMCPToMount(
+function attachWebMCPToMount(
   fd: FlowDropInstance,
   options: WebMCPMountOptions,
-  propNodes: NodeMetadata[] | undefined
+  isDestroyed: () => boolean
 ): Promise<WebMCPHandle | undefined> {
-  const { attachWebMCP } = await import('./webmcp/index.js');
-
-  let nodeTypes = options.nodeTypes;
-  if (!nodeTypes) {
-    let fetched: NodeMetadata[] = [];
-    if (propNodes && propNodes.length > 0) {
-      fetched = propNodes;
-    } else {
-      try {
-        fetched = await fd.api.client.getAvailableNodes();
-      } catch (error) {
-        logger.warn('WebMCP: failed to fetch node types; list_types will be empty:', error);
-      }
-    }
-    const known = new Set(fetched.map((n) => n.node_type_id));
-    const formatNodes = fd.formats.getAllFormatNodes().filter((n) => !known.has(n.node_type_id));
-    nodeTypes = [...fetched, ...formatNodes];
-  }
-
-  return attachWebMCP(fd, { ...options, nodeTypes }) ?? undefined;
+  return new Promise((resolve) => {
+    // Dynamic imports keep the adapter and the rune helper out of the core
+    // entry's static graph (see scripts/check-bundle.mjs).
+    whenWorkflowLoaded(fd, async () => {
+      if (isDestroyed()) return resolve(undefined);
+      const { attachWebMCP } = await import('./webmcp/index.js');
+      if (isDestroyed()) return resolve(undefined);
+      resolve(attachWebMCP(fd, options) ?? undefined);
+    });
+  });
 }
 
 /**
@@ -521,6 +516,12 @@ export async function mountFlowDropApp(
     fd.workflow.setOnWorkflowChange(eventHandlers.onWorkflowChange);
   }
 
+  // The mount's `nodes` seed the instance's node-type list; App replaces it
+  // with the merged (props + format nodes) list as soon as it has one.
+  if (nodes && nodes.length > 0) {
+    fd.nodeTypes.set(nodes);
+  }
+
   // Create the Svelte App component with configuration
   const svelteApp = mount(App, {
     target: container,
@@ -616,20 +617,27 @@ export async function mountFlowDropApp(
     unsubscribeDraftSettings
   };
 
-  // WebMCP editor tools, opt-in. Dynamic import keeps the adapter out of the
-  // core entry's static graph (see scripts/check-bundle.mjs).
+  // WebMCP editor tools, opt-in. Attaches in the background — mounting does
+  // not wait for it — and detaches with the mount.
   let webmcpHandle: WebMCPHandle | undefined;
+  let destroyed = false;
   if (webmcp) {
-    webmcpHandle = await attachWebMCPToMount(fd, webmcp === true ? {} : webmcp, nodes);
+    void attachWebMCPToMount(fd, webmcp === true ? {} : webmcp, () => destroyed).then((handle) => {
+      if (destroyed) handle?.detach();
+      else webmcpHandle = handle;
+    });
   }
 
   // Create the mounted app interface
   const mountedApp: MountedFlowDropApp = {
     instance: fd,
-    webmcp: webmcpHandle,
+    get webmcp() {
+      return webmcpHandle;
+    },
 
     destroy: () => {
       // Remove the agent-facing tools before anything else goes away.
+      destroyed = true;
       webmcpHandle?.detach();
 
       // Call onBeforeUnmount if provided

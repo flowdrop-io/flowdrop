@@ -348,6 +348,13 @@
 
   let nodes = $state<NodeMetadata[]>([]);
   let nodeTypesLoading = $state<boolean>(true);
+
+  // The instance carries the list this editor knows, so code outside the
+  // component tree (the WebMCP adapter's list_types / add_node) reads what the
+  // editor fetched instead of fetching again.
+  $effect(() => {
+    fd.nodeTypes.set(nodes);
+  });
   // Remove workflow prop - use global store directly
   // let workflow = $derived($workflowStore || initialWorkflow);
   let error = $state<string | null>(null);

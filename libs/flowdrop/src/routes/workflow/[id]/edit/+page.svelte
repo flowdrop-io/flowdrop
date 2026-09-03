@@ -11,6 +11,7 @@
   import type { Workflow, WorkflowNode, NodeMetadata } from '$lib/types/index.js';
   import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
   import { attachWebMCP, type WebMCPHandle } from '$lib/webmcp/index.js';
+  import { whenWorkflowLoaded } from '$lib/utils/whenWorkflowLoaded.svelte.js';
 
   /**
    * Workflow edit type — the editable Workflow plus API bookkeeping fields
@@ -42,6 +43,7 @@
   // types come from the same endpoint App fetches; captured during fetchWorkflow.
   let availableNodeTypes: NodeMetadata[] = [];
   let webmcp: WebMCPHandle | null = null;
+  let cancelWebMCPAttach: (() => void) | null = null;
 
   // Workflow data state
   let workflow = $state<WorkflowEdit | null>(null);
@@ -138,20 +140,25 @@
         }
       }
 
-      // Register the editor tools for the browser's agent once the workflow is
-      // known. Silent no-op when the browser has no document.modelContext.
+      // Register the editor tools for the browser's agent once App has put the
+      // workflow in the store, so the tool descriptions carry its name. Silent
+      // no-op when the browser has no document.modelContext.
       webmcp?.detach();
-      webmcp = attachWebMCP(fd, { nodeTypes: () => availableNodeTypes });
-      if (webmcp) {
+      cancelWebMCPAttach?.();
+      cancelWebMCPAttach = whenWorkflowLoaded(fd, async () => {
+        webmcp = attachWebMCP(fd, { nodeTypes: () => availableNodeTypes });
+        if (!webmcp) {
+          console.info(
+            '[flowdrop] WebMCP: no document.modelContext — enable chrome://flags/#enable-webmcp-testing'
+          );
+          return;
+        }
+        await webmcp.ready;
         console.info(
           `[flowdrop] WebMCP: ${webmcp.tools.length} editor tools registered`,
           webmcp.tools
         );
-      } else {
-        console.info(
-          '[flowdrop] WebMCP: no document.modelContext — enable chrome://flags/#enable-webmcp-testing'
-        );
-      }
+      });
 
       // Map API response to workflow data
       workflow = {
@@ -196,6 +203,7 @@
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      cancelWebMCPAttach?.();
       webmcp?.detach();
     };
   });
