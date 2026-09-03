@@ -13,13 +13,23 @@ import { render } from 'svelte/server';
 import WorkflowInterfaceEntryComposer from '$lib/components/WorkflowInterfaceEntryComposer.svelte';
 import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
 import type { Workflow } from '$lib/types/index.js';
+import { PortCompatibilityChecker } from '$lib/utils/connections.js';
+import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
 
 const noop = () => {};
+const checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG);
 
 describe('WorkflowInterfaceEntryComposer', () => {
   it('opens on the bind-or-custom question with both choices', () => {
     const body = render(WorkflowInterfaceEntryComposer, {
-      props: { direction: 'inputs', candidates: [], onBind: noop, onCustom: noop, onCancel: noop }
+      props: {
+        direction: 'inputs',
+        candidates: [],
+        checker,
+        onBind: noop,
+        onCustom: noop,
+        onCancel: noop
+      }
     }).body;
 
     expect(body).toContain('New input');
@@ -32,7 +42,14 @@ describe('WorkflowInterfaceEntryComposer', () => {
 
   it('is titled for the output side too', () => {
     const body = render(WorkflowInterfaceEntryComposer, {
-      props: { direction: 'outputs', candidates: [], onBind: noop, onCustom: noop, onCancel: noop }
+      props: {
+        direction: 'outputs',
+        candidates: [],
+        checker,
+        onBind: noop,
+        onCustom: noop,
+        onCancel: noop
+      }
     }).body;
 
     expect(body).toContain('New output');

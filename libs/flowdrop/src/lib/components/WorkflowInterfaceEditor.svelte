@@ -32,6 +32,7 @@
   import WorkflowInterfaceEntryComposer from '$lib/components/WorkflowInterfaceEntryComposer.svelte';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
+  import { PortCompatibilityChecker } from '$lib/utils/connections.js';
   import type {
     PortDataTypeConfig,
     Workflow,
@@ -58,12 +59,20 @@
      * The wire format stays an open string; this only constrains *authoring*.
      */
     dataTypes?: PortDataTypeConfig[];
+    /**
+     * The instance's port-compatibility checker (pass `fd.portCompatibility`).
+     * The composer's port picker draws each candidate with the canvas's shape
+     * symbol and lane chip, and both read the checker for shape and colour.
+     * Defaults to a checker over the built-in port config.
+     */
+    checker?: PortCompatibilityChecker;
   }
 
   const {
     workflow,
     onChange,
-    dataTypes = DEFAULT_PORT_CONFIG.dataTypes.filter((dt) => dt.enabled !== false)
+    dataTypes = DEFAULT_PORT_CONFIG.dataTypes.filter((dt) => dt.enabled !== false),
+    checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG)
   }: Props = $props();
 
   type Direction = 'inputs' | 'outputs';
@@ -331,7 +340,7 @@
         <WorkflowInterfaceEntryComposer
           direction={section.key}
           candidates={rankBindablePorts(workflow, entryDirectionOf(section.key))}
-          {dataTypes}
+          {checker}
           onBind={(candidate) => addBoundEntry(section.key, candidate)}
           onCustom={() => addEntry(section.key)}
           onCancel={() => (composerFor = null)}

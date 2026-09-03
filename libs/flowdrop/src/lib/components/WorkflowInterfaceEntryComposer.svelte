@@ -22,25 +22,26 @@
   import Input from '$lib/components/Input.svelte';
   import { m } from '$lib/messages/index.js';
   import { isFreeBindablePort, type RankedBindablePort } from '$lib/utils/workflowInterface.js';
-  import { getDataTypeColorFromConfigs } from '$lib/utils/colors.js';
-  import type { PortDataTypeConfig } from '$lib/types/index.js';
+  import PortShapeSymbol from '$lib/components/ports/PortShapeSymbol.svelte';
+  import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
+  import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
 
   interface Props {
     direction: 'inputs' | 'outputs';
     /** From `rankBindablePorts` — already ordered free-first. */
     candidates: RankedBindablePort[];
     /**
-     * The host's data-type vocabulary, for the colour of each row's type chip —
-     * the same colour the port's handle has on the canvas. Empty falls back to
-     * the built-in palette.
+     * The instance's port-compatibility checker — the source of each row's
+     * shape symbol and lane chip, so a candidate reads exactly as its port does
+     * on the canvas.
      */
-    dataTypes?: PortDataTypeConfig[];
+    checker: PortCompatibilityChecker;
     onBind: (candidate: RankedBindablePort) => void;
     onCustom: () => void;
     onCancel: () => void;
   }
 
-  const { direction, candidates, dataTypes = [], onBind, onCustom, onCancel }: Props = $props();
+  const { direction, candidates, checker, onBind, onCustom, onCancel }: Props = $props();
 
   const isInput = $derived(direction === 'inputs');
 
@@ -250,18 +251,17 @@
             onclick={() => (selectedKey = keyOf(candidate))}
             ondblclick={() => confirm(candidate)}
           >
-            <span
-              class="wf-composer__option-type"
-              style="--wf-composer-type-color: {getDataTypeColorFromConfigs(
-                dataTypes,
-                candidate.port.dataType
-              )}">{candidate.port.dataType}</span
-            >
+            <!-- The same two chips a port row wears on the canvas, so a
+                 candidate is recognisable as the port it points at. The
+                 symbol is a fixed-width column; the lane name rides at the
+                 end of the path, where its width cannot push the text about. -->
+            <PortShapeSymbol {checker} port={candidate.port} />
             <span class="wf-composer__option-body">
               <span class="wf-composer__option-path">
                 <span class="wf-composer__option-node">{candidate.nodeLabel}</span>
                 <Icon icon="heroicons:chevron-right" />
                 <span class="wf-composer__option-port">{candidate.port.name}</span>
+                <PortLaneChip {checker} port={candidate.port} />
               </span>
               {#if candidate.port.description}
                 <span class="wf-composer__option-desc">{candidate.port.description}</span>
@@ -562,27 +562,14 @@
     color: var(--fd-muted-foreground);
   }
 
-  .wf-composer__option--taken .wf-composer__option-type {
+  .wf-composer__option--taken :global(.flowdrop-port-symbol),
+  .wf-composer__option--taken :global(.flowdrop-badge--outline) {
     opacity: 0.7;
   }
 
-  .wf-composer__option-type {
-    flex-shrink: 0;
-    margin-top: 0.125rem;
-    padding: 0.0625rem 0.375rem;
-    border-radius: var(--fd-radius-full);
-    /* The port's own colour, as on its canvas handle: a soft tint behind it. */
-    background-color: color-mix(in srgb, var(--wf-composer-type-color) 14%, transparent);
-    color: var(--wf-composer-type-color);
-    font-family: var(--fd-font-mono);
-    font-size: var(--fd-text-2xs);
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: lowercase;
-  }
-
-  .wf-composer__option--selected .wf-composer__option-type {
-    background-color: color-mix(in srgb, var(--wf-composer-type-color) 20%, var(--fd-card));
+  /* The lane chip is quiet on purpose; keep it from stretching a wrapped path. */
+  .wf-composer__option-path :global(.flowdrop-badge--outline) {
+    flex: none;
   }
 
   .wf-composer__option-body {

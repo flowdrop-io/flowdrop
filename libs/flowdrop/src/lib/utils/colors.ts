@@ -106,33 +106,6 @@ export function getDataTypeColorToken(checker: PortCompatibilityChecker, dataTyp
 }
 
 /**
- * The colour a port of this data type is drawn in, resolved from a plain list
- * of data-type configs rather than a checker — for components that are handed
- * `PortConfig.dataTypes` (the interface editor, say) and have no instance.
- *
- * Matches the id or an alias case-insensitively, then the element type of a
- * `type[]` array, then the built-in defaults, then slate — so the chip beside
- * a candidate port is the same colour as the handle it points at.
- */
-export function getDataTypeColorFromConfigs(
-  dataTypes: readonly PortDataTypeConfig[],
-  dataType: string
-): string {
-  const wanted = dataType.trim().toLowerCase();
-  const matches = (candidate: string): boolean => candidate.toLowerCase() === wanted;
-  const config = dataTypes.find(
-    (entry) => matches(entry.id) || (entry.aliases ?? []).some(matches)
-  );
-  if (config?.color) return config.color;
-
-  if (wanted.endsWith('[]')) {
-    return getDataTypeColorFromConfigs(dataTypes, wanted.slice(0, -2));
-  }
-
-  return DEFAULT_DATA_TYPE_COLORS[wanted] || 'var(--fd-node-slate)';
-}
-
-/**
  * Get data type configuration from port config
  * @param checker - The instance's port compatibility checker
  * @param dataType - The data type

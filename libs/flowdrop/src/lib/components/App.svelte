@@ -1254,6 +1254,7 @@
     <WorkflowInterfaceEditor
       workflow={fd.workflow.current}
       dataTypes={fd.portCompatibility.getEnabledDataTypes()}
+      checker={fd.portCompatibility}
       onChange={(next) => fd.workflow.batchUpdate({ interface: next })}
     />
   {/if}
