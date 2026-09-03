@@ -8,12 +8,15 @@ import {
   buildToolDescriptors,
   validateToolArgs,
   describeCommand,
+  commandRecord,
   EXPOSED_COMMAND_TYPES,
   VIEW_COMMAND_TYPES,
   EXCLUDED_COMMAND_TYPES,
   COMPOSITE_VERBS
 } from '../../../src/lib/webmcp/descriptors.js';
 import { ToolArgumentError } from '../../../src/lib/webmcp/types.js';
+import type { ToolSchemaProperty } from '../../../src/lib/webmcp/types.js';
+import { VALIDATOR_KEYWORDS } from '../../../src/lib/webmcp/validate.js';
 import { parseCommand } from '../../../src/lib/commands/parser.js';
 import { executeCommand } from '../../../src/lib/commands/executor.js';
 import { buildTypeMap } from '../../../src/lib/commands/types.js';
@@ -100,6 +103,32 @@ describe('D8 coverage', () => {
       .map((d) => d.verb)
       .sort();
     expect(readOnly).toEqual(['get_config', 'info', 'list_edges', 'list_nodes', 'list_types']);
+  });
+
+  it('every exposed command has a description, a schema, a builder and a summary', () => {
+    for (const type of EXPOSED_COMMAND_TYPES) {
+      const record = commandRecord(type);
+      expect(record.description.length, `${type} description`).toBeGreaterThan(10);
+      expect(record.inputSchema.type, `${type} schema`).toBe('object');
+      expect(typeof record.build, `${type} build`).toBe('function');
+      expect(typeof record.summarize, `${type} summarize`).toBe('function');
+    }
+  });
+
+  it('every schema keyword in use is one the validator handles', () => {
+    const seen = new Set<string>();
+    const walk = (schema: ToolSchemaProperty): void => {
+      for (const key of Object.keys(schema)) seen.add(key);
+      for (const p of Object.values(schema.properties ?? {})) walk(p);
+      if (schema.items) walk(schema.items);
+      for (const alt of schema.anyOf ?? []) walk(alt);
+    };
+    for (const d of buildToolDescriptors()) walk(d.inputSchema);
+    for (const key of seen) {
+      expect(VALIDATOR_KEYWORDS.has(key as keyof ToolSchemaProperty), `${key} is unhandled`).toBe(
+        true
+      );
+    }
   });
 
   it('every schema forbids additional properties', () => {

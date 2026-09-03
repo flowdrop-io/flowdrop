@@ -29,13 +29,13 @@ export { attachWebMCP, detectModelContext, DEFAULT_PREFIX } from './register.js'
 export {
   buildToolDescriptors,
   describeCommand,
-  validateToolArgs,
   EXPOSED_COMMAND_TYPES,
   VIEW_COMMAND_TYPES,
   EXCLUDED_COMMAND_TYPES,
   COMPOSITE_VERBS
 } from './descriptors.js';
 export type { BuildDescriptorsOptions } from './descriptors.js';
+export { validateToolArgs, VALIDATOR_KEYWORDS } from './validate.js';
 export { ToolArgumentError } from './types.js';
 export { createFakeModelContext } from './fake.js';
 export type { FakeModelContext } from './fake.js';
