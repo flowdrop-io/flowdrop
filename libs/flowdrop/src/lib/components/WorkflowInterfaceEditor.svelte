@@ -331,6 +331,7 @@
         <WorkflowInterfaceEntryComposer
           direction={section.key}
           candidates={rankBindablePorts(workflow, entryDirectionOf(section.key))}
+          {dataTypes}
           onBind={(candidate) => addBoundEntry(section.key, candidate)}
           onCustom={() => addEntry(section.key)}
           onCancel={() => (composerFor = null)}

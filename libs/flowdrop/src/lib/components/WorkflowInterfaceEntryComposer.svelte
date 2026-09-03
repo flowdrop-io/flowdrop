@@ -22,17 +22,25 @@
   import Input from '$lib/components/Input.svelte';
   import { m } from '$lib/messages/index.js';
   import { isFreeBindablePort, type RankedBindablePort } from '$lib/utils/workflowInterface.js';
+  import { getDataTypeColorFromConfigs } from '$lib/utils/colors.js';
+  import type { PortDataTypeConfig } from '$lib/types/index.js';
 
   interface Props {
     direction: 'inputs' | 'outputs';
     /** From `rankBindablePorts` — already ordered free-first. */
     candidates: RankedBindablePort[];
+    /**
+     * The host's data-type vocabulary, for the colour of each row's type chip —
+     * the same colour the port's handle has on the canvas. Empty falls back to
+     * the built-in palette.
+     */
+    dataTypes?: PortDataTypeConfig[];
     onBind: (candidate: RankedBindablePort) => void;
     onCustom: () => void;
     onCancel: () => void;
   }
 
-  const { direction, candidates, onBind, onCustom, onCancel }: Props = $props();
+  const { direction, candidates, dataTypes = [], onBind, onCustom, onCancel }: Props = $props();
 
   const isInput = $derived(direction === 'inputs');
 
@@ -242,7 +250,13 @@
             onclick={() => (selectedKey = keyOf(candidate))}
             ondblclick={() => confirm(candidate)}
           >
-            <span class="wf-composer__option-type">{candidate.port.dataType}</span>
+            <span
+              class="wf-composer__option-type"
+              style="--wf-composer-type-color: {getDataTypeColorFromConfigs(
+                dataTypes,
+                candidate.port.dataType
+              )}">{candidate.port.dataType}</span
+            >
             <span class="wf-composer__option-body">
               <span class="wf-composer__option-path">
                 <span class="wf-composer__option-node">{candidate.nodeLabel}</span>
@@ -548,13 +562,18 @@
     color: var(--fd-muted-foreground);
   }
 
+  .wf-composer__option--taken .wf-composer__option-type {
+    opacity: 0.7;
+  }
+
   .wf-composer__option-type {
     flex-shrink: 0;
     margin-top: 0.125rem;
     padding: 0.0625rem 0.375rem;
     border-radius: var(--fd-radius-full);
-    background-color: var(--fd-muted);
-    color: var(--fd-muted-foreground);
+    /* The port's own colour, as on its canvas handle: a soft tint behind it. */
+    background-color: color-mix(in srgb, var(--wf-composer-type-color) 14%, transparent);
+    color: var(--wf-composer-type-color);
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-2xs);
     font-weight: 600;
@@ -563,8 +582,7 @@
   }
 
   .wf-composer__option--selected .wf-composer__option-type {
-    background-color: var(--fd-card);
-    color: var(--fd-primary);
+    background-color: color-mix(in srgb, var(--wf-composer-type-color) 20%, var(--fd-card));
   }
 
   .wf-composer__option-body {
