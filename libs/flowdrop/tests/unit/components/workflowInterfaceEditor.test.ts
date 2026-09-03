@@ -19,6 +19,10 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'svelte/server';
 import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
+import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
+import { rankBindablePorts } from '$lib/utils/workflowInterface.js';
+import { PortCompatibilityChecker } from '$lib/utils/connections.js';
+import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
 import type { NodePort, Workflow, WorkflowNode } from '$lib/types/index.js';
 
 function makePort(id: string, dataType = 'string', overrides: Partial<NodePort> = {}): NodePort {
@@ -61,6 +65,8 @@ function makeWorkflow(nodes: WorkflowNode[], workflowInterface?: Workflow['inter
   };
 }
 
+const checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG);
+
 describe('WorkflowInterfaceEditor', () => {
   it('renders the empty state with add affordances when there is no interface', () => {
     const workflow = makeWorkflow([makeNode('node-1', [makePort('in-1')], [])]);
@@ -87,10 +93,23 @@ describe('WorkflowInterfaceEditor', () => {
     }).body;
 
     expect(body).toContain('public-in');
+    // The "Bound port" control is a closed picker on an unbound entry; the
+    // candidates it will unfold are the listbox's, checked below.
+    expect(body).toContain('Not bound');
+
+    const list = render(BindablePortListbox, {
+      props: {
+        direction: 'inputs',
+        candidates: rankBindablePorts(workflow, 'input'),
+        checker,
+        idPrefix: 'test',
+        onConfirm: () => {}
+      }
+    }).body;
     // The exposed port is offered as a binding option...
-    expect(body).toContain('in-a');
+    expect(list).toContain('in-a');
     // ...the not-exposed one is not (decision 3: external ⊂ internal).
-    expect(body).not.toContain('in-b');
+    expect(list).not.toContain('in-b');
   });
 
   it('renders the unbound status in words for a draft entry', () => {
@@ -238,8 +257,10 @@ describe('WorkflowInterfaceEditor', () => {
     const summaryAt = body.indexOf('More options');
     expect(body.indexOf('Data type')).toBeGreaterThan(summaryAt);
     expect(body.indexOf('Description')).toBeGreaterThan(summaryAt);
-    // A resolved binding offers the pull-from-port affordance.
-    expect(body).toContain('Pull from port');
+    // A resolved binding offers the pull-from-port affordance, inside the disclosure.
+    expect(body.indexOf('Pull from port')).toBeGreaterThan(summaryAt);
+    // The bound port is said back in the control: node › port.
+    expect(body).toContain('in-a');
   });
 
   it('offers no pull button for an unbound entry', () => {

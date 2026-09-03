@@ -19,11 +19,9 @@
   import Icon from '@iconify/svelte';
   import Button from '$lib/components/Button.svelte';
   import IconButton from '$lib/components/IconButton.svelte';
-  import Input from '$lib/components/Input.svelte';
   import { m } from '$lib/messages/index.js';
-  import { isFreeBindablePort, type RankedBindablePort } from '$lib/utils/workflowInterface.js';
-  import PortShapeSymbol from '$lib/components/ports/PortShapeSymbol.svelte';
-  import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
+  import type { RankedBindablePort } from '$lib/utils/workflowInterface.js';
+  import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
   import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
 
   interface Props {
@@ -46,81 +44,18 @@
   const isInput = $derived(direction === 'inputs');
 
   let mode = $state<'choose' | 'bind'>('choose');
-  let query = $state('');
-  let selectedKey = $state<string | null>(null);
+  let selected = $state<RankedBindablePort | undefined>(undefined);
 
   let firstChoice = $state<HTMLButtonElement | null>(null);
-  let listbox = $state<HTMLDivElement | null>(null);
 
-  // Land keyboard focus on the form as it opens, and on the list as the
-  // author steps into it — the composer is a modal moment inside the panel.
+  // Land keyboard focus on the form as it opens; the listbox takes it itself
+  // as the author steps into it — the composer is a modal moment inside the panel.
   $effect(() => {
     if (mode === 'choose') firstChoice?.focus();
-    else listbox?.focus();
   });
-
-  function keyOf(candidate: RankedBindablePort): string {
-    return `${candidate.nodeId} ${candidate.port.id}`;
-  }
-
-  const filtered = $derived.by(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return candidates;
-    return candidates.filter((candidate) =>
-      [
-        candidate.nodeLabel,
-        candidate.port.name,
-        candidate.port.id,
-        candidate.port.dataType,
-        candidate.port.description ?? ''
-      ].some((text) => text.toLowerCase().includes(q))
-    );
-  });
-
-  const free = $derived(filtered.filter(isFreeBindablePort));
-  const taken = $derived(filtered.filter((candidate) => !isFreeBindablePort(candidate)));
-
-  const selected = $derived(
-    selectedKey === null
-      ? undefined
-      : candidates.find((candidate) => keyOf(candidate) === selectedKey)
-  );
-
-  function optionId(candidate: RankedBindablePort): string {
-    return `wf-composer-option-${direction}-${candidate.nodeId}-${candidate.port.id}`.replace(
-      /[^A-Za-z0-9_-]/g,
-      '_'
-    );
-  }
 
   function confirm(candidate: RankedBindablePort | undefined = selected): void {
     if (candidate) onBind(candidate);
-  }
-
-  function handleListKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onCancel();
-      return;
-    }
-    if (filtered.length === 0) return;
-    const index = selected ? filtered.findIndex((c) => keyOf(c) === keyOf(selected)) : -1;
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      selectedKey = keyOf(filtered[Math.min(index + 1, filtered.length - 1)]);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      selectedKey = keyOf(filtered[Math.max(index - 1, 0)]);
-    } else if (event.key === 'Home') {
-      event.preventDefault();
-      selectedKey = keyOf(filtered[0]);
-    } else if (event.key === 'End') {
-      event.preventDefault();
-      selectedKey = keyOf(filtered[filtered.length - 1]);
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      confirm();
-    }
   }
 
   function handleChoiceKeydown(event: KeyboardEvent): void {
@@ -204,112 +139,16 @@
       </button>
     </div>
   {:else}
-    {#if candidates.length > 0}
-      <Input
-        size="sm"
-        type="search"
-        value={query}
-        placeholder={m().workflowInterface.composerSearchPlaceholder}
-        aria-label={m().workflowInterface.composerSearchLabel}
-        oninput={(e) => (query = e.currentTarget.value)}
-      >
-        {#snippet leading()}
-          <Icon icon="heroicons:magnifying-glass" />
-        {/snippet}
-      </Input>
-    {/if}
-
-    <div
-      class="wf-composer__list"
-      role="listbox"
-      tabindex="0"
-      bind:this={listbox}
-      aria-label={isInput
-        ? m().workflowInterface.composerListLabelInput
-        : m().workflowInterface.composerListLabelOutput}
-      aria-activedescendant={selected ? optionId(selected) : undefined}
-      onkeydown={handleListKeydown}
-    >
-      {#if candidates.length === 0}
-        <p class="wf-composer__empty">{m().workflowInterface.composerNoPorts}</p>
-      {:else if filtered.length === 0}
-        <p class="wf-composer__empty">{m().workflowInterface.composerNoMatches}</p>
-      {:else}
-        {#snippet option(candidate: RankedBindablePort)}
-          {@const isSelected = selected !== undefined && keyOf(selected) === keyOf(candidate)}
-          <!-- Keyboard handling lives on the listbox (roving aria-activedescendant),
-               so the option itself needs no key handler. -->
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <div
-            id={optionId(candidate)}
-            class="wf-composer__option"
-            class:wf-composer__option--selected={isSelected}
-            class:wf-composer__option--taken={!isFreeBindablePort(candidate)}
-            role="option"
-            tabindex="-1"
-            aria-selected={isSelected}
-            onclick={() => (selectedKey = keyOf(candidate))}
-            ondblclick={() => confirm(candidate)}
-          >
-            <!-- The same two chips a port row wears on the canvas, so a
-                 candidate is recognisable as the port it points at. The
-                 symbol is a fixed-width column; the lane name rides at the
-                 end of the path, where its width cannot push the text about. -->
-            <PortShapeSymbol {checker} port={candidate.port} />
-            <span class="wf-composer__option-body">
-              <span class="wf-composer__option-path">
-                <span class="wf-composer__option-node">{candidate.nodeLabel}</span>
-                <Icon icon="heroicons:chevron-right" />
-                <span class="wf-composer__option-port">{candidate.port.name}</span>
-                <PortLaneChip {checker} port={candidate.port} />
-              </span>
-              {#if candidate.port.description}
-                <span class="wf-composer__option-desc">{candidate.port.description}</span>
-              {/if}
-              {#if candidate.connected || candidate.publishedAs !== undefined || candidate.port.required}
-                <span class="wf-composer__option-flags">
-                  {#if candidate.connected}
-                    <span class="flowdrop-badge flowdrop-badge--sm flowdrop-badge--warning">
-                      {m().workflowInterface.composerConnected}
-                    </span>
-                  {/if}
-                  {#if candidate.publishedAs !== undefined}
-                    <span class="flowdrop-badge flowdrop-badge--sm flowdrop-badge--secondary">
-                      {m().workflowInterface.composerPublishedAs({ id: candidate.publishedAs })}
-                    </span>
-                  {/if}
-                  {#if candidate.port.required}
-                    <span class="flowdrop-badge flowdrop-badge--sm flowdrop-badge--outline">
-                      {m().workflowInterface.composerRequired}
-                    </span>
-                  {/if}
-                </span>
-              {/if}
-            </span>
-            <span class="wf-composer__option-check" aria-hidden="true">
-              <Icon icon="heroicons:check" />
-            </span>
-          </div>
-        {/snippet}
-
-        {#if free.length > 0}
-          <div class="wf-composer__group" role="presentation">
-            <span class="wf-composer__group-title">{m().workflowInterface.composerGroupFree}</span>
-            {#each free as candidate (keyOf(candidate))}
-              {@render option(candidate)}
-            {/each}
-          </div>
-        {/if}
-        {#if taken.length > 0}
-          <div class="wf-composer__group" role="presentation">
-            <span class="wf-composer__group-title">{m().workflowInterface.composerGroupTaken}</span>
-            {#each taken as candidate (keyOf(candidate))}
-              {@render option(candidate)}
-            {/each}
-          </div>
-        {/if}
-      {/if}
-    </div>
+    <BindablePortListbox
+      {direction}
+      {candidates}
+      {checker}
+      idPrefix="wf-composer-option-{direction}"
+      autofocus
+      onHighlight={(candidate) => (selected = candidate)}
+      onConfirm={(candidate) => confirm(candidate)}
+      {onCancel}
+    />
 
     <div class="wf-composer__actions">
       <Button variant="ghost" size="sm" onclick={() => (mode = 'choose')}>
@@ -487,157 +326,6 @@
   .wf-composer :global(.wf-composer__choice-arrow) {
     flex-shrink: 0;
     color: var(--fd-muted-foreground);
-  }
-
-  /* The picker */
-  .wf-composer__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-xs);
-    max-height: 18rem;
-    overflow-y: auto;
-    padding: var(--fd-space-2xs);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background-color: var(--fd-card);
-    scrollbar-width: thin;
-    scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
-  }
-
-  .wf-composer__list:focus-visible {
-    outline: none;
-    border-color: var(--fd-primary);
-    box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
-  }
-
-  .wf-composer__empty {
-    margin: 0;
-    padding: var(--fd-space-md) var(--fd-space-sm);
-    font-size: var(--fd-text-xs);
-    line-height: 1.5;
-    text-align: center;
-    color: var(--fd-muted-foreground);
-  }
-
-  .wf-composer__group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-
-  .wf-composer__group-title {
-    padding: var(--fd-space-2xs) var(--fd-space-xs);
-    font-size: var(--fd-text-2xs);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--fd-muted-foreground);
-  }
-
-  .wf-composer__option {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs);
-    border: 1px solid transparent;
-    border-radius: var(--fd-radius-md);
-    cursor: pointer;
-    transition:
-      background-color var(--fd-transition-fast),
-      border-color var(--fd-transition-fast);
-  }
-
-  .wf-composer__option:hover {
-    background-color: var(--fd-muted);
-  }
-
-  .wf-composer__option--selected,
-  .wf-composer__option--selected:hover {
-    border-color: var(--fd-primary);
-    background-color: var(--fd-primary-muted);
-  }
-
-  .wf-composer__option--taken .wf-composer__option-node,
-  .wf-composer__option--taken .wf-composer__option-port {
-    color: var(--fd-muted-foreground);
-  }
-
-  .wf-composer__option--taken :global(.flowdrop-port-symbol),
-  .wf-composer__option--taken :global(.flowdrop-badge--outline) {
-    opacity: 0.7;
-  }
-
-  /* The lane chip is quiet on purpose; keep it from stretching a wrapped path. */
-  .wf-composer__option-path :global(.flowdrop-badge--outline) {
-    flex: none;
-  }
-
-  .wf-composer__option-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .wf-composer__option-path {
-    display: inline-flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.125rem;
-    font-size: var(--fd-text-xs);
-    line-height: 1.4;
-  }
-
-  .wf-composer__option-path :global(svg) {
-    flex-shrink: 0;
-    color: var(--fd-muted-foreground);
-  }
-
-  .wf-composer__option-node {
-    color: var(--fd-muted-foreground);
-  }
-
-  .wf-composer__option-port {
-    font-weight: 600;
-    color: var(--fd-foreground);
-  }
-
-  .wf-composer__option-desc {
-    font-size: var(--fd-text-2xs);
-    line-height: 1.45;
-    color: var(--fd-muted-foreground);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .wf-composer__option-flags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--fd-space-2xs);
-    margin-top: 0.125rem;
-  }
-
-  .wf-composer__option-flags :global(.flowdrop-badge) {
-    font-size: var(--fd-text-2xs);
-    line-height: 1.2;
-  }
-
-  .wf-composer__option-check {
-    flex-shrink: 0;
-    display: inline-flex;
-    width: 1rem;
-    margin-top: 0.125rem;
-    color: var(--fd-primary);
-    opacity: 0;
-    transition: opacity var(--fd-transition-fast);
-  }
-
-  .wf-composer__option--selected .wf-composer__option-check {
-    opacity: 1;
   }
 
   .wf-composer__actions {

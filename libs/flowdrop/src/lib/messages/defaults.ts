@@ -510,6 +510,12 @@ export const defaultMessages = {
     removeExample: 'Remove example',
     bindingLabel: 'Bound port',
     bindingUnbound: 'Not bound',
+    bindingChange: 'Change the bound port',
+    bindingChoose: 'Choose a port to bind',
+    bindingCurrent: 'Current',
+    bindingUnbind: 'Unbind',
+    bindingDangling: ({ nodeId, portId }: { nodeId: string; portId: string }) =>
+      `${nodeId} › ${portId} (missing)`,
     moreOptions: 'More options',
     pullFromPort: 'Pull from port',
     pullFromPortTitle:

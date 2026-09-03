@@ -41,7 +41,6 @@
   } from '$lib/types/index.js';
   import {
     entryFromBindablePort,
-    listBindablePorts,
     rankBindablePorts,
     resolveInterface,
     validateWorkflowInterface,
@@ -195,7 +194,7 @@
   });
 
   function bindablePorts(direction: Direction) {
-    return listBindablePorts(workflow, entryDirectionOf(direction));
+    return rankBindablePorts(workflow, entryDirectionOf(direction));
   }
 
   function nextId(direction: Direction): string {
@@ -339,7 +338,7 @@
       {#if composerFor === section.key}
         <WorkflowInterfaceEntryComposer
           direction={section.key}
-          candidates={rankBindablePorts(workflow, entryDirectionOf(section.key))}
+          candidates={bindablePorts(section.key)}
           {checker}
           onBind={(candidate) => addBoundEntry(section.key, candidate)}
           onCustom={() => addEntry(section.key)}
@@ -361,6 +360,7 @@
               {entry}
               {status}
               {dataTypes}
+              {checker}
               direction={section.key}
               candidates={bindablePorts(section.key)}
               footerIssues={footerIssues(section.key, entry.id, status)}

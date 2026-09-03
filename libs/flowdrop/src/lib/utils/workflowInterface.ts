@@ -555,6 +555,17 @@ export interface RankedBindablePort extends BindablePort {
   publishedAs?: string;
 }
 
+/**
+ * A stable key for a bindable port — `nodeId::portId` — the value a picker
+ * highlights by and an entry's single binding is compared against.
+ */
+export function bindablePortKey(
+  candidate: BindablePort | { nodeId: string; portId: string }
+): string {
+  const portId = 'port' in candidate ? candidate.port.id : candidate.portId;
+  return `${candidate.nodeId}::${portId}`;
+}
+
 /** A port nothing is using yet — the natural first pick for a new entry. */
 export function isFreeBindablePort(candidate: RankedBindablePort): boolean {
   return !candidate.connected && candidate.publishedAs === undefined;

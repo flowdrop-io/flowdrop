@@ -24,12 +24,17 @@
   import IconButton from '$lib/components/IconButton.svelte';
   import Input from '$lib/components/Input.svelte';
   import Select from '$lib/components/Select.svelte';
+  import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
+  import PortShapeSymbol from '$lib/components/ports/PortShapeSymbol.svelte';
+  import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
   import { m } from '$lib/messages/index.js';
   import type { PortDataTypeConfig, WorkflowInterfaceEntry } from '$lib/types/index.js';
+  import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
   import {
+    bindablePortKey,
     describeInterfaceEntryStatus,
     pullEntryFieldsFromPort,
-    type BindablePort,
+    type RankedBindablePort,
     type InterfaceIssue,
     type ResolvedInterfaceEntry
   } from '$lib/utils/workflowInterface.js';
@@ -38,10 +43,12 @@
     entry: WorkflowInterfaceEntry;
     direction: 'inputs' | 'outputs';
     status: ResolvedInterfaceEntry | undefined;
-    /** Candidate ports for this direction, for the binding picker. */
-    candidates: BindablePort[];
+    /** Candidate ports for this direction, ranked, for the binding picker. */
+    candidates: RankedBindablePort[];
     /** The authoring vocabulary offered by the dataType picker. */
     dataTypes: PortDataTypeConfig[];
+    /** The instance's checker — shape symbol and lane colour of the bound port. */
+    checker: PortCompatibilityChecker;
     /** The issues this card explains in its footer. */
     footerIssues: InterfaceIssue[];
     /** Input side only: the bound port already receives another edge. */
@@ -61,6 +68,7 @@
     status,
     candidates,
     dataTypes,
+    checker,
     footerIssues,
     alreadyConnected = false,
     conflictingSource,
@@ -106,33 +114,44 @@
     return options;
   }
 
-  function bindingKey(nodeId: string, portId: string): string {
-    return `${nodeId}::${portId}`;
-  }
+  /** Whether the binding picker is unfolded under the "Bound port" control. */
+  let pickerOpen = $state(false);
 
-  /** The entry's current single binding, as a picker value (`''` = unbound). */
-  const currentBinding = $derived(
-    entry.bindings[0] ? bindingKey(entry.bindings[0].nodeId, entry.bindings[0].portId) : ''
-  );
+  /** The entry's current single binding, as a picker key (`undefined` = unbound). */
+  const currentKey = $derived(entry.bindings[0] ? bindablePortKey(entry.bindings[0]) : undefined);
+
+  /** The bound port, when the single binding resolves. */
+  const boundTarget = $derived(status?.targets[0]);
 
   /** The bound port's own dataType, when the single binding resolves. */
-  const boundPortType = $derived(status?.targets[0]?.port.dataType);
+  const boundPortType = $derived(boundTarget?.port.dataType);
 
-  function handleBindingChange(value: string): void {
-    if (!value) {
-      onPatch({ bindings: [] });
-      return;
-    }
-    const [nodeId, portId] = value.split('::');
-    const patch: Partial<WorkflowInterfaceEntry> = { bindings: [{ nodeId, portId }] };
+  /**
+   * The picker's candidates, with this entry's own port counted as free: it
+   * is "published" — by the very entry choosing — and greying it out as taken
+   * would tell the author their current choice is unavailable.
+   */
+  const ownCandidates = $derived(
+    candidates.map((candidate) =>
+      candidate.publishedAs === entry.id ? { ...candidate, publishedAs: undefined } : candidate
+    )
+  );
+
+  function bindTo(candidate: RankedBindablePort): void {
+    const patch: Partial<WorkflowInterfaceEntry> = {
+      bindings: [{ nodeId: candidate.nodeId, portId: candidate.port.id }]
+    };
     // Convenience default: prefill an empty dataType from the picked port's own
     // type. The field stays freely editable afterward — this only saves the
     // common case of typing out what the port already declares.
-    if (!entry.dataType) {
-      const match = candidates.find((b) => b.nodeId === nodeId && b.port.id === portId);
-      if (match) patch.dataType = match.port.dataType;
-    }
+    if (!entry.dataType) patch.dataType = candidate.port.dataType;
     onPatch(patch);
+    pickerOpen = false;
+  }
+
+  function unbind(): void {
+    onPatch({ bindings: [] });
+    pickerOpen = false;
   }
 
   /**
@@ -214,47 +233,86 @@
           onchange={(e) => onPatch({ id: e.currentTarget.value })}
         />
       </label>
-      <label class="wf-interface__field wf-interface__field--binding">
-        <span class="wf-interface__label">{m().workflowInterface.bindingLabel}</span>
-        <Select
-          size="sm"
-          invalid={isInput && alreadyConnected}
-          value={currentBinding}
-          onchange={(e) => handleBindingChange(e.currentTarget.value)}
+      <div class="wf-interface__field wf-interface__field--binding">
+        <span class="wf-interface__label" id="wf-binding-label-{direction}-{entry.id}">
+          {m().workflowInterface.bindingLabel}
+        </span>
+        <!-- The bound port, said back the way the canvas says it — shape symbol,
+             node › port, lane chip — and the way in to change it. Looks like a
+             select, opens the shared port listbox instead. -->
+        <button
+          type="button"
+          class="wf-interface__binding"
+          class:wf-interface__binding--open={pickerOpen}
+          class:wf-interface__binding--invalid={isInput && alreadyConnected}
+          class:wf-interface__binding--empty={!entry.bindings[0]}
+          aria-haspopup="listbox"
+          aria-expanded={pickerOpen}
+          aria-labelledby="wf-binding-label-{direction}-{entry.id}"
+          title={m().workflowInterface.bindingChange}
+          onclick={() => (pickerOpen = !pickerOpen)}
         >
-          <option value="">{m().workflowInterface.bindingUnbound}</option>
-          {#each candidates as candidate (bindingKey(candidate.nodeId, candidate.port.id))}
-            <option value={bindingKey(candidate.nodeId, candidate.port.id)}>
-              {candidate.nodeLabel} — {candidate.port.name} ({candidate.port.dataType})
-            </option>
-          {/each}
-        </Select>
+          {#if boundTarget}
+            <PortShapeSymbol {checker} port={boundTarget.port} />
+            <span class="wf-interface__binding-path">
+              <span class="wf-interface__binding-node">
+                {boundTarget.node.data?.label ?? boundTarget.node.id}
+              </span>
+              <Icon icon="heroicons:chevron-right" />
+              <span class="wf-interface__binding-port">{boundTarget.port.name}</span>
+              <PortLaneChip {checker} port={boundTarget.port} />
+            </span>
+          {:else if entry.bindings[0]}
+            <span class="wf-interface__binding-path wf-interface__binding-path--dangling">
+              {m().workflowInterface.bindingDangling({
+                nodeId: entry.bindings[0].nodeId,
+                portId: entry.bindings[0].portId
+              })}
+            </span>
+          {:else}
+            <span class="wf-interface__binding-placeholder">
+              {m().workflowInterface.bindingUnbound}
+            </span>
+          {/if}
+          <Icon icon="heroicons:chevron-up-down" class="wf-interface__binding-caret" />
+        </button>
         {#if isInput && alreadyConnected}
           <span class="wf-interface__inline wf-interface__inline--error">
             {m().workflowInterface.alreadyConnectedInline({ source: conflictingSource ?? '' })}
           </span>
         {/if}
-      </label>
+      </div>
     </div>
 
-    {#if status?.targets[0]}
-      <div class="wf-interface__bound">
-        <span class="wf-interface__bound-type">{status.targets[0].port.dataType}</span>
-        <span class="wf-interface__bound-path">
-          {status.targets[0].node.data?.label ?? status.targets[0].node.id}
-          <Icon icon="heroicons:chevron-right" />
-          {status.targets[0].port.name}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          class="wf-interface__pull"
-          title={m().workflowInterface.pullFromPortTitle}
-          onclick={() => onPatch(pullEntryFieldsFromPort(status.targets[0].port))}
-        >
-          <Icon icon="heroicons:arrow-down-tray" />
-          {m().workflowInterface.pullFromPort}
-        </Button>
+    {#if pickerOpen}
+      <div
+        class="wf-interface__picker"
+        role="group"
+        aria-label={m().workflowInterface.bindingChoose}
+      >
+        <BindablePortListbox
+          {direction}
+          candidates={ownCandidates}
+          {checker}
+          idPrefix="wf-binding-option-{direction}-{entry.id}"
+          {currentKey}
+          confirmOnClick
+          autofocus
+          onConfirm={bindTo}
+          onCancel={() => (pickerOpen = false)}
+        />
+        <div class="wf-interface__picker-actions">
+          {#if entry.bindings[0]}
+            <Button variant="ghost" size="sm" onclick={unbind}>
+              <Icon icon="heroicons:link-slash" />
+              {m().workflowInterface.bindingUnbind}
+            </Button>
+          {/if}
+          <span class="wf-interface__picker-spacer"></span>
+          <Button variant="ghost" size="sm" onclick={() => (pickerOpen = false)}>
+            {m().workflowInterface.composerCancel}
+          </Button>
+        </div>
       </div>
     {/if}
 
@@ -270,6 +328,20 @@
         {m().workflowInterface.moreOptions}
       </summary>
       <div class="wf-interface__more-body">
+        {#if boundTarget}
+          <div class="wf-interface__pull-row">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="wf-interface__pull"
+              title={m().workflowInterface.pullFromPortTitle}
+              onclick={() => onPatch(pullEntryFieldsFromPort(boundTarget.port))}
+            >
+              <Icon icon="heroicons:arrow-down-tray" />
+              {m().workflowInterface.pullFromPort}
+            </Button>
+          </div>
+        {/if}
         <div class="wf-interface__row">
           <label class="wf-interface__field">
             <span class="wf-interface__label">{m().workflowInterface.nameLabel}</span>
@@ -559,49 +631,119 @@
     font-weight: 500;
   }
 
-  /* The bound port, said back: type chip, node › port, and the pull action. */
-  .wf-interface__bound {
+  /* The bound port, said back the way the canvas says it, in a select's clothes. */
+  .wf-interface__binding {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: var(--fd-space-xs);
+    width: 100%;
     min-height: 2rem;
     padding: var(--fd-space-2xs) var(--fd-space-xs);
+    border: 1px solid var(--fd-border);
     border-radius: var(--fd-control-radius);
-    background-color: var(--fd-muted);
+    background-color: var(--fd-card);
+    color: var(--fd-foreground);
+    font: inherit;
     font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color var(--fd-transition-fast),
+      box-shadow var(--fd-transition-fast);
   }
 
-  .wf-interface__bound-type {
-    padding: 0.0625rem 0.375rem;
-    border-radius: var(--fd-radius-full);
-    background-color: var(--fd-primary-muted);
-    color: var(--fd-primary);
-    font-family: var(--fd-font-mono);
-    font-size: var(--fd-text-2xs);
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: lowercase;
+  .wf-interface__binding:hover {
+    border-color: var(--fd-border-strong);
   }
 
-  .wf-interface__bound-path {
+  .wf-interface__binding:focus-visible,
+  .wf-interface__binding--open {
+    outline: none;
+    border-color: var(--fd-primary);
+    box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
+  }
+
+  .wf-interface__binding--invalid {
+    border-color: var(--fd-error);
+  }
+
+  .wf-interface__binding-path {
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.125rem;
+    flex: 1;
     min-width: 0;
-    color: var(--fd-foreground);
-    font-weight: 500;
+    line-height: 1.4;
   }
 
-  .wf-interface__bound-path :global(svg) {
+  .wf-interface__binding-path :global(svg) {
+    flex-shrink: 0;
     color: var(--fd-muted-foreground);
   }
 
-  .wf-interface__bound :global(.wf-interface__pull) {
+  .wf-interface__binding-path :global(.flowdrop-badge--outline) {
+    flex: none;
+  }
+
+  .wf-interface__binding-node {
+    color: var(--fd-muted-foreground);
+  }
+
+  .wf-interface__binding-port {
+    font-weight: 600;
+  }
+
+  .wf-interface__binding-path--dangling {
+    color: var(--fd-error);
+    font-family: var(--fd-font-mono);
+  }
+
+  .wf-interface__binding-placeholder {
+    flex: 1;
+    color: var(--fd-muted-foreground);
+  }
+
+  .wf-interface__binding :global(.wf-interface__binding-caret) {
+    flex-shrink: 0;
     margin-left: auto;
+    color: var(--fd-muted-foreground);
+  }
+
+  /* The unfolded picker: the shared listbox plus its own unbind/cancel row. */
+  .wf-interface__picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-xs);
+    border: 1px solid color-mix(in srgb, var(--fd-primary) 45%, var(--fd-border));
+    border-radius: var(--fd-radius-md);
+    background-color: color-mix(in srgb, var(--fd-primary) 3%, var(--fd-card));
+  }
+
+  .wf-interface__picker-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+  }
+
+  .wf-interface__picker-spacer {
+    flex: 1;
+  }
+
+  .wf-interface__picker-actions :global(.flowdrop-btn) {
     min-height: 1.75rem;
     padding-block: 0;
+  }
+
+  .wf-interface__pull-row {
+    display: flex;
+  }
+
+  .wf-interface__pull-row :global(.wf-interface__pull) {
+    min-height: 1.75rem;
+    padding-block: 0;
+    padding-inline: var(--fd-space-xs);
     color: var(--fd-primary);
   }
 
