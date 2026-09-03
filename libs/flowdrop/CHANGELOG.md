@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **"Add input" / "Add output" in the workflow interface editor opens an inline composer instead of dropping in a blank row.** A clearly separate two-step draft form asks first whether the new entry should bind to an existing port. _Yes_ opens a custom port picker: ports nothing is using yet are listed first under **Available**, then the ones that already have an edge or are already published, each row showing the port's type, `node › port`, description and a **Connected** / **Published as …** / **Required** badge — the metadata a native select cannot show — with a search box and full keyboard support (arrows, Home/End, Enter to add, Escape to close). Picking a port adds an entry pulled from it: bound, with name, type, description, required and default copied and the id seeded from the port's own id (suffixed if taken). _No_ adds an empty, unbound entry exactly as before. Two new pure helpers in `utils/workflowInterface`, `rankBindablePorts()` and `entryFromBindablePort()`, back the picker.
+
 ### Changed
 
 - **The workflow interface editor now looks like the rest of the settings panel.** Entries are cards on the panel's card surface, using the shared `Input`, `Select`, `Button` and `IconButton` controls and the settings form's label voice, so the Interface tab no longer reads as a foreign screen next to the Settings tab. A bound entry says its target back as a type chip and `node › port` line with the pull action beside it; the entry health dot has a soft halo; status messages are tinted callouts instead of bare coloured text; the empty state is a quiet dashed placeholder; section titles carry an inputs/outputs glyph and an entry count. Markup, message strings and the `wf-interface__*` class names are unchanged, so existing overrides and tests keep working.

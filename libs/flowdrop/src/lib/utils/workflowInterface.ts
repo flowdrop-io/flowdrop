@@ -546,3 +546,85 @@ export function listBindablePorts(
 
   return result;
 }
+
+/** A bindable port plus what the canvas already does with it. */
+export interface RankedBindablePort extends BindablePort {
+  /** An edge already feeds this input, or already drains this output. */
+  connected: boolean;
+  /** The id of the same-direction interface entry that already binds this port, if any. */
+  publishedAs?: string;
+}
+
+/** A port nothing is using yet — the natural first pick for a new entry. */
+export function isFreeBindablePort(candidate: RankedBindablePort): boolean {
+  return !candidate.connected && candidate.publishedAs === undefined;
+}
+
+/**
+ * `listBindablePorts`, annotated and ordered for a "pick a port to publish"
+ * picker: every port nothing is using yet comes first, then the ports that
+ * already have an edge or are already published by another entry. Within
+ * each group the canvas order is kept, so the list stays stable as the
+ * author edits.
+ *
+ * "Connected" mirrors `validateWorkflowInterface`'s already-connected rule
+ * for inputs (an incoming edge on the bound handle) and its natural inverse
+ * for outputs (an outgoing edge). Neither is forbidden — an output can be
+ * both wired and published — the ranking only says which ports need no
+ * second thought.
+ */
+export function rankBindablePorts(
+  workflow: Workflow,
+  direction: 'input' | 'output'
+): RankedBindablePort[] {
+  const entries =
+    (direction === 'input' ? workflow.interface?.inputs : workflow.interface?.outputs) ?? [];
+
+  const ranked = listBindablePorts(workflow, direction).map((candidate): RankedBindablePort => {
+    const handleId = buildHandleId(candidate.nodeId, direction, candidate.port.id);
+    const connected = workflow.edges.some((edge) =>
+      direction === 'input' ? edge.targetHandle === handleId : edge.sourceHandle === handleId
+    );
+    const publishedAs = entries.find((entry) =>
+      entry.bindings.some(
+        (binding) => binding.nodeId === candidate.nodeId && binding.portId === candidate.port.id
+      )
+    )?.id;
+    return publishedAs === undefined
+      ? { ...candidate, connected }
+      : { ...candidate, connected, publishedAs };
+  });
+
+  return [
+    ...ranked.filter(isFreeBindablePort),
+    ...ranked.filter((candidate) => !isFreeBindablePort(candidate))
+  ];
+}
+
+/**
+ * A complete new entry for a port the author just picked: bound to it, with
+ * every field `pullEntryFieldsFromPort` can derive, and an `id` seeded from
+ * the port's own id — made unique against `existingIds` with a numeric
+ * suffix (`text`, `text_2`, `text_3`, …).
+ *
+ * Seeding the id from the port is a convenience at creation time only: the
+ * author edits it like any other field afterwards, and nothing later
+ * re-derives it. DN1's concern — a contract silently keyed on internal port
+ * names — is about that ongoing coupling, which this does not introduce.
+ */
+export function entryFromBindablePort(
+  candidate: BindablePort,
+  existingIds: Iterable<string>
+): WorkflowInterfaceEntry {
+  const taken = new Set(existingIds);
+  let id = candidate.port.id;
+  for (let n = 2; taken.has(id); n += 1) {
+    id = `${candidate.port.id}_${n}`;
+  }
+  return {
+    id,
+    dataType: candidate.port.dataType,
+    bindings: [{ nodeId: candidate.nodeId, portId: candidate.port.id }],
+    ...pullEntryFieldsFromPort(candidate.port)
+  };
+}

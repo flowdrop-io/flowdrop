@@ -29,6 +29,7 @@
   import Button from '$lib/components/Button.svelte';
   import { m } from '$lib/messages/index.js';
   import WorkflowInterfaceEntryCard from '$lib/components/WorkflowInterfaceEntryCard.svelte';
+  import WorkflowInterfaceEntryComposer from '$lib/components/WorkflowInterfaceEntryComposer.svelte';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
   import type {
@@ -38,10 +39,13 @@
     WorkflowInterfaceEntry
   } from '$lib/types/index.js';
   import {
+    entryFromBindablePort,
     listBindablePorts,
+    rankBindablePorts,
     resolveInterface,
     validateWorkflowInterface,
     type InterfaceIssue,
+    type RankedBindablePort,
     type ResolvedInterfaceEntry
   } from '$lib/utils/workflowInterface.js';
 
@@ -224,12 +228,38 @@
     });
   }
 
-  function addEntry(direction: Direction): void {
-    const entry: WorkflowInterfaceEntry = { id: nextId(direction), dataType: '', bindings: [] };
+  /**
+   * Which section's "Add" composer is open, if any. One at a time: opening
+   * the other side's closes this one, and adding or cancelling closes it.
+   */
+  let composerFor = $state<Direction | null>(null);
+
+  function toggleComposer(direction: Direction): void {
+    composerFor = composerFor === direction ? null : direction;
+  }
+
+  function appendEntry(direction: Direction, entry: WorkflowInterfaceEntry): void {
     // A row id of its own, so adding an entry leaves every other card — and
     // every other card's disclosure — exactly as the author left it.
     rowIds[direction] = [...rowIds[direction], mintRowId()];
     commit(direction, [...entriesFor(direction), entry]);
+    composerFor = null;
+  }
+
+  /** The composer's "no, custom" path: an empty, unbound entry with a generated id. */
+  function addEntry(direction: Direction): void {
+    appendEntry(direction, { id: nextId(direction), dataType: '', bindings: [] });
+  }
+
+  /** The composer's "yes, bind" path: an entry pulled from the picked port. */
+  function addBoundEntry(direction: Direction, candidate: RankedBindablePort): void {
+    appendEntry(
+      direction,
+      entryFromBindablePort(
+        candidate,
+        entriesFor(direction).map((entry) => entry.id)
+      )
+    );
   }
 
   function removeEntry(direction: Direction, index: number): void {
@@ -285,10 +315,10 @@
           {/if}
         </h4>
         <Button
-          variant="outline"
+          variant={composerFor === section.key ? 'secondary' : 'outline'}
           size="sm"
           class="wf-interface__add"
-          onclick={() => addEntry(section.key)}
+          onclick={() => toggleComposer(section.key)}
         >
           <Icon icon="heroicons:plus" />
           {section.key === 'inputs'
@@ -296,6 +326,16 @@
             : m().workflowInterface.addOutput}
         </Button>
       </div>
+
+      {#if composerFor === section.key}
+        <WorkflowInterfaceEntryComposer
+          direction={section.key}
+          candidates={rankBindablePorts(workflow, entryDirectionOf(section.key))}
+          onBind={(candidate) => addBoundEntry(section.key, candidate)}
+          onCustom={() => addEntry(section.key)}
+          onCancel={() => (composerFor = null)}
+        />
+      {/if}
 
       {#if list.length === 0}
         <p class="wf-interface__empty">

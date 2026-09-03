@@ -517,6 +517,30 @@ export const defaultMessages = {
     removeEntry: ({ id }: { id: string }) => `Remove interface entry "${id}"`,
     moveUp: ({ id }: { id: string }) => `Move "${id}" up`,
     moveDown: ({ id }: { id: string }) => `Move "${id}" down`,
-    metaDisclosure: 'Server metadata (read-only)'
+    metaDisclosure: 'Server metadata (read-only)',
+    // The inline composer that opens from "Add input" / "Add output".
+    composerTitleInput: 'New input',
+    composerTitleOutput: 'New output',
+    composerStep: ({ step, total }: { step: number; total: number }) => `Step ${step} of ${total}`,
+    composerClose: 'Close without adding',
+    composerQuestion: 'Bind it to an existing port?',
+    composerBindYes: 'Yes, bind to a port',
+    composerBindYesHint:
+      'Pick an exposed port. The entry takes its id, name, type and description from it.',
+    composerBindNo: 'No, add a custom entry',
+    composerBindNoHint: 'Start with an empty entry. Bind it later, or leave it unbound.',
+    composerSearchLabel: 'Search ports',
+    composerSearchPlaceholder: 'Search by node, port or type…',
+    composerListLabelInput: 'Exposed input ports',
+    composerListLabelOutput: 'Exposed output ports',
+    composerGroupFree: 'Available',
+    composerGroupTaken: 'Connected or already published',
+    composerNoPorts: 'No exposed ports to bind yet. Expose a port on a node first.',
+    composerNoMatches: 'No ports match your search.',
+    composerConnected: 'Connected',
+    composerPublishedAs: ({ id }: { id: string }) => `Published as ${id}`,
+    composerRequired: 'Required',
+    composerBack: 'Back',
+    composerCancel: 'Cancel'
   }
 } as const;

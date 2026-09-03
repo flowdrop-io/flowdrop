@@ -14,6 +14,8 @@ import {
   pullEntryFieldsFromPort,
   interfaceBoundHandles,
   interfaceBoundTooltip,
+  rankBindablePorts,
+  entryFromBindablePort,
   describeInterfaceEntryStatus,
   listBindablePorts
 } from '$lib/utils/workflowInterface.js';
@@ -901,5 +903,101 @@ describe('listBindablePorts', () => {
     expect(listBindablePorts(workflow, 'input')).toEqual([
       { nodeId: 'node-1', nodeLabel: 'node-1', port }
     ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// rankBindablePorts
+// ---------------------------------------------------------------------------
+
+describe('rankBindablePorts', () => {
+  it('puts ports nothing is using yet first, then connected or already-published ones, in canvas order', () => {
+    const wired = makePort('wired', 'string', { type: 'input' });
+    const free1 = makePort('free-1', 'string', { type: 'input' });
+    const published = makePort('published', 'string', { type: 'input' });
+    const free2 = makePort('free-2', 'number', { type: 'input' });
+    const node = makeNode('node-1', [wired, free1, published, free2], []);
+    const feeder = makeNode('feeder', [], [makePort('out', 'string', { type: 'output' })]);
+    const workflow = makeWorkflow([node, feeder], [], {
+      inputs: [
+        { id: 'public', dataType: 'string', bindings: [{ nodeId: 'node-1', portId: 'published' }] }
+      ]
+    });
+    workflow.edges = [
+      {
+        id: 'e1',
+        source: 'feeder',
+        target: 'node-1',
+        sourceHandle: buildHandleId('feeder', 'output', 'out'),
+        targetHandle: buildHandleId('node-1', 'input', 'wired')
+      }
+    ];
+
+    const ranked = rankBindablePorts(workflow, 'input');
+    expect(ranked.map((r) => r.port.id)).toEqual(['free-1', 'free-2', 'wired', 'published']);
+    expect(ranked.find((r) => r.port.id === 'wired')).toMatchObject({ connected: true });
+    expect(ranked.find((r) => r.port.id === 'published')).toMatchObject({
+      connected: false,
+      publishedAs: 'public'
+    });
+    expect(ranked.find((r) => r.port.id === 'free-1')).toMatchObject({ connected: false });
+    expect(ranked.find((r) => r.port.id === 'free-1')).not.toHaveProperty('publishedAs');
+  });
+
+  it('treats an output with an outgoing edge as connected', () => {
+    const drained = makePort('drained', 'string', { type: 'output' });
+    const idle = makePort('idle', 'string', { type: 'output' });
+    const node = makeNode('node-1', [], [drained, idle]);
+    const sink = makeNode('sink', [makePort('in', 'string', { type: 'input' })], []);
+    const workflow = makeWorkflow([node, sink]);
+    workflow.edges = [
+      {
+        id: 'e1',
+        source: 'node-1',
+        target: 'sink',
+        sourceHandle: buildHandleId('node-1', 'output', 'drained'),
+        targetHandle: buildHandleId('sink', 'input', 'in')
+      }
+    ];
+
+    expect(rankBindablePorts(workflow, 'output').map((r) => [r.port.id, r.connected])).toEqual([
+      ['idle', false],
+      ['drained', true]
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// entryFromBindablePort
+// ---------------------------------------------------------------------------
+
+describe('entryFromBindablePort', () => {
+  const candidate = {
+    nodeId: 'node-1',
+    nodeLabel: 'Node One',
+    port: makePort('text', 'string', {
+      type: 'input',
+      name: 'Text',
+      description: 'The text',
+      required: true,
+      defaultValue: 'hi'
+    })
+  };
+
+  it('binds to the port and pulls every derivable field, seeding the id from the port id', () => {
+    expect(entryFromBindablePort(candidate, [])).toEqual({
+      id: 'text',
+      name: 'Text',
+      dataType: 'string',
+      description: 'The text',
+      required: true,
+      defaultValue: 'hi',
+      bindings: [{ nodeId: 'node-1', portId: 'text' }]
+    });
+  });
+
+  it('suffixes the id until it is unique among the existing entries', () => {
+    expect(entryFromBindablePort(candidate, ['text']).id).toBe('text_2');
+    expect(entryFromBindablePort(candidate, ['text', 'text_2']).id).toBe('text_3');
   });
 });
