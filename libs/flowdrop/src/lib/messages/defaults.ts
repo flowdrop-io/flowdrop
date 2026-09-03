@@ -490,8 +490,6 @@ export const defaultMessages = {
     outputsHeading: 'Outputs',
     addInput: 'Add input',
     addOutput: 'Add output',
-    noInputs: 'No inputs declared yet.',
-    noOutputs: 'No outputs declared yet.',
     idLabel: 'ID',
     nameLabel: 'Name',
     descriptionLabel: 'Description',

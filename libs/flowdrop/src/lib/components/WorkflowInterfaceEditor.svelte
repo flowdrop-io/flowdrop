@@ -26,7 +26,6 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
-  import Button from '$lib/components/Button.svelte';
   import { m } from '$lib/messages/index.js';
   import WorkflowInterfaceEntryCard from '$lib/components/WorkflowInterfaceEntryCard.svelte';
   import WorkflowInterfaceEntryComposer from '$lib/components/WorkflowInterfaceEntryComposer.svelte';
@@ -322,37 +321,9 @@
             <span class="wf-interface__count">{list.length}</span>
           {/if}
         </h4>
-        <Button
-          variant={composerFor === section.key ? 'secondary' : 'outline'}
-          size="sm"
-          class="wf-interface__add"
-          onclick={() => toggleComposer(section.key)}
-        >
-          <Icon icon="heroicons:plus" />
-          {section.key === 'inputs'
-            ? m().workflowInterface.addInput
-            : m().workflowInterface.addOutput}
-        </Button>
       </div>
 
-      {#if composerFor === section.key}
-        <WorkflowInterfaceEntryComposer
-          direction={section.key}
-          candidates={bindablePorts(section.key)}
-          {checker}
-          onBind={(candidate) => addBoundEntry(section.key, candidate)}
-          onCustom={() => addEntry(section.key)}
-          onCancel={() => (composerFor = null)}
-        />
-      {/if}
-
-      {#if list.length === 0}
-        <p class="wf-interface__empty">
-          {section.key === 'inputs'
-            ? m().workflowInterface.noInputs
-            : m().workflowInterface.noOutputs}
-        </p>
-      {:else}
+      {#if list.length > 0}
         <ul class="wf-interface__list">
           {#each list as entry, index (rowIds[section.key][index] ?? `pending-${index}`)}
             {@const status = statusFor(section.key, entry.id)}
@@ -380,6 +351,29 @@
           {/each}
         </ul>
       {/if}
+
+      <!-- The insertion point, always shown: a new entry lands here, at the end
+           of the list. The dashed slot is the add action; while the composer is
+           open it takes the slot's place, so the draft sits exactly where the
+           entry it becomes will sit. Doubles as the empty state — an empty side
+           is a side with only its insertion point. -->
+      {#if composerFor === section.key}
+        <WorkflowInterfaceEntryComposer
+          direction={section.key}
+          candidates={bindablePorts(section.key)}
+          {checker}
+          onBind={(candidate) => addBoundEntry(section.key, candidate)}
+          onCustom={() => addEntry(section.key)}
+          onCancel={() => (composerFor = null)}
+        />
+      {:else}
+        <button type="button" class="wf-interface__add" onclick={() => toggleComposer(section.key)}>
+          <Icon icon="heroicons:plus" />
+          {section.key === 'inputs'
+            ? m().workflowInterface.addInput
+            : m().workflowInterface.addOutput}
+        </button>
+      {/if}
     </section>
   {/each}
 </div>
@@ -389,7 +383,7 @@
     Two sections — inputs, outputs — in the visual family of the settings
     form this editor sits beside: the same section-title voice as
     `.config-surface__section-title`, the shared `.flowdrop-btn` for the add
-    action, and a quiet dashed placeholder for an empty side.
+    action as a dashed insertion slot at the end of each side.
   */
   .wf-interface {
     display: flex;
@@ -443,20 +437,45 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .wf-interface__section-header :global(.wf-interface__add) {
-    min-height: 1.75rem;
-    padding-block: 0;
+  /* The insertion slot: a dashed, full-width add action where the next entry
+     will appear. Quiet at rest, primary on hover and focus. */
+  .wf-interface__add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fd-space-xs);
+    width: 100%;
+    min-height: 2.5rem;
+    padding: var(--fd-space-sm);
+    border: 1px dashed var(--fd-border-strong);
+    border-radius: var(--fd-radius-lg);
+    background-color: transparent;
+    color: var(--fd-muted-foreground);
+    font: inherit;
+    font-size: var(--fd-text-xs);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      border-color var(--fd-transition-fast),
+      background-color var(--fd-transition-fast),
+      color var(--fd-transition-fast);
   }
 
-  .wf-interface__empty {
-    margin: 0;
-    padding: var(--fd-space-md) var(--fd-space-sm);
-    border: 1px dashed var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    font-size: var(--fd-text-xs);
-    line-height: 1.5;
-    color: var(--fd-muted-foreground);
-    text-align: center;
+  .wf-interface__add:hover {
+    border-color: var(--fd-primary);
+    background-color: var(--fd-primary-muted);
+    color: var(--fd-primary);
+  }
+
+  .wf-interface__add:focus-visible {
+    outline: none;
+    border-color: var(--fd-primary);
+    color: var(--fd-primary);
+    box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
+  }
+
+  .wf-interface__add :global(svg) {
+    font-size: 0.875rem;
   }
 
   .wf-interface__list {

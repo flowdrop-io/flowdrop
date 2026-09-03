@@ -68,16 +68,27 @@ function makeWorkflow(nodes: WorkflowNode[], workflowInterface?: Workflow['inter
 const checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG);
 
 describe('WorkflowInterfaceEditor', () => {
-  it('renders the empty state with add affordances when there is no interface', () => {
+  it('renders an empty side as just its insertion slot — the add action, no placeholder text', () => {
     const workflow = makeWorkflow([makeNode('node-1', [makePort('in-1')], [])]);
     const body = render(WorkflowInterfaceEditor, {
       props: { workflow, onChange: () => {} }
     }).body;
 
-    expect(body).toContain('No inputs declared yet.');
-    expect(body).toContain('No outputs declared yet.');
+    expect(body).not.toContain('declared yet');
     expect(body).toContain('Add input');
     expect(body).toContain('Add output');
+  });
+
+  it('keeps the insertion slot after the entries, where the next one will land', () => {
+    const port = makePort('in-a', 'string', { type: 'input' });
+    const workflow = makeWorkflow([makeNode('node-1', [port], [])], {
+      inputs: [{ id: 'first-in', dataType: 'string', bindings: [] }]
+    });
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body.indexOf('Add input')).toBeGreaterThan(body.indexOf('first-in'));
   });
 
   it('renders an entry row with its id and a binding picker limited to exposed ports', () => {
