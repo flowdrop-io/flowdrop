@@ -26,6 +26,7 @@
   import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
   import { m } from '$lib/messages/index.js';
   import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
+  import { focusOnMount } from '$lib/utils/focus.js';
   import {
     bindablePortKey,
     isFreeBindablePort,
@@ -68,11 +69,6 @@
 
   let query = $state('');
   let highlightedKey = $state<string | null>(null);
-  let listbox = $state<HTMLDivElement | null>(null);
-
-  $effect(() => {
-    if (autofocus) listbox?.focus();
-  });
 
   const filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
@@ -102,8 +98,15 @@
     onHighlight?.(candidate);
   }
 
+  /**
+   * A DOM id for an option. Node and port ids can hold any character, so each
+   * one outside `[A-Za-z0-9-]` — the underscore included — is written as `_`
+   * plus its hex code point. Reversible, so `a.b` and `a_b` cannot collide.
+   */
   function optionId(candidate: RankedBindablePort): string {
-    return `${idPrefix}-${candidate.nodeId}-${candidate.port.id}`.replace(/[^A-Za-z0-9_-]/g, '_');
+    const raw = `${candidate.nodeId}-${candidate.port.id}`;
+    const safe = raw.replace(/[^A-Za-z0-9-]/g, (c) => `_${c.codePointAt(0)!.toString(16)}`);
+    return `${idPrefix}-${safe}`;
   }
 
   function pick(candidate: RankedBindablePort): void {
@@ -160,7 +163,7 @@
     class="wf-portlist__list"
     role="listbox"
     tabindex="0"
-    bind:this={listbox}
+    {@attach focusOnMount(autofocus)}
     aria-label={isInput
       ? m().workflowInterface.composerListLabelInput
       : m().workflowInterface.composerListLabelOutput}

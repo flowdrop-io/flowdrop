@@ -80,19 +80,11 @@
   }: Props = $props();
 
   /**
-   * Whether the secondary fields are disclosed.
-   *
-   * Seeded once, from whether this entry wants attention, and owned by the
-   * author from then on. It must NOT track `status`: that is live data, and a
-   * disclosure driven by data is the bug this component was split out to kill.
-   * Rendering `open` as a reactive attribute meant every edit in the card came
-   * back as a new `workflow`, re-ran the attribute and slammed the fields shut,
-   * pulling the focused input out from under the author mid-word — focus fell
-   * to `<body>` and the keystrokes after it were silently dropped. Deriving it
-   * from `status` instead of seeding from it reintroduces exactly that, most
-   * sharply when the author fixes a type mismatch with the select inside and it
-   * shuts on them mid-fix.
+   * Whether the secondary fields are disclosed: seeded once from whether the
+   * entry wants attention, then the author's. Deriving it from `status` would
+   * shut the fields on every edit and drop the focused input's keystrokes.
    */
+  // The seed is meant to be read once.
   // svelte-ignore state_referenced_locally
   let fieldsOpen = $state(status?.status === 'type-mismatch');
 
@@ -726,18 +718,11 @@
     flex: 1;
   }
 
-  .wf-interface__picker-actions :global(.flowdrop-btn) {
-    min-height: 1.75rem;
-    padding-block: 0;
-  }
-
   .wf-interface__pull-row {
     display: flex;
   }
 
   .wf-interface__pull-row :global(.wf-interface__pull) {
-    min-height: 1.75rem;
-    padding-block: 0;
     padding-inline: var(--fd-space-xs);
     color: var(--fd-primary);
   }

@@ -224,9 +224,11 @@ p {
 }
 
 .flowdrop-btn--sm {
-  padding: var(--fd-space-2xs) var(--fd-space-md);
+  /* Same height as IconButton's sm (--fd-size-icon-btn), so the two sit on one
+     line without callers overriding either. */
+  padding: 0 var(--fd-space-md);
   font-size: var(--fd-text-xs);
-  min-height: 2rem;
+  min-height: var(--fd-size-icon-btn);
 }
 
 .flowdrop-btn--lg {

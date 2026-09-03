@@ -23,6 +23,7 @@
   import type { RankedBindablePort } from '$lib/utils/workflowInterface.js';
   import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
   import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
+  import { focusOnMount } from '$lib/utils/focus.js';
 
   interface Props {
     direction: 'inputs' | 'outputs';
@@ -45,14 +46,6 @@
 
   let mode = $state<'choose' | 'bind'>('choose');
   let selected = $state<RankedBindablePort | undefined>(undefined);
-
-  let firstChoice = $state<HTMLButtonElement | null>(null);
-
-  // Land keyboard focus on the form as it opens; the listbox takes it itself
-  // as the author steps into it — the composer is a modal moment inside the panel.
-  $effect(() => {
-    if (mode === 'choose') firstChoice?.focus();
-  });
 
   function confirm(candidate: RankedBindablePort | undefined = selected): void {
     if (candidate) onBind(candidate);
@@ -109,7 +102,7 @@
       <button
         type="button"
         class="wf-composer__choice"
-        bind:this={firstChoice}
+        {@attach focusOnMount()}
         onclick={() => (mode = 'bind')}
         onkeydown={handleChoiceKeydown}
       >
@@ -234,8 +227,6 @@
   }
 
   .wf-composer :global(.wf-composer__close) {
-    width: 1.75rem;
-    height: 1.75rem;
     flex-shrink: 0;
   }
 
@@ -336,10 +327,5 @@
 
   .wf-composer__actions-spacer {
     flex: 1;
-  }
-
-  .wf-composer__actions :global(.flowdrop-btn) {
-    min-height: 1.75rem;
-    padding-block: 0;
   }
 </style>
