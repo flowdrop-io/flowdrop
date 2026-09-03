@@ -20,6 +20,10 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from '$lib/components/Button.svelte';
+  import IconButton from '$lib/components/IconButton.svelte';
+  import Input from '$lib/components/Input.svelte';
+  import Select from '$lib/components/Select.svelte';
   import { m } from '$lib/messages/index.js';
   import type { PortDataTypeConfig, WorkflowInterfaceEntry } from '$lib/types/index.js';
   import {
@@ -172,69 +176,87 @@
     status.status !== 'ok' &&
     status.status !== 'unbound'}
 >
-  {#if status}
-    <span
-      class="wf-interface__dot wf-interface__dot--{status.status}"
-      title={describeInterfaceEntryStatus(status)}
-    ></span>
-  {/if}
-  <div class="wf-interface__reorder">
-    <button
-      type="button"
-      disabled={isFirst}
-      onclick={() => onMove(-1)}
-      aria-label={m().workflowInterface.moveUp({ id: entry.id })}
-    >
-      <Icon icon="heroicons:chevron-up" />
-    </button>
-    <button
-      type="button"
-      disabled={isLast}
-      onclick={() => onMove(1)}
-      aria-label={m().workflowInterface.moveDown({ id: entry.id })}
-    >
-      <Icon icon="heroicons:chevron-down" />
-    </button>
+  <div class="wf-interface__entry-side">
+    {#if status}
+      <span
+        class="wf-interface__dot wf-interface__dot--{status.status}"
+        title={describeInterfaceEntryStatus(status)}
+      ></span>
+    {/if}
+    <div class="wf-interface__reorder">
+      <button
+        type="button"
+        disabled={isFirst}
+        onclick={() => onMove(-1)}
+        aria-label={m().workflowInterface.moveUp({ id: entry.id })}
+      >
+        <Icon icon="heroicons:chevron-up" />
+      </button>
+      <button
+        type="button"
+        disabled={isLast}
+        onclick={() => onMove(1)}
+        aria-label={m().workflowInterface.moveDown({ id: entry.id })}
+      >
+        <Icon icon="heroicons:chevron-down" />
+      </button>
+    </div>
   </div>
 
   <div class="wf-interface__fields">
-    <div class="wf-interface__row">
+    <div class="wf-interface__row wf-interface__row--identity">
       <label class="wf-interface__field wf-interface__field--id">
         <span class="wf-interface__label">{m().workflowInterface.idLabel}</span>
-        <input
+        <Input
+          size="sm"
           type="text"
           value={entry.id}
           onchange={(e) => onPatch({ id: e.currentTarget.value })}
         />
       </label>
-      <label class="wf-interface__field wf-interface__field--wide">
+      <label class="wf-interface__field wf-interface__field--binding">
         <span class="wf-interface__label">{m().workflowInterface.bindingLabel}</span>
-        <select value={currentBinding} onchange={(e) => handleBindingChange(e.currentTarget.value)}>
+        <Select
+          size="sm"
+          invalid={isInput && alreadyConnected}
+          value={currentBinding}
+          onchange={(e) => handleBindingChange(e.currentTarget.value)}
+        >
           <option value="">{m().workflowInterface.bindingUnbound}</option>
           {#each candidates as candidate (bindingKey(candidate.nodeId, candidate.port.id))}
             <option value={bindingKey(candidate.nodeId, candidate.port.id)}>
               {candidate.nodeLabel} — {candidate.port.name} ({candidate.port.dataType})
             </option>
           {/each}
-        </select>
+        </Select>
         {#if isInput && alreadyConnected}
           <span class="wf-interface__inline wf-interface__inline--error">
             {m().workflowInterface.alreadyConnectedInline({ source: conflictingSource ?? '' })}
           </span>
         {/if}
       </label>
-      {#if status?.targets[0]}
-        <button
-          type="button"
+    </div>
+
+    {#if status?.targets[0]}
+      <div class="wf-interface__bound">
+        <span class="wf-interface__bound-type">{status.targets[0].port.dataType}</span>
+        <span class="wf-interface__bound-path">
+          {status.targets[0].node.data?.label ?? status.targets[0].node.id}
+          <Icon icon="heroicons:chevron-right" />
+          {status.targets[0].port.name}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
           class="wf-interface__pull"
           title={m().workflowInterface.pullFromPortTitle}
           onclick={() => onPatch(pullEntryFieldsFromPort(status.targets[0].port))}
         >
           <Icon icon="heroicons:arrow-down-tray" />
           {m().workflowInterface.pullFromPort}
-        </button>
-      {/if}
-    </div>
+        </Button>
+      </div>
+    {/if}
 
     <!-- Two-way, and it settles: the setter writes what the DOM already
          reports, and assigning `open` a value it already holds fires no
@@ -243,104 +265,123 @@
          update-depth guard could not catch, since each turn is a fresh
          event task. -->
     <details class="wf-interface__more" bind:open={fieldsOpen}>
-      <summary>{m().workflowInterface.moreOptions}</summary>
-      <div class="wf-interface__row">
-        <label class="wf-interface__field">
-          <span class="wf-interface__label">{m().workflowInterface.nameLabel}</span>
-          <input
-            type="text"
-            value={entry.name ?? ''}
-            placeholder={m().workflowInterface.namePlaceholder}
-            onchange={(e) => onPatch({ name: e.currentTarget.value || undefined })}
-          />
-        </label>
-        <label class="wf-interface__field">
-          <span class="wf-interface__label">{m().workflowInterface.dataTypeLabel}</span>
-          <select
-            value={entry.dataType}
-            onchange={(e) => onPatch({ dataType: e.currentTarget.value })}
-          >
-            {#if !entry.dataType}
-              <option value="" disabled selected>
-                {m().workflowInterface.dataTypePlaceholder}
-              </option>
-            {/if}
-            {#each dataTypeOptions(entry.dataType) as option (option.id)}
-              <option value={option.id}>{option.name}</option>
-            {/each}
-          </select>
-          {#if status?.status === 'type-mismatch' && boundPortType}
-            <span class="wf-interface__inline wf-interface__inline--warning">
-              {m().workflowInterface.typeMismatchInline({ portType: boundPortType ?? '' })}
-              <button
-                type="button"
-                class="wf-interface__quickfix"
-                onclick={() => onPatch({ dataType: boundPortType ?? entry.dataType })}
-              >
-                {m().workflowInterface.useMatchPortType}
-              </button>
-            </span>
-          {/if}
-        </label>
-        {#if isInput}
-          <label class="wf-interface__field wf-interface__field--checkbox">
-            <input
-              type="checkbox"
-              checked={entry.required ?? false}
-              onchange={(e) => onPatch({ required: e.currentTarget.checked || undefined })}
+      <summary>
+        <Icon icon="heroicons:chevron-right" />
+        {m().workflowInterface.moreOptions}
+      </summary>
+      <div class="wf-interface__more-body">
+        <div class="wf-interface__row">
+          <label class="wf-interface__field">
+            <span class="wf-interface__label">{m().workflowInterface.nameLabel}</span>
+            <Input
+              size="sm"
+              type="text"
+              value={entry.name ?? ''}
+              placeholder={m().workflowInterface.namePlaceholder}
+              onchange={(e) => onPatch({ name: e.currentTarget.value || undefined })}
             />
-            <span class="wf-interface__label">{m().workflowInterface.requiredLabel}</span>
           </label>
+          <label class="wf-interface__field">
+            <span class="wf-interface__label">{m().workflowInterface.dataTypeLabel}</span>
+            <Select
+              size="sm"
+              invalid={status?.status === 'type-mismatch'}
+              value={entry.dataType}
+              onchange={(e) => onPatch({ dataType: e.currentTarget.value })}
+            >
+              {#if !entry.dataType}
+                <option value="" disabled selected>
+                  {m().workflowInterface.dataTypePlaceholder}
+                </option>
+              {/if}
+              {#each dataTypeOptions(entry.dataType) as option (option.id)}
+                <option value={option.id}>{option.name}</option>
+              {/each}
+            </Select>
+            {#if status?.status === 'type-mismatch' && boundPortType}
+              <span class="wf-interface__inline wf-interface__inline--warning">
+                {m().workflowInterface.typeMismatchInline({ portType: boundPortType ?? '' })}
+                <button
+                  type="button"
+                  class="wf-interface__quickfix"
+                  onclick={() => onPatch({ dataType: boundPortType ?? entry.dataType })}
+                >
+                  {m().workflowInterface.useMatchPortType}
+                </button>
+              </span>
+            {/if}
+          </label>
+        </div>
+
+        <div class="wf-interface__row">
+          <label class="wf-interface__field wf-interface__field--wide">
+            <span class="wf-interface__label">{m().workflowInterface.descriptionLabel}</span>
+            <Input
+              size="sm"
+              type="text"
+              value={entry.description ?? ''}
+              onchange={(e) => onPatch({ description: e.currentTarget.value || undefined })}
+            />
+          </label>
+        </div>
+
+        <div class="wf-interface__row">
+          <label class="wf-interface__field">
+            <span class="wf-interface__label">{m().workflowInterface.defaultValueLabel}</span>
+            <Input
+              size="sm"
+              type="text"
+              value={formatDefaultValue(entry.defaultValue)}
+              onchange={(e) => onPatch({ defaultValue: parseDefaultValue(e.currentTarget.value) })}
+            />
+          </label>
+          {#if isInput}
+            <label class="wf-interface__field wf-interface__field--checkbox">
+              <input
+                type="checkbox"
+                checked={entry.required ?? false}
+                onchange={(e) => onPatch({ required: e.currentTarget.checked || undefined })}
+              />
+              <span class="wf-interface__label">{m().workflowInterface.requiredLabel}</span>
+            </label>
+          {/if}
+        </div>
+
+        {#if isInput}
+          <div class="wf-interface__examples">
+            <span class="wf-interface__label">
+              {m().workflowInterface.examplesLabel}
+            </span>
+            {#each entry.examples ?? [] as example, exampleIndex (exampleIndex)}
+              <div class="wf-interface__example-row">
+                <Input
+                  size="sm"
+                  type="text"
+                  value={formatDefaultValue(example)}
+                  onchange={(e) => patchExample(exampleIndex, e.currentTarget.value)}
+                />
+                <IconButton
+                  size="sm"
+                  class="wf-interface__example-remove"
+                  onclick={() => removeExample(exampleIndex)}
+                  ariaLabel={m().workflowInterface.removeExample}
+                >
+                  <Icon icon="heroicons:x-mark" />
+                </IconButton>
+              </div>
+            {/each}
+            <Button
+              variant="ghost"
+              size="sm"
+              class="wf-interface__example-add"
+              onclick={addExample}
+            >
+              <Icon icon="heroicons:plus" />
+              {m().workflowInterface.addExample}
+            </Button>
+          </div>
         {/if}
       </div>
-
-      <div class="wf-interface__row">
-        <label class="wf-interface__field wf-interface__field--wide">
-          <span class="wf-interface__label">{m().workflowInterface.descriptionLabel}</span>
-          <input
-            type="text"
-            value={entry.description ?? ''}
-            onchange={(e) => onPatch({ description: e.currentTarget.value || undefined })}
-          />
-        </label>
-        <label class="wf-interface__field">
-          <span class="wf-interface__label">{m().workflowInterface.defaultValueLabel}</span>
-          <input
-            type="text"
-            value={formatDefaultValue(entry.defaultValue)}
-            onchange={(e) => onPatch({ defaultValue: parseDefaultValue(e.currentTarget.value) })}
-          />
-        </label>
-      </div>
-
-      {#if isInput}
-        <div class="wf-interface__examples">
-          <span class="wf-interface__label">
-            {m().workflowInterface.examplesLabel}
-          </span>
-          {#each entry.examples ?? [] as example, exampleIndex (exampleIndex)}
-            <div class="wf-interface__example-row">
-              <input
-                type="text"
-                value={formatDefaultValue(example)}
-                onchange={(e) => patchExample(exampleIndex, e.currentTarget.value)}
-              />
-              <button
-                type="button"
-                class="wf-interface__example-remove"
-                onclick={() => removeExample(exampleIndex)}
-                aria-label={m().workflowInterface.removeExample}
-              >
-                <Icon icon="heroicons:x-mark" />
-              </button>
-            </div>
-          {/each}
-          <button type="button" class="wf-interface__example-add" onclick={addExample}>
-            <Icon icon="heroicons:plus" />
-            {m().workflowInterface.addExample}
-          </button>
-        </div>
-      {/if}
     </details>
 
     <!-- Every resolveInterface status renders in words somewhere in this card —
@@ -366,45 +407,87 @@
     {/if}
   </div>
 
-  <button
-    type="button"
+  <IconButton
+    size="sm"
     class="wf-interface__remove"
     onclick={onRemove}
-    aria-label={m().workflowInterface.removeEntry({ id: entry.id })}
+    ariaLabel={m().workflowInterface.removeEntry({ id: entry.id })}
   >
     <Icon icon="heroicons:trash" />
-  </button>
+  </IconButton>
 </li>
 
 <style>
+  /*
+    One interface entry, styled as a card in the same family as the settings
+    form beside it: the shared `.flowdrop-input` controls (via Input/Select),
+    the shared `.flowdrop-btn` buttons (via Button/IconButton), the settings
+    form's label weight and size, and the panel's card surface. Nothing here
+    declares a colour that isn't a design token.
+  */
   .wf-interface__entry {
     display: flex;
     align-items: flex-start;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs);
-    border: 1px solid var(--fd-border-muted);
-    border-radius: var(--fd-radius-md);
+    gap: var(--fd-space-sm);
+    padding: var(--fd-space-sm) var(--fd-space-sm) var(--fd-space-sm) var(--fd-space-xs);
+    background-color: var(--fd-card);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-lg);
+    box-shadow: var(--fd-shadow-sm);
+    transition:
+      border-color var(--fd-transition-fast),
+      box-shadow var(--fd-transition-fast);
+  }
+
+  .wf-interface__entry:hover {
+    border-color: var(--fd-border-strong);
+  }
+
+  .wf-interface__entry:focus-within {
+    border-color: var(--fd-primary);
+    box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
   }
 
   .wf-interface__entry--error {
-    border-color: color-mix(in srgb, var(--fd-error) 40%, var(--fd-border-muted));
+    border-color: color-mix(in srgb, var(--fd-error) 45%, var(--fd-border));
+  }
+
+  /* The card's spine: health dot on top, reorder chevrons below. */
+  .wf-interface__entry-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fd-space-2xs);
+    flex-shrink: 0;
+    padding-top: 0.375rem;
   }
 
   .wf-interface__reorder {
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
   }
 
   .wf-interface__reorder button {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 1.25rem;
+    height: 1rem;
     padding: 0;
     border: none;
+    border-radius: var(--fd-radius-sm);
     background: none;
     color: var(--fd-muted-foreground);
+    font-size: 0.875rem;
     cursor: pointer;
+    transition:
+      color var(--fd-transition-fast),
+      background-color var(--fd-transition-fast);
+  }
+
+  .wf-interface__reorder button:hover:not(:disabled) {
+    color: var(--fd-foreground);
+    background-color: var(--fd-subtle);
   }
 
   .wf-interface__reorder button:disabled {
@@ -417,25 +500,29 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-sm);
   }
 
   .wf-interface__row {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-sm);
   }
 
   .wf-interface__field {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
-    flex: 1;
-    min-width: 6rem;
+    gap: var(--fd-space-2xs);
+    flex: 1 1 8rem;
+    min-width: 0;
   }
 
   .wf-interface__field--id {
-    flex: 0 0 8rem;
+    flex: 1 1 7rem;
+  }
+
+  .wf-interface__field--binding {
+    flex: 2 1 12rem;
   }
 
   .wf-interface__field--wide {
@@ -445,30 +532,77 @@
   .wf-interface__field--checkbox {
     flex-direction: row;
     align-items: center;
-    gap: 0.375rem;
+    gap: var(--fd-space-xs);
     flex: 0 0 auto;
+    align-self: flex-end;
+    min-height: 2rem;
   }
 
+  .wf-interface__field--checkbox input[type='checkbox'] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: var(--fd-primary);
+    cursor: pointer;
+  }
+
+  /* Same voice as FormFieldWrapper's `.form-field__label`. */
   .wf-interface__label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: var(--fd-foreground);
+  }
+
+  .wf-interface__field--checkbox .wf-interface__label {
+    font-weight: 500;
+  }
+
+  /* The bound port, said back: type chip, node › port, and the pull action. */
+  .wf-interface__bound {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    min-height: 2rem;
+    padding: var(--fd-space-2xs) var(--fd-space-xs);
+    border-radius: var(--fd-control-radius);
+    background-color: var(--fd-muted);
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
   }
 
-  .wf-interface__field input[type='text'],
-  .wf-interface__field select {
-    padding: 0.25rem 0.375rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
-    font-size: var(--fd-text-xs);
+  .wf-interface__bound-type {
+    padding: 0.0625rem 0.375rem;
+    border-radius: var(--fd-radius-full);
+    background-color: var(--fd-primary-muted);
+    color: var(--fd-primary);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-2xs);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
   }
 
-  /* Selects size to their longest option instead of truncating it. */
-  .wf-interface__field select {
-    min-width: 8rem;
-    width: max-content;
-    max-width: 100%;
+  .wf-interface__bound-path {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    min-width: 0;
+    color: var(--fd-foreground);
+    font-weight: 500;
+  }
+
+  .wf-interface__bound-path :global(svg) {
+    color: var(--fd-muted-foreground);
+  }
+
+  .wf-interface__bound :global(.wf-interface__pull) {
+    margin-left: auto;
+    min-height: 1.75rem;
+    padding-block: 0;
+    color: var(--fd-primary);
   }
 
   /* Entry health at a glance; the title tooltip carries the words. */
@@ -476,31 +610,36 @@
     flex-shrink: 0;
     width: 0.5rem;
     height: 0.5rem;
-    margin-top: 0.5rem;
     border-radius: 50%;
     background-color: var(--fd-muted-foreground);
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);
+    color: var(--fd-muted-foreground);
   }
 
   .wf-interface__dot--ok {
     background-color: var(--fd-success);
+    color: var(--fd-success);
   }
 
   .wf-interface__dot--type-mismatch,
   .wf-interface__dot--unbound {
     background-color: var(--fd-warning);
+    color: var(--fd-warning);
   }
 
   .wf-interface__dot--dangling,
   .wf-interface__dot--hidden,
   .wf-interface__dot--over-bound {
     background-color: var(--fd-error);
+    color: var(--fd-error);
   }
 
   /* Field-anchored feedback: one short line under the field it belongs to. */
   .wf-interface__inline {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.375rem;
+    gap: var(--fd-space-xs);
     font-size: var(--fd-text-xs);
     line-height: 1.4;
   }
@@ -514,17 +653,20 @@
   }
 
   .wf-interface__quickfix {
-    padding: 0 0.25rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
-    font-size: var(--fd-text-xs);
+    padding: 0 var(--fd-space-xs);
+    border: 1px solid currentColor;
+    border-radius: var(--fd-radius-full);
+    background-color: transparent;
+    color: inherit;
+    font-size: var(--fd-text-2xs);
+    font-weight: 600;
+    line-height: 1.4;
     cursor: pointer;
+    transition: background-color var(--fd-transition-fast);
   }
 
   .wf-interface__quickfix:hover {
-    background-color: var(--fd-muted);
+    background-color: color-mix(in srgb, currentColor 12%, transparent);
   }
 
   /* The secondary fields live behind a disclosure so a card's resting state
@@ -534,109 +676,109 @@
   }
 
   .wf-interface__more > summary {
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .wf-interface__more[open] > summary {
-    margin-bottom: var(--fd-space-xs);
-  }
-
-  .wf-interface__more > :global(.wf-interface__row + .wf-interface__row),
-  .wf-interface__more .wf-interface__examples {
-    margin-top: var(--fd-space-xs);
-  }
-
-  .wf-interface__pull {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    align-self: flex-end;
-    padding: 0.25rem 0.375rem;
-    border: 1px solid var(--fd-border);
+    gap: 0.125rem;
+    list-style: none;
+    padding: 0.125rem var(--fd-space-xs) 0.125rem 0.125rem;
     border-radius: var(--fd-radius-sm);
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
-    font-size: var(--fd-text-xs);
-    white-space: nowrap;
+    color: var(--fd-muted-foreground);
+    font-weight: 500;
     cursor: pointer;
+    user-select: none;
+    transition:
+      color var(--fd-transition-fast),
+      background-color var(--fd-transition-fast);
   }
 
-  .wf-interface__pull:hover {
-    background-color: var(--fd-muted);
+  .wf-interface__more > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .wf-interface__more > summary:hover {
+    color: var(--fd-foreground);
+    background-color: var(--fd-subtle);
+  }
+
+  .wf-interface__more > summary :global(svg) {
+    transition: transform var(--fd-transition-fast);
+  }
+
+  .wf-interface__more[open] > summary :global(svg) {
+    transform: rotate(90deg);
+  }
+
+  .wf-interface__more-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-sm);
+    margin-top: var(--fd-space-sm);
+    padding-top: var(--fd-space-sm);
+    border-top: 1px dashed var(--fd-border-muted);
   }
 
   .wf-interface__examples {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--fd-space-xs);
   }
 
   .wf-interface__example-row {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--fd-space-xs);
   }
 
-  .wf-interface__example-row input {
+  .wf-interface__example-row :global(.flowdrop-input) {
     flex: 1;
-    padding: 0.25rem 0.375rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
-    font-size: var(--fd-text-xs);
   }
 
-  .wf-interface__example-remove {
-    display: inline-flex;
-    padding: 0.125rem;
-    border: none;
-    background: none;
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
+  .wf-interface__example-row :global(.wf-interface__example-remove) {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
   }
 
-  .wf-interface__example-remove:hover {
+  .wf-interface__example-row :global(.wf-interface__example-remove:hover) {
     color: var(--fd-error);
   }
 
-  .wf-interface__example-add {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
+  .wf-interface__examples :global(.wf-interface__example-add) {
     align-self: flex-start;
-    padding: 0.125rem 0.25rem;
-    border: none;
-    background: none;
+    min-height: 1.75rem;
+    padding-inline: var(--fd-space-xs);
     color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-xs);
-    cursor: pointer;
   }
 
-  .wf-interface__example-add:hover {
+  .wf-interface__examples :global(.wf-interface__example-add:hover) {
     color: var(--fd-foreground);
   }
 
+  /* Status callouts: a tinted strip with a coloured edge, not bare coloured text. */
   .wf-interface__status {
     margin: 0;
+    padding: var(--fd-space-2xs) var(--fd-space-xs);
+    border-left: 3px solid var(--fd-muted-foreground);
+    border-radius: 0 var(--fd-radius-sm) var(--fd-radius-sm) 0;
+    background-color: var(--fd-muted);
     font-size: var(--fd-text-xs);
     line-height: 1.5;
-    color: var(--fd-muted-foreground);
+    color: var(--fd-foreground);
   }
 
   .wf-interface__status--error,
   .wf-interface__status--dangling,
   .wf-interface__status--hidden,
   .wf-interface__status--over-bound {
-    color: var(--fd-error);
+    border-left-color: var(--fd-error);
+    background-color: var(--fd-error-muted);
   }
 
   .wf-interface__status--warning,
   .wf-interface__status--unbound,
   .wf-interface__status--type-mismatch {
-    color: var(--fd-warning);
+    border-left-color: var(--fd-warning);
+    background-color: var(--fd-warning-muted);
   }
 
   .wf-interface__meta {
@@ -644,29 +786,37 @@
     color: var(--fd-muted-foreground);
   }
 
+  .wf-interface__meta > summary {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .wf-interface__meta > summary:hover {
+    color: var(--fd-foreground);
+  }
+
   .wf-interface__meta pre {
-    margin: 0.25rem 0 0;
-    padding: 0.375rem;
-    background: var(--fd-muted);
+    margin: var(--fd-space-xs) 0 0;
+    padding: var(--fd-space-xs);
+    border: 1px solid var(--fd-border-muted);
     border-radius: var(--fd-radius-sm);
+    background-color: var(--fd-muted);
+    color: var(--fd-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-2xs);
+    line-height: 1.5;
     overflow-x: auto;
   }
 
-  .wf-interface__remove {
+  .wf-interface__entry :global(.wf-interface__remove) {
     flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.25rem;
-    border: none;
-    background: none;
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    border-radius: var(--fd-radius-sm);
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-top: 0.125rem;
   }
 
-  .wf-interface__remove:hover {
+  .wf-interface__entry :global(.wf-interface__remove:hover) {
     color: var(--fd-error);
-    background-color: color-mix(in srgb, var(--fd-error) 10%, transparent);
+    background-color: var(--fd-error-muted);
   }
 </style>

@@ -26,6 +26,7 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from '$lib/components/Button.svelte';
   import { m } from '$lib/messages/index.js';
   import WorkflowInterfaceEntryCard from '$lib/components/WorkflowInterfaceEntryCard.svelte';
   import { buildHandleId } from '$lib/utils/handleIds.js';
@@ -268,19 +269,32 @@
 <div class="wf-interface">
   {#each SECTIONS as section (section.key)}
     {@const list = entriesFor(section.key)}
-    <div class="wf-interface__section">
+    <section class="wf-interface__section">
       <div class="wf-interface__section-header">
         <h4 class="wf-interface__section-title">
+          <Icon
+            icon={section.key === 'inputs'
+              ? 'heroicons:arrow-right-end-on-rectangle'
+              : 'heroicons:arrow-right-start-on-rectangle'}
+          />
           {section.key === 'inputs'
             ? m().workflowInterface.inputsHeading
             : m().workflowInterface.outputsHeading}
+          {#if list.length > 0}
+            <span class="wf-interface__count">{list.length}</span>
+          {/if}
         </h4>
-        <button type="button" class="wf-interface__add" onclick={() => addEntry(section.key)}>
+        <Button
+          variant="outline"
+          size="sm"
+          class="wf-interface__add"
+          onclick={() => addEntry(section.key)}
+        >
           <Icon icon="heroicons:plus" />
           {section.key === 'inputs'
             ? m().workflowInterface.addInput
             : m().workflowInterface.addOutput}
-        </button>
+        </Button>
       </div>
 
       {#if list.length === 0}
@@ -316,30 +330,41 @@
           {/each}
         </ul>
       {/if}
-    </div>
+    </section>
   {/each}
 </div>
 
 <style>
+  /*
+    Two sections — inputs, outputs — in the visual family of the settings
+    form this editor sits beside: the same section-title voice as
+    `.config-surface__section-title`, the shared `.flowdrop-btn` for the add
+    action, and a quiet dashed placeholder for an empty side.
+  */
   .wf-interface {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-lg, 1.5rem);
+    gap: var(--fd-space-xl);
   }
 
   .wf-interface__section {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-sm);
   }
 
   .wf-interface__section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--fd-space-sm);
+    min-height: 2rem;
   }
 
   .wf-interface__section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
     margin: 0;
     font-size: var(--fd-text-xs);
     font-weight: 600;
@@ -348,28 +373,40 @@
     letter-spacing: 0.05em;
   }
 
-  .wf-interface__add {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--fd-radius-sm);
-    border: 1px solid var(--fd-border);
-    background: var(--fd-background);
-    color: var(--fd-foreground);
-    font-size: var(--fd-text-xs);
-    cursor: pointer;
+  .wf-interface__section-title :global(svg) {
+    font-size: 0.875rem;
   }
 
-  .wf-interface__add:hover {
-    background: var(--fd-muted);
+  .wf-interface__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.125rem;
+    padding: 0 0.375rem;
+    border-radius: var(--fd-radius-full);
+    background-color: var(--fd-muted);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-2xs);
+    font-weight: 600;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wf-interface__section-header :global(.wf-interface__add) {
+    min-height: 1.75rem;
+    padding-block: 0;
   }
 
   .wf-interface__empty {
     margin: 0;
+    padding: var(--fd-space-md) var(--fd-space-sm);
+    border: 1px dashed var(--fd-border);
+    border-radius: var(--fd-radius-lg);
     font-size: var(--fd-text-xs);
+    line-height: 1.5;
     color: var(--fd-muted-foreground);
-    font-style: italic;
+    text-align: center;
   }
 
   .wf-interface__list {
@@ -378,6 +415,6 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-sm);
   }
 </style>
