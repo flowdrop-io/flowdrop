@@ -17,6 +17,7 @@
 
 import type { Command, UIAction } from '../commands/types.js';
 import type { NodeMetadata } from '../types/index.js';
+import type { MessagesOverride } from '../messages/types.js';
 
 // ============================================================================
 // JSON Schema (the subset the descriptors use)
@@ -135,11 +136,11 @@ export type WebMCPApproval = 'confirm' | 'auto' | ((commands: Command[]) => Prom
 export interface WebMCPOptions {
   /**
    * Node type definitions the tools resolve `add_node` and `list_types`
-   * against. The instance does not carry these (the editor fetches them per
-   * mount), so the host passes them — as an array or a getter that returns
-   * the current list.
+   * against, as an array or a getter that returns the current list. Defaults
+   * to the instance's own list (`instance.nodeTypes`), which the editor fills
+   * as its fetch lands — pass this only when the host knows better.
    */
-  nodeTypes: NodeMetadata[] | (() => NodeMetadata[]);
+  nodeTypes?: NodeMetadata[] | (() => NodeMetadata[]);
   /** Tool name prefix. Default `flowdrop`. Must be unique per document. */
   prefix?: string;
   /** Approval policy for mutating tools. Default `'confirm'`. */
@@ -152,6 +153,12 @@ export interface WebMCPOptions {
   onUIAction?: (action: UIAction) => void;
   /** Where the built-in confirm dialog mounts. Default `document.body`. */
   container?: HTMLElement;
+  /**
+   * Strings for the built-in confirm dialog, in the shape of the library's
+   * `messages` prop: a partial override of the defaults, or a getter for one
+   * when an i18n library drives the locale. English when omitted.
+   */
+  messages?: MessagesOverride | (() => MessagesOverride);
   /**
    * Runtime override. Default: `document.modelContext`, then
    * `navigator.modelContext`. Tests pass a fake here.
@@ -173,8 +180,15 @@ export type WebMCPMountOptions = Omit<
 
 /** Returned by `attachWebMCP`. */
 export interface WebMCPHandle {
-  /** Fully qualified names of the registered tools. */
+  /**
+   * Fully qualified names of the tools the runtime accepted. Registration is
+   * asynchronous in the spec, so this fills in as registrations settle; a
+   * tool the runtime refused is warned about once and never listed. Await
+   * {@link ready} for the final list.
+   */
   readonly tools: readonly string[];
+  /** Resolves once every registration has settled — accepted or refused. */
+  readonly ready: Promise<void>;
   /** False after `detach()` (or after the instance was destroyed). */
   readonly attached: boolean;
   /** Abort the registration, remove the tools, free the prefix. Idempotent. */

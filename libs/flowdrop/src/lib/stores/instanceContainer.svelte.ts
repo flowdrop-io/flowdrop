@@ -14,6 +14,7 @@
  * @module stores/instanceContainer
  */
 
+import type { NodeMetadata } from '../types/index.js';
 import { HistoryService, historyService } from '../services/historyService.js';
 import { WorkflowStore } from './workflowStore.svelte.js';
 import { HistoryStore } from './historyStore.svelte.js';
@@ -83,11 +84,43 @@ export interface FlowDropInstance {
   /** Pipeline panel open/close state (instance-scoped persistence). */
   readonly pipelinePanel: PipelinePanelStore;
   /**
+   * The node types this editor currently knows: what `App` fetched (or was
+   * given), merged with the format-provided nodes. Written by the editor as
+   * its fetch lands; read by anything that needs the list without fetching
+   * again (the WebMCP adapter's `list_types`, `add_node`).
+   */
+  readonly nodeTypes: NodeTypesStore;
+  /**
+   * Run `fn` when this instance is destroyed. Returns an unsubscribe; calling
+   * it before `destroy()` means `fn` never runs. Adapters that bind to an
+   * instance (WebMCP, host integrations) hook their teardown here instead of
+   * wrapping `destroy`.
+   */
+  onDestroy(fn: () => void): () => void;
+  /**
    * Dispose all per-instance resources (subscriptions, effect roots,
    * external callbacks). Safe to call more than once. Must not touch
    * sibling instances.
    */
   destroy(): void;
+}
+
+/**
+ * The instance's node-type list. A getter and a setter over one `$state`, so
+ * a reader inside an effect tracks it and a reader outside one just gets the
+ * current array.
+ */
+export class NodeTypesStore {
+  #list = $state<NodeMetadata[]>([]);
+
+  /** The list as last set; empty until the editor's fetch lands. */
+  get current(): NodeMetadata[] {
+    return this.#list;
+  }
+
+  set(list: NodeMetadata[]): void {
+    this.#list = list;
+  }
 }
 
 export interface CreateInstanceOptions {
@@ -165,6 +198,14 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     portCompatibility: new PortCompatibilityChecker(DEFAULT_PORT_CONFIG),
     // The default instance keeps the legacy bare localStorage key.
     pipelinePanel: new PipelinePanelStore(id),
+    nodeTypes: new NodeTypesStore(),
+    onDestroy(fn) {
+      cleanups.push(fn);
+      return () => {
+        const i = cleanups.indexOf(fn);
+        if (i !== -1) cleanups.splice(i, 1);
+      };
+    },
     destroy() {
       while (cleanups.length > 0) {
         cleanups.pop()?.();

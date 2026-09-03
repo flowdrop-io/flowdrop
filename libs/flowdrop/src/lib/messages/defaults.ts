@@ -546,5 +546,14 @@ export const defaultMessages = {
     composerRequired: 'Required',
     composerBack: 'Back',
     composerCancel: 'Cancel'
+  },
+
+  // The confirm dialog the WebMCP adapter shows before a browser agent's change runs.
+  webmcp: {
+    confirmTitle: ({ name }: { name: string }) => `A browser agent wants to change “${name}”`,
+    confirmCount: ({ count }: { count: number }) =>
+      `${count === 1 ? '1 change' : `${count} changes`} — applied together, undone together.`,
+    reject: 'Reject',
+    apply: 'Apply'
   }
 } as const;

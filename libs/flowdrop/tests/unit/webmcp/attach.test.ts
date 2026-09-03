@@ -11,8 +11,10 @@ import { createFlowDropInstance } from '../../../src/lib/stores/instanceContaine
 import { attachWebMCP, detectModelContext } from '../../../src/lib/webmcp/register.js';
 import { createFakeModelContext } from '../../../src/lib/webmcp/fake.js';
 import { updateSettings, resetSettings } from '../../../src/lib/stores/settingsStore.svelte.js';
+import { setLogLevel } from '../../../src/lib/utils/logger.js';
 import type { NodeMetadata, Workflow } from '../../../src/lib/types/index.js';
 import type { Command } from '../../../src/lib/commands/types.js';
+import type { WebMCPOptions } from '../../../src/lib/webmcp/types.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -48,14 +50,20 @@ function workflow(): Workflow {
   };
 }
 
-function setup(approval: 'auto' | 'confirm' | ((c: Command[]) => Promise<boolean>) = 'auto') {
+async function setup(
+  approval: 'auto' | 'confirm' | ((c: Command[]) => Promise<boolean>) = 'auto',
+  extra: Partial<WebMCPOptions> = {}
+) {
   const runtime = createFakeModelContext();
   const instance = createFlowDropInstance({ id: `t-${Math.random().toString(36).slice(2)}` });
   instance.workflow.initialize(workflow());
-  const handle = attachWebMCP(instance, { nodeTypes, approval, modelContext: runtime });
+  const handle = attachWebMCP(instance, { nodeTypes, approval, modelContext: runtime, ...extra });
   if (!handle) throw new Error('attach returned null');
+  await handle.ready;
   return { runtime, instance, handle };
 }
+
+const tick = () => new Promise((r) => setTimeout(r, 0));
 
 const nodeCount = (i: ReturnType<typeof createFlowDropInstance>) =>
   i.workflow.current?.nodes.length ?? -1;
@@ -82,8 +90,8 @@ describe('attachWebMCP — registration', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
-  it('registers every descriptor with the prefix, readOnlyHint and workflow name', () => {
-    const { runtime, handle } = setup();
+  it('registers every descriptor with the prefix, readOnlyHint and workflow name', async () => {
+    const { runtime, handle } = await setup();
     expect(handle.tools.length).toBe(runtime.tools.size);
     expect(handle.tools).toContain('flowdrop_add_node');
     expect(handle.tools).toContain('flowdrop_batch');
@@ -103,19 +111,20 @@ describe('attachWebMCP — registration', () => {
     expect(runtime.tools.has('flowdrop_view')).toBe(true);
   });
 
-  it('throws on a second attach with the same prefix on the same runtime', () => {
-    const { runtime } = setup();
+  it('throws on a second attach with the same prefix on the same runtime', async () => {
+    const { runtime } = await setup();
     const other = createFlowDropInstance();
     expect(() => attachWebMCP(other, { nodeTypes, modelContext: runtime })).toThrow(
       /already registered/
     );
     // A distinct prefix is fine.
     const h2 = attachWebMCP(other, { nodeTypes, modelContext: runtime, prefix: 'second' });
+    await h2?.ready;
     expect(h2?.tools).toContain('second_add_node');
   });
 
-  it('detach removes every tool and frees the prefix', () => {
-    const { runtime, handle, instance } = setup();
+  it('detach removes every tool and frees the prefix', async () => {
+    const { runtime, handle, instance } = await setup();
     handle.detach();
     expect(handle.attached).toBe(false);
     expect(runtime.tools.size).toBe(0);
@@ -123,11 +132,54 @@ describe('attachWebMCP — registration', () => {
     expect(attachWebMCP(instance, { nodeTypes, modelContext: runtime })).not.toBeNull();
   });
 
-  it('detaches when the instance is destroyed', () => {
-    const { runtime, handle, instance } = setup();
+  it('detaches when the instance is destroyed', async () => {
+    const { runtime, handle, instance } = await setup();
     instance.destroy();
     expect(handle.attached).toBe(false);
     expect(runtime.tools.size).toBe(0);
+  });
+
+  it('a detached adapter leaves nothing behind on the instance', async () => {
+    const { handle, instance } = await setup();
+    const detach = vi.spyOn(handle, 'detach');
+    handle.detach();
+    instance.destroy();
+    // destroy() found no adapter hook left to run; detach ran once, by us.
+    expect(detach).toHaveBeenCalledTimes(1);
+    expect(handle.attached).toBe(false);
+  });
+
+  it('tools the runtime refuses are warned about once and not listed', async () => {
+    const runtime = createFakeModelContext();
+    const original = runtime.registerTool.bind(runtime);
+    runtime.registerTool = (tool, options) =>
+      tool.name === 'flowdrop_undo' ? Promise.reject(new Error('nope')) : original(tool, options);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    setLogLevel('warn');
+    const instance = createFlowDropInstance();
+    instance.workflow.initialize(workflow());
+    const handle = attachWebMCP(instance, { nodeTypes, approval: 'auto', modelContext: runtime });
+    if (!handle) throw new Error('attach returned null');
+    await handle.ready;
+    setLogLevel('none');
+    expect(handle.tools).toContain('flowdrop_add_node');
+    expect(handle.tools).not.toContain('flowdrop_undo');
+    expect(handle.tools.length).toBe(runtime.tools.size);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('flowdrop_undo');
+  });
+
+  it('reads node types from the instance when none are passed', async () => {
+    const runtime = createFakeModelContext();
+    const instance = createFlowDropInstance();
+    instance.workflow.initialize(workflow());
+    const handle = attachWebMCP(instance, { approval: 'auto', modelContext: runtime });
+    await handle?.ready;
+    let out = await runtime.call('flowdrop_list_types');
+    expect((out.data as { types: unknown[] }).types).toHaveLength(0);
+    instance.nodeTypes.set(nodeTypes);
+    out = await runtime.call('flowdrop_list_types');
+    expect((out.data as { types: unknown[] }).types).toHaveLength(2);
   });
 });
 
@@ -138,7 +190,7 @@ describe('attachWebMCP — registration', () => {
 describe('attachWebMCP — execution', () => {
   it('read tools run without the gate', async () => {
     const gate = vi.fn(async () => false);
-    const { runtime } = setup(gate);
+    const { runtime } = await setup(gate);
     const out = await runtime.call('flowdrop_list_types');
     expect(out.ok).toBe(true);
     expect((out.data as { types: unknown[] }).types).toHaveLength(2);
@@ -147,7 +199,7 @@ describe('attachWebMCP — execution', () => {
 
   it('mutating tools wait on the gate and apply when approved', async () => {
     const gate = vi.fn(async () => true);
-    const { runtime, instance } = setup(gate);
+    const { runtime, instance } = await setup(gate);
     const out = await runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
     expect(out.ok).toBe(true);
     expect((out.data as { nodeId: string }).nodeId).toBe('text_input.1');
@@ -157,7 +209,7 @@ describe('attachWebMCP — execution', () => {
   });
 
   it('a rejected gate leaves the workflow untouched', async () => {
-    const { runtime, instance } = setup(async () => false);
+    const { runtime, instance } = await setup(async () => false);
     const out = await runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
     expect(out).toEqual({ ok: false, code: 'REJECTED', error: expect.any(String) });
     expect(nodeCount(instance)).toBe(0);
@@ -165,7 +217,7 @@ describe('attachWebMCP — execution', () => {
 
   it('a second mutating call while the gate is open gets BUSY', async () => {
     let release!: (v: boolean) => void;
-    const { runtime, instance } = setup(() => new Promise<boolean>((r) => (release = r)));
+    const { runtime, instance } = await setup(() => new Promise<boolean>((r) => (release = r)));
     const first = runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
     await Promise.resolve();
     const second = await runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
@@ -176,7 +228,7 @@ describe('attachWebMCP — execution', () => {
   });
 
   it('a batch with a failing third command rolls back and reports it', async () => {
-    const { runtime, instance } = setup('auto');
+    const { runtime, instance } = await setup('auto');
     const out = await runtime.call('flowdrop_batch', {
       commands: [
         { type: 'add_node', nodeTypeId: 'text_input' },
@@ -201,7 +253,7 @@ describe('attachWebMCP — execution', () => {
   });
 
   it('a successful batch is one undo step', async () => {
-    const { runtime, instance } = setup('auto');
+    const { runtime, instance } = await setup('auto');
     const out = await runtime.call('flowdrop_batch', {
       commands: [
         { type: 'add_node', nodeTypeId: 'text_input' },
@@ -224,7 +276,7 @@ describe('attachWebMCP — execution', () => {
   });
 
   it('set_config stores typed values the way the DSL does', async () => {
-    const { runtime, instance } = setup('auto');
+    const { runtime, instance } = await setup('auto');
     await runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
     await runtime.call('flowdrop_set_config', {
       nodeId: 'text_input.1',
@@ -241,14 +293,14 @@ describe('attachWebMCP — execution', () => {
 
   it('invalid arguments never reach the gate', async () => {
     const gate = vi.fn(async () => true);
-    const { runtime } = setup(gate);
+    const { runtime } = await setup(gate);
     const out = await runtime.call('flowdrop_add_node', { nodeTypeId: 42 });
     expect(out.code).toBe('INVALID_ARGUMENTS');
     expect(gate).not.toHaveBeenCalled();
   });
 
   it('executor errors come back with their code', async () => {
-    const { runtime } = setup('auto');
+    const { runtime } = await setup('auto');
     const out = await runtime.call('flowdrop_info', { nodeId: 'ghost.1' });
     expect(out.ok).toBe(false);
     expect(out.code).toBe('NODE_NOT_FOUND');
@@ -256,7 +308,7 @@ describe('attachWebMCP — execution', () => {
 
   it('layout tools are skipped with the chat panel wording when the setting is off', async () => {
     const gate = vi.fn(async () => true);
-    const { runtime, instance } = setup(gate);
+    const { runtime, instance } = await setup(gate);
     await runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
     const before = instance.workflow.current?.nodes[0].position;
 
@@ -296,6 +348,43 @@ describe('attachWebMCP — execution', () => {
     expect(onUIAction).toHaveBeenCalledWith({ type: 'select_node', nodeId: 'text_input.1' });
   });
 
+  it('view actions run without the gate; a batch mixing view and a change is gated whole', async () => {
+    const gate = vi.fn(async () => true);
+    const runtime = createFakeModelContext();
+    const instance = createFlowDropInstance();
+    instance.workflow.initialize(workflow());
+    const onUIAction = vi.fn();
+    const handle = attachWebMCP(instance, {
+      nodeTypes,
+      approval: gate,
+      modelContext: runtime,
+      onUIAction
+    });
+    await handle?.ready;
+
+    const view = await runtime.call('flowdrop_view', { action: 'zoom_in' });
+    expect(view.ok).toBe(true);
+    expect(onUIAction).toHaveBeenCalledWith({ type: 'canvas_zoom_in' });
+    expect(gate).not.toHaveBeenCalled();
+
+    const mixed = await runtime.call('flowdrop_batch', {
+      commands: [
+        { type: 'view', action: 'fit_view' },
+        { type: 'add_node', nodeTypeId: 'text_input' }
+      ]
+    });
+    expect(mixed.ok).toBe(true);
+    expect(gate).toHaveBeenCalledTimes(1);
+    expect(gate.mock.calls[0][0]).toEqual([
+      { type: 'canvas_fit_view' },
+      { type: 'add_node', nodeTypeId: 'text_input' }
+    ]);
+
+    // undo changes the document: still gated.
+    await runtime.call('flowdrop_undo');
+    expect(gate).toHaveBeenCalledTimes(2);
+  });
+
   it('reports NO_WORKFLOW when nothing is loaded', async () => {
     const runtime = createFakeModelContext();
     const instance = createFlowDropInstance();
@@ -305,7 +394,7 @@ describe('attachWebMCP — execution', () => {
   });
 
   it('refuses calls after detach', async () => {
-    const { runtime, handle } = setup('auto');
+    const { runtime, handle } = await setup('auto');
     const tool = runtime.tools.get('flowdrop_list_nodes')!;
     handle.detach();
     const out = JSON.parse((await tool.execute({})).content[0].text);
@@ -323,7 +412,7 @@ describe('attachWebMCP — confirm dialog', () => {
     (document.querySelector(`[data-testid="${testid}"]`) as HTMLButtonElement).click();
 
   it('renders the commands, applies on Apply, and disappears', async () => {
-    const { runtime, instance } = setup('confirm');
+    const { runtime, instance } = await setup('confirm');
     const pending = runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
     await new Promise((r) => setTimeout(r, 0));
 
@@ -338,8 +427,81 @@ describe('attachWebMCP — confirm dialog', () => {
     expect(dialog()).toBeNull();
   });
 
+  it('never opens for a view call, even with approval: confirm', async () => {
+    const runtime = createFakeModelContext();
+    const instance = createFlowDropInstance();
+    instance.workflow.initialize(workflow());
+    const handle = attachWebMCP(instance, {
+      nodeTypes,
+      approval: 'confirm',
+      modelContext: runtime,
+      onUIAction: vi.fn()
+    });
+    await handle?.ready;
+    const out = await runtime.call('flowdrop_view', { action: 'fit_view' });
+    expect(out.ok).toBe(true);
+    expect(dialog()).toBeNull();
+
+    // A batch with a change in it lists every line, view included.
+    const pending = runtime.call('flowdrop_batch', {
+      commands: [
+        { type: 'view', action: 'fit_view' },
+        { type: 'add_node', nodeTypeId: 'text_input' }
+      ]
+    });
+    await tick();
+    expect(dialog()?.textContent).toContain('Fit view');
+    expect(dialog()?.textContent).toContain('Add node text_input');
+    click('flowdrop-webmcp-approve');
+    expect((await pending).ok).toBe(true);
+  });
+
+  it('reads its strings from the messages option', async () => {
+    const { runtime } = await setup('confirm', {
+      messages: {
+        webmcp: {
+          confirmTitle: ({ name }) => `Ein Agent möchte „${name}“ ändern`,
+          reject: 'Ablehnen',
+          apply: 'Anwenden'
+        }
+      }
+    });
+    const pending = runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
+    await tick();
+    expect(dialog()?.textContent).toContain('Ein Agent möchte „Newsletter“ ändern');
+    expect(
+      document.querySelector('[data-testid="flowdrop-webmcp-reject"]')?.textContent?.trim()
+    ).toBe('Ablehnen');
+    expect(
+      document.querySelector('[data-testid="flowdrop-webmcp-approve"]')?.textContent?.trim()
+    ).toBe('Anwenden');
+    click('flowdrop-webmcp-reject');
+    expect((await pending).code).toBe('REJECTED');
+  });
+
+  it('starts on Apply, traps Tab between the two buttons, and rejects on Escape', async () => {
+    const { runtime } = await setup('confirm');
+    const pending = runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
+    await tick();
+    const approve = document.querySelector('[data-testid="flowdrop-webmcp-approve"]')!;
+    const reject = document.querySelector('[data-testid="flowdrop-webmcp-reject"]')!;
+    expect(document.activeElement).toBe(approve);
+
+    const key = (k: string) =>
+      document.activeElement!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: k, bubbles: true })
+      );
+    key('Tab');
+    expect(document.activeElement).toBe(reject);
+    key('Tab');
+    expect(document.activeElement).toBe(approve);
+    key('Escape');
+    expect((await pending).code).toBe('REJECTED');
+    expect(dialog()).toBeNull();
+  });
+
   it('rejects on Reject and on detach', async () => {
-    const { runtime, instance, handle } = setup('confirm');
+    const { runtime, instance, handle } = await setup('confirm');
 
     const first = runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
     await new Promise((r) => setTimeout(r, 0));

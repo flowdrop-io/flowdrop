@@ -9,6 +9,9 @@
 -->
 
 <script lang="ts">
+  import { m } from '../messages/index.js';
+  import { focusOnMount } from '../utils/focus.js';
+
   interface Props {
     /** Editor / workflow name, so two editors on one page are distinguishable. */
     editorName: string;
@@ -20,21 +23,22 @@
 
   let { editorName, lines, onResolve }: Props = $props();
 
+  let rejectButton = $state<HTMLButtonElement | null>(null);
   let approveButton = $state<HTMLButtonElement | null>(null);
 
-  $effect(() => {
-    approveButton?.focus();
-  });
-
+  // Focus starts on Apply and stays inside the dialog: Tab and Shift+Tab move
+  // between the two buttons, Escape rejects. The handler sits on the dialog
+  // itself, which holds focus through its buttons, not on the window.
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
       onResolve(false);
+    } else if (event.key === 'Tab') {
+      event.preventDefault();
+      (document.activeElement === approveButton ? rejectButton : approveButton)?.focus();
     }
   }
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <div class="fd-webmcp-confirm" data-testid="flowdrop-webmcp-confirm">
   <div
@@ -43,12 +47,14 @@
     aria-modal="true"
     aria-labelledby="fd-webmcp-confirm-title"
     aria-describedby="fd-webmcp-confirm-list"
+    tabindex="-1"
+    onkeydown={handleKeydown}
   >
     <h2 id="fd-webmcp-confirm-title" class="fd-webmcp-confirm__title">
-      A browser agent wants to change “{editorName}”
+      {m().webmcp.confirmTitle({ name: editorName })}
     </h2>
     <p class="fd-webmcp-confirm__hint">
-      {lines.length === 1 ? '1 change' : `${lines.length} changes`} — applied together, undone together.
+      {m().webmcp.confirmCount({ count: lines.length })}
     </p>
     <ol id="fd-webmcp-confirm-list" class="fd-webmcp-confirm__list">
       {#each lines as line, i (i)}
@@ -60,18 +66,20 @@
         type="button"
         class="fd-webmcp-confirm__button fd-webmcp-confirm__button--reject"
         data-testid="flowdrop-webmcp-reject"
+        bind:this={rejectButton}
         onclick={() => onResolve(false)}
       >
-        Reject
+        {m().webmcp.reject}
       </button>
       <button
         type="button"
         class="fd-webmcp-confirm__button fd-webmcp-confirm__button--approve"
         data-testid="flowdrop-webmcp-approve"
         bind:this={approveButton}
+        {@attach focusOnMount()}
         onclick={() => onResolve(true)}
       >
-        Apply
+        {m().webmcp.apply}
       </button>
     </div>
   </div>

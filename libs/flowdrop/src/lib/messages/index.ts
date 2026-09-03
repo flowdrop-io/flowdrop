@@ -7,5 +7,5 @@
 
 export { defaultMessages } from './defaults.js';
 export { mergeMessages } from './merge.js';
-export { setMessages, getMessages, m } from './context.js';
+export { setMessages, getMessages, messagesContext, m } from './context.js';
 export type { Messages, MessagesOverride, DeepPartial } from './types.js';

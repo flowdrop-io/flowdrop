@@ -15,10 +15,11 @@ import type { NodeMetadata } from '../types/index.js';
 import type { Command, CommandResult } from '../commands/types.js';
 import { executeBatch } from '../commands/batch.js';
 import { createStoreCommandContext } from '../commands/storeIntegration.svelte.js';
-import { isLayoutCommand, isMutatingCommand } from '../chat/commandClassifier.js';
+import { isLayoutCommand, isMutatingCommand, isViewCommand } from '../chat/commandClassifier.js';
 import { getBehaviorSettings } from '../stores/settingsStore.svelte.js';
+import { logger } from '../utils/logger.js';
 import { buildToolDescriptors } from './descriptors.js';
-import { validateToolArgs } from './descriptors.js';
+import { validateToolArgs } from './validate.js';
 import { createApprovalGate, GateBusyError } from './gate.js';
 import {
   ToolArgumentError,
@@ -109,6 +110,17 @@ function stripResult(result: CommandResult): Record<string, unknown> {
   return { ok: false, code: result.code, error: result.error };
 }
 
+/**
+ * The gate exists because any agent on the page can alter the user's
+ * document. A command that only moves the view — selection, a panel, the
+ * viewport — alters nothing the user would need to undo, so it runs unasked;
+ * `undo` and `redo` change the document and stay gated. A batch is gated as a
+ * whole when any of its items is.
+ */
+function needsApproval(commands: Command[]): boolean {
+  return commands.some((c) => isMutatingCommand(c.type) && !isViewCommand(c.type));
+}
+
 // ============================================================================
 // attach
 // ============================================================================
@@ -121,12 +133,14 @@ function stripResult(result: CommandResult): Record<string, unknown> {
  * already registered on this runtime (two editors on one page need distinct
  * prefixes).
  *
- * The registration is torn down by `handle.detach()` or automatically when
- * `instance.destroy()` runs.
+ * Registration settles asynchronously: `handle.tools` lists the tools the
+ * runtime has accepted so far and `handle.ready` resolves when every
+ * registration has settled. The registration is torn down by
+ * `handle.detach()` or automatically when `instance.destroy()` runs.
  */
 export function attachWebMCP(
   instance: FlowDropInstance,
-  options: WebMCPOptions
+  options: WebMCPOptions = {}
 ): WebMCPHandle | null {
   const detected = options.modelContext ?? detectModelContext();
   if (!detected) return null;
@@ -138,14 +152,18 @@ export function attachWebMCP(
   }
   claimPrefix(runtime, prefix);
 
-  const nodeTypes = (): NodeMetadata[] =>
-    typeof options.nodeTypes === 'function' ? options.nodeTypes() : options.nodeTypes;
+  const nodeTypes = (): NodeMetadata[] => {
+    const source = options.nodeTypes;
+    if (source === undefined) return instance.nodeTypes.current;
+    return typeof source === 'function' ? source() : source;
+  };
 
   const editorName = (): string => instance.workflow.current?.name ?? instance.id;
 
   const gate = createApprovalGate(options.approval ?? 'confirm', {
     container: options.container,
-    editorName
+    editorName,
+    messages: options.messages
   });
 
   const controller = new AbortController();
@@ -191,8 +209,8 @@ export function attachWebMCP(
     const context = createStoreCommandContext(nodeTypes(), options.onUIAction, instance);
     if (!context) return errorResult('NO_WORKFLOW', 'No workflow is loaded in this editor');
 
-    // D3: reads run, mutations wait for the gate.
-    if (commands.some((c) => isMutatingCommand(c.type))) {
+    // D3: reads and view changes run; document changes wait for the gate.
+    if (needsApproval(commands)) {
       let approved: boolean;
       try {
         approved = await gate.request(commands);
@@ -229,7 +247,8 @@ export function attachWebMCP(
   // ---- register -----------------------------------------------------------
 
   const nameSuffix = ` Editor: "${editorName()}".`;
-  for (const descriptor of descriptors) {
+
+  async function register(descriptor: ToolDescriptor): Promise<void> {
     const name = `${prefix}_${descriptor.verb}`;
     const tool: RegisteredToolDefinition = {
       name,
@@ -238,17 +257,28 @@ export function attachWebMCP(
       annotations: { readOnlyHint: descriptor.readOnly },
       execute: (input) => run(descriptor, input)
     };
-    // The spec returns a promise; pre-spec runtimes return nothing. Neither
-    // rejection nor return value carries anything we act on.
-    void Promise.resolve(runtime.registerTool(tool, { signal: controller.signal })).catch(() => {});
-    names.push(name);
+    try {
+      // The spec returns a promise that rejects when the runtime refuses the
+      // tool; pre-spec runtimes return nothing, which `await` takes as accepted.
+      await runtime.registerTool(tool, { signal: controller.signal });
+    } catch (err) {
+      logger.warn(
+        `WebMCP: the runtime refused tool "${name}":`,
+        err instanceof Error ? err.message : err
+      );
+      return;
+    }
+    if (attached) names.push(name);
   }
+
+  const ready = Promise.all(descriptors.map(register)).then(() => undefined);
 
   // ---- detach -------------------------------------------------------------
 
   function detach(): void {
     if (!attached) return;
     attached = false;
+    unsubscribeDestroy();
     gate.dispose();
     controller.abort();
     if (typeof runtime.unregisterTool === 'function') {
@@ -263,18 +293,14 @@ export function attachWebMCP(
     releasePrefix(runtime, prefix);
   }
 
-  // Detach when the instance goes away. `destroy` is an own, writable
-  // property of the instance object literal (see instanceContainer).
-  const originalDestroy = instance.destroy;
-  (instance as { destroy: () => void }).destroy = () => {
-    detach();
-    originalDestroy.call(instance);
-  };
+  // Detach when the instance goes away.
+  const unsubscribeDestroy = instance.onDestroy(detach);
 
   return {
     get tools() {
       return names;
     },
+    ready,
     get attached() {
       return attached;
     },

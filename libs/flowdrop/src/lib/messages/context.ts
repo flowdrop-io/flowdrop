@@ -26,6 +26,15 @@ export function setMessages(getter: () => Messages): void {
 }
 
 /**
+ * The context entry `setMessages` would create, for code that mounts a
+ * component imperatively (`mount(Component, { target, context })`) and so has
+ * no provider above it. The WebMCP confirm dialog is mounted this way.
+ */
+export function messagesContext(getter: () => Messages): Map<unknown, unknown> {
+  return new Map([[KEY, getter]]);
+}
+
+/**
  * Returns the current messages getter. Components should call the result on
  * every read so locale switches in the consumer's i18n library propagate
  * without a subscription.
