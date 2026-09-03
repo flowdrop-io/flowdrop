@@ -196,12 +196,6 @@
     status.status !== 'unbound'}
 >
   <div class="wf-interface__entry-side">
-    {#if status}
-      <span
-        class="wf-interface__dot wf-interface__dot--{status.status}"
-        title={describeInterfaceEntryStatus(status)}
-      ></span>
-    {/if}
     <div class="wf-interface__reorder">
       <button
         type="button"
@@ -456,10 +450,11 @@
       </div>
     </details>
 
-    <!-- Every resolveInterface status renders in words somewhere in this card —
-         the obligation that makes this surface canonical. `ok` lives on the
-         header dot; type-mismatch and already-connected render inline next to
-         their own field; the rest are explained here. -->
+    <!-- Every non-ok resolveInterface status renders in words somewhere in this
+         card — the obligation that makes this surface canonical. `ok` says
+         nothing: neutral is the good state, and the card's error border already
+         marks the bad ones. Type-mismatch and already-connected render inline
+         next to their own field; the rest are explained here. -->
     {#if status && FOOTER_STATUSES.has(status.status)}
       <p class="wf-interface__status wf-interface__status--{status.status}">
         {describeInterfaceEntryStatus(status)}
@@ -745,35 +740,6 @@
     padding-block: 0;
     padding-inline: var(--fd-space-xs);
     color: var(--fd-primary);
-  }
-
-  /* Entry health at a glance; the title tooltip carries the words. */
-  .wf-interface__dot {
-    flex-shrink: 0;
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background-color: var(--fd-muted-foreground);
-    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);
-    color: var(--fd-muted-foreground);
-  }
-
-  .wf-interface__dot--ok {
-    background-color: var(--fd-success);
-    color: var(--fd-success);
-  }
-
-  .wf-interface__dot--type-mismatch,
-  .wf-interface__dot--unbound {
-    background-color: var(--fd-warning);
-    color: var(--fd-warning);
-  }
-
-  .wf-interface__dot--dangling,
-  .wf-interface__dot--hidden,
-  .wf-interface__dot--over-bound {
-    background-color: var(--fd-error);
-    color: var(--fd-error);
   }
 
   /* Field-anchored feedback: one short line under the field it belongs to. */

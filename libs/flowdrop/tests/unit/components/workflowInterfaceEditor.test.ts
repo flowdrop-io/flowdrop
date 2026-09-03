@@ -172,9 +172,8 @@ describe('WorkflowInterfaceEditor', () => {
       props: { workflow, onChange: () => {} }
     }).body;
 
-    // The status dot repeats the prose in its title tooltip; count visible text only.
-    const visible = body.replace(/title="[^"]*"/g, '');
-    expect(visible.split('has no bindings yet').length - 1).toBe(1);
+    // Said once, in the footer — there is no status dot repeating it any more.
+    expect(body.split('has no bindings yet').length - 1).toBe(1);
   });
 
   it('renders a type mismatch inline under the Data type field with a quick fix, not as footer prose', () => {
@@ -191,10 +190,8 @@ describe('WorkflowInterfaceEditor', () => {
 
     expect(body).toContain("Doesn't match the bound port's type (number).");
     expect(body).toContain('Use port type');
-    // The long-form sentence must not also render in the card footer (the dot's
-    // title tooltip is the one allowed carrier of it).
-    const visible = body.replace(/title="[^"]*"/g, '');
-    expect(visible).not.toContain('declares a data type that does not match');
+    // The long-form sentence must not render anywhere in the card.
+    expect(body).not.toContain('declares a data type that does not match');
   });
 
   it('names the competing source inline when a bound input port already has an incoming edge', () => {
