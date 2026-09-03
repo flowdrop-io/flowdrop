@@ -1,11 +1,17 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import WebMCPFakeAgent from '../stories/WebMCPFakeAgent.svelte';
+  import type { NodeMetadata, NodePort, Workflow } from '../types/index.js';
 
   // Inline fixtures: importing from src/mocks would make svelte-package emit
   // declaration files outside src/lib.
-  const port = (id, name, type, dataType) => ({ id, name, type, dataType });
-  const nodes = [
+  const port = (id: string, name: string, type: NodePort['type'], dataType: string): NodePort => ({
+    id,
+    name,
+    type,
+    dataType
+  });
+  const nodes: NodeMetadata[] = [
     {
       node_type_id: 'chat_model',
       name: 'Chat Model',
@@ -53,7 +59,7 @@
     }
   ];
 
-  const workflow = {
+  const workflow: Workflow = {
     id: 'webmcp-demo',
     name: 'WebMCP demo',
     nodes: [
