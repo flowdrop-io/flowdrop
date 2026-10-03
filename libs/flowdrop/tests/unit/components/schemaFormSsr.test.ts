@@ -56,6 +56,28 @@ describe('SchemaForm SSR (standalone, no <App> ancestor)', () => {
     expect(body).toContain('id="age"');
   });
 
+  it('renders a format: "autocomplete" field as the built-in autocomplete, not a text box', () => {
+    // SchemaForm and ConfigForm render through the light FormFieldLight. When
+    // they moved to it (2.0.0-beta.2) the built-in autocomplete was left behind,
+    // so every autocomplete config field silently became a plain text input.
+    const body = render(SchemaForm, {
+      props: {
+        schema: {
+          type: 'object',
+          properties: {
+            assignee: {
+              type: 'string',
+              title: 'Assignee',
+              format: 'autocomplete',
+              autocomplete: { url: '/api/users' }
+            }
+          }
+        }
+      }
+    }).body;
+    expect(body).toContain('form-autocomplete__input');
+  });
+
   it('renders the empty state for a schema with no properties (still no throw)', () => {
     expect(() => render(SchemaForm, { props: { schema: { type: 'object' } } }).body).not.toThrow();
   });

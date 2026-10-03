@@ -20,16 +20,18 @@
   Type Resolution Order:
   1. Check field registry for custom/heavy components (highest priority)
   2. format: 'hidden' -> skip rendering (return nothing)
-  3. enum with multiple: true -> FormCheckboxGroup
-  4. enum -> FormSelect (simple values without labels)
-  5. oneOf with const/title (labeled options) -> FormSelect
-  6. format: 'multiline' -> FormTextarea
-  7. format: 'range' (number/integer) -> FormRangeField
-  8. type: 'string' -> FormTextField
-  9. type: 'number' or 'integer' -> FormNumberField
-  10. type: 'boolean' -> FormToggle
-  11. type: 'array' -> FormArray
-  12. fallback -> FormTextField
+  3. format: 'autocomplete' with autocomplete.url -> FormAutocomplete (light: no
+     heavy deps, so it is built in here exactly as in FormField)
+  4. enum with multiple: true -> FormCheckboxGroup
+  5. enum -> FormSelect (simple values without labels)
+  6. oneOf with const/title (labeled options) -> FormSelect
+  7. format: 'multiline' -> FormTextarea
+  8. format: 'range' (number/integer) -> FormRangeField
+  9. type: 'string' -> FormTextField
+  10. type: 'number' or 'integer' -> FormNumberField
+  11. type: 'boolean' -> FormToggle
+  12. type: 'array' -> FormArray
+  13. fallback -> FormTextField
 -->
 
 <script lang="ts">
@@ -43,6 +45,7 @@
   import FormCheckboxGroup from './FormCheckboxGroup.svelte';
   import FormArray from './FormArray.svelte';
   import FormPorts from './FormPorts.svelte';
+  import FormAutocomplete from './FormAutocomplete.svelte';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
 
@@ -128,6 +131,15 @@
       return 'hidden';
     }
 
+    // Autocomplete for format: "autocomplete" with autocomplete.url. A
+    // registered override already won above; otherwise the built-in one, as in
+    // FormField. Without this a node's autocomplete config field rendered as a
+    // plain text box in the config panel once ConfigForm moved to this light
+    // factory (2.0.0-beta.2).
+    if (schema.format === 'autocomplete' && schema.autocomplete?.url) {
+      return 'autocomplete';
+    }
+
     // Check for heavy editor formats that need registration
     if (schema.format === 'json' || schema.format === 'code') {
       return 'code-editor-fallback';
@@ -195,6 +207,19 @@
   });
 
   /**
+   * Autocomplete value - string or string[] depending on `autocomplete.multiple`
+   */
+  const autocompleteValue = $derived.by((): string | string[] => {
+    if (schema.autocomplete?.multiple) {
+      if (Array.isArray(value)) {
+        return value.map((v) => String(v));
+      }
+      return value ? [String(value)] : [];
+    }
+    return String(value ?? '');
+  });
+
+  /**
    * Get helpful message for missing editor registration
    */
   function getEditorHint(editorType: string): string {
@@ -243,6 +268,16 @@
         {workflowId}
         {authProvider}
         onChange={(val: unknown) => onChange(val)}
+      />
+    {:else if fieldType === 'autocomplete' && schema.autocomplete}
+      <FormAutocomplete
+        id={fieldKey}
+        value={autocompleteValue}
+        autocomplete={schema.autocomplete}
+        placeholder={schema.placeholder ?? ''}
+        {required}
+        ariaDescribedBy={descriptionId}
+        onChange={(val) => onChange(val)}
       />
     {:else if fieldType === 'checkbox-group'}
       <FormCheckboxGroup

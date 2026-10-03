@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Autocomplete config fields (`format: 'autocomplete'` with `autocomplete.url`)
+  render as autocompletes again in the node config panel and `SchemaForm`.
+  They had been plain text boxes since 2.0.0-beta.2, when both moved to
+  `FormFieldLight`, which had no built-in fallback; a registered override on
+  `fd.fields` still wins.
+
 ## [2.8.0] - 2026-09-10
 
 ### Added
