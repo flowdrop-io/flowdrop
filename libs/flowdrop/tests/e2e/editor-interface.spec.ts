@@ -16,6 +16,11 @@
  *    supplied, leave it alone", so the removal never landed and the row stayed.
  *    Reported from a real workflow as "I cannot delete the output entry".
  *
+ * Since 2.6.0 "Add input" / "Add output" opens an inline two-step composer
+ * ("Bind it to an existing port?") instead of dropping in a blank row; its
+ * "No, add a custom entry" path adds the same empty, unbound entry the button
+ * used to, so the helpers below take that path.
+ *
  * These assert the user-facing contract — the field stays on screen, keeps
  * focus, keeps what was typed, and the row actually goes away — rather than the
  * attributes that happen to implement it.
@@ -47,9 +52,18 @@ async function openInterfaceTab(page: Page): Promise<void> {
   await expect(page.locator('.wf-interface')).toBeVisible();
 }
 
+/**
+ * Add an empty, unbound entry through the composer's "No, add a custom entry"
+ * path. (The other path, "Yes, bind to a port", opens the port picker.)
+ */
+async function addCustomEntry(page: Page, side: 'input' | 'output'): Promise<void> {
+  await page.getByRole('button', { name: side === 'input' ? 'Add input' : 'Add output' }).click();
+  await page.getByRole('button', { name: /^No, add a custom entry/ }).click();
+}
+
 /** Add an input entry and open its secondary-fields disclosure. */
 async function addInputWithFieldsOpen(page: Page, nth = 0): Promise<void> {
-  await page.getByRole('button', { name: 'Add input' }).click();
+  await addCustomEntry(page, 'input');
   await page.locator('.wf-interface__more').nth(nth).locator('summary').click();
   await expect(page.locator('.wf-interface__example-add').nth(nth)).toBeVisible();
 }
@@ -117,7 +131,7 @@ test.describe('Interface editor', () => {
     await openInterfaceTab(page);
 
     // Two entries, with only the second one's fields open.
-    await page.getByRole('button', { name: 'Add input' }).click();
+    await addCustomEntry(page, 'input');
     await addInputWithFieldsOpen(page, 1);
 
     const cards = page.locator('.wf-interface__more');
@@ -145,7 +159,7 @@ test.describe('Interface editor', () => {
     // emptied interface as `undefined`, which the store reads as "no interface
     // key supplied, leave it alone", so the row never left. Reproduced from a
     // real workflow as "I cannot delete the output entry".
-    await page.getByRole('button', { name: 'Add output' }).click();
+    await addCustomEntry(page, 'output');
     await expect(page.locator('.wf-interface__entry')).toHaveCount(1);
 
     await page
@@ -155,7 +169,9 @@ test.describe('Interface editor', () => {
       .click();
 
     await expect(page.locator('.wf-interface__entry')).toHaveCount(0);
-    await expect(page.getByText('No outputs declared yet.')).toBeVisible();
+    // An empty side is just its insertion slot since 2.6.0 — the "No outputs
+    // declared yet." placeholder is gone.
+    await expect(page.getByRole('button', { name: 'Add output' })).toBeVisible();
   });
 
   test('removing an entry does not hand its open fields to a neighbour', async ({ page }) => {
@@ -164,7 +180,7 @@ test.describe('Interface editor', () => {
 
     // Two entries, with only the first one's fields open.
     await addInputWithFieldsOpen(page, 0);
-    await page.getByRole('button', { name: 'Add input' }).click();
+    await addCustomEntry(page, 'input');
 
     const cards = page.locator('.wf-interface__more');
     const isOpen = () =>
