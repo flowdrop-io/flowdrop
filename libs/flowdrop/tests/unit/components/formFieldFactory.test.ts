@@ -58,7 +58,8 @@ describe('one field factory', () => {
     ['json', { type: 'object', format: 'json' }],
     ['markdown', { type: 'string', format: 'markdown' }],
     ['template', { type: 'string', format: 'template' }],
-    ['object without format', { type: 'object' }]
+    ['object without format', { type: 'object' }],
+    ['object with a format nothing renders', { type: 'object', format: 'key-value' }]
   ] as [string, FieldSchema][])(
     '%s: Full has the editor built in, Light shows the registration hint',
     (_, schema) => {
@@ -77,6 +78,12 @@ describe('one field factory', () => {
     const body = html(FormFieldFull, { type: 'object', format: 'json' }, '', instance);
     expect(body).toContain('<textarea'); // the host's component, not CodeMirror
     expect(body).not.toContain('Editor component not registered');
+  });
+
+  it('an object with format ports still gets the ports widget, not the JSON editor', () => {
+    const schema: FieldSchema = { type: 'object', format: 'ports' };
+    expect(html(FormFieldFull, schema)).toBe(html(FormFieldLight, schema));
+    expect(html(FormFieldLight, schema)).not.toContain('Editor component not registered');
   });
 
   it('FormFieldLight takes no editors, even from an untyped caller', () => {

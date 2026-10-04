@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `disabled` prop). Hosts that marked fields `readOnly` but relied on editing
   them will find them locked.
 - Number fields honour `step` in the node config panel and `SchemaForm`.
+- An `object` field whose `format` the form does not render itself (anything
+  but `hidden`, `autocomplete` and `ports`) gets the JSON editor. It used to
+  fall through to a text field that showed `[object Object]` and saved a string
+  over the object on the first keystroke.
 
 ### Changed
 

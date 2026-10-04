@@ -78,6 +78,9 @@ export function resolveBaseFieldType(schema: FieldSchema): BaseFieldType | null 
 /** The editors too heavy for the light `/form` entry (CodeMirror and friends). */
 export type HeavyEditorKind = 'code-editor' | 'markdown-editor' | 'template-editor';
 
+/** Formats the factory renders itself even on an `object` (`ports` is one). */
+const OBJECT_FORMATS_WITH_OWN_FIELD = new Set(['hidden', 'autocomplete', 'ports']);
+
 /**
  * Which heavy editor a schema asks for, or `null` for none. The light factory
  * renders it from the field registry, or from the statically bundled set that
@@ -97,8 +100,10 @@ export function resolveHeavyEditorKind(schema: FieldSchema): HeavyEditorKind | n
     return 'template-editor';
   }
 
-  // An object without a format is edited as JSON.
-  if (schema.type === 'object' && !schema.format) {
+  // An object is edited as JSON unless its format is one the factory renders
+  // itself. An unknown format must not fall through to a text field, which
+  // would show "[object Object]" and save a string over the object.
+  if (schema.type === 'object' && !OBJECT_FORMATS_WITH_OWN_FIELD.has(schema.format ?? '')) {
     return 'code-editor';
   }
 
