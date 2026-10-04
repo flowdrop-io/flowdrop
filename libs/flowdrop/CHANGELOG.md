@@ -14,6 +14,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   They had been plain text boxes since 2.0.0-beta.2, when both moved to
   `FormFieldLight`, which had no built-in fallback; a registered override on
   `fd.fields` still wins.
+- `readOnly: true` on a config field now disables it in the node config panel
+  and `SchemaForm`. `FormFieldLight` never passed `disabled` on, so read-only
+  fields were editable; it now reaches every built-in field, the textarea
+  fallback for an unregistered editor, and registered components (as the
+  `disabled` prop). Hosts that marked fields `readOnly` but relied on editing
+  them will find them locked.
+- Number fields honour `step` in the node config panel and `SchemaForm`.
+
+### Changed
+
+- **`FormFieldFull`** (`@flowdrop/flowdrop/form/full`) and `FormField`
+  (`@flowdrop/flowdrop/form`) now render through one internal field factory;
+  `FormFieldFull` only adds the bundled code, markdown and template editors.
+  They used to be two copies of the factory, and the copies had drifted, which
+  is how the autocomplete and `readOnly` bugs above shipped. One behaviour
+  difference for `FormFieldFull` users: a component registered on `fd.fields`
+  now wins for every field, as it always did for `FormField`, where before
+  `FormFieldFull` consulted the registry only for autocomplete fields. Neither
+  component gained or lost a prop; their props type, `FormFieldFactoryProps`,
+  now also lists `node`, `nodes`, `edges`, `workflowId` and `authProvider`,
+  which both always accepted.
 
 ## [2.8.0] - 2026-09-10
 

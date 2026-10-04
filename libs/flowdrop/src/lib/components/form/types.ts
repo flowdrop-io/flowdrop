@@ -6,7 +6,13 @@
  * and support extensibility for complex field types like arrays and objects.
  */
 
-import type { AutocompleteConfig, TemplateVariablesConfig } from '$lib/types/index.js';
+import type {
+  AutocompleteConfig,
+  TemplateVariablesConfig,
+  WorkflowNode,
+  WorkflowEdge
+} from '$lib/types/index.js';
+import type { AuthProvider } from '$lib/types/auth.js';
 
 /**
  * Supported field types for form rendering
@@ -338,7 +344,8 @@ export interface FieldSchema {
 }
 
 /**
- * Props for the FormField factory component
+ * Props for the field factory components (`FormField` from `form`,
+ * `FormFieldFull` from `form/full`)
  * Renders the appropriate field component based on schema
  */
 export interface FormFieldFactoryProps {
@@ -352,6 +359,16 @@ export interface FormFieldFactoryProps {
   required?: boolean;
   /** Animation delay index for staggered animations */
   animationIndex?: number;
+  /** Current workflow node (optional, forwarded to registered editors for template variable API mode) */
+  node?: WorkflowNode;
+  /** All workflow nodes (optional, forwarded to registered editors for port-derived variables) */
+  nodes?: WorkflowNode[];
+  /** All workflow edges (optional, forwarded to registered editors for port-derived variables) */
+  edges?: WorkflowEdge[];
+  /** Workflow ID (optional, forwarded to registered editors for template variable API mode) */
+  workflowId?: string;
+  /** Auth provider (optional, forwarded to registered editors for API requests) */
+  authProvider?: AuthProvider;
   /** Callback when the field value changes */
   onChange: (value: unknown) => void;
 }
