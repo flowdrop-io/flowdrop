@@ -107,6 +107,13 @@
     authProvider
   }: Props = $props();
 
+  /**
+   * The value as editor text. Registered editors get the raw config value,
+   * which is not always a string (null for an unset field, a number from a
+   * mistyped schema); CodeMirror throws on anything but a string.
+   */
+  const text = $derived(typeof value === 'string' ? value : value == null ? '' : String(value));
+
   // Active instance — supplies endpoint configuration for API variable fetching.
   const fd = getInstance();
 
@@ -434,7 +441,7 @@
       // Then create editor with loaded schema
       editorView = new EditorView({
         state: EditorState.create({
-          doc: value,
+          doc: text,
           extensions: createExtensions()
         }),
         parent: containerRef
@@ -462,13 +469,13 @@
     const currentContent = editorView.state.doc.toString();
 
     // Only update if content actually changed and wasn't from internal edit
-    if (value !== currentContent && !isInternalUpdate) {
+    if (text !== currentContent && !isInternalUpdate) {
       isInternalUpdate = true;
       editorView.dispatch({
         changes: {
           from: 0,
           to: editorView.state.doc.length,
-          insert: value
+          insert: text
         }
       });
       isInternalUpdate = false;
@@ -502,7 +509,7 @@
     type="hidden"
     {id}
     name={id}
-    {value}
+    value={text}
     aria-describedby={ariaDescribedBy}
     aria-required={required}
   />
@@ -585,7 +592,7 @@
   {/if}
 
   <!-- Placeholder hint when empty -->
-  {#if !value && placeholderExample}
+  {#if !text && placeholderExample}
     <div class="form-template-editor__placeholder">
       <span class="form-template-editor__placeholder-label">Example template:</span>
       <code class="form-template-editor__placeholder-example">{placeholderExample}</code>

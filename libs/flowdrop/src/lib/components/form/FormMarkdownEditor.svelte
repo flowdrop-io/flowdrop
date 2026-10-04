@@ -75,6 +75,13 @@
     onChange
   }: Props = $props();
 
+  /**
+   * The value as editor text. Registered editors get the raw config value,
+   * which is not always a string (null for an unset field, a number from a
+   * mistyped schema); CodeMirror throws on anything but a string.
+   */
+  const text = $derived(typeof value === 'string' ? value : value == null ? '' : String(value));
+
   /** Reference to the editor container element */
   let containerRef: HTMLDivElement | undefined = $state(undefined);
 
@@ -426,7 +433,7 @@
     if (!containerRef) return;
 
     // Load autosaved content if available
-    let initialContent = value;
+    let initialContent = text;
     if (autosave) {
       try {
         const saved = localStorage.getItem(`flowdrop-markdown-${id}`);
@@ -468,13 +475,13 @@
     }
 
     const currentContent = editorView.state.doc.toString();
-    if (value !== currentContent && !isInternalUpdate) {
+    if (text !== currentContent && !isInternalUpdate) {
       isInternalUpdate = true;
       editorView.dispatch({
         changes: {
           from: 0,
           to: editorView.state.doc.length,
-          insert: value
+          insert: text
         }
       });
       isInternalUpdate = false;
@@ -515,7 +522,7 @@
     type="hidden"
     {id}
     name={id}
-    {value}
+    value={text}
     aria-describedby={ariaDescribedBy}
     aria-required={required}
   />

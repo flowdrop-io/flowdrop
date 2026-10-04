@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   but `hidden`, `autocomplete` and `ports`) gets the JSON editor. It used to
   fall through to a text field that showed `[object Object]` and saved a string
   over the object on the first keystroke.
+- The markdown and template editors accept a value that is not a string:
+  `null` shows an empty editor and a number its text, where a number used to
+  throw from CodeMirror (`(config.doc || "").split is not a function`).
+  `FormFieldFull` used to coerce the value before handing it over; it now
+  reaches the editors as stored, as it always did in the config panel.
 
 ### Changed
 
