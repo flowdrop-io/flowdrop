@@ -113,11 +113,26 @@
     selection.addRange(range);
   }
 
+  /**
+   * Drop a caret or selection that sits in the edit box before the box goes
+   * away. Left in place, the browser moves it to the box's parent when the
+   * box is removed, and WebKit, after the caret was moved with an arrow key,
+   * scrolls the nearest scrollable ancestor to reveal it: the canvas area
+   * jumps and every node appears to move.
+   */
+  function dropCaret(): void {
+    const selection = window.getSelection();
+    if (selection && editorEl && editorEl.contains(selection.anchorNode)) {
+      selection.removeAllRanges();
+    }
+  }
+
   function finish(save: boolean, refocusNode: boolean): void {
     // The blur that follows an Enter or Escape finds the edit already over.
     if (!editing) return;
     const text = save ? (editorEl?.textContent ?? '') : null;
     const wrapper = rootEl?.closest<HTMLElement>('.svelte-flow__node') ?? null;
+    dropCaret();
     editing = false;
     props.data.onInlineCommit?.(props.id, text);
     if (refocusNode) {

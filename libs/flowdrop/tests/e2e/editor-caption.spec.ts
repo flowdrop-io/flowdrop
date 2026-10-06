@@ -194,6 +194,46 @@ test.describe('Caption node', () => {
     expect(after?.y).toBeCloseTo(before?.y ?? 0, 0);
   });
 
+  test('ending an edit after moving the caret does not scroll the canvas area', async ({
+    page
+  }) => {
+    await gotoCaptionEditor(page, 'workflow=caption');
+
+    const node = page.locator('.svelte-flow__node[data-id="caption-short"]');
+    const before = await node.boundingBox();
+    await node.dblclick();
+    await page.keyboard.type('abc');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('Escape');
+    await expect(node).toBeFocused();
+
+    // WebKit used to scroll the overflowing main area to the orphaned caret.
+    const scrollTop = await page.evaluate(() =>
+      Math.max(
+        0,
+        ...Array.from(document.querySelectorAll<HTMLElement>('.flowdrop-main-layout__main')).map(
+          (el) => el.scrollTop
+        )
+      )
+    );
+    expect(scrollTop).toBe(0);
+    const after = await node.boundingBox();
+    expect(after?.y).toBeCloseTo(before?.y ?? 0, 0);
+  });
+
+  test('arrow keys still move a selected caption when it is not being edited', async ({ page }) => {
+    await gotoCaptionEditor(page, 'workflow=caption');
+
+    const node = page.locator('.svelte-flow__node[data-id="caption-short"]');
+    await node.click();
+    await expect(node).toBeFocused();
+    const before = await node.boundingBox();
+    await page.keyboard.press('ArrowRight');
+    await expect
+      .poll(async () => (await node.boundingBox())?.x ?? 0)
+      .toBeGreaterThan((before?.x ?? 0) + 1);
+  });
+
   test('pasted text and newlines are stored as one clean line', async ({ page }) => {
     await gotoCaptionEditor(page, 'workflow=caption');
 
