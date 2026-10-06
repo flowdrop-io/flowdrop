@@ -582,6 +582,28 @@ export const defaultMessages = {
     moveUp: ({ id }: { id: string }) => `Move "${id}" up`,
     moveDown: ({ id }: { id: string }) => `Move "${id}" down`,
     metaDisclosure: 'Server metadata (read-only)',
+    // The Chat turn selector: what a port is for in a chat turn (`turn`).
+    turnLabel: 'Chat turn',
+    turnNone: 'None',
+    turns: {
+      message: 'User message',
+      history: 'History',
+      session_id: 'Session ID',
+      message_id: 'Message ID',
+      reply: 'Reply'
+    },
+    turnDescriptions: {
+      message: "Receives the person's chat message",
+      history: 'Receives recent user and assistant messages from the session',
+      session_id: "Receives the session's ID",
+      message_id: "Receives the ID of the person's message",
+      reply: "Text the session saves as the assistant's answer"
+    },
+    turnUnknown: ({ value }: { value: string }) => `${value} (not known to this editor)`,
+    turnTakenInline: ({ id }: { id: string }) =>
+      `Input "${id}" already has this chat turn. A workflow takes one input per turn value.`,
+    historyLimitLabel: 'Messages to include',
+    historyLimitPlaceholder: ({ limit }: { limit: number }) => `${limit} (default)`,
     // The inline composer that opens from "Add input" / "Add output".
     composerTitleInput: 'New input',
     composerTitleOutput: 'New output',

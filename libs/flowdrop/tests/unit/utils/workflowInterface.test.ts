@@ -17,7 +17,13 @@ import {
   rankBindablePorts,
   entryFromBindablePort,
   describeInterfaceEntryStatus,
-  listBindablePorts
+  listBindablePorts,
+  turnsFor,
+  isKnownTurn,
+  turnTakenBy,
+  turnPatch,
+  historyLimitPatch,
+  historyLimitOf
 } from '$lib/utils/workflowInterface.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
@@ -999,5 +1005,134 @@ describe('entryFromBindablePort', () => {
   it('suffixes the id until it is unique among the existing entries', () => {
     expect(entryFromBindablePort(candidate, ['text']).id).toBe('text_2');
     expect(entryFromBindablePort(candidate, ['text', 'text_2']).id).toBe('text_3');
+  });
+});
+
+// =========================================================================
+// Chat turn ports
+// =========================================================================
+
+describe('turn vocabulary', () => {
+  it('offers message, history, session_id, message_id on inputs and reply on outputs', () => {
+    expect(turnsFor('input')).toEqual(['message', 'history', 'session_id', 'message_id']);
+    expect(turnsFor('output')).toEqual(['reply']);
+  });
+
+  it('knows its own vocabulary and nothing else', () => {
+    expect(isKnownTurn('reply')).toBe(true);
+    expect(isKnownTurn('history')).toBe(true);
+    expect(isKnownTurn('entity_context')).toBe(false);
+  });
+});
+
+describe('turnTakenBy', () => {
+  it('reports the first holder to every later input with the same turn', () => {
+    const a = makeEntry({ id: 'a', turn: 'message' });
+    const b = makeEntry({ id: 'b', turn: 'history' });
+    const c = makeEntry({ id: 'c', turn: 'message' });
+    const inputs = [a, b, c];
+    expect(turnTakenBy(inputs, a)).toBeUndefined();
+    expect(turnTakenBy(inputs, b)).toBeUndefined();
+    expect(turnTakenBy(inputs, c)).toBe('a');
+  });
+
+  it('says nothing for an entry without a turn', () => {
+    const a = makeEntry({ id: 'a' });
+    const b = makeEntry({ id: 'b' });
+    expect(turnTakenBy([a, b], b)).toBeUndefined();
+  });
+});
+
+describe('turnPatch', () => {
+  it('sets the turn', () => {
+    expect(turnPatch(makeEntry(), 'message')).toEqual({ turn: 'message' });
+  });
+
+  it('clears the turn with an undefined key, never an empty string', () => {
+    const patch = turnPatch(makeEntry({ turn: 'reply' }), '');
+    expect('turn' in patch).toBe(true);
+    expect(patch.turn).toBeUndefined();
+  });
+
+  it('drops meta.limit when leaving history, keeping other meta keys', () => {
+    const entry = makeEntry({ turn: 'history', meta: { limit: 5, http: { in: 'query' } } });
+    expect(turnPatch(entry, 'message')).toEqual({
+      turn: 'message',
+      meta: { http: { in: 'query' } }
+    });
+  });
+
+  it('drops meta entirely when limit was its only key', () => {
+    const patch = turnPatch(makeEntry({ turn: 'history', meta: { limit: 5 } }), '');
+    expect('meta' in patch).toBe(true);
+    expect(patch.meta).toBeUndefined();
+  });
+
+  it('does not touch meta when it holds no limit', () => {
+    const patch = turnPatch(makeEntry({ meta: { http: { in: 'query' } } }), 'message');
+    expect('meta' in patch).toBe(false);
+  });
+
+  it('keeps meta.limit when switching to history', () => {
+    const patch = turnPatch(makeEntry({ meta: { limit: 3 } }), 'history');
+    expect('meta' in patch).toBe(false);
+  });
+});
+
+describe('historyLimitPatch / historyLimitOf', () => {
+  it('writes a positive integer limit beside other meta keys', () => {
+    const entry = makeEntry({ turn: 'history', meta: { mcp: { toolParam: true } } });
+    expect(historyLimitPatch(entry, '20')).toEqual({
+      meta: { mcp: { toolParam: true }, limit: 20 }
+    });
+  });
+
+  it('removes the limit for empty, zero, negative or fractional input', () => {
+    const entry = makeEntry({ turn: 'history', meta: { limit: 5 } });
+    for (const raw of ['', '0', '-3', '2.5', 'abc']) {
+      expect(historyLimitPatch(entry, raw)).toEqual({ meta: undefined });
+    }
+  });
+
+  it('reads back only a positive integer limit', () => {
+    expect(historyLimitOf(makeEntry({ meta: { limit: 7 } }))).toBe(7);
+    expect(historyLimitOf(makeEntry({ meta: { limit: '7' } }))).toBeUndefined();
+    expect(historyLimitOf(makeEntry())).toBeUndefined();
+  });
+});
+
+describe('validateWorkflowInterface — turn', () => {
+  it('warns on the second input carrying the same turn', () => {
+    const workflow = makeWorkflow([], [], {
+      inputs: [makeEntry({ id: 'a', turn: 'message' }), makeEntry({ id: 'b', turn: 'message' })]
+    });
+    const issues = validateWorkflowInterface(workflow).filter(
+      (issue) => issue.code === 'interface-turn-duplicate'
+    );
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ entryId: 'b', direction: 'input', severity: 'warning' });
+  });
+
+  it('allows any number of reply outputs', () => {
+    const workflow = makeWorkflow([], [], {
+      outputs: [makeEntry({ id: 'a', turn: 'reply' }), makeEntry({ id: 'b', turn: 'reply' })]
+    });
+    expect(
+      validateWorkflowInterface(workflow).filter((issue) => issue.code.startsWith('interface-turn'))
+    ).toEqual([]);
+  });
+
+  it('warns on a known turn on the wrong side, and ignores unknown values', () => {
+    const workflow = makeWorkflow([], [], {
+      inputs: [makeEntry({ id: 'in', turn: 'reply' })],
+      outputs: [
+        makeEntry({ id: 'out', turn: 'message' }),
+        makeEntry({ id: 'later', turn: 'entity_context' as WorkflowInterfaceEntry['turn'] })
+      ]
+    });
+    const codes = validateWorkflowInterface(workflow)
+      .filter((issue) => issue.code === 'interface-turn-direction')
+      .map((issue) => issue.entryId);
+    expect(codes).toEqual(['in', 'out']);
   });
 });

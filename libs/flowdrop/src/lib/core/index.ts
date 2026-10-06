@@ -40,6 +40,7 @@ export type {
   PortBinding,
   WorkflowInterface,
   WorkflowInterfaceEntry,
+  WorkflowInterfaceTurn,
   ConfigValues,
   WorkflowNode,
   WorkflowEdge,
@@ -76,6 +77,11 @@ export type {
 } from '../types/index.js';
 
 export { isUISchemaControl, isUISchemaVerticalLayout, isUISchemaGroup } from '../types/index.js';
+export {
+  WORKFLOW_INTERFACE_INPUT_TURNS,
+  WORKFLOW_INTERFACE_OUTPUT_TURNS,
+  DEFAULT_HISTORY_TURN_LIMIT
+} from '../types/index.js';
 
 // Configuration types
 export type {

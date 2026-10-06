@@ -21,7 +21,9 @@
   so every edit here goes through the store's normal history path.
 
   `meta` is never editable here (design decision 4) — it round-trips verbatim
-  and is shown as a read-only JSON disclosure when present.
+  and is shown as a read-only JSON disclosure when present. One exception: the
+  Chat turn selector writes `meta.limit` on a `history` entry (and removes it
+  when the entry stops being one), the one key `turn` owns.
 -->
 
 <script lang="ts">
@@ -42,6 +44,7 @@
     entryFromBindablePort,
     rankBindablePorts,
     resolveInterface,
+    turnTakenBy,
     validateWorkflowInterface,
     type InterfaceIssue,
     type RankedBindablePort,
@@ -113,7 +116,8 @@
    */
   const INLINE_ISSUE_CODES = new Set([
     'interface-type-mismatch',
-    'interface-input-already-connected'
+    'interface-input-already-connected',
+    'interface-turn-duplicate'
   ]);
 
   function footerIssues(
@@ -297,9 +301,27 @@
     patch: Partial<WorkflowInterfaceEntry>
   ): void {
     const list = entriesFor(direction).map((entry, i) =>
-      i === index ? { ...entry, ...patch } : entry
+      i === index ? applyPatch(entry, patch) : entry
     );
     commit(direction, list);
+  }
+
+  /**
+   * Merge a patch into an entry. A key the patch sets to `undefined` is
+   * removed rather than kept as an own `undefined` property, so clearing a
+   * field (a turn set back to none, an emptied name) leaves no key behind.
+   * Keys the patch does not mention — including ones this editor does not
+   * know — are carried over untouched.
+   */
+  function applyPatch(
+    entry: WorkflowInterfaceEntry,
+    patch: Partial<WorkflowInterfaceEntry>
+  ): WorkflowInterfaceEntry {
+    const next: WorkflowInterfaceEntry = { ...entry, ...patch };
+    for (const key of Object.keys(patch) as Array<keyof WorkflowInterfaceEntry>) {
+      if (patch[key] === undefined) delete next[key];
+    }
+    return next;
   }
 </script>
 
@@ -341,6 +363,9 @@
                 'interface-input-already-connected'
               )}
               conflictingSource={conflictingSourceLabel(entry)}
+              turnTakenBy={section.key === 'inputs'
+                ? turnTakenBy(entriesFor('inputs'), entry)
+                : undefined}
               isFirst={index === 0}
               isLast={index === list.length - 1}
               onPatch={(patch: Partial<WorkflowInterfaceEntry>) =>

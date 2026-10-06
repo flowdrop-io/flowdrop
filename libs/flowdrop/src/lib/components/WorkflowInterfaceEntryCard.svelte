@@ -28,12 +28,22 @@
   import PortShapeSymbol from '$lib/components/ports/PortShapeSymbol.svelte';
   import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
   import { m } from '$lib/messages/index.js';
-  import type { PortDataTypeConfig, WorkflowInterfaceEntry } from '$lib/types/index.js';
+  import {
+    DEFAULT_HISTORY_TURN_LIMIT,
+    type PortDataTypeConfig,
+    type WorkflowInterfaceEntry,
+    type WorkflowInterfaceTurn
+  } from '$lib/types/index.js';
   import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
   import {
     bindablePortKey,
     describeInterfaceEntryStatus,
+    historyLimitOf,
+    historyLimitPatch,
+    isKnownTurn,
     pullEntryFieldsFromPort,
+    turnPatch,
+    turnsFor,
     type RankedBindablePort,
     type InterfaceIssue,
     type ResolvedInterfaceEntry
@@ -55,6 +65,8 @@
     alreadyConnected?: boolean;
     /** Label of the node feeding that competing edge, when there is one. */
     conflictingSource?: string;
+    /** Input side only: the id of another input that already has this entry's turn. */
+    turnTakenBy?: string;
     isFirst: boolean;
     isLast: boolean;
     onPatch: (patch: Partial<WorkflowInterfaceEntry>) => void;
@@ -72,6 +84,7 @@
     footerIssues,
     alreadyConnected = false,
     conflictingSource,
+    turnTakenBy,
     isFirst,
     isLast,
     onPatch,
@@ -86,7 +99,7 @@
    */
   // The seed is meant to be read once.
   // svelte-ignore state_referenced_locally
-  let fieldsOpen = $state(status?.status === 'type-mismatch');
+  let fieldsOpen = $state(status?.status === 'type-mismatch' || turnTakenBy !== undefined);
 
   /** Statuses still explained in the footer (the rest render inline or as the dot). */
   const FOOTER_STATUSES = new Set(['unbound', 'dangling', 'hidden', 'over-bound']);
@@ -104,6 +117,40 @@
       options.push({ id: current, name: current });
     }
     return options;
+  }
+
+  /**
+   * Chat turn options for this direction. A stored value outside them — one
+   * from a newer server, or a value of the other direction — is listed too,
+   * so the select shows what is stored and never silently rewrites it.
+   */
+  const turnOptions = $derived.by(() => {
+    const options: Array<{ value: string; label: string }> = turnsFor(
+      isInput ? 'input' : 'output'
+    ).map((value) => ({ value, label: m().workflowInterface.turns[value] }));
+    const current = entry.turn;
+    if (current !== undefined && !options.some((option) => option.value === current)) {
+      options.push({
+        value: current,
+        label: isKnownTurn(current)
+          ? m().workflowInterface.turns[current]
+          : m().workflowInterface.turnUnknown({ value: current })
+      });
+    }
+    return options;
+  });
+
+  /** The current turn's one-line description, when it is a known value. */
+  const turnDescription = $derived(
+    entry.turn !== undefined && isKnownTurn(entry.turn)
+      ? m().workflowInterface.turnDescriptions[entry.turn]
+      : undefined
+  );
+
+  function setTurn(value: string): void {
+    // Only values the select offers reach here: the direction's vocabulary,
+    // '' for none, or the stored value itself (a no-op patch).
+    onPatch(turnPatch(entry, value as WorkflowInterfaceTurn | ''));
   }
 
   /** Whether the binding picker is unfolded under the "Bound port" control. */
@@ -312,8 +359,53 @@
       <summary>
         <Icon icon="heroicons:chevron-right" />
         {m().workflowInterface.moreOptions}
+        {#if entry.turn !== undefined}
+          <span class="wf-interface__turn-chip">
+            {isKnownTurn(entry.turn) ? m().workflowInterface.turns[entry.turn] : entry.turn}
+          </span>
+        {/if}
       </summary>
       <div class="wf-interface__more-body">
+        <div class="wf-interface__row">
+          <label class="wf-interface__field">
+            <span class="wf-interface__label">{m().workflowInterface.turnLabel}</span>
+            <Select
+              size="sm"
+              invalid={turnTakenBy !== undefined}
+              value={entry.turn ?? ''}
+              onchange={(e) => setTurn(e.currentTarget.value)}
+            >
+              <option value="">{m().workflowInterface.turnNone}</option>
+              {#each turnOptions as option (option.value)}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </Select>
+            {#if turnTakenBy !== undefined}
+              <span class="wf-interface__inline wf-interface__inline--warning">
+                {m().workflowInterface.turnTakenInline({ id: turnTakenBy })}
+              </span>
+            {:else if turnDescription}
+              <span class="wf-interface__hint">{turnDescription}</span>
+            {/if}
+          </label>
+          {#if entry.turn === 'history'}
+            <label class="wf-interface__field">
+              <span class="wf-interface__label">{m().workflowInterface.historyLimitLabel}</span>
+              <Input
+                size="sm"
+                type="number"
+                min="1"
+                step="1"
+                value={historyLimitOf(entry) ?? ''}
+                placeholder={m().workflowInterface.historyLimitPlaceholder({
+                  limit: DEFAULT_HISTORY_TURN_LIMIT
+                })}
+                onchange={(e) => onPatch(historyLimitPatch(entry, e.currentTarget.value))}
+              />
+            </label>
+          {/if}
+        </div>
+
         {#if boundTarget}
           <div class="wf-interface__pull-row">
             <Button
@@ -735,6 +827,25 @@
     gap: var(--fd-space-xs);
     font-size: var(--fd-text-xs);
     line-height: 1.4;
+  }
+
+  .wf-interface__hint {
+    font-size: var(--fd-text-xs);
+    line-height: 1.4;
+    color: var(--fd-muted-foreground);
+  }
+
+  /* The entry's chat turn, said at rest on the disclosure's summary. */
+  .wf-interface__turn-chip {
+    margin-left: var(--fd-space-xs);
+    padding: 0 var(--fd-space-xs);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-full);
+    background-color: var(--fd-muted);
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-2xs);
+    font-weight: 600;
+    line-height: 1.5;
   }
 
   .wf-interface__inline--warning {

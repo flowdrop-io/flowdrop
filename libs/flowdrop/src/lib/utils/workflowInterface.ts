@@ -21,9 +21,14 @@ import type {
   Workflow,
   WorkflowInterface,
   WorkflowInterfaceEntry,
+  WorkflowInterfaceTurn,
   WorkflowNode
 } from '$lib/types/index.js';
-import { dynamicPortToNodePort } from '$lib/types/index.js';
+import {
+  dynamicPortToNodePort,
+  WORKFLOW_INTERFACE_INPUT_TURNS,
+  WORKFLOW_INTERFACE_OUTPUT_TURNS
+} from '$lib/types/index.js';
 import { isPortExposed } from '$lib/utils/portUtils.js';
 import { LOOPBACK_PORT_NAME } from '$lib/utils/connections.js';
 import { PORTS_CONFIG_KEY } from '$lib/utils/nodeFormSchema.js';
@@ -265,6 +270,39 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
             message: `Interface input "${entry.id}" is bound to a port that already has an incoming edge; the port would receive two sources for one value.`
           });
         }
+      }
+    }
+  }
+
+  for (const entry of workflow.interface.inputs ?? []) {
+    const otherId = turnTakenBy(workflow.interface.inputs ?? [], entry);
+    if (otherId !== undefined) {
+      issues.push({
+        entryId: entry.id,
+        direction: 'input',
+        severity: 'warning',
+        code: 'interface-turn-duplicate',
+        message: `Interface input "${entry.id}" has chat turn "${entry.turn}", which input "${otherId}" already has; a workflow takes at most one input per turn value.`
+      });
+    }
+  }
+
+  for (const direction of ['input', 'output'] as const) {
+    const entries =
+      (direction === 'input' ? workflow.interface.inputs : workflow.interface.outputs) ?? [];
+    for (const entry of entries) {
+      if (
+        entry.turn !== undefined &&
+        isKnownTurn(entry.turn) &&
+        !turnsFor(direction).includes(entry.turn)
+      ) {
+        issues.push({
+          entryId: entry.id,
+          direction,
+          severity: 'warning',
+          code: 'interface-turn-direction',
+          message: `Interface ${direction} "${entry.id}" has chat turn "${entry.turn}", which only applies to ${direction === 'input' ? 'outputs' : 'inputs'}.`
+        });
       }
     }
   }
@@ -638,4 +676,86 @@ export function entryFromBindablePort(
     bindings: [{ nodeId: candidate.nodeId, portId: candidate.port.id }],
     ...pullEntryFieldsFromPort(candidate.port)
   };
+}
+
+// ---------------------------------------------------------------------------
+// Chat turn ports
+// ---------------------------------------------------------------------------
+
+/** The turn values an entry of this direction may carry, in selector order. */
+export function turnsFor(direction: 'input' | 'output'): readonly WorkflowInterfaceTurn[] {
+  return direction === 'input' ? WORKFLOW_INTERFACE_INPUT_TURNS : WORKFLOW_INTERFACE_OUTPUT_TURNS;
+}
+
+/** Whether a value is in this library's turn vocabulary (either direction). */
+export function isKnownTurn(value: string): value is WorkflowInterfaceTurn {
+  return (
+    (WORKFLOW_INTERFACE_INPUT_TURNS as readonly string[]).includes(value) ||
+    (WORKFLOW_INTERFACE_OUTPUT_TURNS as readonly string[]).includes(value)
+  );
+}
+
+/**
+ * The id of the first OTHER input entry already carrying `entry`'s turn
+ * value, or `undefined`. Every input turn is at most one per workflow; the
+ * first entry in list order keeps the value, later ones are reported. Only
+ * meaningful for inputs — `reply` on outputs is unbounded.
+ */
+export function turnTakenBy(
+  inputs: readonly WorkflowInterfaceEntry[],
+  entry: WorkflowInterfaceEntry
+): string | undefined {
+  if (entry.turn === undefined) return undefined;
+  const index = inputs.indexOf(entry);
+  const first = inputs.findIndex((other) => other.turn === entry.turn);
+  if (first === -1 || first === index || index === -1) return undefined;
+  return inputs[first].id;
+}
+
+/**
+ * The patch that sets (or with `''` clears) an entry's turn. Never writes a
+ * `turn` key for "none" (the key is set to `undefined`, which the editor's
+ * commit drops), and drops `meta.limit` when the entry stops being `history`
+ * — leaving every other `meta` key, and `meta` itself when others remain,
+ * untouched.
+ */
+export function turnPatch(
+  entry: WorkflowInterfaceEntry,
+  next: WorkflowInterfaceTurn | ''
+): Partial<WorkflowInterfaceEntry> {
+  const patch: Partial<WorkflowInterfaceEntry> = { turn: next === '' ? undefined : next };
+  if (next !== 'history' && entry.meta && 'limit' in entry.meta) {
+    patch.meta = metaWithLimit(entry.meta, undefined);
+  }
+  return patch;
+}
+
+/**
+ * The patch that sets a `history` entry's `meta.limit` from a raw field
+ * value. Empty, non-numeric or non-positive input removes the key, so the
+ * server's default applies; other `meta` keys are kept.
+ */
+export function historyLimitPatch(
+  entry: WorkflowInterfaceEntry,
+  raw: string
+): Partial<WorkflowInterfaceEntry> {
+  const parsed = Number(raw);
+  const limit = raw.trim() !== '' && Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+  return { meta: metaWithLimit(entry.meta, limit) };
+}
+
+/** The `meta.limit` a history entry states, when it is a positive integer. */
+export function historyLimitOf(entry: WorkflowInterfaceEntry): number | undefined {
+  const limit = entry.meta?.limit;
+  return typeof limit === 'number' && Number.isInteger(limit) && limit > 0 ? limit : undefined;
+}
+
+function metaWithLimit(
+  meta: Record<string, unknown> | undefined,
+  limit: number | undefined
+): Record<string, unknown> | undefined {
+  const next: Record<string, unknown> = { ...(meta ?? {}) };
+  if (limit === undefined) delete next.limit;
+  else next.limit = limit;
+  return Object.keys(next).length > 0 ? next : undefined;
 }

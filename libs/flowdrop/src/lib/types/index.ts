@@ -1530,9 +1530,50 @@ export interface WorkflowInterfaceEntry {
    * round-trips verbatim. Servers use it to say what "external" means for them
    * (`{"http": {"in": "query"}}`, `{"mcp": {"toolParam": true}}`, …).
    * Keys under the `fd.` prefix are reserved for future library use.
+   *
+   * One exception, owned by `turn`: when `turn` is `history`, `meta.limit`
+   * (a positive integer, default {@link DEFAULT_HISTORY_TURN_LIMIT}) is how
+   * many past user/assistant rows the session fills the port with. The
+   * interface editor writes that one key and nothing else.
    */
   meta?: Record<string, unknown>;
+  /**
+   * What this port is for in a chat turn (see {@link WorkflowInterfaceTurn}).
+   * Absent means the port plays no part in a turn. Validated by the server
+   * against its vocabulary; a value this library does not know (from a newer
+   * server) round-trips verbatim.
+   */
+  turn?: WorkflowInterfaceTurn;
 }
+
+/**
+ * The chat-turn vocabulary of an interface port: what the session fills an
+ * input port with, or which output ports become the assistant's reply.
+ *
+ * Inputs (at most one entry per value):
+ * - `message`: the person's message (the turn's content), a string
+ * - `history`: past user and assistant rows, bounded by `meta.limit`
+ * - `session_id`: the session's id
+ * - `message_id`: the id of the person's message row
+ *
+ * Outputs (any number):
+ * - `reply`: each value becomes one assistant message
+ */
+export type WorkflowInterfaceTurn = 'message' | 'history' | 'session_id' | 'message_id' | 'reply';
+
+/** Turn values valid on an input entry, in selector order. */
+export const WORKFLOW_INTERFACE_INPUT_TURNS: readonly WorkflowInterfaceTurn[] = [
+  'message',
+  'history',
+  'session_id',
+  'message_id'
+];
+
+/** Turn values valid on an output entry, in selector order. */
+export const WORKFLOW_INTERFACE_OUTPUT_TURNS: readonly WorkflowInterfaceTurn[] = ['reply'];
+
+/** `meta.limit` the server assumes for a `history` port that states none. */
+export const DEFAULT_HISTORY_TURN_LIMIT = 10;
 
 /** A workflow's public contract. Array order is the caller-facing order. */
 export interface WorkflowInterface {

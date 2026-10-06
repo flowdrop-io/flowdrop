@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Interface entries take an optional `turn`: what the port is for in a chat
+  turn. Inputs may be `message`, `history`, `session_id` or `message_id` (at
+  most one input per value); outputs may be `reply` (any number). A `history`
+  entry reads its window from `meta.limit` (default 10). The interface editor
+  gains a **Chat turn** selector under "More options" that offers only the
+  values valid for the entry's side, warns inline when another input already
+  has the value, and adds a "Messages to include" field for `history`. The
+  chosen turn shows on the collapsed card. "None" removes the key; a turn this
+  editor does not know is listed as it is and round-trips untouched. New type
+  `WorkflowInterfaceTurn` and constants `WORKFLOW_INTERFACE_INPUT_TURNS`,
+  `WORKFLOW_INTERFACE_OUTPUT_TURNS` and `DEFAULT_HISTORY_TURN_LIMIT` from
+  `core`. `validateWorkflowInterface` reports `interface-turn-duplicate` and
+  `interface-turn-direction` (warnings).
 - Playground messages carry an `origin` (`user`, `workflow`, `engine`,
   `playground` or `interrupt`): which component posted the row. Rows posted by
   the engine, a console observer or the interrupt system get a small,
