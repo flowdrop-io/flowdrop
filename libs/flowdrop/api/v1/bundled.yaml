@@ -4547,6 +4547,11 @@ components:
           description: |
             Optional layout hint. When omitted, the client picks a default
             based on the message role.
+        origin:
+          $ref: '#/components/schemas/PlaygroundMessageOrigin'
+          description: |
+            Which component posted the message. Always present on current
+            servers; absent from older ones.
         metadata:
           type: object
           properties:
@@ -6420,23 +6425,48 @@ components:
     PlaygroundMessageDisplay:
       type: string
       enum:
+        - default
         - bubble
         - log
         - notice
         - card
+        - hidden
       description: |
-        Layout hint chosen by the server. When omitted, the client defaults
-        from the role:
+        Layout hint chosen by the server. When omitted (or `default`), the
+        client defaults from the role:
         - `log` → `log`
         - `system` (with compactSystemMessages enabled) → `notice`
         - everything else → `bubble`
 
         Layouts:
+        - `default` — no hint; same as omitting the field
         - `bubble` — chat bubble with avatar, header, body, optional footer
           containing hierarchy + tags
         - `log` — one-liner: icon · hierarchy · body · tags · timestamp
         - `notice` — compact centered notice
         - `card` — vertical: hierarchy (top), body (middle), tags (bottom)
+        - `hidden` — not rendered by default. Hidden is not private: the row
+          is still delivered with the rest of the session. It hides noise,
+          never secrets.
+    PlaygroundMessageOrigin:
+      type: string
+      enum:
+        - user
+        - workflow
+        - engine
+        - playground
+        - interrupt
+      description: |
+        Which component posted the message — the axis beside `role` (who spoke,
+        conversationally) and `display` (how to render it).
+        - `user` — a person typed it
+        - `workflow` — the workflow produced it (a reply)
+        - `engine` — the run machinery wrote it (trigger rows, failures,
+          recovery, reporting rows)
+        - `playground` — a console observer wrote it for its own viewers
+        - `interrupt` — the interrupt system posted a question into the session
+
+        Servers that predate the field omit it; clients treat that as unknown.
     AgentSpecNodeBase:
       type: object
       description: Base properties shared by all Agent Spec nodes
