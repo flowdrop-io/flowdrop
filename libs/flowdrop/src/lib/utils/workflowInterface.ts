@@ -723,7 +723,7 @@ export function turnTakenBy(
  */
 export function turnPatch(
   entry: WorkflowInterfaceEntry,
-  next: WorkflowInterfaceTurn | ''
+  next: WorkflowInterfaceEntry['turn'] | ''
 ): Partial<WorkflowInterfaceEntry> {
   const patch: Partial<WorkflowInterfaceEntry> = { turn: next === '' ? undefined : next };
   if (next !== 'history' && entry.meta && 'limit' in entry.meta) {

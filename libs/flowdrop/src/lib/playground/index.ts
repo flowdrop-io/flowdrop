@@ -226,6 +226,8 @@ export {
   resolvePlaygroundInputMode,
   interfaceFormEntries,
   interfaceFormSchema,
+  collectInterfaceInputs,
+  type InterfaceInputsResult,
   type PlaygroundInputMode
 } from '../utils/workflowInterface.js';
 

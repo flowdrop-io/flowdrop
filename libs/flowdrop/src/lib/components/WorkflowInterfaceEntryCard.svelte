@@ -31,8 +31,7 @@
   import {
     DEFAULT_HISTORY_TURN_LIMIT,
     type PortDataTypeConfig,
-    type WorkflowInterfaceEntry,
-    type WorkflowInterfaceTurn
+    type WorkflowInterfaceEntry
   } from '$lib/types/index.js';
   import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
   import {
@@ -150,7 +149,7 @@
   function setTurn(value: string): void {
     // Only values the select offers reach here: the direction's vocabulary,
     // '' for none, or the stored value itself (a no-op patch).
-    onPatch(turnPatch(entry, value as WorkflowInterfaceTurn | ''));
+    onPatch(turnPatch(entry, value));
   }
 
   /** Whether the binding picker is unfolded under the "Bound port" control. */

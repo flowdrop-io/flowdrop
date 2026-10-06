@@ -142,7 +142,7 @@ describe('Chat turn selector', () => {
   });
 
   it('lists an unknown stored turn and keeps it through an edit to another field', () => {
-    const unknown = 'entity_context' as WorkflowInterfaceEntry['turn'];
+    const unknown = 'entity_context';
     const { target, onChange } = render({
       inputs: [entry({ id: 'ctx', turn: unknown, meta: { limit: 3 } })]
     });

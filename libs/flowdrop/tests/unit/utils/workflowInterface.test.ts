@@ -1133,7 +1133,7 @@ describe('validateWorkflowInterface — turn', () => {
       inputs: [makeEntry({ id: 'in', turn: 'reply' })],
       outputs: [
         makeEntry({ id: 'out', turn: 'message' }),
-        makeEntry({ id: 'later', turn: 'entity_context' as WorkflowInterfaceEntry['turn'] })
+        makeEntry({ id: 'later', turn: 'entity_context' })
       ]
     });
     const codes = validateWorkflowInterface(workflow)
@@ -1183,7 +1183,7 @@ describe('Playground input mode', () => {
   });
 
   it('never puts a turn port in the form, including values from a newer server', () => {
-    const newer = entry('ctx', { turn: 'entity_context' as WorkflowInterfaceEntry['turn'] });
+    const newer = entry('ctx', { turn: 'entity_context' });
     expect(interfaceFormEntries({ inputs: [newer, entry('topic')] }).map((e) => e.id)).toEqual([
       'topic'
     ]);

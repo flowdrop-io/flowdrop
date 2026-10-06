@@ -21,7 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `WorkflowInterfaceTurn` and constants `WORKFLOW_INTERFACE_INPUT_TURNS`,
   `WORKFLOW_INTERFACE_OUTPUT_TURNS` and `DEFAULT_HISTORY_TURN_LIMIT` from
   `core`. `validateWorkflowInterface` reports `interface-turn-duplicate` and
-  `interface-turn-direction` (warnings).
+  `interface-turn-direction` (warnings). `WorkflowInterfaceEntry.turn` is typed
+  `WorkflowInterfaceTurn | (string & {})`: a value from a newer server is a
+  valid `turn` and round-trips; check it against the known values before indexing by it.
 - Playground messages carry an `origin` (`user`, `workflow`, `engine`,
   `playground` or `interrupt`): which component posted the row. Rows posted by
   the engine, a console observer or the interrupt system get a small,
@@ -111,9 +113,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `interfaceFormEntries()`, `interfaceFormSchema()` and type
   `PlaygroundInputMode` (`playground`; the type also from `core`); store
   getters `fd.playground.inputMode` and `fd.playground.interfaceFormEntries`;
-  `messages.playground.inputForm` (`title`, `missingRequired`). The Run
-  button's handler may return a promise of whether the run started; `false`
-  re-enables Run at once.
+  `messages.playground.inputForm` (`title`, `missingRequired`). The form's
+  values and what a turn would send now live in the store:
+  `fd.playground.formValues` / `setFormValues()`, and `fd.playground.turnInputs`
+  (the inputs, or the required ones still missing, so a Run control can open the
+  form instead of failing); new pure `collectInterfaceInputs()` and type
+  `InterfaceInputsResult` (`playground`). `fd.playground.lastTurn` /
+  `setLastTurn()` hold the sessions door's answer for the turn just taken.
+  Run works again for every turn of a session: the one gate any Run control
+  reads is `fd.playground.canRun` (not executing, no turn request in flight,
+  and not waiting for the legacy `enableRun` message), with `turnPending`,
+  `runLocked`, `setTurnPending()`, `lockRunUntilEnabled()` and
+  `releaseRunLock()` behind it. `ChatInput` and `ControlPanel` take
+  `awaitEnableRun` (default `true`, the old protocol: a Run click locks Run
+  until a message with `enableRun` metadata arrives); the Playground turns it
+  off for turn-port workflows, whose server never sends it.
 - Optional `sessions` endpoint group: one session's own HTTP surface
   (`get`, `delete`, `messages`, `turn`, `stop`, optional `reset`), served by
   FlowDrop Drupal under `/api/flowdrop/sessions/{sessionId}/…` from the
@@ -133,7 +147,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `{kind: 'turn', result}` from `sessions.turn` (new type
   `PlaygroundTurnResult`; `PlaygroundTurnResponse`). The Playground uses it.
   `PlaygroundMessageRequest.content` is optional (a form-only workflow takes
-  `inputs` alone). OpenAPI documents the `/sessions/{sessionId}` paths and
+  `inputs` alone). Which kind comes back follows the endpoint group the
+  request went to, not the shape of the payload. OpenAPI documents the `/sessions/{sessionId}` paths and
   the turn result.
 
 ### Deprecated

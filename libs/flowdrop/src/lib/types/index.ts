@@ -1541,9 +1541,10 @@ export interface WorkflowInterfaceEntry {
    * What this port is for in a chat turn (see {@link WorkflowInterfaceTurn}).
    * Absent means the port plays no part in a turn. Validated by the server
    * against its vocabulary; a value this library does not know (from a newer
-   * server) round-trips verbatim.
+   * server) round-trips verbatim, which is why the type admits any string
+   * beside the known values. Narrow with `isKnownTurn` before indexing by it.
    */
-  turn?: WorkflowInterfaceTurn;
+  turn?: WorkflowInterfaceTurn | (string & {});
 }
 
 /**
