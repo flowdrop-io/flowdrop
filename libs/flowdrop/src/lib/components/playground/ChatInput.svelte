@@ -11,7 +11,6 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import { tick } from 'svelte';
-  import { hasEnableRunFlag } from '../../types/playground.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
   import {
@@ -50,12 +49,15 @@
      * replayed as input on the following turn — indistinguishable downstream
      * from something the user actually typed. Hosts that provide this get a Run
      * button that launches instead.
-     *
-     * May return a promise of whether the run started: `false` re-enables
-     * the Run button at once (a refused run never sends the `enableRun`
-     * message that would otherwise re-enable it).
      */
-    onRunWorkflow?: () => void | Promise<boolean | void>;
+    onRunWorkflow?: () => void;
+    /**
+     * When true (the default, the original protocol for hosts using ChatInput
+     * directly), a Run click locks Run until the backend posts a message with
+     * `enableRun` metadata. The Playground turns it off for turn-port
+     * workflows, whose server never sends that message.
+     */
+    awaitEnableRun?: boolean;
     /**
      * Enable the slash-command lane (default: false).
      *
@@ -78,6 +80,7 @@
     onSendMessage,
     onStopExecution,
     onRunWorkflow,
+    awaitEnableRun = true,
     enableCommands = false,
     commandFeedback = null,
     onDismissCommandFeedback
@@ -93,13 +96,6 @@
   const resolvedPredefinedMessage = $derived(predefinedMessage ?? chat.predefinedRun);
 
   const noInputsAvailable = $derived(!showTextarea && !showRunButton);
-
-  /**
-   * Tracks whether the Run button is enabled. Starts as true; becomes false
-   * after Run is clicked; re-enabled when the backend sends a message with
-   * enableRun: true metadata.
-   */
-  let runEnabled = $state(true);
 
   let inputValue = $state('');
   let inputField: HTMLTextAreaElement | undefined = $state();
@@ -180,28 +176,8 @@
     inputValue.trim().length > 0 && (inputIsCommand || fd.playground.canSendMessage)
   );
 
-  // Count of enableRun messages seen so far. A plain `let`, not `$state`: it is
-  // bookkeeping for the effects below, never read during render. Because it is
-  // not reactive, writing to it inside an effect creates no dependency and
-  // needs no `untrack`.
-  let seenEnableRunCount = 0;
-
-  $effect(() => {
-    const count = fd.playground.messages.filter((msg) => hasEnableRunFlag(msg.metadata)).length;
-    if (count > seenEnableRunCount) {
-      seenEnableRunCount = count;
-      runEnabled = true;
-    }
-  });
-
-  $effect(() => {
-    if (fd.playground.currentSession?.id) {
-      seenEnableRunCount = 0;
-      runEnabled = true;
-    }
-  });
-
-  // Same rationale as `seenEnableRunCount`: plain `let`, no `untrack` needed.
+  // A plain `let`, not `$state`: bookkeeping for the effect below, never read
+  // during render, so writing it inside the effect creates no dependency.
   let wasExecuting = false;
 
   /** Auto-focus input when execution completes */
@@ -281,8 +257,8 @@
   }
 
   function handleRun(): void {
-    if (fd.playground.isExecuting || !runEnabled) return;
-    runEnabled = false;
+    if (!fd.playground.canRun) return;
+    if (awaitEnableRun) fd.playground.lockRunUntilEnabled();
 
     const action = resolveRunAction({
       canLaunch: onRunWorkflow != null,
@@ -291,12 +267,7 @@
     });
 
     if (action.kind === 'launch') {
-      const started = onRunWorkflow?.();
-      if (started instanceof Promise) {
-        void started.then((ok) => {
-          if (ok === false) runEnabled = true;
-        });
-      }
+      onRunWorkflow?.();
       return;
     }
 
@@ -423,12 +394,12 @@
           {actions.send}
         </button>
       {:else if showRunButton}
-        {@const runLabel = runEnabled ? actions.runTitle : actions.runWaitingTitle}
+        {@const runLabel = fd.playground.canRun ? actions.runTitle : actions.runWaitingTitle}
         <button
           type="button"
           class="chat-input__run-btn"
           onclick={handleRun}
-          disabled={!runEnabled}
+          disabled={!fd.playground.canRun}
           title={runLabel}
           aria-label={runLabel}
         >

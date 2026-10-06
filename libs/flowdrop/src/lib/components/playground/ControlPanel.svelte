@@ -28,7 +28,9 @@
     onSendMessage: (content: string) => void;
     onStopExecution: () => void;
     /** Start a run without posting a chat message. See ChatInput. */
-    onRunWorkflow?: () => void | Promise<boolean | void>;
+    onRunWorkflow?: () => void;
+    /** Whether a Run click waits for the backend's `enableRun`. See ChatInput. */
+    awaitEnableRun?: boolean;
     /**
      * Enable the slash-command lane (default: false).
      *
@@ -74,6 +76,7 @@
     onSendMessage,
     onStopExecution,
     onRunWorkflow,
+    awaitEnableRun = true,
     enableCommands = false,
     commandFeedback = null,
     onDismissCommandFeedback,
@@ -298,6 +301,7 @@
     {onSendMessage}
     {onStopExecution}
     {onRunWorkflow}
+    {awaitEnableRun}
     {enableCommands}
     {commandFeedback}
     {onDismissCommandFeedback}

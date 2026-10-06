@@ -19,7 +19,7 @@ import type {
   PlaygroundMessagesApiResponse,
   PlaygroundExecution
 } from '../types/playground.js';
-import { isChatInputNode } from '../types/playground.js';
+import { hasEnableRunFlag, isChatInputNode } from '../types/playground.js';
 import type { Workflow, WorkflowInterfaceEntry, WorkflowNode } from '../types/index.js';
 import {
   interfaceFormEntries,
@@ -101,6 +101,9 @@ export interface PlaygroundStoreActions {
   pinExecution: (executionId: string | null) => void;
   setShowLogs: (value: boolean) => void;
   toggleShowLogs: () => void;
+  setTurnPending: (value: boolean) => void;
+  lockRunUntilEnabled: () => void;
+  releaseRunLock: () => void;
 }
 
 // =========================================================================
@@ -182,6 +185,27 @@ export class PlaygroundStore {
   // acknowledged optimistic write, overwritten by the next server response.
   #isExecuting = $derived(this.#currentSession?.status === 'running');
 
+  /**
+   * Whether a turn request is in flight: from the click until the server has
+   * answered. The session only turns `running` once the request has been
+   * accepted, so this closes the gap in which a second click could post a
+   * second turn.
+   */
+  #turnPending = $state(false);
+
+  /** How many messages so far carry the legacy `enableRun` flag. */
+  #enableRunCount = $derived(this.#messages.filter((m) => hasEnableRunFlag(m.metadata)).length);
+
+  /**
+   * The `enableRun` count at the moment Run was clicked under the legacy
+   * protocol, or `null` when Run is not locked. Run stays locked until a
+   * newer `enableRun` message raises the count past this.
+   */
+  #runLockedAt = $state<number | null>(null);
+
+  /** Whether Run is waiting for a backend `enableRun` message. */
+  #runLocked = $derived(this.#runLockedAt !== null && this.#enableRunCount <= this.#runLockedAt);
+
   /** Cleanups for active subscribeToSessionStatus effect roots. */
   readonly #statusSubscriptions = new Set<() => void>();
 
@@ -207,7 +231,10 @@ export class PlaygroundStore {
       switchSession: this.switchSession.bind(this),
       pinExecution: this.pinExecution.bind(this),
       setShowLogs: this.setShowLogs.bind(this),
-      toggleShowLogs: this.toggleShowLogs.bind(this)
+      toggleShowLogs: this.toggleShowLogs.bind(this),
+      setTurnPending: this.setTurnPending.bind(this),
+      lockRunUntilEnabled: this.lockRunUntilEnabled.bind(this),
+      releaseRunLock: this.releaseRunLock.bind(this)
     });
   }
 
@@ -233,6 +260,26 @@ export class PlaygroundStore {
   /** Executing state (derived from server status). */
   get isExecuting(): boolean {
     return this.#isExecuting;
+  }
+
+  /** Whether a turn request is in flight (see `setTurnPending`). */
+  get turnPending(): boolean {
+    return this.#turnPending;
+  }
+
+  /** Whether Run is locked until the backend posts an `enableRun` message. */
+  get runLocked(): boolean {
+    return this.#runLocked;
+  }
+
+  /**
+   * Whether a Run control may start a turn now. The one gate any Run control
+   * reads (the Playground's button today, a canvas run bar later), so they
+   * cannot disagree: nothing is running, no request is in flight and the
+   * legacy `enableRun` lock is not holding Run back.
+   */
+  get canRun(): boolean {
+    return !this.#isExecuting && !this.#turnPending && !this.#runLocked;
   }
 
   /** Loading state. */
@@ -522,6 +569,8 @@ export class PlaygroundStore {
   /** Set the current session. */
   setCurrentSession(session: PlaygroundSession | null): void {
     this.#pinnedExecutionId = null;
+    // A different session starts with Run free; the same session keeps its lock.
+    if (session?.id !== this.#currentSession?.id) this.#runLockedAt = null;
     this.#currentSession = session;
     if (session) {
       // Update session in the list
@@ -669,6 +718,8 @@ export class PlaygroundStore {
     this.#currentWorkflow = null;
     this.#lastPollSequenceNumber = null;
     this.#pipelineRefreshTrigger = 0;
+    this.#turnPending = false;
+    this.#runLockedAt = null;
   }
 
   /** Switch to a different session. */
@@ -676,6 +727,7 @@ export class PlaygroundStore {
     this.#pinnedExecutionId = null;
     const session = this.#sessions.find((s) => s.id === sessionId);
     if (session) {
+      if (session.id !== this.#currentSession?.id) this.#runLockedAt = null;
       this.#currentSession = session;
       this.#messages = [];
       this.#lastPollSequenceNumber = null;
@@ -695,6 +747,25 @@ export class PlaygroundStore {
   /** Toggle log message visibility. */
   toggleShowLogs(): void {
     this.#showLogs = !this.#showLogs;
+  }
+
+  /** Mark a turn request as in flight (or finished). */
+  setTurnPending(value: boolean): void {
+    this.#turnPending = value;
+  }
+
+  /**
+   * Lock Run until the backend posts a message with `enableRun` metadata
+   * (the legacy protocol). Locking at the current count means only a
+   * *newer* flagged message unlocks it.
+   */
+  lockRunUntilEnabled(): void {
+    this.#runLockedAt = this.#enableRunCount;
+  }
+
+  /** Free Run again, e.g. because the run was refused and no `enableRun` will come. */
+  releaseRunLock(): void {
+    this.#runLockedAt = null;
   }
 
   // -----------------------------------------------------------------------

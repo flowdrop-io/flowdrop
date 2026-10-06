@@ -544,11 +544,12 @@
    * the fabricated turn is the lesser evil. Everywhere else this is what stops
    * "Run workflow" appearing in the conversation as though a user typed it.
    */
-  async function startRun(): Promise<boolean> {
+  async function startRun(): Promise<void> {
     // A workflow that declares turn ports but no message port runs as a turn
     // on its inputs: no fabricated message, which its server would refuse.
     if (inputMode === 'form' || inputMode === 'run') {
-      return takeTurn({ inputs: {} }, true);
+      await takeTurn({ inputs: {} }, true);
+      return;
     }
 
     const action = resolveRunAction({
@@ -559,7 +560,8 @@
 
     if (action.kind === 'message') {
       logger.debug('[Playground] Starting run by message:', action.content);
-      return handleSendMessage(action.content);
+      await handleSendMessage(action.content);
+      return;
     }
 
     const result = await handleLaunchWorkflow({});
@@ -568,9 +570,10 @@
     // itself appearing in the console.
     if (result.status !== 'launched') {
       commandFeedback = describeLaunchResult(result, messages().playground.commands);
-      return false;
+      // A refused launch never sends the `enableRun` message that would
+      // otherwise bring Run back.
+      fd.playground.releaseRunLock();
     }
-    return true;
   }
 
   /**
@@ -706,51 +709,67 @@
    * @returns Whether the turn was accepted
    */
   async function takeTurn(request: PlaygroundMessageRequest, withForm: boolean): Promise<boolean> {
-    if (fd.playground.isExecuting) return false;
-
-    let body = request;
-    if (withForm) {
-      const inputs = collectFormInputs();
-      if (!inputs) return false;
-      body = { ...request, inputs };
+    // Not `canRun`: a Run click has already taken the run lock by now.
+    if (fd.playground.isExecuting || fd.playground.turnPending) {
+      fd.playground.releaseRunLock();
+      return false;
     }
-
-    if (!fd.playground.currentSession) {
-      await handleCreateSession();
-    }
-    const sessionId = fd.playground.currentSession?.id;
-    if (!sessionId) return false;
-
-    fd.playground.updateSessionStatus('running');
-    fd.playground.pinExecution(null);
-    fd.playground.setError(null);
+    fd.playground.setTurnPending(true);
 
     try {
-      const response = await playgroundService.sendTurn(
-        fd.api.config,
-        sessionId,
-        body,
-        fd.api.authProvider
-      );
-      // The legacy door answers with the user's row; the turn door with a
-      // turn result, and the row arrives with the poll started below.
-      if (response.kind === 'message') {
-        fd.playground.addMessage(response.message);
+      let body = request;
+      if (withForm) {
+        const inputs = collectFormInputs();
+        if (!inputs) {
+          fd.playground.releaseRunLock();
+          return false;
+        }
+        body = { ...request, inputs };
       }
-      // Only start polling if not already active — avoids resetting the cursor
-      // mid-session and re-fetching messages that are already in the store.
-      // Seed from the newest loaded message so polling tails live updates
-      // rather than crawling forward from the start of the conversation.
-      if (!playgroundService.isPolling()) {
-        startPolling(sessionId, true);
+
+      if (!fd.playground.currentSession) {
+        await handleCreateSession();
       }
-      return true;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      fd.playground.setError(errorMessage);
-      fd.playground.updateSessionStatus('idle');
-      logger.error('Failed to send message:', err);
-      return false;
+      const sessionId = fd.playground.currentSession?.id;
+      if (!sessionId) {
+        fd.playground.releaseRunLock();
+        return false;
+      }
+
+      fd.playground.updateSessionStatus('running');
+      fd.playground.pinExecution(null);
+      fd.playground.setError(null);
+
+      try {
+        const response = await playgroundService.sendTurn(
+          fd.api.config,
+          sessionId,
+          body,
+          fd.api.authProvider
+        );
+        // The legacy door answers with the user's row; the turn door with a
+        // turn result, and the row arrives with the poll started below.
+        if (response.kind === 'message') {
+          fd.playground.addMessage(response.message);
+        }
+        // Only start polling if not already active — avoids resetting the cursor
+        // mid-session and re-fetching messages that are already in the store.
+        // Seed from the newest loaded message so polling tails live updates
+        // rather than crawling forward from the start of the conversation.
+        if (!playgroundService.isPolling()) {
+          startPolling(sessionId, true);
+        }
+        return true;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+        fd.playground.setError(errorMessage);
+        fd.playground.updateSessionStatus('idle');
+        fd.playground.releaseRunLock();
+        logger.error('Failed to send message:', err);
+        return false;
+      }
+    } finally {
+      fd.playground.setTurnPending(false);
     }
   }
 
@@ -913,6 +932,7 @@
           onSendMessage={handleSendMessage}
           onStopExecution={handleStopExecution}
           onRunWorkflow={startRun}
+          awaitEnableRun={inputMode === 'legacy'}
           onRefresh={refreshFromServer}
           enableCommands
           {commandFeedback}

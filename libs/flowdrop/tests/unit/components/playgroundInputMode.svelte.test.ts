@@ -254,6 +254,40 @@ describe('Playground input mode', () => {
     expect(runButton(target)?.disabled).toBe(false);
   });
 
+  it('run: Run works again for a second turn in the same session', async () => {
+    const { target, fd } = await render(workflowWith({ inputs: [history], outputs: [reply] }));
+
+    runButton(target)?.click();
+    await settle();
+    expect(turnCalls()).toHaveLength(1);
+
+    // The turn finishes: the server never sends an enableRun message.
+    fd.playground.updateSessionStatus('idle');
+    await settle();
+    expect(runButton(target)?.disabled).toBe(false);
+
+    runButton(target)?.click();
+    await settle();
+    expect(turnCalls()).toHaveLength(2);
+  });
+
+  it('form: Run works again for a second turn in the same session', async () => {
+    const { target, fd } = await render(workflowWith({ inputs: [topic], outputs: [reply] }));
+    const field = target.querySelector<HTMLInputElement>('.interface-input-form input');
+    field!.value = 'cats';
+    field!.dispatchEvent(new Event('input', { bubbles: true }));
+    flushSync();
+
+    runButton(target)?.click();
+    await settle();
+    fd.playground.updateSessionStatus('idle');
+    await settle();
+    runButton(target)?.click();
+    await settle();
+
+    expect(turnCalls()).toHaveLength(2);
+  });
+
   it('legacy: an interface without turn ports keeps the chat box', async () => {
     const { target, fd } = await render(workflowWith({ inputs: [topic] }));
 
