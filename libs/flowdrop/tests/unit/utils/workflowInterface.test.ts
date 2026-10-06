@@ -23,7 +23,12 @@ import {
   turnTakenBy,
   turnPatch,
   historyLimitPatch,
-  historyLimitOf
+  historyLimitOf,
+  declaresTurnPorts,
+  interfaceFormEntries,
+  resolvePlaygroundInputMode,
+  interfaceFormSchema,
+  interfaceFormInputs
 } from '$lib/utils/workflowInterface.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
@@ -1134,5 +1139,81 @@ describe('validateWorkflowInterface — turn', () => {
       .filter((issue) => issue.code === 'interface-turn-direction')
       .map((issue) => issue.entryId);
     expect(codes).toEqual(['in', 'out']);
+  });
+});
+
+describe('Playground input mode', () => {
+  const entry = (
+    id: string,
+    extra: Partial<WorkflowInterfaceEntry> = {}
+  ): WorkflowInterfaceEntry => ({ id, dataType: 'string', bindings: [], ...extra });
+
+  it('is legacy without an interface, or with one that declares no turn', () => {
+    expect(resolvePlaygroundInputMode(undefined)).toBe('legacy');
+    expect(resolvePlaygroundInputMode({})).toBe('legacy');
+    expect(resolvePlaygroundInputMode({ inputs: [entry('topic')], outputs: [entry('out')] })).toBe(
+      'legacy'
+    );
+    expect(declaresTurnPorts({ inputs: [entry('topic')] })).toBe(false);
+  });
+
+  it('is chat when an input carries the message turn', () => {
+    expect(
+      resolvePlaygroundInputMode({ inputs: [entry('m', { turn: 'message' }), entry('topic')] })
+    ).toBe('chat');
+  });
+
+  it('is form when turn ports exist, no message, and something to fill', () => {
+    const iface = {
+      inputs: [entry('h', { turn: 'history' }), entry('topic')],
+      outputs: [entry('r', { turn: 'reply' })]
+    };
+    expect(resolvePlaygroundInputMode(iface)).toBe('form');
+    expect(interfaceFormEntries(iface).map((e) => e.id)).toEqual(['topic']);
+  });
+
+  it('is run when only turn-filled inputs (or none) exist', () => {
+    expect(resolvePlaygroundInputMode({ outputs: [entry('r', { turn: 'reply' })] })).toBe('run');
+    expect(
+      resolvePlaygroundInputMode({
+        inputs: [entry('s', { turn: 'session_id' }), entry('i', { turn: 'message_id' })]
+      })
+    ).toBe('run');
+  });
+
+  it('never puts a turn port in the form, including values from a newer server', () => {
+    const newer = entry('ctx', { turn: 'entity_context' as WorkflowInterfaceEntry['turn'] });
+    expect(interfaceFormEntries({ inputs: [newer, entry('topic')] }).map((e) => e.id)).toEqual([
+      'topic'
+    ]);
+  });
+
+  it('builds an object schema keyed by entry id, the fragment winning over the lane', () => {
+    const schema = interfaceFormSchema([
+      entry('topic', { name: 'Topic', description: 'What about', required: true }),
+      entry('count', { dataType: 'number', defaultValue: 3 }),
+      entry('tags', { dataType: 'string[]' }),
+      entry('mode', { schema: { type: 'string', enum: ['a', 'b'] }, dataType: 'mixed' })
+    ]);
+    expect(schema.required).toEqual(['topic']);
+    expect(schema.properties.topic).toMatchObject({
+      type: 'string',
+      title: 'Topic',
+      description: 'What about'
+    });
+    expect(schema.properties.count).toMatchObject({ type: 'number', title: 'count', default: 3 });
+    expect(schema.properties.tags.type).toBe('array');
+    expect(schema.properties.mode).toMatchObject({ type: 'string', enum: ['a', 'b'] });
+  });
+
+  it('sends only given values of the form entries', () => {
+    expect(
+      interfaceFormInputs([entry('topic'), entry('note'), entry('n')], {
+        topic: 'cats',
+        note: '',
+        n: 0,
+        stray: 'x'
+      })
+    ).toEqual({ topic: 'cats', n: 0 });
   });
 });

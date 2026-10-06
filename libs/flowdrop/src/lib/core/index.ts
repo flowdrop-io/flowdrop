@@ -186,6 +186,7 @@ export type {
 } from '../types/playground.js';
 
 export { isChatInputNode, CHAT_INPUT_PATTERNS } from '../types/playground.js';
+export type { PlaygroundInputMode } from '../utils/workflowInterface.js';
 
 // Endpoint config types
 export type { EndpointConfig } from '../config/endpoints.js';

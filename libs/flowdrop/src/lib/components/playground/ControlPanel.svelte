@@ -10,6 +10,8 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import ChatInput from './ChatInput.svelte';
+  import InterfaceInputForm from './InterfaceInputForm.svelte';
+  import type { WorkflowInterfaceEntry } from '../../types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
   import type { CommandOutcome } from '../../playground/commands/index.js';
@@ -26,7 +28,7 @@
     onSendMessage: (content: string) => void;
     onStopExecution: () => void;
     /** Start a run without posting a chat message. See ChatInput. */
-    onRunWorkflow?: () => void;
+    onRunWorkflow?: () => void | Promise<boolean | void>;
     /**
      * Enable the slash-command lane (default: false).
      *
@@ -48,6 +50,15 @@
     showRunButton?: boolean;
     predefinedMessage?: string;
     placeholder?: string;
+    /**
+     * Interface inputs to collect in a form above the composer (inputs
+     * without a chat turn). Empty or absent renders no form.
+     */
+    formEntries?: WorkflowInterfaceEntry[];
+    /** Current form values, keyed by entry id. */
+    formValues?: Record<string, unknown>;
+    /** Called with the complete form values on every change. */
+    onFormChange?: (values: Record<string, unknown>) => void;
     // Session UI config
     showSessionHeader?: boolean;
     showNewSessionButton?: boolean;
@@ -74,6 +85,9 @@
     showRunButton = true,
     predefinedMessage,
     placeholder,
+    formEntries = [],
+    formValues = {},
+    onFormChange,
     showSessionHeader = true,
     showNewSessionButton = true,
     showSessionList = true,
@@ -265,6 +279,15 @@
         </button>
       </div>
     </header>
+  {/if}
+
+  {#if formEntries.length > 0}
+    <InterfaceInputForm
+      entries={formEntries}
+      values={formValues}
+      onChange={(values) => onFormChange?.(values)}
+      disabled={fd.playground.isExecuting}
+    />
   {/if}
 
   <ChatInput

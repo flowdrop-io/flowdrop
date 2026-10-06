@@ -223,6 +223,13 @@ export type {
 } from '../types/playground.js';
 
 export {
+  resolvePlaygroundInputMode,
+  interfaceFormEntries,
+  interfaceFormSchema,
+  type PlaygroundInputMode
+} from '../utils/workflowInterface.js';
+
+export {
   isChatInputNode,
   CHAT_INPUT_PATTERNS,
   defaultShouldStopPolling,

@@ -90,6 +90,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `shortcutDelete` (the key hints beside an entry), and a `messages.nodes.caption`
   branch (`placeholder`, `editLabel`), so the caption's strings can be translated.
 
+- The Playground reads its input from the workflow interface's turn ports.
+  An input with `turn: message` gets the chat box (its content fills that
+  port). Turn ports but no `message` input: the inputs without a turn render
+  as a form (built from each entry's schema fragment and `dataType`) with a
+  Run button, and the turn sends `inputs` and no content. Nothing to fill:
+  Run alone. A workflow with a `message` port and other inputs gets the chat
+  box with the form above it. Turn-filled ports (`history`, `session_id`,
+  `message_id`, and any turn value a newer server adds) never appear in the
+  form. A workflow whose interface declares no `turn` at all, and every
+  server that predates turn ports, keeps the previous behaviour exactly.
+  `showChatInput: false` still hides the chat box; it cannot add one to a
+  workflow without a `message` port, and `predefinedMessage` is ignored
+  there, because its server refuses message content. Blank required inputs
+  are refused before the request; a server refusal (such as the 400 for
+  content sent to a form-only workflow) is shown with the server's message
+  and leaves Run usable. When the host passes no workflow, or one without an
+  `interface` key, the Playground loads it through `workflows.get`; a failure
+  keeps the previous behaviour. New: `resolvePlaygroundInputMode()`,
+  `interfaceFormEntries()`, `interfaceFormSchema()` and type
+  `PlaygroundInputMode` (`playground`; the type also from `core`); store
+  getters `fd.playground.inputMode` and `fd.playground.interfaceFormEntries`;
+  `messages.playground.inputForm` (`title`, `missingRequired`). The Run
+  button's handler may return a promise of whether the run started; `false`
+  re-enables Run at once.
 - Optional `sessions` endpoint group: one session's own HTTP surface
   (`get`, `delete`, `messages`, `turn`, `stop`, optional `reset`), served by
   FlowDrop Drupal under `/api/flowdrop/sessions/{sessionId}/…` from the
@@ -116,6 +140,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `PlaygroundService.sendMessage()`: use `sendTurn()`. It throws when the
   configured door answers with a turn result instead of a message row.
+
+### Fixed
+
+- The Playground read its translated strings with `m()` inside event
+  handlers, which throws outside component initialisation: slash commands,
+  a refused launch from Run, and Run's fallback message failed with
+  `lifecycle_outside_component`. The strings are now read through a getter
+  taken at init.
 
 ## [2.9.0] - 2026-10-04
 

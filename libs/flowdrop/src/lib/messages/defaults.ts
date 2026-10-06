@@ -329,6 +329,12 @@ export const defaultMessages = {
       placeholder: 'Type your message...',
       predefinedRun: 'Run workflow'
     },
+    // The form a workflow's interface inputs render as (inputs without a chat
+    // turn; the session fills the others).
+    inputForm: {
+      title: 'Workflow inputs',
+      missingRequired: ({ names }: { names: string }) => `Fill in the required inputs: ${names}`
+    },
     states: {
       newSessionTitle: 'New session',
       newSessionText: 'Test your flow with a prompt',

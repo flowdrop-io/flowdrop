@@ -31,7 +31,7 @@
   import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
   import type { PlaygroundMessagesApiResponse } from '../../types/playground.js';
   import { logger } from '../../utils/logger.js';
-  import { m } from '$lib/messages/index.js';
+  import { getMessages } from '$lib/messages/index.js';
   import {
     parseSlashCommand,
     dispatchCommand,
@@ -39,6 +39,8 @@
     type CommandOutcome
   } from '../../playground/commands/index.js';
   import { resolveRunAction } from '../../playground/runAction.js';
+  import { interfaceFormInputs } from '../../utils/workflowInterface.js';
+  import type { PlaygroundMessageRequest } from '../../types/playground.js';
 
   interface Props {
     workflowId: string;
@@ -75,6 +77,11 @@
   // svelte-ignore state_referenced_locally
   const fd = provideInstance(instance);
 
+  // The messages getter is read from context here, at init: `m()` calls
+  // getContext, which throws outside component initialisation, and every
+  // read below happens in an event handler or after an await.
+  const messages = getMessages();
+
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
   let isRefreshing = $state(false);
@@ -98,6 +105,27 @@
 
   const messagePageSize = $derived(config.messagePageSize ?? 50);
 
+  /**
+   * How a turn is collected, from the workflow interface's turn ports.
+   * `legacy` (no interface, or no `turn` declared) keeps the host-configured
+   * behaviour exactly; the other modes follow the interface:
+   *  - `chat`: the chat box (unless the host hides it with showChatInput:
+   *    false), plus a form for any other interface inputs;
+   *  - `form`: a form and Run; the turn sends `inputs` and no content;
+   *  - `run`: Run alone; the turn sends neither.
+   * In `form` and `run` the chat box and predefinedMessage are ignored: the
+   * server refuses content for a workflow with no `message` port.
+   */
+  const inputMode = $derived(fd.playground.inputMode);
+  const showChatBox = $derived(
+    inputMode === 'legacy'
+      ? (config.showChatInput ?? true)
+      : inputMode === 'chat' && config.showChatInput !== false
+  );
+
+  /** Values of the interface input form, keyed by entry id. */
+  let formValues = $state<Record<string, unknown>>({});
+
   // Vertical resizer state for the ExecutionConsole ↔ ControlPanel split.
   let playgroundContentEl = $state<HTMLElement | null>(null);
   let controlPanelHeight = $state(140);
@@ -118,6 +146,17 @@
     if (containerHeight > 0) {
       controlPanelHeight = clampControlPanelHeight(untrack(() => controlPanelHeight));
     }
+  });
+
+  // A form arriving with the workflow interface needs room beside the
+  // composer: grow the panel once (the user can still drag it back).
+  let formRoomGiven = false;
+  $effect(() => {
+    if (fd.playground.interfaceFormEntries.length === 0 || formRoomGiven) return;
+    formRoomGiven = true;
+    untrack(() => {
+      controlPanelHeight = clampControlPanelHeight(Math.max(controlPanelHeight, 320));
+    });
   });
 
   const maxControlPanelHeight = $derived(containerHeight ? Math.round(containerHeight * 0.6) : 600);
@@ -201,9 +240,29 @@
     void loadInitialSession(initialSessionId);
   });
 
+  /**
+   * Make sure the playground knows the workflow's interface.
+   *
+   * The mode (chat box, form, Run) is read from the interface's turn ports.
+   * A workflow passed in with an `interface` key is used as is; when it is
+   * missing or has no `interface` key, the workflow is loaded through the
+   * workflows API (`workflows.get`). Any failure leaves the playground in
+   * `legacy` mode, which is the behaviour it had before turn ports.
+   */
+  async function ensureWorkflowInterface(): Promise<void> {
+    if (workflow?.interface !== undefined || !fd.api.config) return;
+    try {
+      const loaded = await fd.api.client.loadWorkflow(workflowId);
+      if (loaded.interface === undefined) return;
+      fd.playground.setWorkflow(workflow ? { ...workflow, interface: loaded.interface } : loaded);
+    } catch (err) {
+      logger.debug('[Playground] Workflow interface unavailable, keeping legacy input:', err);
+    }
+  }
+
   async function initializePlayground(): Promise<void> {
     try {
-      await loadSessions();
+      await Promise.all([loadSessions(), ensureWorkflowInterface()]);
 
       if (initialSessionId) {
         await loadInitialSession(initialSessionId);
@@ -485,17 +544,22 @@
    * the fabricated turn is the lesser evil. Everywhere else this is what stops
    * "Run workflow" appearing in the conversation as though a user typed it.
    */
-  async function startRun(): Promise<void> {
+  async function startRun(): Promise<boolean> {
+    // A workflow that declares turn ports but no message port runs as a turn
+    // on its inputs: no fabricated message, which its server would refuse.
+    if (inputMode === 'form' || inputMode === 'run') {
+      return takeTurn({ inputs: {} }, true);
+    }
+
     const action = resolveRunAction({
       canLaunch: workflowLaunchService.isSupported(fd.api.config),
       predefinedMessage: config.predefinedMessage,
-      defaultMessage: m().playground.chat.predefinedRun
+      defaultMessage: messages().playground.chat.predefinedRun
     });
 
     if (action.kind === 'message') {
       logger.debug('[Playground] Starting run by message:', action.content);
-      await handleSendMessage(action.content);
-      return;
+      return handleSendMessage(action.content);
     }
 
     const result = await handleLaunchWorkflow({});
@@ -503,8 +567,10 @@
     // Only failures need reporting: a successful launch is evident from the run
     // itself appearing in the console.
     if (result.status !== 'launched') {
-      commandFeedback = describeLaunchResult(result, m().playground.commands);
+      commandFeedback = describeLaunchResult(result, messages().playground.commands);
+      return false;
     }
+    return true;
   }
 
   /**
@@ -554,7 +620,7 @@
    */
   async function runCommand(input: string): Promise<void> {
     const parsed = parseSlashCommand(input);
-    const msgs = m().playground.commands;
+    const msgs = messages().playground.commands;
 
     if (parsed.kind === 'unknown') {
       commandFeedback = {
@@ -591,29 +657,69 @@
     });
   }
 
-  async function handleSendMessage(content: string): Promise<void> {
+  async function handleSendMessage(content: string): Promise<boolean> {
     // Commands are intercepted *before* the executing guard: /stop is only
     // useful while a run is in flight, which is exactly when plain text is
     // refused.
     const parsed = parseSlashCommand(content);
     if (parsed.kind === 'command' || parsed.kind === 'unknown') {
       await runCommand(content);
-      return;
+      return true;
     }
 
     commandFeedback = null;
 
-    if (fd.playground.isExecuting) return;
-
     // An escaped message (`//foo`) is sent as its literal text (`/foo`).
     const messageContent = parsed.kind === 'message' ? parsed.content : content;
 
-    if (!fd.playground.currentSession) {
-      await handleCreateSession();
-      if (!fd.playground.currentSession) return;
+    return takeTurn({ content: messageContent, inputs: {} }, inputMode === 'chat');
+  }
+
+  /**
+   * The interface form's values as named inputs, or `null` (with the reason
+   * shown) when a required input is blank. Blank optional inputs are left
+   * out so the server's default applies.
+   */
+  function collectFormInputs(): Record<string, unknown> | null {
+    const entries = fd.playground.interfaceFormEntries;
+    const inputs = interfaceFormInputs(entries, formValues);
+    const missing = entries
+      .filter(
+        (entry) => entry.required && entry.defaultValue === undefined && !(entry.id in inputs)
+      )
+      .map((entry) => entry.name ?? entry.id);
+    if (missing.length > 0) {
+      fd.playground.setError(
+        messages().playground.inputForm.missingRequired({ names: missing.join(', ') })
+      );
+      return null;
+    }
+    return inputs;
+  }
+
+  /**
+   * Take one turn: post the request to the session's turn door and tail the
+   * session. With `withForm`, the interface form's values ride along as
+   * `inputs`. A refusal (a 400 naming the fix, a 409, …) is shown with the
+   * server's own message and leaves the session idle.
+   *
+   * @returns Whether the turn was accepted
+   */
+  async function takeTurn(request: PlaygroundMessageRequest, withForm: boolean): Promise<boolean> {
+    if (fd.playground.isExecuting) return false;
+
+    let body = request;
+    if (withForm) {
+      const inputs = collectFormInputs();
+      if (!inputs) return false;
+      body = { ...request, inputs };
     }
 
-    const sessionId = fd.playground.currentSession!.id;
+    if (!fd.playground.currentSession) {
+      await handleCreateSession();
+    }
+    const sessionId = fd.playground.currentSession?.id;
+    if (!sessionId) return false;
 
     fd.playground.updateSessionStatus('running');
     fd.playground.pinExecution(null);
@@ -623,7 +729,7 @@
       const response = await playgroundService.sendTurn(
         fd.api.config,
         sessionId,
-        { content: messageContent, inputs: {} },
+        body,
         fd.api.authProvider
       );
       // The legacy door answers with the user's row; the turn door with a
@@ -638,11 +744,13 @@
       if (!playgroundService.isPolling()) {
         startPolling(sessionId, true);
       }
+      return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       fd.playground.setError(errorMessage);
       fd.playground.updateSessionStatus('idle');
       logger.error('Failed to send message:', err);
+      return false;
     }
   }
 
@@ -809,9 +917,14 @@
           enableCommands
           {commandFeedback}
           onDismissCommandFeedback={() => (commandFeedback = null)}
-          showChatInput={config.showChatInput ?? true}
+          showChatInput={showChatBox}
           showRunButton={config.showRunButton ?? true}
-          predefinedMessage={config.predefinedMessage}
+          predefinedMessage={inputMode === 'form' || inputMode === 'run'
+            ? undefined
+            : config.predefinedMessage}
+          formEntries={fd.playground.interfaceFormEntries}
+          {formValues}
+          onFormChange={(values) => (formValues = values)}
           showSessionHeader={config.showSessionHeader ?? true}
           showNewSessionButton={config.showNewSessionButton ?? true}
           showSessionList={config.showSessionList ?? true}

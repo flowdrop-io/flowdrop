@@ -20,7 +20,12 @@ import type {
   PlaygroundExecution
 } from '../types/playground.js';
 import { isChatInputNode } from '../types/playground.js';
-import type { Workflow, WorkflowNode } from '../types/index.js';
+import type { Workflow, WorkflowInterfaceEntry, WorkflowNode } from '../types/index.js';
+import {
+  interfaceFormEntries,
+  resolvePlaygroundInputMode,
+  type PlaygroundInputMode
+} from '../utils/workflowInterface.js';
 import { logger } from '../utils/logger.js';
 
 // =========================================================================
@@ -131,6 +136,14 @@ export class PlaygroundStore {
 
   /** Current workflow being tested */
   #currentWorkflow = $state<Workflow | null>(null);
+
+  /** Input mode from the workflow interface — see {@link inputMode}. */
+  #inputMode = $derived(resolvePlaygroundInputMode(this.#currentWorkflow?.interface));
+
+  /** Form entries from the workflow interface — see {@link interfaceFormEntries}. */
+  #interfaceFormEntries = $derived(
+    this.#inputMode === 'legacy' ? [] : interfaceFormEntries(this.#currentWorkflow?.interface)
+  );
 
   /** Last polling cursor for incremental message fetching */
   #lastPollSequenceNumber = $state<number | null>(null);
@@ -347,6 +360,24 @@ export class PlaygroundStore {
     });
 
     return fields;
+  }
+
+  /**
+   * How a turn is collected, read from the workflow interface's turn ports
+   * (see {@link PlaygroundInputMode}). `legacy` while no workflow is set or
+   * its interface declares no `turn`.
+   */
+  get inputMode(): PlaygroundInputMode {
+    return this.#inputMode;
+  }
+
+  /**
+   * The interface inputs a person fills in (inputs without a `turn`), in
+   * interface order. Empty in `legacy` mode: there the node-based
+   * {@link inputFields} apply.
+   */
+  get interfaceFormEntries(): WorkflowInterfaceEntry[] {
+    return this.#interfaceFormEntries;
   }
 
   /** Whether the workflow has a chat input. */

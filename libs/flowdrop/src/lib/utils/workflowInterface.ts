@@ -14,6 +14,8 @@
  */
 
 import type {
+  ConfigProperty,
+  ConfigSchema,
   DynamicPort,
   NodePort,
   PortBinding,
@@ -758,4 +760,116 @@ function metaWithLimit(
   if (limit === undefined) delete next.limit;
   else next.limit = limit;
   return Object.keys(next).length > 0 ? next : undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Playground input mode
+// ---------------------------------------------------------------------------
+
+/**
+ * How the Playground collects a turn, read from the workflow interface.
+ *
+ * - `chat`: an input carries `turn: message`. The chat box sends `content`;
+ *   any other non-turn inputs render as a form beside it.
+ * - `form`: the interface declares turn ports but no `message` input, and has
+ *   non-turn inputs. A form and a Run button; the turn sends `inputs` only
+ *   (the server refuses `content` for such a workflow).
+ * - `run`: the interface declares turn ports, no `message` input and no
+ *   non-turn input. Just a Run button.
+ * - `legacy`: the interface is absent or declares no `turn` on any entry.
+ *   The server falls back to guessing the chat input from the nodes
+ *   (deprecated, until FlowDrop 3.0), so the Playground keeps its old
+ *   behaviour too. Also what every server that predates turn ports gets.
+ */
+export type PlaygroundInputMode = 'chat' | 'form' | 'run' | 'legacy';
+
+/** Whether any entry of the interface, on either side, declares a `turn`. */
+export function declaresTurnPorts(workflowInterface: WorkflowInterface | undefined): boolean {
+  const entries = [...(workflowInterface?.inputs ?? []), ...(workflowInterface?.outputs ?? [])];
+  return entries.some((entry) => Boolean(entry.turn));
+}
+
+/**
+ * The input entries a person fills in: every input without a `turn`. Turn
+ * inputs (`message`, `history`, `session_id`, `message_id`, and any value a
+ * newer server adds) are filled by the session, never by the form.
+ */
+export function interfaceFormEntries(
+  workflowInterface: WorkflowInterface | undefined
+): WorkflowInterfaceEntry[] {
+  return (workflowInterface?.inputs ?? []).filter((entry) => !entry.turn);
+}
+
+/** Resolve the Playground's input mode from a workflow interface. */
+export function resolvePlaygroundInputMode(
+  workflowInterface: WorkflowInterface | undefined
+): PlaygroundInputMode {
+  if (!declaresTurnPorts(workflowInterface)) return 'legacy';
+  if ((workflowInterface?.inputs ?? []).some((entry) => entry.turn === 'message')) return 'chat';
+  return interfaceFormEntries(workflowInterface).length > 0 ? 'form' : 'run';
+}
+
+/** JSON Schema `type` for an interface entry's lane, when its schema states none. */
+function formFieldType(dataType: string): ConfigProperty['type'] {
+  const lane = dataType.toLowerCase();
+  if (lane === 'number' || lane === 'float') return 'number';
+  if (lane === 'integer') return 'integer';
+  if (lane === 'boolean') return 'boolean';
+  if (lane === 'array' || lane === 'messages' || lane.endsWith('[]')) return 'array';
+  if (lane === 'json' || lane === 'object') return 'object';
+  return 'string';
+}
+
+const FORM_FIELD_TYPES: readonly string[] = [
+  'string',
+  'number',
+  'boolean',
+  'array',
+  'object',
+  'integer'
+];
+
+/**
+ * The object schema a form renders for the given entries: one property per
+ * entry, keyed by its `id` (the name the server matches inputs on). The
+ * entry's own schema fragment wins over what the entry states one level up;
+ * the type falls back to the entry's `dataType` lane.
+ */
+export function interfaceFormSchema(entries: readonly WorkflowInterfaceEntry[]): ConfigSchema {
+  const properties: Record<string, ConfigProperty> = {};
+  const required: string[] = [];
+  for (const entry of entries) {
+    const fragment = (entry.schema ?? {}) as Record<string, unknown>;
+    const fragmentType = typeof fragment.type === 'string' ? fragment.type : undefined;
+    const type =
+      fragmentType && FORM_FIELD_TYPES.includes(fragmentType)
+        ? (fragmentType as ConfigProperty['type'])
+        : formFieldType(entry.dataType);
+    const property: ConfigProperty = { ...fragment, type, title: entry.name ?? entry.id };
+    if (entry.description !== undefined) property.description = entry.description;
+    if (entry.defaultValue !== undefined) property.default = entry.defaultValue;
+    properties[entry.id] = property;
+    if (entry.required) required.push(entry.id);
+  }
+  return required.length > 0
+    ? { type: 'object', properties, required }
+    : { type: 'object', properties };
+}
+
+/**
+ * The inputs a form turn sends: the values of the given entries, without
+ * blank optional values (an empty string or `undefined` is "not given", so
+ * the server's default applies). Keys outside the entries are dropped.
+ */
+export function interfaceFormInputs(
+  entries: readonly WorkflowInterfaceEntry[],
+  values: Record<string, unknown>
+): Record<string, unknown> {
+  const inputs: Record<string, unknown> = {};
+  for (const entry of entries) {
+    const value = values[entry.id];
+    if (value === undefined || value === '') continue;
+    inputs[entry.id] = value;
+  }
+  return inputs;
 }

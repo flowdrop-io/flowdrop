@@ -50,8 +50,12 @@
      * replayed as input on the following turn — indistinguishable downstream
      * from something the user actually typed. Hosts that provide this get a Run
      * button that launches instead.
+     *
+     * May return a promise of whether the run started: `false` re-enables
+     * the Run button at once (a refused run never sends the `enableRun`
+     * message that would otherwise re-enable it).
      */
-    onRunWorkflow?: () => void;
+    onRunWorkflow?: () => void | Promise<boolean | void>;
     /**
      * Enable the slash-command lane (default: false).
      *
@@ -287,7 +291,12 @@
     });
 
     if (action.kind === 'launch') {
-      onRunWorkflow?.();
+      const started = onRunWorkflow?.();
+      if (started instanceof Promise) {
+        void started.then((ok) => {
+          if (ok === false) runEnabled = true;
+        });
+      }
       return;
     }
 

@@ -463,6 +463,12 @@ export interface PlaygroundConfig {
   /**
    * Whether to show the chat text input (default: true)
    * When false, only the "Run" button is displayed for workflow execution.
+   *
+   * When the workflow interface declares turn ports, the interface decides:
+   * the chat box shows only for a workflow with a `message` port, and this
+   * option can still hide it (false) but not add it to a workflow without
+   * one, whose server refuses message content. A workflow whose interface
+   * declares no turn port follows this option as before.
    */
   showChatInput?: boolean;
   /**
@@ -474,6 +480,8 @@ export interface PlaygroundConfig {
   /**
    * Predefined message to send when "Run" button is clicked (default: "Run workflow")
    * Used when showChatInput is false to provide a default message for workflow execution.
+   * Ignored for a workflow whose interface declares turn ports but no
+   * `message` port: Run sends its form inputs and no message.
    */
   predefinedMessage?: string;
   /**
