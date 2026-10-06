@@ -342,8 +342,9 @@ export class PlaygroundService {
    * Goes to `sessions.turn` when that group is configured, else to the legacy
    * `playground.sendMessage`. The two doors answer differently (the legacy one
    * with the user's message row, the turn door with a turn result), so the
-   * answer is returned tagged; either way the rest of the turn arrives through
-   * the messages poll.
+   * answer is returned tagged. The tag follows the door the request went to
+   * (the endpoint group), never the shape of the payload; either way the rest
+   * of the turn arrives through the messages poll.
    *
    * `content` is optional: a workflow whose interface declares no `message`
    * port takes `inputs` alone, and its server refuses `content` with a 400
@@ -389,10 +390,9 @@ export class PlaygroundService {
     if (!data) {
       throw new Error('Failed to send message: No data returned');
     }
-    if ('userMessageId' in data && !('role' in data)) {
-      return { kind: 'turn', result: data as PlaygroundTurnResult };
-    }
-    return { kind: 'message', message: data as PlaygroundMessage };
+    return group === 'sessions'
+      ? { kind: 'turn', result: data as PlaygroundTurnResult }
+      : { kind: 'message', message: data as PlaygroundMessage };
   }
 
   /**

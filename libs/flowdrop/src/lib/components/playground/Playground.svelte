@@ -544,7 +544,7 @@
     // A workflow that declares turn ports but no message port runs as a turn
     // on its inputs: no fabricated message, which its server would refuse.
     if (inputMode === 'form' || inputMode === 'run') {
-      await takeTurn({ inputs: {} }, true);
+      await takeTurn({});
       return;
     }
 
@@ -671,18 +671,18 @@
     // An escaped message (`//foo`) is sent as its literal text (`/foo`).
     const messageContent = parsed.kind === 'message' ? parsed.content : content;
 
-    return takeTurn({ content: messageContent, inputs: {} }, inputMode === 'chat');
+    return takeTurn({ content: messageContent });
   }
 
   /**
    * Take one turn: post the request to the session's turn door and tail the
-   * session. With `withForm`, the interface form's values ride along as
-   * `inputs`. A refusal (a 400 naming the fix, a 409, …) is shown with the
+   * session. The interface form's values ride along as `inputs` (none in
+   * legacy mode). A refusal (a 400 naming the fix, a 409, …) is shown with the
    * server's own message and leaves the session idle.
    *
    * @returns Whether the turn was accepted
    */
-  async function takeTurn(request: PlaygroundMessageRequest, withForm: boolean): Promise<boolean> {
+  async function takeTurn(request: PlaygroundMessageRequest): Promise<boolean> {
     // Not `canRun`: a Run click has already taken the run lock by now.
     if (fd.playground.isExecuting || fd.playground.turnPending) {
       fd.playground.releaseRunLock();
@@ -691,20 +691,19 @@
     fd.playground.setTurnPending(true);
 
     try {
-      let body = request;
-      if (withForm) {
-        const turnInputs = fd.playground.turnInputs;
-        if (!turnInputs.ok) {
-          fd.playground.setError(
-            messages().playground.inputForm.missingRequired({
-              names: turnInputs.missing.map((entry) => entry.name ?? entry.id).join(', ')
-            })
-          );
-          fd.playground.releaseRunLock();
-          return false;
-        }
-        body = { ...request, inputs: turnInputs.inputs };
+      // In legacy mode there are no interface form entries, so `inputs` is
+      // `{}` — exactly what the legacy door was always sent.
+      const turnInputs = fd.playground.turnInputs;
+      if (!turnInputs.ok) {
+        fd.playground.setError(
+          messages().playground.inputForm.missingRequired({
+            names: turnInputs.missing.map((entry) => entry.name ?? entry.id).join(', ')
+          })
+        );
+        fd.playground.releaseRunLock();
+        return false;
       }
+      const body: PlaygroundMessageRequest = { ...request, inputs: turnInputs.inputs };
 
       if (!fd.playground.currentSession) {
         await handleCreateSession();

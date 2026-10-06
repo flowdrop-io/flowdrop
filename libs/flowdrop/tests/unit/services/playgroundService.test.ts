@@ -453,6 +453,29 @@ describe('PlaygroundService', () => {
       );
     });
 
+    it('decides the answer kind by the endpoint group, not the payload shape', async () => {
+      const userRow = {
+        id: 'm-1',
+        sessionId: 'session-1',
+        role: 'user',
+        content: 'hi',
+        timestamp: '2026-10-06T10:00:00Z'
+      };
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: userRow })
+      });
+
+      // Sessions door: always a turn result, whatever it looks like.
+      const turn = await service.sendTurn(endpointConfig, 'session-1', { content: 'hi' });
+      expect(turn.kind).toBe('turn');
+
+      // Legacy door: always the user's row.
+      const legacy = createMockPlaygroundConfig() as unknown as EndpointConfig;
+      const message = await service.sendTurn(legacy, 'session-1', { content: 'hi' });
+      expect(message).toEqual({ kind: 'message', message: userRow });
+    });
+
     it('treats a group without reset as a backend that cannot reset', async () => {
       delete endpointConfig!.endpoints.sessions!.reset;
 
