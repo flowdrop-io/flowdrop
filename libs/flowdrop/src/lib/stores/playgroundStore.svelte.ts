@@ -13,6 +13,7 @@
 
 import type {
   PlaygroundSession,
+  PlaygroundTurnResult,
   PlaygroundMessage,
   PlaygroundInputField,
   PlaygroundSessionStatus,
@@ -22,8 +23,10 @@ import type {
 import { hasEnableRunFlag, isChatInputNode } from '../types/playground.js';
 import type { Workflow, WorkflowInterfaceEntry, WorkflowNode } from '../types/index.js';
 import {
+  collectInterfaceInputs,
   interfaceFormEntries,
   resolvePlaygroundInputMode,
+  type InterfaceInputsResult,
   type PlaygroundInputMode
 } from '../utils/workflowInterface.js';
 import { logger } from '../utils/logger.js';
@@ -104,6 +107,8 @@ export interface PlaygroundStoreActions {
   setTurnPending: (value: boolean) => void;
   lockRunUntilEnabled: () => void;
   releaseRunLock: () => void;
+  setFormValues: (values: Record<string, unknown>) => void;
+  setLastTurn: (result: PlaygroundTurnResult | null) => void;
 }
 
 // =========================================================================
@@ -147,6 +152,15 @@ export class PlaygroundStore {
   #interfaceFormEntries = $derived(
     this.#inputMode === 'legacy' ? [] : interfaceFormEntries(this.#currentWorkflow?.interface)
   );
+
+  /** Values of the interface input form, keyed by entry id. */
+  #formValues = $state<Record<string, unknown>>({});
+
+  /** What a turn would send now — see {@link turnInputs}. */
+  #turnInputs = $derived(collectInterfaceInputs(this.#interfaceFormEntries, this.#formValues));
+
+  /** The sessions door's answer to the last turn — see {@link lastTurn}. */
+  #lastTurn = $state<PlaygroundTurnResult | null>(null);
 
   /** Last polling cursor for incremental message fetching */
   #lastPollSequenceNumber = $state<number | null>(null);
@@ -234,7 +248,9 @@ export class PlaygroundStore {
       toggleShowLogs: this.toggleShowLogs.bind(this),
       setTurnPending: this.setTurnPending.bind(this),
       lockRunUntilEnabled: this.lockRunUntilEnabled.bind(this),
-      releaseRunLock: this.releaseRunLock.bind(this)
+      releaseRunLock: this.releaseRunLock.bind(this),
+      setFormValues: this.setFormValues.bind(this),
+      setLastTurn: this.setLastTurn.bind(this)
     });
   }
 
@@ -427,6 +443,29 @@ export class PlaygroundStore {
     return this.#interfaceFormEntries;
   }
 
+  /** Values of the interface input form, keyed by entry id. */
+  get formValues(): Record<string, unknown> {
+    return this.#formValues;
+  }
+
+  /**
+   * What a turn would send now: the form's inputs, or which required inputs
+   * are still missing. A Run control can open the form on `missing` instead
+   * of failing the request.
+   */
+  get turnInputs(): InterfaceInputsResult {
+    return this.#turnInputs;
+  }
+
+  /**
+   * The sessions door's answer (pipelineId, status, userMessageId) for the
+   * turn just taken; `null` before any turn, and on the legacy door, which
+   * answers with a message row instead.
+   */
+  get lastTurn(): PlaygroundTurnResult | null {
+    return this.#lastTurn;
+  }
+
   /** Whether the workflow has a chat input. */
   get hasChatInput(): boolean {
     const fields = this.inputFields;
@@ -563,6 +602,8 @@ export class PlaygroundStore {
 
   /** Set the current workflow. */
   setWorkflow(workflow: Workflow | null): void {
+    // Values typed for one workflow's inputs mean nothing for another's.
+    if (workflow?.id !== this.#currentWorkflow?.id) this.#formValues = {};
     this.#currentWorkflow = workflow;
   }
 
@@ -570,7 +611,10 @@ export class PlaygroundStore {
   setCurrentSession(session: PlaygroundSession | null): void {
     this.#pinnedExecutionId = null;
     // A different session starts with Run free; the same session keeps its lock.
-    if (session?.id !== this.#currentSession?.id) this.#runLockedAt = null;
+    if (session?.id !== this.#currentSession?.id) {
+      this.#runLockedAt = null;
+      this.#lastTurn = null;
+    }
     this.#currentSession = session;
     if (session) {
       // Update session in the list
@@ -720,6 +764,8 @@ export class PlaygroundStore {
     this.#pipelineRefreshTrigger = 0;
     this.#turnPending = false;
     this.#runLockedAt = null;
+    this.#formValues = {};
+    this.#lastTurn = null;
   }
 
   /** Switch to a different session. */
@@ -727,7 +773,10 @@ export class PlaygroundStore {
     this.#pinnedExecutionId = null;
     const session = this.#sessions.find((s) => s.id === sessionId);
     if (session) {
-      if (session.id !== this.#currentSession?.id) this.#runLockedAt = null;
+      if (session.id !== this.#currentSession?.id) {
+        this.#runLockedAt = null;
+        this.#lastTurn = null;
+      }
       this.#currentSession = session;
       this.#messages = [];
       this.#lastPollSequenceNumber = null;
@@ -761,6 +810,16 @@ export class PlaygroundStore {
    */
   lockRunUntilEnabled(): void {
     this.#runLockedAt = this.#enableRunCount;
+  }
+
+  /** Replace the interface input form's values. */
+  setFormValues(values: Record<string, unknown>): void {
+    this.#formValues = values;
+  }
+
+  /** Record the sessions door's answer for the turn just taken (`null` clears it). */
+  setLastTurn(result: PlaygroundTurnResult | null): void {
+    this.#lastTurn = result;
   }
 
   /** Free Run again, e.g. because the run was refused and no `enableRun` will come. */

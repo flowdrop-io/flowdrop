@@ -28,7 +28,8 @@ import {
   interfaceFormEntries,
   resolvePlaygroundInputMode,
   interfaceFormSchema,
-  interfaceFormInputs
+  interfaceFormInputs,
+  collectInterfaceInputs
 } from '$lib/utils/workflowInterface.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
@@ -1215,5 +1216,28 @@ describe('Playground input mode', () => {
         stray: 'x'
       })
     ).toEqual({ topic: 'cats', n: 0 });
+  });
+
+  it('collects the inputs when every required entry has a value', () => {
+    expect(
+      collectInterfaceInputs([entry('topic', { required: true }), entry('note')], {
+        topic: 'cats',
+        note: ''
+      })
+    ).toEqual({ ok: true, inputs: { topic: 'cats' } });
+  });
+
+  it('reports a required entry without a default or a value as missing', () => {
+    const topic = entry('topic', { required: true });
+    expect(collectInterfaceInputs([topic, entry('note')], { topic: '' })).toEqual({
+      ok: false,
+      missing: [topic]
+    });
+  });
+
+  it('does not report a required entry that has a default', () => {
+    expect(
+      collectInterfaceInputs([entry('topic', { required: true, defaultValue: 'x' })], {})
+    ).toEqual({ ok: true, inputs: {} });
   });
 });

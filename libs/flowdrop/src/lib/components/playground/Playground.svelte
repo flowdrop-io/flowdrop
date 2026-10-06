@@ -39,7 +39,6 @@
     type CommandOutcome
   } from '../../playground/commands/index.js';
   import { resolveRunAction } from '../../playground/runAction.js';
-  import { interfaceFormInputs } from '../../utils/workflowInterface.js';
   import type { PlaygroundMessageRequest } from '../../types/playground.js';
 
   interface Props {
@@ -122,9 +121,6 @@
       ? (config.showChatInput ?? true)
       : inputMode === 'chat' && config.showChatInput !== false
   );
-
-  /** Values of the interface input form, keyed by entry id. */
-  let formValues = $state<Record<string, unknown>>({});
 
   // Vertical resizer state for the ExecutionConsole ↔ ControlPanel split.
   let playgroundContentEl = $state<HTMLElement | null>(null);
@@ -679,28 +675,6 @@
   }
 
   /**
-   * The interface form's values as named inputs, or `null` (with the reason
-   * shown) when a required input is blank. Blank optional inputs are left
-   * out so the server's default applies.
-   */
-  function collectFormInputs(): Record<string, unknown> | null {
-    const entries = fd.playground.interfaceFormEntries;
-    const inputs = interfaceFormInputs(entries, formValues);
-    const missing = entries
-      .filter(
-        (entry) => entry.required && entry.defaultValue === undefined && !(entry.id in inputs)
-      )
-      .map((entry) => entry.name ?? entry.id);
-    if (missing.length > 0) {
-      fd.playground.setError(
-        messages().playground.inputForm.missingRequired({ names: missing.join(', ') })
-      );
-      return null;
-    }
-    return inputs;
-  }
-
-  /**
    * Take one turn: post the request to the session's turn door and tail the
    * session. With `withForm`, the interface form's values ride along as
    * `inputs`. A refusal (a 400 naming the fix, a 409, …) is shown with the
@@ -719,12 +693,17 @@
     try {
       let body = request;
       if (withForm) {
-        const inputs = collectFormInputs();
-        if (!inputs) {
+        const turnInputs = fd.playground.turnInputs;
+        if (!turnInputs.ok) {
+          fd.playground.setError(
+            messages().playground.inputForm.missingRequired({
+              names: turnInputs.missing.map((entry) => entry.name ?? entry.id).join(', ')
+            })
+          );
           fd.playground.releaseRunLock();
           return false;
         }
-        body = { ...request, inputs };
+        body = { ...request, inputs: turnInputs.inputs };
       }
 
       if (!fd.playground.currentSession) {
@@ -749,8 +728,11 @@
         );
         // The legacy door answers with the user's row; the turn door with a
         // turn result, and the row arrives with the poll started below.
-        if (response.kind === 'message') {
+        if (response.kind === 'turn') {
+          fd.playground.setLastTurn(response.result);
+        } else {
           fd.playground.addMessage(response.message);
+          fd.playground.setLastTurn(null);
         }
         // Only start polling if not already active — avoids resetting the cursor
         // mid-session and re-fetching messages that are already in the store.
@@ -943,8 +925,8 @@
             ? undefined
             : config.predefinedMessage}
           formEntries={fd.playground.interfaceFormEntries}
-          {formValues}
-          onFormChange={(values) => (formValues = values)}
+          formValues={fd.playground.formValues}
+          onFormChange={(values) => fd.playground.setFormValues(values)}
           showSessionHeader={config.showSessionHeader ?? true}
           showNewSessionButton={config.showNewSessionButton ?? true}
           showSessionList={config.showSessionList ?? true}

@@ -873,3 +873,26 @@ export function interfaceFormInputs(
   }
   return inputs;
 }
+
+/** What {@link collectInterfaceInputs} found. */
+export type InterfaceInputsResult =
+  | { ok: true; inputs: Record<string, unknown> }
+  | { ok: false; missing: WorkflowInterfaceEntry[] };
+
+/**
+ * The inputs a form turn would send, or the required entries that are still
+ * blank. An entry is missing when it is required, has no default for the
+ * server to fall back on, and has no value (see {@link interfaceFormInputs}
+ * for what counts as blank). Missing inputs are data, not an exception, so
+ * a Run control can open the form instead of failing.
+ */
+export function collectInterfaceInputs(
+  entries: readonly WorkflowInterfaceEntry[],
+  values: Record<string, unknown>
+): InterfaceInputsResult {
+  const inputs = interfaceFormInputs(entries, values);
+  const missing = entries.filter(
+    (entry) => entry.required && entry.defaultValue === undefined && !(entry.id in inputs)
+  );
+  return missing.length > 0 ? { ok: false, missing } : { ok: true, inputs };
+}
