@@ -40,7 +40,11 @@ export { createFlowDropInstance } from './stores/instanceContainer.svelte.js';
 export { getInstance, provideInstance } from './stores/getInstance.svelte.js';
 
 // Endpoint configuration helpers.
-export { createEndpointConfig, defaultEndpointConfig } from './config/endpoints.js';
+export {
+  createEndpointConfig,
+  defaultEndpointConfig,
+  sessionsEndpoints
+} from './config/endpoints.js';
 
 // Authentication providers.
 export { NoAuthProvider, StaticAuthProvider, CallbackAuthProvider } from './types/auth.js';

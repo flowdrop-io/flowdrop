@@ -90,6 +90,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `shortcutDelete` (the key hints beside an entry), and a `messages.nodes.caption`
   branch (`placeholder`, `editLabel`), so the caption's strings can be translated.
 
+- Optional `sessions` endpoint group: one session's own HTTP surface
+  (`get`, `delete`, `messages`, `turn`, `stop`, optional `reset`), served by
+  FlowDrop Drupal under `/api/flowdrop/sessions/{sessionId}/…` from the
+  release that ships it. When a host configures the group, every per-session
+  call goes there; when it does not, the calls stay on the matching
+  `playground` keys, so nothing changes against servers that predate it.
+  Listing and creating sessions for a workflow stay on `playground`. The
+  group is not in `defaultEndpointConfig` (hosts merge groups over the
+  defaults, so a default would move every host to paths its server may not
+  serve); hosts opt in with the new `sessionsEndpoints` constant. New
+  `resolveSessionEndpoint()` and types `SessionEndpointKey`,
+  `ResolvedSessionEndpoint`. `/reset` is offered when the winning group has
+  a reset path.
+- `PlaygroundService.sendTurn(config, sessionId, {content?, inputs?})` takes
+  a turn through whichever door is configured and returns the answer tagged:
+  `{kind: 'message', message}` from `playground.sendMessage`,
+  `{kind: 'turn', result}` from `sessions.turn` (new type
+  `PlaygroundTurnResult`; `PlaygroundTurnResponse`). The Playground uses it.
+  `PlaygroundMessageRequest.content` is optional (a form-only workflow takes
+  `inputs` alone). OpenAPI documents the `/sessions/{sessionId}` paths and
+  the turn result.
+
+### Deprecated
+
+- `PlaygroundService.sendMessage()`: use `sendTurn()`. It throws when the
+  configured door answers with a turn result instead of a message row.
+
 ## [2.9.0] - 2026-10-04
 
 ### Fixed

@@ -202,6 +202,8 @@ export type {
   PlaygroundMessage,
   PlaygroundInputField,
   PlaygroundMessageRequest,
+  PlaygroundTurnResult,
+  PlaygroundTurnResponse,
   PlaygroundMessagesResult,
   PlaygroundConfig,
   PlaygroundMode,
@@ -294,8 +296,12 @@ export type { PipelineViewDef, PipelineViewProps } from '../types/index.js';
 export {
   createEndpointConfig,
   defaultEndpointConfig,
+  sessionsEndpoints,
+  resolveSessionEndpoint,
   buildEndpointUrl,
-  type EndpointConfig
+  type EndpointConfig,
+  type SessionEndpointKey,
+  type ResolvedSessionEndpoint
 } from '../config/endpoints.js';
 
 // ============================================================================

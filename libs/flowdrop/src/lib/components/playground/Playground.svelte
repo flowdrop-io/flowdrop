@@ -620,14 +620,17 @@
     fd.playground.setError(null);
 
     try {
-      const message = await playgroundService.sendMessage(
+      const response = await playgroundService.sendTurn(
         fd.api.config,
         sessionId,
-        messageContent,
-        {},
+        { content: messageContent, inputs: {} },
         fd.api.authProvider
       );
-      fd.playground.addMessage(message);
+      // The legacy door answers with the user's row; the turn door with a
+      // turn result, and the row arrives with the poll started below.
+      if (response.kind === 'message') {
+        fd.playground.addMessage(response.message);
+      }
       // Only start polling if not already active — avoids resetting the cursor
       // mid-session and re-fetching messages that are already in the store.
       // Seed from the newest loaded message so polling tails live updates

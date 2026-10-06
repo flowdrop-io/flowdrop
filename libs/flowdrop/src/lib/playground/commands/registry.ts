@@ -10,6 +10,7 @@
  */
 
 import type { EndpointConfig } from '../../config/endpoints.js';
+import { resolveSessionEndpoint } from '../../config/endpoints.js';
 import type { SlashCommandDescriptor, SlashCommandName } from './types.js';
 
 /**
@@ -35,7 +36,8 @@ export const COMMAND_NAMES = [
  *
  * `playground.stopExecution`, `createSession` and `deleteSession` are required
  * keys in {@link EndpointConfig}, so their commands are available whenever a
- * config exists at all. `resetSession` is optional — the one place where the
+ * config exists at all. Reset is optional (`playground.resetSession`, or
+ * `sessions.reset` when that group is configured) — the one place where the
  * "absence of an endpoint is absence of a command" rule currently bites.
  */
 const hasPlayground = (config: EndpointConfig | null): boolean =>
@@ -79,7 +81,7 @@ export const COMMAND_DESCRIPTORS: readonly SlashCommandDescriptor[] = [
     name: 'reset',
     takesArgs: false,
     isAvailable: (config) =>
-      hasPlayground(config) && config?.endpoints.playground.resetSession != null
+      config != null && hasPlayground(config) && resolveSessionEndpoint(config, 'reset') != null
   },
   {
     name: 'delete',

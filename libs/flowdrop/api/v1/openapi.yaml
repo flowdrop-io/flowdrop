@@ -60,6 +60,11 @@ tags:
     description: Pipeline execution and monitoring
   - name: Playground
     description: Interactive workflow testing and chat interface
+  - name: Sessions
+    description: |
+      One session's own surface: read, delete, page messages, take a turn,
+      stop, reset. Servers that predate it serve these under
+      `/playground/sessions/*`.
   - name: Interrupts
     description: |
       Human-in-the-Loop (HITL) interrupt endpoints for workflow interactions.
@@ -155,6 +160,18 @@ paths:
     $ref: './paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1messages~1{messageId}~1status'
   /playground/sessions/{sessionId}/stop:
     $ref: './paths/playground.yaml#/~1playground~1sessions~1{sessionId}~1stop'
+
+  # Sessions
+  /sessions/{sessionId}:
+    $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}'
+  /sessions/{sessionId}/messages:
+    $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}~1messages'
+  /sessions/{sessionId}/turn:
+    $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}~1turn'
+  /sessions/{sessionId}/stop:
+    $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}~1stop'
+  /sessions/{sessionId}/reset:
+    $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}~1reset'
 
   # Chat (LLM Integration)
   /workflows/{id}/chat/messages:

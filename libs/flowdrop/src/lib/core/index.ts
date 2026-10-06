@@ -166,6 +166,8 @@ export type {
   PlaygroundMessage,
   PlaygroundInputField,
   PlaygroundMessageRequest,
+  PlaygroundTurnResult,
+  PlaygroundTurnResponse,
   PlaygroundMessagesResult,
   PlaygroundConfig,
   PlaygroundMode,
@@ -336,7 +338,13 @@ export {
 // ============================================================================
 
 export { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
-export { defaultEndpointConfig, createEndpointConfig } from '../config/endpoints.js';
+export {
+  defaultEndpointConfig,
+  createEndpointConfig,
+  sessionsEndpoints,
+  resolveSessionEndpoint
+} from '../config/endpoints.js';
+export type { SessionEndpointKey, ResolvedSessionEndpoint } from '../config/endpoints.js';
 
 // ============================================================================
 // Shared Utilities

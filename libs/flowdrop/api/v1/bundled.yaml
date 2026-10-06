@@ -57,6 +57,11 @@ tags:
     description: Pipeline execution and monitoring
   - name: Playground
     description: Interactive workflow testing and chat interface
+  - name: Sessions
+    description: |
+      One session's own surface: read, delete, page messages, take a turn,
+      stop, reset. Servers that predate it serve these under
+      `/playground/sessions/*`.
   - name: Interrupts
     description: |
       Human-in-the-Loop (HITL) interrupt endpoints for workflow interactions.
@@ -1552,6 +1557,11 @@ paths:
         Messages are processed in sequence order within a session to ensure proper
         conversation flow. If a previous message is not yet complete, the request
         will be rejected with a conflict error.
+
+        Servers with the session surface serve the same turn at
+        `POST /sessions/{sessionId}/turn` (which answers with a turn result
+        instead of the message row) and keep this path as an alias for one minor.
+        `content` is optional there and here: see `PlaygroundMessageRequest`.
       tags:
         - Playground
       parameters:
@@ -1573,6 +1583,11 @@ paths:
                 summary: Simple chat message
                 value:
                   content: Hello, can you help me analyze this data?
+              formOnly:
+                summary: Inputs only, for a workflow with no message port
+                value:
+                  inputs:
+                    topic: cats
               withInputs:
                 summary: Message with additional inputs
                 value:
@@ -1736,6 +1751,221 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /sessions/{sessionId}:
+    get:
+      operationId: getSession
+      summary: Get session details
+      description: The session, its status and its executions.
+      tags:
+        - Sessions
+      parameters:
+        - name: sessionId
+          in: path
+          description: Session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundSessionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteSession
+      summary: Delete a session
+      description: Permanently delete a session and all its messages.
+      tags:
+        - Sessions
+      parameters:
+        - name: sessionId
+          in: path
+          description: Session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /sessions/{sessionId}/messages:
+    get:
+      operationId: listSessionMessages
+      summary: Page a session's messages
+      description: |
+        Same query parameters and response as
+        `GET /playground/sessions/{sessionId}/messages`: `since` (forward
+        cursor, polling), `before` (backward cursor, scroll-up), `latest`
+        (newest page) and `limit`.
+      tags:
+        - Sessions
+      parameters:
+        - name: sessionId
+          in: path
+          description: Session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: latest
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: A page of messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaygroundMessagesResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /sessions/{sessionId}/turn:
+    post:
+      operationId: takeSessionTurn
+      summary: Take a turn
+      description: |
+        Post the person's message and/or named inputs and run the session's
+        workflow on them. Answers 202 with a turn result, not the user's message
+        row (which `POST /playground/sessions/{sessionId}/messages` returns); the
+        row arrives through the messages endpoint.
+      tags:
+        - Sessions
+      parameters:
+        - name: sessionId
+          in: path
+          description: Session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaygroundMessageRequest'
+            examples:
+              chat:
+                summary: A chat turn
+                value:
+                  content: Hello, can you help me analyze this data?
+              form:
+                summary: A form-only workflow's turn
+                value:
+                  inputs:
+                    topic: cats
+      responses:
+        '202':
+          description: Turn accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionTurnResponse'
+        '400':
+          description: |
+            Malformed body, inputs the workflow does not declare, or `content`
+            sent to a workflow with no `message` port (the message names the fix).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: A turn is already running, or the session has no workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /sessions/{sessionId}/stop:
+    post:
+      operationId: stopSessionTurn
+      summary: Stop the running turn
+      description: Cancels the session's running pipeline and sets the session idle.
+      tags:
+        - Sessions
+      parameters:
+        - name: sessionId
+          in: path
+          description: Session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stopped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: No turn is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /sessions/{sessionId}/reset:
+    post:
+      operationId: resetSession
+      summary: Reset a stuck session to idle
+      description: |
+        Cancels pending messages and clears interrupt state. Optional: a server
+        without it omits the path, and clients leave `sessions.reset` unset.
+      tags:
+        - Sessions
+      parameters:
+        - name: sessionId
+          in: path
+          description: Session UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /workflows/{id}/chat/messages:
     post:
       operationId: sendChatMessage
@@ -4631,18 +4861,25 @@ components:
         - required
     PlaygroundMessageRequest:
       type: object
-      description: Request body for sending a message to the playground
+      description: |
+        Request body for a turn: the person's message, named inputs, or both.
+
+        `content` fills the input port whose interface entry has `turn: message`.
+        A workflow that declares turn ports but no `message` port is form-only:
+        it runs on `inputs` alone and the server refuses `content` with a 400
+        whose message names the fix. A workflow that declares no turn port at all
+        keeps the server's older behaviour (deprecated) and still needs `content`.
       properties:
         content:
           type: string
-          description: Message content (typically user input)
+          description: The person's message
           maxLength: 10000
         inputs:
           type: object
           additionalProperties: true
-          description: Additional input values for workflow nodes
-      required:
-        - content
+          description: |
+            Named inputs, keyed by interface entry name. Ports with a `turn` are
+            filled by the session and are not sent here.
     PlaygroundSessionResponse:
       allOf:
         - $ref: '#/components/schemas/ApiResponse'
@@ -6496,6 +6733,59 @@ components:
         - `interrupt` — the interrupt system posted a question into the session
 
         Servers that predate the field omit it; clients treat that as unknown.
+    SessionTurnResult:
+      type: object
+      description: |
+        Snapshot of a turn at the moment the request returned. The user's row,
+        the assistant rows and later status changes arrive through the messages
+        endpoint like those of any other turn.
+      properties:
+        sessionId:
+          type: string
+        userMessageId:
+          type: string
+          description: Id of the user's message row; also the turn's id
+        pipelineId:
+          type: string
+          nullable: true
+          description: The pipeline running the turn; null until it exists (queued turns)
+        status:
+          type: string
+          enum:
+            - queued
+            - running
+            - completed
+            - awaiting_input
+            - paused
+            - failed
+        assistantMessageIds:
+          type: array
+          items:
+            type: string
+          description: Assistant rows written during the turn; filled only when the server waited
+        finalAssistantMessageId:
+          type: string
+          nullable: true
+        finalAssistantMessage:
+          type: string
+          nullable: true
+        artifacts:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required:
+        - sessionId
+        - userMessageId
+        - pipelineId
+        - status
+    SessionTurnResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/SessionTurnResult'
     AgentSpecNodeBase:
       type: object
       description: Base properties shared by all Agent Spec nodes

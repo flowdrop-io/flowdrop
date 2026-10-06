@@ -13,7 +13,11 @@ const mockGetEndpointHeaders = vi.fn();
 // singleton). Tests set this and pass it as the first argument.
 let endpointConfig: EndpointConfig | null = null;
 
-vi.mock('$lib/config/endpoints.js', () => ({
+vi.mock('$lib/config/endpoints.js', async () => ({
+  // The group resolver is pure; the real one is what the service must obey.
+  resolveSessionEndpoint: (
+    await vi.importActual<typeof import('$lib/config/endpoints.js')>('$lib/config/endpoints.js')
+  ).resolveSessionEndpoint,
   buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args),
   getEndpointHeaders: (...args: unknown[]) => mockGetEndpointHeaders(...args),
   // Mirrors the real helper: static endpoint headers merged with the auth
@@ -340,6 +344,122 @@ describe('PlaygroundService', () => {
         'Content-Type': 'application/json',
         Authorization: 'Bearer token-123'
       });
+    });
+  });
+
+  describe('sendTurn', () => {
+    it('sends inputs without content, and omits keys left undefined', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: { id: 'msg-1', role: 'user', content: '' } })
+      });
+
+      const response = await service.sendTurn(endpointConfig, 'session-1', {
+        inputs: { topic: 'cats' }
+      });
+
+      expect(response).toEqual({
+        kind: 'message',
+        message: { id: 'msg-1', role: 'user', content: '' }
+      });
+      const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(fetchCall[0]).toBe('/api/sessions/session-1/messages');
+      expect(JSON.parse(fetchCall[1].body)).toEqual({ inputs: { topic: 'cats' } });
+    });
+
+    it('surfaces the server message of a 400 refusal', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: async () => ({
+          success: false,
+          error: 'This workflow takes no message; declare a message port or send inputs'
+        })
+      });
+
+      await expect(
+        service.sendTurn(endpointConfig, 'session-1', { content: 'hi' })
+      ).rejects.toThrow('This workflow takes no message');
+    });
+  });
+
+  describe('sessions endpoint group', () => {
+    beforeEach(() => {
+      const config = createMockPlaygroundConfig() as unknown as EndpointConfig;
+      config.endpoints.sessions = {
+        get: '/s/{sessionId}',
+        delete: '/s/{sessionId}',
+        messages: '/s/{sessionId}/messages',
+        turn: '/s/{sessionId}/turn',
+        stop: '/s/{sessionId}/stop',
+        reset: '/s/{sessionId}/reset'
+      };
+      endpointConfig = config;
+    });
+
+    function urlOf(call = 0): string {
+      return (global.fetch as ReturnType<typeof vi.fn>).mock.calls[call][0];
+    }
+
+    it('routes every per-session call through the group', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: { id: 'session-1' } })
+      });
+
+      await service.getSession(endpointConfig, 'session-1');
+      await service.deleteSession(endpointConfig, 'session-1');
+      await service.getMessages(endpointConfig, 'session-1', { latest: true });
+      await service.stopExecution(endpointConfig, 'session-1');
+      await service.resetSession(endpointConfig, 'session-1');
+
+      expect(urlOf(0)).toBe('/api/s/session-1');
+      expect(urlOf(1)).toBe('/api/s/session-1');
+      expect(urlOf(2)).toBe('/api/s/session-1/messages?latest=true');
+      expect(urlOf(3)).toBe('/api/s/session-1/stop');
+      expect(urlOf(4)).toBe('/api/s/session-1/reset');
+    });
+
+    it('keeps listing and creating sessions on the playground group', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: [] })
+      });
+
+      await service.listSessions(endpointConfig, 'wf-1');
+
+      expect(urlOf()).toBe('/api/workflows/wf-1/sessions');
+    });
+
+    it('returns the turn result tagged as such', async () => {
+      const result = {
+        sessionId: '7',
+        userMessageId: '42',
+        pipelineId: null,
+        status: 'queued'
+      };
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: result })
+      });
+
+      const response = await service.sendTurn(endpointConfig, 'session-1', { content: 'hi' });
+
+      expect(urlOf()).toBe('/api/s/session-1/turn');
+      expect(response).toEqual({ kind: 'turn', result });
+      await expect(service.sendMessage(endpointConfig, 'session-1', 'hi')).rejects.toThrow(
+        'use sendTurn()'
+      );
+    });
+
+    it('treats a group without reset as a backend that cannot reset', async () => {
+      delete endpointConfig!.endpoints.sessions!.reset;
+
+      await expect(service.resetSession(endpointConfig, 'session-1')).rejects.toThrow(
+        'not supported'
+      );
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 

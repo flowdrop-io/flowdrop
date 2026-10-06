@@ -243,6 +243,11 @@
       Messages are processed in sequence order within a session to ensure proper
       conversation flow. If a previous message is not yet complete, the request
       will be rejected with a conflict error.
+
+      Servers with the session surface serve the same turn at
+      `POST /sessions/{sessionId}/turn` (which answers with a turn result
+      instead of the message row) and keep this path as an alias for one minor.
+      `content` is optional there and here: see `PlaygroundMessageRequest`.
     tags:
       - Playground
     parameters:
@@ -264,6 +269,11 @@
               summary: Simple chat message
               value:
                 content: Hello, can you help me analyze this data?
+            formOnly:
+              summary: Inputs only, for a workflow with no message port
+              value:
+                inputs:
+                  topic: cats
             withInputs:
               summary: Message with additional inputs
               value:

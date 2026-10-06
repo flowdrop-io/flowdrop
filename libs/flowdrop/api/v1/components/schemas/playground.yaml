@@ -392,18 +392,74 @@ PlaygroundInputField:
 
 PlaygroundMessageRequest:
   type: object
-  description: Request body for sending a message to the playground
+  description: |
+    Request body for a turn: the person's message, named inputs, or both.
+
+    `content` fills the input port whose interface entry has `turn: message`.
+    A workflow that declares turn ports but no `message` port is form-only:
+    it runs on `inputs` alone and the server refuses `content` with a 400
+    whose message names the fix. A workflow that declares no turn port at all
+    keeps the server's older behaviour (deprecated) and still needs `content`.
   properties:
     content:
       type: string
-      description: Message content (typically user input)
+      description: The person's message
       maxLength: 10000
     inputs:
       type: object
       additionalProperties: true
-      description: Additional input values for workflow nodes
+      description: |
+        Named inputs, keyed by interface entry name. Ports with a `turn` are
+        filled by the session and are not sent here.
+
+SessionTurnResult:
+  type: object
+  description: |
+    Snapshot of a turn at the moment the request returned. The user's row,
+    the assistant rows and later status changes arrive through the messages
+    endpoint like those of any other turn.
+  properties:
+    sessionId:
+      type: string
+    userMessageId:
+      type: string
+      description: Id of the user's message row; also the turn's id
+    pipelineId:
+      type: string
+      nullable: true
+      description: The pipeline running the turn; null until it exists (queued turns)
+    status:
+      type: string
+      enum: [queued, running, completed, awaiting_input, paused, failed]
+    assistantMessageIds:
+      type: array
+      items:
+        type: string
+      description: Assistant rows written during the turn; filled only when the server waited
+    finalAssistantMessageId:
+      type: string
+      nullable: true
+    finalAssistantMessage:
+      type: string
+      nullable: true
+    artifacts:
+      type: array
+      items:
+        type: object
+        additionalProperties: true
   required:
-    - content
+    - sessionId
+    - userMessageId
+    - pipelineId
+    - status
+
+SessionTurnResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/SessionTurnResult'
 
 PlaygroundSessionResponse:
   allOf:

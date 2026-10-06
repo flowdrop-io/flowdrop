@@ -71,7 +71,11 @@ export interface EndpointConfig {
       stop: string;
     };
 
-    // Playground endpoints
+    /**
+     * Playground endpoints. `listSessions` and `createSession` are always read
+     * from here; the per-session keys only while no `sessions` group is
+     * configured (servers that predate it serve the session API here).
+     */
     playground: {
       /** List sessions for a workflow */
       listSessions: string;
@@ -95,6 +99,45 @@ export interface EndpointConfig {
        * absence of a capability — see the slash-command registry.
        */
       resetSession?: string;
+    };
+
+    /**
+     * One session's own HTTP surface: read, delete, page its messages, take a
+     * turn, stop and reset. Keyed by the session's id, independent of which
+     * client created it (the Playground, a node session, an integration).
+     *
+     * Optional as a whole. When present, every per-session call goes here and
+     * the matching `playground` keys are no longer read; when absent, those
+     * calls stay on the `playground` group, which is what servers that predate
+     * this surface serve. Listing and creating sessions for a workflow stay on
+     * `playground` either way: they are the console's concern, not the
+     * session's. {@link sessionsEndpoints} holds the reference backend's paths.
+     *
+     * Not part of {@link defaultEndpointConfig} on purpose: hosts merge their
+     * endpoint groups over the defaults, so a default here would move every
+     * host to paths its server may not serve yet. The host that knows its
+     * server sets the group.
+     */
+    sessions?: {
+      /** Get session details (`GET`) */
+      get: string;
+      /** Delete a session (`DELETE`) */
+      delete: string;
+      /**
+       * Page a session's messages (`GET`; `since`, `before`, `latest` and
+       * `limit` query parameters, the same response as `playground.getMessages`).
+       */
+      messages: string;
+      /**
+       * Take a turn (`POST`, body `{content?, inputs?}`). Answers with the
+       * turn result (`userMessageId`, `pipelineId`, `status`, …), not the
+       * user's message row; the row arrives with the next messages poll.
+       */
+      turn: string;
+      /** Stop the running turn (`POST`) */
+      stop: string;
+      /** Reset a stuck session to idle (`POST`). Optional, as `playground.resetSession`. */
+      reset?: string;
     };
 
     /**
@@ -328,6 +371,60 @@ export const defaultEndpointConfig: EndpointConfig = {
     backoff: 'exponential'
   }
 };
+
+/**
+ * The reference backend's `sessions` group: the session HTTP surface under
+ * `/sessions/{sessionId}`. Hosts whose server serves it opt in with
+ * `endpoints: { ...defaultEndpointConfig.endpoints, sessions: sessionsEndpoints }`.
+ */
+export const sessionsEndpoints: NonNullable<EndpointConfig['endpoints']['sessions']> = {
+  get: '/sessions/{sessionId}',
+  delete: '/sessions/{sessionId}',
+  messages: '/sessions/{sessionId}/messages',
+  turn: '/sessions/{sessionId}/turn',
+  stop: '/sessions/{sessionId}/stop',
+  reset: '/sessions/{sessionId}/reset'
+};
+
+/** One per-session call, named as the `sessions` group names it. */
+export type SessionEndpointKey = keyof NonNullable<EndpointConfig['endpoints']['sessions']>;
+
+/** Which `playground` key served each per-session call before the `sessions` group. */
+const LEGACY_SESSION_ENDPOINT_KEYS = {
+  get: 'getSession',
+  delete: 'deleteSession',
+  messages: 'getMessages',
+  turn: 'sendMessage',
+  stop: 'stopExecution',
+  reset: 'resetSession'
+} as const satisfies Record<SessionEndpointKey, keyof EndpointConfig['endpoints']['playground']>;
+
+/** A resolved per-session endpoint: its path and the group it came from. */
+export interface ResolvedSessionEndpoint {
+  path: string;
+  group: 'sessions' | 'playground';
+}
+
+/**
+ * Resolve a per-session call to its path.
+ *
+ * The `sessions` group wins as a whole when configured; otherwise the call
+ * stays on its `playground` key. A key absent from the winning group is a
+ * capability the backend does not offer (only `reset` may be absent), so this
+ * returns `undefined` rather than borrowing the other group's path.
+ */
+export function resolveSessionEndpoint(
+  config: EndpointConfig,
+  key: SessionEndpointKey
+): ResolvedSessionEndpoint | undefined {
+  const sessions = config.endpoints.sessions;
+  if (sessions) {
+    const path = sessions[key];
+    return path ? { path, group: 'sessions' } : undefined;
+  }
+  const path = config.endpoints.playground?.[LEGACY_SESSION_ENDPOINT_KEYS[key]];
+  return path ? { path, group: 'playground' } : undefined;
+}
 
 /**
  * Create endpoint configuration with custom base URL

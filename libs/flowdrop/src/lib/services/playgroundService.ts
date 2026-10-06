@@ -14,11 +14,17 @@ import type {
   PlaygroundMessagesApiResponse,
   PlaygroundSessionResponse,
   PlaygroundSessionsResponse,
-  PlaygroundSessionStatus
+  PlaygroundSessionStatus,
+  PlaygroundTurnResponse,
+  PlaygroundTurnResult
 } from '../types/playground.js';
 import { defaultShouldStopPolling } from '../types/playground.js';
-import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl } from '../config/endpoints.js';
+import type {
+  EndpointConfig,
+  ResolvedSessionEndpoint,
+  SessionEndpointKey
+} from '../config/endpoints.js';
+import { buildEndpointUrl, resolveSessionEndpoint } from '../config/endpoints.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import type { AuthProvider } from '../types/auth.js';
 import { logger } from '../utils/logger.js';
@@ -94,22 +100,45 @@ export class PlaygroundService {
   }
 
   /**
+   * Resolve a per-session call (see {@link resolveSessionEndpoint}): the
+   * `sessions` group when configured, the legacy `playground` key otherwise.
+   *
+   * @throws Error when the backend does not offer the call
+   */
+  private sessionEndpoint(
+    config: EndpointConfig,
+    key: SessionEndpointKey,
+    sessionId: string
+  ): { url: string; group: ResolvedSessionEndpoint['group'] } {
+    const endpoint = resolveSessionEndpoint(config, key);
+    if (!endpoint) {
+      throw new Error(`Session ${key} is not supported by this backend`);
+    }
+    return {
+      url: buildEndpointUrl(config, endpoint.path, { sessionId }),
+      group: endpoint.group
+    };
+  }
+
+  /**
    * Generic API request helper
    *
    * @param config - The endpoint configuration
    * @param url - The URL to fetch
    * @param options - Fetch options
+   * @param endpointKey - Group whose static headers apply (default `playground`)
    * @returns The parsed JSON response
    */
   private async request<T>(
     config: EndpointConfig,
     url: string,
     options: RequestInit = {},
-    authProvider?: AuthProvider
+    authProvider?: AuthProvider,
+    endpointKey: string = 'playground'
   ): Promise<T> {
     const response = await authenticatedFetch(url, options, {
       config,
-      endpointKey: 'playground',
+      endpointKey,
       authProvider
     });
 
@@ -211,11 +240,15 @@ export class PlaygroundService {
     authProvider?: AuthProvider
   ): Promise<PlaygroundSession> {
     const config = this.getConfig(endpointConfig);
-    const url = buildEndpointUrl(config, config.endpoints.playground.getSession, {
-      sessionId
-    });
+    const { url, group } = this.sessionEndpoint(config, 'get', sessionId);
 
-    const response = await this.request<PlaygroundSessionResponse>(config, url, {}, authProvider);
+    const response = await this.request<PlaygroundSessionResponse>(
+      config,
+      url,
+      {},
+      authProvider,
+      group
+    );
 
     if (!response.data) {
       throw new Error('Session not found');
@@ -235,9 +268,7 @@ export class PlaygroundService {
     authProvider?: AuthProvider
   ): Promise<void> {
     const config = this.getConfig(endpointConfig);
-    const url = buildEndpointUrl(config, config.endpoints.playground.deleteSession, {
-      sessionId
-    });
+    const { url, group } = this.sessionEndpoint(config, 'delete', sessionId);
 
     await this.request<{ success: boolean }>(
       config,
@@ -245,7 +276,8 @@ export class PlaygroundService {
       {
         method: 'DELETE'
       },
-      authProvider
+      authProvider,
+      group
     );
   }
 
@@ -273,9 +305,8 @@ export class PlaygroundService {
     authProvider?: AuthProvider
   ): Promise<PlaygroundMessagesApiResponse> {
     const config = this.getConfig(endpointConfig);
-    let url = buildEndpointUrl(config, config.endpoints.playground.getMessages, {
-      sessionId
-    });
+    const endpoint = this.sessionEndpoint(config, 'messages', sessionId);
+    let url = endpoint.url;
 
     const params = new URLSearchParams();
     if (options.since !== undefined) {
@@ -295,11 +326,82 @@ export class PlaygroundService {
       url = `${url}?${queryString}`;
     }
 
-    return this.request<PlaygroundMessagesApiResponse>(config, url, {}, authProvider);
+    return this.request<PlaygroundMessagesApiResponse>(
+      config,
+      url,
+      {},
+      authProvider,
+      endpoint.group
+    );
+  }
+
+  /**
+   * Take a turn in a session: post the person's message and/or named inputs
+   * and run the session's workflow on them.
+   *
+   * Goes to `sessions.turn` when that group is configured, else to the legacy
+   * `playground.sendMessage`. The two doors answer differently (the legacy one
+   * with the user's message row, the turn door with a turn result), so the
+   * answer is returned tagged; either way the rest of the turn arrives through
+   * the messages poll.
+   *
+   * `content` is optional: a workflow whose interface declares no `message`
+   * port takes `inputs` alone, and its server refuses `content` with a 400
+   * whose message names the fix. Refusals are thrown as an `Error` carrying
+   * the server's message.
+   *
+   * @param sessionId - The session UUID
+   * @param request - `content` (the person's message) and/or `inputs` (named
+   *   interface inputs); keys left `undefined` are not sent
+   */
+  async sendTurn(
+    endpointConfig: EndpointConfig | null,
+    sessionId: string,
+    request: PlaygroundMessageRequest,
+    authProvider?: AuthProvider
+  ): Promise<PlaygroundTurnResponse> {
+    const config = this.getConfig(endpointConfig);
+    const { url, group } = this.sessionEndpoint(config, 'turn', sessionId);
+
+    const requestBody: PlaygroundMessageRequest = {};
+    if (request.content !== undefined) {
+      requestBody.content = request.content;
+    }
+    if (request.inputs !== undefined) {
+      requestBody.inputs = request.inputs;
+    }
+
+    const response = await this.request<{
+      success: boolean;
+      data?: PlaygroundMessage | PlaygroundTurnResult;
+    }>(
+      config,
+      url,
+      {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      },
+      authProvider,
+      group
+    );
+
+    const data = response.data;
+    if (!data) {
+      throw new Error('Failed to send message: No data returned');
+    }
+    if ('userMessageId' in data && !('role' in data)) {
+      return { kind: 'turn', result: data as PlaygroundTurnResult };
+    }
+    return { kind: 'message', message: data as PlaygroundMessage };
   }
 
   /**
    * Send a message to a playground session
+   *
+   * @deprecated Use {@link sendTurn}, which also takes a turn without
+   *   `content` and understands the `sessions.turn` door. This method throws
+   *   when the configured door answers with a turn result instead of the
+   *   user's message row.
    *
    * @param sessionId - The session UUID
    * @param content - The message content
@@ -313,34 +415,18 @@ export class PlaygroundService {
     inputs?: Record<string, unknown>,
     authProvider?: AuthProvider
   ): Promise<PlaygroundMessage> {
-    const config = this.getConfig(endpointConfig);
-    const url = buildEndpointUrl(config, config.endpoints.playground.sendMessage, {
-      sessionId
-    });
-
-    const requestBody: PlaygroundMessageRequest = { content };
-    if (inputs) {
-      requestBody.inputs = inputs;
-    }
-
-    const response = await this.request<{
-      success: boolean;
-      data?: PlaygroundMessage;
-    }>(
-      config,
-      url,
-      {
-        method: 'POST',
-        body: JSON.stringify(requestBody)
-      },
+    const response = await this.sendTurn(
+      endpointConfig,
+      sessionId,
+      { content, inputs },
       authProvider
     );
-
-    if (!response.data) {
-      throw new Error('Failed to send message: No data returned');
+    if (response.kind !== 'message') {
+      throw new Error(
+        'The turn endpoint answered with a turn result, not a message; use sendTurn()'
+      );
     }
-
-    return response.data;
+    return response.message;
   }
 
   /**
@@ -354,9 +440,7 @@ export class PlaygroundService {
     authProvider?: AuthProvider
   ): Promise<void> {
     const config = this.getConfig(endpointConfig);
-    const url = buildEndpointUrl(config, config.endpoints.playground.stopExecution, {
-      sessionId
-    });
+    const { url, group } = this.sessionEndpoint(config, 'stop', sessionId);
 
     await this.request<{ success: boolean }>(
       config,
@@ -364,7 +448,8 @@ export class PlaygroundService {
       {
         method: 'POST'
       },
-      authProvider
+      authProvider,
+      group
     );
   }
 
@@ -385,13 +470,13 @@ export class PlaygroundService {
     authProvider?: AuthProvider
   ): Promise<void> {
     const config = this.getConfig(endpointConfig);
-    const endpoint = config.endpoints.playground.resetSession;
+    const endpoint = resolveSessionEndpoint(config, 'reset');
 
     if (!endpoint) {
       throw new Error('Session reset is not supported by this backend');
     }
 
-    const url = buildEndpointUrl(config, endpoint, { sessionId });
+    const url = buildEndpointUrl(config, endpoint.path, { sessionId });
 
     await this.request<{ success: boolean }>(
       config,
@@ -399,7 +484,8 @@ export class PlaygroundService {
       {
         method: 'POST'
       },
-      authProvider
+      authProvider,
+      endpoint.group
     );
   }
 

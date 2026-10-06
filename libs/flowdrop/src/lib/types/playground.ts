@@ -385,11 +385,46 @@ export interface PlaygroundInputField {
  * Request payload for sending a message to the playground
  */
 export interface PlaygroundMessageRequest {
-  /** Message content (typically user input) */
-  content: string;
-  /** Additional input values for workflow nodes */
+  /**
+   * The person's message. Optional: a workflow whose interface declares no
+   * `message` turn port runs on `inputs` alone, and its server refuses
+   * `content` with a 400.
+   */
+  content?: string;
+  /** Named inputs, keyed by interface entry id (the server's port `name`). */
   inputs?: Record<string, unknown>;
 }
+
+/**
+ * What the `sessions.turn` endpoint answers with (`data` of a 202). A
+ * snapshot at return time: the user's row, the assistant rows and the status
+ * changes arrive through the messages poll like any other turn.
+ */
+export interface PlaygroundTurnResult {
+  /** The session's id. */
+  sessionId: string;
+  /** The id of the user's message row (the turn's id). */
+  userMessageId: string;
+  /** The pipeline running the turn; `null` until it exists (async paths). */
+  pipelineId: string | null;
+  /** `queued`, `running`, `completed`, `awaiting_input`, `paused` or `failed`. */
+  status: string;
+  /** Assistant rows written during the turn (filled only when the server waited). */
+  assistantMessageIds?: string[];
+  finalAssistantMessageId?: string | null;
+  finalAssistantMessage?: string | null;
+  /** Further keys from newer servers pass through untouched. */
+  [key: string]: unknown;
+}
+
+/**
+ * What a turn request returned, by door: the legacy `playground.sendMessage`
+ * answers with the user's message row, `sessions.turn` with a
+ * {@link PlaygroundTurnResult}.
+ */
+export type PlaygroundTurnResponse =
+  | { kind: 'message'; message: PlaygroundMessage }
+  | { kind: 'turn'; result: PlaygroundTurnResult };
 
 /**
  * Response from the messages endpoint with polling support

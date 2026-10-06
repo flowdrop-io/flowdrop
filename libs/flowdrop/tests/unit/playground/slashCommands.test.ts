@@ -12,7 +12,7 @@ import {
   type CommandMessages,
   type CommandHandlers
 } from '../../../src/lib/playground/commands/index.js';
-import { defaultEndpointConfig } from '../../../src/lib/config/endpoints.js';
+import { defaultEndpointConfig, sessionsEndpoints } from '../../../src/lib/config/endpoints.js';
 import type { EndpointConfig } from '../../../src/lib/config/endpoints.js';
 import { defaultMessages } from '../../../src/lib/messages/defaults.js';
 
@@ -231,6 +231,18 @@ describe('command availability', () => {
 
   it('withholds /reset when the backend omits the endpoint', () => {
     expect(isCommandAvailable('reset', configWithoutReset())).toBe(false);
+  });
+
+  it('reads /reset from the sessions group once a host configures it', () => {
+    const withReset = structuredClone(defaultEndpointConfig);
+    withReset.endpoints.sessions = { ...sessionsEndpoints };
+    delete withReset.endpoints.playground.resetSession;
+    expect(isCommandAvailable('reset', withReset)).toBe(true);
+
+    const withoutReset = structuredClone(withReset);
+    delete withoutReset.endpoints.sessions?.reset;
+    withoutReset.endpoints.playground.resetSession = '/playground/sessions/{sessionId}/reset';
+    expect(isCommandAvailable('reset', withoutReset)).toBe(false);
   });
 
   it('still offers commands whose endpoints are required keys', () => {
