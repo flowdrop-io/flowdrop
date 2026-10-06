@@ -3056,6 +3056,133 @@ describe('executeCommand — describe_type', () => {
   });
 });
 
+describe('executeCommand — oneOf allowed values', () => {
+  // The fddo entity_query shape: one oneOf entry per entity type.
+  const entityQuery = createMockMetadata('entity_query', 'Entity Query', {
+    configSchema: {
+      type: 'object',
+      properties: {
+        entity_type: {
+          type: 'string',
+          title: 'Entity Type',
+          description: 'The entity type to query (node, taxonomy_term, user, etc.)',
+          oneOf: [
+            { const: 'ai_file', title: 'AI File' },
+            { const: 'block_content', title: 'Content block' },
+            { const: 'node' }
+          ],
+          default: 'node'
+        },
+        both: {
+          type: 'string',
+          enum: ['a', 'b'],
+          oneOf: [{ const: 'z', title: 'Z' }]
+        },
+        nested: {
+          type: 'string',
+          oneOf: [{ type: 'string', minLength: 1 }, { const: 'x' }]
+        }
+      }
+    } as unknown as NodeMetadata['configSchema']
+  });
+  const nodeTypes = [entityQuery];
+
+  function makeNode() {
+    return createMockNode('entity_query.1', entityQuery, {
+      data: { label: 'Entity Query', config: {}, metadata: entityQuery }
+    });
+  }
+
+  it('describe_type reports the consts as enum, with their titles', () => {
+    const context = createMockContext(createMockWorkflow(), nodeTypes);
+    const result = executeCommand({ type: 'describe_type', nodeTypeId: 'entity_query' }, context);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as import('../../../src/lib/commands/types.js').DescribeTypeResultData;
+    expect(data.config[0]).toEqual({
+      key: 'entity_type',
+      type: 'string',
+      title: 'Entity Type',
+      description: 'The entity type to query (node, taxonomy_term, user, etc.)',
+      enum: ['ai_file', 'block_content', 'node'],
+      enumTitles: { ai_file: 'AI File', block_content: 'Content block' },
+      default: 'node'
+    });
+  });
+
+  it('enum wins over oneOf, and a oneOf of sub-schemas is ignored', () => {
+    const context = createMockContext(createMockWorkflow(), nodeTypes);
+    const result = executeCommand({ type: 'describe_type', nodeTypeId: 'entity_query' }, context);
+    if (!result.ok) throw new Error('describe_type failed');
+    const data = result.data as import('../../../src/lib/commands/types.js').DescribeTypeResultData;
+    const both = data.config.find((c) => c.key === 'both')!;
+    expect(both.enum).toEqual(['a', 'b']);
+    expect(both).not.toHaveProperty('enumTitles');
+    const nested = data.config.find((c) => c.key === 'nested')!;
+    expect(nested).not.toHaveProperty('enum');
+    expect(nested).not.toHaveProperty('enumTitles');
+  });
+
+  it('set_config warns for a value outside the consts, and accepts one inside', () => {
+    const dispatch = createMockDispatch();
+    const context = createMockContext(createMockWorkflow([makeNode()]), nodeTypes, dispatch);
+
+    const bad = executeCommand(
+      { type: 'set_config', nodeId: 'entity_query.1', key: 'entity_type', value: 'article' },
+      context
+    );
+    expect(bad.ok).toBe(true);
+    if (!bad.ok) return;
+    const warnings = (bad.data as import('../../../src/lib/commands/types.js').SetConfigResultData)
+      .warnings;
+    expect(warnings).toHaveLength(1);
+    expect(warnings![0].type).toBe('enum');
+    expect(warnings![0].allowedValues).toEqual(['ai_file', 'block_content', 'node']);
+
+    const good = executeCommand(
+      { type: 'set_config', nodeId: 'entity_query.1', key: 'entity_type', value: 'ai_file' },
+      context
+    );
+    expect(good.ok).toBe(true);
+    if (!good.ok) return;
+    expect(
+      (good.data as import('../../../src/lib/commands/types.js').SetConfigResultData).warnings
+    ).toBeUndefined();
+  });
+
+  it('set_config rejects a value outside the consts in strict mode', () => {
+    const dispatch = createMockDispatch();
+    const context = createMockContext(createMockWorkflow([makeNode()]), nodeTypes, dispatch);
+    const result = executeCommand(
+      {
+        type: 'set_config',
+        nodeId: 'entity_query.1',
+        key: 'entity_type',
+        value: 'article',
+        strict: true
+      },
+      context
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe('CONFIG_VALIDATION_ERROR');
+    expect(dispatch.updateNode).not.toHaveBeenCalled();
+  });
+
+  it('set_config does not constrain a oneOf of sub-schemas', () => {
+    const context = createMockContext(createMockWorkflow([makeNode()]), nodeTypes);
+    const result = executeCommand(
+      { type: 'set_config', nodeId: 'entity_query.1', key: 'nested', value: 'anything' },
+      context
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(
+      (result.data as import('../../../src/lib/commands/types.js').SetConfigResultData).warnings
+    ).toBeUndefined();
+  });
+});
+
 describe('executeCommand — search_types', () => {
   const http = createMockMetadata('http_request', 'HTTP Request', {
     description: 'Fetch a URL over HTTP',

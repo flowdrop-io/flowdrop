@@ -195,6 +195,38 @@ function describePort(p: NodePort): PortDescription {
   return out;
 }
 
+/**
+ * The allowed values of a config key, as a plain list plus titles.
+ *
+ * `enum` wins when present. Otherwise a `oneOf` (or `anyOf`) whose every entry
+ * is `{ const, title? }` counts as the allowed values: the form already renders
+ * that shape as a select, so the agent tools must treat it the same way. A
+ * `oneOf` holding anything else (sub-schemas) says nothing about allowed values
+ * and is ignored.
+ */
+function allowedValuesOf(
+  property: ConfigProperty
+): { values: unknown[]; labels?: Record<string, string> } | undefined {
+  if (property.enum && property.enum.length > 0) return { values: property.enum };
+
+  for (const alternatives of [property.oneOf, property.anyOf]) {
+    if (!Array.isArray(alternatives) || alternatives.length === 0) continue;
+    const isConst = (e: unknown): e is { const: unknown; title?: unknown } =>
+      typeof e === 'object' && e !== null && 'const' in e;
+    if (!alternatives.every(isConst)) continue;
+
+    const labels: Record<string, string> = {};
+    for (const entry of alternatives) {
+      if (typeof entry.title === 'string' && entry.title) labels[String(entry.const)] = entry.title;
+    }
+    return {
+      values: alternatives.map((e) => e.const),
+      ...(Object.keys(labels).length > 0 ? { labels } : {})
+    };
+  }
+  return undefined;
+}
+
 function describeConfigKey(
   key: string,
   property: ConfigProperty | undefined,
@@ -207,7 +239,11 @@ function describeConfigKey(
     if (type !== undefined) out.type = type;
     if (property.title) out.title = property.title;
     if (property.description) out.description = property.description;
-    if (property.enum && property.enum.length > 0) out.enum = property.enum;
+    const allowed = allowedValuesOf(property);
+    if (allowed) {
+      out.enum = allowed.values;
+      if (allowed.labels) out.enumTitles = allowed.labels;
+    }
     if (property.default !== undefined) out.default = property.default;
   }
   if (required) out.required = true;
@@ -398,13 +434,14 @@ function validateConfigValue(
 
   const warnings: NonNullable<SetConfigResultData['warnings']> = [];
 
-  // Enum validation
-  if (property.enum && property.enum.length > 0) {
-    if (!property.enum.includes(value)) {
+  // Enum validation (a oneOf of consts counts as an enum)
+  const allowed = allowedValuesOf(property)?.values;
+  if (allowed) {
+    if (!allowed.includes(value)) {
       warnings.push({
         type: 'enum',
-        message: `Value ${JSON.stringify(value)} is not in allowed values: ${property.enum.map((v) => JSON.stringify(v)).join(', ')}`,
-        allowedValues: property.enum
+        message: `Value ${JSON.stringify(value)} is not in allowed values: ${allowed.map((v) => JSON.stringify(v)).join(', ')}`,
+        allowedValues: allowed
       });
     }
   }

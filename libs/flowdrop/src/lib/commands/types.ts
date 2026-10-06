@@ -296,7 +296,10 @@ export interface ConfigKeyDescription {
   type?: string | string[];
   title?: string;
   description?: string;
+  /** Allowed values: the schema's `enum`, or the consts of a `oneOf`/`anyOf` of `{ const, title }`. */
   enum?: unknown[];
+  /** Display titles for the allowed values, keyed by the value as a string. Only present when the schema gave titles. */
+  enumTitles?: Record<string, string>;
   default?: unknown;
   required?: boolean;
 }

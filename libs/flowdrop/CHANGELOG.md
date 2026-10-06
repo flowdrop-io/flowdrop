@@ -163,6 +163,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a refused launch from Run, and Run's fallback message failed with
   `lifecycle_outside_component`. The strings are now read through a getter
   taken at init.
+- `describe_type`, `get_config` and `set_config` now see the allowed values of a
+  config key declared as a `oneOf` (or `anyOf`) of `{ const, title }`, the
+  shape the form already renders as a select (#41). The values are reported as
+  `enum`, with the titles in a new optional `enumTitles` map on
+  `ConfigKeyDescription`; a value outside them gets the same `allowedValues`
+  warning as an `enum` violation, and `CONFIG_VALIDATION_ERROR` in strict mode.
+  `enum` wins when both are present; a `oneOf` of sub-schemas is ignored.
 
 ## [2.9.0] - 2026-10-04
 
