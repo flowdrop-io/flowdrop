@@ -27,8 +27,12 @@ export interface ContextMenuActions {
     position: XYPosition,
     options?: { edit?: boolean }
   ): string | null;
-  /** Delete nodes (and their edges) as the Delete key would, including the confirm-delete setting and the undo entry. */
-  deleteNodes(ids: string[]): void;
+  /**
+   * Delete nodes (and their edges) as the Delete key would, including the
+   * confirm-delete setting and the undo entry. Resolves once the deletion has
+   * been decided and applied (or declined at the confirm prompt).
+   */
+  deleteNodes(ids: string[]): Promise<void>;
   /** Open the configuration panel for a node. */
   openConfig(id: string): void;
   /** Open a node for typing in place. */

@@ -26,7 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`target`, `nodes`, grid-snapped flow `position`, `nodeTypes`, `actions`) and
   returns the final list, so a host can add, remove or reorder entries. If it
   throws or returns a non-array the built-in entries are used; an entry's `run`
-  may be async, and its errors (thrown or rejected) are logged and never break the canvas. The `ContextMenuContext`,
+  may be async, and its errors (thrown or rejected) are logged and never break the canvas.
+  `actions.deleteNodes` returns a promise, so an async `run` can await the deletion
+  (including the confirm prompt) before doing more. The `ContextMenuContext`,
   `ContextMenuEntry`, `ContextMenuActions`, `ContextMenuOptions` and
   `ContextMenuTarget` types are exported from `@flowdrop/flowdrop/editor`.
 - `messages.contextMenu` strings (`menuLabel`, `configure`, `delete`,

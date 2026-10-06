@@ -37,13 +37,11 @@
   const fd = getInstance();
   const caption = $derived(m().nodes.caption);
 
-  const FALLBACK_MAX_WIDTH = 500;
   /** Horizontal padding on each side, mirrors the CSS. */
   const PADDING_X = 10;
 
   let rootEl: HTMLDivElement | undefined = $state();
   let editorEl: HTMLDivElement | undefined = $state();
-  let textEl: HTMLDivElement | undefined = $state();
 
   /**
    * One-line widths of the two measure spans, in px. `bind:offsetWidth` is
@@ -52,13 +50,11 @@
    */
   let textW = $state(0);
   let placeholderW = $state(0);
-  /** The node's max width, read from CSS once the node is in the DOM. */
-  let maxWidth = $state(FALLBACK_MAX_WIDTH);
 
   let editing = $state(false);
   /** Text as typed while editing; drives live width measurement. */
   let draft = $state('');
-  /** The text is cut off by the two-line clamp. */
+  /** The text is cut off by the two-line clamp; checked on hover, when the tooltip matters. */
   let clipped = $state(false);
 
   const label = $derived(props.data.label ?? '');
@@ -69,45 +65,30 @@
    * Width in px, snapped to the grid; undefined until the text has been
    * measured, so the CSS minimum applies. While editing, the node is never
    * narrower than the placeholder, so a new caption opens wide enough to show
-   * it on one line.
+   * it on one line. The max width is the CSS `max-width`; it clamps this.
    */
   const width = $derived(
     textW === 0 && !editing
       ? undefined
       : snapCaptionWidth(
           Math.max(textW, editing ? placeholderW : 0) + 2 * PADDING_X,
-          getEditorSettings().gridSize,
-          maxWidth
+          getEditorSettings().gridSize
         )
   );
 
-  $effect(() => {
-    if (!rootEl) return;
-    const parsed = parseFloat(
-      getComputedStyle(rootEl).getPropertyValue('--fd-caption-node-max-width')
-    );
-    maxWidth = Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_MAX_WIDTH;
-  });
-
-  // The tooltip shows the full text only when the clamp cuts it. Width and
-  // label are what decide that, so they are what re-runs the check.
-  $effect(() => {
-    void width;
-    void label;
-    clipped = !!textEl && textEl.scrollHeight > textEl.clientHeight + 1;
-  });
+  /** The tooltip shows the full text only when the clamp cuts it. */
+  function checkClipped(event: PointerEvent): void {
+    const el = event.currentTarget as HTMLElement;
+    clipped = el.scrollHeight > el.clientHeight + 1;
+  }
 
   // ---------------------------------------------------------------------------
   // In-place editing
   // ---------------------------------------------------------------------------
 
-  /** Set once an edit has ended so the blur that follows it does not commit again. */
-  let finished = true;
-
   function startEditing(): void {
     if (editing) return;
     draft = label;
-    finished = false;
     editing = true;
   }
 
@@ -133,8 +114,8 @@
   }
 
   function finish(save: boolean, refocusNode: boolean): void {
-    if (finished) return;
-    finished = true;
+    // The blur that follows an Enter or Escape finds the edit already over.
+    if (!editing) return;
     const text = save ? (editorEl?.textContent ?? '') : null;
     const wrapper = rootEl?.closest<HTMLElement>('.svelte-flow__node') ?? null;
     editing = false;
@@ -242,7 +223,11 @@
       {@attach focusWhenVisible(selectContents)}
     ></div>
   {:else}
-    <div class="flowdrop-caption-node__text" title={clipped ? label : undefined} bind:this={textEl}>
+    <div
+      class="flowdrop-caption-node__text"
+      title={clipped ? label : undefined}
+      onpointerenter={checkClipped}
+    >
       {label}
     </div>
   {/if}

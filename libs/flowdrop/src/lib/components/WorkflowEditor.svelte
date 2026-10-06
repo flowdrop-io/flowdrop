@@ -837,10 +837,10 @@
       }
       return id;
     },
-    deleteNodes(ids) {
+    async deleteNodes(ids) {
       if (ids.length === 0) return;
       // Through xyflow so confirm-delete, edge removal and history all apply.
-      void canvasControllerRef?.canvasDeleteNodes(ids);
+      await canvasControllerRef?.canvasDeleteNodes(ids);
     },
     openConfig(id) {
       const node = flowNodes.find((n) => n.id === id);

@@ -14,13 +14,14 @@ export function collapseCaptionText(text: string): string {
 /**
  * The width a caption takes: the natural width of its text plus padding,
  * rounded up to the next grid step, never below two grid steps (40px on the
- * default 20px grid) and never above `max`.
+ * default 20px grid) and never above `max` (none by default: the node's CSS
+ * `max-width` clamps it).
  *
  * @param naturalWidth - width of the text on one line plus horizontal padding, in px
  * @param grid - the editor's grid size in px
- * @param max - the maximum node width in px
+ * @param max - the maximum node width in px, if any
  */
-export function snapCaptionWidth(naturalWidth: number, grid: number, max: number): number {
+export function snapCaptionWidth(naturalWidth: number, grid: number, max = Infinity): number {
   const step = grid > 0 ? grid : 20;
   const floor = 2 * step;
   const snapped = Math.ceil(Math.max(0, naturalWidth) / step) * step;

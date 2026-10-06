@@ -227,6 +227,8 @@ test.describe('Caption node', () => {
     const long = page.locator('.flowdrop-caption-node').filter({ hasText: 'far too long' });
     await expect.poll(() => long.evaluate((el) => (el as HTMLElement).offsetWidth)).toBe(500);
     await expect.poll(() => long.evaluate((el) => (el as HTMLElement).offsetHeight)).toBe(60);
+    // The tooltip is decided on hover, when it matters.
+    await long.locator('.flowdrop-caption-node__text').hover();
     await expect(long.locator('.flowdrop-caption-node__text')).toHaveAttribute(
       'title',
       /far too long/

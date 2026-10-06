@@ -26,7 +26,7 @@ function node(id: string): WorkflowNode {
 function makeActions(): ContextMenuActions {
   return {
     addNode: vi.fn(() => 'new-1'),
-    deleteNodes: vi.fn(),
+    deleteNodes: vi.fn(async () => {}),
     openConfig: vi.fn(),
     editInPlace: vi.fn()
   };

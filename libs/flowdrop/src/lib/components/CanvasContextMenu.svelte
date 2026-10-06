@@ -11,7 +11,8 @@
 -->
 
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import type { Attachment } from 'svelte/attachments';
+  import { on } from 'svelte/events';
   import Icon from '@iconify/svelte';
   import { m } from '$lib/messages/index.js';
   import { isSeparator, type ContextMenuEntry } from '../editor/contextMenu.js';
@@ -35,7 +36,6 @@
 
   /** Element that had focus when the menu opened; focus returns there on keyboard close. */
   let previouslyFocused: HTMLElement | null = null;
-  let opened = false;
 
   function items(): HTMLButtonElement[] {
     return Array.from(
@@ -62,53 +62,46 @@
     restoreFocus();
   }
 
-  // Show the popover, place it and (once) focus the first item. Runs after
-  // mount with `menuEl` bound, and again if the requested position changes
-  // while open. The popover has to be showing before it can be measured.
-  // Written to the style directly: the position is a measurement result, not
-  // state anything else reads.
-  $effect(() => {
-    const el = menuEl;
-    if (!el) return;
-    const wanted = { x, y };
+  /**
+   * Opening, once per menu: remember the focus to return to, show the
+   * popover, focus the first item and wire the dismissals a manual popover
+   * does not do itself.
+   */
+  const open: Attachment<HTMLDivElement> = (el) => {
+    previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Optional: jsdom has no Popover API.
+    el.showPopover?.();
+    el.querySelector<HTMLButtonElement>('[role="menuitem"]:not([aria-disabled="true"])')?.focus({
+      preventScroll: true
+    });
 
-    const first = !opened;
-    if (first) {
-      opened = true;
-      previouslyFocused =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      // Optional: jsdom has no Popover API.
-      el.showPopover?.();
-    }
+    const removers = [
+      on(
+        window,
+        'pointerdown',
+        (event) => {
+          if (event.target instanceof Node && el.contains(event.target)) return;
+          onclose();
+        },
+        { capture: true }
+      ),
+      on(window, 'wheel', () => onclose(), { capture: true, passive: true }),
+      on(window, 'blur', () => onclose())
+    ];
+    return () => removers.forEach((remove) => remove());
+  };
 
-    // Slide back inside the viewport rather than flipping.
-    el.style.left = `${Math.max(0, Math.min(wanted.x, window.innerWidth - el.offsetWidth))}px`;
-    el.style.top = `${Math.max(0, Math.min(wanted.y, window.innerHeight - el.offsetHeight))}px`;
-
-    if (first) items()[0]?.focus({ preventScroll: true });
-  });
-
-  onMount(() => {
-    function onPointerDown(event: PointerEvent): void {
-      if (event.target instanceof Node && menuEl?.contains(event.target)) return;
-      onclose();
-    }
-    function onWheel(): void {
-      onclose();
-    }
-    function onBlur(): void {
-      onclose();
-    }
-
-    window.addEventListener('pointerdown', onPointerDown, true);
-    window.addEventListener('wheel', onWheel, { capture: true, passive: true });
-    window.addEventListener('blur', onBlur);
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown, true);
-      window.removeEventListener('wheel', onWheel, true);
-      window.removeEventListener('blur', onBlur);
-    };
-  });
+  /**
+   * Placement, again whenever the requested position changes: slide back
+   * inside the viewport rather than flipping. The popover is showing by now
+   * (see `open`), so it can be measured. Written to the style directly: the
+   * position is a measurement result, not state anything else reads.
+   */
+  const place: Attachment<HTMLDivElement> = (el) => {
+    el.style.left = `${Math.max(0, Math.min(x, window.innerWidth - el.offsetWidth))}px`;
+    el.style.top = `${Math.max(0, Math.min(y, window.innerHeight - el.offsetHeight))}px`;
+  };
 
   function handleKeydown(event: KeyboardEvent): void {
     const list = items();
@@ -157,6 +150,8 @@
   tabindex="-1"
   aria-label={m().contextMenu.menuLabel}
   onkeydown={handleKeydown}
+  {@attach open}
+  {@attach place}
   oncontextmenu={(event) => event.preventDefault()}
 >
   {#each entries as entry (entry.id)}
