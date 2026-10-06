@@ -1163,7 +1163,17 @@
         "meta": {
           "type": "object",
           "additionalProperties": true,
-          "description": "Opaque consumer metadata. The library never reads or interprets this field\n— it round-trips verbatim on every read/write. Servers use it to say what\n\"external\" means for them, e.g. `{\"http\": {\"in\": \"query\"}}` or\n`{\"mcp\": {\"toolParam\": true}}`.\n\nKeys under the `fd.` prefix are reserved for future library use — consumers\nmust not write keys starting with `fd.`.\n"
+          "description": "Opaque consumer metadata. The library never reads or interprets this field\n— it round-trips verbatim on every read/write. Servers use it to say what\n\"external\" means for them, e.g. `{\"http\": {\"in\": \"query\"}}` or\n`{\"mcp\": {\"toolParam\": true}}`.\n\nKeys under the `fd.` prefix are reserved for future library use — consumers\nmust not write keys starting with `fd.`.\n\nOne exception, owned by `turn`: on a `history` entry, `limit` (a positive\ninteger, default 10) is how many past user and assistant messages the\nsession fills the port with. The interface editor writes that one key.\n"
+        },
+        "turn": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/WorkflowInterfaceTurn"
+            },
+            {
+              "description": "What this port is for in a chat turn. Absent means the port plays no part\nin a turn. Validated by the server against its vocabulary.\n"
+            }
+          ]
         }
       },
       "required": [
@@ -1171,6 +1181,17 @@
         "dataType",
         "bindings"
       ]
+    },
+    "WorkflowInterfaceTurn": {
+      "type": "string",
+      "enum": [
+        "message",
+        "history",
+        "session_id",
+        "message_id",
+        "reply"
+      ],
+      "description": "The chat-turn vocabulary of an interface port.\n\nInputs — at most one entry per value:\n- `message` — the person's message (the turn's content), a string\n- `history` — past user and assistant messages, bounded by `meta.limit`\n  (default 10)\n- `session_id` — the session's id\n- `message_id` — the id of the person's message\n\nOutputs — any number:\n- `reply` — each value becomes one assistant message\n"
     },
     "WorkflowMetadata": {
       "type": "object",

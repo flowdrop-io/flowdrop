@@ -278,10 +278,40 @@ WorkflowInterfaceEntry:
 
         Keys under the `fd.` prefix are reserved for future library use — consumers
         must not write keys starting with `fd.`.
+
+        One exception, owned by `turn`: on a `history` entry, `limit` (a positive
+        integer, default 10) is how many past user and assistant messages the
+        session fills the port with. The interface editor writes that one key.
+    turn:
+      $ref: '#/WorkflowInterfaceTurn'
+      description: |
+        What this port is for in a chat turn. Absent means the port plays no part
+        in a turn. Validated by the server against its vocabulary.
   required:
     - id
     - dataType
     - bindings
+
+WorkflowInterfaceTurn:
+  type: string
+  enum:
+    - message
+    - history
+    - session_id
+    - message_id
+    - reply
+  description: |
+    The chat-turn vocabulary of an interface port.
+
+    Inputs — at most one entry per value:
+    - `message` — the person's message (the turn's content), a string
+    - `history` — past user and assistant messages, bounded by `meta.limit`
+      (default 10)
+    - `session_id` — the session's id
+    - `message_id` — the id of the person's message
+
+    Outputs — any number:
+    - `reply` — each value becomes one assistant message
 
 WorkflowInterface:
   type: object
