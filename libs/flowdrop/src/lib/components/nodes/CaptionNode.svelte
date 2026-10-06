@@ -39,6 +39,8 @@
 
   let rootEl: HTMLDivElement | undefined = $state();
   let measureEl: HTMLSpanElement | undefined = $state();
+  /** One-line copy of the placeholder, present only while editing. */
+  let placeholderMeasureEl: HTMLSpanElement | undefined = $state();
   let editorEl: HTMLDivElement | undefined = $state();
 
   let editing = $state(false);
@@ -61,12 +63,21 @@
     return Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_MAX_WIDTH;
   }
 
-  /** Measure the one-line width of the text and snap the node to the grid. */
+  /** One-line width of a measure span, unscaled by the viewport zoom. */
+  function naturalWidth(el: HTMLSpanElement | undefined): number {
+    if (!el) return 0;
+    // getBoundingClientRect is scaled by the viewport zoom; offsetWidth is not.
+    return el.offsetWidth || el.getBoundingClientRect().width;
+  }
+
+  /**
+   * Measure the one-line width of the text and snap the node to the grid.
+   * While editing, the node is never narrower than the placeholder, so a new
+   * caption opens wide enough to show it on one line.
+   */
   function measure(): void {
     if (!measureEl) return;
-    const natural = measureEl.getBoundingClientRect().width;
-    // getBoundingClientRect is scaled by the viewport zoom; offsetWidth is not.
-    const unscaled = measureEl.offsetWidth || natural;
+    const unscaled = Math.max(naturalWidth(measureEl), naturalWidth(placeholderMeasureEl));
     width = snapCaptionWidth(unscaled + 2 * PADDING_X, getEditorSettings().gridSize, maxWidth());
   }
 
@@ -77,6 +88,7 @@
   // Re-measure when the text or the grid changes, and once fonts have loaded.
   $effect(() => {
     void shownText;
+    void placeholderMeasureEl;
     void getEditorSettings().gridSize;
     if (!measureEl) return;
     measure();
@@ -258,6 +270,11 @@
   <span class="flowdrop-caption-node__measure" aria-hidden="true" bind:this={measureEl}
     >{shownText}</span
   >
+  {#if editing}
+    <span class="flowdrop-caption-node__measure" aria-hidden="true" bind:this={placeholderMeasureEl}
+      >{caption.placeholder}</span
+    >
+  {/if}
 
   {#if editing}
     <div
