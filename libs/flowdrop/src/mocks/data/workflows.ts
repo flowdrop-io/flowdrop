@@ -751,6 +751,112 @@ export const demoAIContentWorkflow: Workflow = {
 };
 
 /**
+ * Builds a showcase node from a catalogue node type, so the showcase does not
+ * carry a second copy of metadata that already lives in `nodes.ts`.
+ */
+function showcaseNode(
+  id: string,
+  nodeTypeId: string,
+  position: { x: number; y: number },
+  config: Record<string, unknown> = {},
+  label?: string
+): WorkflowNode {
+  const metadata = getNodeById(nodeTypeId);
+  if (!metadata) {
+    throw new Error(`${nodeTypeId} node not found in registry`);
+  }
+  return {
+    id,
+    type: 'universalNode',
+    position,
+    deletable: true,
+    data: {
+      label: label ?? metadata.name,
+      config: { ...structuredClone(metadata.config ?? {}), ...config },
+      metadata
+    }
+  };
+}
+
+/** Every port data type in DEFAULT_PORT_CONFIG, for the showcase's port gallery. */
+const SHOWCASE_PORT_DATA_TYPES = [
+  'trigger',
+  'mixed',
+  'string',
+  'number',
+  'boolean',
+  'array',
+  'json',
+  'file',
+  'image',
+  'audio',
+  'video',
+  'tool',
+  'url',
+  'email',
+  'date',
+  'datetime',
+  'time',
+  'messages'
+];
+
+/** Builds one side of the showcase's port gallery: every data type as an input, or as an output. */
+function showcasePortTypesNode(
+  id: string,
+  direction: 'input' | 'output',
+  position: { x: number; y: number }
+): WorkflowNode {
+  const ports = SHOWCASE_PORT_DATA_TYPES.map((dataType) => ({
+    id: `${dataType}_${direction === 'input' ? 'in' : 'out'}`,
+    name: dataType,
+    type: direction,
+    dataType,
+    required: direction === 'input' && (dataType === 'string' || dataType === 'json')
+  }));
+  const name = direction === 'input' ? 'Port Types: Inputs' : 'Port Types: Outputs';
+  return {
+    id,
+    type: 'universalNode',
+    position,
+    deletable: true,
+    data: {
+      label: name,
+      config: {},
+      metadata: {
+        node_type_id: `port_types_${direction}`,
+        name,
+        type: 'default',
+        supportedTypes: ['default'],
+        description: `One ${direction} port per built-in data type`,
+        category: 'processing',
+        icon: 'mdi:palette-swatch',
+        version: '1.0.0',
+        inputs: direction === 'input' ? ports : [],
+        outputs: direction === 'output' ? ports : []
+      }
+    }
+  };
+}
+
+/** Builds a showcase edge; styling and category are derived on load. */
+function showcaseEdge(
+  source: string,
+  sourcePort: string,
+  target: string,
+  targetPort: string
+): WorkflowEdge {
+  const sourceHandle = `${source}-output-${sourcePort}`;
+  const targetHandle = `${target}-input-${targetPort}`;
+  return {
+    id: `xy-edge__${source}${sourceHandle}-${target}${targetHandle}`,
+    source,
+    target,
+    sourceHandle,
+    targetHandle
+  };
+}
+
+/**
  * Mock workflow: Node Types Showcase
  * Demonstrates different node types and their capabilities
  */
@@ -763,8 +869,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'ai_content_analyzer.1',
       type: 'universalNode',
       position: {
-        x: -1600,
-        y: -340
+        x: 960,
+        y: 1780
       },
       deletable: true,
       data: {
@@ -1011,8 +1117,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'file_upload.1',
       type: 'universalNode',
       position: {
-        x: -1280,
-        y: -340
+        x: 600,
+        y: 400
       },
       deletable: true,
       data: {
@@ -1146,8 +1252,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'text_input.1',
       type: 'universalNode',
       position: {
-        x: -1920,
-        y: -340
+        x: 780,
+        y: 0
       },
       deletable: true,
       data: {
@@ -1235,8 +1341,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'if_else.1',
       type: 'universalNode',
       position: {
-        x: -960,
-        y: -340
+        x: 780,
+        y: 1220
       },
       deletable: true,
       data: {
@@ -1359,8 +1465,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'text_output.1',
       type: 'universalNode',
       position: {
-        x: -1920,
-        y: -200
+        x: 780,
+        y: 110
       },
       deletable: true,
       data: {
@@ -1459,8 +1565,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'trigger.1',
       type: 'universalNode',
       position: {
-        x: -2160,
-        y: -340
+        x: 600,
+        y: 1220
       },
       deletable: true,
       data: {
@@ -1621,15 +1727,15 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'notes.1',
       type: 'universalNode',
       position: {
-        x: -1640,
-        y: -760
+        x: 0,
+        y: 0
       },
       deletable: true,
       data: {
         label: 'Notes',
         config: {
           content:
-            '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!',
+            '# Simple, square, atom\n\n- **Simple:** Text Input, Text Output\n- **Square:** the same two nodes as squares\n- **Atom:** a constant as text, number and boolean, and a rectangular Cast with a prefix\n\nThe constant feeds Text Output through a **data** edge.',
           noteType: 'info'
         },
         metadata: {
@@ -1718,8 +1824,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'text_input.2',
       type: 'universalNode',
       position: {
-        x: -2040,
-        y: -340
+        x: 1160,
+        y: 0
       },
       deletable: true,
       data: {
@@ -1807,15 +1913,15 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'notes.2',
       type: 'universalNode',
       position: {
-        x: -1120,
-        y: -760
+        x: 0,
+        y: 1220
       },
       deletable: true,
       data: {
         label: 'Notes',
         config: {
           content:
-            '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!',
+            '# Gateways and terminals\n\nThe **Start** terminal feeds a two-branch If/Else. Its `True` branch triggers a three-branch Switch, and `case_1` ends at the **Exit** terminal.\n\nEdges leaving a gateway branch are **trigger** edges.',
           noteType: 'warning'
         },
         metadata: {
@@ -1904,15 +2010,15 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'notes.3',
       type: 'universalNode',
       position: {
-        x: -600,
-        y: -760
+        x: 0,
+        y: 400
       },
       deletable: true,
       data: {
         label: 'Notes',
         config: {
           content:
-            '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!',
+            '# Data and loop edges\n\nFile Upload feeds ForEach through a **data** edge. Each item goes to Process Item, which returns through a **loopback** edge into `loop_back`.\n\nWhen the loop completes, a **trigger** edge reaches the **End** terminal.',
           noteType: 'success'
         },
         metadata: {
@@ -1994,22 +2100,22 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
         width: 500,
         height: 334
       },
-      selected: true,
+      selected: false,
       dragging: false
     },
     {
       id: 'notes.4',
       type: 'universalNode',
       position: {
-        x: -80,
-        y: -770
+        x: 2200,
+        y: 0
       },
       deletable: true,
       data: {
         label: 'Notes',
         config: {
           content:
-            '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!',
+            '# Port data types\n\nOne port for each of the 18 built-in data types, each joined to its twin so every port colour shows on a wire.\n\nThe `string` and `json` inputs are **required**.',
           noteType: 'error'
         },
         metadata: {
@@ -2098,15 +2204,15 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'notes.5',
       type: 'universalNode',
       position: {
-        x: -2160,
-        y: -760
+        x: 0,
+        y: 1780
       },
       deletable: true,
       data: {
         label: 'Notes',
         config: {
           content:
-            '# Workflow Notes\n\nAdd your documentation here using **Markdown** formatting.\n\n## Features\n- Supports **bold** and *italic* text\n- Create lists and code blocks\n- Add links and more!',
+            '# Tools, dynamic ports and ideas\n\n- A standalone tool with a badge feeds the AI Content Analyzer through a **tool** edge.\n- Custom Function has user-defined ports, one of them required, and a per-instance title.\n- Three idea nodes: two with side ports, one with all four.',
           noteType: 'note'
         },
         metadata: {
@@ -2195,8 +2301,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'constant.1',
       type: 'universalNode',
       position: {
-        x: -2160,
-        y: -200
+        x: 600,
+        y: 130
       },
       deletable: true,
       data: {
@@ -2276,8 +2382,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'idea.1',
       type: 'universalNode',
       position: {
-        x: -1920,
-        y: -80
+        x: 1680,
+        y: 1780
       },
       deletable: true,
       data: {
@@ -2384,8 +2490,8 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       id: 'idea.2',
       type: 'universalNode',
       position: {
-        x: -1920,
-        y: 40
+        x: 1680,
+        y: 1900
       },
       deletable: true,
       data: {
@@ -2485,11 +2591,111 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
         width: 280,
         height: 93
       },
-      selected: true,
+      selected: false,
       dragging: false
-    }
+    },
+    // Terminal: the end and exit variants (trigger.1 is the start variant).
+    showcaseNode('terminal_end.1', 'test_terminal_multi_input', { x: 1680, y: 960 }, {}, 'End'),
+    showcaseNode('terminal_exit.1', 'test_terminal_four_inputs', { x: 1500, y: 1260 }, {}, 'Exit'),
+    // Gateway with three branches (if_else.1 has two).
+    showcaseNode('switch.1', 'switch', { x: 1140, y: 1220 }),
+    // Workflow node with dynamic ports, required ports and per-instance title and description.
+    showcaseNode(
+      'custom_function.1',
+      'custom_function',
+      { x: 1320, y: 1780 },
+      {
+        instanceTitle: 'Score Lead',
+        instanceDescription: 'Per-instance title and description, with user-defined ports.'
+      }
+    ),
+    // Square with an input port (text_input.2 is a square with an output only).
+    showcaseNode('text_output.2', 'text_output', { x: 1160, y: 110 }, { nodeType: 'square' }),
+    // Atom: number and boolean value types, and the rectangle shape with a prefix.
+    showcaseNode('constant.2', 'constant', { x: 600, y: 210 }, { valueType: 'number', value: 42 }),
+    showcaseNode(
+      'constant.3',
+      'constant',
+      { x: 660, y: 210 },
+      { valueType: 'boolean', value: true }
+    ),
+    showcaseNode('cast.1', 'cast', { x: 730, y: 210 }),
+    // Idea with its top and bottom ports enabled.
+    showcaseNode(
+      'idea.3',
+      'idea',
+      { x: 1680, y: 2020 },
+      {
+        title: 'All four ports',
+        enableTopPort: true,
+        enableBottomPort: true
+      }
+    ),
+    // Loop: foreach.1 feeds loop_body.1, which connects back to loop_back.
+    showcaseNode('foreach.1', 'foreach', { x: 960, y: 400 }),
+    showcaseNode(
+      'loop_body.1',
+      'external_only_config_demo',
+      { x: 1320, y: 400 },
+      {},
+      'Process Item'
+    ),
+    // Standalone tool node with a catalogue-level badge.
+    {
+      id: 'web_search.1',
+      type: 'universalNode',
+      position: { x: 600, y: 1780 },
+      deletable: true,
+      data: {
+        label: 'Web Search',
+        config: {},
+        metadata: {
+          node_type_id: 'web_search',
+          name: 'Web Search',
+          type: 'tool',
+          supportedTypes: ['tool'],
+          description: 'Searches the web and returns the top results',
+          category: 'tools',
+          icon: 'mdi:magnify',
+          color: '#f59e0b',
+          version: '2.1.0',
+          badge: 'MCP',
+          inputs: [],
+          outputs: [
+            {
+              id: 'tool',
+              name: 'Tool',
+              type: 'output',
+              dataType: 'tool',
+              description: 'The tool, offered to an agent'
+            }
+          ]
+        }
+      }
+    },
+    // One port per data type, outputs on one node and inputs on the other.
+    showcasePortTypesNode('port_types_out.1', 'output', { x: 2200, y: 340 }),
+    showcasePortTypesNode('port_types_in.1', 'input', { x: 2680, y: 340 })
   ],
-  edges: [],
+  edges: [
+    // data
+    showcaseEdge('trigger.1', 'output', 'if_else.1', 'data'),
+    showcaseEdge('constant.1', 'value', 'text_output.1', 'text'),
+    showcaseEdge('file_upload.1', 'uploaded_files', 'foreach.1', 'items'),
+    showcaseEdge('foreach.1', 'item', 'loop_body.1', 'input'),
+    // loopback
+    showcaseEdge('loop_body.1', 'output', 'foreach.1', 'loop_back'),
+    // trigger, from a trigger port and from gateway branches
+    showcaseEdge('foreach.1', 'completed', 'terminal_end.1', 'trigger1'),
+    showcaseEdge('if_else.1', 'True', 'switch.1', 'trigger'),
+    showcaseEdge('switch.1', 'case_1', 'terminal_exit.1', 'input1'),
+    // tool
+    showcaseEdge('web_search.1', 'tool', 'ai_content_analyzer.1', 'tool'),
+    // one edge per port data type, so each port colour shows on a wire
+    ...SHOWCASE_PORT_DATA_TYPES.map((dataType) =>
+      showcaseEdge('port_types_out.1', `${dataType}_out`, 'port_types_in.1', `${dataType}_in`)
+    )
+  ],
   metadata: {
     schemaVersion: '1.0.0',
     createdAt: '2025-12-29T08:18:13.515Z',
