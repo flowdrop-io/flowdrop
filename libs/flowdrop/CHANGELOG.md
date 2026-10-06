@@ -151,6 +151,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request went to, not the shape of the payload. OpenAPI documents the `/sessions/{sessionId}` paths and
   the turn result.
 
+### Upgrade notes
+
+Type-only changes. Nothing changes at runtime, but TypeScript code can stop
+compiling:
+
+- `PlaygroundMessageDisplay` gained `'default'` and `'hidden'`. An exhaustive
+  `switch` over it (with a `never` check) must handle both.
+- `PlaygroundStoreActions` gained `setTurnPending`, `lockRunUntilEnabled`,
+  `releaseRunLock`, `setFormValues` and `setLastTurn`. Code that implements the
+  interface itself, such as a hand-written mock, must add them.
+- `PlaygroundMessageRequest.content` is now optional (see Added), so code that
+  reads it as a `string` must handle `undefined`.
+
 ### Deprecated
 
 - `PlaygroundService.sendMessage()`: use `sendTurn()`. It throws when the
