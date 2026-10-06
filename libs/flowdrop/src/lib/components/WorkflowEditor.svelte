@@ -36,7 +36,7 @@
   } from '../editor/contextMenu.js';
   import type { NodeMetadata } from '../types/index.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
-  import { decideInlineCommit, collapseCaptionText } from '../utils/captionText.js';
+  import { decideInlineCommit } from '../utils/captionText.js';
   import FlowDropZone from './FlowDropZone.svelte';
   import EdgeRefresher from './EdgeRefresher.svelte';
   import { tick, untrack, onMount } from 'svelte';
@@ -703,6 +703,9 @@
     options: { history?: boolean; emptyLabel?: boolean } = {}
   ): { id: string | null; done: Promise<void> } {
     const { history = true, emptyLabel = false } = options;
+    // The machine's `dropping` state is what holds the store -> canvas sync
+    // off while a node is added (see its permissions), so every placement
+    // goes through it, not only a sidebar drop.
     machine.send('START_DROP');
 
     const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position, flowNodes);
@@ -755,7 +758,7 @@
   interface OpenContextMenu {
     ctx: ContextMenuContext;
     entries: ContextMenuEntry[];
-    /** Pixel position relative to `.flowdrop-canvas`. */
+    /** Viewport (client) position; the menu is in the top layer. */
     x: number;
     y: number;
   }
@@ -780,33 +783,35 @@
    */
   const pendingNewIds = new Set<string>();
 
+  /** Remove a node and its edges from the canvas and the store, without a history entry. */
+  function removeNode(id: string): void {
+    flowNodes = flowNodes.filter((n) => n.id !== id);
+    flowEdges = flowEdges.filter((e) => e.source !== id && e.target !== id);
+    syncFlowToStore();
+  }
+
   /**
-   * An in-place edit ended (see CaptionNode): `text` is the cleaned text, or
-   * null when the user cancelled. `decideInlineCommit` holds the rules.
+   * An in-place edit ended (see CaptionNode): `text` is what was typed, or
+   * null when the user cancelled. `decideInlineCommit` holds the rules and
+   * cleans the text.
    */
   function handleInlineCommit(id: string, text: string | null): void {
     const node = flowNodes.find((n) => n.id === id);
     const isNew = pendingNewIds.delete(id);
     if (!node || !canvasEditable) {
       // Gone (undo, workflow switch) or no longer editable: a pending node must not linger.
-      if (node && isNew) {
-        flowNodes = flowNodes.filter((n) => n.id !== id);
-        flowEdges = flowEdges.filter((e) => e.source !== id && e.target !== id);
-        syncFlowToStore();
-      }
+      if (node && isNew) removeNode(id);
       return;
     }
 
-    const outcome = decideInlineCommit(text, node.data.label ?? '', isNew);
+    const { outcome, label } = decideInlineCommit(text, node.data.label ?? '', isNew);
     if (outcome === 'none') return;
 
     if (outcome === 'remove') {
-      flowNodes = flowNodes.filter((n) => n.id !== id);
-      syncFlowToStore();
+      removeNode(id);
       return;
     }
 
-    const label = collapseCaptionText(text ?? '');
     flowNodes = flowNodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, label } } : n));
     syncFlowToStore();
     const storeValue = fd.workflow.current;
@@ -867,6 +872,14 @@
     openMenu = null;
   }
 
+  /** Run a menu entry. The menu closes first: running may open another one. */
+  function selectContextMenuEntry(entry: ContextMenuEntry): void {
+    const menu = openMenu;
+    if (!menu) return;
+    openMenu = null;
+    runContextMenuEntry(entry, menu.ctx);
+  }
+
   /**
    * Open the menu for a target at a viewport (client) point. Returns false
    * when there is nothing to show, so the caller leaves the browser's own
@@ -878,7 +891,7 @@
     clientX: number,
     clientY: number
   ): boolean {
-    if (!canvasEditable || !canvasEl || !canvasControllerRef) return false;
+    if (!canvasEditable || !canvasControllerRef) return false;
 
     const ctx: ContextMenuContext = {
       target,
@@ -895,8 +908,7 @@
       return false;
     }
 
-    const rect = canvasEl.getBoundingClientRect();
-    openMenu = { ctx, entries, x: clientX - rect.left, y: clientY - rect.top };
+    openMenu = { ctx, entries, x: clientX, y: clientY };
     return true;
   }
 
@@ -1296,17 +1308,11 @@
         </FlowDropZone>
 
         {#if openMenu}
-          {@const menu = openMenu}
           <CanvasContextMenu
-            entries={menu.entries}
-            x={menu.x}
-            y={menu.y}
-            onselect={(entry) => {
-              // Read ctx first: `menu` is derived from `openMenu`, which the close clears.
-              const ctx = menu.ctx;
-              closeContextMenu();
-              runContextMenuEntry(entry, ctx);
-            }}
+            entries={openMenu.entries}
+            x={openMenu.x}
+            y={openMenu.y}
+            onselect={selectContextMenuEntry}
             onclose={closeContextMenu}
           />
         {/if}

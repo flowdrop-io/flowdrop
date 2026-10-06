@@ -11,7 +11,7 @@
   import type { WorkflowNode } from '../types/index.js';
   import { resolveBuiltinAlias } from '../registry/builtinNodes.js';
   import NodeStatusOverlay from './NodeStatusOverlay.svelte';
-  import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
+  import { shouldShowNodeStatus, getOptimalStatusPosition } from '../utils/nodeWrapper.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
 
@@ -132,17 +132,7 @@
     }
 
     // Fallback based on node type
-    switch (resolvedComponentName) {
-      case 'tool':
-        return 'top-left';
-      case 'note':
-      case 'caption':
-        return 'bottom-right';
-      case 'simple':
-      case 'square':
-      default:
-        return 'top-right';
-    }
+    return getOptimalStatusPosition(resolvedComponentName) ?? 'top-right';
   }
 
   /**

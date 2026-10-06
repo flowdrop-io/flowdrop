@@ -2,13 +2,16 @@
   CanvasContextMenu Component
   The editor's right-click / Shift+F10 menu. Renders already-resolved entries
   (see editor/contextMenu.ts) as an ARIA menu positioned at the pointer and
-  clamped inside its offset parent (the canvas). Closes on outside pointerdown,
-  wheel (zoom/pan), window blur, Escape, and after an entry runs.
+  clamped inside the viewport. It is a manual popover, so it sits in the top
+  layer and no ancestor's overflow or stacking context can clip or cover it;
+  that is also why it is positioned in viewport coordinates. A manual popover
+  does not light-dismiss, so it closes itself on outside pointerdown, wheel
+  (zoom/pan), window blur, Escape, and after an entry runs.
   Styled with BEM syntax.
 -->
 
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import { m } from '$lib/messages/index.js';
   import { isSeparator, type ContextMenuEntry } from '../editor/contextMenu.js';
@@ -16,9 +19,9 @@
   interface Props {
     /** Resolved entries (separators already cleaned). */
     entries: ContextMenuEntry[];
-    /** Left edge of the menu, in px relative to the offset parent. */
+    /** Left edge of the menu, in viewport (client) px. */
     x: number;
-    /** Top edge of the menu, in px relative to the offset parent. */
+    /** Top edge of the menu, in viewport (client) px. */
     y: number;
     /** Run an entry. The menu closes afterwards. */
     onselect: (entry: ContextMenuEntry) => void;
@@ -28,12 +31,11 @@
 
   const { entries, x, y, onselect, onclose }: Props = $props();
 
-  let menuEl: HTMLDivElement;
-  let left = $state(0);
-  let top = $state(0);
+  let menuEl: HTMLDivElement | undefined = $state();
 
   /** Element that had focus when the menu opened; focus returns there on keyboard close. */
   let previouslyFocused: HTMLElement | null = null;
+  let opened = false;
 
   function items(): HTMLButtonElement[] {
     return Array.from(
@@ -60,26 +62,35 @@
     restoreFocus();
   }
 
-  /** Clamp the menu inside the offset parent, flipping nothing: it just slides back in. */
-  function position(): void {
-    const parent = menuEl.offsetParent as HTMLElement | null;
-    const maxW = parent?.clientWidth ?? window.innerWidth;
-    const maxH = parent?.clientHeight ?? window.innerHeight;
-    left = Math.max(0, Math.min(x, maxW - menuEl.offsetWidth));
-    top = Math.max(0, Math.min(y, maxH - menuEl.offsetHeight));
-  }
+  // Show the popover, place it and (once) focus the first item. Runs after
+  // mount with `menuEl` bound, and again if the requested position changes
+  // while open. The popover has to be showing before it can be measured.
+  // Written to the style directly: the position is a measurement result, not
+  // state anything else reads.
+  $effect(() => {
+    const el = menuEl;
+    if (!el) return;
+    const wanted = { x, y };
+
+    const first = !opened;
+    if (first) {
+      opened = true;
+      previouslyFocused =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      // Optional: jsdom has no Popover API.
+      el.showPopover?.();
+    }
+
+    // Slide back inside the viewport rather than flipping.
+    el.style.left = `${Math.max(0, Math.min(wanted.x, window.innerWidth - el.offsetWidth))}px`;
+    el.style.top = `${Math.max(0, Math.min(wanted.y, window.innerHeight - el.offsetHeight))}px`;
+
+    if (first) items()[0]?.focus({ preventScroll: true });
+  });
 
   onMount(() => {
-    previouslyFocused =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-    void tick().then(() => {
-      position();
-      items()[0]?.focus({ preventScroll: true });
-    });
-
     function onPointerDown(event: PointerEvent): void {
-      if (event.target instanceof Node && menuEl.contains(event.target)) return;
+      if (event.target instanceof Node && menuEl?.contains(event.target)) return;
       onclose();
     }
     function onWheel(): void {
@@ -97,13 +108,6 @@
       window.removeEventListener('wheel', onWheel, true);
       window.removeEventListener('blur', onBlur);
     };
-  });
-
-  // Re-clamp if the requested position changes while open.
-  $effect(() => {
-    void x;
-    void y;
-    if (menuEl) position();
   });
 
   function handleKeydown(event: KeyboardEvent): void {
@@ -147,12 +151,11 @@
 
 <div
   bind:this={menuEl}
+  popover="manual"
   class="canvas-context-menu nodrag nopan nowheel"
   role="menu"
   tabindex="-1"
   aria-label={m().contextMenu.menuLabel}
-  style:left="{left}px"
-  style:top="{top}px"
   onkeydown={handleKeydown}
   oncontextmenu={(event) => event.preventDefault()}
 >
@@ -184,8 +187,11 @@
 
 <style>
   .canvas-context-menu {
-    position: absolute;
-    z-index: 50;
+    /* Reset the popover user-agent styles: it is placed by the script, in the viewport. */
+    position: fixed;
+    inset: auto;
+    margin: 0;
+    overflow: visible;
     min-width: 11rem;
     max-width: 18rem;
     padding: 0.25rem;

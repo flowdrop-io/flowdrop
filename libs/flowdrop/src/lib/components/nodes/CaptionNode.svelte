@@ -10,18 +10,22 @@
 
 <script lang="ts">
   import { tick, untrack } from 'svelte';
+  import type { Attachment } from 'svelte/attachments';
+  import { on } from 'svelte/events';
   import { m } from '$lib/messages/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { getEditorSettings } from '../../stores/settingsStore.svelte.js';
-  import { collapseCaptionText, snapCaptionWidth } from '../../utils/captionText.js';
+  import { snapCaptionWidth } from '../../utils/captionText.js';
+  import { focusWhenVisible } from '../../utils/focus.js';
 
   interface Props {
     id: string;
     data: {
       label: string;
       /**
-       * Called when an edit ends: the cleaned text, or `null` when the edit
-       * was cancelled. The editor decides whether anything is written.
+       * Called when an edit ends: the text as typed (the editor cleans it), or
+       * `null` when the edit was cancelled. The editor decides whether
+       * anything is written.
        */
       onInlineCommit?: (id: string, text: string | null) => void;
     };
@@ -38,73 +42,59 @@
   const PADDING_X = 10;
 
   let rootEl: HTMLDivElement | undefined = $state();
-  let measureEl: HTMLSpanElement | undefined = $state();
-  /** One-line copy of the placeholder, present only while editing. */
-  let placeholderMeasureEl: HTMLSpanElement | undefined = $state();
   let editorEl: HTMLDivElement | undefined = $state();
+  let textEl: HTMLDivElement | undefined = $state();
+
+  /**
+   * One-line widths of the two measure spans, in px. `bind:offsetWidth` is
+   * unscaled by the viewport zoom (a bounding rect is not) and updates when a
+   * web font arrives, so the width below needs no font-loading hook.
+   */
+  let textW = $state(0);
+  let placeholderW = $state(0);
+  /** The node's max width, read from CSS once the node is in the DOM. */
+  let maxWidth = $state(FALLBACK_MAX_WIDTH);
 
   let editing = $state(false);
   /** Text as typed while editing; drives live width measurement. */
   let draft = $state('');
-  /** Width in px once measured; null renders at the CSS minimum until then. */
-  let width = $state<number | null>(null);
   /** The text is cut off by the two-line clamp. */
   let clipped = $state(false);
-  let textEl: HTMLDivElement | undefined = $state();
 
   const label = $derived(props.data.label ?? '');
   const shownText = $derived(editing ? draft : label);
   const showPlaceholder = $derived(editing && draft === '');
 
-  function maxWidth(): number {
-    if (!rootEl) return FALLBACK_MAX_WIDTH;
-    const raw = getComputedStyle(rootEl).getPropertyValue('--fd-caption-node-max-width');
-    const parsed = parseFloat(raw);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_MAX_WIDTH;
-  }
-
-  /** One-line width of a measure span, unscaled by the viewport zoom. */
-  function naturalWidth(el: HTMLSpanElement | undefined): number {
-    if (!el) return 0;
-    // getBoundingClientRect is scaled by the viewport zoom; offsetWidth is not.
-    return el.offsetWidth || el.getBoundingClientRect().width;
-  }
-
   /**
-   * Measure the one-line width of the text and snap the node to the grid.
-   * While editing, the node is never narrower than the placeholder, so a new
-   * caption opens wide enough to show it on one line.
+   * Width in px, snapped to the grid; undefined until the text has been
+   * measured, so the CSS minimum applies. While editing, the node is never
+   * narrower than the placeholder, so a new caption opens wide enough to show
+   * it on one line.
    */
-  function measure(): void {
-    if (!measureEl) return;
-    const unscaled = Math.max(naturalWidth(measureEl), naturalWidth(placeholderMeasureEl));
-    width = snapCaptionWidth(unscaled + 2 * PADDING_X, getEditorSettings().gridSize, maxWidth());
-  }
+  const width = $derived(
+    textW === 0 && !editing
+      ? undefined
+      : snapCaptionWidth(
+          Math.max(textW, editing ? placeholderW : 0) + 2 * PADDING_X,
+          getEditorSettings().gridSize,
+          maxWidth
+        )
+  );
 
-  function measureClip(): void {
-    clipped = !!textEl && textEl.scrollHeight > textEl.clientHeight + 1;
-  }
-
-  // Re-measure when the text or the grid changes, and once fonts have loaded.
   $effect(() => {
-    void shownText;
-    void placeholderMeasureEl;
-    void getEditorSettings().gridSize;
-    if (!measureEl) return;
-    measure();
-    void tick().then(measureClip);
+    if (!rootEl) return;
+    const parsed = parseFloat(
+      getComputedStyle(rootEl).getPropertyValue('--fd-caption-node-max-width')
+    );
+    maxWidth = Number.isFinite(parsed) && parsed > 0 ? parsed : FALLBACK_MAX_WIDTH;
   });
 
+  // The tooltip shows the full text only when the clamp cuts it. Width and
+  // label are what decide that, so they are what re-runs the check.
   $effect(() => {
-    let cancelled = false;
-    void document.fonts?.ready.then(() => {
-      if (cancelled) return;
-      measure();
-      measureClip();
-    });
-    return () => {
-      cancelled = true;
-    };
+    void width;
+    void label;
+    clipped = !!textEl && textEl.scrollHeight > textEl.clientHeight + 1;
   });
 
   // ---------------------------------------------------------------------------
@@ -125,46 +115,27 @@
     fd.inlineEdit.request(props.id);
   }
 
-  // Take an edit request addressed to this node.
+  // Take edit requests addressed to this node; a request made before this
+  // mounted runs as soon as it registers.
   $effect(() => {
-    if (fd.inlineEdit.requested === props.id) {
-      fd.inlineEdit.clear();
-      untrack(startEditing);
-    }
+    const id = props.id;
+    return untrack(() => fd.inlineEdit.register(id, startEditing));
   });
 
-  // Entering edit mode: fill the box, focus it, select everything. A node that
-  // was just added is hidden by xyflow until it has been measured, and a hidden
-  // element cannot take focus, so retry for a few frames.
-  $effect(() => {
-    if (!editing || !editorEl) return;
-    const box = editorEl;
-    box.textContent = untrack(() => label);
-
-    let frames = 0;
-    let raf = 0;
-    function focusAndSelect(): void {
-      box.focus({ preventScroll: true });
-      if (document.activeElement !== box) {
-        if (++frames < 30) raf = requestAnimationFrame(focusAndSelect);
-        return;
-      }
-      const selection = window.getSelection();
-      if (selection) {
-        const range = document.createRange();
-        range.selectNodeContents(box);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-    }
-    focusAndSelect();
-    return () => cancelAnimationFrame(raf);
-  });
+  /** Select everything in the box, once it has focus. */
+  function selectContents(box: HTMLElement): void {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(box);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
 
   function finish(save: boolean, refocusNode: boolean): void {
     if (finished) return;
     finished = true;
-    const text = save ? collapseCaptionText(editorEl?.textContent ?? '') : null;
+    const text = save ? (editorEl?.textContent ?? '') : null;
     const wrapper = rootEl?.closest<HTMLElement>('.svelte-flow__node') ?? null;
     editing = false;
     props.data.onInlineCommit?.(props.id, text);
@@ -187,72 +158,54 @@
   }
 
   /**
-   * Wires the edit box with native listeners: keys must not reach xyflow's
-   * Delete/Backspace and arrow handling, and a real stopPropagation is needed
-   * for that.
+   * Sets up the edit box: fills it with the current text and wires native
+   * listeners. Keys must not reach xyflow's Delete/Backspace and arrow
+   * handling, and `on()` (unlike an `onkeydown` attribute) is not delegated, so
+   * a real stopPropagation keeps them away. The box exists only while editing,
+   * so this runs once per edit.
    */
-  function editable(node: HTMLDivElement) {
+  const editable: Attachment<HTMLDivElement> = (node) => {
     // `plaintext-only` where supported; otherwise plain `true` plus paste
     // handling below, which never lets markup in.
     node.contentEditable = 'plaintext-only';
     if (node.contentEditable !== 'plaintext-only') node.contentEditable = 'true';
+    node.textContent = untrack(() => label);
 
-    function onKeydown(event: KeyboardEvent): void {
-      event.stopPropagation();
-      if (event.isComposing) return;
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        finish(true, true);
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        finish(false, true);
-      }
-    }
-    function onBeforeInput(event: InputEvent): void {
-      // Newlines are never stored.
-      if (event.inputType === 'insertParagraph' || event.inputType === 'insertLineBreak') {
-        event.preventDefault();
-      }
-    }
-    function onInput(): void {
-      draft = node.textContent ?? '';
-    }
-    function onPaste(event: ClipboardEvent): void {
-      event.preventDefault();
-      insertPlainText(event.clipboardData?.getData('text/plain') ?? '');
-    }
-    function onDrop(event: DragEvent): void {
-      event.preventDefault();
-    }
-    function onBlur(): void {
-      finish(true, false);
-    }
     // Keep pointer interaction inside the box from selecting or dragging the node.
-    function stop(event: Event): void {
-      event.stopPropagation();
-    }
+    const stop = (event: Event): void => event.stopPropagation();
 
-    node.addEventListener('keydown', onKeydown);
-    node.addEventListener('keyup', stop);
-    node.addEventListener('beforeinput', onBeforeInput);
-    node.addEventListener('input', onInput);
-    node.addEventListener('paste', onPaste);
-    node.addEventListener('drop', onDrop);
-    node.addEventListener('blur', onBlur);
-    node.addEventListener('dblclick', stop);
-    return {
-      destroy() {
-        node.removeEventListener('keydown', onKeydown);
-        node.removeEventListener('keyup', stop);
-        node.removeEventListener('beforeinput', onBeforeInput);
-        node.removeEventListener('input', onInput);
-        node.removeEventListener('paste', onPaste);
-        node.removeEventListener('drop', onDrop);
-        node.removeEventListener('blur', onBlur);
-        node.removeEventListener('dblclick', stop);
-      }
-    };
-  }
+    const removers = [
+      on(node, 'keydown', (event) => {
+        event.stopPropagation();
+        if (event.isComposing) return;
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          finish(true, true);
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          finish(false, true);
+        }
+      }),
+      on(node, 'keyup', stop),
+      on(node, 'beforeinput', (event) => {
+        // Newlines are never stored.
+        if (event.inputType === 'insertParagraph' || event.inputType === 'insertLineBreak') {
+          event.preventDefault();
+        }
+      }),
+      on(node, 'input', () => {
+        draft = node.textContent ?? '';
+      }),
+      on(node, 'paste', (event) => {
+        event.preventDefault();
+        insertPlainText(event.clipboardData?.getData('text/plain') ?? '');
+      }),
+      on(node, 'drop', (event) => event.preventDefault()),
+      on(node, 'blur', () => finish(true, false)),
+      on(node, 'dblclick', stop)
+    ];
+    return () => removers.forEach((remove) => remove());
+  };
 </script>
 
 <!-- Presentational: focus, selection and keyboard activation live on xyflow's
@@ -263,15 +216,15 @@
   class:flowdrop-caption-node--selected={props.selected}
   class:flowdrop-caption-node--editing={editing}
   bind:this={rootEl}
-  style:width={width === null ? undefined : `${width}px`}
+  style:width={width === undefined ? undefined : `${width}px`}
   ondblclick={requestEdit}
 >
   <!-- Invisible one-line copy of the text; its natural width sets the node width. -->
-  <span class="flowdrop-caption-node__measure" aria-hidden="true" bind:this={measureEl}
+  <span class="flowdrop-caption-node__measure" aria-hidden="true" bind:offsetWidth={textW}
     >{shownText}</span
   >
   {#if editing}
-    <span class="flowdrop-caption-node__measure" aria-hidden="true" bind:this={placeholderMeasureEl}
+    <span class="flowdrop-caption-node__measure" aria-hidden="true" bind:offsetWidth={placeholderW}
       >{caption.placeholder}</span
     >
   {/if}
@@ -285,7 +238,8 @@
       aria-label={caption.editLabel}
       data-placeholder={caption.placeholder}
       bind:this={editorEl}
-      use:editable
+      {@attach editable}
+      {@attach focusWhenVisible(selectContents)}
     ></div>
   {:else}
     <div class="flowdrop-caption-node__text" title={clipped ? label : undefined} bind:this={textEl}>

@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Right-clicking an unselected node selects it first. The menu only opens in
   edit mode (read-only and locked editors keep the browser's own menu), is
   keyboard operable (arrow keys, Home/End, Enter, Escape), and closes on an
-  outside click, zoom, pan or window blur.
+  outside click, zoom, pan or window blur. It is a popover in the top layer,
+  so no canvas overflow or stacking context can clip or cover it.
 - Shift+F10 and the Menu key open the context menu from the keyboard: on a
   focused node it opens that node's menu, elsewhere on the canvas it opens the
   canvas menu at the centre of the view.
@@ -24,8 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `WorkflowEditor`). It receives the built-in entries and the click context
   (`target`, `nodes`, grid-snapped flow `position`, `nodeTypes`, `actions`) and
   returns the final list, so a host can add, remove or reorder entries. If it
-  throws or returns a non-array the built-in entries are used; errors from an
-  entry's `run` are logged and never break the canvas. The `ContextMenuContext`,
+  throws or returns a non-array the built-in entries are used; an entry's `run`
+  may be async, and its errors (thrown or rejected) are logged and never break the canvas. The `ContextMenuContext`,
   `ContextMenuEntry`, `ContextMenuActions`, `ContextMenuOptions` and
   `ContextMenuTarget` types are exported from `@flowdrop/flowdrop/editor`.
 - `messages.contextMenu` strings (`menuLabel`, `configure`, `delete`,
@@ -53,9 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PluginNodeDefinition` and `registerCustom`): a node that sets it edits its
   text in place, so Enter on the focused node, a double-click and the node
   context menu's "Edit text" ask it to start typing instead of opening the
-  config panel. `fd.nodes.editsInPlace(type)` reads it, and `fd.inlineEdit`
-  (`request(id)`, `requested`, `clear()`) is the channel a component listens to.
-- `messages.contextMenu.addCaption` and `editText`, and a `messages.nodes.caption`
+  config panel. `fd.nodes.editsInPlace(type)` reads it, and `fd.inlineEdit` is
+  the channel: a component calls `register(id, start)` on mount (it gets back
+  the unregister function), and `request(id)` calls that starter, or holds the
+  request until the node registers.
+- `messages.contextMenu.addCaption`, `editText`, `shortcutEnter` and
+  `shortcutDelete` (the key hints beside an entry), and a `messages.nodes.caption`
   branch (`placeholder`, `editLabel`), so the caption's strings can be translated.
 
 ## [2.9.0] - 2026-10-04

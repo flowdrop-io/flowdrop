@@ -15,13 +15,13 @@
   const noop = (): void => {};
 
   const nodeEntries: ContextMenuEntry[] = [
-    { id: 'configure', label: 'Configure', shortcut: '↵', run: noop },
+    { id: 'configure', label: 'Configure', shortcut: 'Enter', run: noop },
     { id: 'separator-node', separator: true },
-    { id: 'delete', label: 'Delete', shortcut: '⌫', run: noop }
+    { id: 'delete', label: 'Delete', shortcut: 'Delete', run: noop }
   ];
 
   const selectionEntries: ContextMenuEntry[] = [
-    { id: 'delete', label: 'Delete 3 nodes', shortcut: '⌫', run: noop }
+    { id: 'delete', label: 'Delete 3 nodes', shortcut: 'Delete', run: noop }
   ];
 
   const consumerEntries: ContextMenuEntry[] = [
@@ -31,10 +31,10 @@
   ];
 
   const disabledEntries: ContextMenuEntry[] = [
-    { id: 'configure', label: 'Configure', shortcut: '↵', run: noop },
+    { id: 'configure', label: 'Configure', shortcut: 'Enter', run: noop },
     { id: 'publish', label: 'Publish (not allowed here)', disabled: true, run: noop },
     { id: 'separator-node', separator: true },
-    { id: 'delete', label: 'Delete', shortcut: '⌫', run: noop }
+    { id: 'delete', label: 'Delete', shortcut: 'Delete', run: noop }
   ];
 </script>
 

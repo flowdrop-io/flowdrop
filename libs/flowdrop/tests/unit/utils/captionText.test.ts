@@ -42,21 +42,30 @@ describe('snapCaptionWidth', () => {
 });
 
 describe('decideInlineCommit', () => {
+  const outcome = (text: string | null, current: string, isNew: boolean) =>
+    decideInlineCommit(text, current, isNew).outcome;
+
   it('new caption: empty or cancelled is removed, text is added', () => {
-    expect(decideInlineCommit('', '', true)).toBe('remove');
-    expect(decideInlineCommit('  \n ', '', true)).toBe('remove');
-    expect(decideInlineCommit(null, '', true)).toBe('remove');
-    expect(decideInlineCommit('Inputs', '', true)).toBe('add');
+    expect(outcome('', '', true)).toBe('remove');
+    expect(outcome('  \n ', '', true)).toBe('remove');
+    expect(outcome(null, '', true)).toBe('remove');
+    expect(outcome('Inputs', '', true)).toBe('add');
   });
 
   it('existing caption: empty, cancelled or unchanged writes nothing', () => {
-    expect(decideInlineCommit('', 'Inputs', false)).toBe('none');
-    expect(decideInlineCommit(null, 'Inputs', false)).toBe('none');
-    expect(decideInlineCommit('Inputs', 'Inputs', false)).toBe('none');
-    expect(decideInlineCommit('  Inputs ', 'Inputs', false)).toBe('none');
+    expect(outcome('', 'Inputs', false)).toBe('none');
+    expect(outcome(null, 'Inputs', false)).toBe('none');
+    expect(outcome('Inputs', 'Inputs', false)).toBe('none');
+    expect(outcome('  Inputs ', 'Inputs', false)).toBe('none');
   });
 
   it('existing caption: changed text is an edit', () => {
-    expect(decideInlineCommit('Outputs', 'Inputs', false)).toBe('edit');
+    expect(outcome('Outputs', 'Inputs', false)).toBe('edit');
+  });
+
+  it('returns the collapsed text, and an empty label when cancelled', () => {
+    expect(decideInlineCommit('  Two\n  lines\t ', 'Inputs', false).label).toBe('Two lines');
+    expect(decideInlineCommit('Inputs', '', true)).toEqual({ outcome: 'add', label: 'Inputs' });
+    expect(decideInlineCommit(null, 'Inputs', false)).toEqual({ outcome: 'none', label: '' });
   });
 });

@@ -30,15 +30,24 @@ export function snapCaptionWidth(naturalWidth: number, grid: number, max: number
 /** What the editor does with a finished in-place edit. */
 export type InlineCommitOutcome = 'none' | 'remove' | 'add' | 'edit';
 
+/** The decision for a finished in-place edit, with the text to write. */
+export interface InlineCommitDecision {
+  outcome: InlineCommitOutcome;
+  /** The collapsed text; empty when the edit was cancelled. */
+  label: string;
+}
+
 /**
- * The five commit rules for an in-place edit of a caption.
+ * The commit rules for an in-place edit of a caption. This is the one place
+ * the typed text is cleaned (see `collapseCaptionText`); callers write
+ * `label` and do not collapse again.
  *
  * - new caption, cancelled or empty: `remove` (no history entry)
  * - new caption, text: `add` (history "Add caption")
  * - existing caption, cancelled, empty or unchanged: `none` (the node restores itself)
  * - existing caption, changed text: `edit` (history "Edit caption")
  *
- * @param text - the cleaned text, or `null` when the edit was cancelled
+ * @param text - the text as typed, or `null` when the edit was cancelled
  * @param current - the label the node has now
  * @param isNew - whether the node was just added and has no history entry yet
  */
@@ -46,9 +55,9 @@ export function decideInlineCommit(
   text: string | null,
   current: string,
   isNew: boolean
-): InlineCommitOutcome {
-  const value = text === null ? '' : collapseCaptionText(text);
-  if (isNew) return value === '' ? 'remove' : 'add';
-  if (value === '' || value === current) return 'none';
-  return 'edit';
+): InlineCommitDecision {
+  const label = text === null ? '' : collapseCaptionText(text);
+  if (isNew) return { outcome: label === '' ? 'remove' : 'add', label };
+  if (label === '' || label === current) return { outcome: 'none', label };
+  return { outcome: 'edit', label };
 }

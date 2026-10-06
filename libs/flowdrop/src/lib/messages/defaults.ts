@@ -246,7 +246,10 @@ export const defaultMessages = {
     delete: 'Delete',
     deleteNodes: ({ n }: { n: number }) => `Delete ${n} node${n !== 1 ? 's' : ''}`,
     addCaption: 'Add caption',
-    editText: 'Edit text'
+    editText: 'Edit text',
+    // Key hints shown beside an entry; plain words so they read on any platform.
+    shortcutEnter: 'Enter',
+    shortcutDelete: 'Delete'
   },
 
   layout: {

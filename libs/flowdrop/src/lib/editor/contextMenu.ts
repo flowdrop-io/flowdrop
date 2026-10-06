@@ -57,7 +57,7 @@ export type ContextMenuEntry =
       /** Display-only hint, e.g. the key that triggers the same action. */
       shortcut?: string;
       disabled?: boolean;
-      run(ctx: ContextMenuContext): void;
+      run(ctx: ContextMenuContext): void | Promise<void>;
     }
   | { id: string; separator: true };
 
@@ -130,13 +130,13 @@ export function buildDefaultContextMenuEntries(
       ? {
           id: 'edit-text',
           label: messages.editText,
-          shortcut: '↵',
+          shortcut: messages.shortcutEnter,
           run: (c) => c.actions.editInPlace(c.nodes[0].id)
         }
       : {
           id: 'configure',
           label: messages.configure,
-          shortcut: '↵',
+          shortcut: messages.shortcutEnter,
           run: (c) => c.actions.openConfig(c.nodes[0].id)
         };
     return [
@@ -145,7 +145,7 @@ export function buildDefaultContextMenuEntries(
       {
         id: 'delete',
         label: messages.delete,
-        shortcut: '⌫',
+        shortcut: messages.shortcutDelete,
         run: (c) => c.actions.deleteNodes(c.nodes.map((n) => n.id))
       }
     ];
@@ -156,7 +156,7 @@ export function buildDefaultContextMenuEntries(
       {
         id: 'delete',
         label: messages.deleteNodes({ n: ctx.nodes.length }),
-        shortcut: '⌫',
+        shortcut: messages.shortcutDelete,
         run: (c) => c.actions.deleteNodes(c.nodes.map((n) => n.id))
       }
     ];
@@ -207,7 +207,7 @@ export function resolveContextMenuEntries(
 export function runContextMenuEntry(entry: ContextMenuEntry, ctx: ContextMenuContext): void {
   if (isSeparator(entry) || entry.disabled) return;
   try {
-    const result: unknown = entry.run(ctx);
+    const result = entry.run(ctx);
     if (result instanceof Promise) {
       result.catch((error: unknown) =>
         logger.error(`Context menu entry "${entry.id}" failed.`, error)

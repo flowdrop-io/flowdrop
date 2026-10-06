@@ -64,9 +64,20 @@ describe('buildDefaultContextMenuEntries', () => {
   it('node: Configure, separator, Delete', () => {
     const entries = buildDefaultContextMenuEntries(makeCtx('node', [node('a')]));
     expect(ids(entries)).toEqual(['configure', 'separator-node', 'delete']);
-    expect(entries[0]).toMatchObject({ label: 'Configure', shortcut: '↵' });
-    expect(entries[2]).toMatchObject({ label: 'Delete', shortcut: '⌫' });
+    expect(entries[0]).toMatchObject({ label: 'Configure', shortcut: 'Enter' });
+    expect(entries[2]).toMatchObject({ label: 'Delete', shortcut: 'Delete' });
     expect(isSeparator(entries[1])).toBe(true);
+  });
+
+  it('shortcut hints come from the messages', () => {
+    const messages = {
+      ...defaultMessages.contextMenu,
+      shortcutEnter: 'Eingabe',
+      shortcutDelete: 'Entf'
+    };
+    const entries = buildDefaultContextMenuEntries(makeCtx('node', [node('a')]), messages);
+    expect(entries[0]).toMatchObject({ shortcut: 'Eingabe' });
+    expect(entries[2]).toMatchObject({ shortcut: 'Entf' });
   });
 
   it('node: Configure and Delete call the matching actions', () => {
@@ -126,7 +137,7 @@ describe('buildDefaultContextMenuEntries', () => {
       editsInPlace: () => true
     });
     expect(ids(entries)).toEqual(['edit-text', 'separator-node', 'delete']);
-    expect(entries[0]).toMatchObject({ label: 'Edit text', shortcut: '↵' });
+    expect(entries[0]).toMatchObject({ label: 'Edit text', shortcut: 'Enter' });
     runContextMenuEntry(entries[0], ctx);
     expect(ctx.actions.editInPlace).toHaveBeenCalledWith('a');
     expect(ctx.actions.openConfig).not.toHaveBeenCalled();
