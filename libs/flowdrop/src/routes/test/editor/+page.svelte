@@ -6,6 +6,9 @@
     - ?workflow=empty   -> empty canvas (no nodes)
     - ?workflow=complex  -> branching workflow with 4 nodes, 3 edges
     - (default)          -> simple workflow with 2 nodes, 1 edge
+    - ?mode=readonly|locked -> editor mode (default 'edit')
+    - ?contextMenu=extra -> pass a `contextMenu.items` that appends a
+      "Test extra entry" item; running it sets window.__contextMenuExtraRan
     - ?settingsDefaults=light|dark|auto -> seed host settings defaults
       before mounting, mirroring mountFlowDropApp({ settings }) — used by
       the settings persistence tests
@@ -20,6 +23,7 @@
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
   import type { Workflow, NodeMetadata } from '$lib/types/index.js';
   import type { ThemePreference } from '$lib/types/settings.js';
+  import type { ContextMenuOptions } from '$lib/editor/contextMenu.js';
   import { createChainedTriggerWorkflow } from '../../../mocks/data/workflows.js';
 
   // --- Query param for workflow variant ---
@@ -28,6 +32,31 @@
   // --- Query param for UI theme (?theme=default|minimal|drafter) ---
   let themeName = $derived(
     ($page.url.searchParams.get('theme') ?? 'default') as 'default' | 'minimal' | 'drafter'
+  );
+
+  // --- Query param for editor mode (?mode=readonly|locked) ---
+  let editorMode = $derived(
+    (['readonly', 'locked'].includes($page.url.searchParams.get('mode') ?? '')
+      ? $page.url.searchParams.get('mode')
+      : 'edit') as 'edit' | 'readonly' | 'locked'
+  );
+
+  // --- Consumer context-menu entry (?contextMenu=extra) ---
+  let contextMenu = $derived<ContextMenuOptions | undefined>(
+    $page.url.searchParams.get('contextMenu') === 'extra'
+      ? {
+          items: (_ctx, defaults) => [
+            ...defaults,
+            {
+              id: 'test-extra',
+              label: 'Test extra entry',
+              run: () => {
+                (window as unknown as Record<string, unknown>).__contextMenuExtraRan = true;
+              }
+            }
+          ]
+        }
+      : undefined
   );
 
   // --- Host settings defaults (settings persistence e2e) ---
@@ -445,6 +474,8 @@
     nodes={testNodeTypes}
     workflow={selectedWorkflow}
     theme={themeName}
+    mode={editorMode}
+    {contextMenu}
   />
 </div>
 

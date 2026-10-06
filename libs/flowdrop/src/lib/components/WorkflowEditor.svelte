@@ -24,6 +24,17 @@
   import type { WorkflowNode as WorkflowNodeType, Workflow, WorkflowEdge } from '../types/index.js';
   import CanvasBanner from './CanvasBanner.svelte';
   import CanvasController from './CanvasController.svelte';
+  import CanvasContextMenu from './CanvasContextMenu.svelte';
+  import {
+    resolveContextMenuEntries,
+    runContextMenuEntry,
+    type ContextMenuActions,
+    type ContextMenuContext,
+    type ContextMenuEntry,
+    type ContextMenuOptions,
+    type ContextMenuTarget
+  } from '../editor/contextMenu.js';
+  import type { NodeMetadata } from '../types/index.js';
   import FlowDropZone from './FlowDropZone.svelte';
   import EdgeRefresher from './EdgeRefresher.svelte';
   import { tick, untrack, onMount } from 'svelte';
@@ -31,7 +42,7 @@
   import type { AuthProvider } from '../types/auth.js';
   import ConnectionLine from './ConnectionLine.svelte';
   import FlowDropEdge from './FlowDropEdge.svelte';
-  import { m } from '$lib/messages/index.js';
+  import { m, getMessages } from '$lib/messages/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import type { FlowDropGridVariant } from '../types/theme.js';
@@ -107,6 +118,12 @@
      * @default true
      */
     builtinEditors?: boolean;
+    /**
+     * Customise the canvas context menu (right-click, Shift+F10, Menu key).
+     * `items` receives the built-in entries and returns the final list.
+     * The menu only opens in `'edit'` mode.
+     */
+    contextMenu?: ContextMenuOptions;
   }
 
   let props: Props = $props();
@@ -116,6 +133,10 @@
   // The instance never changes for a mounted component, so capturing it once is correct.
   // svelte-ignore state_referenced_locally
   const fd = provideInstance(props.instance);
+
+  // Messages getter captured at init: `m()` reads Svelte context, which is only
+  // available during component initialisation, not inside event handlers.
+  const getMsgs = getMessages();
 
   // Batteries-included: register the built-in heavy form editors (markdown /
   // code / template) on this instance's field registry so node config fields
@@ -661,39 +682,238 @@
   });
 
   /**
-   * Handle drop event and add new node to canvas
+   * Create a node from node-type JSON at a flow position, append it to the
+   * canvas and the store, and record the "Add node" history entry. Shared by
+   * the sidebar drop and the context menu's `addNode` action.
+   *
+   * The node is on the canvas (and in the store) synchronously; `done`
+   * resolves once the history entry has been pushed.
    */
-  async function handleNodeDrop(
+  function placeNode(
     nodeTypeData: string,
     position: { x: number; y: number }
-  ): Promise<void> {
+  ): { id: string | null; done: Promise<void> } {
     machine.send('START_DROP');
 
     const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position, flowNodes);
 
-    if (newNode) {
-      // Add onConfigOpen callback and append to flowNodes for immediate visual feedback
-      const nodeWithCallback = {
-        ...newNode,
-        data: { ...newNode.data, onConfigOpen: props.openConfigSidebar }
-      };
-      flowNodes = [...flowNodes, nodeWithCallback];
+    if (!newNode) {
+      logger.warn('Failed to create node from drop data');
+      machine.send('DROP_COMPLETE');
+      return { id: null, done: Promise.resolve() };
+    }
 
-      // Sync to store
-      syncFlowToStore();
+    // Add onConfigOpen callback and append to flowNodes for immediate visual feedback
+    const nodeWithCallback = {
+      ...newNode,
+      data: { ...newNode.data, onConfigOpen: props.openConfigSidebar }
+    };
+    flowNodes = [...flowNodes, nodeWithCallback];
 
+    // Sync to store
+    syncFlowToStore();
+
+    const done = (async () => {
       await tick();
 
       const storeValue = fd.workflow.current;
       if (storeValue) {
         fd.workflow.pushHistory('Add node', storeValue);
       }
-    } else {
-      logger.warn('Failed to create node from drop data');
+
+      machine.send('DROP_COMPLETE');
+    })();
+
+    return { id: newNode.id, done };
+  }
+
+  /**
+   * Handle drop event and add new node to canvas
+   */
+  async function handleNodeDrop(
+    nodeTypeData: string,
+    position: { x: number; y: number }
+  ): Promise<void> {
+    await placeNode(nodeTypeData, position).done;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Canvas context menu
+  // ---------------------------------------------------------------------------
+
+  interface OpenContextMenu {
+    ctx: ContextMenuContext;
+    entries: ContextMenuEntry[];
+    /** Pixel position relative to `.flowdrop-canvas`. */
+    x: number;
+    y: number;
+  }
+
+  let openMenu = $state.raw<OpenContextMenu | null>(null);
+  let canvasEl: HTMLDivElement | undefined = $state();
+
+  const contextMenuActions: ContextMenuActions = {
+    addNode(metadata: NodeMetadata, position, _options) {
+      // `_options.edit` is accepted for the API but not wired yet: the caption
+      // phase opens the new node for typing in place.
+      return placeNode(JSON.stringify(metadata), position).id;
+    },
+    deleteNodes(ids) {
+      if (ids.length === 0) return;
+      // Through xyflow so confirm-delete, edge removal and history all apply.
+      void canvasControllerRef?.canvasDeleteNodes(ids);
+    },
+    openConfig(id) {
+      const node = flowNodes.find((n) => n.id === id);
+      if (!node || !props.openConfigSidebar) return;
+      // Same node shape UniversalNode's Enter key passes.
+      props.openConfigSidebar({
+        id,
+        type: node.data.metadata?.type ?? 'default',
+        data: node.data
+      } as WorkflowNodeType);
+    },
+    editInPlace(_id) {
+      // No-op until a node type edits in place (caption phase).
+    }
+  };
+
+  /**
+   * Snap a flow position to the grid cell it falls in (floor, not round), so
+   * a node added from the menu has its top-left on the cell that was clicked.
+   */
+  function snapPosition(position: { x: number; y: number }): { x: number; y: number } {
+    const settings = getEditorSettings();
+    if (!settings.snapToGrid) return position;
+    const grid = settings.gridSize;
+    return { x: Math.floor(position.x / grid) * grid, y: Math.floor(position.y / grid) * grid };
+  }
+
+  function closeContextMenu(): void {
+    openMenu = null;
+  }
+
+  /**
+   * Open the menu for a target at a viewport (client) point. Returns false
+   * when there is nothing to show, so the caller leaves the browser's own
+   * menu alone.
+   */
+  function showContextMenu(
+    target: ContextMenuTarget,
+    nodes: WorkflowNodeType[],
+    clientX: number,
+    clientY: number
+  ): boolean {
+    if (!canvasEditable || !canvasEl || !canvasControllerRef) return false;
+
+    const ctx: ContextMenuContext = {
+      target,
+      nodes,
+      position: snapPosition(canvasControllerRef.canvasScreenToFlow({ x: clientX, y: clientY })),
+      nodeTypes: fd.nodeTypes.current,
+      actions: contextMenuActions
+    };
+    const entries = resolveContextMenuEntries(ctx, props.contextMenu, getMsgs().contextMenu);
+    if (entries.length === 0) {
+      openMenu = null;
+      return false;
     }
 
-    machine.send('DROP_COMPLETE');
+    const rect = canvasEl.getBoundingClientRect();
+    openMenu = { ctx, entries, x: clientX - rect.left, y: clientY - rect.top };
+    return true;
   }
+
+  /** Right-click or keyboard on a node: select it alone first, unless it is part of a multi-selection. */
+  function openNodeMenu(nodeId: string, clientX: number, clientY: number): void {
+    const node = flowNodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const selected = flowNodes.filter((n) => n.selected);
+    if (node.selected && selected.length > 1) {
+      showContextMenu('selection', selected, clientX, clientY);
+      return;
+    }
+
+    if (!node.selected || selected.length > 1) {
+      flowNodes = flowNodes.map((n) =>
+        n.selected === (n.id === nodeId) ? n : { ...n, selected: n.id === nodeId }
+      );
+    }
+    showContextMenu('node', [flowNodes.find((n) => n.id === nodeId) ?? node], clientX, clientY);
+  }
+
+  function handleNodeContextMenu({
+    event,
+    node
+  }: {
+    event: MouseEvent;
+    node: WorkflowNodeType;
+  }): void {
+    if (!canvasEditable) return;
+    event.preventDefault();
+    openNodeMenu(node.id, event.clientX, event.clientY);
+  }
+
+  function handleSelectionContextMenu({
+    event,
+    nodes
+  }: {
+    event: MouseEvent;
+    nodes: WorkflowNodeType[];
+  }): void {
+    if (!canvasEditable) return;
+    event.preventDefault();
+    showContextMenu(
+      nodes.length > 1 ? 'selection' : 'node',
+      nodes.map((n) => flowNodes.find((f) => f.id === n.id) ?? n),
+      event.clientX,
+      event.clientY
+    );
+  }
+
+  function handlePaneContextMenu({ event }: { event: MouseEvent }): void {
+    if (!canvasEditable) return;
+    // Only take over the right-click when the pane menu has entries.
+    if (showContextMenu('pane', [], event.clientX, event.clientY)) event.preventDefault();
+  }
+
+  /**
+   * Shift+F10 / the Menu key: on a focused node wrapper open that node's menu
+   * anchored at the node; elsewhere in the canvas open the pane menu at the
+   * viewport centre. Returns true when the key was handled.
+   */
+  function handleMenuKey(event: KeyboardEvent, target: HTMLElement): boolean {
+    const isMenuKey = event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey);
+    if (!isMenuKey || !canvasEditable) return false;
+    if (!target.closest('.flowdrop-canvas') || target.closest('.canvas-context-menu')) return false;
+
+    event.preventDefault();
+
+    const wrapper = target.classList.contains('svelte-flow__node') ? target : null;
+    const nodeId = wrapper?.dataset.id;
+    if (wrapper && nodeId) {
+      const rect = wrapper.getBoundingClientRect();
+      openNodeMenu(nodeId, rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return true;
+    }
+
+    const flowEl = canvasEl?.querySelector('.svelte-flow') ?? canvasEl;
+    if (flowEl) {
+      const rect = flowEl.getBoundingClientRect();
+      showContextMenu('pane', [], rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
+    return true;
+  }
+
+  // Menus never outlive edit mode or the workflow they were opened on.
+  $effect(() => {
+    if (!canvasEditable) openMenu = null;
+  });
+  $effect(() => {
+    void svelteFlowKey;
+    openMenu = null;
+  });
 
   /**
    * Handle a workflow JSON file dropped directly onto the canvas.
@@ -841,6 +1061,11 @@
       return;
     }
 
+    // Shift+F10 / Menu key: open the canvas context menu.
+    if (handleMenuKey(event, target)) {
+      return;
+    }
+
     // Backspace/Delete on a canvas element: let SvelteFlow handle the
     // deletion, but block the browser default (WebKit navigates back).
     if ((event.key === 'Backspace' || event.key === 'Delete') && target.closest('.svelte-flow')) {
@@ -893,7 +1118,11 @@
       <!-- Flow Canvas.
            Capture-phase mousedown so dragging from a port never turns into a
            WebKit text-selection drag — see suppressPortDragSelection. -->
-      <div class="flowdrop-canvas" onmousedowncapture={suppressPortDragSelection}>
+      <div
+        class="flowdrop-canvas"
+        bind:this={canvasEl}
+        onmousedowncapture={suppressPortDragSelection}
+      >
         <FlowDropZone ondrop={handleNodeDrop} onfiledrop={handleWorkflowFileDrop}>
           {#key svelteFlowKey}
             <SvelteFlow
@@ -909,6 +1138,9 @@
               onnodedragstart={handleNodeDragStart}
               onnodedrag={handleNodeDrag}
               onnodedragstop={handleNodeDragStop}
+              onnodecontextmenu={handleNodeContextMenu}
+              onselectioncontextmenu={handleSelectionContextMenu}
+              onpanecontextmenu={handlePaneContextMenu}
               minZoom={0.2}
               maxZoom={3}
               clickConnect={true}
@@ -979,6 +1211,22 @@
             </CanvasBanner>
           {/if}
         </FlowDropZone>
+
+        {#if openMenu}
+          {@const menu = openMenu}
+          <CanvasContextMenu
+            entries={menu.entries}
+            x={menu.x}
+            y={menu.y}
+            onselect={(entry) => {
+              // Read ctx first: `menu` is derived from `openMenu`, which the close clears.
+              const ctx = menu.ctx;
+              closeContextMenu();
+              runContextMenuEntry(entry, ctx);
+            }}
+            onclose={closeContextMenu}
+          />
+        {/if}
       </div>
 
       <!-- Status Bar: aria-live announces dynamic changes (node/edge counts, cycle warnings) -->

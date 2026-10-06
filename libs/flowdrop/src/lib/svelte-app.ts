@@ -49,7 +49,15 @@ import type { NavbarAction } from './types/navbar.js';
 import type { HostHooks, WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
 import { whenWorkflowLoaded } from './utils/whenWorkflowLoaded.svelte.js';
 export type { NavbarAction };
+import type { ContextMenuOptions } from './editor/contextMenu.js';
 export type { HostHooks, WebMCPHandle, WebMCPMountOptions };
+export type {
+  ContextMenuActions,
+  ContextMenuContext,
+  ContextMenuEntry,
+  ContextMenuOptions,
+  ContextMenuTarget
+} from './editor/contextMenu.js';
 
 /**
  * Mount options for FlowDrop App
@@ -212,6 +220,18 @@ export interface FlowDropMountOptions {
    * assistant must be able to run the workflow even with WebMCP switched off.
    */
   host?: HostHooks;
+
+  /**
+   * Customise the canvas context menu (right-click on a node, a selection or
+   * the empty canvas; Shift+F10 / the Menu key). `items(ctx, defaults)`
+   * receives the built-in entries and returns the final list: append, remove,
+   * reorder or pass them through. It is synchronous; if it throws or returns a
+   * non-array the built-in entries are used. Errors thrown by an entry's `run`
+   * are logged, never rethrown. The menu only opens in `mode: 'edit'`.
+   * Passed straight to the editor, not published on the instance: unlike
+   * {@link host} (agent surfaces), this is purely editor UI.
+   */
+  contextMenu?: ContextMenuOptions;
 }
 
 /**
@@ -483,7 +503,8 @@ export async function mountFlowDropApp(
     showSettingsResetButton,
     instanceId,
     webmcp,
-    host
+    host,
+    contextMenu
   } = options;
 
   // Per-instance state container — this is what allows multiple FlowDrop
@@ -574,7 +595,8 @@ export async function mountFlowDropApp(
       settingsCategories,
       showSettingsSyncButton,
       showSettingsResetButton,
-      workflowFormats
+      workflowFormats,
+      contextMenu
     }
   });
 
@@ -808,6 +830,8 @@ export async function mountWorkflowEditor(
      * @default true
      */
     builtinEditors?: boolean;
+    /** Customise the canvas context menu — see {@link FlowDropMountOptions.contextMenu}. */
+    contextMenu?: ContextMenuOptions;
   } = {}
 ): Promise<MountedFlowDropApp> {
   const {
@@ -817,7 +841,8 @@ export async function mountWorkflowEditor(
     categories,
     authProvider,
     instanceId,
-    builtinEditors
+    builtinEditors,
+    contextMenu
   } = options;
 
   // Per-instance state container (see mountFlowDropApp)
@@ -845,7 +870,8 @@ export async function mountWorkflowEditor(
       instance: fd,
       endpointConfig: config,
       authProvider,
-      builtinEditors
+      builtinEditors,
+      contextMenu
     }
   });
 

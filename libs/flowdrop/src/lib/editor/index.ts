@@ -317,6 +317,14 @@ export type { UIAction } from '../commands/types.js';
 export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from '../svelte-app.js';
 
 export type {
+  ContextMenuActions,
+  ContextMenuContext,
+  ContextMenuEntry,
+  ContextMenuOptions,
+  ContextMenuTarget
+} from './contextMenu.js';
+
+export type {
   NodeComponentProps,
   NodeComponentRegistration,
   FlowDropPluginConfig,

@@ -239,6 +239,14 @@ export const defaultMessages = {
     }
   },
 
+  contextMenu: {
+    // aria-label of the canvas context menu.
+    menuLabel: 'Canvas actions',
+    configure: 'Configure',
+    delete: 'Delete',
+    deleteNodes: ({ n }: { n: number }) => `Delete ${n} node${n !== 1 ? 's' : ''}`
+  },
+
   layout: {
     // Sidebar/main-region landmarks.
     componentsSidebar: 'Components sidebar',

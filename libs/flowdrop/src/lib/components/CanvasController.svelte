@@ -8,7 +8,16 @@
   import { useSvelteFlow } from '@xyflow/svelte';
   import { getEditorSettings } from '../stores/settingsStore.svelte.js';
 
-  const { fitView, zoomIn, zoomOut, setZoom, setCenter, setViewport } = useSvelteFlow();
+  const {
+    fitView,
+    zoomIn,
+    zoomOut,
+    setZoom,
+    setCenter,
+    setViewport,
+    screenToFlowPosition,
+    deleteElements
+  } = useSvelteFlow();
 
   export function canvasFitView(): void {
     fitView({ padding: 0.2, duration: 300 });
@@ -33,5 +42,18 @@
   export function canvasResetView(): void {
     const defaultZoom = getEditorSettings().defaultZoom;
     setViewport({ x: 0, y: 0, zoom: defaultZoom }, { duration: 300 });
+  }
+
+  /** Convert a viewport (client) point to flow coordinates. */
+  export function canvasScreenToFlow(point: { x: number; y: number }): { x: number; y: number } {
+    return screenToFlowPosition(point);
+  }
+
+  /**
+   * Delete nodes through xyflow so `onbeforedelete` (confirm setting) and
+   * `ondelete` (edge removal + history entry) run exactly as for the Delete key.
+   */
+  export async function canvasDeleteNodes(ids: string[]): Promise<void> {
+    await deleteElements({ nodes: ids.map((id) => ({ id })) });
   }
 </script>

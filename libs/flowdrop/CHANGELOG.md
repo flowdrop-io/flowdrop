@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Canvas context menu. Right-clicking a node opens a menu with Configure and
+  Delete; right-clicking a multi-selection offers "Delete n nodes". Delete runs
+  through the same path as the Delete key, so the confirm-delete setting
+  applies, connected edges go with the node, and one undo restores both.
+  Right-clicking an unselected node selects it first. The menu only opens in
+  edit mode (read-only and locked editors keep the browser's own menu), is
+  keyboard operable (arrow keys, Home/End, Enter, Escape), and closes on an
+  outside click, zoom, pan or window blur.
+- Shift+F10 and the Menu key open the context menu from the keyboard: on a
+  focused node it opens that node's menu, elsewhere on the canvas it opens the
+  canvas menu at the centre of the view.
+- `contextMenu.items` mount option (and `contextMenu` prop on `App` and
+  `WorkflowEditor`). It receives the built-in entries and the click context
+  (`target`, `nodes`, grid-snapped flow `position`, `nodeTypes`, `actions`) and
+  returns the final list, so a host can add, remove or reorder entries. If it
+  throws or returns a non-array the built-in entries are used; errors from an
+  entry's `run` are logged and never break the canvas. The `ContextMenuContext`,
+  `ContextMenuEntry`, `ContextMenuActions`, `ContextMenuOptions` and
+  `ContextMenuTarget` types are exported from `@flowdrop/flowdrop/editor`.
+- `messages.contextMenu` strings (`menuLabel`, `configure`, `delete`,
+  `deleteNodes`) so the menu can be translated.
+
 ## [2.9.0] - 2026-10-04
 
 ### Fixed

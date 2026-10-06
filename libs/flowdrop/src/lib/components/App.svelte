@@ -5,6 +5,7 @@
 -->
 
 <script lang="ts">
+  import type { ContextMenuOptions } from '../editor/contextMenu.js';
   import { onMount, tick, untrack } from 'svelte';
   import MainLayout from '$lib/components/layouts/MainLayout.svelte';
   import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
@@ -183,6 +184,11 @@
      * function call you'd rather not invoke unless the prop is actually read.
      */
     messages?: MessagesOverride | (() => MessagesOverride);
+    /**
+     * Customise the canvas context menu. `items` receives the built-in entries
+     * and returns the final list. The menu only opens in `'edit'` mode.
+     */
+    contextMenu?: ContextMenuOptions;
     /** Per-instance state container (created by mount functions). Defaults to the page-default instance. */
     instance?: FlowDropInstance;
   }
@@ -222,6 +228,7 @@
     workflowSettingsSchema,
     workflowFormats,
     messages: messagesOverride,
+    contextMenu,
     instance
   }: Props = $props();
 
@@ -1613,6 +1620,7 @@
         {pipelineId}
         {refreshTrigger}
         builtinEditors={features.builtinEditors}
+        {contextMenu}
         gridVariant={themeConfig?.canvas?.grid ?? 'dots'}
         consoleOpen={consoleActive}
         onToggleConsole={consoleGroupOffered ? toggleConsole : undefined}
