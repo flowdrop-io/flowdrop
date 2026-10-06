@@ -9,7 +9,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import { slide } from 'svelte/transition';
-  import type { PlaygroundMessageLevel } from '../../types/playground.js';
+  import { isHiddenMessage, type PlaygroundMessageLevel } from '../../types/playground.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
 
   const fd = getInstance();
@@ -34,24 +34,27 @@
   /** Reference to logs container for auto-scroll */
   let logsContainer = $state<HTMLDivElement>();
 
+  /** Log rows to render: `display: 'hidden'` rows are noise, not shown. */
+  const visibleLogs = $derived(fd.playground.logMessages.filter((log) => !isHiddenMessage(log)));
+
   /**
    * Filter logs based on selected level
    */
   const filteredLogs = $derived(
     levelFilter === 'all'
-      ? fd.playground.logMessages
-      : fd.playground.logMessages.filter((log) => log.metadata?.level === levelFilter)
+      ? visibleLogs
+      : visibleLogs.filter((log) => log.metadata?.level === levelFilter)
   );
 
   /**
    * Count of logs by level
    */
   const logCounts = $derived({
-    all: fd.playground.logMessages.length,
-    info: fd.playground.logMessages.filter((l) => l.metadata?.level === 'info').length,
-    warning: fd.playground.logMessages.filter((l) => l.metadata?.level === 'warning').length,
-    error: fd.playground.logMessages.filter((l) => l.metadata?.level === 'error').length,
-    debug: fd.playground.logMessages.filter((l) => l.metadata?.level === 'debug').length
+    all: visibleLogs.length,
+    info: visibleLogs.filter((l) => l.metadata?.level === 'info').length,
+    warning: visibleLogs.filter((l) => l.metadata?.level === 'warning').length,
+    error: visibleLogs.filter((l) => l.metadata?.level === 'error').length,
+    debug: visibleLogs.filter((l) => l.metadata?.level === 'debug').length
   });
 
   /**

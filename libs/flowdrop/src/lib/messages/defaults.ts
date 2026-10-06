@@ -414,6 +414,20 @@ export const defaultMessages = {
       log: 'Log',
       message: 'Message'
     },
+    // Badges for messages posted by a component other than the person or
+    // the workflow (the message `origin`). user/workflow are never badged.
+    origins: {
+      user: 'User',
+      workflow: 'Workflow',
+      engine: 'Engine',
+      playground: 'Playground',
+      interrupt: 'Interrupt',
+      postedBy: ({ origin }: { origin: string }) => `Posted by: ${origin}`
+    },
+    // Collapsible run of adjacent log lines.
+    logGroup: {
+      summary: ({ count }: { count: number }) => `${count} log lines`
+    },
     messageTooltips: {
       nodeId: ({ id }: { id: string }) => `Node ID: ${id}`,
       executionDuration: 'Execution duration'

@@ -7,11 +7,13 @@
 import type {
   PlaygroundMessage,
   PlaygroundMessageLevel,
+  PlaygroundMessageOrigin,
   PlaygroundMessageRole
 } from '../../types/playground.js';
 import type { Messages } from '../../messages/types.js';
 
 export type RoleLabels = Messages['playground']['roles'];
+export type OriginLabels = Messages['playground']['origins'];
 
 export function formatTimestamp(timestamp: string): string {
   return new Date(timestamp).toLocaleTimeString('en-US', {
@@ -76,4 +78,65 @@ export function getRoleLabel(
     default:
       return roles.message;
   }
+}
+
+/**
+ * Origins that earn a badge. `user` and `workflow` are the conversation
+ * itself and stay unbadged; everything else was posted by a component
+ * around the conversation and is marked so a reader can tell it apart.
+ */
+const BADGED_ORIGINS: ReadonlySet<PlaygroundMessageOrigin> = new Set<PlaygroundMessageOrigin>([
+  'engine',
+  'playground',
+  'interrupt'
+]);
+
+/**
+ * The origin to badge a message with, or null for none. Absent (older
+ * servers), unknown, `user` and `workflow` origins get no badge.
+ */
+export function getOriginBadge(
+  message: Pick<PlaygroundMessage, 'origin'>
+): PlaygroundMessageOrigin | null {
+  const origin = message.origin;
+  return origin !== undefined && BADGED_ORIGINS.has(origin) ? origin : null;
+}
+
+/** A run of adjacent rows collapsed into one group, or a single row. */
+export type MessageRow<T> =
+  | { kind: 'single'; item: T }
+  | { kind: 'group'; key: string; items: T[] };
+
+/**
+ * Fold runs of at least `minRun` adjacent groupable items into one group;
+ * everything else stays a single row. Order is preserved. The group key is
+ * the first item's key, so a run that grows at its tail keeps its identity
+ * (and its open/closed state) across renders.
+ */
+export function groupAdjacent<T>(
+  items: readonly T[],
+  isGroupable: (item: T) => boolean,
+  keyOf: (item: T) => string,
+  minRun = 3
+): MessageRow<T>[] {
+  const rows: MessageRow<T>[] = [];
+  let run: T[] = [];
+  const flush = () => {
+    if (run.length >= minRun) {
+      rows.push({ kind: 'group', key: keyOf(run[0]), items: run });
+    } else {
+      for (const item of run) rows.push({ kind: 'single', item });
+    }
+    run = [];
+  };
+  for (const item of items) {
+    if (isGroupable(item)) {
+      run.push(item);
+    } else {
+      flush();
+      rows.push({ kind: 'single', item });
+    }
+  }
+  flush();
+  return rows;
 }

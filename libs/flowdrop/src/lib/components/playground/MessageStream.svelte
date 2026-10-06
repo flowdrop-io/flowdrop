@@ -13,7 +13,12 @@
   import { tick, untrack, type Snippet } from 'svelte';
   import MessageBubble from './MessageBubble.svelte';
   import { InterruptBubble } from '../interrupt/index.js';
-  import type { PlaygroundMessage } from '../../types/playground.js';
+  import {
+    isHiddenMessage,
+    resolveMessageDisplay,
+    type PlaygroundMessage
+  } from '../../types/playground.js';
+  import { groupAdjacent } from './messageDisplay.js';
   import {
     isInterruptMetadata,
     extractInterruptMetadata,
@@ -73,6 +78,25 @@
   const displayMessages = $derived(
     allowLogs && fd.playground.showLogs ? fd.playground.messages : fd.playground.chatMessages
   );
+
+  /**
+   * What is actually rendered: `display: 'hidden'` rows are dropped. They stay
+   * in the store (cursors, interrupt sync) — hiding is about noise, never
+   * about secrecy, since the row has already reached the browser.
+   */
+  const visibleMessages = $derived(displayMessages.filter((msg) => !isHiddenMessage(msg)));
+
+  /** Runs of three or more adjacent log-layout rows fold into a collapsible group. */
+  const rows = $derived(
+    groupAdjacent(
+      visibleMessages,
+      (msg) =>
+        !isInterruptMessage(msg) && resolveMessageDisplay(msg, { compactSystemMessages }) === 'log',
+      (msg) => msg.id
+    )
+  );
+
+  const lastVisibleId = $derived(visibleMessages.at(-1)?.id);
 
   let previousMessageCount = 0;
   let userScrolledUp = false;
@@ -181,9 +205,9 @@
     return interruptsByMessageId.get(message.id);
   }
 
-  const showWelcome = $derived(!fd.playground.currentSession && displayMessages.length === 0);
+  const showWelcome = $derived(!fd.playground.currentSession && visibleMessages.length === 0);
   const showEmptyChat = $derived(
-    fd.playground.currentSession !== null && displayMessages.length === 0
+    fd.playground.currentSession !== null && visibleMessages.length === 0
   );
 
   // Reset scroll-tracking when session changes
@@ -194,7 +218,7 @@
   });
 
   $effect(() => {
-    const currentCount = displayMessages.length;
+    const currentCount = visibleMessages.length;
 
     if (!autoScroll || !messagesContainer) {
       untrack(() => {
@@ -220,6 +244,29 @@
   });
 </script>
 
+{#snippet messageRow(message: PlaygroundMessage)}
+  {#if isInterruptMessage(message)}
+    {@const interrupt = getInterruptForMessage(message)}
+    {#if interrupt}
+      <InterruptBubble
+        {interrupt}
+        showTimestamp={showTimestamps}
+        onResolved={onInterruptResolved}
+        hierarchy={message.hierarchy}
+        tags={message.tags}
+      />
+    {/if}
+  {:else}
+    <MessageBubble
+      {message}
+      showTimestamp={showTimestamps}
+      isLast={message.id === lastVisibleId}
+      {enableMarkdown}
+      {compactSystemMessages}
+    />
+  {/if}
+{/snippet}
+
 <div
   class="message-stream"
   role="log"
@@ -242,26 +289,18 @@
         <span class="message-stream__loading-older-spinner"></span>
       </div>
     {/if}
-    {#each displayMessages as message, index (message.id)}
-      {#if isInterruptMessage(message)}
-        {@const interrupt = getInterruptForMessage(message)}
-        {#if interrupt}
-          <InterruptBubble
-            {interrupt}
-            showTimestamp={showTimestamps}
-            onResolved={onInterruptResolved}
-            hierarchy={message.hierarchy}
-            tags={message.tags}
-          />
-        {/if}
+    {#each rows as row (row.kind === 'group' ? `group:${row.key}` : row.item.id)}
+      {#if row.kind === 'group'}
+        <details class="message-stream__log-group" open>
+          <summary class="message-stream__log-group-summary">
+            {m().playground.logGroup.summary({ count: row.items.length })}
+          </summary>
+          {#each row.items as message (message.id)}
+            {@render messageRow(message)}
+          {/each}
+        </details>
       {:else}
-        <MessageBubble
-          {message}
-          showTimestamp={showTimestamps}
-          isLast={index === displayMessages.length - 1}
-          {enableMarkdown}
-          {compactSystemMessages}
-        />
+        {@render messageRow(row.item)}
       {/if}
     {/each}
 
@@ -384,6 +423,31 @@
       padding-left: var(--fd-space-xs);
       padding-right: var(--fd-space-xs);
     }
+  }
+
+  /* A run of adjacent log rows, collapsible. Muted, no chrome beyond a
+     hairline so it reads as one quiet block rather than a card. */
+  .message-stream__log-group {
+    margin: var(--fd-space-3xs) 0;
+  }
+
+  .message-stream__log-group-summary {
+    cursor: pointer;
+    padding: var(--fd-space-3xs) var(--fd-space-xl);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+    opacity: 0.8;
+    user-select: none;
+  }
+
+  .message-stream__log-group-summary:hover {
+    opacity: 1;
+  }
+
+  .message-stream__log-group-summary:focus-visible {
+    outline: 2px solid var(--fd-ring);
+    outline-offset: -2px;
   }
 
   /* Overlay, out of flow — its presence must not shift message layout, or it

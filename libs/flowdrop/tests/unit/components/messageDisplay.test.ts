@@ -12,7 +12,9 @@ import {
   formatTimestamp,
   getLogLevelIcon,
   getRoleIcon,
+  getOriginBadge,
   getRoleLabel,
+  groupAdjacent,
   type RoleLabels
 } from '$lib/components/playground/messageDisplay.js';
 
@@ -115,5 +117,47 @@ describe('getRoleLabel', () => {
         ROLES
       )
     ).toBe('System');
+  });
+});
+
+describe('getOriginBadge', () => {
+  it('badges engine, playground and interrupt', () => {
+    expect(getOriginBadge({ origin: 'engine' })).toBe('engine');
+    expect(getOriginBadge({ origin: 'playground' })).toBe('playground');
+    expect(getOriginBadge({ origin: 'interrupt' })).toBe('interrupt');
+  });
+
+  it('never badges the conversation itself or an absent origin', () => {
+    expect(getOriginBadge({ origin: 'user' })).toBeNull();
+    expect(getOriginBadge({ origin: 'workflow' })).toBeNull();
+    expect(getOriginBadge({})).toBeNull();
+  });
+});
+
+describe('groupAdjacent', () => {
+  const isLog = (s: string) => s.startsWith('l');
+  const key = (s: string) => s;
+
+  it('folds runs at or above the minimum and keeps order', () => {
+    expect(groupAdjacent(['a', 'l1', 'l2', 'l3', 'b'], isLog, key)).toEqual([
+      { kind: 'single', item: 'a' },
+      { kind: 'group', key: 'l1', items: ['l1', 'l2', 'l3'] },
+      { kind: 'single', item: 'b' }
+    ]);
+  });
+
+  it('leaves short runs as singles', () => {
+    expect(groupAdjacent(['l1', 'l2', 'a'], isLog, key)).toEqual([
+      { kind: 'single', item: 'l1' },
+      { kind: 'single', item: 'l2' },
+      { kind: 'single', item: 'a' }
+    ]);
+  });
+
+  it('flushes a trailing run and honours a custom minimum', () => {
+    expect(groupAdjacent(['a', 'l1', 'l2'], isLog, key, 2)).toEqual([
+      { kind: 'single', item: 'a' },
+      { kind: 'group', key: 'l1', items: ['l1', 'l2'] }
+    ]);
   });
 });

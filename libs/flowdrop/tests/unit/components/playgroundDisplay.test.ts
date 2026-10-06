@@ -12,7 +12,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { resolveMessageDisplay, type PlaygroundMessage } from '$lib/types/playground.js';
+import {
+  isHiddenMessage,
+  resolveMessageDisplay,
+  type PlaygroundMessage
+} from '$lib/types/playground.js';
 
 function makeMessage(overrides: Partial<PlaygroundMessage> = {}): PlaygroundMessage {
   return {
@@ -97,5 +101,27 @@ describe('hierarchy and tags — server-authoritative passthrough', () => {
   it('treats empty tags array as authoritative — no chips, no merge', () => {
     const message = makeMessage({ tags: [] });
     expect(message.tags).toEqual([]);
+  });
+});
+
+describe('resolveMessageDisplay — default and hidden', () => {
+  it('treats display=default as no hint', () => {
+    expect(resolveMessageDisplay(makeMessage({ role: 'log', display: 'default' }))).toBe('log');
+    expect(resolveMessageDisplay(makeMessage({ role: 'system', display: 'default' }))).toBe(
+      'notice'
+    );
+    expect(resolveMessageDisplay(makeMessage({ role: 'assistant', display: 'default' }))).toBe(
+      'bubble'
+    );
+  });
+
+  it('passes display=hidden through', () => {
+    expect(resolveMessageDisplay(makeMessage({ display: 'hidden' }))).toBe('hidden');
+  });
+
+  it('isHiddenMessage is true only for display=hidden', () => {
+    expect(isHiddenMessage(makeMessage({ display: 'hidden' }))).toBe(true);
+    expect(isHiddenMessage(makeMessage({ display: 'log' }))).toBe(false);
+    expect(isHiddenMessage(makeMessage({}))).toBe(false);
   });
 });

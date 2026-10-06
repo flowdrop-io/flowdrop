@@ -7,8 +7,9 @@
   import type { PlaygroundMessage } from '../../types/playground.js';
   import HierarchyTrail from './HierarchyTrail.svelte';
   import MessageTagStrip from './MessageTagStrip.svelte';
+  import OriginBadge from './OriginBadge.svelte';
   import MessageMarkdown from './MessageMarkdown.svelte';
-  import { formatTimestamp, getRoleLabel } from './messageDisplay.js';
+  import { formatTimestamp, getOriginBadge, getRoleLabel } from './messageDisplay.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -24,6 +25,7 @@
   const hierarchy = $derived(message.hierarchy ?? []);
   const tags = $derived(message.tags ?? []);
   const roleLabel = $derived(getRoleLabel(message, m().playground.roles));
+  const hasOriginBadge = $derived(getOriginBadge(message) !== null);
   // Logs render as plain text; everything else respects enableMarkdown.
   const markdown = $derived(enableMarkdown && message.role !== 'log');
 </script>
@@ -35,9 +37,12 @@
   class:message-card--warning={level === 'warning'}
   aria-label={roleLabel}
 >
-  {#if hierarchy.length > 0 || showTimestamp}
+  {#if hierarchy.length > 0 || showTimestamp || hasOriginBadge}
     <header class="message-card__header">
-      <HierarchyTrail items={hierarchy} />
+      <span class="message-card__lead">
+        <OriginBadge {message} />
+        <HierarchyTrail items={hierarchy} />
+      </span>
       {#if showTimestamp}
         <time
           class="message-card__timestamp"
@@ -88,6 +93,13 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--fd-space-sm);
+    min-width: 0;
+  }
+
+  .message-card__lead {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
     min-width: 0;
   }
 

@@ -204,29 +204,64 @@ export interface MessageTag {
 /**
  * Rendering hint the server may set to choose a layout regardless of role.
  *
+ * - `default`: no hint; same as omitting the field (role-based default below)
  * - `bubble`: chat bubble shape (default for user/assistant)
  * - `log`: dense one-liner (default for log role)
  * - `notice`: compact centered notice (default for system role with
  *   compactSystemMessages enabled)
  * - `card`: vertical layout — breadcrumb (top), body (middle), tags (bottom)
+ * - `hidden`: not rendered by default. **Hidden is not private**: the row
+ *   still reaches the browser with the rest of the session. It hides noise,
+ *   never secrets.
  *
- * When omitted, the client falls back to the role-based default above.
+ * When omitted (or `default`), the client falls back to the role-based
+ * default above.
  */
-export type PlaygroundMessageDisplay = 'bubble' | 'log' | 'notice' | 'card';
+export type PlaygroundMessageDisplay = 'default' | 'bubble' | 'log' | 'notice' | 'card' | 'hidden';
 
 /**
- * Resolve the effective layout for a message. Server-supplied `display` wins;
- * otherwise we fall back to a role-based default. Pure function so the
- * dispatcher and tests can share it.
+ * The layout a message resolves to: never `default` (that is resolved to a
+ * role-based layout first).
+ */
+export type ResolvedMessageDisplay = Exclude<PlaygroundMessageDisplay, 'default'>;
+
+/**
+ * Which component posted a session message — the third axis beside `role`
+ * (who spoke, conversationally) and `display` (how to render it).
+ *
+ * - `user`: a person typed it.
+ * - `workflow`: the workflow produced it (a reply).
+ * - `engine`: the run machinery wrote it (trigger rows, failures, recovery,
+ *   reporting rows).
+ * - `playground`: a console observer wrote it for its own viewers.
+ * - `interrupt`: the interrupt system posted a question into the session.
+ *
+ * Servers that predate the field omit it; treat that as unknown.
+ */
+export type PlaygroundMessageOrigin = 'user' | 'workflow' | 'engine' | 'playground' | 'interrupt';
+
+/**
+ * Resolve the effective layout for a message. Server-supplied `display` wins
+ * (except `default`, which means "no hint"); otherwise we fall back to a
+ * role-based default. Pure function so the dispatcher and tests can share it.
  */
 export function resolveMessageDisplay(
   message: Pick<PlaygroundMessage, 'role' | 'display'>,
   options: { compactSystemMessages?: boolean } = {}
-): PlaygroundMessageDisplay {
-  if (message.display) return message.display;
+): ResolvedMessageDisplay {
+  if (message.display && message.display !== 'default') return message.display;
   if (message.role === 'system' && options.compactSystemMessages !== false) return 'notice';
   if (message.role === 'log') return 'log';
   return 'bubble';
+}
+
+/**
+ * Whether a message carries the `hidden` display hint. Hidden rows are kept
+ * in the store (they still arrive and advance polling cursors) but are not
+ * rendered. This only hides noise — it is never a security boundary.
+ */
+export function isHiddenMessage(message: Pick<PlaygroundMessage, 'display'>): boolean {
+  return message.display === 'hidden';
 }
 
 /**
@@ -298,8 +333,14 @@ export interface PlaygroundMessage {
    * Layout hint. When omitted, the client picks a default from the role:
    * - log → 'log', system (when compactSystemMessages) → 'notice',
    *   user/assistant → 'bubble'.
+   * `hidden` rows are not rendered (noise, not secrecy).
    */
   display?: PlaygroundMessageDisplay;
+  /**
+   * Which component posted the message. Always present on current servers;
+   * absent from older ones (treat as unknown — no origin badge).
+   */
+  origin?: PlaygroundMessageOrigin;
   /** Additional message metadata */
   metadata?: PlaygroundMessageMetadata;
 }

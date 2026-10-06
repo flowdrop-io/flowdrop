@@ -8,6 +8,7 @@
   import type { PlaygroundMessage } from '../../types/playground.js';
   import HierarchyTrail from './HierarchyTrail.svelte';
   import MessageTagStrip from './MessageTagStrip.svelte';
+  import OriginBadge from './OriginBadge.svelte';
   import { formatTimestamp, getLogLevelIcon } from './messageDisplay.js';
 
   interface Props {
@@ -34,6 +35,7 @@
   {#if message.metadata?.source}
     <span class="system-notice__source">{message.metadata.source}</span>
   {/if}
+  <OriginBadge {message} />
   <HierarchyTrail items={hierarchy} />
   <span class="system-notice__text">{message.content}</span>
   <MessageTagStrip {tags} />

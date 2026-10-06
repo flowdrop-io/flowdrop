@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Playground messages carry an `origin` (`user`, `workflow`, `engine`,
+  `playground` or `interrupt`): which component posted the row. Rows posted by
+  the engine, a console observer or the interrupt system get a small,
+  muted origin badge; user and workflow rows, and rows from servers that do not
+  send `origin`, get none. New types `PlaygroundMessageOrigin` and
+  `ResolvedMessageDisplay`; `PlaygroundMessageDisplay` is now exported from
+  `core` and `playground`.
+- The message `display` hint accepts `default` (same as no hint) and `hidden`.
+  Hidden rows are kept in the store but not rendered in the message stream or
+  the execution logs panel. Hidden is not private: the row has reached the
+  browser, so it hides noise, never secrets.
+- Three or more adjacent log-layout rows in the message stream fold into a
+  collapsible group ("n log lines"), open by default.
 - Canvas context menu. Right-clicking a node opens a menu with Configure and
   Delete; right-clicking a multi-selection offers "Delete n nodes". Delete runs
   through the same path as the Delete key, so the confirm-delete setting

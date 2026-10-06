@@ -9,6 +9,7 @@
   import type { PlaygroundMessage } from '../../types/playground.js';
   import HierarchyTrail from './HierarchyTrail.svelte';
   import MessageTagStrip from './MessageTagStrip.svelte';
+  import OriginBadge from './OriginBadge.svelte';
   import MessageMarkdown from './MessageMarkdown.svelte';
   import { formatDuration, formatTimestamp, getRoleIcon, getRoleLabel } from './messageDisplay.js';
   import { m } from '$lib/messages/index.js';
@@ -45,6 +46,7 @@
   <div class="message-bubble__content">
     <div class="message-bubble__header">
       <span class="message-bubble__role">{roleLabel}</span>
+      <OriginBadge {message} />
       {#if showTimestamp}
         <time
           class="message-bubble__timestamp"

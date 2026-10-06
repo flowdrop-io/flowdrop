@@ -9,6 +9,7 @@ import type {
   PlaygroundExecution,
   PlaygroundMessage,
   PlaygroundMessageDisplay,
+  PlaygroundMessageOrigin,
   PlaygroundSessionStatus,
   PlaygroundMessageRole,
   PlaygroundMessageLevel,
@@ -252,6 +253,7 @@ export function addMessage(
     hierarchy?: MessageHierarchyItem[];
     tags?: MessageTag[];
     display?: PlaygroundMessageDisplay;
+    origin?: PlaygroundMessageOrigin;
   }
 ): PlaygroundMessage | undefined {
   if (!mockSessions.has(sessionId)) {
@@ -284,6 +286,9 @@ export function addMessage(
     hierarchy: options?.hierarchy,
     tags: options?.tags,
     display: options?.display,
+    // Mirrors the server's default when a writer names none: by role.
+    origin:
+      options?.origin ?? (role === 'user' ? 'user' : role === 'assistant' ? 'workflow' : 'engine'),
     metadata: {
       ...(options?.metadata ?? {
         level: options?.level,
