@@ -272,6 +272,10 @@
     }
 
     onSendMessage?.(action.content);
+
+    // A slash command (a `predefinedMessage` of `/help`, say) runs without
+    // taking a turn, so no `enableRun` message will ever follow to free the lock.
+    if (awaitEnableRun && isCommandInput(action.content)) fd.playground.releaseRunLock();
   }
 
   function handleInput(): void {

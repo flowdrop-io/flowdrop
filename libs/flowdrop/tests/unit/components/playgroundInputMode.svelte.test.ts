@@ -325,4 +325,18 @@ describe('Playground input mode', () => {
     expect(target.querySelector('.chat-input__command-feedback')).not.toBeNull();
     expect(turnCalls()).toHaveLength(0);
   });
+
+  it('legacy: Run with a slash-command predefinedMessage runs the command and frees Run', async () => {
+    const { target } = await render(workflowWith(), {
+      showChatInput: false,
+      predefinedMessage: '/help'
+    });
+
+    runButton(target)?.click();
+    await settle();
+
+    // The command ran (no turn was taken), and nothing is left to unlock Run.
+    expect(turnCalls()).toHaveLength(0);
+    expect(runButton(target)?.disabled).toBe(false);
+  });
 });

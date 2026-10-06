@@ -174,6 +174,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with no edges (a note) comes first in the node list: the start node is the
   first node with no incoming and at least one outgoing edge (#45). A workflow
   without any such node lays out as before.
+- Legacy Run (`awaitEnableRun`) no longer stays locked when `predefinedMessage`
+  is a slash command such as `/help`: the command runs without taking a turn,
+  so no `enableRun` message ever arrived to unlock Run. The lock is released
+  once the command has been sent.
 
 ## [2.9.0] - 2026-10-04
 
