@@ -1505,7 +1505,16 @@ function executeAutoLayout(
   for (const e of layoutEdges) {
     inDegree.set(e.target, (inDegree.get(e.target) ?? 0) + 1);
   }
+  // Prefer a root that also has an outgoing edge: a node with no edges at all
+  // (a note, a caption) is in-degree 0 too, and starting the layering there
+  // reaches nothing, which flattens the whole workflow into one column.
+  const outDegree = new Map<string, number>();
+  for (const e of layoutEdges) {
+    outDegree.set(e.source, (outDegree.get(e.source) ?? 0) + 1);
+  }
   const startNode =
+    workflow.nodes.find((n) => (inDegree.get(n.id) ?? 0) === 0 && (outDegree.get(n.id) ?? 0) > 0)
+      ?.id ??
     workflow.nodes.find((n) => (inDegree.get(n.id) ?? 0) === 0)?.id ??
     workflow.nodes.reduce((leftmost, n) => (n.position.x < leftmost.position.x ? n : leftmost)).id;
 

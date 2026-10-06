@@ -170,6 +170,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ConfigKeyDescription`; a value outside them gets the same `allowedValues`
   warning as an `enum` violation, and `CONFIG_VALIDATION_ERROR` in strict mode.
   `enum` wins when both are present; a `oneOf` of sub-schemas is ignored.
+- `layout auto` no longer collapses a workflow into one column when a node
+  with no edges (a note) comes first in the node list: the start node is the
+  first node with no incoming and at least one outgoing edge (#45). A workflow
+  without any such node lays out as before.
 
 ## [2.9.0] - 2026-10-04
 

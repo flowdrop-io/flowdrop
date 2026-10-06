@@ -2808,6 +2808,48 @@ describe('executeCommand — auto_layout', () => {
     expect(result.code).toBe('NO_WORKFLOW');
   });
 
+  it('starts from a real entry when an edge-less node comes first (#45)', () => {
+    const dispatch = createMockDispatch();
+    const note = createMockNode('agentspec.llm_node.note', llmMetadata, {
+      position: { x: 0, y: 0 }
+    });
+    const a = createMockNode('agentspec.llm_node.a', llmMetadata, { position: { x: 300, y: 0 } });
+    const b = createMockNode('agentspec.api_node.b', apiMetadata, { position: { x: 100, y: 0 } });
+    const c = createMockNode('agentspec.api_node.c', apiMetadata, { position: { x: 200, y: 0 } });
+    const edges = [
+      { id: 'e1', source: a.id, target: b.id },
+      { id: 'e2', source: b.id, target: c.id }
+    ] as WorkflowEdge[];
+    const context = createMockContext(
+      createMockWorkflow([note, a, b, c], edges),
+      nodeTypes,
+      dispatch
+    );
+
+    const result = executeCommand({ type: 'auto_layout' }, context);
+    expect(result.ok).toBe(true);
+
+    const updated = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      .nodes as WorkflowNode[];
+    const x = (id: string) => updated.find((n) => n.id === id)!.position.x;
+    // A, B, C are left to right in three distinct columns
+    expect(x(a.id)).toBeLessThan(x(b.id));
+    expect(x(b.id)).toBeLessThan(x(c.id));
+  });
+
+  it('still lays out a workflow of only edge-less nodes', () => {
+    const dispatch = createMockDispatch();
+    const n1 = createMockNode('agentspec.llm_node.1', llmMetadata);
+    const n2 = createMockNode('agentspec.llm_node.2', llmMetadata);
+    const context = createMockContext(createMockWorkflow([n1, n2], []), nodeTypes, dispatch);
+
+    const result = executeCommand({ type: 'auto_layout' }, context);
+    expect(result.ok).toBe(true);
+    const updated = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      .nodes as WorkflowNode[];
+    expect(updated).toHaveLength(2);
+  });
+
   it('handles disconnected nodes', () => {
     const dispatch = createMockDispatch();
     const node1 = createMockNode('agentspec.llm_node.1', llmMetadata, {
