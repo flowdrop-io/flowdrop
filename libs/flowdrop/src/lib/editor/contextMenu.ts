@@ -73,29 +73,74 @@ export interface ContextMenuOptions {
 
 type ContextMenuMessages = typeof defaultMessages.contextMenu;
 
+/**
+ * What the pure builder cannot learn from the context alone. Kept out of
+ * `ContextMenuContext` so that public shape does not change.
+ */
+export interface DefaultEntriesOptions {
+  /** Whether a node edits its text in place (its registration sets `editsInPlace`). Default: never. */
+  editsInPlace?: (node: WorkflowNode) => boolean;
+}
+
+/**
+ * The first node type that is the caption: `type === 'caption'`, or
+ * `supportedTypes` includes `'caption'`. Undefined when the backend has none,
+ * in which case there is no "Add caption" entry.
+ */
+export function findCaptionMetadata(nodeTypes: NodeMetadata[]): NodeMetadata | undefined {
+  return nodeTypes.find(
+    (meta) => meta.type === 'caption' || (meta.supportedTypes ?? []).includes('caption')
+  );
+}
+
 /** Type guard: separator entry. */
 export function isSeparator(entry: ContextMenuEntry): entry is { id: string; separator: true } {
   return 'separator' in entry && entry.separator === true;
 }
 
 /**
- * The built-in entries for a menu: node -> Configure, separator, Delete;
- * selection (2+ nodes) -> Delete n nodes; pane -> none yet.
+ * The built-in entries for a menu: node -> Configure (or Edit text for a node
+ * that edits in place), separator, Delete; selection (2+ nodes) -> Delete n
+ * nodes; pane -> Add caption when the node types include a caption, else none.
  *
  * @param messages - the `contextMenu` message branch (`m().contextMenu` in a component)
+ * @param options - facts the context does not carry (see `DefaultEntriesOptions`)
  */
 export function buildDefaultContextMenuEntries(
   ctx: ContextMenuContext,
-  messages: ContextMenuMessages = defaultMessages.contextMenu
+  messages: ContextMenuMessages = defaultMessages.contextMenu,
+  options: DefaultEntriesOptions = {}
 ): ContextMenuEntry[] {
-  if (ctx.target === 'node' && ctx.nodes.length === 1) {
+  if (ctx.target === 'pane') {
+    const caption = findCaptionMetadata(ctx.nodeTypes);
+    if (!caption) return [];
     return [
       {
-        id: 'configure',
-        label: messages.configure,
-        shortcut: '↵',
-        run: (c) => c.actions.openConfig(c.nodes[0].id)
-      },
+        id: 'add-caption',
+        label: messages.addCaption,
+        run: (c) => {
+          c.actions.addNode(caption, c.position, { edit: true });
+        }
+      }
+    ];
+  }
+
+  if (ctx.target === 'node' && ctx.nodes.length === 1) {
+    const first: ContextMenuEntry = options.editsInPlace?.(ctx.nodes[0])
+      ? {
+          id: 'edit-text',
+          label: messages.editText,
+          shortcut: '↵',
+          run: (c) => c.actions.editInPlace(c.nodes[0].id)
+        }
+      : {
+          id: 'configure',
+          label: messages.configure,
+          shortcut: '↵',
+          run: (c) => c.actions.openConfig(c.nodes[0].id)
+        };
+    return [
+      first,
       { id: 'separator-node', separator: true },
       {
         id: 'delete',
@@ -138,9 +183,10 @@ export function cleanSeparators(entries: ContextMenuEntry[]): ContextMenuEntry[]
 export function resolveContextMenuEntries(
   ctx: ContextMenuContext,
   options?: ContextMenuOptions,
-  messages: ContextMenuMessages = defaultMessages.contextMenu
+  messages: ContextMenuMessages = defaultMessages.contextMenu,
+  defaultsOptions: DefaultEntriesOptions = {}
 ): ContextMenuEntry[] {
-  const defaults = buildDefaultContextMenuEntries(ctx, messages);
+  const defaults = buildDefaultContextMenuEntries(ctx, messages, defaultsOptions);
   const items = options?.items;
   if (!items) return cleanSeparators(defaults);
 

@@ -1401,6 +1401,14 @@ p {
   --fd-notes-node-max-width: 500px;
   --fd-notes-node-min-height: 200px;
   --fd-notes-node-backdrop-filter: blur(8px);
+
+  /* =========================================================================
+	   Caption Node Component Tokens
+	   Colours (--fd-caption-node-bg / -fg) live in tokens.css. Width snaps up
+	   to the grid between two grid steps and this maximum.
+	   ========================================================================= */
+
+  --fd-caption-node-max-width: 500px;
 }
 
 /* Dark mode overrides for interrupt component tokens */

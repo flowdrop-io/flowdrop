@@ -23,6 +23,8 @@ export interface NodeComponentProps {
   /** Node data containing label, config, metadata, executionInfo */
   data: WorkflowNode['data'] & {
     onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
+    /** Injected by the editor for nodes that edit in place: the cleaned text, or null when cancelled. */
+    onInlineCommit?: (id: string, text: string | null) => void;
   };
   /** Whether the node is currently selected */
   selected?: boolean;
@@ -69,6 +71,12 @@ export interface NodeTypeInfo {
   statusPosition?: StatusPosition;
   /** Default status overlay size for this node type */
   statusSize?: StatusSize;
+  /**
+   * The node edits its text in place. Enter on the focused node, the
+   * context menu's "Edit text" and a double-click then ask the component to
+   * start typing (via `fd.inlineEdit`) instead of opening the config panel.
+   */
+  editsInPlace?: boolean;
 }
 
 /**
@@ -148,6 +156,9 @@ export interface PluginNodeDefinition {
 
   /** Status overlay size */
   statusSize?: StatusSize;
+
+  /** The node edits its text in place (see `NodeTypeInfo.editsInPlace`) */
+  editsInPlace?: boolean;
 }
 
 /**
@@ -428,6 +439,17 @@ export class NodeComponentRegistry extends BaseRegistry<string, NodeComponentReg
     return this.items.get(type)?.statusSize ?? 'md';
   }
 
+  /**
+   * Whether a node type edits its text in place.
+   *
+   * @param type - The node type
+   * @returns true when the registration sets `editsInPlace`
+   */
+  editsInPlace(type: string): boolean {
+    this.trackVersion(); // reactive dependency (reads items directly)
+    return this.items.get(type)?.editsInPlace === true;
+  }
+
   // ==========================================================================
   // Plugin system
   // ==========================================================================
@@ -460,6 +482,7 @@ export class NodeComponentRegistry extends BaseRegistry<string, NodeComponentReg
       source?: string;
       statusPosition?: StatusPosition;
       statusSize?: StatusSize;
+      editsInPlace?: boolean;
     } = {}
   ): void {
     this.register({
@@ -471,7 +494,8 @@ export class NodeComponentRegistry extends BaseRegistry<string, NodeComponentReg
       category: options.category ?? 'custom',
       source: options.source ?? 'custom',
       statusPosition: options.statusPosition,
-      statusSize: options.statusSize
+      statusSize: options.statusSize,
+      editsInPlace: options.editsInPlace
     });
   }
 
@@ -514,7 +538,8 @@ export class NodeComponentRegistry extends BaseRegistry<string, NodeComponentReg
           category: nodeDef.category ?? 'custom',
           source: config.namespace,
           statusPosition: nodeDef.statusPosition,
-          statusSize: nodeDef.statusSize
+          statusSize: nodeDef.statusSize,
+          editsInPlace: nodeDef.editsInPlace
         };
 
         this.register(registration);

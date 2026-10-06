@@ -52,6 +52,7 @@ export { default as WorkflowNodeComponent } from '../components/nodes/WorkflowNo
 export { default as SimpleNode } from '../components/nodes/SimpleNode.svelte';
 export { default as ToolNode } from '../components/nodes/ToolNode.svelte';
 export { default as NotesNode } from '../components/nodes/NotesNode.svelte';
+export { default as CaptionNode } from '../components/nodes/CaptionNode.svelte';
 export { default as GatewayNode } from '../components/nodes/GatewayNode.svelte';
 export { default as SquareNode } from '../components/nodes/SquareNode.svelte';
 export { default as TerminalNode } from '../components/nodes/TerminalNode.svelte';

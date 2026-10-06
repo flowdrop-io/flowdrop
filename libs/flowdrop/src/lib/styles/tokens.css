@@ -127,6 +127,10 @@
   --fd-card: #ffffff; /* @public */
   --fd-card-foreground: var(--_gray-9); /* @public */
 
+  /* ----- CAPTION NODE (inverted: reads as a label against any canvas) ----- */
+  --fd-caption-node-bg: var(--fd-foreground); /* @public */
+  --fd-caption-node-fg: var(--fd-background); /* @public */
+
   /* ----- CHROME PANELS (sidebar + config/inspector panel) -----
      Large editor-shell panels read from these so a theme can make them
      glassy/translucent without touching every other surface. Default to the
@@ -445,6 +449,10 @@
   /* ----- SURFACES (Backgrounds) - Softer contrast ----- */
   --fd-background: #1a1a1e;
   --fd-foreground: var(--_gray-2);
+  /* Re-declared here: a var() reference resolves where it is declared, so a
+     data-theme="dark" on a container below :root needs its own copy. */
+  --fd-caption-node-bg: var(--fd-foreground);
+  --fd-caption-node-fg: var(--fd-background);
   --fd-muted: #242428;
   --fd-muted-foreground: var(--_gray-4);
   --fd-subtle: #2a2a30;

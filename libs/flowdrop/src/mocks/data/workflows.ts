@@ -2594,6 +2594,9 @@ export const demoNodeTypesShowcaseWorkflow: Workflow = {
       selected: false,
       dragging: false
     },
+    // Caption: one opens the value-node band, one marks a node with a TODO.
+    showcaseNode('caption.1', 'caption', { x: 600, y: 140 }, {}, 'Value nodes'),
+    showcaseNode('caption.2', 'caption', { x: 1320, y: 1720 }, {}, 'TODO'),
     // Terminal: the end and exit variants (trigger.1 is the start variant).
     showcaseNode('terminal_end.1', 'test_terminal_multi_input', { x: 1680, y: 960 }, {}, 'End'),
     showcaseNode('terminal_exit.1', 'test_terminal_four_inputs', { x: 1500, y: 1260 }, {}, 'Exit'),

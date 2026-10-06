@@ -30,6 +30,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ContextMenuTarget` types are exported from `@flowdrop/flowdrop/editor`.
 - `messages.contextMenu` strings (`menuLabel`, `configure`, `delete`,
   `deleteNodes`) so the menu can be translated.
+- Caption node (`caption`): a short, high-contrast line of text (one or two
+  lines) that names or marks nearby nodes, for anything a note would be too
+  heavy for. It has no ports, no config panel and no status overlay, and its
+  text is the node's label. The width follows the text, rounded up to the grid
+  and kept between two grid steps (40px on the default grid) and 500px; the
+  height is 40px for one line and 60px for two, and longer text is cut off with
+  an ellipsis and shown in full as a tooltip. Right-click empty canvas and
+  choose "Add caption" (shown when the editor's node types include a node type
+  whose `type` is `caption`, or lists `caption` in `supportedTypes`; a backend
+  without one gets no menu entry). The new caption opens for typing; Enter or
+  clicking away saves, Escape cancels, and an empty or cancelled new caption is
+  removed without an undo entry. To edit an existing caption, double-click it,
+  press Enter on the focused node, or choose "Edit text" from its menu (which
+  replaces Configure for captions). Newlines and pasted formatting are never
+  stored, and saving an edit is one undo step ("Add caption" / "Edit caption").
+  `CaptionNode` is exported from `@flowdrop/flowdrop/editor`.
+- `--fd-caption-node-bg` and `--fd-caption-node-fg` (default to the theme's
+  foreground and background, so the caption reads as inverted in light and dark)
+  and `--fd-caption-node-max-width` (500px) tokens for the caption node.
+- `editsInPlace` option on node component registrations (`NodeComponentRegistration`,
+  `PluginNodeDefinition` and `registerCustom`): a node that sets it edits its
+  text in place, so Enter on the focused node, a double-click and the node
+  context menu's "Edit text" ask it to start typing instead of opening the
+  config panel. `fd.nodes.editsInPlace(type)` reads it, and `fd.inlineEdit`
+  (`request(id)`, `requested`, `clear()`) is the channel a component listens to.
+- `messages.contextMenu.addCaption` and `editText`, and a `messages.nodes.caption`
+  branch (`placeholder`, `editLabel`), so the caption's strings can be translated.
 
 ## [2.9.0] - 2026-10-04
 

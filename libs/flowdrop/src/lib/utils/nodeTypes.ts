@@ -19,6 +19,7 @@ import { resolveBuiltinAlias, isBuiltinType } from '../registry/builtinNodeTypes
  */
 const TYPE_DISPLAY_NAMES: Record<NodeType, string> = {
   note: 'Note (sticky note style)',
+  caption: 'Caption (short label text)',
   simple: 'Simple (compact layout)',
   square: 'Square (geometric layout)',
   atom: 'Atom (minimal value/transform)',

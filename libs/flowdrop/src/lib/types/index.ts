@@ -333,6 +333,7 @@ export function dynamicPortToNodePort(port: DynamicPort, portType: 'input' | 'ou
  */
 export type BuiltinNodeType =
   | 'note'
+  | 'caption'
   | 'simple'
   | 'square'
   | 'atom'

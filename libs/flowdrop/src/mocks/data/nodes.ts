@@ -2816,6 +2816,25 @@ const flowdropNativeNodes: NodeMetadata[] = [
     }
   },
   {
+    node_type_id: 'caption',
+    name: 'Caption',
+    type: 'caption',
+    supportedTypes: ['caption'],
+    description:
+      'Short high-contrast text (one or two lines) that names or marks nearby nodes. For anything longer, use note.',
+    category: 'tools',
+    icon: 'mdi:format-title',
+    version: '1.0.0',
+    tags: ['tools', 'caption', 'label', 'annotation'],
+    inputs: [],
+    outputs: [],
+    config: {},
+    configSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
     node_type_id: 'openai_chat',
     name: 'OpenAI Chat',
     type: 'default',

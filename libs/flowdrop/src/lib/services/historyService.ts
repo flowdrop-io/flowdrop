@@ -427,7 +427,7 @@ export class HistoryService {
   /**
    * Create a deep clone of a workflow
    *
-   * Strips non-serializable values (e.g., onConfigOpen callbacks) before cloning
+   * Strips non-serializable values (e.g., onConfigOpen and onInlineCommit callbacks) before cloning
    * so structuredClone doesn't throw on function references.
    * Falls back to JSON round-trip if structuredClone still fails (e.g., Svelte proxies).
    */
@@ -436,7 +436,7 @@ export class HistoryService {
       ...workflow,
       nodes: workflow.nodes.map((n) => ({
         ...n,
-        data: { ...n.data, onConfigOpen: undefined }
+        data: { ...n.data, onConfigOpen: undefined, onInlineCommit: undefined }
       }))
     };
     try {

@@ -244,7 +244,9 @@ export const defaultMessages = {
     menuLabel: 'Canvas actions',
     configure: 'Configure',
     delete: 'Delete',
-    deleteNodes: ({ n }: { n: number }) => `Delete ${n} node${n !== 1 ? 's' : ''}`
+    deleteNodes: ({ n }: { n: number }) => `Delete ${n} node${n !== 1 ? 's' : ''}`,
+    addCaption: 'Add caption',
+    editText: 'Edit text'
   },
 
   layout: {
@@ -473,6 +475,13 @@ export const defaultMessages = {
       processing: 'Processing...',
       errorOccurred: 'Error occurred',
       configure: 'Configure note'
+    },
+
+    caption: {
+      // Shown (dimmed) in an empty caption while it is being typed.
+      placeholder: 'Caption',
+      // aria-label of the text box while a caption is edited in place.
+      editLabel: 'Caption text'
     },
 
     // SvelteFlow node aria-labels — every visible node and port needs a

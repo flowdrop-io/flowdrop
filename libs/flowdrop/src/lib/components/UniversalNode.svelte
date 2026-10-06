@@ -59,10 +59,12 @@
 
   /**
    * Determine if status overlay should be shown.
-   * Hide for note nodes as they have their own styling.
+   * Hide for note and caption nodes as they have their own styling.
    */
   let shouldShowStatus = $derived(
-    shouldShowNodeStatus(executionInfo) && resolvedComponentName !== 'note'
+    shouldShowNodeStatus(executionInfo) &&
+      resolvedComponentName !== 'note' &&
+      resolvedComponentName !== 'caption'
   );
 
   // Keyboard activation lives on xyflow's node wrapper — the single focusable,
@@ -81,6 +83,11 @@
       if (event.target !== wrapper) return;
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
+        // Nodes that edit their text in place (caption) start typing instead.
+        if (fd.nodes.editsInPlace(resolvedComponentName)) {
+          fd.inlineEdit.request(id);
+          return;
+        }
         data.onConfigOpen?.({
           id,
           type: resolvedComponentName,
@@ -129,6 +136,7 @@
       case 'tool':
         return 'top-left';
       case 'note':
+      case 'caption':
         return 'bottom-right';
       case 'simple':
       case 'square':
@@ -152,6 +160,7 @@
     switch (resolvedComponentName) {
       case 'tool':
       case 'note':
+      case 'caption':
       case 'square':
         return 'sm';
       case 'simple':

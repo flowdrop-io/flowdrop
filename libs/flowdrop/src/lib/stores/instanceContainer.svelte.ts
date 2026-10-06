@@ -25,6 +25,7 @@ import { InterruptStore } from './interruptStore.svelte.js';
 import { CategoriesStore } from './categoriesStore.svelte.js';
 import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
+import { InlineEditStore } from './inlineEditStore.svelte.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
@@ -85,6 +86,11 @@ export interface FlowDropInstance {
   readonly portCoordinates: PortCoordinateStore;
   /** Pipeline panel open/close state (instance-scoped persistence). */
   readonly pipelinePanel: PipelinePanelStore;
+  /**
+   * The "open this node for typing in place" channel. Nodes registered with
+   * `editsInPlace` (the caption) watch it for their own id.
+   */
+  readonly inlineEdit: InlineEditStore;
   /**
    * The node types this editor currently knows: what `App` fetched (or was
    * given), merged with the format-provided nodes. Written by the editor as
@@ -246,6 +252,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     portCompatibility: new PortCompatibilityChecker(DEFAULT_PORT_CONFIG),
     // The default instance keeps the legacy bare localStorage key.
     pipelinePanel: new PipelinePanelStore(id),
+    inlineEdit: new InlineEditStore(),
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
     approvalGate: null,

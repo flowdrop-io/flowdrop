@@ -4,6 +4,7 @@ import {
   resolveContextMenuEntries,
   runContextMenuEntry,
   cleanSeparators,
+  findCaptionMetadata,
   isSeparator,
   type ContextMenuActions,
   type ContextMenuContext,
@@ -11,7 +12,7 @@ import {
 } from '../../../src/lib/editor/contextMenu.js';
 import { defaultMessages } from '../../../src/lib/messages/defaults.js';
 import { logger } from '../../../src/lib/utils/logger.js';
-import type { WorkflowNode } from '../../../src/lib/types/index.js';
+import type { NodeMetadata, WorkflowNode } from '../../../src/lib/types/index.js';
 
 function node(id: string): WorkflowNode {
   return {
@@ -43,6 +44,19 @@ function makeCtx(
     actions: makeActions()
   };
 }
+
+function meta(over: Partial<NodeMetadata>): NodeMetadata {
+  return {
+    node_type_id: 'x',
+    name: 'X',
+    type: 'default',
+    inputs: [],
+    outputs: [],
+    ...over
+  } as NodeMetadata;
+}
+
+const captionMeta = meta({ node_type_id: 'caption', name: 'Caption', type: 'caption' });
 
 const ids = (entries: ContextMenuEntry[]): string[] => entries.map((e) => e.id);
 
@@ -80,6 +94,63 @@ describe('buildDefaultContextMenuEntries', () => {
 
   it('pane: no entries yet', () => {
     expect(buildDefaultContextMenuEntries(makeCtx('pane'))).toEqual([]);
+  });
+
+  it('pane: Add caption when the node types include a caption, running addNode with edit', () => {
+    const ctx = makeCtx('pane');
+    ctx.nodeTypes = [meta({ node_type_id: 'calc' }), captionMeta];
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual(['add-caption']);
+    expect(entries[0]).toMatchObject({ label: 'Add caption' });
+    runContextMenuEntry(entries[0], ctx);
+    expect(ctx.actions.addNode).toHaveBeenCalledWith(captionMeta, ctx.position, { edit: true });
+  });
+
+  it('pane: no Add caption without caption metadata', () => {
+    const ctx = makeCtx('pane');
+    ctx.nodeTypes = [meta({ node_type_id: 'calc' }), meta({ node_type_id: 'note', type: 'note' })];
+    expect(buildDefaultContextMenuEntries(ctx)).toEqual([]);
+  });
+
+  it('pane: a node type that only lists caption in supportedTypes counts', () => {
+    const viaSupported = meta({ node_type_id: 'label', supportedTypes: ['default', 'caption'] });
+    const ctx = makeCtx('pane');
+    ctx.nodeTypes = [viaSupported];
+    expect(findCaptionMetadata(ctx.nodeTypes)).toBe(viaSupported);
+    expect(ids(buildDefaultContextMenuEntries(ctx))).toEqual(['add-caption']);
+  });
+
+  it('node that edits in place: Edit text instead of Configure, then Delete', () => {
+    const ctx = makeCtx('node', [node('a')]);
+    const entries = buildDefaultContextMenuEntries(ctx, defaultMessages.contextMenu, {
+      editsInPlace: () => true
+    });
+    expect(ids(entries)).toEqual(['edit-text', 'separator-node', 'delete']);
+    expect(entries[0]).toMatchObject({ label: 'Edit text', shortcut: '↵' });
+    runContextMenuEntry(entries[0], ctx);
+    expect(ctx.actions.editInPlace).toHaveBeenCalledWith('a');
+    expect(ctx.actions.openConfig).not.toHaveBeenCalled();
+  });
+
+  it('the predicate decides per node; without it Configure stays', () => {
+    const ctx = makeCtx('node', [node('plain')]);
+    const withPredicate = buildDefaultContextMenuEntries(ctx, defaultMessages.contextMenu, {
+      editsInPlace: (n) => n.id === 'caption.1'
+    });
+    expect(ids(withPredicate)).toEqual(['configure', 'separator-node', 'delete']);
+    expect(ids(buildDefaultContextMenuEntries(ctx))).toEqual([
+      'configure',
+      'separator-node',
+      'delete'
+    ]);
+  });
+
+  it('resolveContextMenuEntries passes the predicate through', () => {
+    const ctx = makeCtx('node', [node('a')]);
+    const entries = resolveContextMenuEntries(ctx, undefined, defaultMessages.contextMenu, {
+      editsInPlace: () => true
+    });
+    expect(ids(entries)).toEqual(['edit-text', 'separator-node', 'delete']);
   });
 
   it('uses the supplied messages', () => {

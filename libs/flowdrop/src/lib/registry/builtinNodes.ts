@@ -19,6 +19,7 @@ import AtomNode from '../components/nodes/AtomNode.svelte';
 import ToolNode from '../components/nodes/ToolNode.svelte';
 import GatewayNode from '../components/nodes/GatewayNode.svelte';
 import NotesNode from '../components/nodes/NotesNode.svelte';
+import CaptionNode from '../components/nodes/CaptionNode.svelte';
 import TerminalNode from '../components/nodes/TerminalNode.svelte';
 import IdeaNode from '../components/nodes/IdeaNode.svelte';
 
@@ -117,6 +118,18 @@ export const BUILTIN_NODE_COMPONENTS: NodeComponentRegistration[] = [
     source: FLOWDROP_SOURCE,
     statusPosition: 'bottom-right',
     statusSize: 'sm'
+  },
+  {
+    type: 'caption',
+    displayName: 'Caption',
+    description: 'Short high-contrast text that names or marks nearby nodes',
+    component: CaptionNode,
+    icon: 'mdi:format-title',
+    category: 'layout',
+    source: FLOWDROP_SOURCE,
+    statusPosition: 'bottom-right',
+    statusSize: 'sm',
+    editsInPlace: true
   },
   {
     type: 'terminal',

@@ -30,6 +30,7 @@ export type BuiltinNodeType =
   | 'tool'
   | 'gateway'
   | 'note'
+  | 'caption'
   | 'terminal'
   | 'idea';
 
@@ -44,6 +45,7 @@ export const BUILTIN_NODE_TYPES: BuiltinNodeType[] = [
   'tool',
   'gateway',
   'note',
+  'caption',
   'terminal',
   'idea'
 ];

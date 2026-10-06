@@ -29,6 +29,27 @@ describe('NodeComponentRegistry', () => {
     registry = new NodeComponentRegistry();
   });
 
+  describe('editsInPlace', () => {
+    it('is false by default and true when the registration sets it', () => {
+      registry.register(createMockRegistration('plain'));
+      registry.register({ ...createMockRegistration('inline'), editsInPlace: true });
+      expect(registry.editsInPlace('plain')).toBe(false);
+      expect(registry.editsInPlace('inline')).toBe(true);
+      expect(registry.editsInPlace('unknown')).toBe(false);
+    });
+
+    it('is set on the built-in caption only', () => {
+      const seeded = new NodeComponentRegistry({
+        registrations: BUILTIN_NODE_COMPONENTS,
+        defaultType: 'workflowNode'
+      });
+      const inline = BUILTIN_NODE_COMPONENTS.filter((r) => seeded.editsInPlace(r.type)).map(
+        (r) => r.type
+      );
+      expect(inline).toEqual(['caption']);
+    });
+  });
+
   describe('constructor seeding', () => {
     it('should seed from BUILTIN_NODE_COMPONENTS when provided', () => {
       const seeded = new NodeComponentRegistry({

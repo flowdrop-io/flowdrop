@@ -7,6 +7,10 @@
     - ?workflow=complex  -> branching workflow with 4 nodes, 3 edges
     - (default)          -> simple workflow with 2 nodes, 1 edge
     - ?mode=readonly|locked -> editor mode (default 'edit')
+    - ?workflow=caption  -> a text input plus two captions (short, long); also
+                           offers the caption node type
+    - ?caption=1         -> offer the caption node type (the pane menu then has
+                           "Add caption"); without it the type list has none
     - ?contextMenu=extra -> pass a `contextMenu.items` that appends a
       "Test extra entry" item; running it sets window.__contextMenuExtraRan
     - ?settingsDefaults=light|dark|auto -> seed host settings defaults
@@ -68,6 +72,26 @@
       void initializeSettings({ defaults: { theme: { preference: pref as ThemePreference } } });
     }
   }
+
+  // --- Caption node type is only offered on request (?caption=1 or ?workflow=caption) ---
+  let offerCaption = $derived(
+    $page.url.searchParams.get('caption') === '1' || workflowVariant === 'caption'
+  );
+
+  const captionNodeType: NodeMetadata = {
+    node_type_id: 'caption',
+    name: 'Caption',
+    description: 'Short high-contrast text that names or marks nearby nodes',
+    category: 'tools',
+    version: '1.0.0',
+    type: 'caption',
+    supportedTypes: ['caption'],
+    icon: 'mdi:format-title',
+    inputs: [],
+    outputs: [],
+    configSchema: { type: 'object', properties: {} },
+    tags: ['caption']
+  };
 
   // --- Node type definitions (inlined to avoid import path issues) ---
   const testNodeTypes: NodeMetadata[] = [
@@ -438,7 +462,50 @@
     }
   };
 
+  // Workflow with an existing short caption and a long one (clamp + tooltip)
+  const captionWorkflow: Workflow = {
+    id: 'test-workflow-caption',
+    name: 'Caption Workflow',
+    description: 'A node and two captions for in-place editing tests',
+    nodes: [
+      {
+        id: 'node-input',
+        type: 'universalNode',
+        position: { x: 200, y: 300 },
+        data: {
+          label: 'Text Input',
+          config: { defaultValue: '' },
+          metadata: testNodeTypes[0]
+        }
+      },
+      {
+        id: 'caption-short',
+        type: 'universalNode',
+        position: { x: 200, y: 200 },
+        data: { label: 'Inputs', config: {}, metadata: captionNodeType }
+      },
+      {
+        id: 'caption-long',
+        type: 'universalNode',
+        position: { x: 600, y: 200 },
+        data: {
+          label:
+            'This caption is far too long for two lines of a five hundred pixel wide label so the clamp has to cut it off with an ellipsis and keep the full text in the tooltip instead of growing taller',
+          config: {},
+          metadata: captionNodeType
+        }
+      }
+    ],
+    edges: [],
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+
   const workflows: Record<string, Workflow> = {
+    caption: captionWorkflow,
     simple: simpleWorkflow,
     empty: emptyWorkflow,
     complex: complexWorkflow,
@@ -471,7 +538,7 @@
     height="100vh"
     width="100%"
     showNavbar={true}
-    nodes={testNodeTypes}
+    nodes={offerCaption ? [...testNodeTypes, captionNodeType] : testNodeTypes}
     workflow={selectedWorkflow}
     theme={themeName}
     mode={editorMode}

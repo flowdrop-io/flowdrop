@@ -65,6 +65,7 @@ export function getOptimalStatusPosition(nodeType: string): NodeStatusConfig['po
     case 'tool':
       return 'top-left';
     case 'note':
+    case 'caption':
       return 'bottom-right';
     case 'simple':
     case 'square':
@@ -81,6 +82,7 @@ export function getOptimalStatusSize(nodeType: string): NodeStatusConfig['size']
     case 'tool':
       return 'sm';
     case 'note':
+    case 'caption':
       return 'sm';
     case 'simple':
     case 'square':

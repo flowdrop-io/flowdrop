@@ -35,6 +35,8 @@
     type ContextMenuTarget
   } from '../editor/contextMenu.js';
   import type { NodeMetadata } from '../types/index.js';
+  import { resolveComponentName } from '../utils/nodeTypes.js';
+  import { decideInlineCommit, collapseCaptionText } from '../utils/captionText.js';
   import FlowDropZone from './FlowDropZone.svelte';
   import EdgeRefresher from './EdgeRefresher.svelte';
   import { tick, untrack, onMount } from 'svelte';
@@ -228,17 +230,23 @@
   // ---------------------------------------------------------------------------
   // Helper: derive flowNodes/flowEdges from a Workflow object
   // ---------------------------------------------------------------------------
+  /** Add the callbacks every node component can call: open config, commit an in-place edit. */
+  function withNodeCallbacks(node: WorkflowNodeType) {
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        onConfigOpen: props.openConfigSidebar,
+        onInlineCommit: handleInlineCommit
+      }
+    };
+  }
+
   function buildFlowNodesFromStore(workflow: Workflow): {
     nodes: WorkflowNodeType[];
     edges: WorkflowEdge[];
   } {
-    const nodesWithCallbacks = workflow.nodes.map((node) => ({
-      ...node,
-      data: {
-        ...node.data,
-        onConfigOpen: props.openConfigSidebar
-      }
-    }));
+    const nodesWithCallbacks = workflow.nodes.map(withNodeCallbacks);
     const styledEdges = EdgeStylingHelper.updateEdgeStyles(workflow.edges, nodesWithCallbacks);
     return { nodes: nodesWithCallbacks, edges: styledEdges };
   }
@@ -691,8 +699,10 @@
    */
   function placeNode(
     nodeTypeData: string,
-    position: { x: number; y: number }
+    position: { x: number; y: number },
+    options: { history?: boolean; emptyLabel?: boolean } = {}
   ): { id: string | null; done: Promise<void> } {
+    const { history = true, emptyLabel = false } = options;
     machine.send('START_DROP');
 
     const newNode = NodeOperationsHelper.createNodeFromDrop(nodeTypeData, position, flowNodes);
@@ -703,11 +713,10 @@
       return { id: null, done: Promise.resolve() };
     }
 
-    // Add onConfigOpen callback and append to flowNodes for immediate visual feedback
-    const nodeWithCallback = {
-      ...newNode,
-      data: { ...newNode.data, onConfigOpen: props.openConfigSidebar }
-    };
+    // Add the node callbacks and append to flowNodes for immediate visual feedback
+    const nodeWithCallback = withNodeCallbacks(
+      emptyLabel ? { ...newNode, data: { ...newNode.data, label: '' } } : newNode
+    );
     flowNodes = [...flowNodes, nodeWithCallback];
 
     // Sync to store
@@ -716,9 +725,11 @@
     const done = (async () => {
       await tick();
 
-      const storeValue = fd.workflow.current;
-      if (storeValue) {
-        fd.workflow.pushHistory('Add node', storeValue);
+      if (history) {
+        const storeValue = fd.workflow.current;
+        if (storeValue) {
+          fd.workflow.pushHistory('Add node', storeValue);
+        }
       }
 
       machine.send('DROP_COMPLETE');
@@ -752,11 +763,74 @@
   let openMenu = $state.raw<OpenContextMenu | null>(null);
   let canvasEl: HTMLDivElement | undefined = $state();
 
+  /** Whether a node's registered component edits its text in place (the caption). */
+  function nodeEditsInPlace(node: WorkflowNodeType): boolean {
+    return (
+      !!node.data.metadata &&
+      fd.nodes.editsInPlace(
+        resolveComponentName(fd.nodes, node.data.metadata, node.data.config?.nodeType as string)
+      )
+    );
+  }
+
+  /**
+   * Ids of in-place nodes that were just added and have no history entry yet.
+   * Their first save pushes "Add caption"; cancelling or leaving them empty
+   * removes them without a trace.
+   */
+  const pendingNewIds = new Set<string>();
+
+  /**
+   * An in-place edit ended (see CaptionNode): `text` is the cleaned text, or
+   * null when the user cancelled. `decideInlineCommit` holds the rules.
+   */
+  function handleInlineCommit(id: string, text: string | null): void {
+    const node = flowNodes.find((n) => n.id === id);
+    const isNew = pendingNewIds.delete(id);
+    if (!node || !canvasEditable) {
+      // Gone (undo, workflow switch) or no longer editable: a pending node must not linger.
+      if (node && isNew) {
+        flowNodes = flowNodes.filter((n) => n.id !== id);
+        flowEdges = flowEdges.filter((e) => e.source !== id && e.target !== id);
+        syncFlowToStore();
+      }
+      return;
+    }
+
+    const outcome = decideInlineCommit(text, node.data.label ?? '', isNew);
+    if (outcome === 'none') return;
+
+    if (outcome === 'remove') {
+      flowNodes = flowNodes.filter((n) => n.id !== id);
+      syncFlowToStore();
+      return;
+    }
+
+    const label = collapseCaptionText(text ?? '');
+    flowNodes = flowNodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, label } } : n));
+    syncFlowToStore();
+    const storeValue = fd.workflow.current;
+    if (storeValue) {
+      fd.workflow.pushHistory(outcome === 'add' ? 'Add caption' : 'Edit caption', storeValue);
+    }
+  }
+
   const contextMenuActions: ContextMenuActions = {
-    addNode(metadata: NodeMetadata, position, _options) {
-      // `_options.edit` is accepted for the API but not wired yet: the caption
-      // phase opens the new node for typing in place.
-      return placeNode(JSON.stringify(metadata), position).id;
+    addNode(metadata: NodeMetadata, position, options) {
+      const editsHere =
+        options?.edit === true && fd.nodes.editsInPlace(resolveComponentName(fd.nodes, metadata));
+      if (!editsHere) return placeNode(JSON.stringify(metadata), position).id;
+
+      // New in-place node: empty text, no history entry until the first save.
+      const { id } = placeNode(JSON.stringify(metadata), position, {
+        history: false,
+        emptyLabel: true
+      });
+      if (id) {
+        pendingNewIds.add(id);
+        fd.inlineEdit.request(id);
+      }
+      return id;
     },
     deleteNodes(ids) {
       if (ids.length === 0) return;
@@ -773,8 +847,8 @@
         data: node.data
       } as WorkflowNodeType);
     },
-    editInPlace(_id) {
-      // No-op until a node type edits in place (caption phase).
+    editInPlace(id) {
+      fd.inlineEdit.request(id);
     }
   };
 
@@ -813,7 +887,9 @@
       nodeTypes: fd.nodeTypes.current,
       actions: contextMenuActions
     };
-    const entries = resolveContextMenuEntries(ctx, props.contextMenu, getMsgs().contextMenu);
+    const entries = resolveContextMenuEntries(ctx, props.contextMenu, getMsgs().contextMenu, {
+      editsInPlace: nodeEditsInPlace
+    });
     if (entries.length === 0) {
       openMenu = null;
       return false;
@@ -913,6 +989,13 @@
   $effect(() => {
     void svelteFlowKey;
     openMenu = null;
+    pendingNewIds.clear();
+    fd.inlineEdit.clear();
+  });
+
+  // In-place editing follows edit mode.
+  $effect(() => {
+    fd.inlineEdit.setEditable(canvasEditable);
   });
 
   /**
