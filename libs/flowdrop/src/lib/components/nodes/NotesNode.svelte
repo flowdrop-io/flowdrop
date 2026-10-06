@@ -315,6 +315,12 @@
     margin-bottom: 0;
   }
 
+  /* h1/h2 keep their browser-default sizes (~2em/1.5em), which overflow a 20px row
+     and overlap when they wrap; give each of their lines two grid rows instead. */
+  .flowdrop-notes-node__body :global(:is(h1, h2)) {
+    line-height: 40px;
+  }
+
   .flowdrop-notes-node__body :global(li) {
     margin: 0;
     line-height: 20px;
