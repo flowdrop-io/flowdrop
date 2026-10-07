@@ -27,6 +27,7 @@ import { CategoriesStore } from './categoriesStore.svelte.js';
 import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
 import { InlineEditStore } from './inlineEditStore.svelte.js';
+import { EditorModeStore } from './editorModeStore.svelte.js';
 import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
@@ -107,6 +108,12 @@ export interface FlowDropInstance {
    * `editsInPlace` (the caption) watch it for their own id.
    */
   readonly inlineEdit: InlineEditStore;
+  /**
+   * The Edit | Test mode of this editor. `fd.editorMode.set('test')` is how a
+   * host (or a run bar) takes the editor into Test mode; the navbar switch
+   * writes the same store.
+   */
+  readonly editorMode: EditorModeStore;
   /**
    * The node types this editor currently knows: what `App` fetched (or was
    * given), merged with the format-provided nodes. Written by the editor as
@@ -293,6 +300,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     // The default instance keeps the legacy bare localStorage key.
     pipelinePanel: new PipelinePanelStore(id),
     inlineEdit: new InlineEditStore(),
+    editorMode: new EditorModeStore(),
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
     approvalGate: null,

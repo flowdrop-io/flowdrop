@@ -24,3 +24,30 @@ describe('resolveInspectorSurface', () => {
     expect(resolveInspectorSurface({ ...open, hasNode: false })).toBe('workflow');
   });
 });
+
+describe('Test mode', () => {
+  it('rests on the workflow tabs when nothing is open', () => {
+    expect(
+      resolveInspectorSurface({ hasNode: false, workflowOpen: false, editorMode: 'test' })
+    ).toBe('workflow');
+  });
+
+  it('still lets a node win over the resting workflow tabs', () => {
+    expect(
+      resolveInspectorSurface({ hasNode: true, workflowOpen: false, editorMode: 'test' })
+    ).toBe('node');
+  });
+
+  it('keeps Edit mode inspector-on-demand', () => {
+    expect(
+      resolveInspectorSurface({ hasNode: false, workflowOpen: false, editorMode: 'edit' })
+    ).toBeNull();
+  });
+
+  it('offers no close control for the resting workflow tabs, only for a node', () => {
+    expect(closeTarget('workflow', 'test')).toBeNull();
+    expect(closeTarget('node', 'test')).toBe('node');
+    expect(closeTarget('workflow', 'edit')).toBe('workflow');
+  });
+});
+

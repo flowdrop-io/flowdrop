@@ -198,6 +198,9 @@ export type { PlaygroundInputMode } from '../utils/workflowInterface.js';
 export type { NodeStatusScope } from '../stores/playgroundStore.svelte.js';
 export type { RunController, RunControllerOptions } from '../stores/runController.svelte.js';
 
+// The Edit | Test axis of an editor (`fd.editorMode`, the `editorMode` prop).
+export type { EditorMode, EditorModeStore } from '../stores/editorModeStore.svelte.js';
+
 // Endpoint config types
 export type { EndpointConfig } from '../config/endpoints.js';
 
