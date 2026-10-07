@@ -205,18 +205,20 @@ export class RunController {
    * with no Playground mounted. A no-op when a surface configured a workflow
    * id (the Playground sets its own workflow) or the editor has none.
    *
-   * When the store holds a different workflow, its sessions belong to that
-   * one and are dropped, so a turn from the Console never lands in another
-   * workflow's session.
+   * The same workflow is re-adopted when the editor holds a newer copy, so a
+   * binding edited since the last turn is the one the next turn uses. When the
+   * store holds a different workflow, its sessions belong to that one and are
+   * dropped, so a turn from the Console never lands in another workflow's
+   * session.
    */
   adoptEditorWorkflow(): void {
     if (this.#hasConfiguredWorkflow) return;
     const editorWorkflow = this.#workflow.current;
     if (!editorWorkflow) return;
     const held = this.#playground.currentWorkflow;
-    if (held && held.id === editorWorkflow.id) return;
+    if (held === editorWorkflow) return;
 
-    if (held) {
+    if (held && held.id !== editorWorkflow.id) {
       this.#service.stopPolling();
       this.#playground.setSessions([]);
       this.#playground.setCurrentSession(null);

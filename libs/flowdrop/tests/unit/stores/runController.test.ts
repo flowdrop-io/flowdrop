@@ -257,6 +257,26 @@ describe('RunController', () => {
       expect(service.stopPolling).toHaveBeenCalled();
     });
 
+    it('picks up a binding edited in the editor since the last turn, keeping the sessions', () => {
+      const { runs, editor, playground } = setup();
+      editor.initialize(workflow('a'));
+      runs.adoptEditorWorkflow();
+      playground.setSessions([session('s1')]);
+      playground.setFormValues({ topic: 'solar' });
+
+      editor.initialize({
+        ...workflow('a'),
+        playground: { chat: { message: 'question', replies: [] } }
+      } as Workflow);
+      runs.adoptEditorWorkflow();
+
+      expect(playground.currentWorkflow?.playground).toEqual({
+        chat: { message: 'question', replies: [] }
+      });
+      expect(playground.sessions.map((s) => s.id)).toEqual(['s1']);
+      expect(playground.formValues).toEqual({ topic: 'solar' });
+    });
+
     it('leaves the playground workflow alone when a surface configured one', () => {
       const { runs, editor, playground } = setup();
       runs.configure({ workflowId: 'configured' });
