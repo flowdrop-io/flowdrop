@@ -29,8 +29,8 @@ export function render() {
 /** Light/base aliases (:root). */
 export const LIGHT_ALIASES: Readonly<Record<string, string>> = ${JSON.stringify(maps.light, null, 2)};
 
-/** Dark overrides ([data-theme='dark']); null = literal value, no longer an alias. */
-export const DARK_ALIASES: Readonly<Record<string, string | null>> = ${JSON.stringify(maps.dark, null, 2)};
+/** Dark overrides ([data-theme='dark']): aliases, plus literal dark values of light aliases. */
+export const DARK_ALIASES: Readonly<Record<string, string>> = ${JSON.stringify(maps.dark, null, 2)};
 `;
 }
 

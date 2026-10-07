@@ -83,8 +83,8 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'sidebar-flat-item-color': 'var(--fd-foreground)'
 };
 
-/** Dark overrides ([data-theme='dark']); null = literal value, no longer an alias. */
-export const DARK_ALIASES: Readonly<Record<string, string | null>> = {
+/** Dark overrides ([data-theme='dark']): aliases, plus literal dark values of light aliases. */
+export const DARK_ALIASES: Readonly<Record<string, string>> = {
   'caption-node-bg': 'var(--fd-foreground)',
   'caption-node-fg': 'var(--fd-background)',
   'interrupt-badge-completed-bg': 'var(--fd-primary-muted)',
@@ -92,5 +92,5 @@ export const DARK_ALIASES: Readonly<Record<string, string | null>> = {
   'interrupt-btn-secondary-bg': 'var(--fd-secondary)',
   'interrupt-btn-secondary-border': 'var(--fd-border)',
   'interrupt-btn-secondary-text': 'var(--fd-foreground)',
-  'interrupt-selected-decline-bg': null
+  'interrupt-selected-decline-bg': 'rgba(248, 113, 113, 0.15)'
 };

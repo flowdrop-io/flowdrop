@@ -67,6 +67,16 @@ describe('buildScopedSkinCss', () => {
     expect(css).not.toContain('--fd-interrupt-selected-decline-bg: var(');
   });
 
+  it('restores a literal dark value for an alias the light rule redeclares', () => {
+    // decline-bg is var(--fd-error-muted) in light and a literal in dark; the
+    // light rule redeclares it on the scope, which would shadow the :root dark
+    // literal unless the dark rule puts it back.
+    const css = buildScopedSkinCss('a1', { tokens: { 'error-muted': '#fee' } });
+    const [light, dark] = css.split(`[data-theme='dark']`);
+    expect(light).toContain('--fd-interrupt-selected-decline-bg: var(--fd-error-muted);');
+    expect(dark).toContain('--fd-interrupt-selected-decline-bg: rgba(248, 113, 113, 0.15);');
+  });
+
   it('keeps two instances apart', () => {
     const a = buildScopedSkinCss('a', { tokens: { primary: 'red' } });
     const b = buildScopedSkinCss('b', { tokens: { primary: 'blue' } });

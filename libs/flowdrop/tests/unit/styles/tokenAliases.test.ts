@@ -18,7 +18,7 @@ describe('tokenAliases.ts', () => {
     expect(LIGHT_ALIASES['panel-bg']).toBe('var(--fd-background)');
     expect(LIGHT_ALIASES['note-border']).toBe('var(--fd-node-border)');
     expect(LIGHT_ALIASES['interrupt-pending-border']).toBe('var(--fd-warning)');
-    expect(DARK_ALIASES['interrupt-selected-decline-bg']).toBeNull();
+    expect(DARK_ALIASES['interrupt-selected-decline-bg']).toBe('rgba(248, 113, 113, 0.15)');
   });
 });
 

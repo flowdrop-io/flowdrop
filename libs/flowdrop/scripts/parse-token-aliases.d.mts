@@ -4,5 +4,5 @@ export function parseTokenDeclarations(css: string): {
 };
 export function buildAliasMaps(sources: string[]): {
   light: Record<string, string>;
-  dark: Record<string, string | null>;
+  dark: Record<string, string>;
 };

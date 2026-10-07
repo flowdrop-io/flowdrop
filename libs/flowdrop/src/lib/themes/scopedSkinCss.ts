@@ -47,14 +47,9 @@ function rule(selector: string, declarations: Record<string, string>): string {
   return `${selector} {\n${body}\n}\n`;
 }
 
-/** Dark-mode alias expressions: the light ones with the dark block's overrides applied. */
+/** Dark-mode alias values: the light ones with the dark block's overrides applied. */
 function effectiveDarkAliases(): Record<string, string> {
-  const merged: Record<string, string> = { ...LIGHT_ALIASES };
-  for (const [name, expression] of Object.entries(DARK_ALIASES)) {
-    if (expression === null) delete merged[name];
-    else merged[name] = expression;
-  }
-  return merged;
+  return { ...LIGHT_ALIASES, ...DARK_ALIASES };
 }
 
 /** Keep the id usable inside an attribute selector. */
@@ -87,11 +82,20 @@ export function buildScopedSkinCss(
   const skinSet = new Set([...lightKeys, ...darkKeys]);
   let css = '';
 
+  const lightAliases = aliasClosure(lightKeys, LIGHT_ALIASES, skinSet);
   if (lightKeys.length > 0) {
-    css += rule(scope, { ...aliasClosure(lightKeys, LIGHT_ALIASES, skinSet), ...tokens });
+    css += rule(scope, { ...lightAliases, ...tokens });
   }
 
-  const darkAliases = aliasClosure(skinSet, effectiveDarkAliases(), skinSet);
+  // Every alias the light rule redeclares shadows the :root dark value, so the
+  // dark rule restores it — including dark values that are literals, which the
+  // closure (it follows var() references) would never pick up.
+  const darkAliases: Record<string, string> = {
+    ...aliasClosure(skinSet, effectiveDarkAliases(), skinSet)
+  };
+  for (const name of Object.keys(lightAliases)) {
+    if (name in DARK_ALIASES && !(name in darkAliases)) darkAliases[name] = DARK_ALIASES[name];
+  }
   if (darkKeys.length > 0 || Object.keys(darkAliases).length > 0) {
     css += rule(`[data-theme='dark'] ${scope}`, { ...darkAliases, ...darkTokens });
   }

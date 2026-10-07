@@ -82,9 +82,10 @@ const REFERENCES_FD_VAR = /var\(\s*--fd-/;
  *
  * `light` — token → expression, for every :root declaration that reads another
  *           --fd-* token.
- * `dark`  — token → expression for every [data-theme='dark'] declaration that
- *           reads one; `null` when the dark block gives an alias a literal
- *           value (it then no longer follows anything).
+ * `dark`  — token → value for every [data-theme='dark'] declaration that
+ *           reads another --fd-* token, plus the dark value of every light
+ *           alias the dark block sets to a literal (a scoped skin that
+ *           redeclares the light alias must restore that literal in dark mode).
  * @param {string[]} sources
  */
 export function buildAliasMaps(sources) {
@@ -102,7 +103,7 @@ export function buildAliasMaps(sources) {
   const darkAliases = {};
   for (const [k, v] of Object.entries(dark)) {
     if (REFERENCES_FD_VAR.test(v)) darkAliases[k] = v;
-    else if (k in light) darkAliases[k] = null;
+    else if (k in light) darkAliases[k] = v;
   }
   return { light: sortKeys(light), dark: sortKeys(darkAliases) };
 }
