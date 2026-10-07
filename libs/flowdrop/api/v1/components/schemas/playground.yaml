@@ -90,6 +90,18 @@ PlaygroundSession:
       type: object
       additionalProperties: true
       description: Custom session metadata
+    thirdPartySettings:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties: true
+      description: |
+        Settings the modules that created or used the session keep on it, keyed
+        by module. The Playground stamps `flowdrop_playground: { created: true }`
+        on the sessions it creates, and the editor's Playground lists only those.
+        A server that exposes third-party settings sends the key on every session
+        (an empty map when nobody stamped it); a server that does not leaves the
+        key out and the editor lists every session.
   required:
     - id
     - workflowId
@@ -97,6 +109,62 @@ PlaygroundSession:
     - status
     - createdAt
     - updatedAt
+
+SessionRun:
+  type: object
+  description: One run a session started (the pipeline id is its messages' execution id).
+  properties:
+    id:
+      type: string
+      description: The pipeline id
+    startedAt:
+      type: string
+      format: date-time
+      nullable: true
+    completedAt:
+      type: string
+      format: date-time
+      nullable: true
+    status:
+      type: string
+      description: The pipeline status, or `unknown` when the pipeline is gone
+    workflowVersion:
+      type: string
+      nullable: true
+      description: The workflow version the run started on; null when unknown
+    message:
+      type: string
+      nullable: true
+      description: The person's message that started the run, cut by the server
+    inputs:
+      type: object
+      additionalProperties: true
+      description: The named inputs the turn started with (`{}` when none), bounded
+    inputsTruncated:
+      type: boolean
+      description: Whether anything in `inputs` was cut
+  required:
+    - id
+    - status
+
+SessionRunsResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            workflowVersion:
+              type: string
+              nullable: true
+              description: The session's workflow as it is now
+            runs:
+              type: array
+              items:
+                $ref: '#/SessionRun'
+          required:
+            - runs
 
 PlaygroundExecution:
   type: object

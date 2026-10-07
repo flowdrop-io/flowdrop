@@ -19,6 +19,7 @@ import type {
   MessageTag
 } from '../../lib/types/playground.js';
 import { ENABLE_RUN_METADATA_KEY } from '../../lib/types/playground.js';
+import { getWorkflowById } from './workflows.js';
 import {
   createConfirmationInterrupt,
   createChoiceInterrupt,
@@ -97,6 +98,36 @@ export function getSessionById(sessionId: string): PlaygroundSession | undefined
   return mockSessions.get(sessionId);
 }
 
+/** The workflow version each mock run started on, keyed by execution id. */
+const executionVersions = new Map<string, string>();
+
+/**
+ * The mock's workflow version: a short hash of what the server's version
+ * covers (node ids, types and config, edges, interface, Playground settings)
+ * and not of what it ignores (positions, sizes, labels). `null` for a
+ * workflow that does not exist.
+ */
+export function mockWorkflowVersion(workflowId: string): string | null {
+  const workflow = getWorkflowById(workflowId);
+  if (!workflow) return null;
+  const text = JSON.stringify({
+    nodes: workflow.nodes.map((n) => [n.id, n.type, n.data?.config ?? null]),
+    edges: workflow.edges.map((e) => [e.source, e.sourceHandle, e.target, e.targetHandle]),
+    interface: workflow.interface ?? null,
+    playground: workflow.playground ?? null
+  });
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    hash = Math.imul(hash ^ text.charCodeAt(i), 16777619) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+/** The version a mock run was stamped with, or `null` when it was not. */
+export function getExecutionVersion(executionId: string): string | null {
+  return executionVersions.get(executionId) ?? null;
+}
+
 /**
  * Create a new session
  *
@@ -120,7 +151,10 @@ export function createSession(
     createdAt: now,
     updatedAt: now,
     metadata,
-    executions: []
+    executions: [],
+    // The server stamps the Playground's mark on sessions the Playground
+    // creates; every mock session is one.
+    thirdPartySettings: { flowdrop_playground: { created: true } }
   };
 
   mockSessions.set(session.id, session);
@@ -177,6 +211,9 @@ export function addExecutionToSession(
 ): void {
   const session = mockSessions.get(sessionId);
   if (!session) return;
+
+  const version = mockWorkflowVersion(session.workflowId);
+  if (version !== null) executionVersions.set(executionId, version);
 
   const entry: PlaygroundExecution = { id: executionId, startedAt, status: 'running' };
   session.executions = [...(session.executions ?? []), entry];

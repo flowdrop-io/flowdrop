@@ -18,6 +18,9 @@ vi.mock('$lib/config/endpoints.js', async () => ({
   resolveSessionEndpoint: (
     await vi.importActual<typeof import('$lib/config/endpoints.js')>('$lib/config/endpoints.js')
   ).resolveSessionEndpoint,
+  resolveSessionRunsEndpoint: (
+    await vi.importActual<typeof import('$lib/config/endpoints.js')>('$lib/config/endpoints.js')
+  ).resolveSessionRunsEndpoint,
   buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args),
   getEndpointHeaders: (...args: unknown[]) => mockGetEndpointHeaders(...args),
   // Mirrors the real helper: static endpoint headers merged with the auth
@@ -419,6 +422,71 @@ describe('PlaygroundService', () => {
       expect(urlOf(2)).toBe('/api/s/session-1/messages?latest=true');
       expect(urlOf(3)).toBe('/api/s/session-1/stop');
       expect(urlOf(4)).toBe('/api/s/session-1/reset');
+    });
+
+    describe('getSessionRuns', () => {
+      const runs = { workflowVersion: 'v2', runs: [{ id: 'p1', workflowVersion: 'v1' }] };
+
+      it('reads the runs from the sessions group, with the limit', async () => {
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: runs })
+        });
+
+        const result = await service.getSessionRuns(endpointConfig, 'session-1', { limit: 20 });
+
+        expect(urlOf()).toBe('/api/sessions/session-1/runs?limit=20');
+        expect(result).toEqual(runs);
+      });
+
+      it('uses the configured path when the group names one', async () => {
+        (endpointConfig as EndpointConfig).endpoints.sessions!.runs = '/s/{sessionId}/runs';
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: runs })
+        });
+
+        await service.getSessionRuns(endpointConfig, 'session-1');
+
+        expect(urlOf()).toBe('/api/s/session-1/runs');
+      });
+
+      it.each([404, 405, 501])('resolves null on an older server (%i)', async (status) => {
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+          ok: false,
+          status,
+          statusText: 'Not Found',
+          json: async () => ({})
+        });
+
+        expect(await service.getSessionRuns(endpointConfig, 'session-1')).toBeNull();
+      });
+
+      it('resolves null without calling when there is no sessions group', async () => {
+        endpointConfig = createMockPlaygroundConfig() as unknown as EndpointConfig;
+
+        expect(await service.getSessionRuns(endpointConfig, 'session-1')).toBeNull();
+        expect(global.fetch).not.toHaveBeenCalled();
+      });
+
+      it('throws on any other failure, and resolves null for a payload without runs', async () => {
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          statusText: 'Server Error',
+          json: async () => ({})
+        });
+        await expect(service.getSessionRuns(endpointConfig, 'session-1')).rejects.toThrow('500');
+
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => ({ success: true, data: {} })
+        });
+        expect(await service.getSessionRuns(endpointConfig, 'session-1')).toBeNull();
+      });
     });
 
     it('keeps listing and creating sessions on the playground group', async () => {

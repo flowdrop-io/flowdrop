@@ -167,6 +167,11 @@ export type { DynamicSchemaResult } from '../services/dynamicSchemaService.js';
 // Playground types
 export type {
   PlaygroundSession,
+  SessionRun,
+  SessionRunsResult,
+  SessionThirdPartySettings,
+  VersionDivider,
+  VersionDividerAnchor,
   PlaygroundMessage,
   PlaygroundInputField,
   PlaygroundMessageRequest,

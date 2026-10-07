@@ -14,6 +14,8 @@ import {
   addMessage,
   updateSessionStatus,
   simulateExecution,
+  mockWorkflowVersion,
+  getExecutionVersion,
   initializeDemoForeachPlaygroundData
 } from '../data/playground.js';
 import { getWorkflowById } from '../data/index.js';
@@ -373,6 +375,46 @@ export const sessionTurnHandler = http.post(
 );
 
 /**
+ * GET /api/flowdrop/sessions/:sessionId/runs
+ * The runs a session started, oldest first, each stamped with the workflow
+ * version it ran. `?limit=` keeps the newest runs.
+ */
+export const sessionRunsHandler = http.get(
+  `${API_BASE}/sessions/:sessionId/runs`,
+  ({ params, request }) => {
+    const { sessionId } = params;
+    const id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+    const session = getSessionById(id);
+
+    if (!session) {
+      return HttpResponse.json(
+        { success: false, error: 'Session not found', code: 'NOT_FOUND' },
+        { status: 404 }
+      );
+    }
+
+    const limit = Number(new URL(request.url).searchParams.get('limit') ?? 50);
+    const runs = (session.executions ?? [])
+      .map((execution) => ({
+        id: execution.id,
+        startedAt: execution.startedAt,
+        completedAt: execution.status === 'running' ? null : execution.startedAt,
+        status: execution.status,
+        workflowVersion: getExecutionVersion(execution.id),
+        message: null,
+        inputs: {},
+        inputsTruncated: false
+      }))
+      .slice(-Math.max(1, limit));
+
+    return HttpResponse.json({
+      success: true,
+      data: { workflowVersion: mockWorkflowVersion(session.workflowId), runs }
+    });
+  }
+);
+
+/**
  * POST /api/flowdrop/playground/sessions/:sessionId/stop
  * Stop execution in a session
  */
@@ -433,5 +475,6 @@ export const playgroundHandlers = [
   getMessagesHandler,
   sendMessageHandler,
   sessionTurnHandler,
+  sessionRunsHandler,
   stopExecutionHandler
 ];

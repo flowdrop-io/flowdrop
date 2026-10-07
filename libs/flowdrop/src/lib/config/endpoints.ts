@@ -138,6 +138,14 @@ export interface EndpointConfig {
       stop: string;
       /** Reset a stuck session to idle (`POST`). Optional, as `playground.resetSession`. */
       reset?: string;
+      /**
+       * The runs a session started, each stamped with the workflow version it
+       * ran (`GET`, `limit` query parameter). Optional: a server without it
+       * answers 404 and the editor shows no version dividers. When the group
+       * is configured and this key is left out, the editor still tries
+       * {@link sessionsEndpoints}'s path and stops after the first 404.
+       */
+      runs?: string;
     };
 
     /**
@@ -383,11 +391,15 @@ export const sessionsEndpoints: NonNullable<EndpointConfig['endpoints']['session
   messages: '/sessions/{sessionId}/messages',
   turn: '/sessions/{sessionId}/turn',
   stop: '/sessions/{sessionId}/stop',
-  reset: '/sessions/{sessionId}/reset'
+  reset: '/sessions/{sessionId}/reset',
+  runs: '/sessions/{sessionId}/runs'
 };
 
 /** One per-session call, named as the `sessions` group names it. */
-export type SessionEndpointKey = keyof NonNullable<EndpointConfig['endpoints']['sessions']>;
+export type SessionEndpointKey = Exclude<
+  keyof NonNullable<EndpointConfig['endpoints']['sessions']>,
+  'runs'
+>;
 
 /** Which `playground` key served each per-session call before the `sessions` group. */
 const LEGACY_SESSION_ENDPOINT_KEYS = {
@@ -424,6 +436,19 @@ export function resolveSessionEndpoint(
   }
   const path = config.endpoints.playground?.[LEGACY_SESSION_ENDPOINT_KEYS[key]];
   return path ? { path, group: 'playground' } : undefined;
+}
+
+/**
+ * The path of a session's runs, or `undefined` when the backend has no
+ * `sessions` group (servers that predate the session surface have no runs
+ * endpoint either). Unlike the other per-session calls there is no legacy
+ * `playground` key, and a `sessions` group without a `runs` key falls back to
+ * the reference path: the call is optional and a 404 switches it off.
+ */
+export function resolveSessionRunsEndpoint(config: EndpointConfig): string | undefined {
+  const sessions = config.endpoints.sessions;
+  if (!sessions) return undefined;
+  return sessions.runs ?? sessionsEndpoints.runs;
 }
 
 /**

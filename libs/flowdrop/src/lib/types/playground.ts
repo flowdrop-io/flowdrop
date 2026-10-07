@@ -97,6 +97,66 @@ export interface PlaygroundExecution {
 }
 
 /**
+ * One run a session started, as the session runs endpoint reports it.
+ *
+ * `workflowVersion` is an opaque string: equal means no node config, edge,
+ * interface port or third-party setting changed between two runs. `null`
+ * means unknown (older run, or a run the session did not start) and is never
+ * treated as stale.
+ */
+export interface SessionRun {
+  /** Pipeline id (the execution id of the run's messages) */
+  id: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  /** Pipeline status, or `unknown` when the pipeline is gone */
+  status: string;
+  workflowVersion: string | null;
+  /** The person's message that started the run (cut by the server) */
+  message: string | null;
+  /** The named inputs the turn started with, bounded by the server */
+  inputs: Record<string, unknown>;
+  /** Whether anything in `inputs` was cut */
+  inputsTruncated: boolean;
+}
+
+/** The session runs endpoint's `data`: the runs, oldest first, and the current version. */
+export interface SessionRunsResult {
+  /** The session's workflow as it is now; `null` when the workflow is gone */
+  workflowVersion: string | null;
+  runs: SessionRun[];
+}
+
+/** Response of `GET /sessions/{id}/runs`. */
+export type SessionRunsResponse = PlaygroundApiResponse<SessionRunsResult>;
+
+/**
+ * Where a "Saved, new version" divider sits in the conversation feed.
+ *  - `before-run`: above the first message of a run (reconstructed from the
+ *    runs endpoint, where consecutive runs' versions differ);
+ *  - `after-message`: below a message (added when the workflow is saved while
+ *    a conversation is open);
+ *  - `end`: below the last message (the workflow changed since the last run).
+ */
+export type VersionDividerAnchor =
+  | { kind: 'before-run'; runId: string }
+  | { kind: 'after-message'; messageId: string }
+  | { kind: 'end' };
+
+/** A divider in the conversation feed marking a new workflow version. */
+export interface VersionDivider {
+  id: string;
+  anchor: VersionDividerAnchor;
+}
+
+/**
+ * Third-party settings on a session, keyed by the module that owns them: the
+ * wire shape of the server's session third-party settings. The Playground
+ * reads its own key (see {@link PLAYGROUND_SESSION_MARK}).
+ */
+export type SessionThirdPartySettings = Record<string, Record<string, unknown>>;
+
+/**
  * Playground session representing a test conversation
  *
  * Sessions maintain conversation history and allow interactive testing
@@ -136,6 +196,13 @@ export interface PlaygroundSession {
   executions?: PlaygroundExecution[];
   /** Custom session metadata */
   metadata?: Record<string, unknown>;
+  /**
+   * Third-party settings the modules that created or used the session keep on
+   * it. A server that exposes them sends the key on every session (an empty
+   * map for a session nobody stamped); a server that does not leaves it out,
+   * which is how the client tells "unmarked" from "cannot tell".
+   */
+  thirdPartySettings?: SessionThirdPartySettings;
 }
 
 /**

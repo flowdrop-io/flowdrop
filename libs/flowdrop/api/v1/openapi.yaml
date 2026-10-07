@@ -166,6 +166,8 @@ paths:
     $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}'
   /sessions/{sessionId}/messages:
     $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}~1messages'
+  /sessions/{sessionId}/runs:
+    $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}~1runs'
   /sessions/{sessionId}/turn:
     $ref: './paths/sessions.yaml#/~1sessions~1{sessionId}~1turn'
   /sessions/{sessionId}/stop:
