@@ -232,26 +232,13 @@
     }
   });
 
-  // Auto-refresh pipeline data every 5 seconds when pipeline is running
-  let refreshInterval: NodeJS.Timeout | null = null;
-
+  // Auto-refresh pipeline data every 5 seconds while the pipeline is running.
+  // The teardown stops it when the status or pipeline changes, and on unmount.
   $effect(() => {
-    // Clear existing interval
-    if (refreshInterval) {
-      clearInterval(refreshInterval);
-      refreshInterval = null;
-    }
-
-    // Only start polling if pipeline is running
-    if (pipelineStatus === 'running' && pipelineId) {
-      refreshInterval = setInterval(() => {
-        fetchPipelineData();
-      }, 5000);
-    }
+    if (pipelineStatus !== 'running' || !pipelineId) return;
+    const refreshInterval = setInterval(() => fetchPipelineData(), 5000);
+    return () => clearInterval(refreshInterval);
   });
-
-  // Note: Interval cleanup is handled by the $effect above.
-  // In Svelte 5, $effect cleanup runs both on re-execution and component destroy.
 
   // Refresh pipeline data whenever new messages arrive (e.g. log messages during execution).
   // Debounced so burst arrivals collapse into one fetch.

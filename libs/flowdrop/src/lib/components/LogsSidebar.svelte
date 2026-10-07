@@ -30,19 +30,22 @@
   let sidebarRef: HTMLElement | undefined = $state();
 
   // Focus management and body scroll control
+  // The teardown restores the body's own overflow when the sidebar closes or
+  // unmounts while open, so the host page is never left unscrollable.
   $effect(() => {
-    if (props.isOpen) {
-      // Focus management - focus the sidebar when it opens
-      setTimeout(() => {
-        sidebarRef?.focus();
-      }, 100);
+    if (!props.isOpen) return;
+    // Focus management - focus the sidebar when it opens
+    const focusTimer = setTimeout(() => {
+      sidebarRef?.focus();
+    }, 100);
 
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden';
-    } else {
-      // Restore body scroll
-      document.body.style.overflow = '';
-    }
+    // Prevent body scroll
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      clearTimeout(focusTimer);
+      document.body.style.overflow = previousOverflow;
+    };
   });
 
   /**

@@ -117,6 +117,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Svelte failed to compile the shipped components. `engines.node` is
   `>=20`, as `marked` and `dompurify` already require.
 - Storybook stories and their mock modules are no longer in the tarball.
+- Pipeline status no longer leaks after it unmounts. Its 5-second poll kept
+  calling the API for the life of the page if the component went away while
+  the pipeline was running. The logs sidebar left the host page's body
+  unscrollable when it unmounted while open, and now restores the body's own
+  `overflow` rather than clearing it. The editor's node execution-info load,
+  scheduled with `requestIdleCallback`, was never cancelled (it was cleared
+  with `clearTimeout`), so a quick pipeline switch still ran the stale load;
+  it is now cancelled, and an unmounted editor drops a scheduled or
+  in-flight load.
 
 ## [2.10.1] - 2026-10-07
 

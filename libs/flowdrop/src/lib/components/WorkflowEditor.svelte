@@ -199,7 +199,8 @@
   let flowEdges = $state.raw<WorkflowEdge[]>([]);
 
   // Execution info loading state
-  let loadExecutionInfoTimeout: number | null = null;
+  /** Cancels the scheduled (not yet started) execution-info load, if any. */
+  let cancelScheduledExecutionInfo: (() => void) | null = null;
   let executionInfoAbortController: AbortController | null = null;
 
   /**
@@ -331,26 +332,25 @@
     previousExecWorkflowId = storeValue.id;
     previousExecPipelineId = pipelineId;
 
-    // Cancel any pending idle/timeout schedule. In-flight fetches are
-    // cancelled by loadNodeExecutionInfo() itself when it's re-entered.
-    if (loadExecutionInfoTimeout) {
-      clearTimeout(loadExecutionInfoTimeout);
-      loadExecutionInfoTimeout = null;
-    }
+    // Cancel any pending schedule. In-flight fetches are cancelled by
+    // loadNodeExecutionInfo() itself when it's re-entered.
+    cancelScheduledExecutionInfo?.();
 
     // Schedule loading with requestIdleCallback (falls back to setTimeout)
     if (typeof requestIdleCallback !== 'undefined') {
-      loadExecutionInfoTimeout = requestIdleCallback(
-        () => {
-          loadNodeExecutionInfo();
-        },
-        { timeout: 500 }
-      ) as unknown as number;
+      const id = requestIdleCallback(() => loadNodeExecutionInfo(), { timeout: 500 });
+      cancelScheduledExecutionInfo = () => cancelIdleCallback(id);
     } else {
-      loadExecutionInfoTimeout = setTimeout(() => {
-        loadNodeExecutionInfo();
-      }, 300) as unknown as number;
+      const id = setTimeout(() => loadNodeExecutionInfo(), 300);
+      cancelScheduledExecutionInfo = () => clearTimeout(id);
     }
+  });
+
+  // On unmount: drop a scheduled load and discard an in-flight one, so
+  // nothing writes flowNodes after the editor is gone.
+  $effect(() => () => {
+    cancelScheduledExecutionInfo?.();
+    executionInfoAbortController?.abort();
   });
 
   // Re-fetch node execution info when the parent bumps refreshTrigger
