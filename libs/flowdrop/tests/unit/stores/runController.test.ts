@@ -395,4 +395,64 @@ describe('RunController', () => {
       expect(playground.nodeStatuses).toEqual({});
     });
   });
+  describe('requestNodeStatuses', () => {
+    const done = { status: 'completed', executionCount: 1, isExecuting: false } as const;
+    const wf = () => ({
+      ...workflow('wf'),
+      nodes: [{ id: 'n1' }] as unknown as Workflow['nodes']
+    });
+
+    it('coalesces asks made while a load runs into one more load', async () => {
+      const { runs, playground, editor } = setup();
+      editor.initialize(wf());
+      playground.pinExecution('p1');
+      const first = deferred<Record<string, typeof done>>();
+      const spy = vi
+        .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
+        .mockReturnValueOnce(first.promise)
+        .mockResolvedValue({ n1: done });
+
+      runs.requestNodeStatuses();
+      runs.requestNodeStatuses();
+      runs.requestNodeStatuses();
+      expect(spy).toHaveBeenCalledTimes(1);
+
+      first.resolve({});
+      await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
+      await vi.waitFor(() => expect(playground.nodeStatusFor('n1')).toEqual(done));
+      // Nothing more was asked for, so nothing more loads.
+      await new Promise((r) => setTimeout(r, 10));
+      expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    it('can be asked again once the load has finished', async () => {
+      const { runs, playground, editor } = setup();
+      editor.initialize(wf());
+      playground.pinExecution('p1');
+      const spy = vi
+        .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
+        .mockResolvedValue({ n1: done });
+
+      runs.requestNodeStatuses();
+      await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+      await new Promise((r) => setTimeout(r, 0));
+      runs.requestNodeStatuses();
+      await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
+    });
+  });
+
+  describe('isLive', () => {
+    it('is true while a run is going or waiting for someone, false otherwise', () => {
+      const { runs, playground } = setup();
+      expect(runs.isLive).toBe(false);
+      playground.setCurrentSession(session('s', 'running'));
+      expect(runs.isLive).toBe(true);
+      playground.setCurrentSession(session('s', 'awaiting_input'));
+      expect(runs.isLive).toBe(true);
+      playground.setCurrentSession(session('s', 'completed'));
+      expect(runs.isLive).toBe(false);
+      playground.setCurrentSession(session('s', 'failed'));
+      expect(runs.isLive).toBe(false);
+    });
+  });
 });

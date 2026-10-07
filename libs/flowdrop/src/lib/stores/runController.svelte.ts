@@ -106,6 +106,9 @@ export class RunController {
 
   // Same idea as #loadToken, for node status loads.
   #statusToken = 0;
+  // requestNodeStatuses(): one load in flight, and whether another was asked for meanwhile.
+  #statusLoading = false;
+  #statusAgain = false;
 
   #pendingSignal = $state<{ pipelineId: string; signal: string } | null>(null);
   #isRefreshing = $state(false);
@@ -767,10 +770,47 @@ export class RunController {
     }
   }
 
+  /**
+   * Ask for the shown run's node statuses to be (re)loaded, for a caller that
+   * asks on every poll tick: one load runs at a time, and any number of asks
+   * made while it runs coalesce into one more load afterwards. The request
+   * rate therefore follows the network, not the poll interval, and the last
+   * state is always the one loaded.
+   */
+  requestNodeStatuses(): void {
+    if (this.#statusLoading) {
+      this.#statusAgain = true;
+      return;
+    }
+    this.#statusLoading = true;
+    void (async () => {
+      try {
+        do {
+          this.#statusAgain = false;
+          await this.loadNodeStatuses();
+        } while (this.#statusAgain);
+      } finally {
+        this.#statusLoading = false;
+      }
+    })();
+  }
+
   /** Drop the node statuses and any load still in flight. */
   clearNodeStatuses(): void {
     this.#statusToken++;
+    this.#statusAgain = false;
     this.#playground.clearNodeStatuses();
+  }
+
+  /**
+   * Whether the current session has a run that is going or waiting for
+   * someone (running, or awaiting input). The one fact "a run needs
+   * watching" is read from here: the dot on the Test switch, and the
+   * badges that follow a run in Edit mode.
+   */
+  get isLive(): boolean {
+    const status = this.#playground.sessionStatus;
+    return status === 'running' || status === 'awaiting_input';
   }
 
   /** Fetch what is new for the current session and tail it when it is running. */
