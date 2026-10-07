@@ -205,4 +205,92 @@ test.describe('Canvas context menu', () => {
       )
     ).toBe(true);
   });
+
+  // Loading another workflow remounts <SvelteFlow> ({#key} on the workflow
+  // id). @xyflow/svelte >= 1.6.6 then hands the provider an empty store, so
+  // anything reading the provider instead of the live canvas acted on nothing:
+  // Delete closed the menu and left the node in place.
+  test('Delete still works after another workflow is loaded into the editor', async ({ page }) => {
+    await gotoEditor(page, 'simple');
+    await assertStatusBar(page, 2, 1);
+
+    await page.evaluate(() => {
+      (document.querySelector('.svelte-flow') as HTMLElement & { __before?: boolean }).__before =
+        true;
+    });
+
+    const port = (id: string, type: 'input' | 'output') => ({
+      id,
+      name: id,
+      type,
+      dataType: 'string'
+    });
+    const workflow = {
+      id: 'test-workflow-reloaded',
+      name: 'Reloaded Workflow',
+      nodes: ['a', 'b', 'c'].map((id, i) => ({
+        id: `reloaded-${id}`,
+        type: 'universalNode',
+        position: { x: 100 + i * 250, y: 150 },
+        data: {
+          label: `Node ${id}`,
+          config: {},
+          metadata: {
+            node_type_id: 'text_passthrough',
+            name: 'Passthrough',
+            description: '',
+            category: 'processing',
+            version: '1.0.0',
+            inputs: [port('in', 'input')],
+            outputs: [port('out', 'output')]
+          }
+        }
+      })),
+      edges: [
+        {
+          id: 'e-ab',
+          source: 'reloaded-a',
+          target: 'reloaded-b',
+          sourceHandle: 'out',
+          targetHandle: 'in'
+        },
+        {
+          id: 'e-bc',
+          source: 'reloaded-b',
+          target: 'reloaded-c',
+          sourceHandle: 'out',
+          targetHandle: 'in'
+        }
+      ]
+    };
+
+    // Drop it as a file, the way a user imports a workflow onto the canvas.
+    await page.evaluate((json) => {
+      const data = new DataTransfer();
+      data.items.add(new File([json], 'reloaded.json', { type: 'application/json' }));
+      document
+        .querySelector('.flow-drop-zone')
+        ?.dispatchEvent(
+          new DragEvent('drop', { dataTransfer: data, bubbles: true, cancelable: true })
+        );
+    }, JSON.stringify(workflow));
+    await assertStatusBar(page, 3, 2);
+
+    // The canvas really was remounted, or this test proves nothing.
+    expect(
+      await page.evaluate(
+        () =>
+          (document.querySelector('.svelte-flow') as HTMLElement & { __before?: boolean }).__before
+      )
+    ).toBeUndefined();
+
+    // WebKit can leave the new canvas panned away from the nodes after an
+    // import (unrelated to this bug); fit the view first, as a user would.
+    await page.locator('.svelte-flow__controls-fitview').click();
+    await page.locator('.svelte-flow__node[data-id="reloaded-a"]').click({ button: 'right' });
+    await menu(page)
+      .getByRole('menuitem', { name: /Delete/ })
+      .click();
+    await assertStatusBar(page, 2, 1);
+  });
 });

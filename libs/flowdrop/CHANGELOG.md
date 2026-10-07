@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- With `@xyflow/svelte` 1.6.6 or later, the context menu's Delete did nothing
+  after the editor loaded a workflow (for example on mount in the Drupal
+  module, or after dropping a workflow file on the canvas): the menu closed
+  and the node stayed. The editor's other canvas helpers (fit view, zoom,
+  pan, sidebar drop position, caption placement, edge refresh, port
+  tracking) read the same stale state and were exposed to the same problem.
+  They now live inside the canvas, so they always act on the one that is
+  showing. The Delete key was never affected.
+
 ## [2.10.0] - 2026-10-07
 
 ### Added

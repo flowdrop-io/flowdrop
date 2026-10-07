@@ -1,7 +1,7 @@
 <!--
   EdgeRefresher Component
   Helper component that uses useUpdateNodeInternals to force edge recalculation
-  Must be rendered inside SvelteFlowProvider context
+  Must be rendered inside <SvelteFlow> (not beside it under a provider).
 -->
 
 <script lang="ts">

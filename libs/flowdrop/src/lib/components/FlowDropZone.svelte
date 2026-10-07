@@ -1,11 +1,11 @@
 <!--
   Flow Drop Zone Component
-  Handles drag and drop with proper coordinate transformation
-  Must be used inside SvelteFlowProvider
+  Handles drag and drop with proper coordinate transformation.
+  It wraps the canvas, so it sits outside <SvelteFlow>'s context: the parent
+  passes the screen-to-flow conversion in as `toFlowPosition`.
 -->
 
 <script lang="ts">
-  import { useSvelteFlow } from '@xyflow/svelte';
   import type { Snippet } from 'svelte';
   import { m } from '$lib/messages/index.js';
 
@@ -13,13 +13,16 @@
     ondrop: (nodeTypeData: string, position: { x: number; y: number }) => void;
     /** Optional callback invoked when a JSON file is dropped onto the canvas. */
     onfiledrop?: (file: File) => void;
+    /**
+     * Convert a viewport (client) point to flow coordinates, accounting for
+     * zoom and pan. Returns null while no canvas is mounted; the drop is then
+     * ignored.
+     */
+    toFlowPosition: (point: { x: number; y: number }) => { x: number; y: number } | null;
     children: Snippet;
   }
 
   let props: Props = $props();
-
-  // Access SvelteFlow instance for coordinate transformation
-  const { screenToFlowPosition } = useSvelteFlow();
 
   /**
    * Handle drag over event
@@ -55,10 +58,11 @@
     const nodeTypeData = e.dataTransfer?.getData('application/json');
     if (nodeTypeData) {
       // Convert screen coordinates to flow coordinates (accounts for zoom and pan)
-      const position = screenToFlowPosition({
+      const position = props.toFlowPosition({
         x: e.clientX,
         y: e.clientY
       });
+      if (!position) return;
 
       // Call the parent handler with the converted position
       props.ondrop(nodeTypeData, position);

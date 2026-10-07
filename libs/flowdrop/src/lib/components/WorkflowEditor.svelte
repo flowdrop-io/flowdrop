@@ -12,7 +12,6 @@
     Background,
     BackgroundVariant,
     MiniMap,
-    SvelteFlowProvider,
     type ColorMode
   } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
@@ -1051,7 +1050,8 @@
    */
   let nodeIdToRefresh = $state<string | null>(null);
 
-  // Canvas viewport controller ref (rendered inside SvelteFlowProvider)
+  // Canvas viewport controller ref. Rendered inside <SvelteFlow>, so it is
+  // remounted with the canvas and always talks to the live instance's store.
   let canvasControllerRef: CanvasController | undefined = $state();
 
   /**
@@ -1099,7 +1099,7 @@
     nodeIdToRefresh = nodeId;
   }
 
-  // Canvas viewport methods (forwarded to CanvasController inside SvelteFlowProvider)
+  // Canvas viewport methods (forwarded to CanvasController inside <SvelteFlow>)
 
   export function canvasFitView(): void {
     canvasControllerRef?.canvasFitView();
@@ -1193,152 +1193,152 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<SvelteFlowProvider>
-  <!-- Canvas viewport controller - provides fitView, zoom, pan methods -->
-  <CanvasController bind:this={canvasControllerRef} />
-
-  <!-- EdgeRefresher component - handles updateNodeInternals calls -->
-  <EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
-
-  <!-- Port Coordinate Tracker - maintains port positions for proximity connect -->
-  <PortCoordinateTracker
-    nodeToUpdate={portCoordNodeToUpdate}
-    rebuildTrigger={portCoordRebuildTrigger}
-    nodes={flowNodes}
-  />
-
-  <div class="flowdrop-workflow-editor">
-    <!-- Main Editor Area -->
-    <div class="flowdrop-workflow-editor__main">
-      <!-- Flow Canvas.
+<div class="flowdrop-workflow-editor">
+  <!-- Main Editor Area -->
+  <div class="flowdrop-workflow-editor__main">
+    <!-- Flow Canvas.
            Capture-phase mousedown so dragging from a port never turns into a
            WebKit text-selection drag — see suppressPortDragSelection. -->
-      <div
-        class="flowdrop-canvas"
-        bind:this={canvasEl}
-        onmousedowncapture={suppressPortDragSelection}
+    <div
+      class="flowdrop-canvas"
+      bind:this={canvasEl}
+      onmousedowncapture={suppressPortDragSelection}
+    >
+      <FlowDropZone
+        ondrop={handleNodeDrop}
+        onfiledrop={handleWorkflowFileDrop}
+        toFlowPosition={(point) => canvasControllerRef?.canvasScreenToFlow(point) ?? null}
       >
-        <FlowDropZone ondrop={handleNodeDrop} onfiledrop={handleWorkflowFileDrop}>
-          {#key svelteFlowKey}
-            <SvelteFlow
-              id={fd.id}
-              bind:nodes={flowNodes}
-              bind:edges={flowEdges}
-              {nodeTypes}
-              {edgeTypes}
-              {defaultEdgeOptions}
-              onconnect={() => void handleConnect()}
-              onbeforedelete={handleBeforeDelete}
-              ondelete={handleNodesDelete}
-              onnodedragstart={handleNodeDragStart}
-              onnodedrag={handleNodeDrag}
-              onnodedragstop={handleNodeDragStop}
-              onnodecontextmenu={handleNodeContextMenu}
-              onselectioncontextmenu={handleSelectionContextMenu}
-              onpanecontextmenu={handlePaneContextMenu}
-              minZoom={0.2}
-              maxZoom={3}
-              clickConnect={true}
-              elevateEdgesOnSelect={true}
-              connectionLineType={ConnectionLineType.Bezier}
-              connectionLineComponent={ConnectionLine}
-              {snapGrid}
-              {initialViewport}
-              colorMode={getResolvedTheme() as ColorMode}
-              fitView={getEditorSettings().fitViewOnLoad}
-              nodesDraggable={canvasEditable}
-              nodesConnectable={canvasEditable}
-              elementsSelectable={canvasEditable}
-            >
-              <Controls />
-              {#if canvasEditable && props.onToggleConsole}
-                <CanvasIconButton
-                  class="flowdrop-console-toggle"
-                  label={props.consoleToggleLabel ?? m().layout.commandConsole}
-                  active={props.consoleOpen}
-                  onclick={props.onToggleConsole}
-                >
-                  {#snippet icon()}
-                    <CommandLineIcon />
-                  {/snippet}
-                </CanvasIconButton>
-              {/if}
-              <!-- Always render Background for consistent bg color in dark/light mode -->
-              <Background
-                gap={getEditorSettings().gridSize}
-                bgColor="var(--fd-canvas-bg)"
-                variant={gridVariant}
-                lineWidth={1}
-                patternColor={getEditorSettings().showGrid
-                  ? 'var(--fd-grid-pattern-color)'
-                  : 'transparent'}
-              />
-              {#if getEditorSettings().showMinimap}
-                <MiniMap />
-              {/if}
-            </SvelteFlow>
-          {/key}
-          <!-- Drop Zone Indicator -->
-          {#if flowNodes.length === 0}
-            <CanvasBanner
-              title="Drag components here to start building"
-              description="Use the sidebar to add components to your workflow"
-            >
-              {#snippet icon()}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="1em"
-                  height="1em"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="18" cy="5" r="3" />
-                  <circle cx="6" cy="12" r="3" />
-                  <circle cx="18" cy="19" r="3" />
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                </svg>
-              {/snippet}
-            </CanvasBanner>
-          {/if}
-        </FlowDropZone>
-
-        {#if openMenu}
-          <CanvasContextMenu
-            entries={openMenu.entries}
-            x={openMenu.x}
-            y={openMenu.y}
-            onselect={selectContextMenuEntry}
-            onclose={closeContextMenu}
-          />
-        {/if}
-      </div>
-
-      <!-- Status Bar: aria-live announces dynamic changes (node/edge counts, cycle warnings) -->
-      <div class="flowdrop-status-bar" aria-live="polite" aria-atomic="true">
-        <div class="flowdrop-status-bar__content">
-          <div class="flowdrop-flex flowdrop-gap--4">
-            <span class="flowdrop-text--xs flowdrop-text--gray">{flowNodes.length} nodes</span>
-            <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
-            <span class="flowdrop-text--xs flowdrop-text--gray">{flowEdges.length} connections</span
-            >
-
-            {#if hasCycles}
-              <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
-              <span class="flowdrop-text--xs flowdrop-font--medium flowdrop-text--error"
-                >⚠️ Cycles detected</span
+        {#key svelteFlowKey}
+          <SvelteFlow
+            id={fd.id}
+            bind:nodes={flowNodes}
+            bind:edges={flowEdges}
+            {nodeTypes}
+            {edgeTypes}
+            {defaultEdgeOptions}
+            onconnect={() => void handleConnect()}
+            onbeforedelete={handleBeforeDelete}
+            ondelete={handleNodesDelete}
+            onnodedragstart={handleNodeDragStart}
+            onnodedrag={handleNodeDrag}
+            onnodedragstop={handleNodeDragStop}
+            onnodecontextmenu={handleNodeContextMenu}
+            onselectioncontextmenu={handleSelectionContextMenu}
+            onpanecontextmenu={handlePaneContextMenu}
+            minZoom={0.2}
+            maxZoom={3}
+            clickConnect={true}
+            elevateEdgesOnSelect={true}
+            connectionLineType={ConnectionLineType.Bezier}
+            connectionLineComponent={ConnectionLine}
+            {snapGrid}
+            {initialViewport}
+            colorMode={getResolvedTheme() as ColorMode}
+            fitView={getEditorSettings().fitViewOnLoad}
+            nodesDraggable={canvasEditable}
+            nodesConnectable={canvasEditable}
+            elementsSelectable={canvasEditable}
+          >
+            <!-- Renderless helpers. They live inside <SvelteFlow>, not beside it
+                   under a provider: @xyflow/svelte >= 1.6.6 replaces the provider's
+                   store with an empty one when a SvelteFlow is destroyed, so after
+                   the {#key} remount a helper outside would act on that empty
+                   store (context-menu Delete silently did nothing). -->
+            <CanvasController bind:this={canvasControllerRef} />
+            <EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
+            <PortCoordinateTracker
+              nodeToUpdate={portCoordNodeToUpdate}
+              rebuildTrigger={portCoordRebuildTrigger}
+              nodes={flowNodes}
+            />
+            <Controls />
+            {#if canvasEditable && props.onToggleConsole}
+              <CanvasIconButton
+                class="flowdrop-console-toggle"
+                label={props.consoleToggleLabel ?? m().layout.commandConsole}
+                active={props.consoleOpen}
+                onclick={props.onToggleConsole}
               >
+                {#snippet icon()}
+                  <CommandLineIcon />
+                {/snippet}
+              </CanvasIconButton>
             {/if}
-          </div>
+            <!-- Always render Background for consistent bg color in dark/light mode -->
+            <Background
+              gap={getEditorSettings().gridSize}
+              bgColor="var(--fd-canvas-bg)"
+              variant={gridVariant}
+              lineWidth={1}
+              patternColor={getEditorSettings().showGrid
+                ? 'var(--fd-grid-pattern-color)'
+                : 'transparent'}
+            />
+            {#if getEditorSettings().showMinimap}
+              <MiniMap />
+            {/if}
+          </SvelteFlow>
+        {/key}
+        <!-- Drop Zone Indicator -->
+        {#if flowNodes.length === 0}
+          <CanvasBanner
+            title="Drag components here to start building"
+            description="Use the sidebar to add components to your workflow"
+          >
+            {#snippet icon()}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+            {/snippet}
+          </CanvasBanner>
+        {/if}
+      </FlowDropZone>
+
+      {#if openMenu}
+        <CanvasContextMenu
+          entries={openMenu.entries}
+          x={openMenu.x}
+          y={openMenu.y}
+          onselect={selectContextMenuEntry}
+          onclose={closeContextMenu}
+        />
+      {/if}
+    </div>
+
+    <!-- Status Bar: aria-live announces dynamic changes (node/edge counts, cycle warnings) -->
+    <div class="flowdrop-status-bar" aria-live="polite" aria-atomic="true">
+      <div class="flowdrop-status-bar__content">
+        <div class="flowdrop-flex flowdrop-gap--4">
+          <span class="flowdrop-text--xs flowdrop-text--gray">{flowNodes.length} nodes</span>
+          <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
+          <span class="flowdrop-text--xs flowdrop-text--gray">{flowEdges.length} connections</span>
+
+          {#if hasCycles}
+            <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
+            <span class="flowdrop-text--xs flowdrop-font--medium flowdrop-text--error"
+              >⚠️ Cycles detected</span
+            >
+          {/if}
         </div>
       </div>
     </div>
   </div>
-</SvelteFlowProvider>
+</div>
 
 <!-- Toast notifications container -->
 <!-- aria-live="polite" ensures screen readers announce toast messages without interrupting -->

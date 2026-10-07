@@ -1,7 +1,7 @@
 <!--
   CanvasController Component
   Provides viewport control methods (fitView, zoom, pan) via useSvelteFlow().
-  Must be rendered inside SvelteFlowProvider context.
+  Must be rendered inside <SvelteFlow> (not beside it under a provider).
 -->
 
 <script lang="ts">

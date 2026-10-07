@@ -1,7 +1,7 @@
 <!--
   Port Coordinate Tracker Component
   Bridge component that exposes SvelteFlow's getInternalNode to the parent.
-  Must be rendered inside SvelteFlowProvider context.
+  Must be rendered inside <SvelteFlow> (not beside it under a provider).
 
   Uses the same pattern as EdgeRefresher - a renderless component that hooks
   into the SvelteFlow context.
