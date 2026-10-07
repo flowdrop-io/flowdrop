@@ -327,7 +327,7 @@
 {#if schema?.properties}
   <form
     bind:this={formRef}
-    class="schema-form {className}"
+    class="flowdrop-scope schema-form {className}"
     class:schema-form--loading={loading}
     class:schema-form--disabled={disabled}
     onsubmit={(e) => {

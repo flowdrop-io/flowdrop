@@ -721,7 +721,7 @@
   }
 </script>
 
-<div class="ai-chat-panel" role="region" aria-label={t.aiAssistant}>
+<div class="flowdrop-scope ai-chat-panel" role="region" aria-label={t.aiAssistant}>
   {#if !isChatConfigured}
     <!-- No backend configured -->
     <div class="ai-chat-panel__notice">

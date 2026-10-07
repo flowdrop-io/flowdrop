@@ -420,7 +420,7 @@
   }
 </script>
 
-<div class="flowdrop-settings-panel {className}">
+<div class="flowdrop-scope flowdrop-settings-panel {className}">
   <!-- Tab Navigation -->
   <div
     class="flowdrop-settings-panel__tabs"

@@ -894,7 +894,7 @@
 </script>
 
 <div
-  class="playground"
+  class="flowdrop-scope playground"
   class:playground--embedded={mode === 'embedded'}
   class:playground--standalone={mode === 'standalone'}
   class:playground--modal={mode === 'modal'}

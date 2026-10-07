@@ -3,14 +3,23 @@
 /* Import design tokens */
 @import './tokens.css';
 
-/* Reset and base styles */
-* {
+/* Reset and base styles.
+   Scoped to the library's roots so importing this file never changes the host
+   page. :where() keeps the old specificity (the bare `*` was 0,0,0 and `p`
+   0,0,1), so component rules win exactly as before.
+
+   Roots: .flowdrop-root (App), .flowdrop-scope (marker on the outermost element
+   of every component that can be mounted on its own: editor, playground, forms,
+   settings, chat, markdown display), .flowdrop-portal (overlays moved to
+   <body>), .svelte-flow (xyflow canvas). */
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal, .svelte-flow),
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal, .svelte-flow) * {
   box-sizing: border-box;
 }
 
 /* Drop the UA default margin on paragraphs so block text sits on the grid;
    contexts that want spacing (e.g. .markdown-display p) opt back in. */
-p {
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal, .svelte-flow) p {
   margin: 0;
 }
 
@@ -24,6 +33,8 @@ p {
    click. Scoped to the library roots so it never leaks into the host app.
    ─────────────────────────────────────────────────────────────────────────── */
 .flowdrop-root :focus-visible,
+.flowdrop-scope :focus-visible,
+.flowdrop-portal :focus-visible,
 .svelte-flow :focus-visible {
   outline: var(--fd-ring-width) solid var(--fd-ring);
   outline-offset: var(--fd-ring-offset);

@@ -148,6 +148,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (config panel, surface overlay) carry the scope along. Light/dark stays the
   page-wide `data-theme` on `<html>`. A host that styled its own page with a
   skin's `--fd-*` variables must set them itself.
+- `@flowdrop/flowdrop/styles` no longer resets the host page. `* { box-sizing:
+border-box }` and `p { margin: 0 }` now apply only inside FlowDrop's own
+  roots (`.flowdrop-root`, the new `.flowdrop-scope` marker on each standalone
+  component, `.flowdrop-portal`, `.svelte-flow`), at the same zero
+  specificity as before. Host elements that relied on the leak need their own
+  rule.
 
 ## [2.10.1] - 2026-10-07
 

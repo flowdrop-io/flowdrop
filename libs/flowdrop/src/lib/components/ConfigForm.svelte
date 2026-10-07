@@ -608,7 +608,7 @@
 
 <!-- External Edit Link Section (shown when configured and preferred) -->
 {#if showExternalEditLink && configEditOptions?.externalEditLink}
-  <div class="config-form__admin-edit">
+  <div class="flowdrop-scope config-form__admin-edit">
     <div class="config-form__admin-edit-header">
       <Icon icon="heroicons:arrow-top-right-on-square" />
       <span>External Configuration</span>
@@ -634,14 +634,14 @@
 
 <!-- Dynamic Schema Loading State -->
 {#if dynamicSchemaLoading}
-  <div class="config-form__loading">
+  <div class="flowdrop-scope config-form__loading">
     <div class="config-form__loading-spinner"></div>
     <p class="config-form__loading-text">
       {configEditOptions?.loadingMessage ?? 'Loading configuration options...'}
     </p>
   </div>
 {:else if dynamicSchemaError}
-  <div class="config-form__error">
+  <div class="flowdrop-scope config-form__error">
     <div class="config-form__error-header">
       <Icon icon="heroicons:exclamation-triangle" />
       <span>Configuration Error</span>
@@ -675,7 +675,7 @@
   </div>
 {:else if configSchema}
   <form
-    class="config-form"
+    class="flowdrop-scope config-form"
     onfocusout={handleFormBlur}
     onsubmit={(e) => {
       e.preventDefault();
@@ -789,7 +789,7 @@
     {/if}
   </form>
 {:else if !dynamicSchemaLoading && !showExternalEditLink}
-  <div class="config-form__empty">
+  <div class="flowdrop-scope config-form__empty">
     <div class="config-form__empty-icon">
       <Icon icon="heroicons:cog-6-tooth" />
     </div>

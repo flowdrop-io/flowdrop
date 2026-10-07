@@ -71,7 +71,7 @@
   const displayTitle = $derived(navbarTitle ?? workflow?.name ?? 'Playground');
 </script>
 
-<div class="fd-playground-app">
+<div class="flowdrop-scope fd-playground-app">
   {#if showNavbar}
     <Navbar
       title={displayTitle}

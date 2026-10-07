@@ -22,7 +22,7 @@
   let displayClass = $derived(props.className || 'markdown-display');
 </script>
 
-<div class={displayClass}>
+<div class="flowdrop-scope {displayClass}">
   <!-- Content is sanitized with DOMPurify to prevent XSS -->
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html renderedContent}

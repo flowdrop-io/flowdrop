@@ -47,7 +47,7 @@
 {#if props.isOpen}
   <!-- Modal Backdrop -->
   <div
-    class="config-modal-backdrop"
+    class="flowdrop-scope config-modal-backdrop"
     onclick={handleBackdropClick}
     onkeydown={handleKeydown}
     role="dialog"

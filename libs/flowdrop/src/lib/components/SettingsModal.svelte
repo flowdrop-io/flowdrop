@@ -126,7 +126,7 @@
 <!-- native <dialog> backdrop click-to-close pattern -->
 <dialog
   bind:this={dialogRef}
-  class="flowdrop-settings-modal {className}"
+  class="flowdrop-scope flowdrop-settings-modal {className}"
   onclick={handleBackdropClick}
   onkeydown={handleKeydown}
   onclose={handleDialogClose}

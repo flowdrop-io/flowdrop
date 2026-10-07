@@ -1219,7 +1219,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="flowdrop-workflow-editor">
+<div class="flowdrop-scope flowdrop-workflow-editor">
   <!-- Main Editor Area -->
   <div class="flowdrop-workflow-editor__main">
     <!-- Flow Canvas.
@@ -1368,7 +1368,7 @@
 
 <!-- Toast notifications container -->
 <!-- aria-live="polite" ensures screen readers announce toast messages without interrupting -->
-<div aria-live="polite" aria-atomic="true">
+<div class="flowdrop-scope" aria-live="polite" aria-atomic="true">
   <Toaster
     position="bottom-center"
     containerClassName={FLOWDROP_TOASTER_CLASS}

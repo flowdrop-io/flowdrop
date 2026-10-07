@@ -163,7 +163,7 @@
 </script>
 
 <div
-  class="playground-studio"
+  class="flowdrop-scope playground-studio"
   class:playground-studio--resizing={isResizing}
   style="--playground-studio-min-chat-width: {minChatWidth}px"
 >

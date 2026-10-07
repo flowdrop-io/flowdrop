@@ -79,7 +79,7 @@
 {#if isOpen}
   <!-- Modal Backdrop -->
   <div
-    class="playground-modal-backdrop"
+    class="flowdrop-scope playground-modal-backdrop"
     onclick={handleBackdropClick}
     onkeydown={handleKeydown}
     role="dialog"

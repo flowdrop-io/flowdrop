@@ -57,7 +57,7 @@
   }
 </script>
 
-<div class="fd-webmcp-confirm" data-testid="flowdrop-webmcp-confirm">
+<div class="flowdrop-portal fd-webmcp-confirm" data-testid="flowdrop-webmcp-confirm">
   <div
     class="fd-webmcp-confirm__dialog"
     role="alertdialog"
@@ -118,8 +118,9 @@
 </div>
 
 <style>
-  /* Mounted on document.body, outside the editor tree: the tokens come from
-     :root (tokens.css), the button classes from base.css — both global — and
+  /* Mounted on document.body, outside the editor tree (flowdrop-portal keeps the
+     base.css resets on it; no editor scope, so default tokens): the tokens come
+     from :root (tokens.css), the button classes from base.css — both global — and
      the dark skin from [data-theme='dark'] on <html>. Only the font has no
      host to inherit from, so it is set here. The shell follows
      SettingsModal: blurred backdrop, header / body / footer with the xl
