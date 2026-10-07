@@ -261,6 +261,28 @@ export const defaultMessages = {
     shortcutDelete: 'Delete'
   },
 
+  // The run bar on the Edit canvas: shown only while a run exists.
+  runBar: {
+    label: 'Run',
+    running: 'Running',
+    waiting: 'Waiting',
+    failed: 'Failed',
+    done: 'Done',
+    stopped: 'Stopped',
+    stop: 'Stop',
+    stopLabel: 'Stop the run',
+    open: 'Open',
+    openLabel: 'Open the run in Test mode',
+    // Read out politely when the status changes.
+    announce: {
+      running: 'Run started.',
+      waiting: 'Run is waiting for you.',
+      failed: 'Run failed.',
+      done: 'Run finished.',
+      stopped: 'Run stopped.'
+    }
+  },
+
   layout: {
     // Sidebar/main-region landmarks.
     componentsSidebar: 'Components sidebar',

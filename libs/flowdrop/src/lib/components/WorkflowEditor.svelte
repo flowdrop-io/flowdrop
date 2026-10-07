@@ -22,6 +22,7 @@
   } from '../stores/settingsStore.svelte.js';
   import type { WorkflowNode as WorkflowNodeType, Workflow, WorkflowEdge } from '../types/index.js';
   import CanvasBanner from './CanvasBanner.svelte';
+  import RunBar from './RunBar.svelte';
   import CanvasController from './CanvasController.svelte';
   import CanvasContextMenu from './CanvasContextMenu.svelte';
   import {
@@ -124,6 +125,19 @@
      * The menu only opens in `'edit'` mode.
      */
     contextMenu?: ContextMenuOptions;
+    /**
+     * Show the run bar on the canvas while a run exists (a Console
+     * `session run`, an Assistant run). It appears only for an editable
+     * canvas and never at rest. Hosts that show runs another way (Test mode)
+     * set `false`.
+     * @default true
+     */
+    showRunBar?: boolean;
+    /**
+     * Take the person to the run in Test mode: the run bar's Open button, shown
+     * while a run waits for them. Without it the button is not shown.
+     */
+    onOpenTest?: () => void;
   }
 
   let props: Props = $props();
@@ -1289,6 +1303,10 @@
           </CanvasBanner>
         {/if}
       </FlowDropZone>
+
+      {#if canvasEditable && (props.showRunBar ?? true)}
+        <RunBar onOpen={props.onOpenTest} />
+      {/if}
 
       {#if openMenu}
         <CanvasContextMenu
