@@ -70,6 +70,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `session` line is refused before anything runs, `help` lists the group and
   `help session` shows its usage.
 
+- Test mode: **Save & send**. The docked Playground's Send reads "Save & send"
+  (and Run "Save & run") while the workflow has unsaved edits, Playground
+  settings included. Pressing it saves through the editor's own save, then
+  sends; when the save fails or a host cancels it nothing is sent, the typed
+  text stays and the Playground says why. `PlaygroundSurface` and
+  `DockedPlayground` take `onSave`; `ChatInput` and `ControlPanel` take
+  `beforeSend` and `saveFirst`; `fd.runs.needsSave` and `fd.runs.saveFirst()`.
+  New messages `playground.actions.saveAndSend`, `saveAndRun`, `saving` and
+  `playground.saveFailed`, `saveNotDone`.
+- Test mode: a **"Saved — new version" divider** in the conversation where the
+  workflow changed. It is added when the workflow is saved while a conversation
+  is open (unless the save left the version of the last run unchanged, a node
+  moved to another place, say), and rebuilt on load from the session's runs:
+  above a run whose `workflowVersion` differs from the one before, and at the
+  end when the workflow changed since the last run. A run with an unknown
+  version (`null`) is never compared. New message `playground.versionDivider`.
+- Session runs: `GET /sessions/{id}/runs` (FlowDrop for Drupal 2.7.0) in the
+  OpenAPI spec, `PlaygroundService.getSessionRuns()` and the optional
+  `sessions.runs` endpoint (`sessionsEndpoints.runs`; a `sessions` group without
+  the key still tries the reference path). A server without the endpoint answers
+  404 and the editor shows no dividers and no error; it is asked once per page.
+  The runs of the current session are in `fd.playground.sessionRuns`
+  (`SessionRunsResult`, `SessionRun`), loaded by `fd.runs.loadSessionRuns()`.
+  `isRunStale()` and `versionDividersFromRuns()` are exported from `playground`.
+- Sessions carry `thirdPartySettings` (`PlaygroundSession`, `SessionThirdPartySettings`):
+  the Playground's own sessions are marked `flowdrop_playground.created`
+  (`PLAYGROUND_SESSION_MARK`, `isPlaygroundSession()`, `playgroundSessionsOf()`).
+  A server that exposes the settings sends them on every session; one that does
+  not leaves the key out.
+
 - Test mode: an **Edit | Test** switch in the navbar. Test docks the Playground
   in the left slot (where the node library sits in Edit mode), compact: no
   760px minimum and no pipeline panel. The inspector stays open, resting on
@@ -123,6 +153,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   prop and `NodeStatusConfig.showDetails` are now no-ops (the latter is marked
   deprecated); the `status.overlay` messages for the panel's labels are gone,
   and `status.overlay.tooltip` takes only `{ status }`.
+- Test mode: the docked Playground's history lists only the sessions the
+  Playground created (`playgroundSessionsOnly`), not every session of the
+  workflow. A server that does not send `thirdPartySettings` lists them all.
+  A session survives a save: saving never resets or reloads the conversation.
+  Reset (`/reset`, a stuck session back to idle) and new (the chip's "New
+  session", `/new`, `session new`) stay two separate actions.
+- A session created by the editor's Playground or the Console is named by the
+  server (a client-side `Session N` repeats when the list is partial); the
+  standalone Playground keeps counting. `App`'s save returns whether the
+  workflow was written, `globalSaveWorkflow` tells `fd.runs` after a write.
 - Internal: the Playground's conversation surface is now `PlaygroundSurface`,
   and `Playground` is a thin wrapper around it. Test mode's docked Playground
   is built on the surface, not on the standalone wrapper, so it is unaffected
