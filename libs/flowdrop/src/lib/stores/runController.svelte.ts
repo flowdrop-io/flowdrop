@@ -837,7 +837,8 @@ export class RunController {
    * edits to the graph. Without arguments it follows the session's active run
    * and the editor's workflow. A newer call, or {@link clearNodeStatuses},
    * discards the result of one still in flight. Without a run or a saved
-   * workflow it clears instead.
+   * workflow it clears instead. A read that fails keeps the last good result
+   * of the same run.
    */
   async loadNodeStatuses(pipelineId?: string | null, workflow?: Workflow | null): Promise<void> {
     const runId = pipelineId ?? this.#playground.activeExecutionId;
@@ -848,7 +849,7 @@ export class RunController {
       return;
     }
     try {
-      const statuses = await nodeExecutionService.getMultipleNodeExecutionInfo(
+      const statuses = await nodeExecutionService.fetchMultipleNodeExecutionInfo(
         this.#api.config,
         target.nodes.map((node) => node.id),
         runId
@@ -858,6 +859,12 @@ export class RunController {
     } catch (error) {
       if (token === this.#statusToken) {
         logger.error('Failed to load node execution info:', error);
+        // A failed read keeps the last good map of this run (the next poll
+        // tick retries). Statuses of another run or workflow are not kept.
+        const shown = this.#playground.nodeStatusScope;
+        if (shown && (shown.pipelineId !== runId || shown.workflowId !== target.id)) {
+          this.#playground.clearNodeStatuses();
+        }
       }
     }
   }

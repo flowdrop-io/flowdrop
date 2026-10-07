@@ -109,7 +109,11 @@ export class NodeExecutionService {
   }
 
   /**
-   * Get execution information for multiple nodes from pipeline data
+   * Get execution information for multiple nodes from pipeline data.
+   *
+   * Never rejects: when the pipeline cannot be read, every node comes back
+   * idle. A caller that must tell "idle" from "could not read" (and keep what
+   * it already shows) uses {@link fetchMultipleNodeExecutionInfo}.
    */
   async getMultipleNodeExecutionInfo(
     endpointConfig: EndpointConfig | null,
@@ -119,75 +123,73 @@ export class NodeExecutionService {
     if (!pipelineId) {
       return {};
     }
-
-    // Check if API is temporarily unavailable
+    // Pipeline API temporarily unavailable: answer idle without a call or a log line.
     if (this.apiUnavailable && Date.now() < this.apiUnavailableUntil) {
-      const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
-      nodeIds.forEach((nodeId) => {
-        defaultExecutionInfo[nodeId] = {
-          status: 'idle',
-          executionCount: 0,
-          isExecuting: false
-        };
-      });
-      return defaultExecutionInfo;
+      return this.idleExecutionInfo(nodeIds);
     }
-
     try {
-      if (!endpointConfig) throw new Error('Endpoint config not available');
-      const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
-        id: pipelineId
-      });
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        // If the endpoint returns 404, it means the pipeline API is not available
-        // Mark API as unavailable for 5 minutes to prevent repeated calls
-        if (response.status === 404) {
-          logger.warn(`Pipeline API endpoint not available for pipeline ${pipelineId}`);
-          this.apiUnavailable = true;
-          this.apiUnavailableUntil = Date.now() + PIPELINE_API_UNAVAILABLE_DURATION_MS;
-          const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
-          nodeIds.forEach((nodeId) => {
-            defaultExecutionInfo[nodeId] = {
-              status: 'idle',
-              executionCount: 0,
-              isExecuting: false
-            };
-          });
-          return defaultExecutionInfo;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const raw = await response.json();
-      const result = raw.data ?? raw;
-      const jobs: PipelineJob[] = result.jobs || [];
-      const nodeStatuses: Record<string, NodeStatusEntry> = result.node_statuses || {};
-
-      const executionInfoMap: Record<string, NodeExecutionInfo> = {};
-
-      nodeIds.forEach((nodeId) => {
-        executionInfoMap[nodeId] = this.buildNodeExecutionInfo(nodeId, nodeStatuses[nodeId], jobs);
-        if (executionInfoMap[nodeId].status !== 'idle' || executionInfoMap[nodeId].jobs) {
-          this.cache.set(nodeId, executionInfoMap[nodeId]);
-        }
-      });
-
-      return executionInfoMap;
+      return await this.fetchMultipleNodeExecutionInfo(endpointConfig, nodeIds, pipelineId);
     } catch (error) {
       logger.error('Failed to fetch multiple node execution info:', error);
       // Return default values instead of empty object to prevent repeated calls
-      const defaultExecutionInfo: Record<string, NodeExecutionInfo> = {};
-      nodeIds.forEach((nodeId) => {
-        defaultExecutionInfo[nodeId] = {
-          status: 'idle',
-          executionCount: 0,
-          isExecuting: false
-        };
-      });
-      return defaultExecutionInfo;
+      return this.idleExecutionInfo(nodeIds);
     }
+  }
+
+  /**
+   * Like {@link getMultipleNodeExecutionInfo}, but a pipeline that cannot be
+   * read (network error, HTTP error, pipeline API unavailable) rejects instead
+   * of answering "all idle", so the caller can keep its last good result.
+   */
+  async fetchMultipleNodeExecutionInfo(
+    endpointConfig: EndpointConfig | null,
+    nodeIds: string[],
+    pipelineId: string
+  ): Promise<Record<string, NodeExecutionInfo>> {
+    // The pipeline API is temporarily unavailable: do not call it again yet.
+    if (this.apiUnavailable && Date.now() < this.apiUnavailableUntil) {
+      throw new Error('Pipeline API temporarily unavailable');
+    }
+    if (!endpointConfig) throw new Error('Endpoint config not available');
+    const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
+      id: pipelineId
+    });
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      // A 404 means the pipeline API is not available: mark it unavailable for
+      // 5 minutes to prevent repeated calls.
+      if (response.status === 404) {
+        logger.warn(`Pipeline API endpoint not available for pipeline ${pipelineId}`);
+        this.apiUnavailable = true;
+        this.apiUnavailableUntil = Date.now() + PIPELINE_API_UNAVAILABLE_DURATION_MS;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const raw = await response.json();
+    const result = raw.data ?? raw;
+    const jobs: PipelineJob[] = result.jobs || [];
+    const nodeStatuses: Record<string, NodeStatusEntry> = result.node_statuses || {};
+
+    const executionInfoMap: Record<string, NodeExecutionInfo> = {};
+
+    nodeIds.forEach((nodeId) => {
+      executionInfoMap[nodeId] = this.buildNodeExecutionInfo(nodeId, nodeStatuses[nodeId], jobs);
+      if (executionInfoMap[nodeId].status !== 'idle' || executionInfoMap[nodeId].jobs) {
+        this.cache.set(nodeId, executionInfoMap[nodeId]);
+      }
+    });
+
+    return executionInfoMap;
+  }
+
+  private idleExecutionInfo(nodeIds: string[]): Record<string, NodeExecutionInfo> {
+    const idle: Record<string, NodeExecutionInfo> = {};
+    nodeIds.forEach((nodeId) => {
+      idle[nodeId] = { status: 'idle', executionCount: 0, isExecuting: false };
+    });
+    return idle;
   }
 
   /**

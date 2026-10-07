@@ -338,7 +338,7 @@ describe('RunController', () => {
     it('puts the run status in the instance playground store, scoped to workflow and run', async () => {
       const { runs, playground } = setup();
       const spy = vi
-        .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
+        .spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo')
         .mockResolvedValue({ n1: done });
 
       await runs.loadNodeStatuses('p1', wf());
@@ -351,7 +351,7 @@ describe('RunController', () => {
     it('survives the editor workflow changing', async () => {
       const { runs, playground, editor } = setup();
       editor.initialize(wf());
-      vi.spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo').mockResolvedValue({
+      vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockResolvedValue({
         n1: done
       });
       await runs.loadNodeStatuses('p1');
@@ -362,7 +362,7 @@ describe('RunController', () => {
     it('lets the last load win when an earlier one resolves after it', async () => {
       const { runs, playground } = setup();
       const slow = deferred<Record<string, typeof done>>();
-      vi.spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo').mockImplementation(
+      vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockImplementation(
         async (_c, _ids, run) => (run === 'slow' ? slow.promise : { n2: done })
       );
 
@@ -378,7 +378,7 @@ describe('RunController', () => {
     it('clearNodeStatuses discards a load still in flight', async () => {
       const { runs, playground } = setup();
       const slow = deferred<Record<string, typeof done>>();
-      vi.spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo').mockReturnValue(slow.promise);
+      vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockReturnValue(slow.promise);
 
       const load = runs.loadNodeStatuses('p1', wf());
       runs.clearNodeStatuses();
@@ -395,6 +395,40 @@ describe('RunController', () => {
       expect(playground.nodeStatuses).toEqual({});
     });
   });
+  describe('loadNodeStatuses on a failed read', () => {
+    const done = { status: 'completed', executionCount: 1, isExecuting: false } as const;
+    const wf = () => ({
+      ...workflow('wf'),
+      nodes: [{ id: 'n1' }] as unknown as Workflow['nodes']
+    });
+
+    it('keeps the last good statuses of the same run', async () => {
+      const { runs, playground } = setup();
+      vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo')
+        .mockResolvedValueOnce({ n1: done })
+        .mockRejectedValueOnce(new Error('offline'));
+
+      await runs.loadNodeStatuses('p1', wf());
+      await runs.loadNodeStatuses('p1', wf());
+
+      expect(playground.nodeStatusFor('n1')).toEqual(done);
+      expect(playground.nodeStatusScope).toEqual({ workflowId: 'wf', pipelineId: 'p1' });
+    });
+
+    it('does not show another run\'s statuses under a run that failed to load', async () => {
+      const { runs, playground } = setup();
+      vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo')
+        .mockResolvedValueOnce({ n1: done })
+        .mockRejectedValueOnce(new Error('offline'));
+
+      await runs.loadNodeStatuses('p1', wf());
+      await runs.loadNodeStatuses('p2', wf());
+
+      expect(playground.nodeStatuses).toEqual({});
+      expect(playground.nodeStatusScope).toBeNull();
+    });
+  });
+
   describe('requestNodeStatuses', () => {
     const done = { status: 'completed', executionCount: 1, isExecuting: false } as const;
     const wf = () => ({
@@ -408,7 +442,7 @@ describe('RunController', () => {
       playground.pinExecution('p1');
       const first = deferred<Record<string, typeof done>>();
       const spy = vi
-        .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
+        .spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo')
         .mockReturnValueOnce(first.promise)
         .mockResolvedValue({ n1: done });
 
@@ -430,7 +464,7 @@ describe('RunController', () => {
       editor.initialize(wf());
       playground.pinExecution('p1');
       const spy = vi
-        .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
+        .spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo')
         .mockResolvedValue({ n1: done });
 
       runs.requestNodeStatuses();
@@ -449,7 +483,7 @@ describe('RunController', () => {
         nodes: [{ id: 'n1' }] as unknown as Workflow['nodes']
       });
       const spy = vi
-        .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
+        .spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo')
         .mockResolvedValue({});
       let status = 'running';
       const hooks = runs.wrapHostHooks({

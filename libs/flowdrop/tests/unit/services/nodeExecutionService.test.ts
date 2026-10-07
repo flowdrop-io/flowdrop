@@ -264,6 +264,20 @@ describe('NodeExecutionService', () => {
       expect(result['node-1'].jobs![1].status).toBe('skipped');
     });
 
+    it('fetchMultipleNodeExecutionInfo rejects where the other answers idle', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('offline'));
+
+      await expect(
+        service.fetchMultipleNodeExecutionInfo(endpointConfig, ['node-1'], 'pipeline-1')
+      ).rejects.toThrow('offline');
+      const idle = await service.getMultipleNodeExecutionInfo(
+        endpointConfig,
+        ['node-1'],
+        'pipeline-1'
+      );
+      expect(idle['node-1'].status).toBe('idle');
+    });
+
     it('should mark API unavailable on 404', async () => {
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
