@@ -50,6 +50,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   saved, exported or kept across edits. `NodeOperationsHelper.applyExecutionInfo`
   is deprecated with it. Both go in 3.0.
 
+### Fixed
+
+- The right-hand inspector now follows the selection. With the workflow
+  settings open, opening a node for configuration used to show nothing new
+  because the workflow tabs (Settings | Interface | Playground) took
+  precedence over the node. A node now wins, closing it falls back to the
+  workflow tabs, and the close button no longer leaves a hidden node selected
+  behind the workflow tabs. The tab strip wraps on narrow widths.
+  `resolveInspectorSurface` holds the rule.
+
 ## [2.11.0] - 2026-10-07
 
 ### Added

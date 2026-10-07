@@ -83,3 +83,31 @@ test.describe('Playground settings tab', () => {
     await expect(page.locator('.wf-interface__turn-deprecated')).toHaveCount(0);
   });
 });
+
+test.describe('Inspector follows the selection', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
+  });
+
+  test('a node wins over open workflow settings, and closing it returns to the tabs', async ({
+    page
+  }) => {
+    await gotoEditorWith(page, 'none');
+    await openWorkflowSettings(page);
+    await expect(page.getByRole('tab', { name: 'Playground' })).toBeVisible();
+
+    // Select a node: its config shows instead of the workflow tabs.
+    await page.locator('.svelte-flow__node').first().dblclick({ force: true });
+    await expect(page.locator('.config-panel').first()).toContainText('Text Input');
+    await expect(page.getByRole('tab', { name: 'Interface' })).toHaveCount(0);
+
+    // Deselect: the workflow tabs are back, Playground among them.
+    const pane = page.locator('.svelte-flow__pane');
+    const box = await pane.boundingBox();
+    if (!box) throw new Error('Canvas pane not found');
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height - 20);
+    await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Playground' }).click();
+    await expect(page.getByTestId('workflow-playground-settings')).toBeVisible();
+  });
+});
