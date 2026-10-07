@@ -33,8 +33,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `session` line is refused before anything runs, `help` lists the group and
   `help session` shows its usage.
 
+- Test mode: an **Edit | Test** switch in the navbar. Test docks the Playground
+  in the left slot (where the node library sits in Edit mode), compact: no
+  760px minimum and no pipeline panel. The inspector stays open, resting on
+  the workflow tabs (Settings | Interface | Playground) until a node is opened;
+  **N** opens the node library as a popover and **Esc** closes it. Below 1200px
+  the Playground is a drawer over the canvas, opened by the button that holds
+  the sidebar's place. The Playground targets the editor's current workflow,
+  including its unsaved edits, and the instance's current test session (created
+  on the first send); the session and a running run survive switching back to
+  Edit. Node badges follow the shown run as it progresses, and in Edit mode
+  only while a run is going; Edit mode at rest looks as before, with a dot on
+  the Test switch while a run is going or waiting. The "no chat yet" notice
+  links to the Playground settings tab. Edit mode is unchanged.
+- The mode is held per instance: `fd.editorMode` (`EditorModeStore`:
+  `current`, `isTest`, `set('edit' | 'test')`, `toggle()`; the `EditorMode`
+  type is exported from `core`). Start in Test with the `editorMode` prop of
+  `App` or the `editorMode` mount option; a host that hides the navbar, or
+  runs the switch itself, calls `instance.editorMode.set('test')`. Test only
+  takes effect for a saved workflow on an editable canvas (`mode: 'edit'`, no
+  `pipelineId`); `features.testMode: false` removes the switch.
+- `fd.runs.isLive` (a run is going or waiting for someone) and
+  `fd.runs.requestNodeStatuses()` (ask for the shown run's node statuses on
+  every poll tick; asks made while a load runs coalesce into one more load).
+- `ConfigPanel`'s `onClose` is optional: without it the panel has no close
+  control. `NodeSidebar` takes a `popover` prop (always expanded, as wide as
+  its container).
+
 ### Changed
 
+- Internal: the Playground's conversation surface is now `PlaygroundSurface`,
+  and `Playground` is a thin wrapper around it. Test mode's docked Playground
+  is built on the surface, not on the standalone wrapper, so it is unaffected
+  when the standalone Playground is deprecated and removed. The surface can
+  keep the instance's session when it unmounts (`retainSession`) and follow
+  a live workflow's interface and Playground settings (`followWorkflow`), and
+  to let the first send create the session (`sessionOptional`: the composer
+  works with no session, and nothing asks for one first).
 - A saved or exported workflow can no longer contain a node's `executionInfo`: the
   canvas-to-store sync, save and export all strip it.
 - Internal: the Playground delegates its session and run executors to
