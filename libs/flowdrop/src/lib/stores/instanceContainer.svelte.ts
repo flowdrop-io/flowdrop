@@ -29,6 +29,7 @@ import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
 import { InlineEditStore } from './inlineEditStore.svelte.js';
 import { EditorModeStore } from './editorModeStore.svelte.js';
 import { NodeHighlightStore } from './nodeHighlightStore.svelte.js';
+import { EditedNodesStore } from './editedNodesStore.svelte.js';
 import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
@@ -120,6 +121,11 @@ export interface FlowDropInstance {
    * the "show this node's last run" request a message link makes.
    */
   readonly highlight: NodeHighlightStore;
+  /**
+   * Which nodes changed since the shown run started (the `edited` mark in Test
+   * mode). `App` feeds it the shown run and the effective mode.
+   */
+  readonly editedNodes: EditedNodesStore;
   /**
    * The node types this editor currently knows: what `App` fetched (or was
    * given), merged with the format-provided nodes. Written by the editor as
@@ -310,6 +316,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     inlineEdit: new InlineEditStore(),
     editorMode: new EditorModeStore(),
     highlight: new NodeHighlightStore(),
+    editedNodes: new EditedNodesStore(() => workflow.current),
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
     approvalGate: null,

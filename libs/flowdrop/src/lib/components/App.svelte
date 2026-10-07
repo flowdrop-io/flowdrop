@@ -366,6 +366,17 @@
     if (!followRun) return;
     return () => fd.runs.clearNodeStatuses();
   });
+  // `edited` marks: shown in Test mode only. The baseline is taken when a run
+  // is first seen (live or opened), before any statuses load, so edits made
+  // while its statuses are still loading count.
+  $effect(() => {
+    fd.editedNodes.setVisible(testMode);
+  });
+  $effect(() => {
+    void fd.workflow.current?.id;
+    const runId = fd.runs.activeRun?.runId ?? fd.playground.activeExecutionId ?? null;
+    untrack(() => fd.editedNodes.track(pipelineId ? null : runId));
+  });
   // Crossing between Edit and Test drops a run that has already ended, so the
   // bar does not come back stale. A live run keeps its state.
   $effect(() => {

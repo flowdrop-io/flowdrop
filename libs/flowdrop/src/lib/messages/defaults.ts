@@ -624,7 +624,9 @@ export const defaultMessages = {
       lastRunLabel: 'Last Run:',
       durationLabel: 'Duration:',
       errorLabel: 'Error:',
-      historyLabel: 'Runs:'
+      historyLabel: 'Runs:',
+      edited: 'edited',
+      editedTooltip: 'Changed since this run started. The result may be out of date.'
     }
   },
 

@@ -11,8 +11,9 @@
   import type { WorkflowNode } from '../types/index.js';
   import { resolveBuiltinAlias } from '../registry/builtinNodes.js';
   import NodeStatusOverlay from './NodeStatusOverlay.svelte';
-  import { shouldShowNodeStatus, getOptimalStatusPosition } from '../utils/nodeWrapper.js';
+  import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
+  import { m } from '../messages/index.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
 
   const fd = getInstance();
@@ -57,6 +58,18 @@
    * `data.executionInfo` is a deprecated fallback for hosts that still write it.
    */
   let executionInfo = $derived(fd.playground.nodeStatusFor(id) ?? data.executionInfo);
+
+  /**
+   * The `edited` mark: Test mode only, only on a node that has a last run
+   * (a node that never ran has no result to be stale), and only when its
+   * configuration changed since the shown run started.
+   */
+  let showEdited = $derived(
+    fd.editedNodes.visible &&
+      !!executionInfo &&
+      executionInfo.status !== 'idle' &&
+      fd.editedNodes.isEdited(id)
+  );
 
   /**
    * Determine if status overlay should be shown.
@@ -122,21 +135,6 @@
   }
 
   /**
-   * Get optimal status position for this node type.
-   * Uses registry if available, otherwise falls back to defaults.
-   */
-  function getStatusPosition(): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' {
-    // Try registry first
-    const position = fd.nodes.getStatusPosition(resolvedComponentName);
-    if (position) {
-      return position;
-    }
-
-    // Fallback based on node type
-    return getOptimalStatusPosition(resolvedComponentName) ?? 'top-right';
-  }
-
-  /**
    * Get optimal status size for this node type.
    * Uses registry if available, otherwise falls back to defaults.
    */
@@ -169,15 +167,17 @@
     <NodeComponent {id} {data} {selected} />
   {/if}
 
+  {#if showEdited && shouldShowStatus}
+    <span
+      class="universal-node__edited"
+      data-testid="node-edited"
+      title={m().status.overlay.editedTooltip}>{m().status.overlay.edited}</span
+    >
+  {/if}
+
   <!-- Status overlay - only show if there's meaningful status information -->
   {#if shouldShowStatus}
-    <NodeStatusOverlay
-      nodeId={id}
-      {executionInfo}
-      position={getStatusPosition()}
-      size={getStatusSize()}
-      showDetails={true}
-    />
+    <NodeStatusOverlay nodeId={id} {executionInfo} size={getStatusSize()} showDetails={true} />
   {/if}
 </div>
 
@@ -185,5 +185,23 @@
   .universal-node {
     position: relative;
     display: inline-block;
+  }
+
+  .universal-node__edited {
+    position: absolute;
+    top: -9px;
+    left: 8px;
+    z-index: 1000;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background:
+      linear-gradient(var(--fd-warning-muted), var(--fd-warning-muted)), var(--fd-background);
+    color: var(--fd-foreground);
+    border: 1px solid var(--fd-warning);
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    pointer-events: none;
   }
 </style>

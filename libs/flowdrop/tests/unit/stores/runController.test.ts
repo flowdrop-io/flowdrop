@@ -378,7 +378,9 @@ describe('RunController', () => {
     it('clearNodeStatuses discards a load still in flight', async () => {
       const { runs, playground } = setup();
       const slow = deferred<Record<string, typeof done>>();
-      vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockReturnValue(slow.promise);
+      vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockReturnValue(
+        slow.promise
+      );
 
       const load = runs.loadNodeStatuses('p1', wf());
       runs.clearNodeStatuses();
@@ -415,7 +417,7 @@ describe('RunController', () => {
       expect(playground.nodeStatusScope).toEqual({ workflowId: 'wf', pipelineId: 'p1' });
     });
 
-    it('does not show another run\'s statuses under a run that failed to load', async () => {
+    it("does not show another run's statuses under a run that failed to load", async () => {
       const { runs, playground } = setup();
       vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo')
         .mockResolvedValueOnce({ n1: done })
