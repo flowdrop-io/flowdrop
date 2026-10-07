@@ -28,6 +28,7 @@ import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
 import { InlineEditStore } from './inlineEditStore.svelte.js';
 import { EditorModeStore } from './editorModeStore.svelte.js';
+import { NodeHighlightStore } from './nodeHighlightStore.svelte.js';
 import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
@@ -114,6 +115,11 @@ export interface FlowDropInstance {
    * writes the same store.
    */
   readonly editorMode: EditorModeStore;
+  /**
+   * Hover and selection shared by Playground messages and canvas nodes, and
+   * the "show this node's last run" request a message link makes.
+   */
+  readonly highlight: NodeHighlightStore;
   /**
    * The node types this editor currently knows: what `App` fetched (or was
    * given), merged with the format-provided nodes. Written by the editor as
@@ -303,6 +309,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     pipelinePanel: new PipelinePanelStore(id),
     inlineEdit: new InlineEditStore(),
     editorMode: new EditorModeStore(),
+    highlight: new NodeHighlightStore(),
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
     approvalGate: null,

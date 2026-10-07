@@ -45,3 +45,36 @@ export function closeTarget(
   if (surface === 'workflow' && editorMode === 'test') return null;
   return surface;
 }
+
+/** The tabs of a node in the inspector. */
+export type NodeInspectorTab = 'config' | 'lastRun';
+
+/**
+ * The tabs a node shows. Test mode has Config | Last run; Edit mode has no tab
+ * strip at all (an empty list): Config is the only content, as it always was.
+ */
+export function nodeInspectorTabs(editorMode: 'edit' | 'test' = 'edit'): NodeInspectorTab[] {
+  return editorMode === 'test' ? ['config', 'lastRun'] : [];
+}
+
+/**
+ * The tab to show: the requested one if the mode offers it, else Config.
+ * Leaving Test mode therefore lands on Config without losing the pick.
+ */
+export function resolveNodeTab(
+  requested: NodeInspectorTab,
+  editorMode: 'edit' | 'test' = 'edit'
+): NodeInspectorTab {
+  return nodeInspectorTabs(editorMode).includes(requested) ? requested : 'config';
+}
+
+/**
+ * The tab a node opens on when it becomes the open node: Last run in Test mode
+ * if the node ran in the shown run (that is what one is looking for), else Config.
+ */
+export function openingNodeTab(
+  editorMode: 'edit' | 'test' = 'edit',
+  nodeHasRun = false
+): NodeInspectorTab {
+  return editorMode === 'test' && nodeHasRun ? 'lastRun' : 'config';
+}

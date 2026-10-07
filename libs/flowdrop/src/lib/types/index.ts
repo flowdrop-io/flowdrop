@@ -1792,6 +1792,10 @@ export interface NodeJobExecution {
   executionTimeUs?: number;
   /** Error message if the job failed */
   error?: string;
+  /** What the job was given (the pipeline payload's `input_data`), when the backend sends it */
+  input?: unknown;
+  /** What the job produced (`output_data`), when the backend sends it */
+  output?: unknown;
 }
 
 /**

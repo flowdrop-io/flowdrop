@@ -28,6 +28,8 @@ interface PipelineJob {
   execution_time_us?: number;
   error?: string;
   error_message?: string;
+  input_data?: unknown;
+  output_data?: unknown;
 }
 
 /**
@@ -330,7 +332,9 @@ export class NodeExecutionService {
       executionTime,
       executionTimeUs:
         job.execution_time_us ?? (executionTime != null ? executionTime * 1000 : undefined),
-      error: job.error_message ?? job.error
+      error: job.error_message ?? job.error,
+      input: job.input_data ?? undefined,
+      output: job.output_data ?? undefined
     };
   }
 

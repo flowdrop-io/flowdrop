@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { resolveInspectorSurface, closeTarget } from '$lib/utils/inspectorSurface.js';
+import {
+  resolveInspectorSurface,
+  closeTarget,
+  nodeInspectorTabs,
+  resolveNodeTab,
+  openingNodeTab
+} from '$lib/utils/inspectorSurface.js';
 
 describe('resolveInspectorSurface', () => {
   it('shows nothing when nothing is open', () => {
@@ -48,5 +54,26 @@ describe('Test mode', () => {
     expect(closeTarget('workflow', 'test')).toBeNull();
     expect(closeTarget('node', 'test')).toBe('node');
     expect(closeTarget('workflow', 'edit')).toBe('workflow');
+  });
+});
+
+describe('node inspector tabs', () => {
+  it('Edit mode has no tab strip; Test mode has Config | Last run', () => {
+    expect(nodeInspectorTabs('edit')).toEqual([]);
+    expect(nodeInspectorTabs()).toEqual([]);
+    expect(nodeInspectorTabs('test')).toEqual(['config', 'lastRun']);
+  });
+
+  it('Edit mode always resolves to Config', () => {
+    expect(resolveNodeTab('lastRun', 'edit')).toBe('config');
+    expect(resolveNodeTab('lastRun', 'test')).toBe('lastRun');
+    expect(resolveNodeTab('config', 'test')).toBe('config');
+  });
+
+  it('a node opens on Last run only in Test mode and only if it ran', () => {
+    expect(openingNodeTab('test', true)).toBe('lastRun');
+    expect(openingNodeTab('test', false)).toBe('config');
+    expect(openingNodeTab('edit', true)).toBe('config');
+    expect(openingNodeTab()).toBe('config');
   });
 });
