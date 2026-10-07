@@ -409,6 +409,13 @@ describe('playgroundForSave', () => {
 });
 
 describe('withoutInterfaceTurns', () => {
+  it('keeps a turn value this library does not know (from a newer server)', () => {
+    const newer = entry('x', { turn: 'from_the_future' });
+    const result = withoutInterfaceTurns({ inputs: [newer, entry('m', { turn: 'message' })] });
+    expect(result?.inputs?.[0]).toBe(newer);
+    expect(result?.inputs?.[1]).toEqual(entry('m'));
+  });
+
   it('is undefined for no interface', () => {
     expect(withoutInterfaceTurns(undefined)).toBeUndefined();
   });

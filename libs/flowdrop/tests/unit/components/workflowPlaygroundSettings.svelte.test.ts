@@ -224,6 +224,64 @@ describe('WorkflowPlaygroundSettings: deprecated interface turns', () => {
     expect(target.textContent).toContain('deprecated');
   });
 
+  it('shows what the turns set up in the controls, not an empty binding', () => {
+    const { target } = render(withTurns());
+    expect(selectFor(target, 'Message goes to').value).toBe('m');
+    expect(selectFor(target, 'History goes to').value).toBe('h');
+    expect(target.querySelector<HTMLInputElement>('input[type="number"]')?.value).toBe('4');
+    expect(checkboxFor(target, 'Writer · Text').checked).toBe(true);
+  });
+
+  it('a first edit moves the turns with it, so the chat is not switched off', () => {
+    const { target, onMoveTurns, onChange } = render(withTurns());
+    toggle(checkboxFor(target, 'Writer · Summary'), true);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onMoveTurns).toHaveBeenCalledWith({
+      message: 'm',
+      history: { input: 'h', limit: 4 },
+      session_id: null,
+      message_id: null,
+      replies: [
+        { node_id: 'n1', port: 'text' },
+        { node_id: 'n1', port: 'summary' }
+      ],
+      sub_workflow_replies: false
+    });
+  });
+
+  it('clearing the last field moves the turns as an empty binding (no chat, no fallback)', () => {
+    const wf = makeWorkflow({
+      interface: { inputs: [entry('m', { turn: 'message' })] },
+      playground: { chat: null }
+    });
+    const { target, onMoveTurns } = render(wf);
+    choose(selectFor(target, 'Message goes to'), '');
+    expect(onMoveTurns).toHaveBeenCalledWith(emptyChat());
+  });
+
+  it('without onMoveTurns, a first edit stores the full binding the turns declare', () => {
+    const { target, onChange } = render(withTurns(), false);
+    toggle(checkboxFor(target, 'sub-workflows'), true);
+    expect(lastChat(onChange)).toEqual({
+      message: 'm',
+      history: { input: 'h', limit: 4 },
+      session_id: null,
+      message_id: null,
+      replies: [{ node_id: 'n1', port: 'text' }],
+      sub_workflow_replies: true
+    });
+  });
+
+  it('offers no move for turn values this library does not know', () => {
+    const wf = makeWorkflow({
+      interface: { inputs: [entry('m', { turn: 'from_the_future' })] },
+      playground: { chat: null }
+    });
+    const { target } = render(wf);
+    expect(target.textContent).toContain('deprecated');
+    expect(target.querySelectorAll('button')).toHaveLength(0);
+  });
+
   it('does not show the note once settings are stored', () => {
     const wf = withTurns();
     wf.playground = { chat: { ...emptyChat(), message: 'm' } };
@@ -376,12 +434,24 @@ describe('WorkflowPlaygroundSettings: history limit', () => {
     expect(lastChat(onChange)?.history).toEqual({ input: 'hist', limit: 25 });
   });
 
-  it('falls back to the default for a blank, zero or fractional limit', () => {
+  it('refuses a blank, zero or fractional limit: says why, keeps the field and the stored limit', () => {
     const { target, onChange } = render(withHistory(6));
     for (const bad of ['', '0', '-3', '2.5', 'abc']) {
       setLimit(limitInput(target), bad);
-      expect(lastChat(onChange)?.history).toEqual({ input: 'hist', limit: 10 });
+      expect(onChange).not.toHaveBeenCalled();
+      expect(limitInput(target).value).toBe(bad === 'abc' ? '' : bad);
+      expect(limitInput(target).classList).toContain('flowdrop-input--invalid');
+      expect(target.textContent).toContain('A whole number, 1 or more.');
     }
+  });
+
+  it('clears the refusal once a valid limit is written', () => {
+    const { target, onChange } = render(withHistory(6));
+    setLimit(limitInput(target), '0');
+    setLimit(limitInput(target), '8');
+    expect(lastChat(onChange)?.history).toEqual({ input: 'hist', limit: 8 });
+    expect(limitInput(target).classList).not.toContain('flowdrop-input--invalid');
+    expect(target.textContent).not.toContain('A whole number, 1 or more.');
   });
 
   it('takes the default limit when a history input is first chosen', () => {
@@ -434,7 +504,7 @@ describe('WorkflowPlaygroundSettings: problems', () => {
       })
     );
     expect(target.textContent).toContain(
-      '"message" is bound to the input "gone", which is not on the workflow interface.'
+      'Message goes to: the input "gone" is not on the workflow interface.'
     );
     const select = selectFor(target, 'Message goes to');
     expect(select.value).toBe('gone');
@@ -458,7 +528,9 @@ describe('WorkflowPlaygroundSettings: problems', () => {
         }
       })
     );
-    expect(target.textContent).toContain('Input "msg" is bound twice');
+    expect(target.textContent).toContain(
+      'Session ID goes to: the input "msg" is already picked under "Message goes to".'
+    );
   });
 
   it('shows an error under a stored reply whose node is gone, and lists it', () => {
@@ -468,7 +540,9 @@ describe('WorkflowPlaygroundSettings: problems', () => {
       })
     );
     expect(target.textContent).toContain('ghost · text');
-    expect(target.textContent).toContain('node "ghost", which is not in the workflow');
+    expect(target.textContent).toContain(
+      'The reply "ghost · text" is on a node that is no longer in the workflow.'
+    );
     expect(checkboxFor(target, 'ghost · text').checked).toBe(true);
   });
 
@@ -478,6 +552,36 @@ describe('WorkflowPlaygroundSettings: problems', () => {
         playground: { chat: { ...emptyChat(), replies: [{ node_id: 'n1', port: 'nope' }] } }
       })
     );
-    expect(target.textContent).toContain('which has no such output');
+    expect(target.textContent).toContain(
+      'The reply "n1 · nope" is on an output the node no longer has.'
+    );
+  });
+});
+
+describe('WorkflowPlaygroundSettings: session and message ids', () => {
+  function details(target: HTMLElement): HTMLDetailsElement {
+    const el = target.querySelector<HTMLDetailsElement>('details');
+    if (!el) throw new Error('no ids disclosure');
+    return el;
+  }
+
+  it('is closed when neither id is bound', () => {
+    const { target } = render(makeWorkflow({ playground: { chat: null } }));
+    expect(details(target).open).toBe(false);
+  });
+
+  it('opens when a new workflow value binds an id (undo, load, move)', () => {
+    const props = $state({
+      workflow: makeWorkflow({ playground: { chat: null } }),
+      onChange: vi.fn()
+    });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    mounted = mount(WorkflowPlaygroundSettings, { target, props });
+    flushSync();
+    expect(details(target).open).toBe(false);
+    props.workflow = makeWorkflow({ playground: { chat: { ...emptyChat(), session_id: 'sid' } } });
+    flushSync();
+    expect(details(target).open).toBe(true);
   });
 });

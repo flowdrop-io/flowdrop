@@ -14,9 +14,11 @@
   workflow. Nothing set = no chat: the Playground shows a form or Run instead.
 
   A workflow without settings that still marks its interface with the
-  deprecated `turn` keeps chatting through those marks; `onMoveTurns` lets
-  the author move them here in one step (the caller also clears them from the
-  interface).
+  deprecated `turn` keeps chatting through those marks. The controls then
+  show what the marks set up, and `onMoveTurns` moves them here: on the
+  button, and on the first edit, so an edit never starts from an empty
+  binding (which would switch the chat off) and clearing every field really
+  means no chat (the marks are gone, nothing falls back to them).
 -->
 
 <script lang="ts">
@@ -35,13 +37,15 @@
   import {
     emptyPlaygroundChat,
     interfaceTurnChat,
+    isPlaygroundChatSet,
     normalizePlaygroundChat,
     withPlaygroundChat
   } from '$lib/utils/playgroundChat.js';
   import {
     listBindablePorts,
     playgroundChatIssues,
-    type PlaygroundChatInputKey
+    type PlaygroundChatInputKey,
+    type PlaygroundChatIssue
   } from '$lib/utils/workflowInterface.js';
 
   interface Props {
@@ -50,8 +54,11 @@
     onChange: (next: WorkflowPlayground) => void;
     /**
      * Move the deprecated interface `turn` marks into these settings: called
-     * with the binding they declare. The caller stores it and clears `turn`
-     * from the interface in one update. Omit to hide the action.
+     * with the binding to store (the one they declare, or it with the first
+     * edit applied). The caller stores it and clears `turn` from the
+     * interface in one update. Omit to hide the action; edits then go to
+     * `onChange` and the marks stay, so clearing every field falls back to
+     * them.
      */
     onMoveTurns?: (chat: PlaygroundChatBinding) => void;
   }
@@ -62,13 +69,13 @@
   const stored = $derived(
     workflow.playground?.chat ? normalizePlaygroundChat(workflow.playground.chat) : null
   );
-  /** What the controls show: the stored binding, or an empty one. */
-  const chat = $derived(stored ?? emptyPlaygroundChat());
   /** The binding the deprecated interface `turn` marks declare, when nothing is stored. */
   const turnChat = $derived(stored === null ? interfaceTurnChat(workflow.interface) : null);
+  /** What the controls show: the binding in effect (stored, else the marks), or an empty one. */
+  const chat = $derived(stored ?? turnChat ?? emptyPlaygroundChat());
 
   const inputs = $derived(workflow.interface?.inputs ?? []);
-  const issues = $derived(playgroundChatIssues(workflow, stored));
+  const issues = $derived(playgroundChatIssues(workflow, stored ?? turnChat));
   const errors = $derived(issues.filter((issue) => issue.severity === 'error'));
   const halfSet = $derived(issues.some((issue) => issue.code === 'playground-half-set'));
 
@@ -87,22 +94,35 @@
     return options;
   });
 
+  /** Whether either id input is bound: the disclosure is then open. */
+  const idsBound = $derived(chat.session_id !== null || chat.message_id !== null);
+  /** Whether the person opened the disclosure themselves. */
+  let idsOpened = $state(false);
+
+  /** The label of the field a binding key fills. */
+  const keyLabels = $derived<Record<PlaygroundChatInputKey, string>>({
+    message: m().playgroundSettings.messageLabel,
+    history: m().playgroundSettings.historyLabel,
+    session_id: m().playgroundSettings.sessionIdLabel,
+    message_id: m().playgroundSettings.messageIdLabel
+  });
+
   const idFields = $derived([
-    { key: 'session_id' as const, label: m().playgroundSettings.sessionIdLabel },
-    { key: 'message_id' as const, label: m().playgroundSettings.messageIdLabel }
+    { key: 'session_id' as const, label: keyLabels.session_id },
+    { key: 'message_id' as const, label: keyLabels.message_id }
   ]);
 
-  /** Whether the two id inputs are disclosed: when either is bound, else on request. */
-  // The seed is meant to be read once.
-  // svelte-ignore state_referenced_locally
-  let idsOpen = $state(chat.session_id !== null || chat.message_id !== null);
+  /** Whether the limit field holds something that is not a valid limit. */
+  let historyLimitInvalid = $state(false);
 
   function sameReply(a: PlaygroundReplyPort, b: PlaygroundReplyPort): boolean {
     return a.node_id === b.node_id && a.port === b.port;
   }
 
   function update(patch: Partial<PlaygroundChatBinding>): void {
-    onChange(withPlaygroundChat(workflow.playground, { ...chat, ...patch }));
+    const next = { ...chat, ...patch };
+    if (stored === null && turnChat !== null && onMoveTurns) onMoveTurns(next);
+    else onChange(withPlaygroundChat(workflow.playground, next));
   }
 
   function setInput(key: Exclude<PlaygroundChatInputKey, 'history'>, value: string): void {
@@ -110,6 +130,7 @@
   }
 
   function setHistoryInput(value: string): void {
+    historyLimitInvalid = false;
     update({
       history:
         value === ''
@@ -118,14 +139,18 @@
     });
   }
 
-  function setHistoryLimit(raw: string): void {
+  function setHistoryLimit(field: HTMLInputElement): void {
     if (chat.history === null) return;
-    const parsed = Number(raw);
-    const limit =
-      raw.trim() !== '' && Number.isInteger(parsed) && parsed > 0
-        ? parsed
-        : DEFAULT_HISTORY_TURN_LIMIT;
-    update({ history: { ...chat.history, limit } });
+    const parsed = Number(field.value);
+    if (field.value.trim() === '' || !Number.isInteger(parsed) || parsed < 1) {
+      // Keep what the person typed and say why it is not taken: the stored
+      // limit stays, so falling back here would leave the field showing a
+      // value nobody saved.
+      historyLimitInvalid = true;
+      return;
+    }
+    historyLimitInvalid = false;
+    update({ history: { ...chat.history, limit: parsed } });
   }
 
   function toggleReply(reply: PlaygroundReplyPort, on: boolean): void {
@@ -133,13 +158,51 @@
     update({ replies: on ? [...others, reply] : others });
   }
 
+  /** An issue in the person's language (`issue.message` is English, for logs). */
+  function issueText(issue: PlaygroundChatIssue): string {
+    const texts = m().playgroundSettings.issues;
+    const reply = issue.reply ? replyLabel(issue.reply) : '';
+    switch (issue.code) {
+      case 'playground-input-missing':
+        return issue.key && issue.input
+          ? texts.inputMissing({ field: keyLabels[issue.key], id: issue.input })
+          : issue.message;
+      case 'playground-input-duplicate':
+        return issue.key && issue.input && issue.otherKey
+          ? texts.inputDuplicate({
+              field: keyLabels[issue.key],
+              id: issue.input,
+              other: keyLabels[issue.otherKey]
+            })
+          : issue.message;
+      case 'playground-reply-node-missing':
+        return texts.replyNodeMissing({ reply });
+      case 'playground-reply-port-missing':
+        return texts.replyPortMissing({ reply });
+      case 'playground-half-set':
+        return m().playgroundSettings.halfSet;
+      default:
+        return issue.message;
+    }
+  }
+
+  /** A reply as the reply list labels it, or `node · port` when it is not listed. */
+  function replyLabel(reply: PlaygroundReplyPort): string {
+    return (
+      replyOptions.find((option) => sameReply(option.reply, reply))?.label ??
+      `${reply.node_id} · ${reply.port}`
+    );
+  }
+
   /** An input key's error, for the field's invalid state. */
   function inputError(key: PlaygroundChatInputKey): string | undefined {
-    return errors.find((issue) => issue.key === key)?.message;
+    const issue = errors.find((candidate) => candidate.key === key);
+    return issue && issueText(issue);
   }
 
   function replyError(reply: PlaygroundReplyPort): string | undefined {
-    return errors.find((issue) => issue.reply && sameReply(issue.reply, reply))?.message;
+    const issue = errors.find((candidate) => candidate.reply && sameReply(candidate.reply, reply));
+    return issue && issueText(issue);
   }
 
   /**
@@ -164,7 +227,7 @@
     {#if turnChat}
       <div class="wf-playground__note" role="note">
         <p>{m().playgroundSettings.turnSource}</p>
-        {#if onMoveTurns}
+        {#if onMoveTurns && isPlaygroundChatSet(turnChat)}
           <Button variant="secondary" size="sm" onclick={() => turnChat && onMoveTurns?.(turnChat)}>
             {m().playgroundSettings.moveTurns}
           </Button>
@@ -221,14 +284,24 @@
           type="number"
           min="1"
           step="1"
+          invalid={historyLimitInvalid}
           value={chat.history.limit}
-          onchange={(e) => setHistoryLimit(e.currentTarget.value)}
+          onchange={(e) => setHistoryLimit(e.currentTarget)}
         />
+        {#if historyLimitInvalid}
+          <span class="wf-playground__inline wf-playground__inline--error">
+            {m().playgroundSettings.historyLimitInvalid}
+          </span>
+        {/if}
       </label>
     {/if}
   </div>
 
-  <details class="wf-playground__more" bind:open={idsOpen}>
+  <details
+    class="wf-playground__more"
+    open={idsBound || idsOpened}
+    ontoggle={(e) => (idsOpened = e.currentTarget.open)}
+  >
     <summary>
       <Icon icon="heroicons:chevron-right" />
       {m().playgroundSettings.idsDisclosure}
@@ -290,7 +363,7 @@
     </p>
   {/if}
   {#each errors.filter((issue) => issue.key !== undefined) as issue (issue.code + issue.key)}
-    <p class="wf-playground__inline wf-playground__inline--error">{issue.message}</p>
+    <p class="wf-playground__inline wf-playground__inline--error">{issueText(issue)}</p>
   {/each}
 
   <p class="wf-playground__meta">{m().playgroundSettings.savedWith}</p>

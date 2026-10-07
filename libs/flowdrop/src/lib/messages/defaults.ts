@@ -333,6 +333,10 @@ export const defaultMessages = {
     // Shown when the workflow's Playground settings bind no chat (and no
     // deprecated interface `turn` does): the form or Run still work.
     chatNotSetUp: 'No chat yet. Pick the input the message goes to in Playground settings.',
+    // Shown when a message input is bound but no reply is: the run completes
+    // and nothing prints.
+    chatHalfSet:
+      'Nothing will reply here. Pick the results that print as replies in Playground settings.',
     // The form a workflow's interface inputs render as (inputs without a chat
     // turn; the session fills the others).
     inputForm: {
@@ -653,7 +657,7 @@ export const defaultMessages = {
     notSetUp:
       'No chat until someone sets it up. The Playground shows a form built from the interface inputs. To chat with this workflow, pick the input the message goes to and the results that print as replies.',
     turnSource:
-      'This workflow chats through "Chat turn" marks on its interface, which are deprecated. Move them here to keep the chat as it is.',
+      'This workflow chats through "Chat turn" marks on its interface, which are deprecated. The fields below show what they set up. Move them here to keep the chat as it is; changing any field moves them too.',
     moveTurns: 'Move them here',
     noInputs: 'The workflow interface has no inputs yet. Add one on the Interface tab first.',
     messageLabel: 'Message goes to',
@@ -671,7 +675,19 @@ export const defaultMessages = {
     subWorkflowReplies: 'Also print what sub-workflows reply',
     halfSet:
       'Nothing will print. The run completes and the chat stays silent. Pick at least one reply.',
-    savedWith: 'Set for this workflow and saved with it when you press Save.'
+    savedWith: 'Set for this workflow and saved with it when you press Save.',
+    historyLimitInvalid: 'A whole number, 1 or more.',
+    /** Problems with the binding, by issue code (`playgroundChatIssues`). */
+    issues: {
+      inputMissing: ({ field, id }: { field: string; id: string }) =>
+        `${field}: the input "${id}" is not on the workflow interface.`,
+      inputDuplicate: ({ field, id, other }: { field: string; id: string; other: string }) =>
+        `${field}: the input "${id}" is already picked under "${other}".`,
+      replyNodeMissing: ({ reply }: { reply: string }) =>
+        `The reply "${reply}" is on a node that is no longer in the workflow.`,
+      replyPortMissing: ({ reply }: { reply: string }) =>
+        `The reply "${reply}" is on an output the node no longer has.`
+    }
   },
 
   // The confirm dialog the WebMCP adapter shows before a browser agent's change runs.

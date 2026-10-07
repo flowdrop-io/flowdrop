@@ -39,6 +39,7 @@
     type CommandOutcome
   } from '../../playground/commands/index.js';
   import { resolveRunAction } from '../../playground/runAction.js';
+  import { isPlaygroundChatHalfSet } from '../../utils/playgroundChat.js';
   import type { PlaygroundMessageRequest } from '../../types/playground.js';
 
   interface Props {
@@ -80,6 +81,19 @@
   // getContext, which throws outside component initialisation, and every
   // read below happens in an event handler or after an await.
   const messages = getMessages();
+
+  /**
+   * One line above the composer when the chat binding cannot chat: nothing
+   * set up (the form or Run still work), or a message input with no reply,
+   * which would take what the person types and never answer.
+   */
+  const chatNotice = $derived.by(() => {
+    const resolved = fd.playground.chatBinding;
+    if (resolved === null) return undefined;
+    if (resolved.source === 'none') return messages().playground.chatNotSetUp;
+    if (isPlaygroundChatHalfSet(resolved.binding)) return messages().playground.chatHalfSet;
+    return undefined;
+  });
 
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
@@ -243,7 +257,9 @@
    * settings, else from its interface's deprecated turn ports. A workflow
    * passed in with both an `interface` and a `playground` key is used as is;
    * when either is missing, the workflow is loaded through the workflows API
-   * (`workflows.get`) and the two keys are taken from there. Any failure
+   * (`workflows.get`) and only the missing keys are taken from there: a key
+   * the caller passed is its live copy (the editor's, unsaved edits and all)
+   * and never gives way to the saved one. Any failure
    * leaves the playground in `legacy` mode, which is the behaviour it had
    * before turn ports.
    */
@@ -256,16 +272,21 @@
     }
     try {
       const loaded = await fd.api.client.loadWorkflow(workflowId);
-      if (loaded.interface === undefined && loaded.playground === undefined) return;
-      fd.playground.setWorkflow(
-        workflow
-          ? {
-              ...workflow,
-              ...(loaded.interface !== undefined && { interface: loaded.interface }),
-              ...(loaded.playground !== undefined && { playground: loaded.playground })
-            }
-          : loaded
-      );
+      if (!workflow) {
+        if (loaded.interface !== undefined || loaded.playground !== undefined) {
+          fd.playground.setWorkflow(loaded);
+        }
+        return;
+      }
+      const missingInterface = workflow.interface === undefined && loaded.interface !== undefined;
+      const missingPlayground =
+        workflow.playground === undefined && loaded.playground !== undefined;
+      if (!missingInterface && !missingPlayground) return;
+      fd.playground.setWorkflow({
+        ...workflow,
+        ...(missingInterface && { interface: loaded.interface }),
+        ...(missingPlayground && { playground: loaded.playground })
+      });
     } catch (err) {
       logger.debug('[Playground] Workflow interface unavailable, keeping legacy input:', err);
     }
@@ -939,9 +960,7 @@
             ? undefined
             : config.predefinedMessage}
           formEntries={fd.playground.interfaceFormEntries}
-          notice={fd.playground.chatBinding?.source === 'none'
-            ? messages().playground.chatNotSetUp
-            : undefined}
+          notice={chatNotice}
           formValues={fd.playground.formValues}
           onFormChange={(values) => fd.playground.setFormValues(values)}
           showSessionHeader={config.showSessionHeader ?? true}

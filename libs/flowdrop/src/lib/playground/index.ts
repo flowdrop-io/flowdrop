@@ -228,6 +228,8 @@ export {
   interfaceFormSchema,
   collectInterfaceInputs,
   playgroundChatIssues,
+  interfaceFormEntriesFor,
+  playgroundInputModeFor,
   type InterfaceInputsResult,
   type PlaygroundInputMode,
   type PlaygroundChatIssue,

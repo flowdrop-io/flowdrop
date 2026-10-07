@@ -24,7 +24,11 @@ import type {
   WorkflowInterfaceEntry,
   WorkflowPlayground
 } from '$lib/types/index.js';
-import { DEFAULT_HISTORY_TURN_LIMIT } from '$lib/types/index.js';
+import {
+  DEFAULT_HISTORY_TURN_LIMIT,
+  WORKFLOW_INTERFACE_INPUT_TURNS,
+  WORKFLOW_INTERFACE_OUTPUT_TURNS
+} from '$lib/types/index.js';
 
 /** The binding in effect for a workflow, and where it came from. */
 export interface ResolvedPlaygroundChat {
@@ -218,17 +222,19 @@ export function playgroundForSave(
 }
 
 /**
- * The interface with every deprecated `turn` mark removed (and a history
- * entry's `meta.limit`, which only `turn: history` gave a meaning), for the
- * step that moves the marks into Playground settings. Other `meta` keys stay;
- * an entry left with an empty `meta` loses the key.
+ * The interface with every deprecated `turn` mark this library knows removed
+ * (and a history entry's `meta.limit`, which only `turn: history` gave a
+ * meaning), for the step that moves the marks into Playground settings. Other
+ * `meta` keys stay; an entry left with an empty `meta` loses the key. A turn
+ * value from a newer server is not part of the move, so it stays and
+ * round-trips verbatim.
  */
 export function withoutInterfaceTurns(
   workflowInterface: WorkflowInterface | undefined
 ): WorkflowInterface | undefined {
   if (workflowInterface === undefined) return undefined;
   const strip = (entry: WorkflowInterfaceEntry): WorkflowInterfaceEntry => {
-    if (entry.turn === undefined) return entry;
+    if (entry.turn === undefined || !KNOWN_TURNS.has(entry.turn)) return entry;
     const next: WorkflowInterfaceEntry = { ...entry };
     delete next.turn;
     if (entry.turn === 'history' && next.meta && 'limit' in next.meta) {
@@ -245,6 +251,11 @@ export function withoutInterfaceTurns(
     ...(workflowInterface.outputs && { outputs: workflowInterface.outputs.map(strip) })
   };
 }
+
+const KNOWN_TURNS: ReadonlySet<string> = new Set([
+  ...WORKFLOW_INTERFACE_INPUT_TURNS,
+  ...WORKFLOW_INTERFACE_OUTPUT_TURNS
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

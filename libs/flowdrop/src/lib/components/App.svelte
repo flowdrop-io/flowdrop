@@ -381,12 +381,14 @@
   // are two tabs of one surface, not a field inside the settings form.
   let workflowSettingsTab = $state<'settings' | 'interface' | 'playground'>('settings');
   // The Playground tab exists only while the workflow carries Playground
-  // settings; a workflow loaded without them falls back to Settings.
-  $effect(() => {
-    if (workflowSettingsTab === 'playground' && fd.workflow.current?.playground === undefined) {
-      workflowSettingsTab = 'settings';
-    }
-  });
+  // settings; a workflow loaded without them shows Settings. Derived rather
+  // than reset, so there is no frame with the Playground tab picked and
+  // nothing shown, and the pick comes back with a workflow that has them.
+  const activeWorkflowSettingsTab = $derived(
+    workflowSettingsTab === 'playground' && fd.workflow.current?.playground === undefined
+      ? 'settings'
+      : workflowSettingsTab
+  );
 
   // Which surface (`config` | `console` | `chat`) is focused in its host. A
   // single selector across hosts: each TabbedSurface highlights this id when it
@@ -1360,9 +1362,9 @@
       <button
         type="button"
         role="tab"
-        aria-selected={workflowSettingsTab === 'settings'}
+        aria-selected={activeWorkflowSettingsTab === 'settings'}
         class="workflow-settings-tabs__tab"
-        class:workflow-settings-tabs__tab--active={workflowSettingsTab === 'settings'}
+        class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'settings'}
         onclick={() => (workflowSettingsTab = 'settings')}
       >
         {mergedMessages.navigation.workflowSettingsPanelSubtitle}
@@ -1370,9 +1372,9 @@
       <button
         type="button"
         role="tab"
-        aria-selected={workflowSettingsTab === 'interface'}
+        aria-selected={activeWorkflowSettingsTab === 'interface'}
         class="workflow-settings-tabs__tab"
-        class:workflow-settings-tabs__tab--active={workflowSettingsTab === 'interface'}
+        class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'interface'}
         onclick={() => (workflowSettingsTab = 'interface')}
       >
         {mergedMessages.navigation.workflowSettingsInterfaceTab}
@@ -1381,9 +1383,9 @@
         <button
           type="button"
           role="tab"
-          aria-selected={workflowSettingsTab === 'playground'}
+          aria-selected={activeWorkflowSettingsTab === 'playground'}
           class="workflow-settings-tabs__tab"
-          class:workflow-settings-tabs__tab--active={workflowSettingsTab === 'playground'}
+          class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'playground'}
           onclick={() => (workflowSettingsTab = 'playground')}
         >
           {mergedMessages.navigation.workflowSettingsPlaygroundTab}
@@ -1392,20 +1394,20 @@
     </div>
     <div
       class="workflow-settings-tabs__panel"
-      style:display={workflowSettingsTab === 'settings' ? 'block' : 'none'}
+      style:display={activeWorkflowSettingsTab === 'settings' ? 'block' : 'none'}
     >
       {@render workflowConfigFormEl()}
     </div>
     <div
       class="workflow-settings-tabs__panel"
-      style:display={workflowSettingsTab === 'interface' ? 'block' : 'none'}
+      style:display={activeWorkflowSettingsTab === 'interface' ? 'block' : 'none'}
     >
       {@render workflowInterfaceEl()}
     </div>
     {#if fd.workflow.current?.playground !== undefined}
       <div
         class="workflow-settings-tabs__panel"
-        style:display={workflowSettingsTab === 'playground' ? 'block' : 'none'}
+        style:display={activeWorkflowSettingsTab === 'playground' ? 'block' : 'none'}
       >
         {@render workflowPlaygroundEl()}
       </div>

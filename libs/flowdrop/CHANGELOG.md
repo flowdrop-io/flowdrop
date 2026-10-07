@@ -30,9 +30,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is no longer on the interface or a reply on a node or port that is gone. A
   workflow that still chats through interface `turn` marks gets a **Move them
   here** button: it writes the binding they declare and removes the marks in
-  one undoable step. Edits mark the workflow dirty and are saved with it.
+  one undoable step. Until then the fields show what the marks set up, and the
+  first edit moves them too, so a single change never switches the chat off
+  and clearing every field really means no chat. A turn value this library
+  does not know (from a newer server) stays on the interface. An invalid
+  message count is refused with a reason instead of falling back to 10.
+  Problems are worded through the message catalogue
+  (`playgroundSettings.issues`); `PlaygroundChatIssue` gains `input` and
+  `otherKey` for that, and `message` stays English for logs and agents.
+  Edits mark the workflow dirty and are saved with it.
 - The Playground shows one line, _No chat yet…_, when the workflow's settings
-  bind no chat. The form or the Run button still work.
+  bind no chat. The form or the Run button still work. It shows _Nothing will
+  reply here…_ when a message input is bound but no reply is.
+- `interfaceFormEntriesFor` and `playgroundInputModeFor` (from `playground`):
+  the same as `interfaceFormEntries` and `resolvePlaygroundInputMode`, for a
+  binding already resolved with `resolvePlaygroundChat`.
 
 ### Changed
 
@@ -47,6 +59,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `playground` key, and send nothing for it otherwise.
 - `fd.workflow.batchUpdate` accepts `playground`, keyed on presence like
   `interface`.
+- When the host passes a workflow without `interface` or `playground`, the
+  Playground loads it and takes only the missing keys. A key the host passed
+  is its live copy (the editor's, unsaved edits and all) and is never replaced
+  by the saved one.
 
 ### Deprecated
 

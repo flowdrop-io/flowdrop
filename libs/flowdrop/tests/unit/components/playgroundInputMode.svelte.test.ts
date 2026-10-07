@@ -447,4 +447,48 @@ describe('Playground input mode with Playground settings', () => {
     expect(fd.playground.inputMode).toBe('form');
     expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
   });
+  it("keeps the caller's interface and takes only the missing playground from workflows.get", async () => {
+    // The editor passes its live workflow, unsaved interface edits and all;
+    // the saved copy must not replace it.
+    workflowsGetBody = {
+      success: true,
+      data: workflowWith({ inputs: [topic] }, { chat: null })
+    };
+    const { fd } = await render(workflowWith({ inputs: [plain('msg'), topic] }));
+
+    expect(calls.some((c) => c.method === 'GET' && c.url.endsWith('/workflows/wf'))).toBe(true);
+    expect(fd.playground.inputMode).toBe('form');
+    expect(fd.playground.interfaceFormEntries.map((entry) => entry.id)).toEqual(['msg', 'topic']);
+  });
+
+  it("keeps the caller's interface when the server sends no playground (before 2.7.0)", async () => {
+    // The caller's (unsaved) interface marks a message turn; the saved copy
+    // has none, and taking it would drop the Playground back to legacy.
+    workflowsGetBody = { success: true, data: workflowWith({ inputs: [topic] }) };
+    const { fd } = await render(workflowWith({ inputs: [message, topic], outputs: [reply] }));
+
+    expect(fd.playground.chatBinding).toBeNull();
+    expect(fd.playground.inputMode).toBe('chat');
+  });
+
+  it('says nothing will reply when a message input is bound and no reply is', async () => {
+    const { target } = await render(
+      workflowWith({ inputs: [plain('msg')] }, { chat: { ...emptyChat, message: 'msg' } })
+    );
+
+    expect(target.querySelector('.control-panel__notice')?.textContent).toContain(
+      'Nothing will reply here'
+    );
+  });
+
+  it('shows no notice when the chat is bound with a reply', async () => {
+    const { target } = await render(
+      workflowWith(
+        { inputs: [plain('msg')] },
+        { chat: { ...emptyChat, message: 'msg', replies: [{ node_id: 'n', port: 'p' }] } }
+      )
+    );
+
+    expect(target.querySelector('.control-panel__notice')).toBeNull();
+  });
 });

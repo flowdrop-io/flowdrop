@@ -42,7 +42,8 @@ import type { PortMapping } from '$lib/utils/nodeSwap.js';
 import {
   isPlaygroundChatHalfSet,
   playgroundBoundInputs,
-  resolvePlaygroundChat
+  resolvePlaygroundChat,
+  type ResolvedPlaygroundChat
 } from '$lib/utils/playgroundChat.js';
 
 /**
@@ -817,8 +818,21 @@ export function interfaceFormEntries(
   workflowInterface: WorkflowInterface | undefined,
   playground?: WorkflowPlayground
 ): WorkflowInterfaceEntry[] {
+  return interfaceFormEntriesFor(
+    workflowInterface,
+    resolvePlaygroundChat({ interface: workflowInterface, playground })
+  );
+}
+
+/**
+ * {@link interfaceFormEntries} for a binding already resolved with
+ * `resolvePlaygroundChat` (`null` = the workflow carries no `playground`).
+ */
+export function interfaceFormEntriesFor(
+  workflowInterface: WorkflowInterface | undefined,
+  resolved: ResolvedPlaygroundChat | null
+): WorkflowInterfaceEntry[] {
   const inputs = workflowInterface?.inputs ?? [];
-  const resolved = resolvePlaygroundChat({ interface: workflowInterface, playground });
   if (resolved === null) return inputs.filter((entry) => !entry.turn);
   const bound = playgroundBoundInputs(resolved.binding);
   return inputs.filter((entry) => !bound.has(entry.id));
@@ -832,14 +846,27 @@ export function resolvePlaygroundInputMode(
   workflowInterface: WorkflowInterface | undefined,
   playground?: WorkflowPlayground
 ): PlaygroundInputMode {
-  const resolved = resolvePlaygroundChat({ interface: workflowInterface, playground });
+  return playgroundInputModeFor(
+    workflowInterface,
+    resolvePlaygroundChat({ interface: workflowInterface, playground })
+  );
+}
+
+/**
+ * {@link resolvePlaygroundInputMode} for a binding already resolved with
+ * `resolvePlaygroundChat` (`null` = the workflow carries no `playground`).
+ */
+export function playgroundInputModeFor(
+  workflowInterface: WorkflowInterface | undefined,
+  resolved: ResolvedPlaygroundChat | null
+): PlaygroundInputMode {
   if (resolved === null) {
     if (!declaresTurnPorts(workflowInterface)) return 'legacy';
     if ((workflowInterface?.inputs ?? []).some((entry) => entry.turn === 'message')) return 'chat';
   } else if (resolved.binding.message !== null) {
     return 'chat';
   }
-  return interfaceFormEntries(workflowInterface, playground).length > 0 ? 'form' : 'run';
+  return interfaceFormEntriesFor(workflowInterface, resolved).length > 0 ? 'form' : 'run';
 }
 
 /** Which part of a chat binding names an interface input. */
@@ -854,9 +881,17 @@ export interface PlaygroundChatIssue {
     | 'playground-reply-node-missing'
     | 'playground-reply-port-missing'
     | 'playground-half-set';
+  /**
+   * The issue in English, for logs and agents. A UI formats its own text
+   * from `code` and the fields below (see `playgroundSettings.issues`).
+   */
   message: string;
   /** The binding key an input issue is about. */
   key?: PlaygroundChatInputKey;
+  /** The input an input issue names. */
+  input?: string;
+  /** `playground-input-duplicate`: the key that has the input already. */
+  otherKey?: PlaygroundChatInputKey;
   /** The reply a reply issue is about. */
   reply?: PlaygroundReplyPort;
 }
@@ -892,6 +927,7 @@ export function playgroundChatIssues(
         severity: 'error',
         code: 'playground-input-missing',
         key,
+        input: id,
         message: `"${key}" is bound to the input "${id}", which is not on the workflow interface.`
       });
       continue;
@@ -902,6 +938,8 @@ export function playgroundChatIssues(
         severity: 'error',
         code: 'playground-input-duplicate',
         key,
+        input: id,
+        otherKey: other,
         message: `Input "${id}" is bound twice ("${other}" and "${key}").`
       });
       continue;

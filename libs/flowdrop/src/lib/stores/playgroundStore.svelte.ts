@@ -24,8 +24,8 @@ import { hasEnableRunFlag, isChatInputNode } from '../types/playground.js';
 import type { Workflow, WorkflowInterfaceEntry, WorkflowNode } from '../types/index.js';
 import {
   collectInterfaceInputs,
-  interfaceFormEntries,
-  resolvePlaygroundInputMode,
+  interfaceFormEntriesFor,
+  playgroundInputModeFor,
   type InterfaceInputsResult,
   type PlaygroundInputMode
 } from '../utils/workflowInterface.js';
@@ -146,19 +146,19 @@ export class PlaygroundStore {
   /** Current workflow being tested */
   #currentWorkflow = $state<Workflow | null>(null);
 
+  /** The chat binding in effect — see {@link chatBinding}. Resolved once, read by the two below. */
+  #chatBinding = $derived(resolvePlaygroundChat(this.#currentWorkflow));
+
   /** Input mode from the workflow's chat binding — see {@link inputMode}. */
   #inputMode = $derived(
-    resolvePlaygroundInputMode(this.#currentWorkflow?.interface, this.#currentWorkflow?.playground)
+    playgroundInputModeFor(this.#currentWorkflow?.interface, this.#chatBinding)
   );
-
-  /** The chat binding in effect — see {@link chatBinding}. */
-  #chatBinding = $derived(resolvePlaygroundChat(this.#currentWorkflow));
 
   /** Form entries from the workflow interface — see {@link interfaceFormEntries}. */
   #interfaceFormEntries = $derived(
     this.#inputMode === 'legacy'
       ? []
-      : interfaceFormEntries(this.#currentWorkflow?.interface, this.#currentWorkflow?.playground)
+      : interfaceFormEntriesFor(this.#currentWorkflow?.interface, this.#chatBinding)
   );
 
   /** Values of the interface input form, keyed by entry id. */
