@@ -105,7 +105,7 @@ test.describe('Inspector follows the selection', () => {
     const pane = page.locator('.svelte-flow__pane');
     const box = await pane.boundingBox();
     if (!box) throw new Error('Canvas pane not found');
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height - 20);
+    await page.mouse.click(box.x + 50, box.y + box.height - 50);
     await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
     await page.getByRole('tab', { name: 'Playground' }).click();
     await expect(page.getByTestId('workflow-playground-settings')).toBeVisible();
