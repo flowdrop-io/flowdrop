@@ -160,7 +160,7 @@
   }
 </script>
 
-<section class="control-panel" {style}>
+<section class="control-panel" class:control-panel--notice={!!notice} {style}>
   {#if showSessionHeader}
     <header class="control-panel__header">
       <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
@@ -346,6 +346,12 @@
     border-top: 1px solid var(--fd-border);
   }
 
+  /* A notice is taller than the 140px the split gives the panel by default;
+     without this it pushed the composer out of the panel in a narrow dock. */
+  .control-panel--notice {
+    min-height: min-content;
+  }
+
   .control-panel__notice {
     display: flex;
     align-items: flex-start;
@@ -400,9 +406,12 @@
     flex-shrink: 0;
   }
 
+  /* Shrinks with the header (the chip's name ellipsizes) so the actions
+     stay inside a narrow dock instead of being clipped. */
   .control-panel__session-chip-wrap {
     position: relative;
-    flex-shrink: 0;
+    flex: 0 1 auto;
+    min-width: 0;
   }
 
   .control-panel__session-chip {
@@ -418,7 +427,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all var(--fd-transition-fast);
-    max-width: 220px;
+    max-width: min(220px, 100%);
     line-height: 1;
   }
 
@@ -574,6 +583,7 @@
     align-items: center;
     gap: var(--fd-space-xs);
     margin-left: auto;
+    flex-shrink: 0;
   }
 
   .control-panel__toolbar-btn {

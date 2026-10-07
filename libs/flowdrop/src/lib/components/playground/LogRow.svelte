@@ -145,9 +145,12 @@
     letter-spacing: 0.04em;
   }
 
+  /* A basis, not flex: 1: with a zero basis the text never wraps below the
+     badges and trail, and in a narrow stream (the docked Playground) it is
+     squeezed to a few characters, one per line. */
   .log-row__text {
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 10rem;
+    min-width: min(10rem, 100%);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }

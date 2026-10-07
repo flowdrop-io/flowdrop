@@ -116,6 +116,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The node status badge no longer opens a hover details panel (status,
+  executions, last run, duration, error, job history). Those facts live in the
+  inspector's Last run tab; the badge is status only and keeps a tooltip and
+  accessible name with the status word. `NodeStatusOverlay`'s `showDetails`
+  prop and `NodeStatusConfig.showDetails` are now no-ops (the latter is marked
+  deprecated); the `status.overlay` messages for the panel's labels are gone,
+  and `status.overlay.tooltip` takes only `{ status }`.
 - Internal: the Playground's conversation surface is now `PlaygroundSurface`,
   and `Playground` is a thin wrapper around it. Test mode's docked Playground
   is built on the surface, not on the standalone wrapper, so it is unaffected
@@ -147,6 +154,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is deprecated with it. Both go in 3.0.
 
 ### Fixed
+
+- Log rows in a narrow message stream (the docked Playground in Test mode)
+  squeezed their text to a few characters per line, because the text had a
+  zero flex basis and never wrapped below the origin badge and hierarchy trail.
 
 - The right-hand inspector now follows the selection. With the workflow
   settings open, opening a node for configuration used to show nothing new
