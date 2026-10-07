@@ -142,6 +142,31 @@ export class RunController {
     return this.#isRefreshing;
   }
 
+  /** The instance's playground store, for surfaces that read what a run produced. */
+  get playground(): PlaygroundStore {
+    return this.#playground;
+  }
+
+  /** The instance's workflow store: the editor's workflow and its dirty state. */
+  get editor(): WorkflowStore {
+    return this.#workflow;
+  }
+
+  /** Whether the instance has a backend to talk to. */
+  get isConfigured(): boolean {
+    return this.#api.isConfigured();
+  }
+
+  /** Whether the backend can launch a run without a chat message. */
+  get canLaunch(): boolean {
+    return workflowLaunchService.isSupported(this.#api.config);
+  }
+
+  /** A launch result as feedback text, in the configured messages. */
+  describeLaunch(result: LaunchResult): CommandOutcome {
+    return describeLaunchResult(result, this.#messages.playground.commands);
+  }
+
   /** The configured messages, falling back to the English defaults. */
   get #messages(): Messages {
     return (this.#options.messages ?? (() => defaultMessages))();
@@ -532,7 +557,7 @@ export class RunController {
       // A refused launch never sends the `enableRun` message that would
       // otherwise bring Run back.
       this.#playground.releaseRunLock();
-      return describeLaunchResult(result, this.#messages.playground.commands);
+      return this.describeLaunch(result);
     }
     return null;
   }
