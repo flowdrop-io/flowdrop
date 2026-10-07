@@ -10,18 +10,6 @@
   /workflow/[id]/playground/[sessionId] route.
 -->
 
-<script lang="ts" module>
-  /**
-   * API base URLs whose server sent a workflow without `playground` (before
-   * FlowDrop 2.7.0). Such a server sends none for any workflow, so once one
-   * load has said so, a caller that passes the interface needs no further
-   * load. Keyed by base URL, not by client: mounting with `endpointConfig`
-   * rebuilds the client every time. Lasts for the page; an upgraded server
-   * is seen on the next page load.
-   */
-  const serversWithoutPlaygroundSettings = new Set<string>();
-</script>
-
 <script lang="ts">
   import { onMount, onDestroy, untrack } from 'svelte';
   import Icon from '@iconify/svelte';
@@ -30,27 +18,17 @@
   import type { Workflow } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
   import type { AuthProvider } from '../../types/auth.js';
-  import type {
-    PlaygroundMode,
-    PlaygroundConfig,
-    PlaygroundSessionStatus
-  } from '../../types/playground.js';
-  import { pipelineSignalService } from '../../services/pipelineSignalService.js';
-  import { workflowLaunchService } from '../../services/workflowLaunchService.js';
+  import type { PlaygroundMode, PlaygroundConfig } from '../../types/playground.js';
   import { provideInstance } from '../../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
-  import type { PlaygroundMessagesApiResponse } from '../../types/playground.js';
   import { logger } from '../../utils/logger.js';
   import { getMessages } from '$lib/messages/index.js';
   import {
     parseSlashCommand,
     dispatchCommand,
-    describeLaunchResult,
     type CommandOutcome
   } from '../../playground/commands/index.js';
-  import { resolveRunAction } from '../../playground/runAction.js';
   import { isPlaygroundChatHalfSet, isPlaygroundChatSet } from '../../utils/playgroundChat.js';
-  import type { PlaygroundMessageRequest } from '../../types/playground.js';
 
   interface Props {
     workflowId: string;
@@ -108,26 +86,28 @@
 
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
-  let isRefreshing = $state(false);
   /**
    * Transient result of the last slash command. Deliberately component state,
    * not a session message — see runCommand.
    */
   let commandFeedback = $state<CommandOutcome | null>(null);
-  /**
-   * A signal accepted but not yet observed as effective.
-   *
-   * Backends refuse a second signal on the same pipeline, so we hold this to
-   * disable rather than fire a request guaranteed to be rejected. Cleared when
-   * the session status changes — that transition is the signal taking effect
-   * (or the run ending on its own).
-   */
-  let pendingSignal = $state<{ pipelineId: string; signal: string } | null>(null);
-  // Monotonic token so a slow session load can't overwrite a newer one when the
-  // user switches sessions faster than the network responds (last-load wins).
-  let loadToken = 0;
 
-  const messagePageSize = $derived(config.messagePageSize ?? 50);
+  // The session/run executors live in the instance's run controller. The
+  // props that steer them are handed over at init and kept in sync below.
+  const runOptions = () => ({
+    workflowId,
+    workflow,
+    messagePageSize: config.messagePageSize,
+    pollingInterval: config.pollingInterval,
+    shouldStopPolling: config.shouldStopPolling,
+    onSessionNavigate,
+    predefinedMessage: config.predefinedMessage,
+    messages
+  });
+  fd.runs.configure(runOptions());
+  $effect(() => {
+    fd.runs.configure(runOptions());
+  });
 
   /**
    * How a turn is collected, from the workflow interface's turn ports.
@@ -218,26 +198,13 @@
     if (workflow) fd.playground.setWorkflow(workflow);
 
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && fd.playgroundService.isPolling()) {
-        const sessionId = fd.playground.currentSession?.id;
-        if (sessionId) {
-          void fd.playgroundService
-            .getMessages(
-              fd.api.config,
-              sessionId,
-              {
-                since: fd.playgroundService.getLastSequenceNumber() ?? undefined
-              },
-              fd.api.authProvider
-            )
-            .then((response) => fd.playground.applyServerResponse(response, sessionId))
-            .catch((err) => logger.error('[Playground] Visibility catchup failed:', err));
-        }
+      if (document.visibilityState === 'visible' && fd.runs.isPolling) {
+        void fd.runs.catchUp();
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
-    const handleRefreshStatus = () => void refreshFromServer();
+    const handleRefreshStatus = () => void fd.runs.refresh();
     document.addEventListener('flowdrop:refresh-status', handleRefreshStatus);
 
     void initializePlayground();
@@ -261,54 +228,9 @@
     void loadInitialSession(initialSessionId);
   });
 
-  /**
-   * Make sure the playground knows the workflow's interface and chat binding.
-   *
-   * The mode (chat box, form, Run) is read from the workflow's Playground
-   * settings, else from its interface's deprecated turn ports. A workflow
-   * passed in with both an `interface` and a `playground` key is used as is;
-   * when either is missing, the workflow is loaded through the workflows API
-   * (`workflows.get`) and only the missing keys are taken from there: a key
-   * the caller passed is its live copy (the editor's, unsaved edits and all)
-   * and never gives way to the saved one. Any failure
-   * leaves the playground in `legacy` mode, which is the behaviour it had
-   * before turn ports.
-   */
-  async function ensureWorkflowInterface(): Promise<void> {
-    if (!fd.api.config) return;
-    const server = fd.api.config.baseUrl;
-    if (
-      workflow?.interface !== undefined &&
-      (workflow.playground !== undefined || serversWithoutPlaygroundSettings.has(server))
-    ) {
-      return;
-    }
-    try {
-      const loaded = await fd.api.client.loadWorkflow(workflowId);
-      if (loaded.playground === undefined) serversWithoutPlaygroundSettings.add(server);
-      if (!workflow) {
-        if (loaded.interface !== undefined || loaded.playground !== undefined) {
-          fd.playground.setWorkflow(loaded);
-        }
-        return;
-      }
-      const missingInterface = workflow.interface === undefined && loaded.interface !== undefined;
-      const missingPlayground =
-        workflow.playground === undefined && loaded.playground !== undefined;
-      if (!missingInterface && !missingPlayground) return;
-      fd.playground.setWorkflow({
-        ...workflow,
-        ...(missingInterface && { interface: loaded.interface }),
-        ...(missingPlayground && { playground: loaded.playground })
-      });
-    } catch (err) {
-      logger.debug('[Playground] Workflow interface unavailable, keeping legacy input:', err);
-    }
-  }
-
   async function initializePlayground(): Promise<void> {
     try {
-      await Promise.all([loadSessions(), ensureWorkflowInterface()]);
+      await Promise.all([fd.runs.loadSessions(), fd.runs.ensureWorkflowInterface()]);
 
       if (initialSessionId) {
         await loadInitialSession(initialSessionId);
@@ -339,7 +261,7 @@
     loadedInitialSessionId = sessionId;
 
     try {
-      await loadSession(sessionId);
+      await fd.runs.loadSession(sessionId);
     } catch (err) {
       logger.error('[Playground] Failed to load initial session:', err);
     }
@@ -351,315 +273,27 @@
     fd.playgroundService.stopPolling();
     fd.playground.reset();
     fd.interrupts.reset();
+    // Drop the props this mount handed the controller: they close over it.
+    fd.runs.configure({});
   });
 
-  async function loadSessions(): Promise<void> {
-    fd.playground.setLoading(true);
-    fd.playground.setError(null);
-
-    try {
-      const sessionList = await fd.playgroundService.listSessions(
-        fd.api.config,
-        workflowId,
-        undefined,
-        fd.api.authProvider
-      );
-      fd.playground.setSessions(sessionList);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
-      fd.playground.setError(errorMessage);
-      logger.error('Failed to load sessions:', err);
-    } finally {
-      fd.playground.setLoading(false);
-    }
-  }
-
-  async function loadSession(sessionId: string): Promise<void> {
-    fd.playground.setLoading(true);
-    fd.playground.setError(null);
-    const token = ++loadToken;
-
-    try {
-      const session = await fd.playgroundService.getSession(
-        fd.api.config,
-        sessionId,
-        fd.api.authProvider
-      );
-      if (token !== loadToken) return; // a newer session load superseded us
-      fd.playground.setCurrentSession(session);
-
-      // Load only the most recent page; older messages load on demand when the
-      // user scrolls up (loadOlderMessages). Clear right before applying the
-      // fresh page — not before the await — so switching sessions doesn't blank
-      // the view for the duration of the fetch.
-      const response = await fd.playgroundService.getMessages(
-        fd.api.config,
-        sessionId,
-        {
-          latest: true,
-          limit: messagePageSize
-        },
-        fd.api.authProvider
-      );
-      if (token !== loadToken) return;
-      fd.playground.clearMessages();
-      fd.playground.applyServerResponse(response, sessionId);
-      fd.playground.setHasOlder(deriveHasOlder(response));
-
-      if (session.status !== 'idle') {
-        // Seed polling from the newest loaded message so it tails live updates
-        // instead of crawling forward from the start of the conversation.
-        startPolling(sessionId, true);
-      }
-    } catch (err) {
-      if (token !== loadToken) return; // don't surface a superseded load's error
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load session';
-      fd.playground.setError(errorMessage);
-      logger.error('Failed to load session:', err);
-    } finally {
-      if (token === loadToken) fd.playground.setLoading(false);
-    }
-  }
-
   /**
-   * Load the page of messages immediately older than the oldest one currently
-   * shown. Triggered by scroll-up in MessageStream, which serializes calls and
-   * owns the in-flight/anchoring state. Bypasses applyServerResponse so a
-   * historical fetch never disturbs the live polling cursor or pipeline view.
-   */
-  async function loadOlderMessages(): Promise<void> {
-    const sessionId = fd.playground.currentSession?.id;
-    const before = fd.playground.oldestSequenceNumber;
-    if (!sessionId || before === null) return;
-
-    try {
-      const response = await fd.playgroundService.getMessages(
-        fd.api.config,
-        sessionId,
-        {
-          before,
-          limit: messagePageSize
-        },
-        fd.api.authProvider
-      );
-      // The session may have changed while the fetch was in flight — don't
-      // splice an old session's page into the new session's store.
-      if (fd.playground.currentSession?.id !== sessionId) return;
-      if (response.data && response.data.length > 0) {
-        fd.playground.addMessages(response.data);
-      }
-      fd.playground.setHasOlder(deriveHasOlder(response));
-    } catch (err) {
-      logger.error('[Playground] Failed to load older messages:', err);
-    }
-  }
-
-  /**
-   * Whether older messages remain after a backward-pagination response. Prefer
-   * the server's explicit `hasOlder` flag; fall back to inferring from page
-   * fullness for backends that haven't adopted the field yet.
-   */
-  function deriveHasOlder(response: PlaygroundMessagesApiResponse): boolean {
-    if (typeof response.hasOlder === 'boolean') return response.hasOlder;
-    return (response.data?.length ?? 0) >= messagePageSize;
-  }
-
-  async function handleCreateSession(): Promise<void> {
-    fd.playground.setLoading(true);
-    fd.playground.setError(null);
-
-    try {
-      const sessionName = `Session ${fd.playground.sessions.length + 1}`;
-      const session = await fd.playgroundService.createSession(
-        fd.api.config,
-        workflowId,
-        sessionName,
-        undefined,
-        fd.api.authProvider
-      );
-
-      // Stop polling the previous (possibly running) session before switching,
-      // mirroring handleSelectSession. Otherwise its next poll keeps the old
-      // 'running' status alive and the new session's chat input stays disabled.
-      fd.playgroundService.stopPolling();
-
-      if (onSessionNavigate) {
-        onSessionNavigate(session.id);
-        return;
-      }
-
-      fd.playground.addSession(session);
-      fd.playground.setCurrentSession(session);
-      fd.playground.clearMessages();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create session';
-      fd.playground.setError(errorMessage);
-      logger.error('Failed to create session:', err);
-    } finally {
-      fd.playground.setLoading(false);
-    }
-  }
-
-  async function handleSelectSession(sessionId: string): Promise<void> {
-    fd.playground.pinExecution(null);
-    const currentSessionId = fd.playground.currentSession?.id;
-    if (currentSessionId === sessionId) return;
-
-    fd.playgroundService.stopPolling();
-    fd.playground.updateSessionStatus('idle');
-    await loadSession(sessionId);
-  }
-
-  async function handleDeleteSession(sessionId: string): Promise<void> {
-    try {
-      await fd.playgroundService.deleteSession(fd.api.config, sessionId, fd.api.authProvider);
-      fd.playground.removeSession(sessionId);
-
-      if (fd.playground.currentSession?.id === sessionId) {
-        fd.playgroundService.stopPolling();
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete session';
-      fd.playground.setError(errorMessage);
-      logger.error('Failed to delete session:', err);
-    }
-  }
-
-  /**
-   * Reset a stuck session to idle.
-   *
-   * Mirrors handleStopExecution: tear down polling and force the local status
-   * back to idle even on failure, since the point of reset is to escape a state
-   * the client and server disagree about.
-   */
-  async function handleResetSession(): Promise<void> {
-    const sessionId = fd.playground.currentSession?.id;
-    if (!sessionId) return;
-
-    try {
-      await fd.playgroundService.resetSession(fd.api.config, sessionId, fd.api.authProvider);
-      fd.playgroundService.stopPolling();
-      fd.playground.updateSessionStatus('idle');
-      fd.playground.setError(null);
-    } catch (err) {
-      fd.playgroundService.stopPolling();
-      fd.playground.updateSessionStatus('idle');
-      logger.error('Failed to reset session:', err);
-      throw err;
-    }
-  }
-
-  /**
-   * Launch a run with named inputs and no chat message.
-   *
-   * Creates a session first when there is none, so the run has a conversation
-   * to report into — the launch endpoint accepts a session id precisely so its
-   * messages land somewhere the user is looking.
-   */
-  async function handleLaunchWorkflow(inputs: Record<string, string>) {
-    if (!fd.playground.currentSession) {
-      await handleCreateSession();
-    }
-
-    const sessionId = fd.playground.currentSession?.id;
-
-    const result = await workflowLaunchService.launch(
-      fd.api.config,
-      workflowId,
-      { inputs, sessionId },
-      fd.api.authProvider
-    );
-
-    if (result.status === 'launched' && sessionId) {
-      // Mirror handleSendMessage: reflect the run optimistically and tail it.
-      fd.playground.updateSessionStatus('running');
-      fd.playground.pinExecution(null);
-      fd.playground.setError(null);
-      if (!fd.playgroundService.isPolling()) {
-        startPolling(sessionId, true);
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Start a run from a button or auto-run, without posting a chat message.
-   *
-   * Falls back to sending `predefinedMessage` only where the backend has no
-   * launch verb — there a message is genuinely the only way to start a run, so
-   * the fabricated turn is the lesser evil. Everywhere else this is what stops
-   * "Run workflow" appearing in the conversation as though a user typed it.
+   * Start a run from the Run button or auto-run; a refused launch is reported
+   * as transient composer feedback.
    */
   async function startRun(): Promise<void> {
-    // A workflow that declares turn ports but no message port runs as a turn
-    // on its inputs: no fabricated message, which its server would refuse.
-    if (inputMode === 'form' || inputMode === 'run') {
-      await takeTurn({});
-      return;
-    }
-
-    const action = resolveRunAction({
-      canLaunch: workflowLaunchService.isSupported(fd.api.config),
-      predefinedMessage: config.predefinedMessage,
-      defaultMessage: messages().playground.chat.predefinedRun
-    });
-
-    if (action.kind === 'message') {
-      logger.debug('[Playground] Starting run by message:', action.content);
-      await handleSendMessage(action.content);
-      return;
-    }
-
-    const result = await handleLaunchWorkflow({});
-
-    // Only failures need reporting: a successful launch is evident from the run
-    // itself appearing in the console.
-    if (result.status !== 'launched') {
-      commandFeedback = describeLaunchResult(result, messages().playground.commands);
-      // A refused launch never sends the `enableRun` message that would
-      // otherwise bring Run back.
-      fd.playground.releaseRunLock();
-    }
+    const feedback = await fd.runs.startRun();
+    if (feedback) commandFeedback = feedback;
   }
 
   /**
-   * Send an operator signal to a specific pipeline.
-   *
-   * Records the signal as pending on acceptance so a second one is refused
-   * client-side rather than by the backend.
-   */
-  async function handleSendSignal(
-    signal: 'pause' | 'resume' | 'cancel',
-    pipelineId: string,
-    reason?: string
-  ) {
-    const result = await pipelineSignalService[signal](
-      fd.api.config,
-      pipelineId,
-      { reason },
-      fd.api.authProvider
-    );
-
-    if (result.status === 'accepted') {
-      pendingSignal = { pipelineId, signal };
-    }
-
-    return result;
-  }
-
-  /**
-   * Clear a pending signal once the session status moves.
-   *
-   * The status transition is the observable consequence of the signal landing
-   * — or of the run ending by itself, which equally means the signal is moot.
+   * Clear a pending signal once the session status moves: that transition is
+   * the signal taking effect (or the run ending on its own).
    */
   $effect(() => {
     // Track the status so this re-runs on every change.
     void fd.playground.currentSession?.status;
-    untrack(() => {
-      if (pendingSignal) pendingSignal = null;
-    });
+    untrack(() => fd.runs.clearPendingSignal());
   });
 
   /**
@@ -694,15 +328,8 @@
       // run. Sub-flows are excluded upstream, so `/pause` targets the run the
       // user means rather than whichever inner iteration is on screen.
       pipelineId: fd.playground.activeExecutionId,
-      pendingSignal,
-      handlers: {
-        createSession: handleCreateSession,
-        deleteSession: handleDeleteSession,
-        stopExecution: handleStopExecution,
-        resetSession: handleResetSession,
-        sendSignal: handleSendSignal,
-        launchWorkflow: handleLaunchWorkflow
-      },
+      pendingSignal: fd.runs.pendingSignal,
+      handlers: fd.runs.commandHandlers(),
       messages: msgs
     });
   }
@@ -722,174 +349,7 @@
     // An escaped message (`//foo`) is sent as its literal text (`/foo`).
     const messageContent = parsed.kind === 'message' ? parsed.content : content;
 
-    return takeTurn({ content: messageContent });
-  }
-
-  /**
-   * Take one turn: post the request to the session's turn door and tail the
-   * session. The interface form's values ride along as `inputs` (none in
-   * legacy mode). A refusal (a 400 naming the fix, a 409, …) is shown with the
-   * server's own message and leaves the session idle.
-   *
-   * @returns Whether the turn was accepted
-   */
-  async function takeTurn(request: PlaygroundMessageRequest): Promise<boolean> {
-    // Not `canRun`: a Run click has already taken the run lock by now.
-    if (fd.playground.isExecuting || fd.playground.turnPending) {
-      fd.playground.releaseRunLock();
-      return false;
-    }
-    fd.playground.setTurnPending(true);
-
-    try {
-      // In legacy mode there are no interface form entries, so `inputs` is
-      // `{}` — exactly what the legacy door was always sent.
-      const turnInputs = fd.playground.turnInputs;
-      if (!turnInputs.ok) {
-        fd.playground.setError(
-          messages().playground.inputForm.missingRequired({
-            names: turnInputs.missing.map((entry) => entry.name ?? entry.id).join(', ')
-          })
-        );
-        fd.playground.releaseRunLock();
-        return false;
-      }
-      const body: PlaygroundMessageRequest = { ...request, inputs: turnInputs.inputs };
-
-      if (!fd.playground.currentSession) {
-        await handleCreateSession();
-      }
-      const sessionId = fd.playground.currentSession?.id;
-      if (!sessionId) {
-        fd.playground.releaseRunLock();
-        return false;
-      }
-
-      fd.playground.updateSessionStatus('running');
-      fd.playground.pinExecution(null);
-      fd.playground.setError(null);
-
-      try {
-        const response = await fd.playgroundService.sendTurn(
-          fd.api.config,
-          sessionId,
-          body,
-          fd.api.authProvider
-        );
-        // The legacy door answers with the user's row; the turn door with a
-        // turn result, and the row arrives with the poll started below.
-        if (response.kind === 'turn') {
-          fd.playground.setLastTurn(response.result);
-        } else {
-          fd.playground.addMessage(response.message);
-          fd.playground.setLastTurn(null);
-        }
-        // Only start polling if not already active — avoids resetting the cursor
-        // mid-session and re-fetching messages that are already in the store.
-        // Seed from the newest loaded message so polling tails live updates
-        // rather than crawling forward from the start of the conversation.
-        if (!fd.playgroundService.isPolling()) {
-          startPolling(sessionId, true);
-        }
-        return true;
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-        fd.playground.setError(errorMessage);
-        fd.playground.updateSessionStatus('idle');
-        fd.playground.releaseRunLock();
-        logger.error('Failed to send message:', err);
-        return false;
-      }
-    } finally {
-      fd.playground.setTurnPending(false);
-    }
-  }
-
-  async function handleStopExecution(): Promise<void> {
-    const sessionId = fd.playground.currentSession?.id;
-    if (!sessionId) return;
-
-    try {
-      await fd.playgroundService.stopExecution(fd.api.config, sessionId, fd.api.authProvider);
-      fd.playgroundService.stopPolling();
-      fd.playground.updateSessionStatus('idle');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to stop execution';
-      fd.playground.setError(errorMessage);
-      fd.playgroundService.stopPolling();
-      fd.playground.updateSessionStatus('idle');
-      logger.error('Failed to stop execution:', err);
-    }
-  }
-
-  function startPolling(
-    sessionId: string,
-    seedSequence = false,
-    overrideShouldStopPolling?: (status: PlaygroundSessionStatus) => boolean
-  ): void {
-    const pollingInterval = config.pollingInterval ?? 1500;
-    const initialSequenceNumber = seedSequence ? fd.playground.latestSequenceNumber : null;
-
-    fd.playgroundService.startPolling(
-      fd.api.config,
-      sessionId,
-      (response) => fd.playground.applyServerResponse(response, sessionId),
-      pollingInterval,
-      overrideShouldStopPolling ?? config.shouldStopPolling,
-      initialSequenceNumber,
-      fd.api.authProvider
-    );
-  }
-
-  async function refreshFromServer(): Promise<void> {
-    const sessionId = fd.playground.currentSession?.id;
-    if (!sessionId || isRefreshing) return;
-    isRefreshing = true;
-    try {
-      const response = await fd.playgroundService.getMessages(
-        fd.api.config,
-        sessionId,
-        {
-          since: fd.playgroundService.getLastSequenceNumber() ?? undefined
-        },
-        fd.api.authProvider
-      );
-      fd.playground.applyServerResponse(response, sessionId);
-      if (response.sessionStatus === 'running' && !fd.playgroundService.isPolling()) {
-        startPolling(sessionId, true);
-      }
-    } catch (err) {
-      logger.error('[Playground] Status refresh failed:', err);
-    } finally {
-      isRefreshing = false;
-    }
-  }
-
-  async function handleInterruptResolved(): Promise<void> {
-    const sessionId = fd.playground.currentSession?.id;
-    if (!sessionId) return;
-
-    try {
-      // Catch up immediately rather than waiting for the next poll interval.
-      // Use the service's sequence cursor so we only fetch new messages.
-      const response = await fd.playgroundService.getMessages(
-        fd.api.config,
-        sessionId,
-        {
-          since: fd.playgroundService.getLastSequenceNumber() ?? undefined
-        },
-        fd.api.authProvider
-      );
-      fd.playground.applyServerResponse(response, sessionId);
-    } catch (err) {
-      logger.error('[Playground] Failed to refresh after interrupt:', err);
-    }
-
-    // Polling continues through awaiting_input now, but restart defensively
-    // in case it stopped for any reason (e.g. component re-mount).
-    if (!fd.playgroundService.isPolling()) {
-      startPolling(sessionId, true);
-    }
+    return fd.runs.takeTurn({ content: messageContent });
   }
 </script>
 
@@ -925,9 +385,11 @@
           showTimestamps={config.showTimestamps ?? true}
           autoScroll={config.autoScroll ?? true}
           enableMarkdown={config.enableMarkdown ?? true}
-          onInterruptResolved={handleInterruptResolved}
-          onCreateSession={fd.playground.sessions.length === 0 ? handleCreateSession : undefined}
-          onLoadOlder={loadOlderMessages}
+          onInterruptResolved={() => fd.runs.catchUp({ restartPolling: true })}
+          onCreateSession={fd.playground.sessions.length === 0
+            ? () => fd.runs.createSession()
+            : undefined}
+          onLoadOlder={() => fd.runs.loadOlderMessages()}
         />
 
         <!-- Focusable ARIA splitter: keyboard/pointer handlers drive the resize -->
@@ -956,16 +418,16 @@
           style="height: {controlPanelHeight}px; flex-shrink: 0;"
           {isPipelinePanelOpen}
           {onTogglePanel}
-          {isRefreshing}
+          isRefreshing={fd.runs.isRefreshing}
           {onSessionNavigate}
-          onCreateSession={handleCreateSession}
-          onSelectSession={handleSelectSession}
-          onDeleteSession={handleDeleteSession}
+          onCreateSession={() => fd.runs.createSession()}
+          onSelectSession={(sessionId) => fd.runs.selectSession(sessionId)}
+          onDeleteSession={(sessionId) => fd.runs.deleteSession(sessionId)}
           onSendMessage={handleSendMessage}
-          onStopExecution={handleStopExecution}
+          onStopExecution={() => fd.runs.stopExecution()}
           onRunWorkflow={startRun}
           awaitEnableRun={inputMode === 'legacy'}
-          onRefresh={refreshFromServer}
+          onRefresh={() => fd.runs.refresh()}
           enableCommands
           {commandFeedback}
           onDismissCommandFeedback={() => (commandFeedback = null)}
