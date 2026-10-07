@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `fd.runs`, a per-instance run controller (`RunController`, exported from
+  `playground`, types from `core`). It holds the session and run executors that
+  lived inside the Playground component: load, create, select, delete and reset
+  sessions, take a turn, launch a run, send a signal, stop, poll, refresh and
+  catch up. The Playground and the editor Console share it, so there is one
+  code path; it is also the controller the planned Test mode builds on. With no
+  Playground mounted it follows the editor's workflow.
+- The editor Console gains `session` commands: `session send "…"` (a
+  triple-quoted block for several lines), `session run [key=value …]`,
+  `session stop`, `session new` and `session status`. They run in the Console
+  only and are not part of the editing commands, the AI Assistant or WebMCP;
+  `parseCommand` says so for a `session` line. `parseSessionCommand` and
+  `executeSessionCommand` are exported from `commands`. A batch that contains a
+  `session` line is refused before anything runs, `help` lists the group and
+  `help session` shows its usage.
+
+### Changed
+
+- Internal: the Playground delegates its session and run executors to
+  `fd.runs`; what it shows and does is unchanged, except that a
+  `predefinedMessage` starting with `/` is now sent as typed instead of being
+  read as a slash command.
+
 ## [2.11.0] - 2026-10-07
 
 ### Added
