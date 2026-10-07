@@ -95,7 +95,8 @@
   // Gateway-specific data - branches are calculated at runtime from config
   let branches = $derived((props.data.config?.branches as Branch[]) || []);
   let activeBranches = $derived(
-    (props.data.executionInfo?.output?.active_branches as string[]) || []
+    ((fd.playground.nodeStatusFor(props.id) ?? props.data.executionInfo)?.output
+      ?.active_branches as string[]) || []
   );
 
   /**

@@ -54,7 +54,6 @@
     WorkflowOperationsHelper,
     ConfigurationHelper
   } from '../helpers/workflowEditorHelper.js';
-  import type { NodeExecutionInfo } from '../types/index.js';
   import { Toaster } from 'svelte-5-french-toast';
   import {
     flowdropToastOptions,
@@ -198,17 +197,10 @@
   let flowNodes = $state.raw<WorkflowNodeType[]>([]);
   let flowEdges = $state.raw<WorkflowEdge[]>([]);
 
-  // Execution info loading state
+  // Run status loading. The status itself lives in fd.playground.nodeStatuses
+  // (never on the nodes); the editor only decides when to ask fd.runs to load it.
   /** Cancels the scheduled (not yet started) execution-info load, if any. */
   let cancelScheduledExecutionInfo: (() => void) | null = null;
-  let executionInfoAbortController: AbortController | null = null;
-  /**
-   * The last execution info that loaded for the shown pipeline. Plain (not
-   * reactive) on purpose: it is only read when flowNodes is rebuilt from the
-   * store, which has no executionInfo of its own. Cleared whenever the
-   * pipeline or workflow changes, so it can never paint another run.
-   */
-  let latestExecutionInfo: Record<string, NodeExecutionInfo> | null = null;
 
   /**
    * Key for SvelteFlow component — changes when workflow ID changes.
@@ -255,11 +247,7 @@
   } {
     const nodesWithCallbacks = workflow.nodes.map(withNodeCallbacks);
     const styledEdges = EdgeStylingHelper.updateEdgeStyles(workflow.edges, nodesWithCallbacks);
-    // Re-apply the loaded run status: a rebuild must not drop the badges.
-    const nodes = latestExecutionInfo
-      ? NodeOperationsHelper.applyExecutionInfo(nodesWithCallbacks, latestExecutionInfo)
-      : nodesWithCallbacks;
-    return { nodes, edges: styledEdges };
+    return { nodes: nodesWithCallbacks, edges: styledEdges };
   }
 
   // ---------------------------------------------------------------------------
@@ -302,7 +290,7 @@
     const isNewWorkflow = storeValue.id !== previousSyncedWorkflowId;
 
     // A different workflow never inherits the previous one's run status.
-    if (isNewWorkflow) latestExecutionInfo = null;
+    if (isNewWorkflow) untrack(() => fd.runs.clearNodeStatuses());
 
     if (isNewWorkflow) {
       untrack(() =>
@@ -331,12 +319,9 @@
   // ---------------------------------------------------------------------------
   // Execution info effect (separate — async, depends on workflow + pipeline ID)
   // ---------------------------------------------------------------------------
-  /** Forget the loaded run status and take it off the canvas nodes. */
+  /** Forget the loaded run status (and any load still in flight). */
   function resetExecutionInfo(): void {
-    latestExecutionInfo = null;
-    untrack(() => {
-      flowNodes = NodeOperationsHelper.applyExecutionInfo(flowNodes, null);
-    });
+    untrack(() => fd.runs.clearNodeStatuses());
   }
 
   let previousExecWorkflowId: string | null = null;
@@ -365,7 +350,6 @@
     // Cancel any pending schedule and any in-flight fetch (it belongs to the
     // previous pipeline), and drop the previous run's status.
     cancelScheduledExecutionInfo?.();
-    executionInfoAbortController?.abort();
     resetExecutionInfo();
 
     // Schedule loading with requestIdleCallback (falls back to setTimeout)
@@ -379,19 +363,18 @@
   });
 
   // On unmount: drop a scheduled load and discard an in-flight one, so
-  // nothing writes flowNodes after the editor is gone.
+  // nothing writes the store after the editor is gone.
   $effect(() => () => {
     cancelScheduledExecutionInfo?.();
-    executionInfoAbortController?.abort();
-    latestExecutionInfo = null;
+    fd.runs.clearNodeStatuses();
   });
 
   // Re-fetch node execution info when the parent bumps refreshTrigger
   // (poll ticks, chat-message arrivals, manual refresh). loadNodeExecutionInfo()
-  // is the single loader of executionInfo: it keeps the result in
-  // latestExecutionInfo and paints it onto flowNodes. buildFlowNodesFromStore
-  // re-applies that map on every rebuild, so a store change or a settings
-  // change never drops the badges. No parallel channel.
+  // is the single loader of run status: fd.runs puts the result in
+  // fd.playground.nodeStatuses, which the node overlay reads. Nothing is
+  // written onto flowNodes, so a rebuild from the store (any edit, a settings
+  // change) never drops the badges. No parallel channel.
   // svelte-ignore state_referenced_locally
   let _prevExecRefreshTrigger = props.refreshTrigger ?? 0;
   $effect(() => {
@@ -429,42 +412,14 @@
   });
 
   /**
-   * Load node execution information for all nodes in the workflow.
-   * Cancels any in-flight fetch so concurrent callers (pipelineId change
-   * and refreshTrigger bumps) can't race on flowNodes.
+   * Ask the run controller to load node status for the shown pipeline.
+   * A newer call (pipelineId change, refreshTrigger bump) supersedes an
+   * in-flight one, so they can't race.
    */
   async function loadNodeExecutionInfo(): Promise<void> {
     const workflow = untrack(() => fd.workflow.current);
     if (!workflow?.nodes || !props.pipelineId) return;
-
-    if (executionInfoAbortController) {
-      executionInfoAbortController.abort();
-    }
-    const controller = new AbortController();
-    executionInfoAbortController = controller;
-
-    try {
-      const executionInfo = await NodeOperationsHelper.loadNodeExecutionInfo(
-        fd.api,
-        workflow,
-        props.pipelineId
-      );
-
-      if (controller.signal.aborted) return;
-
-      // Keep the map for later rebuilds, and paint it now (visual-only, no
-      // store sync needed).
-      latestExecutionInfo = executionInfo;
-      flowNodes = NodeOperationsHelper.applyExecutionInfo(flowNodes, executionInfo);
-
-      if (executionInfoAbortController === controller) {
-        executionInfoAbortController = null;
-      }
-    } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
-        logger.error('Failed to load node execution info:', error);
-      }
-    }
+    await fd.runs.loadNodeStatuses(props.pipelineId, workflow);
   }
 
   // The global store should be initialized by the parent App component

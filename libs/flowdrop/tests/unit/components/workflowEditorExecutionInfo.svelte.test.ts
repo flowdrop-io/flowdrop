@@ -1,7 +1,7 @@
 /**
- * The editor keeps run status across a settings change: the sync effect
- * (store -> flowNodes) must not re-run for a setting it only reads in passing,
- * and a rebuild re-applies the loaded execution info either way.
+ * The editor keeps run status in the instance's playground store, not on the
+ * canvas nodes: a rebuild from the workflow store (any edit, a settings change)
+ * cannot drop it, and it never reaches the workflow.
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -9,7 +9,7 @@ import { mount, unmount, flushSync, tick } from 'svelte';
 import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
 import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
 import { updateSettings } from '$lib/stores/settingsStore.svelte.js';
-import { NodeOperationsHelper } from '$lib/helpers/workflowEditorHelper.js';
+import { nodeExecutionService } from '$lib/services/nodeExecutionService.js';
 import type { Workflow } from '$lib/types/index.js';
 
 vi.mock('@iconify/svelte', async (importOriginal) => {
@@ -41,6 +41,7 @@ afterEach(() => {
   if (app) unmount(app);
   app = null;
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 async function settle(): Promise<void> {
@@ -52,11 +53,10 @@ async function settle(): Promise<void> {
 }
 
 describe('WorkflowEditor run status and the sync effect', () => {
-  it('re-applies the loaded map on a store rebuild, and a settings change does not rebuild', async () => {
+  it('keeps the loaded status in fd.playground across store rebuilds and settings changes', async () => {
     vi.stubGlobal('requestIdleCallback', (cb: () => void) => setTimeout(cb, 0));
     vi.stubGlobal('cancelIdleCallback', (id: number) => clearTimeout(id));
-    vi.spyOn(NodeOperationsHelper, 'loadNodeExecutionInfo').mockResolvedValue(info as never);
-    const apply = vi.spyOn(NodeOperationsHelper, 'applyExecutionInfo');
+    vi.spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo').mockResolvedValue(info as never);
 
     const fd = createFlowDropInstance({ id: 'exec-info' });
     fd.workflow.initialize(workflow);
@@ -65,32 +65,31 @@ describe('WorkflowEditor run status and the sync effect', () => {
     app = mount(WorkflowEditor, { target, props: { instance: fd, pipelineId: 'p1' } as never });
     await settle();
 
-    // The load painted the map once it arrived.
-    expect(apply).toHaveBeenCalledWith(expect.anything(), info);
+    // The load landed in the store, scoped to the workflow and run.
+    expect(fd.playground.nodeStatusFor('n1')).toEqual(info.n1);
+    expect(fd.playground.nodeStatusScope).toEqual({ workflowId: 'wf-exec', pipelineId: 'p1' });
 
-    // A workflow store change rebuilds flowNodes; the map is applied again.
-    apply.mockClear();
+    // Edits rebuild flowNodes from the store; the status stays, and is not
+    // written into the workflow.
     fd.workflow.updateName('Renamed');
     await settle();
-    expect(apply).toHaveBeenCalledWith(expect.anything(), info);
+    expect(fd.playground.nodeStatusFor('n1')).toEqual(info.n1);
+    for (const node of fd.workflow.nodes) expect('executionInfo' in node.data).toBe(false);
 
-    // A settings change (theme) must not rebuild flowNodes at all.
-    apply.mockClear();
     updateSettings({ theme: 'dark' } as never);
     await settle();
-    expect(apply).not.toHaveBeenCalled();
+    expect(fd.playground.nodeStatusFor('n1')).toEqual(info.n1);
 
     fd.destroy();
   });
 
-  it('clears the map when the pipeline changes, so a rebuild paints nothing stale', async () => {
+  it('clears the status when the pipeline changes, so nothing stale shows', async () => {
     vi.stubGlobal('requestIdleCallback', (cb: () => void) => setTimeout(cb, 0));
     vi.stubGlobal('cancelIdleCallback', (id: number) => clearTimeout(id));
     const load = vi
-      .spyOn(NodeOperationsHelper, 'loadNodeExecutionInfo')
+      .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
       .mockResolvedValueOnce(info as never)
       .mockImplementation(() => new Promise(() => {}));
-    const apply = vi.spyOn(NodeOperationsHelper, 'applyExecutionInfo');
 
     const fd = createFlowDropInstance({ id: 'exec-info-2' });
     fd.workflow.initialize(workflow);
@@ -108,17 +107,37 @@ describe('WorkflowEditor run status and the sync effect', () => {
     });
     await settle();
     expect(load).toHaveBeenCalledTimes(1);
+    expect(fd.playground.nodeStatusFor('n1')).toEqual(info.n1);
 
     pipelineId = 'p2';
     await settle();
-    expect(apply).toHaveBeenCalledWith(expect.anything(), null);
+    expect(fd.playground.nodeStatusFor('n1')).toBeUndefined();
 
     // The new pipeline's load never resolves; a rebuild must not bring p1 back.
-    apply.mockClear();
     fd.workflow.updateName('Renamed again');
     await settle();
-    expect(apply).not.toHaveBeenCalledWith(expect.anything(), info);
+    expect(fd.playground.nodeStatusFor('n1')).toBeUndefined();
 
     fd.destroy();
+  });
+
+  it('keeps two instances on one page apart', async () => {
+    vi.stubGlobal('requestIdleCallback', (cb: () => void) => setTimeout(cb, 0));
+    vi.stubGlobal('cancelIdleCallback', (id: number) => clearTimeout(id));
+    vi.spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo').mockResolvedValue(info as never);
+    const a = createFlowDropInstance({ id: 'exec-info-a' });
+    const b = createFlowDropInstance({ id: 'exec-info-b' });
+    a.workflow.initialize(workflow);
+    b.workflow.initialize(workflow);
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    app = mount(WorkflowEditor, { target, props: { instance: a, pipelineId: 'p1' } as never });
+    await settle();
+
+    expect(a.playground.nodeStatusFor('n1')).toEqual(info.n1);
+    expect(b.playground.nodeStatusFor('n1')).toBeUndefined();
+
+    a.destroy();
+    b.destroy();
   });
 });

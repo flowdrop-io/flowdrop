@@ -1409,7 +1409,13 @@ export interface WorkflowNode extends Node {
     isProcessing?: boolean;
     /** Error message if the node execution failed */
     error?: string;
-    /** Node execution tracking information */
+    /**
+     * Node execution tracking information.
+     *
+     * @deprecated Run status lives in the instance's `fd.playground.nodeStatuses`
+     * (keyed by node id), which the node overlay reads first. Still read as a
+     * fallback, but never saved, exported or kept across edits. Removed in 3.0.
+     */
     executionInfo?: NodeExecutionInfo;
     /**
      * Per-instance extension properties for 3rd party integrations

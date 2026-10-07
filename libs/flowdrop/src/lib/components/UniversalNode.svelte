@@ -53,9 +53,10 @@
   let nodeComponent = $derived(getNodeComponent(resolvedComponentName));
 
   /**
-   * Get execution info for status overlay
+   * Run status for the overlay: from the instance's store, keyed by node id.
+   * `data.executionInfo` is a deprecated fallback for hosts that still write it.
    */
-  let executionInfo = $derived(data.executionInfo);
+  let executionInfo = $derived(fd.playground.nodeStatusFor(id) ?? data.executionInfo);
 
   /**
    * Determine if status overlay should be shown.
