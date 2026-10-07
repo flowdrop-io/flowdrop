@@ -98,6 +98,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   each standalone component, `.flowdrop-portal`, `.svelte-flow`), at the same
   zero specificity as before. Host elements that relied on the leak need
   their own rule.
+- Unmounting a Playground no longer calls `interruptService.stopPolling()`.
+  That poller is page-wide and the library never starts it, so one
+  playground closing stopped polling a host had started for the whole page.
+  A host that starts it stops it.
 
 ### Deprecated
 

@@ -35,7 +35,6 @@
     PlaygroundConfig,
     PlaygroundSessionStatus
   } from '../../types/playground.js';
-  import { interruptService } from '../../services/interruptService.js';
   import { pipelineSignalService } from '../../services/pipelineSignalService.js';
   import { workflowLaunchService } from '../../services/workflowLaunchService.js';
   import { provideInstance } from '../../stores/getInstance.svelte.js';
@@ -347,8 +346,9 @@
   }
 
   onDestroy(() => {
+    // Only this instance's poller. interruptService polling is page-wide and
+    // never started by the library; a host that starts it stops it.
     fd.playgroundService.stopPolling();
-    interruptService.stopPolling();
     fd.playground.reset();
     fd.interrupts.reset();
   });
