@@ -83,6 +83,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The mock backend checks `playground.chat` on save against the interface and
   nodes in the same save, with `playgroundChatIssues`, and stores the saved
   interface.
+- **Host pages:** a skin's tokens no longer land on the host page's `:root`.
+  Each editor scopes them to its own root (`data-fd-scope`), so two editors
+  with different skins stop overwriting each other and the page around the
+  editor gets no `--fd-*` variables. Aliases that follow a token the skin sets
+  (`--fd-panel-bg` and the like) are redeclared in the scope, and overlays
+  moved to `<body>` (config panel, surface overlay, WebMCP approval dialog)
+  carry the scope along. Light/dark stays the page-wide `data-theme` on
+  `<html>`. A host that styled its own page with a skin's `--fd-*` variables
+  must set them itself.
+- **Host pages:** `@flowdrop/flowdrop/styles` no longer resets the host page.
+  `* { box-sizing: border-box }` and `p { margin: 0 }` now apply only inside
+  FlowDrop's own roots (`.flowdrop-root`, the new `.flowdrop-scope` marker on
+  each standalone component, `.flowdrop-portal`, `.svelte-flow`), at the same
+  zero specificity as before. Host elements that relied on the leak need
+  their own rule.
 
 ### Deprecated
 
@@ -140,20 +155,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instance instead of sharing the default, and destroying it no longer
   resets or stops the first one. The first mount still owns the default
   instance, as before.
-- A skin's tokens no longer land on the host page's `:root`. Each editor
-  scopes them to its own root (`data-fd-scope`), so two editors with different
-  skins stop overwriting each other and the page around the editor gets no
-  `--fd-*` variables. Aliases that follow a token the skin sets (`--fd-panel-bg`
-  and the like) are redeclared in the scope, and overlays moved to `<body>`
-  (config panel, surface overlay) carry the scope along. Light/dark stays the
-  page-wide `data-theme` on `<html>`. A host that styled its own page with a
-  skin's `--fd-*` variables must set them itself.
-- `@flowdrop/flowdrop/styles` no longer resets the host page. `* { box-sizing:
-border-box }` and `p { margin: 0 }` now apply only inside FlowDrop's own
-  roots (`.flowdrop-root`, the new `.flowdrop-scope` marker on each standalone
-  component, `.flowdrop-portal`, `.svelte-flow`), at the same zero
-  specificity as before. Host elements that relied on the leak need their own
-  rule.
+- The WebMCP approval dialog keeps the editor's skin. It mounts on `<body>`,
+  outside the editor, so it showed the default colours for a skinned editor;
+  it now carries the editor's skin scope (`FlowDropInstance.skinScope`, set by
+  the editor while it is mounted). Step numbers from 10 on no longer hang
+  outside the list: each number has its own column, sized to the widest. The
+  dialog also sets its own margins, fonts and list style, so a host page's
+  `h2`, `p`, `ol`, `li` and `label` rules no longer reshape it.
 
 ## [2.10.1] - 2026-10-07
 
