@@ -132,6 +132,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   badges vanished until the next poll. The editor now keeps the last loaded
   execution info and re-applies it on every rebuild; it drops it when the
   pipeline or workflow changes.
+- Playgrounds on one page no longer stop each other. Live polling is now
+  per FlowDrop instance (`fd.playgroundService`; the page-default instance
+  keeps using the exported `playgroundService`, so existing calls still
+  reach it). A second `mountPlayground` / `mountPlaygroundStudio` /
+  `mountPlaygroundApp` without an `instanceId` gets its own isolated
+  instance instead of sharing the default, and destroying it no longer
+  resets or stops the first one. The first mount still owns the default
+  instance, as before.
 
 ## [2.10.1] - 2026-10-07
 

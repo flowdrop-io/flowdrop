@@ -35,7 +35,6 @@
     PlaygroundConfig,
     PlaygroundSessionStatus
   } from '../../types/playground.js';
-  import { playgroundService } from '../../services/playgroundService.js';
   import { interruptService } from '../../services/interruptService.js';
   import { pipelineSignalService } from '../../services/pipelineSignalService.js';
   import { workflowLaunchService } from '../../services/workflowLaunchService.js';
@@ -220,15 +219,15 @@
     if (workflow) fd.playground.setWorkflow(workflow);
 
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && playgroundService.isPolling()) {
+      if (document.visibilityState === 'visible' && fd.playgroundService.isPolling()) {
         const sessionId = fd.playground.currentSession?.id;
         if (sessionId) {
-          void playgroundService
+          void fd.playgroundService
             .getMessages(
               fd.api.config,
               sessionId,
               {
-                since: playgroundService.getLastSequenceNumber() ?? undefined
+                since: fd.playgroundService.getLastSequenceNumber() ?? undefined
               },
               fd.api.authProvider
             )
@@ -348,7 +347,7 @@
   }
 
   onDestroy(() => {
-    playgroundService.stopPolling();
+    fd.playgroundService.stopPolling();
     interruptService.stopPolling();
     fd.playground.reset();
     fd.interrupts.reset();
@@ -359,7 +358,7 @@
     fd.playground.setError(null);
 
     try {
-      const sessionList = await playgroundService.listSessions(
+      const sessionList = await fd.playgroundService.listSessions(
         fd.api.config,
         workflowId,
         undefined,
@@ -381,7 +380,7 @@
     const token = ++loadToken;
 
     try {
-      const session = await playgroundService.getSession(
+      const session = await fd.playgroundService.getSession(
         fd.api.config,
         sessionId,
         fd.api.authProvider
@@ -393,7 +392,7 @@
       // user scrolls up (loadOlderMessages). Clear right before applying the
       // fresh page — not before the await — so switching sessions doesn't blank
       // the view for the duration of the fetch.
-      const response = await playgroundService.getMessages(
+      const response = await fd.playgroundService.getMessages(
         fd.api.config,
         sessionId,
         {
@@ -434,7 +433,7 @@
     if (!sessionId || before === null) return;
 
     try {
-      const response = await playgroundService.getMessages(
+      const response = await fd.playgroundService.getMessages(
         fd.api.config,
         sessionId,
         {
@@ -471,7 +470,7 @@
 
     try {
       const sessionName = `Session ${fd.playground.sessions.length + 1}`;
-      const session = await playgroundService.createSession(
+      const session = await fd.playgroundService.createSession(
         fd.api.config,
         workflowId,
         sessionName,
@@ -482,7 +481,7 @@
       // Stop polling the previous (possibly running) session before switching,
       // mirroring handleSelectSession. Otherwise its next poll keeps the old
       // 'running' status alive and the new session's chat input stays disabled.
-      playgroundService.stopPolling();
+      fd.playgroundService.stopPolling();
 
       if (onSessionNavigate) {
         onSessionNavigate(session.id);
@@ -506,18 +505,18 @@
     const currentSessionId = fd.playground.currentSession?.id;
     if (currentSessionId === sessionId) return;
 
-    playgroundService.stopPolling();
+    fd.playgroundService.stopPolling();
     fd.playground.updateSessionStatus('idle');
     await loadSession(sessionId);
   }
 
   async function handleDeleteSession(sessionId: string): Promise<void> {
     try {
-      await playgroundService.deleteSession(fd.api.config, sessionId, fd.api.authProvider);
+      await fd.playgroundService.deleteSession(fd.api.config, sessionId, fd.api.authProvider);
       fd.playground.removeSession(sessionId);
 
       if (fd.playground.currentSession?.id === sessionId) {
-        playgroundService.stopPolling();
+        fd.playgroundService.stopPolling();
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete session';
@@ -538,12 +537,12 @@
     if (!sessionId) return;
 
     try {
-      await playgroundService.resetSession(fd.api.config, sessionId, fd.api.authProvider);
-      playgroundService.stopPolling();
+      await fd.playgroundService.resetSession(fd.api.config, sessionId, fd.api.authProvider);
+      fd.playgroundService.stopPolling();
       fd.playground.updateSessionStatus('idle');
       fd.playground.setError(null);
     } catch (err) {
-      playgroundService.stopPolling();
+      fd.playgroundService.stopPolling();
       fd.playground.updateSessionStatus('idle');
       logger.error('Failed to reset session:', err);
       throw err;
@@ -576,7 +575,7 @@
       fd.playground.updateSessionStatus('running');
       fd.playground.pinExecution(null);
       fd.playground.setError(null);
-      if (!playgroundService.isPolling()) {
+      if (!fd.playgroundService.isPolling()) {
         startPolling(sessionId, true);
       }
     }
@@ -771,7 +770,7 @@
       fd.playground.setError(null);
 
       try {
-        const response = await playgroundService.sendTurn(
+        const response = await fd.playgroundService.sendTurn(
           fd.api.config,
           sessionId,
           body,
@@ -789,7 +788,7 @@
         // mid-session and re-fetching messages that are already in the store.
         // Seed from the newest loaded message so polling tails live updates
         // rather than crawling forward from the start of the conversation.
-        if (!playgroundService.isPolling()) {
+        if (!fd.playgroundService.isPolling()) {
           startPolling(sessionId, true);
         }
         return true;
@@ -811,13 +810,13 @@
     if (!sessionId) return;
 
     try {
-      await playgroundService.stopExecution(fd.api.config, sessionId, fd.api.authProvider);
-      playgroundService.stopPolling();
+      await fd.playgroundService.stopExecution(fd.api.config, sessionId, fd.api.authProvider);
+      fd.playgroundService.stopPolling();
       fd.playground.updateSessionStatus('idle');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to stop execution';
       fd.playground.setError(errorMessage);
-      playgroundService.stopPolling();
+      fd.playgroundService.stopPolling();
       fd.playground.updateSessionStatus('idle');
       logger.error('Failed to stop execution:', err);
     }
@@ -831,7 +830,7 @@
     const pollingInterval = config.pollingInterval ?? 1500;
     const initialSequenceNumber = seedSequence ? fd.playground.latestSequenceNumber : null;
 
-    playgroundService.startPolling(
+    fd.playgroundService.startPolling(
       fd.api.config,
       sessionId,
       (response) => fd.playground.applyServerResponse(response, sessionId),
@@ -847,16 +846,16 @@
     if (!sessionId || isRefreshing) return;
     isRefreshing = true;
     try {
-      const response = await playgroundService.getMessages(
+      const response = await fd.playgroundService.getMessages(
         fd.api.config,
         sessionId,
         {
-          since: playgroundService.getLastSequenceNumber() ?? undefined
+          since: fd.playgroundService.getLastSequenceNumber() ?? undefined
         },
         fd.api.authProvider
       );
       fd.playground.applyServerResponse(response, sessionId);
-      if (response.sessionStatus === 'running' && !playgroundService.isPolling()) {
+      if (response.sessionStatus === 'running' && !fd.playgroundService.isPolling()) {
         startPolling(sessionId, true);
       }
     } catch (err) {
@@ -873,11 +872,11 @@
     try {
       // Catch up immediately rather than waiting for the next poll interval.
       // Use the service's sequence cursor so we only fetch new messages.
-      const response = await playgroundService.getMessages(
+      const response = await fd.playgroundService.getMessages(
         fd.api.config,
         sessionId,
         {
-          since: playgroundService.getLastSequenceNumber() ?? undefined
+          since: fd.playgroundService.getLastSequenceNumber() ?? undefined
         },
         fd.api.authProvider
       );
@@ -888,7 +887,7 @@
 
     // Polling continues through awaiting_input now, but restart defensively
     // in case it stopped for any reason (e.g. component re-mount).
-    if (!playgroundService.isPolling()) {
+    if (!fd.playgroundService.isPolling()) {
       startPolling(sessionId, true);
     }
   }

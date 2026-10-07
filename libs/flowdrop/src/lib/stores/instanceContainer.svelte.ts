@@ -26,6 +26,7 @@ import { CategoriesStore } from './categoriesStore.svelte.js';
 import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
 import { InlineEditStore } from './inlineEditStore.svelte.js';
+import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
@@ -60,6 +61,13 @@ export interface FlowDropInstance {
   readonly historyBindings: HistoryStore;
   /** Playground sessions, messages, and execution state. */
   readonly playground: PlaygroundStore;
+  /**
+   * The playground API client and its polling loop. The default instance
+   * uses the exported `playgroundService` singleton, so legacy external
+   * `playgroundService.stopPolling()` calls still reach it; every other
+   * instance owns a separate service, so sessions poll independently.
+   */
+  readonly playgroundService: PlaygroundService;
   /** Pending interrupt/confirmation dialogs. */
   readonly interrupts: InterruptStore;
   /** Endpoint configuration, auth provider, and API client for this instance. */
@@ -221,6 +229,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   historyBindings.setBeforeNavigateCallback(() => workflow.finalizeNodeConfig());
 
   const playground = new PlaygroundStore();
+  const instancePlaygroundService = isDefault ? playgroundService : new PlaygroundService();
 
   const cleanups: Array<() => void> = [
     () => historyBindings.cleanup(),
@@ -228,7 +237,12 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     () => historyBindings.setBeforeNavigateCallback(null),
     () => workflow.setOnDirtyStateChange(null),
     () => workflow.setOnWorkflowChange(null),
-    () => playground.dispose()
+    () => playground.dispose(),
+    // An owned service stops with its instance. The default one is the shared
+    // singleton and keeps the legacy behavior (outlives its mounts).
+    () => {
+      if (!isDefault) instancePlaygroundService.stopPolling();
+    }
   ];
 
   return {
@@ -239,6 +253,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     workflow,
     historyBindings,
     playground,
+    playgroundService: instancePlaygroundService,
     interrupts: new InterruptStore(),
     api: new ApiContext(),
     nodes: new NodeComponentRegistry({

@@ -67,7 +67,12 @@ export class PlaygroundService {
   private currentBackoff: number = DEFAULT_POLLING_INTERVAL;
   private lastSequenceNumber: number | null = null;
 
-  private constructor() {}
+  /**
+   * Polling state is per object: the page singleton backs the default
+   * FlowDrop instance (and legacy callers); every other instance owns its own
+   * object, so one session polling does not stop another.
+   */
+  constructor() {}
 
   /**
    * Get the singleton instance of PlaygroundService

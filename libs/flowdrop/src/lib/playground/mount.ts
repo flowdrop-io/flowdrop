@@ -63,7 +63,6 @@ import type { PartialSettings, SettingsCategory } from '../types/settings.js';
 import { initializeSettings } from '../stores/settingsStore.svelte.js';
 import type { NavbarAction } from '../types/navbar.js';
 import type { PipelineViewDef } from '../types/index.js';
-import { playgroundService } from '../services/playgroundService.js';
 import {
   createFlowDropInstance,
   getDefaultInstance,
@@ -162,16 +161,12 @@ export interface PlaygroundMountOptions {
   /**
    * Identifier for this playground's FlowDrop instance.
    *
-   * When omitted, the playground uses the page-default instance — matching
-   * the legacy behavior where all playground mounts (and the editor's
-   * built-in playground) shared one session/message store. Pass an explicit
-   * id to isolate this playground's session/message *state* from other
-   * FlowDrop instances on the page.
-   *
-   * Note: live polling is NOT isolated — `playgroundService` keeps one
-   * page-global polling timer, so only one playground can actively poll at
-   * a time regardless of instance. Use `pushMessages()` with your own
-   * transport if two playgrounds need concurrent live updates.
+   * When omitted, the first playground on the page uses the page-default
+   * instance (legacy behavior, shared with the editor's built-in playground);
+   * any further playground mounted without an id while the first is alive
+   * gets its own isolated instance. Pass an explicit id to always have a
+   * dedicated instance. Session/message state and live polling are both per
+   * instance, so playgrounds poll independently.
    */
   instanceId?: string;
 }
@@ -280,19 +275,33 @@ function sizeContainer(
   if (width !== undefined) container.style.width = width;
 }
 
+/** Whether a playground mount currently owns the page-default instance. */
+let defaultPlaygroundClaimed = false;
+
 /**
- * Resolve the FlowDrop instance for a playground mount. No `instanceId` →
- * the page-default instance (legacy shared-store behavior); an explicit id →
- * a fresh isolated instance owned (and destroyed) by this mount.
+ * Resolve the FlowDrop instance for a playground mount.
+ *
+ * - Explicit `instanceId` → a fresh isolated instance owned by this mount.
+ * - No `instanceId` and the default is not claimed by another playground →
+ *   the page-default instance (legacy shared-store behavior, and the one
+ *   `playgroundService` singleton the legacy API reaches).
+ * - No `instanceId` but another playground holds the default → a fresh
+ *   isolated instance, so the second mount neither shares nor wipes the
+ *   first one's session, messages or polling.
+ *
+ * The claim is separate from the editor's (`svelte-app.ts`): an editor and a
+ * playground may still share the default instance, which the editor's own
+ * run/playground hand-off relies on.
  */
 function acquirePlaygroundInstance(instanceId?: string): {
   fd: FlowDropInstance;
-  ownsInstance: boolean;
+  isDefault: boolean;
 } {
-  if (instanceId) {
-    return { fd: createFlowDropInstance({ id: instanceId }), ownsInstance: true };
+  if (!instanceId && !defaultPlaygroundClaimed) {
+    defaultPlaygroundClaimed = true;
+    return { fd: getDefaultInstance(), isDefault: true };
   }
-  return { fd: getDefaultInstance(), ownsInstance: false };
+  return { fd: createFlowDropInstance({ id: instanceId }), isDefault: false };
 }
 
 function buildMountedPlayground(
@@ -300,7 +309,7 @@ function buildMountedPlayground(
   workflowId: string,
   config: PlaygroundConfig,
   fd: FlowDropInstance,
-  ownsInstance: boolean,
+  isDefault: boolean,
   onSessionStatusChange?: (
     status: PlaygroundSessionStatus,
     previousStatus: PlaygroundSessionStatus
@@ -311,17 +320,23 @@ function buildMountedPlayground(
     ? fd.playground.subscribeToSessionStatus(onSessionStatusChange)
     : undefined;
 
+  let destroyed = false;
+
   return {
     destroy: () => {
+      // A second destroy must not release a claim another mount now holds.
+      if (destroyed) return;
+      destroyed = true;
       unsubscribeStatus?.();
-      // Caution (shared default instance): stopPolling is page-global and
-      // reset() clears state other default-mounted playgrounds rely on —
-      // pass `instanceId` to isolate. Preserved legacy behavior.
-      playgroundService.stopPolling();
+      // Stops this instance's own polling and clears its session state. On the
+      // page-default instance that is the legacy singleton service, so a mount
+      // that owns the default keeps the old behavior; any other mount runs on
+      // an isolated instance and cannot touch a sibling playground.
+      fd.playgroundService.stopPolling();
       fd.playground.reset();
-      // Fully dispose instances created for this mount; the shared default
-      // instance only gets the reset above (legacy behavior).
-      if (ownsInstance) {
+      if (isDefault) {
+        defaultPlaygroundClaimed = false;
+      } else {
         fd.destroy();
       }
       unmount(svelteApp);
@@ -330,17 +345,17 @@ function buildMountedPlayground(
     getSessions: () => fd.playground.sessions,
     getMessageCount: () => fd.playground.messageCount,
     isExecuting: () => fd.playground.isExecuting,
-    stopPolling: () => playgroundService.stopPolling(),
+    stopPolling: () => fd.playgroundService.stopPolling(),
     startPolling: () => {
       const session = fd.playground.currentSession;
       if (session) {
-        playgroundService.startPolling(
+        fd.playgroundService.startPolling(
           fd.api.config,
           session.id,
           (response) => fd.playground.applyServerResponse(response, session.id),
           pollingInterval,
           config.shouldStopPolling,
-          playgroundService.getLastSequenceNumber(),
+          fd.playgroundService.getLastSequenceNumber(),
           fd.api.authProvider
         );
       }
@@ -348,7 +363,7 @@ function buildMountedPlayground(
     pushMessages: (response: PlaygroundMessagesApiResponse) =>
       fd.playground.applyServerResponse(response, null),
     reset: () => {
-      playgroundService.stopPolling();
+      fd.playgroundService.stopPolling();
       fd.playground.reset();
     }
   };
@@ -422,7 +437,7 @@ export async function mountPlayground(
     settings: initialSettings
   });
 
-  const { fd, ownsInstance } = acquirePlaygroundInstance(instanceId);
+  const { fd, isDefault } = acquirePlaygroundInstance(instanceId);
 
   let targetContainer = container;
 
@@ -474,7 +489,7 @@ export async function mountPlayground(
     workflowId,
     config,
     fd,
-    ownsInstance,
+    isDefault,
     onSessionStatusChange
   );
 }
@@ -551,7 +566,7 @@ export async function mountPlaygroundStudio(
     settings: initialSettings
   });
 
-  const { fd, ownsInstance } = acquirePlaygroundInstance(instanceId);
+  const { fd, isDefault } = acquirePlaygroundInstance(instanceId);
 
   sizeContainer(container, height, width);
 
@@ -580,7 +595,7 @@ export async function mountPlaygroundStudio(
     workflowId,
     config,
     fd,
-    ownsInstance,
+    isDefault,
     onSessionStatusChange
   );
 }
@@ -682,7 +697,7 @@ export async function mountPlaygroundApp(
     settings: initialSettings
   });
 
-  const { fd, ownsInstance } = acquirePlaygroundInstance(instanceId);
+  const { fd, isDefault } = acquirePlaygroundInstance(instanceId);
 
   sizeContainer(container, height, width);
 
@@ -717,7 +732,7 @@ export async function mountPlaygroundApp(
     workflowId,
     config,
     fd,
-    ownsInstance,
+    isDefault,
     onSessionStatusChange
   );
 }
