@@ -1,8 +1,8 @@
 import type { FlowDropSkin, FlowDropSkinTokens } from '../types/skin.js';
 import { LIGHT_ALIASES, DARK_ALIASES } from '../styles/tokenAliases.js';
+import { SCOPE_ATTR } from '../utils/portal.js';
 
-/** Attribute that scopes one editor instance's skin (set on `.flowdrop-root`, copied onto portalled nodes). */
-export const SCOPE_ATTR = 'data-fd-scope';
+export { SCOPE_ATTR };
 
 const VAR_REF = /var\(\s*--fd-([a-z0-9_-]+)/gi;
 

@@ -455,6 +455,34 @@ describe('attachWebMCP — confirm dialog', () => {
     expect(dialog()).toBeNull();
   });
 
+  it("carries the editor's skin scope, and numbers each step in its own cell", async () => {
+    const { runtime, instance } = await setup('confirm');
+    instance.skinScope = 'c7';
+    const pending = runtime.call('flowdrop_batch', {
+      commands: Array.from({ length: 11 }, () => ({ type: 'add_node', nodeTypeId: 'text_input' }))
+    });
+    await tick();
+
+    expect(dialog()?.closest('[data-fd-scope]')?.getAttribute('data-fd-scope')).toBe('c7');
+    const steps = [...document.querySelectorAll('.fd-webmcp-confirm__step')].map(
+      (el) => el.textContent
+    );
+    expect(steps).toHaveLength(11);
+    expect(steps.at(-1)).toBe('11');
+
+    click('flowdrop-webmcp-reject');
+    await pending;
+  });
+
+  it('opens without a scope when no editor is mounted', async () => {
+    const { runtime } = await setup('confirm');
+    const pending = runtime.call('flowdrop_add_node', { nodeTypeId: 'text_input' });
+    await tick();
+    expect(dialog()?.closest('[data-fd-scope]')).toBeNull();
+    click('flowdrop-webmcp-reject');
+    await pending;
+  });
+
   it('never opens for a view call, even with approval: confirm', async () => {
     const runtime = createFakeModelContext();
     const instance = createFlowDropInstance();

@@ -17,7 +17,8 @@
  * Usage: `<div use:portal>…</div>` or `<div use:portal={targetElement}>…</div>`.
  * No-op during SSR (no `document`).
  */
-const SCOPE_ATTR = 'data-fd-scope';
+/** Attribute that scopes one editor's skin (on `.flowdrop-root`, copied onto overlays). */
+export const SCOPE_ATTR = 'data-fd-scope';
 export const PORTAL_CLASS = 'flowdrop-portal';
 
 export function portal(node: HTMLElement, target: HTMLElement | undefined = undefined) {

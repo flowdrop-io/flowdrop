@@ -27,6 +27,7 @@ import type { Messages, MessagesOverride } from '../messages/index.js';
 import type { WebMCPApproval, WebMCPApprovalRequest } from './types.js';
 import { describeCommand, summarizeCommands } from './descriptors.js';
 import WebMCPConfirm from './WebMCPConfirm.svelte';
+import { SCOPE_ATTR } from '../utils/portal.js';
 
 /** What the gate needs to know about the call it is asking approval for. */
 export interface GateRequest extends WebMCPApprovalRequest {
@@ -90,6 +91,12 @@ export interface CreateGateOptions {
   messages?: MessagesOverride | (() => MessagesOverride);
   /** Offer the "don't ask again for edits" choice. Default true. */
   rememberEdits?: boolean;
+  /**
+   * The editor's skin scope (`data-fd-scope`), read when a dialog opens. The
+   * dialog mounts outside the editor tree, so without it a skinned editor's
+   * dialog shows the default tokens.
+   */
+  skinScope?: () => string | null;
 }
 
 const CONSEQUENTIAL_TOOLS: ReadonlySet<string> = new Set(['save', 'run']);
@@ -154,6 +161,8 @@ export function createApprovalGate(
       let settled = false;
       const host = document.createElement('div');
       host.className = 'fd-webmcp-confirm-host';
+      const scope = options.skinScope?.();
+      if (scope) host.setAttribute(SCOPE_ATTR, scope);
       target.appendChild(host);
 
       const finish = (approved: boolean, remember = false): void => {

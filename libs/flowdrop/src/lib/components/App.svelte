@@ -325,6 +325,15 @@
   // See themes/scopedSkinCss.ts. data-theme stays page-global on <html>.
   const scopeId = $props.id();
 
+  // Publish the scope on the instance so overlays mounted outside this tree
+  // (the WebMCP approval dialog) can carry it. Cleared only if still ours.
+  $effect(() => {
+    fd.skinScope = scopeId;
+    return () => {
+      if (fd.skinScope === scopeId) fd.skinScope = null;
+    };
+  });
+
   $effect(() => {
     if (typeof document === 'undefined') return;
     const css = buildScopedSkinCss(scopeId, resolvedTheme.skin);

@@ -124,6 +124,13 @@ export interface FlowDropInstance {
    */
   approvalGate: ApprovalGate | null;
   /**
+   * The skin scope (`data-fd-scope`) of the editor rendering this instance,
+   * set by `App` while it is mounted. Overlays mounted outside the editor tree
+   * (the WebMCP approval dialog) copy it so they keep the editor's skin.
+   * `null` when no editor is mounted.
+   */
+  skinScope: string | null;
+  /**
    * Run `fn` when this instance is destroyed. Returns an unsubscribe; calling
    * it before `destroy()` means `fn` never runs. Adapters that bind to an
    * instance (WebMCP, host integrations) hook their teardown here instead of
@@ -271,6 +278,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
     approvalGate: null,
+    skinScope: null,
     onDestroy(fn) {
       cleanups.push(fn);
       return () => {

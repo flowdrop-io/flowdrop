@@ -259,7 +259,8 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
       container: options.container,
       editorName,
       messages: options.messages,
-      rememberEdits: options.rememberEdits
+      rememberEdits: options.rememberEdits,
+      skinScope: () => instance.skinScope
     });
   const ownsGate = !options.gate;
   const gateRequest = (tool: string) => {
