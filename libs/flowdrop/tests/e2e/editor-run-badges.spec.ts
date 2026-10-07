@@ -46,6 +46,10 @@ async function stubBackend(page: Page): Promise<Backend> {
     const path = new URL(request.url()).pathname.replace('/api/flowdrop', '');
     const method = request.method();
 
+    // A run with unsaved edits is "Save & send": the save has to work.
+    if (/^\/workflows\/[^/]+$/.test(path) && method === 'PUT') {
+      return route.fulfill(json({ id: 'wf-1' }));
+    }
     if (/\/workflows\/[^/]+\/playground\/sessions$/.test(path)) {
       return route.fulfill(method === 'POST' ? json(SESSION) : json([]));
     }
