@@ -126,6 +126,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with `clearTimeout`), so a quick pipeline switch still ran the stale load;
   it is now cancelled, and an unmounted editor drops a scheduled or
   in-flight load.
+- A settings change (even the theme) no longer wipes the run status from the
+  canvas. The editor rebuilt its nodes from the workflow store on every
+  settings change, and the store carries no execution info, so the status
+  badges vanished until the next poll. The editor now keeps the last loaded
+  execution info and re-applies it on every rebuild; it drops it when the
+  pipeline or workflow changes.
 
 ## [2.10.1] - 2026-10-07
 

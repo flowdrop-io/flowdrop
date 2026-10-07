@@ -166,6 +166,39 @@ export class NodeOperationsHelper {
   }
 
   /**
+   * Paint a run's per-node execution info onto canvas nodes.
+   *
+   * With a map, every node gets its entry (or the idle default, so a node the
+   * run never reached does not keep an older status). With `null`, any
+   * executionInfo is removed. Pure: returns new node objects only where
+   * something changes, and the same array when nothing does.
+   */
+  static applyExecutionInfo<T extends { id: string; data: Record<string, unknown> }>(
+    nodes: T[],
+    info: Record<string, NodeExecutionInfo> | null
+  ): T[] {
+    if (info === null) {
+      if (!nodes.some((node) => 'executionInfo' in node.data)) return nodes;
+      return nodes.map((node) => {
+        if (!('executionInfo' in node.data)) return node;
+        const { executionInfo: _dropped, ...data } = node.data;
+        return { ...node, data };
+      });
+    }
+    return nodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        executionInfo: info[node.id] ?? {
+          status: 'idle' as const,
+          executionCount: 0,
+          isExecuting: false
+        }
+      }
+    }));
+  }
+
+  /**
    * Create a new node from dropped data
    */
   static createNodeFromDrop(

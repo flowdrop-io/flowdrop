@@ -202,6 +202,13 @@
   /** Cancels the scheduled (not yet started) execution-info load, if any. */
   let cancelScheduledExecutionInfo: (() => void) | null = null;
   let executionInfoAbortController: AbortController | null = null;
+  /**
+   * The last execution info that loaded for the shown pipeline. Plain (not
+   * reactive) on purpose: it is only read when flowNodes is rebuilt from the
+   * store, which has no executionInfo of its own. Cleared whenever the
+   * pipeline or workflow changes, so it can never paint another run.
+   */
+  let latestExecutionInfo: Record<string, NodeExecutionInfo> | null = null;
 
   /**
    * Key for SvelteFlow component — changes when workflow ID changes.
@@ -248,7 +255,11 @@
   } {
     const nodesWithCallbacks = workflow.nodes.map(withNodeCallbacks);
     const styledEdges = EdgeStylingHelper.updateEdgeStyles(workflow.edges, nodesWithCallbacks);
-    return { nodes: nodesWithCallbacks, edges: styledEdges };
+    // Re-apply the loaded run status: a rebuild must not drop the badges.
+    const nodes = latestExecutionInfo
+      ? NodeOperationsHelper.applyExecutionInfo(nodesWithCallbacks, latestExecutionInfo)
+      : nodesWithCallbacks;
+    return { nodes, edges: styledEdges };
   }
 
   // ---------------------------------------------------------------------------
@@ -290,6 +301,9 @@
 
     const isNewWorkflow = storeValue.id !== previousSyncedWorkflowId;
 
+    // A different workflow never inherits the previous one's run status.
+    if (isNewWorkflow) latestExecutionInfo = null;
+
     if (isNewWorkflow) {
       untrack(() =>
         machine.send(previousSyncedWorkflowId ? 'WORKFLOW_SWITCHED' : 'WORKFLOW_LOADED')
@@ -302,8 +316,10 @@
     flowEdges = derived.edges;
     previousSyncedWorkflowId = storeValue.id;
 
-    // Trigger port coordinate rebuild after workflow load
-    if (getEditorSettings().proximityConnect) {
+    // Trigger port coordinate rebuild after workflow load. Untracked: the
+    // setting must not re-run this effect, or any settings change (even the
+    // theme) would rebuild flowNodes from the store.
+    if (untrack(() => getEditorSettings().proximityConnect)) {
       portCoordRebuildTrigger = Date.now();
     }
 
@@ -315,6 +331,14 @@
   // ---------------------------------------------------------------------------
   // Execution info effect (separate — async, depends on workflow + pipeline ID)
   // ---------------------------------------------------------------------------
+  /** Forget the loaded run status and take it off the canvas nodes. */
+  function resetExecutionInfo(): void {
+    latestExecutionInfo = null;
+    untrack(() => {
+      flowNodes = NodeOperationsHelper.applyExecutionInfo(flowNodes, null);
+    });
+  }
+
   let previousExecWorkflowId: string | null = null;
   let previousExecPipelineId: string | undefined = undefined;
 
@@ -322,7 +346,13 @@
     const storeValue = fd.workflow.current;
     const pipelineId = props.pipelineId;
 
-    if (!storeValue || !pipelineId) return;
+    if (!storeValue || !pipelineId) {
+      // Nothing to show a run for: forget the previous run entirely.
+      resetExecutionInfo();
+      previousExecWorkflowId = null;
+      previousExecPipelineId = undefined;
+      return;
+    }
 
     const workflowChanged = storeValue.id !== previousExecWorkflowId;
     const pipelineChanged = pipelineId !== previousExecPipelineId;
@@ -332,9 +362,11 @@
     previousExecWorkflowId = storeValue.id;
     previousExecPipelineId = pipelineId;
 
-    // Cancel any pending schedule. In-flight fetches are cancelled by
-    // loadNodeExecutionInfo() itself when it's re-entered.
+    // Cancel any pending schedule and any in-flight fetch (it belongs to the
+    // previous pipeline), and drop the previous run's status.
     cancelScheduledExecutionInfo?.();
+    executionInfoAbortController?.abort();
+    resetExecutionInfo();
 
     // Schedule loading with requestIdleCallback (falls back to setTimeout)
     if (typeof requestIdleCallback !== 'undefined') {
@@ -351,11 +383,15 @@
   $effect(() => () => {
     cancelScheduledExecutionInfo?.();
     executionInfoAbortController?.abort();
+    latestExecutionInfo = null;
   });
 
   // Re-fetch node execution info when the parent bumps refreshTrigger
   // (poll ticks, chat-message arrivals, manual refresh). loadNodeExecutionInfo()
-  // is the single writer of executionInfo on flowNodes — no parallel channel.
+  // is the single loader of executionInfo: it keeps the result in
+  // latestExecutionInfo and paints it onto flowNodes. buildFlowNodesFromStore
+  // re-applies that map on every rebuild, so a store change or a settings
+  // change never drops the badges. No parallel channel.
   // svelte-ignore state_referenced_locally
   let _prevExecRefreshTrigger = props.refreshTrigger ?? 0;
   $effect(() => {
@@ -416,20 +452,10 @@
 
       if (controller.signal.aborted) return;
 
-      const defaultExecutionInfo: NodeExecutionInfo = {
-        status: 'idle' as const,
-        executionCount: 0,
-        isExecuting: false
-      };
-
-      // Update flowNodes with execution info (visual-only, no store sync needed)
-      flowNodes = flowNodes.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          executionInfo: executionInfo[node.id] || defaultExecutionInfo
-        }
-      }));
+      // Keep the map for later rebuilds, and paint it now (visual-only, no
+      // store sync needed).
+      latestExecutionInfo = executionInfo;
+      flowNodes = NodeOperationsHelper.applyExecutionInfo(flowNodes, executionInfo);
 
       if (executionInfoAbortController === controller) {
         executionInfoAbortController = null;
