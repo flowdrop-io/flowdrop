@@ -23,6 +23,14 @@
     fitView({ padding: 0.2, duration: 300 });
   }
 
+  /**
+   * Bring one node into view. Keeps the current zoom unless the node would be
+   * tiny or cut off; asked for by a person (a message link), never by a run.
+   */
+  export function canvasFocusNode(nodeId: string): void {
+    void fitView({ nodes: [{ id: nodeId }], padding: 0.6, maxZoom: 1.25, duration: 300 });
+  }
+
   export function canvasZoomIn(): void {
     zoomIn({ duration: 300 });
   }

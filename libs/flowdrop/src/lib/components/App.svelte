@@ -17,6 +17,7 @@
   import MenuIcon from '$lib/components/icons/MenuIcon.svelte';
   import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
   import ConfigForm from '$lib/components/ConfigForm.svelte';
+  import NodeInspector from '$lib/components/NodeInspector.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
   import WorkflowPlaygroundSettings from '$lib/components/WorkflowPlaygroundSettings.svelte';
@@ -67,7 +68,13 @@
     initializeTheme
   } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
-  import { resolveInspectorSurface, closeTarget } from '../utils/inspectorSurface.js';
+  import {
+    resolveInspectorSurface,
+    closeTarget,
+    openingNodeTab,
+    type NodeInspectorTab
+  } from '../utils/inspectorSurface.js';
+  import { hasRun } from '../utils/lastRun.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
   import type { EditorMode } from '../stores/editorModeStore.svelte.js';
@@ -782,6 +789,54 @@
     swapInteractiveState = null;
   }
 
+  // Which tab the open node shows. Picked when the node opens (Last run in Test
+  // mode if it ran in the shown run, else Config) and kept until another node
+  // opens, so a node that starts running under the cursor does not change the
+  // tab by itself. Edit mode always resolves to Config (`NodeInspector`).
+  let nodeTabPick = $state<{ nodeId: string; tab: NodeInspectorTab } | null>(null);
+  $effect.pre(() => {
+    const id = selectedNodeId;
+    untrack(() => {
+      if (!id) {
+        nodeTabPick = null;
+      } else if (nodeTabPick?.nodeId !== id) {
+        nodeTabPick = {
+          nodeId: id,
+          tab: openingNodeTab(effectiveEditorMode, hasRun(fd.playground.nodeStatusFor(id)))
+        };
+      }
+    });
+  });
+  const nodeInspectorTab = $derived<NodeInspectorTab>(
+    nodeTabPick && nodeTabPick.nodeId === selectedNodeId ? nodeTabPick.tab : 'config'
+  );
+
+  // Messages and canvas nodes light each other up through fd.highlight; the
+  // open node is the "selected" one.
+  $effect(() => {
+    fd.highlight.setSelected(selectedNodeForConfig?.id ?? null);
+    return () => fd.highlight.setSelected(null);
+  });
+
+  /**
+   * A message's node link was clicked: select the node, open its Last run and
+   * bring it into view. Only on request (this is the one place the view moves
+   * for a run). False when this is not Test mode or the node is gone.
+   */
+  function revealNodeLastRun(nodeId: string): boolean {
+    const node = fd.workflow.current?.nodes.find((n) => n.id === nodeId);
+    if (!testMode || !node) return false;
+    nodeTabPick = { nodeId, tab: 'lastRun' };
+    selectedNodeId = nodeId;
+    isConfigSidebarOpen = true;
+    activeSurface = 'config';
+    swapMode = 'idle';
+    swapInteractiveState = null;
+    workflowEditorRef?.canvasFocusNode(nodeId);
+    return true;
+  }
+  $effect(() => fd.highlight.setRevealHandler(revealNodeLastRun));
+
   /**
    * Toggle workflow settings sidebar
    */
@@ -1447,6 +1502,20 @@
   />
 {/snippet}
 
+{#snippet nodeInspectorEl(node: WorkflowNode)}
+  <NodeInspector
+    editorMode={effectiveEditorMode}
+    tab={nodeInspectorTab}
+    onTabChange={(tab) => (nodeTabPick = { nodeId: node.id, tab })}
+    info={fd.playground.nodeStatusFor(node.id)}
+    runShown={fd.playground.nodeStatusScope !== null}
+  >
+    {#snippet config()}
+      {@render nodeConfigFormEl(node)}
+    {/snippet}
+  </NodeInspector>
+{/snippet}
+
 {#snippet workflowConfigFormEl()}
   <ConfigForm
     {authProvider}
@@ -1650,7 +1719,7 @@
             <h3 class="config-surface__section-title">
               {activeConfig.configTitle ?? 'Configuration'}
             </h3>
-            {@render nodeConfigFormEl(activeConfig.node)}
+            {@render nodeInspectorEl(activeConfig.node)}
           </div>
         {:else}
           {@render workflowSettingsTabs()}
@@ -1708,7 +1777,7 @@
         : undefined}
     >
       {#if activeConfig.kind === 'node'}
-        {@render nodeConfigFormEl(activeConfig.node)}
+        {@render nodeInspectorEl(activeConfig.node)}
       {:else}
         {@render workflowSettingsTabs()}
       {/if}

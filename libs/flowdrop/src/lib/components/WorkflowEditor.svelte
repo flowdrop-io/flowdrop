@@ -760,6 +760,35 @@
   let openMenu = $state.raw<OpenContextMenu | null>(null);
   let canvasEl: HTMLDivElement | undefined = $state();
 
+  // A message link's node lights up here, and the node under the pointer
+  // lights its messages (fd.highlight). A class on xyflow's own node wrapper,
+  // so every node type gets it without knowing about it.
+  const LINKED_CLASS = 'fd-node-linked';
+  $effect(() => {
+    const id = fd.highlight.canvasNodeId;
+    // Re-run when nodes are (re)rendered so a node that mounts later is lit too.
+    void flowNodes;
+    if (!id || !canvasEl) return;
+    const el = canvasEl.querySelector<HTMLElement>(
+      `.svelte-flow__node[data-id="${CSS.escape(id)}"]`
+    );
+    el?.classList.add(LINKED_CLASS);
+    return () => el?.classList.remove(LINKED_CLASS);
+  });
+
+  function nodeIdAt(target: EventTarget | null): string | null {
+    const el = (target as Element | null)?.closest?.('.svelte-flow__node');
+    return el?.getAttribute('data-id') ?? null;
+  }
+  function handleCanvasOver(event: MouseEvent): void {
+    const id = nodeIdAt(event.target);
+    if (id !== null) fd.highlight.hoverNode(id);
+  }
+  function handleCanvasOut(event: MouseEvent): void {
+    const leaving = nodeIdAt(event.target);
+    if (leaving !== null && nodeIdAt(event.relatedTarget) !== leaving) fd.highlight.hoverNode(null);
+  }
+
   /** Whether a node's registered component edits its text in place (the caption). */
   function nodeEditsInPlace(node: WorkflowNodeType): boolean {
     return (
@@ -1100,6 +1129,10 @@
     canvasControllerRef?.canvasFitView();
   }
 
+  export function canvasFocusNode(nodeId: string): void {
+    canvasControllerRef?.canvasFocusNode(nodeId);
+  }
+
   export function canvasZoomIn(): void {
     canvasControllerRef?.canvasZoomIn();
   }
@@ -1194,10 +1227,13 @@
     <!-- Flow Canvas.
            Capture-phase mousedown so dragging from a port never turns into a
            WebKit text-selection drag — see suppressPortDragSelection. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="flowdrop-canvas"
       bind:this={canvasEl}
       onmousedowncapture={suppressPortDragSelection}
+      onpointerover={handleCanvasOver}
+      onpointerout={handleCanvasOut}
     >
       <FlowDropZone
         ondrop={handleNodeDrop}
@@ -1423,6 +1459,13 @@
 
   :global(.flowdrop-workflow-editor .svelte-flow__edge:hover path) {
     stroke-width: 3 !important;
+  }
+
+  :global(.flowdrop-workflow-editor .svelte-flow__node.fd-node-linked) {
+    border-radius: var(--fd-radius-lg);
+    outline: 2px solid var(--fd-primary);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--fd-primary) 18%, transparent);
   }
 
   :global(.flowdrop-workflow-editor .svelte-flow__edge.selected) {

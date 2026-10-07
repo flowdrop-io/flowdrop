@@ -283,6 +283,39 @@ export const defaultMessages = {
     }
   },
 
+  // The inspector tabs of a node in Test mode, and the Last run tab.
+  nodeInspector: {
+    tabsLabel: 'Node tabs',
+    config: 'Config',
+    lastRun: 'Last run',
+    notRun: 'This node has not run in the run you are viewing.',
+    running: 'Running now…',
+    waiting: 'Waiting for a decision in the conversation.',
+    noRunShown: 'No run to show yet. Send a message or run the workflow.',
+    status: 'Status',
+    duration: 'Duration',
+    started: 'Started',
+    finished: 'Finished',
+    tokens: 'Tokens',
+    input: 'Input',
+    output: 'Output',
+    error: 'Error',
+    executions: ({ n }: { n: number }) => `Ran ${n} times in this run. Showing the last.`,
+    expand: 'Show all',
+    collapse: 'Show less',
+    statuses: {
+      idle: 'Idle',
+      pending: 'Pending',
+      running: 'Running',
+      completed: 'Completed',
+      failed: 'Failed',
+      cancelled: 'Cancelled',
+      skipped: 'Skipped',
+      paused: 'Paused',
+      interrupted: 'Waiting'
+    }
+  },
+
   layout: {
     // Sidebar/main-region landmarks.
     componentsSidebar: 'Components sidebar',
@@ -479,7 +512,9 @@ export const defaultMessages = {
     },
     messageTooltips: {
       nodeId: ({ id }: { id: string }) => `Node ID: ${id}`,
-      executionDuration: 'Execution duration'
+      executionDuration: 'Execution duration',
+      // The node link above a reply: jumps to the node on request.
+      showNodeLastRun: ({ label }: { label: string }) => `Show ${label} and its last run`
     },
     // ARIA labels for message annotations. The hierarchy trail names the
     // actual path so AT users hear "From: ForEach Loop / Greeter" rather
