@@ -51,7 +51,7 @@
   import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
   import { mergeFeatures } from '$lib/types/events.js';
   import type { FlowDropTheme, FlowDropThemeName } from '$lib/types/theme.js';
-  import { buildScopedSkinCss } from '$lib/themes/scopedSkinCss.js';
+  import { buildScopedSkinCss, toScopeId } from '$lib/themes/scopedSkinCss.js';
   import { resolveTheme } from '$lib/themes/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
@@ -323,7 +323,9 @@
   // copied onto portalled overlays), so two editors with different skins do
   // not overwrite each other and the host page gets no --fd-* variables.
   // See themes/scopedSkinCss.ts. data-theme stays page-global on <html>.
-  const scopeId = $props.id();
+  // One cleaned value for the attribute, the skin rule and fd.skinScope.
+  const rawScopeId = $props.id();
+  const scopeId = toScopeId(rawScopeId);
 
   // Publish the scope on the instance so overlays mounted outside this tree
   // (the WebMCP approval dialog) can carry it. Cleared only if still ours.

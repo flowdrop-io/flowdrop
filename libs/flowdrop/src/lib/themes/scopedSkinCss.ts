@@ -52,9 +52,18 @@ function effectiveDarkAliases(): Record<string, string> {
   return { ...LIGHT_ALIASES, ...DARK_ALIASES };
 }
 
-/** Keep the id usable inside an attribute selector. */
+/**
+ * The scope id as written everywhere: the `data-fd-scope` attribute, the skin
+ * rule and `FlowDropInstance.skinScope`. Clean once at the source so every
+ * side agrees; idempotent, so cleaning again is harmless.
+ */
+export function toScopeId(raw: string): string {
+  return raw.replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+/** Attribute selector for a scope id (cleaned again, so a raw id cannot inject CSS). */
 export function scopeSelector(scopeId: string): string {
-  return `[${SCOPE_ATTR}="${scopeId.replace(/[^a-zA-Z0-9_-]/g, '_')}"]`;
+  return `[${SCOPE_ATTR}="${toScopeId(scopeId)}"]`;
 }
 
 /**

@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   aliasClosure,
   buildScopedSkinCss,
-  scopeSelector
+  scopeSelector,
+  toScopeId
 } from '../../../src/lib/themes/scopedSkinCss.js';
 
 describe('buildScopedSkinCss', () => {
@@ -88,5 +89,12 @@ describe('buildScopedSkinCss', () => {
 
   it('keeps the id safe inside a selector', () => {
     expect(scopeSelector('x"] , body {')).toBe('[data-fd-scope="x_____body__"]');
+  });
+
+  it('cleans a scope id once, the same way the selector does', () => {
+    const id = toScopeId('x"] , body {');
+    expect(id).toBe('x_____body__');
+    expect(toScopeId(id)).toBe(id);
+    expect(scopeSelector(id)).toBe(`[data-fd-scope="${id}"]`);
   });
 });
