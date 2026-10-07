@@ -35,6 +35,7 @@
       mode="embedded"
       retainSession
       followWorkflow
+      sessionOptional
       {onOpenSettings}
     />
   {/key}

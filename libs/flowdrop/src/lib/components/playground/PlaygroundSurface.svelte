@@ -69,6 +69,13 @@
      * a place (the editor). Offered as a link on the "no chat yet" notice.
      */
     onOpenSettings?: () => void;
+    /**
+     * The first send creates the session, so the composer works with none and
+     * nothing asks for a session to be created first (Test mode: the test
+     * session is created on the first run).
+     * @default false
+     */
+    sessionOptional?: boolean;
   }
 
   let {
@@ -86,7 +93,8 @@
     instance,
     retainSession = false,
     followWorkflow = false,
-    onOpenSettings
+    onOpenSettings,
+    sessionOptional = false
   }: Props = $props();
 
   // Resolve/provide once at init; the instance prop is a fixed mount-time choice.
@@ -445,7 +453,8 @@
           autoScroll={config.autoScroll ?? true}
           enableMarkdown={config.enableMarkdown ?? true}
           onInterruptResolved={() => fd.runs.catchUp({ restartPolling: true })}
-          onCreateSession={fd.playground.sessions.length === 0
+          {sessionOptional}
+          onCreateSession={fd.playground.sessions.length === 0 && !sessionOptional
             ? () => fd.runs.createSession()
             : undefined}
           onLoadOlder={() => fd.runs.loadOlderMessages()}
@@ -497,6 +506,7 @@
             : config.predefinedMessage}
           formEntries={fd.playground.interfaceFormEntries}
           notice={chatNotice}
+          {sessionOptional}
           onNoticeAction={onOpenSettings}
           formValues={fd.playground.formValues}
           onFormChange={(values) => fd.playground.setFormValues(values)}

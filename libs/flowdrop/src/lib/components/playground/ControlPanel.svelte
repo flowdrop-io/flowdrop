@@ -76,6 +76,8 @@
     showSessionHeader?: boolean;
     showNewSessionButton?: boolean;
     showSessionList?: boolean;
+    /** The first send creates the session: see ChatInput's `sessionOptional`. */
+    sessionOptional?: boolean;
     style?: string;
   }
 
@@ -107,6 +109,7 @@
     showSessionHeader = true,
     showNewSessionButton = true,
     showSessionList = true,
+    sessionOptional = false,
     style
   }: Props = $props();
 
@@ -330,6 +333,7 @@
     {enableCommands}
     {commandFeedback}
     {onDismissCommandFeedback}
+    {sessionOptional}
   />
 </section>
 

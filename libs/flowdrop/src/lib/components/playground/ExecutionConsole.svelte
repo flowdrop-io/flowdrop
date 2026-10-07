@@ -24,6 +24,11 @@
     onCreateSession?: () => void;
     /** Called when the user scrolls near the top to load older messages */
     onLoadOlder?: () => void | Promise<void>;
+    /**
+     * The first send creates the session, so "no session yet" is the ready
+     * state, not a prompt to create one.
+     */
+    sessionOptional?: boolean;
   }
 
   let {
@@ -34,7 +39,8 @@
     compactSystemMessages = true,
     onInterruptResolved,
     onCreateSession,
-    onLoadOlder
+    onLoadOlder,
+    sessionOptional = false
   }: Props = $props();
 
   const ec = $derived(m().playground.executionConsole);
@@ -54,7 +60,7 @@
     {compactSystemMessages}
     {onInterruptResolved}
     {onLoadOlder}
-    welcome={welcomeState}
+    welcome={sessionOptional ? readyState : welcomeState}
     emptySession={readyState}
   />
 </section>

@@ -70,6 +70,12 @@
     /** Transient result of the last slash command. Never a session message. */
     commandFeedback?: CommandOutcome | null;
     onDismissCommandFeedback?: () => void;
+    /**
+     * The first send creates the session, so typing and sending are allowed
+     * with none (the editor's Test mode: the test session is created on the
+     * first run). By default a session must exist first.
+     */
+    sessionOptional?: boolean;
   }
 
   let {
@@ -83,7 +89,8 @@
     awaitEnableRun = true,
     enableCommands = false,
     commandFeedback = null,
-    onDismissCommandFeedback
+    onDismissCommandFeedback,
+    sessionOptional = false
   }: Props = $props();
 
   const actions = $derived(m().playground.actions);
@@ -173,7 +180,11 @@
    * already swaps Send for Stop while a run is in flight.
    */
   const canSubmit = $derived(
-    inputValue.trim().length > 0 && (inputIsCommand || fd.playground.canSendMessage)
+    inputValue.trim().length > 0 &&
+      (inputIsCommand ||
+        (sessionOptional
+          ? !fd.playground.isExecuting && fd.playground.sessionStatus !== 'awaiting_input'
+          : fd.playground.canSendMessage))
   );
 
   // A plain `let`, not `$state`: bookkeeping for the effect below, never read
@@ -360,7 +371,8 @@
             class="chat-input__textarea"
             placeholder={resolvedPlaceholder}
             rows="1"
-            disabled={fd.playground.isExecuting || !fd.playground.currentSession}
+            disabled={fd.playground.isExecuting ||
+              (!sessionOptional && !fd.playground.currentSession)}
             onkeydown={handleKeydown}
             oninput={handleInput}
             onblur={() => (paletteDismissed = true)}
