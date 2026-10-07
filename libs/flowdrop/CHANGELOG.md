@@ -96,6 +96,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ConfigPanel`'s `onClose` is optional: without it the panel has no close
   control. `NodeSidebar` takes a `popover` prop (always expanded, as wide as
   its container).
+- Status badges, hot edges and the `edited` mark on the edited canvas, all
+  drawn from `fd.playground.nodeStatuses`. The badge is a small status icon on
+  the node's top-right corner, coloured from the theme tokens (`--fd-success`,
+  `--fd-error`, `--fd-primary`, `--fd-warning`, `--fd-muted-foreground`), with
+  no text and no numbers; the spinning and pulsing for running and waiting
+  nodes stop under `prefers-reduced-motion`. An edge is hot (success colour,
+  thicker, class `flowdrop-edge--hot`) when its source node completed and its
+  target was reached (running, completed, failed, paused or waiting): the rule is
+  `isEdgeHot()` in `utils/runEdges.ts`. Hot state is read at draw time and is
+  never written into the saved edges. In Test mode a node that has a last run
+  gets an `edited` mark when its configuration changed since the shown run
+  started, so the result may be stale. Moving a node and renaming it do not
+  count (nor `instanceTitle`, `instanceDescription`, `instanceBadge` or
+  `extensions.ui`); wiring changes into a node do. The editor keeps a
+  per-node fingerprint per run in `fd.editedNodes` (`track(runId)`, `clear()`,
+  `isEdited(nodeId)`), taken when the shown run is first seen and dropped when
+  the run changes. New messages `status.overlay.edited` and `editedTooltip`.
 
 ### Changed
 
@@ -113,6 +130,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `fd.runs`; what it shows and does is unchanged, except that a
   `predefinedMessage` starting with `/` is now sent as typed instead of being
   read as a slash command.
+- The node status overlay is a compact badge (status icon only) instead of a
+  large pill with a label and run count, and its hover details and colours use
+  the theme tokens, so dark mode follows. Durations, counts and errors stay in
+  the hover details until the inspector's Last run tab carries them. The
+  overlay's `position` prop is gone (the badge always sits on the top-right
+  corner), and `UniversalNode` no longer asks the node registry for a status
+  position.
 
 ### Deprecated
 
@@ -131,6 +155,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   workflow tabs, and the close button no longer leaves a hidden node selected
   behind the workflow tabs. The tab strip wraps on narrow widths.
   `resolveInspectorSurface` holds the rule.
+- A failed read of a run's node statuses keeps the last good statuses of that
+  run instead of replacing them with an all-idle map, which blanked the badges
+  on a network blip. `nodeExecutionService.fetchMultipleNodeExecutionInfo`
+  rejects on a failed read; `getMultipleNodeExecutionInfo` still never rejects.
 
 ## [2.11.0] - 2026-10-07
 
