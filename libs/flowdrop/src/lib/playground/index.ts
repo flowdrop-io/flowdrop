@@ -228,29 +228,13 @@ export {
   interfaceFormSchema,
   collectInterfaceInputs,
   playgroundChatIssues,
-  interfaceFormEntriesFor,
-  playgroundInputModeFor,
-  findReplyPort,
   type InterfaceInputsResult,
   type PlaygroundInputMode,
   type PlaygroundChatIssue,
   type PlaygroundChatInputKey
 } from '../utils/workflowInterface.js';
 
-export {
-  resolvePlaygroundChat,
-  normalizePlaygroundChat,
-  emptyPlaygroundChat,
-  isPlaygroundChatSet,
-  isPlaygroundChatHalfSet,
-  playgroundBoundInputs,
-  withPlaygroundChat,
-  followInterfaceInputEdit,
-  rewritePlaygroundReplies,
-  hasKnownInterfaceTurns,
-  type InterfaceInputEdit,
-  type ResolvedPlaygroundChat
-} from '../utils/playgroundChat.js';
+export { resolvePlaygroundChat, type ResolvedPlaygroundChat } from '../utils/playgroundChat.js';
 
 export type {
   WorkflowPlayground,
