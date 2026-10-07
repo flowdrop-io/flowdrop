@@ -17,6 +17,8 @@
   import ConfigForm from '$lib/components/ConfigForm.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
+  import WorkflowPlaygroundSettings from '$lib/components/WorkflowPlaygroundSettings.svelte';
+  import { withPlaygroundChat, withoutInterfaceTurns } from '$lib/utils/playgroundChat.js';
   import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
   import AIChatPanel from '$lib/components/chat/AIChatPanel.svelte';
@@ -377,7 +379,14 @@
   // Inner tab within the workflow-settings surface — see Phase 3 of
   // `.claude/plans/workflow-interface.md`. Settings and the interface editor
   // are two tabs of one surface, not a field inside the settings form.
-  let workflowSettingsTab = $state<'settings' | 'interface'>('settings');
+  let workflowSettingsTab = $state<'settings' | 'interface' | 'playground'>('settings');
+  // The Playground tab exists only while the workflow carries Playground
+  // settings; a workflow loaded without them falls back to Settings.
+  $effect(() => {
+    if (workflowSettingsTab === 'playground' && fd.workflow.current?.playground === undefined) {
+      workflowSettingsTab = 'settings';
+    }
+  });
 
   // Which surface (`config` | `console` | `chat`) is focused in its host. A
   // single selector across hosts: each TabbedSurface highlights this id when it
@@ -392,7 +401,13 @@
   // Built-in workflow settings field names — consumer schemas must not reuse these.
   // 'interface' is reserved too: it names `Workflow.interface`'s own tab, not a
   // workflowSettingsSchema field, but a consumer schema could still collide.
-  const WORKFLOW_SETTINGS_RESERVED = new Set(['name', 'description', 'format', 'interface']);
+  const WORKFLOW_SETTINGS_RESERVED = new Set([
+    'name',
+    'description',
+    'format',
+    'interface',
+    'playground'
+  ]);
 
   // Registered formats this host offers — the mount-level `workflowFormats`
   // allowlist filters the registry (an unknown id filters to nothing rather
@@ -1304,6 +1319,32 @@
       dataTypes={fd.portCompatibility.getEnabledDataTypes()}
       checker={fd.portCompatibility}
       onChange={(next) => fd.workflow.batchUpdate({ interface: next })}
+      onOpenPlaygroundSettings={fd.workflow.current.playground !== undefined
+        ? () => (workflowSettingsTab = 'playground')
+        : undefined}
+    />
+  {/if}
+{/snippet}
+
+<!--
+  The workflow's Playground settings (its chat binding). Only for a backend
+  that sends them (`workflow.playground`, FlowDrop 2.7.0 on): an older one
+  would drop the key on save. Edits go through the workflow store, so they
+  mark the workflow dirty and are saved with it.
+-->
+{#snippet workflowPlaygroundEl()}
+  {#if fd.workflow.current}
+    <WorkflowPlaygroundSettings
+      workflow={fd.workflow.current}
+      onChange={(next) => fd.workflow.batchUpdate({ playground: next })}
+      onMoveTurns={(chat) => {
+        const current = fd.workflow.current;
+        if (!current) return;
+        fd.workflow.batchUpdate({
+          playground: withPlaygroundChat(current.playground, chat),
+          interface: withoutInterfaceTurns(current.interface)
+        });
+      }}
     />
   {/if}
 {/snippet}
@@ -1336,6 +1377,18 @@
       >
         {mergedMessages.navigation.workflowSettingsInterfaceTab}
       </button>
+      {#if fd.workflow.current?.playground !== undefined}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={workflowSettingsTab === 'playground'}
+          class="workflow-settings-tabs__tab"
+          class:workflow-settings-tabs__tab--active={workflowSettingsTab === 'playground'}
+          onclick={() => (workflowSettingsTab = 'playground')}
+        >
+          {mergedMessages.navigation.workflowSettingsPlaygroundTab}
+        </button>
+      {/if}
     </div>
     <div
       class="workflow-settings-tabs__panel"
@@ -1349,6 +1402,14 @@
     >
       {@render workflowInterfaceEl()}
     </div>
+    {#if fd.workflow.current?.playground !== undefined}
+      <div
+        class="workflow-settings-tabs__panel"
+        style:display={workflowSettingsTab === 'playground' ? 'block' : 'none'}
+      >
+        {@render workflowPlaygroundEl()}
+      </div>
+    {/if}
   </div>
 {/snippet}
 

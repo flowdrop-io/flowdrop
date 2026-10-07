@@ -57,6 +57,11 @@
      * without a chat turn). Empty or absent renders no form.
      */
     formEntries?: WorkflowInterfaceEntry[];
+    /**
+     * One friendly line above the form and composer, e.g. that the workflow
+     * has no chat until somebody sets it up. Absent renders nothing.
+     */
+    notice?: string;
     /** Current form values, keyed by entry id. */
     formValues?: Record<string, unknown>;
     /** Called with the complete form values on every change. */
@@ -89,6 +94,7 @@
     predefinedMessage,
     placeholder,
     formEntries = [],
+    notice,
     formValues = {},
     onFormChange,
     showSessionHeader = true,
@@ -284,6 +290,13 @@
     </header>
   {/if}
 
+  {#if notice}
+    <p class="control-panel__notice" role="note">
+      <Icon icon="mdi:information-outline" />
+      <span>{notice}</span>
+    </p>
+  {/if}
+
   {#if formEntries.length > 0}
     <InterfaceInputForm
       entries={formEntries}
@@ -315,6 +328,23 @@
     min-height: 0;
     background-color: var(--fd-background);
     border-top: 1px solid var(--fd-border);
+  }
+
+  .control-panel__notice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fd-space-xs);
+    margin: 0;
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    border-bottom: 1px solid var(--fd-border);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
+    line-height: 1.5;
+  }
+
+  .control-panel__notice :global(svg) {
+    flex: none;
+    margin-top: 0.15em;
   }
 
   .control-panel__header {

@@ -237,20 +237,35 @@
   });
 
   /**
-   * Make sure the playground knows the workflow's interface.
+   * Make sure the playground knows the workflow's interface and chat binding.
    *
-   * The mode (chat box, form, Run) is read from the interface's turn ports.
-   * A workflow passed in with an `interface` key is used as is; when it is
-   * missing or has no `interface` key, the workflow is loaded through the
-   * workflows API (`workflows.get`). Any failure leaves the playground in
-   * `legacy` mode, which is the behaviour it had before turn ports.
+   * The mode (chat box, form, Run) is read from the workflow's Playground
+   * settings, else from its interface's deprecated turn ports. A workflow
+   * passed in with both an `interface` and a `playground` key is used as is;
+   * when either is missing, the workflow is loaded through the workflows API
+   * (`workflows.get`) and the two keys are taken from there. Any failure
+   * leaves the playground in `legacy` mode, which is the behaviour it had
+   * before turn ports.
    */
   async function ensureWorkflowInterface(): Promise<void> {
-    if (workflow?.interface !== undefined || !fd.api.config) return;
+    if (
+      (workflow?.interface !== undefined && workflow?.playground !== undefined) ||
+      !fd.api.config
+    ) {
+      return;
+    }
     try {
       const loaded = await fd.api.client.loadWorkflow(workflowId);
-      if (loaded.interface === undefined) return;
-      fd.playground.setWorkflow(workflow ? { ...workflow, interface: loaded.interface } : loaded);
+      if (loaded.interface === undefined && loaded.playground === undefined) return;
+      fd.playground.setWorkflow(
+        workflow
+          ? {
+              ...workflow,
+              ...(loaded.interface !== undefined && { interface: loaded.interface }),
+              ...(loaded.playground !== undefined && { playground: loaded.playground })
+            }
+          : loaded
+      );
     } catch (err) {
       logger.debug('[Playground] Workflow interface unavailable, keeping legacy input:', err);
     }
@@ -924,6 +939,9 @@
             ? undefined
             : config.predefinedMessage}
           formEntries={fd.playground.interfaceFormEntries}
+          notice={fd.playground.chatBinding?.source === 'none'
+            ? messages().playground.chatNotSetUp
+            : undefined}
           formValues={fd.playground.formValues}
           onFormChange={(values) => fd.playground.setFormValues(values)}
           showSessionHeader={config.showSessionHeader ?? true}

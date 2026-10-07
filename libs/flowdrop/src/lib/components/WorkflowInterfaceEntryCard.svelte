@@ -28,21 +28,14 @@
   import PortShapeSymbol from '$lib/components/ports/PortShapeSymbol.svelte';
   import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
   import { m } from '$lib/messages/index.js';
-  import {
-    DEFAULT_HISTORY_TURN_LIMIT,
-    type PortDataTypeConfig,
-    type WorkflowInterfaceEntry
-  } from '$lib/types/index.js';
+  import type { PortDataTypeConfig, WorkflowInterfaceEntry } from '$lib/types/index.js';
   import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
   import {
     bindablePortKey,
     describeInterfaceEntryStatus,
     historyLimitOf,
-    historyLimitPatch,
     isKnownTurn,
     pullEntryFieldsFromPort,
-    turnPatch,
-    turnsFor,
     type RankedBindablePort,
     type InterfaceIssue,
     type ResolvedInterfaceEntry
@@ -64,8 +57,14 @@
     alreadyConnected?: boolean;
     /** Label of the node feeding that competing edge, when there is one. */
     conflictingSource?: string;
-    /** Input side only: the id of another input that already has this entry's turn. */
+    /** Input side only: the id of another input that already has this entry's (deprecated) turn. */
     turnTakenBy?: string;
+    /**
+     * Opens the workflow's Playground settings, where the chat is set up now.
+     * Linked from the deprecated `turn` notice; omit when the host has no
+     * Playground settings (the notice then says where without a link).
+     */
+    onOpenPlaygroundSettings?: () => void;
     isFirst: boolean;
     isLast: boolean;
     onPatch: (patch: Partial<WorkflowInterfaceEntry>) => void;
@@ -84,6 +83,7 @@
     alreadyConnected = false,
     conflictingSource,
     turnTakenBy,
+    onOpenPlaygroundSettings,
     isFirst,
     isLast,
     onPatch,
@@ -118,39 +118,14 @@
     return options;
   }
 
-  /**
-   * Chat turn options for this direction. A stored value outside them — one
-   * from a newer server, or a value of the other direction — is listed too,
-   * so the select shows what is stored and never silently rewrites it.
-   */
-  const turnOptions = $derived.by(() => {
-    const options: Array<{ value: string; label: string }> = turnsFor(
-      isInput ? 'input' : 'output'
-    ).map((value) => ({ value, label: m().workflowInterface.turns[value] }));
-    const current = entry.turn;
-    if (current !== undefined && !options.some((option) => option.value === current)) {
-      options.push({
-        value: current,
-        label: isKnownTurn(current)
-          ? m().workflowInterface.turns[current]
-          : m().workflowInterface.turnUnknown({ value: current })
-      });
-    }
-    return options;
-  });
-
-  /** The current turn's one-line description, when it is a known value. */
-  const turnDescription = $derived(
-    entry.turn !== undefined && isKnownTurn(entry.turn)
-      ? m().workflowInterface.turnDescriptions[entry.turn]
-      : undefined
+  /** The entry's deprecated `turn`, as a label. */
+  const turnLabel = $derived(
+    entry.turn === undefined
+      ? undefined
+      : isKnownTurn(entry.turn)
+        ? m().workflowInterface.turns[entry.turn]
+        : entry.turn
   );
-
-  function setTurn(value: string): void {
-    // Only values the select offers reach here: the direction's vocabulary,
-    // '' for none, or the stored value itself (a no-op patch).
-    onPatch(turnPatch(entry, value));
-  }
 
   /** Whether the binding picker is unfolded under the "Bound port" control. */
   let pickerOpen = $state(false);
@@ -358,52 +333,35 @@
       <summary>
         <Icon icon="heroicons:chevron-right" />
         {m().workflowInterface.moreOptions}
-        {#if entry.turn !== undefined}
-          <span class="wf-interface__turn-chip">
-            {isKnownTurn(entry.turn) ? m().workflowInterface.turns[entry.turn] : entry.turn}
+        {#if turnLabel !== undefined}
+          <span class="wf-interface__turn-chip wf-interface__turn-chip--deprecated">
+            {turnLabel}
           </span>
         {/if}
       </summary>
       <div class="wf-interface__more-body">
-        <div class="wf-interface__row">
-          <label class="wf-interface__field">
-            <span class="wf-interface__label">{m().workflowInterface.turnLabel}</span>
-            <Select
-              size="sm"
-              invalid={turnTakenBy !== undefined}
-              value={entry.turn ?? ''}
-              onchange={(e) => setTurn(e.currentTarget.value)}
-            >
-              <option value="">{m().workflowInterface.turnNone}</option>
-              {#each turnOptions as option (option.value)}
-                <option value={option.value}>{option.label}</option>
-              {/each}
-            </Select>
-            {#if turnTakenBy !== undefined}
-              <span class="wf-interface__inline wf-interface__inline--warning">
+        {#if turnLabel !== undefined}
+          <div class="wf-interface__turn-deprecated" role="note">
+            <span>
+              {m().workflowInterface.turnDeprecated({
+                turn: turnLabel,
+                limit: entry.turn === 'history' ? historyLimitOf(entry) : undefined
+              })}
+              {#if turnTakenBy !== undefined}
                 {m().workflowInterface.turnTakenInline({ id: turnTakenBy })}
-              </span>
-            {:else if turnDescription}
-              <span class="wf-interface__hint">{turnDescription}</span>
+              {/if}
+            </span>
+            {#if onOpenPlaygroundSettings}
+              <button
+                type="button"
+                class="wf-interface__quickfix"
+                onclick={onOpenPlaygroundSettings}
+              >
+                {m().workflowInterface.turnOpenPlayground}
+              </button>
             {/if}
-          </label>
-          {#if entry.turn === 'history'}
-            <label class="wf-interface__field">
-              <span class="wf-interface__label">{m().workflowInterface.historyLimitLabel}</span>
-              <Input
-                size="sm"
-                type="number"
-                min="1"
-                step="1"
-                value={historyLimitOf(entry) ?? ''}
-                placeholder={m().workflowInterface.historyLimitPlaceholder({
-                  limit: DEFAULT_HISTORY_TURN_LIMIT
-                })}
-                onchange={(e) => onPatch(historyLimitPatch(entry, e.currentTarget.value))}
-              />
-            </label>
-          {/if}
-        </div>
+          </div>
+        {/if}
 
         {#if boundTarget}
           <div class="wf-interface__pull-row">
@@ -845,6 +803,23 @@
     font-size: var(--fd-text-2xs);
     font-weight: 600;
     line-height: 1.5;
+  }
+
+  /* A deprecated `turn` reads as a warning, not as a choice. */
+  .wf-interface__turn-chip--deprecated {
+    border-color: color-mix(in srgb, var(--fd-warning) 45%, var(--fd-border));
+    color: var(--fd-warning);
+    text-decoration: line-through;
+  }
+
+  .wf-interface__turn-deprecated {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--fd-space-xs);
+    font-size: var(--fd-text-xs);
+    line-height: 1.4;
+    color: var(--fd-warning);
   }
 
   .wf-interface__inline--warning {

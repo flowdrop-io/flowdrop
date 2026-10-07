@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Playground settings: a workflow's chat binding now lives in its own
+  `playground` key instead of `turn` on interface entries. The binding says
+  which interface input the chat message goes to, which input receives recent
+  messages (and how many), which inputs receive the session and message IDs,
+  which node output ports print as replies, and whether sub-workflows print
+  their own replies. New types `WorkflowPlayground`, `PlaygroundChatBinding`,
+  `PlaygroundReplyPort` and `PlaygroundChatSource` (from `core`), and the
+  helpers `resolvePlaygroundChat`, `normalizePlaygroundChat`,
+  `playgroundChatIssues` and friends (from `playground`). A server from FlowDrop
+  2.7.0 on sends `playground: {chat, resolved, source}` with every workflow and
+  saves `playground.chat` with it. `chat: null` means the workflow has no chat
+  until somebody sets it up.
+- The workflow settings surface gains a **Playground** tab beside Settings and
+  Interface. It is shown only when the workflow carries Playground settings, so
+  older backends never see it. It has Message goes to, History goes to (with a
+  message count), Session and message IDs, Print as replies, and the
+  sub-workflow switch. It also has a _Not set up_ state, a warning when a
+  message input is bound but no reply is, and inline errors for an input that
+  is no longer on the interface or a reply on a node or port that is gone. A
+  workflow that still chats through interface `turn` marks gets a **Move them
+  here** button: it writes the binding they declare and removes the marks in
+  one undoable step. Edits mark the workflow dirty and are saved with it.
+- The Playground shows one line, _No chat yet…_, when the workflow's settings
+  bind no chat. The form or the Run button still work.
+
+### Changed
+
+- The Playground picks its input mode from the workflow's Playground settings,
+  then from deprecated interface `turn` marks. `legacy` (guess from the nodes)
+  is now used only for a workflow without a `playground` key, that is a server
+  before FlowDrop 2.7.0 whose interface declares no `turn`. With the key
+  present, a workflow that binds no message input gets a form or Run, never
+  `legacy`. `resolvePlaygroundInputMode` and `interfaceFormEntries` take the
+  settings as an optional second argument. Existing calls behave as before.
+- Save and export send `playground: {chat}` when the workflow has a
+  `playground` key, and send nothing for it otherwise.
+- `fd.workflow.batchUpdate` accepts `playground`, keyed on presence like
+  `interface`.
+
+### Deprecated
+
+- `WorkflowInterfaceEntry.turn`, `WorkflowInterfaceTurn`,
+  `WORKFLOW_INTERFACE_INPUT_TURNS` and `WORKFLOW_INTERFACE_OUTPUT_TURNS`. They
+  will be removed in 3.0. A stored `turn` is still read, for a workflow without
+  Playground settings, and still round-trips. The interface editor no longer
+  offers the **Chat turn** selector. An entry that carries a `turn` shows it
+  as a struck-through chip with a note and an **Open Playground settings**
+  link. `interface-turn-duplicate` and `interface-turn-direction` are now
+  worded as deprecation warnings. The selector's message keys (`turnLabel`,
+  `turnNone`, `turnDescriptions`, `turnUnknown`, `historyLimitLabel`,
+  `historyLimitPlaceholder`) are no longer shown. They stay until 3.0 so
+  message overrides keep type-checking.
+
 ## [2.10.1] - 2026-10-07
 
 ### Fixed

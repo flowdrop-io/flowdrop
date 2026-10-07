@@ -55,6 +55,11 @@
     workflow: Workflow;
     onChange: (next: WorkflowInterface | undefined) => void;
     /**
+     * Opens the workflow's Playground settings. Entries that still carry the
+     * deprecated chat `turn` link there; omit when the host has none.
+     */
+    onOpenPlaygroundSettings?: () => void;
+    /**
      * The data-type vocabulary offered by the dataType picker — the host's
      * live `PortConfig.dataTypes` (pass `portCompatibility.getEnabledDataTypes()`).
      * The wire format stays an open string; this only constrains *authoring*.
@@ -72,6 +77,7 @@
   const {
     workflow,
     onChange,
+    onOpenPlaygroundSettings,
     dataTypes = DEFAULT_PORT_CONFIG.dataTypes.filter((dt) => dt.enabled !== false),
     checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG)
   }: Props = $props();
@@ -366,6 +372,7 @@
               turnTakenBy={section.key === 'inputs'
                 ? turnTakenBy(entriesFor('inputs'), entry)
                 : undefined}
+              {onOpenPlaygroundSettings}
               isFirst={index === 0}
               isLast={index === list.length - 1}
               onPatch={(patch: Partial<WorkflowInterfaceEntry>) =>

@@ -13,6 +13,11 @@
                            "Add caption"); without it the type list has none
     - ?contextMenu=extra -> pass a `contextMenu.items` that appends a
       "Test extra entry" item; running it sets window.__contextMenuExtraRan
+    - ?playground=none   -> the workflow carries Playground settings with no
+                           chat bound (a FlowDrop 2.7.0 backend), so the
+                           settings surface shows the Playground tab
+    - ?playground=turn   -> as `none`, plus an interface input that still has
+                           the deprecated `turn: message`
     - ?settingsDefaults=light|dark|auto -> seed host settings defaults
       before mounting, mirroring mountFlowDropApp({ settings }) — used by
       the settings persistence tests
@@ -519,11 +524,33 @@
   let perfCount = $derived(
     Math.min(5000, Math.max(1, Number($page.url.searchParams.get('count')) || 500))
   );
-  let selectedWorkflow = $derived(
+  let baseWorkflow = $derived(
     workflowVariant === 'perf'
       ? createChainedTriggerWorkflow(perfCount, 'perf-chain')
       : (workflows[workflowVariant] ?? simpleWorkflow)
   );
+  // --- Playground settings, as a FlowDrop 2.7.0 backend sends them ---
+  let playgroundVariant = $derived($page.url.searchParams.get('playground'));
+  let selectedWorkflow = $derived.by((): Workflow => {
+    if (playgroundVariant !== 'none' && playgroundVariant !== 'turn') return baseWorkflow;
+    const withSettings: Workflow = {
+      ...baseWorkflow,
+      playground: { chat: null, source: 'none' }
+    };
+    if (playgroundVariant === 'turn') {
+      withSettings.interface = {
+        inputs: [
+          {
+            id: 'message',
+            dataType: 'string',
+            bindings: [{ nodeId: 'node-output', portId: 'value' }],
+            turn: 'message'
+          }
+        ]
+      };
+    }
+    return withSettings;
+  });
 </script>
 
 <svelte:head>

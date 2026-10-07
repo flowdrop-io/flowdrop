@@ -228,6 +228,7 @@ export const defaultMessages = {
     workflowSettingsPanelTitle: 'Workflow Settings',
     workflowSettingsPanelSubtitle: 'Settings',
     workflowSettingsInterfaceTab: 'Interface',
+    workflowSettingsPlaygroundTab: 'Playground',
     nodeConfigDescription: 'Node configuration',
     closeSettings: 'Close settings',
     closeConfigModal: 'Close configuration modal',
@@ -329,6 +330,9 @@ export const defaultMessages = {
       placeholder: 'Type your message...',
       predefinedRun: 'Run workflow'
     },
+    // Shown when the workflow's Playground settings bind no chat (and no
+    // deprecated interface `turn` does): the form or Run still work.
+    chatNotSetUp: 'No chat yet. Pick the input the message goes to in Playground settings.',
     // The form a workflow's interface inputs render as (inputs without a chat
     // turn; the session fills the others).
     inputForm: {
@@ -588,7 +592,14 @@ export const defaultMessages = {
     moveUp: ({ id }: { id: string }) => `Move "${id}" up`,
     moveDown: ({ id }: { id: string }) => `Move "${id}" down`,
     metaDisclosure: 'Server metadata (read-only)',
-    // The Chat turn selector: what a port is for in a chat turn (`turn`).
+    // A port's chat `turn`: deprecated since 2.11.0, read-only. The chat is set
+    // up in the Playground settings tab. `turnLabel`, `turnNone`,
+    // `turnDescriptions`, `turnUnknown`, `historyLimitLabel` and
+    // `historyLimitPlaceholder` belonged to the removed selector and are no
+    // longer shown; they stay until 3.0 so overrides keep type-checking.
+    turnDeprecated: ({ turn, limit }: { turn: string; limit?: number }) =>
+      `Chat turn "${turn}"${limit !== undefined ? ` (${limit} messages)` : ''} is deprecated: the chat is set up in the Playground settings now.`,
+    turnOpenPlayground: 'Open Playground settings',
     turnLabel: 'Chat turn',
     turnNone: 'None',
     turns: {
@@ -607,7 +618,7 @@ export const defaultMessages = {
     },
     turnUnknown: ({ value }: { value: string }) => `${value} (not known to this editor)`,
     turnTakenInline: ({ id }: { id: string }) =>
-      `Input "${id}" already has this chat turn. A workflow takes one input per turn value.`,
+      `Input "${id}" already has this chat turn, so this one does not count.`,
     historyLimitLabel: 'Messages to include',
     historyLimitPlaceholder: ({ limit }: { limit: number }) => `${limit} (default)`,
     // The inline composer that opens from "Add input" / "Add output".
@@ -634,6 +645,33 @@ export const defaultMessages = {
     composerRequired: 'Required',
     composerBack: 'Back',
     composerCancel: 'Cancel'
+  },
+
+  // The workflow's Playground settings tab: its chat binding (`workflow.playground`).
+  playgroundSettings: {
+    notSetUpTitle: 'Not set up',
+    notSetUp:
+      'No chat until someone sets it up. The Playground shows a form built from the interface inputs. To chat with this workflow, pick the input the message goes to and the results that print as replies.',
+    turnSource:
+      'This workflow chats through "Chat turn" marks on its interface, which are deprecated. Move them here to keep the chat as it is.',
+    moveTurns: 'Move them here',
+    noInputs: 'The workflow interface has no inputs yet. Add one on the Interface tab first.',
+    messageLabel: 'Message goes to',
+    messageNone: 'Nothing (form only)',
+    messageHint: 'The input that receives what the person types in the chat.',
+    historyLabel: 'History goes to',
+    historyLimitLabel: 'Messages',
+    inputNone: 'Nothing',
+    inputMissing: ({ id }: { id: string }) => `${id} (not on the interface)`,
+    idsDisclosure: 'Session and message IDs',
+    sessionIdLabel: 'Session ID goes to',
+    messageIdLabel: 'Message ID goes to',
+    repliesLabel: 'Print as replies',
+    repliesNone: 'No node has an exposed output port yet.',
+    subWorkflowReplies: 'Also print what sub-workflows reply',
+    halfSet:
+      'Nothing will print. The run completes and the chat stays silent. Pick at least one reply.',
+    savedWith: 'Set for this workflow and saved with it when you press Save.'
   },
 
   // The confirm dialog the WebMCP adapter shows before a browser agent's change runs.
