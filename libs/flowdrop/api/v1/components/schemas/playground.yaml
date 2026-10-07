@@ -395,11 +395,12 @@ PlaygroundMessageRequest:
   description: |
     Request body for a turn: the person's message, named inputs, or both.
 
-    `content` fills the input port whose interface entry has `turn: message`.
-    A workflow that declares turn ports but no `message` port is form-only:
-    it runs on `inputs` alone and the server refuses `content` with a 400
-    whose message names the fix. A workflow that declares no turn port at all
-    keeps the server's older behaviour (deprecated) and still needs `content`.
+    `content` fills the interface input named by the workflow's chat binding
+    (`playground.resolved.message`). A workflow whose binding has no message
+    input is form-only: it runs on `inputs` alone and the server refuses
+    `content` with a 400 whose message names the fix. A workflow with no
+    binding at all keeps the server's older behaviour (deprecated) and still
+    needs `content`.
   properties:
     content:
       type: string

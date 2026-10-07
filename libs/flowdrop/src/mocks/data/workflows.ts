@@ -729,6 +729,14 @@ export const demoAIContentWorkflow: Workflow = {
         examples: [{ status: 'published' }, { bundle: 'article', limit: 10 }],
         bindings: [{ nodeId: 'content_loader.1', portId: 'filters' }],
         meta: { unknownConsumerKey: { foo: 'bar' } }
+      },
+      {
+        id: 'question',
+        name: 'Question',
+        description: 'What the person asks the agent in a chat turn.',
+        dataType: 'string',
+        required: false,
+        bindings: [{ nodeId: 'simple_agent.1', portId: 'message' }]
       }
     ],
     outputs: [
@@ -747,6 +755,18 @@ export const demoAIContentWorkflow: Workflow = {
         bindings: []
       }
     ]
+  },
+  // Stored Playground settings: the chat binding. `resolved` and `source` are
+  // computed by the mock handlers on every read, as the server does.
+  playground: {
+    chat: {
+      message: 'question',
+      history: null,
+      session_id: null,
+      message_id: null,
+      replies: [{ node_id: 'simple_agent.1', port: 'response' }],
+      sub_workflow_replies: false
+    }
   }
 };
 

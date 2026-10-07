@@ -51,6 +51,16 @@
           "description": "Public contract for callers. Absent = the workflow declares no interface."
         }
       ]
+    },
+    "playground": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/WorkflowPlayground"
+        },
+        {
+          "description": "Playground settings (the chat binding). Absent = the server predates them (before FlowDrop 2.7.0)."
+        }
+      ]
     }
   },
   "required": [
@@ -794,6 +804,99 @@
         "const"
       ]
     },
+    "PlaygroundChatBinding": {
+      "type": "object",
+      "description": "A workflow's chat binding: which interface inputs a chat turn fills and which\nnode output ports print as replies. Inputs are named by interface entry id,\nreplies by node id and output port id.\n",
+      "properties": {
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Interface input that receives the person's message."
+        },
+        "history": {
+          "anyOf": [
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/PlaygroundChatHistory"
+                }
+              ],
+              "description": "Interface input that receives recent messages."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Interface input that receives the session's id."
+        },
+        "message_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Interface input that receives the id of the person's message."
+        },
+        "replies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PlaygroundReplyPort"
+          },
+          "description": "Node output ports whose values print as assistant messages."
+        },
+        "sub_workflow_replies": {
+          "type": "boolean",
+          "description": "Whether replies from sub-workflows print too."
+        }
+      },
+      "required": [
+        "replies"
+      ]
+    },
+    "PlaygroundChatHistory": {
+      "type": "object",
+      "description": "The interface input that receives recent messages.",
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Interface input entry id."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How many past user and assistant messages fill the input. The server enforces its own maximum."
+        }
+      },
+      "required": [
+        "input",
+        "limit"
+      ]
+    },
+    "PlaygroundReplyPort": {
+      "type": "object",
+      "description": "A node output port whose value prints as an assistant reply.",
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "description": "Id of the node."
+        },
+        "port": {
+          "type": "string",
+          "description": "Id of the node's output port."
+        }
+      },
+      "required": [
+        "node_id",
+        "port"
+      ]
+    },
     "PortBinding": {
       "type": "object",
       "description": "A resolved pointer to one inner node port, used by `WorkflowInterfaceEntry.bindings`.\n",
@@ -1171,7 +1274,8 @@
               "$ref": "#/$defs/WorkflowInterfaceTurn"
             },
             {
-              "description": "What this port is for in a chat turn. Absent means the port plays no part\nin a turn. Validated by the server against its vocabulary.\n"
+              "deprecated": true,
+              "description": "**Deprecated** since 2.11.0, removed in 3.0: the chat binding now lives in\nthe workflow's `playground` settings. Still accepted and round-tripped; a\nworkflow without stored Playground settings falls back to it.\n\nWhat this port is for in a chat turn. Absent means the port plays no part\nin a turn. Validated by the server against its vocabulary.\n"
             }
           ]
         }
@@ -1183,6 +1287,7 @@
       ]
     },
     "WorkflowInterfaceTurn": {
+      "deprecated": true,
       "type": "string",
       "enum": [
         "message",
@@ -1191,7 +1296,7 @@
         "message_id",
         "reply"
       ],
-      "description": "The chat-turn vocabulary of an interface port.\n\nInputs — at most one entry per value:\n- `message` — the person's message (the turn's content), a string\n- `history` — past user and assistant messages, bounded by `meta.limit`\n  (default 10)\n- `session_id` — the session's id\n- `message_id` — the id of the person's message\n\nOutputs — any number:\n- `reply` — each value becomes one assistant message\n"
+      "description": "**Deprecated** since 2.11.0, removed in 3.0 (see `WorkflowPlayground`).\n\nThe chat-turn vocabulary of an interface port.\n\nInputs — at most one entry per value:\n- `message` — the person's message (the turn's content), a string\n- `history` — past user and assistant messages, bounded by `meta.limit`\n  (default 10)\n- `session_id` — the session's id\n- `message_id` — the id of the person's message\n\nOutputs — any number:\n- `reply` — each value becomes one assistant message\n"
     },
     "WorkflowMetadata": {
       "type": "object",
@@ -1309,6 +1414,39 @@
         "position",
         "data"
       ]
+    },
+    "WorkflowPlayground": {
+      "type": "object",
+      "description": "Playground settings of a workflow (FlowDrop 2.7.0 and later). Sent with every\nworkflow read. On save the client sends only `{\"chat\": ...}`: `chat: null`\nclears the stored settings, and a request without the `playground` key\nleaves them alone. The server answers 422 with problems for an invalid\nbinding.\n",
+      "properties": {
+        "chat": {
+          "anyOf": [
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/PlaygroundChatBinding"
+                }
+              ],
+              "description": "The stored chat binding; null when none is stored."
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolved": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/PlaygroundChatBinding"
+            }
+          ],
+          "description": "The binding in effect (never null); read-only, ignored on save."
+        },
+        "source": {
+          "type": "string",
+          "description": "Where the binding in effect comes from: `settings`, `interface_turn`\n(the deprecated interface `turn` annotations) or `none`. Clients should\ntolerate other values. Read-only, ignored on save.\n"
+        }
+      }
     }
   }
 }

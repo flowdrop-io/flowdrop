@@ -82,6 +82,8 @@ function convertSchema(schema, currentFile) {
   for (const [key, value] of Object.entries(schema)) {
     // Strip OpenAPI-specific properties
     if (key === 'example' || key === 'examples') continue;
+    // `nullable` is OpenAPI 3.0 only; it is re-expressed below
+    if (key === 'nullable') continue;
 
     if (key === '$ref') {
       const { file, name } = parseRef(value, currentFile);
@@ -103,6 +105,15 @@ function convertSchema(schema, currentFile) {
       result.items = convertSchema(value, currentFile);
     } else {
       result[key] = value;
+    }
+  }
+
+  // OpenAPI 3.0 `nullable: true` -> JSON Schema: accept null as well.
+  if (schema.nullable === true) {
+    if (typeof result.type === 'string') {
+      result.type = [result.type, 'null'];
+    } else {
+      return { anyOf: [result, { type: 'null' }] };
     }
   }
 

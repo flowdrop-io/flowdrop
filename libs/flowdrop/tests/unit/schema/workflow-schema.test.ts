@@ -164,6 +164,54 @@ describe('Workflow JSON Schema', () => {
     });
   });
 
+  describe('playground settings', () => {
+    const nullable = (def: { anyOf?: Array<{ type?: string }> }) =>
+      def.anyOf?.some((branch) => branch.type === 'null') === true;
+
+    it('should expose an optional top-level playground property', () => {
+      const ref = schema.properties.playground.allOf[0].$ref;
+      expect(ref).toBe('#/$defs/WorkflowPlayground');
+      expect(schema.required).not.toContain('playground');
+    });
+
+    it('WorkflowPlayground should take a nullable chat, a resolved binding and a free-form source', () => {
+      const props = schema.$defs.WorkflowPlayground.properties;
+      expect(nullable(props.chat)).toBe(true);
+      expect(JSON.stringify(props.chat)).toContain('#/$defs/PlaygroundChatBinding');
+      expect(props.resolved.allOf[0].$ref).toBe('#/$defs/PlaygroundChatBinding');
+      // plain string, not an enum: unknown values must stay valid
+      expect(props.source.type).toBe('string');
+      expect(props.source.enum).toBeUndefined();
+    });
+
+    it('PlaygroundChatBinding should list replies as an array of reply ports', () => {
+      const props = schema.$defs.PlaygroundChatBinding.properties;
+      expect(props.replies.type).toBe('array');
+      expect(props.replies.items.$ref).toBe('#/$defs/PlaygroundReplyPort');
+      expect(props.sub_workflow_replies.type).toBe('boolean');
+      expect(props.message.type).toEqual(['string', 'null']);
+      expect(nullable(props.history)).toBe(true);
+    });
+
+    it('PlaygroundChatHistory should require an input and a limit of at least 1', () => {
+      const def = schema.$defs.PlaygroundChatHistory;
+      expect(def.required).toEqual(expect.arrayContaining(['input', 'limit']));
+      expect(def.properties.limit.type).toBe('integer');
+      expect(def.properties.limit.minimum).toBe(1);
+    });
+
+    it('PlaygroundReplyPort should require node_id and port', () => {
+      expect(schema.$defs.PlaygroundReplyPort.required).toEqual(
+        expect.arrayContaining(['node_id', 'port'])
+      );
+    });
+
+    it('should mark the interface turn as deprecated', () => {
+      expect(schema.$defs.WorkflowInterfaceTurn.deprecated).toBe(true);
+      expect(schema.$defs.WorkflowInterfaceEntry.properties.turn.allOf[1].deprecated).toBe(true);
+    });
+  });
+
   describe('no OpenAPI-only properties', () => {
     function findExamples(obj: unknown, path = '', inProperties = false): string[] {
       const found: string[] = [];

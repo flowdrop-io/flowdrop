@@ -4307,7 +4307,12 @@ components:
             session fills the port with. The interface editor writes that one key.
         turn:
           $ref: '#/components/schemas/WorkflowInterfaceTurn'
+          deprecated: true
           description: |
+            **Deprecated** since 2.11.0, removed in 3.0: the chat binding now lives in
+            the workflow's `playground` settings. Still accepted and round-tripped; a
+            workflow without stored Playground settings falls back to it.
+
             What this port is for in a chat turn. Absent means the port plays no part
             in a turn. Validated by the server against its vocabulary.
       required:
@@ -4367,6 +4372,9 @@ components:
         interface:
           $ref: '#/components/schemas/WorkflowInterface'
           description: Public contract for callers. Absent = the workflow declares no interface.
+        playground:
+          $ref: '#/components/schemas/WorkflowPlayground'
+          description: Playground settings (the chat binding). Absent = the server predates them (before FlowDrop 2.7.0).
       required:
         - id
         - name
@@ -4394,6 +4402,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WorkflowEdge'
+        playground:
+          $ref: '#/components/schemas/WorkflowPlayground'
+          description: 'Playground settings. Send only `chat`: null clears the stored settings, and omitting the key leaves them alone.'
         tags:
           type: array
           items:
@@ -4422,6 +4433,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WorkflowEdge'
+        playground:
+          $ref: '#/components/schemas/WorkflowPlayground'
+          description: 'Playground settings. Send only `chat`: null clears the stored settings, and omitting the key leaves them alone.'
         metadata:
           type: object
           properties:
@@ -4864,11 +4878,12 @@ components:
       description: |
         Request body for a turn: the person's message, named inputs, or both.
 
-        `content` fills the input port whose interface entry has `turn: message`.
-        A workflow that declares turn ports but no `message` port is form-only:
-        it runs on `inputs` alone and the server refuses `content` with a 400
-        whose message names the fix. A workflow that declares no turn port at all
-        keeps the server's older behaviour (deprecated) and still needs `content`.
+        `content` fills the interface input named by the workflow's chat binding
+        (`playground.resolved.message`). A workflow whose binding has no message
+        input is form-only: it runs on `inputs` alone and the server refuses
+        `content` with a 400 whose message names the fix. A workflow with no
+        binding at all keeps the server's older behaviour (deprecated) and still
+        needs `content`.
       properties:
         content:
           type: string
@@ -6548,6 +6563,7 @@ components:
                 type: string
                 label: Country
     WorkflowInterfaceTurn:
+      deprecated: true
       type: string
       enum:
         - message
@@ -6556,6 +6572,8 @@ components:
         - message_id
         - reply
       description: |
+        **Deprecated** since 2.11.0, removed in 3.0 (see `WorkflowPlayground`).
+
         The chat-turn vocabulary of an interface port.
 
         Inputs — at most one entry per value:
@@ -6567,6 +6585,94 @@ components:
 
         Outputs — any number:
         - `reply` — each value becomes one assistant message
+    PlaygroundChatHistory:
+      type: object
+      description: The interface input that receives recent messages.
+      properties:
+        input:
+          type: string
+          description: Interface input entry id.
+        limit:
+          type: integer
+          minimum: 1
+          description: How many past user and assistant messages fill the input. The server enforces its own maximum.
+          example: 10
+      required:
+        - input
+        - limit
+    PlaygroundReplyPort:
+      type: object
+      description: A node output port whose value prints as an assistant reply.
+      properties:
+        node_id:
+          type: string
+          description: Id of the node.
+          example: chat_output.2
+        port:
+          type: string
+          description: Id of the node's output port.
+          example: message
+      required:
+        - node_id
+        - port
+    PlaygroundChatBinding:
+      type: object
+      description: |
+        A workflow's chat binding: which interface inputs a chat turn fills and which
+        node output ports print as replies. Inputs are named by interface entry id,
+        replies by node id and output port id.
+      properties:
+        message:
+          type: string
+          nullable: true
+          description: Interface input that receives the person's message.
+        history:
+          allOf:
+            - $ref: '#/components/schemas/PlaygroundChatHistory'
+          nullable: true
+          description: Interface input that receives recent messages.
+        session_id:
+          type: string
+          nullable: true
+          description: Interface input that receives the session's id.
+        message_id:
+          type: string
+          nullable: true
+          description: Interface input that receives the id of the person's message.
+        replies:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlaygroundReplyPort'
+          description: Node output ports whose values print as assistant messages.
+        sub_workflow_replies:
+          type: boolean
+          description: Whether replies from sub-workflows print too.
+      required:
+        - replies
+    WorkflowPlayground:
+      type: object
+      description: |
+        Playground settings of a workflow (FlowDrop 2.7.0 and later). Sent with every
+        workflow read. On save the client sends only `{"chat": ...}`: `chat: null`
+        clears the stored settings, and a request without the `playground` key
+        leaves them alone. The server answers 422 with problems for an invalid
+        binding.
+      properties:
+        chat:
+          allOf:
+            - $ref: '#/components/schemas/PlaygroundChatBinding'
+          nullable: true
+          description: The stored chat binding; null when none is stored.
+        resolved:
+          allOf:
+            - $ref: '#/components/schemas/PlaygroundChatBinding'
+          description: The binding in effect (never null); read-only, ignored on save.
+        source:
+          type: string
+          description: |
+            Where the binding in effect comes from: `settings`, `interface_turn`
+            (the deprecated interface `turn` annotations) or `none`. Clients should
+            tolerate other values. Read-only, ignored on save.
     KanbanColumnDef:
       type: object
       properties:

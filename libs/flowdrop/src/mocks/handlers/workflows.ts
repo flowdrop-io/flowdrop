@@ -11,10 +11,66 @@ import {
   updateWorkflow,
   deleteWorkflow
 } from '../data/index.js';
-import type { Workflow, WorkflowResponse, WorkflowsResponse } from '../../lib/types/index.js';
+import type {
+  PlaygroundChatBinding,
+  Workflow,
+  WorkflowResponse,
+  WorkflowsResponse
+} from '../../lib/types/index.js';
+import { normalizePlaygroundChat, resolvePlaygroundChat } from '../../lib/utils/playgroundChat.js';
 
 /** Base API path for flowdrop endpoints */
 const API_BASE = '/api/flowdrop';
+
+/**
+ * The workflow as the server sends it: with a `playground` key whose `resolved`
+ * binding and `source` are computed from the stored `chat` and the interface.
+ *
+ * Only for mock workflows that carry a `playground` key (they stand for a
+ * FlowDrop 2.7.0 backend); the others are sent as they are, so the demo
+ * Playground keeps its pre-settings (`legacy`) behaviour for them.
+ */
+export function withPlaygroundView(workflow: Workflow): Workflow {
+  if (workflow.playground === undefined) return workflow;
+  const chat = workflow.playground.chat ?? null;
+  const stored: Workflow = { ...workflow, playground: { chat } };
+  const resolved = resolvePlaygroundChat(stored);
+  return {
+    ...workflow,
+    playground: {
+      chat,
+      resolved: resolved?.binding,
+      source: resolved?.source ?? 'none'
+    }
+  };
+}
+
+/**
+ * Reads `playground.chat` from a save request. `undefined` = the key is absent
+ * (leave the stored settings alone), `null` = clear, else the normalised binding.
+ */
+function chatFromSaveBody(body: Record<string, unknown>): PlaygroundChatBinding | null | undefined {
+  const playground = body.playground;
+  if (typeof playground !== 'object' || playground === null || !('chat' in playground)) {
+    return undefined;
+  }
+  const chat = (playground as { chat: unknown }).chat;
+  return chat === null || chat === undefined ? null : normalizePlaygroundChat(chat);
+}
+
+/** Names in the binding that the workflow's interface does not declare. */
+function chatProblems(chat: PlaygroundChatBinding, workflow: Workflow): string[] {
+  const inputIds = new Set((workflow.interface?.inputs ?? []).map((entry) => entry.id));
+  const named: [string, string | null][] = [
+    ['message', chat.message],
+    ['history', chat.history?.input ?? null],
+    ['session_id', chat.session_id],
+    ['message_id', chat.message_id]
+  ];
+  return named
+    .filter(([, id]) => id !== null && !inputIds.has(id))
+    .map(([field, id]) => `${field}: the workflow has no interface input "${id}"`);
+}
 
 /**
  * GET /api/flowdrop/workflows
@@ -134,9 +190,15 @@ export const createWorkflowHandler = http.post(`${API_BASE}/workflows`, async ({
       tags: body.tags as string[] | undefined
     });
 
+    const chat = chatFromSaveBody(body);
+    const created =
+      chat !== undefined
+        ? (updateWorkflow(workflow.id, { playground: { chat } }) ?? workflow)
+        : workflow;
+
     const response: WorkflowResponse = {
       success: true,
-      data: workflow,
+      data: withPlaygroundView(created),
       message: 'Workflow created successfully'
     };
 
@@ -188,7 +250,7 @@ export const getWorkflowByIdHandler = http.get(`${API_BASE}/workflows/:id`, ({ p
 
   const response: WorkflowResponse = {
     success: true,
-    data: workflow,
+    data: withPlaygroundView(workflow),
     message: `Workflow "${workflow.name}" retrieved successfully`
   };
 
@@ -220,7 +282,24 @@ export const updateWorkflowHandler = http.put(
     try {
       const body = (await request.json()) as Record<string, unknown>;
 
+      const chat = chatFromSaveBody(body);
+      const existing = getWorkflowById(workflowId);
+      if (chat && existing) {
+        const problems = chatProblems(chat, existing);
+        if (problems.length > 0) {
+          return HttpResponse.json(
+            {
+              success: false,
+              error: 'Invalid Playground settings',
+              code: 'VALIDATION_ERROR',
+              problems
+            },
+            { status: 422 }
+          );
+        }
+      }
       const updated = updateWorkflow(workflowId, {
+        ...(chat !== undefined ? { playground: { chat } } : {}),
         name: body.name as string | undefined,
         description: body.description as string | undefined,
         nodes: body.nodes as Workflow['nodes'] | undefined,
@@ -241,7 +320,7 @@ export const updateWorkflowHandler = http.put(
 
       const response: WorkflowResponse = {
         success: true,
-        data: updated,
+        data: withPlaygroundView(updated),
         message: 'Workflow updated successfully'
       };
 

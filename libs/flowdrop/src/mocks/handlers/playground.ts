@@ -16,6 +16,8 @@ import {
   simulateExecution,
   initializeDemoForeachPlaygroundData
 } from '../data/playground.js';
+import { getWorkflowById } from '../data/index.js';
+import { resolvePlaygroundChat } from '../../lib/utils/playgroundChat.js';
 
 /** Base API path for flowdrop endpoints */
 const API_BASE = '/api/flowdrop';
@@ -289,6 +291,88 @@ export const sendMessageHandler = http.post(
 );
 
 /**
+ * POST /api/flowdrop/sessions/:sessionId/turn
+ * Take a turn through the `sessions` endpoint group. `content` fills the
+ * workflow's bound message input; a workflow whose resolved chat binding has no
+ * message input is form-only and refuses `content` with a 400.
+ */
+export const sessionTurnHandler = http.post(
+  `${API_BASE}/sessions/:sessionId/turn`,
+  async ({ params, request }) => {
+    const { sessionId } = params;
+    const id = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+    const session = getSessionById(id);
+
+    if (!session) {
+      return HttpResponse.json(
+        { success: false, error: 'Session not found', code: 'NOT_FOUND' },
+        { status: 404 }
+      );
+    }
+    if (session.status === 'running') {
+      return HttpResponse.json(
+        { success: false, error: 'Session is already executing', code: 'CONFLICT' },
+        { status: 409 }
+      );
+    }
+
+    let body: { content?: unknown; inputs?: Record<string, unknown> };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      return HttpResponse.json(
+        { success: false, error: 'Invalid request body', code: 'BAD_REQUEST' },
+        { status: 400 }
+      );
+    }
+
+    const hasContent = typeof body.content === 'string' && body.content !== '';
+    const hasInputs = body.inputs !== undefined && Object.keys(body.inputs).length > 0;
+
+    const workflow = getWorkflowById(session.workflowId);
+    const resolved = workflow ? resolvePlaygroundChat(workflow) : null;
+    if (hasContent && resolved && resolved.binding.message === null) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error:
+            'This workflow has no message input in its Playground settings, so it takes inputs only. Send the values in "inputs", or bind a message input in the workflow\'s Playground settings.',
+          code: 'BAD_REQUEST'
+        },
+        { status: 400 }
+      );
+    }
+    if (!hasContent && !hasInputs) {
+      return HttpResponse.json(
+        { success: false, error: 'A turn needs content or inputs', code: 'BAD_REQUEST' },
+        { status: 400 }
+      );
+    }
+
+    const text = hasContent ? (body.content as string) : JSON.stringify(body.inputs);
+    const message = addMessage(id, 'user', text);
+    if (!message) {
+      return HttpResponse.json(
+        { success: false, error: 'Failed to add message', code: 'INTERNAL_ERROR' },
+        { status: 500 }
+      );
+    }
+    simulateExecution(id, text, message.id);
+
+    return HttpResponse.json({
+      success: true,
+      data: {
+        sessionId: id,
+        userMessageId: message.id,
+        pipelineId: null,
+        status: 'running'
+      },
+      message: 'Turn started'
+    });
+  }
+);
+
+/**
  * POST /api/flowdrop/playground/sessions/:sessionId/stop
  * Stop execution in a session
  */
@@ -348,5 +432,6 @@ export const playgroundHandlers = [
   deleteSessionHandler,
   getMessagesHandler,
   sendMessageHandler,
+  sessionTurnHandler,
   stopExecutionHandler
 ];
