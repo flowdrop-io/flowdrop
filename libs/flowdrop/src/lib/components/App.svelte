@@ -1041,11 +1041,11 @@
     }
   });
 
-  async function saveWorkflow(): Promise<void> {
+  async function saveWorkflow(): Promise<boolean> {
     // Commit any in-flight config edit so the save and its history are
     // consistent (the value itself is already live in the store).
     flushNodeConfigEdit();
-    await globalSaveWorkflow({
+    return globalSaveWorkflow({
       eventHandlers: { onBeforeSave, onAfterSave, onSaveError, onApiError },
       features,
       instance: fd,
@@ -1812,6 +1812,7 @@
   {#if fd.workflow.current}
     <DockedPlayground
       workflow={fd.workflow.current}
+      onSave={saveWorkflow}
       onOpenSettings={fd.workflow.current.playground !== undefined
         ? openPlaygroundSettings
         : undefined}

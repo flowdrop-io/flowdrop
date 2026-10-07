@@ -76,6 +76,20 @@
      * @default false
      */
     sessionOptional?: boolean;
+    /**
+     * Save the workflow through the caller's own save path (the editor's).
+     * With it, Send reads "Save & send" while the workflow has unsaved edits,
+     * saves first, and sends nothing when the save fails; the conversation
+     * shows a divider where a save made a new version. Resolves `true` when it
+     * was written, `false` when nothing was saved; throws on failure.
+     */
+    onSave?: () => Promise<boolean>;
+    /**
+     * List only the sessions the Playground created (the editor's Playground),
+     * not every session of the workflow.
+     * @default false
+     */
+    playgroundSessionsOnly?: boolean;
   }
 
   let {
@@ -94,7 +108,9 @@
     retainSession = false,
     followWorkflow = false,
     onOpenSettings,
-    sessionOptional = false
+    sessionOptional = false,
+    onSave,
+    playgroundSessionsOnly = false
   }: Props = $props();
 
   // Resolve/provide once at init; the instance prop is a fixed mount-time choice.
@@ -138,6 +154,8 @@
     shouldStopPolling: config.shouldStopPolling,
     onSessionNavigate,
     predefinedMessage: config.predefinedMessage,
+    saveWorkflow: onSave,
+    playgroundSessionsOnly,
     messages
   });
   fd.runs.configure(runOptions());
@@ -507,6 +525,8 @@
           formEntries={fd.playground.interfaceFormEntries}
           notice={chatNotice}
           {sessionOptional}
+          beforeSend={onSave ? () => fd.runs.saveFirst() : undefined}
+          saveFirst={fd.runs.needsSave}
           onNoticeAction={onOpenSettings}
           formValues={fd.playground.formValues}
           onFormChange={(values) => fd.playground.setFormValues(values)}

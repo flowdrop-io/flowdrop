@@ -19,6 +19,7 @@
     type PlaygroundMessage
   } from '../../types/playground.js';
   import { groupAdjacent } from './messageDisplay.js';
+  import { placeVersionDividers } from '../../utils/sessionRuns.js';
   import {
     isInterruptMetadata,
     extractInterruptMetadata,
@@ -85,6 +86,14 @@
    * about secrecy, since the row has already reached the browser.
    */
   const visibleMessages = $derived(displayMessages.filter((msg) => !isHiddenMessage(msg)));
+
+  /**
+   * The "Saved, new version" dividers, each keyed by the visible message it
+   * follows. Only the conversation (the log toggle never moves one).
+   */
+  const dividerAfter = $derived(
+    placeVersionDividers(fd.playground.versionDividers, fd.playground.messages, visibleMessages)
+  );
 
   /** Runs of three or more adjacent log-layout rows fold into a collapsible group. */
   const rows = $derived(
@@ -267,6 +276,14 @@
   {/if}
 {/snippet}
 
+{#snippet dividerRow(afterId: string | undefined)}
+  {#if afterId !== undefined && dividerAfter.has(afterId)}
+    <div class="message-stream__divider" role="separator" data-testid="version-divider">
+      <span>{m().playground.versionDivider}</span>
+    </div>
+  {/if}
+{/snippet}
+
 <div
   class="message-stream"
   role="log"
@@ -297,10 +314,12 @@
           </summary>
           {#each row.items as message (message.id)}
             {@render messageRow(message)}
+            {@render dividerRow(message.id)}
           {/each}
         </details>
       {:else}
         {@render messageRow(row.item)}
+        {@render dividerRow(row.item.id)}
       {/if}
     {/each}
 
@@ -331,6 +350,24 @@
        renaming the container only requires editing this file. */
     container-type: inline-size;
     container-name: fd-message-stream;
+  }
+
+  /* "Saved, new version": a hairline with its label, between two turns. */
+  .message-stream__divider {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-sm);
+    margin: var(--fd-space-md) 0;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+  }
+
+  .message-stream__divider::before,
+  .message-stream__divider::after {
+    content: '';
+    flex: 1;
+    border-top: 1px dashed var(--fd-border-strong);
   }
 
   /* Zero-height marker the IntersectionObserver watches to trigger

@@ -22,9 +22,14 @@
     workflow: Workflow;
     /** Opens the workflow's Playground settings in the inspector. */
     onOpenSettings?: () => void;
+    /**
+     * The editor's save, so Send reads "Save & send" while the workflow has
+     * unsaved edits. Resolves `true` when written; throws when it fails.
+     */
+    onSave?: () => Promise<boolean>;
   }
 
-  let { workflow, onOpenSettings }: Props = $props();
+  let { workflow, onOpenSettings, onSave }: Props = $props();
 </script>
 
 <div class="docked-playground" data-testid="docked-playground">
@@ -36,6 +41,8 @@
       retainSession
       followWorkflow
       sessionOptional
+      playgroundSessionsOnly
+      {onSave}
       {onOpenSettings}
     />
   {/key}

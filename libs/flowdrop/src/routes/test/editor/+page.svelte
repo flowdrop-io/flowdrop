@@ -14,6 +14,9 @@
                            "Add caption"); without it the type list has none
     - ?contextMenu=extra -> pass a `contextMenu.items` that appends a
       "Test extra entry" item; running it sets window.__contextMenuExtraRan
+    - ?sessions=1        -> the endpoint config carries the `sessions` group
+                           (per-session calls under /sessions/{id}, incl. the
+                           runs endpoint), as a FlowDrop 2.7.0 backend sends it
     - ?playground=none   -> the workflow carries Playground settings with no
                            chat bound (a FlowDrop 2.7.0 backend), so the
                            settings surface shows the Playground tab
@@ -34,6 +37,7 @@
   import type { Workflow, NodeMetadata } from '$lib/types/index.js';
   import type { ThemePreference } from '$lib/types/settings.js';
   import type { ContextMenuOptions } from '$lib/editor/contextMenu.js';
+  import { defaultEndpointConfig, sessionsEndpoints } from '$lib/config/endpoints.js';
   import { createChainedTriggerWorkflow } from '../../../mocks/data/workflows.js';
 
   // --- Query param for workflow variant ---
@@ -83,6 +87,16 @@
       void initializeSettings({ defaults: { theme: { preference: pref as ThemePreference } } });
     }
   }
+
+  // --- The `sessions` endpoint group (?sessions=1) ---
+  let endpointConfig = $derived(
+    $page.url.searchParams.get('sessions') === '1'
+      ? {
+          ...defaultEndpointConfig,
+          endpoints: { ...defaultEndpointConfig.endpoints, sessions: sessionsEndpoints }
+        }
+      : undefined
+  );
 
   // --- Caption node type is only offered on request (?caption=1 or ?workflow=caption) ---
   let offerCaption = $derived(
@@ -576,6 +590,7 @@
     theme={themeName}
     mode={editorMode}
     editorMode={editorTestMode}
+    {endpointConfig}
     {contextMenu}
   />
 </div>

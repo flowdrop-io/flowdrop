@@ -234,7 +234,13 @@ export type {
   PlaygroundSessionResponse,
   PlaygroundMessageResponse,
   PlaygroundMessagesApiResponse,
-  PlaygroundExecution
+  PlaygroundExecution,
+  SessionRun,
+  SessionRunsResult,
+  SessionRunsResponse,
+  SessionThirdPartySettings,
+  VersionDivider,
+  VersionDividerAnchor
 } from '../types/playground.js';
 
 export {
@@ -250,6 +256,14 @@ export {
 } from '../utils/workflowInterface.js';
 
 export { resolvePlaygroundChat, type ResolvedPlaygroundChat } from '../utils/playgroundChat.js';
+
+export {
+  PLAYGROUND_SESSION_MARK,
+  isPlaygroundSession,
+  playgroundSessionsOf,
+  isRunStale,
+  versionDividersFromRuns
+} from '../utils/sessionRuns.js';
 
 export type {
   WorkflowPlayground,

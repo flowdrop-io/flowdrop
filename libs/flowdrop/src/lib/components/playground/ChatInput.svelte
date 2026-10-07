@@ -76,6 +76,17 @@
      * first run). By default a session must exist first.
      */
     sessionOptional?: boolean;
+    /**
+     * Runs before a send or Run goes out; resolves `false` to hold it back
+     * (the typed text stays). The editor's Playground saves the workflow here.
+     * Slash commands skip it.
+     */
+    beforeSend?: () => Promise<boolean>;
+    /**
+     * `beforeSend` has something to do now (unsaved edits): the button says so,
+     * "Save & send" or "Save & run".
+     */
+    saveFirst?: boolean;
   }
 
   let {
@@ -90,7 +101,9 @@
     enableCommands = false,
     commandFeedback = null,
     onDismissCommandFeedback,
-    sessionOptional = false
+    sessionOptional = false,
+    beforeSend,
+    saveFirst = false
   }: Props = $props();
 
   const actions = $derived(m().playground.actions);
@@ -105,6 +118,8 @@
   const noInputsAvailable = $derived(!showTextarea && !showRunButton);
 
   let inputValue = $state('');
+  /** `beforeSend` is running: the composer waits for it. */
+  let preparing = $state(false);
   let inputField: HTMLTextAreaElement | undefined = $state();
 
   /**
@@ -181,6 +196,7 @@
    */
   const canSubmit = $derived(
     inputValue.trim().length > 0 &&
+      !preparing &&
       (inputIsCommand ||
         (sessionOptional
           ? !fd.playground.isExecuting && fd.playground.sessionStatus !== 'awaiting_input'
@@ -200,9 +216,22 @@
     wasExecuting = nowExecuting;
   });
 
-  function handleSend(): void {
+  /** Run `beforeSend`; `false` means hold the send back. */
+  async function prepare(): Promise<boolean> {
+    if (!beforeSend) return true;
+    preparing = true;
+    try {
+      return await beforeSend();
+    } finally {
+      preparing = false;
+    }
+  }
+
+  async function handleSend(): Promise<void> {
     const trimmedValue = inputValue.trim();
     if (!canSubmit) return;
+
+    if (beforeSend && !inputIsCommand && !(await prepare())) return;
 
     onDismissCommandFeedback?.();
     onSendMessage?.(trimmedValue);
@@ -267,8 +296,9 @@
     onStopExecution?.();
   }
 
-  function handleRun(): void {
-    if (!fd.playground.canRun) return;
+  async function handleRun(): Promise<void> {
+    if (!fd.playground.canRun || preparing) return;
+    if (beforeSend && (!(await prepare()) || !fd.playground.canRun)) return;
     if (awaitEnableRun) fd.playground.lockRunUntilEnabled();
 
     const action = resolveRunAction({
@@ -372,6 +402,7 @@
             placeholder={resolvedPlaceholder}
             rows="1"
             disabled={fd.playground.isExecuting ||
+              preparing ||
               (!sessionOptional && !fd.playground.currentSession)}
             onkeydown={handleKeydown}
             oninput={handleInput}
@@ -404,23 +435,27 @@
           class="chat-input__send-btn"
           onclick={handleSend}
           disabled={!canSubmit}
-          title={actions.sendTitle}
-          aria-label={actions.sendTitle}
+          title={saveFirst ? actions.saveAndSendTitle : actions.sendTitle}
+          aria-label={saveFirst ? actions.saveAndSendTitle : actions.sendTitle}
         >
-          {actions.send}
+          {preparing ? actions.saving : saveFirst ? actions.saveAndSend : actions.send}
         </button>
       {:else if showRunButton}
-        {@const runLabel = fd.playground.canRun ? actions.runTitle : actions.runWaitingTitle}
+        {@const runTitle = fd.playground.canRun
+          ? saveFirst
+            ? actions.saveAndRunTitle
+            : actions.runTitle
+          : actions.runWaitingTitle}
         <button
           type="button"
           class="chat-input__run-btn"
           onclick={handleRun}
-          disabled={!fd.playground.canRun}
-          title={runLabel}
-          aria-label={runLabel}
+          disabled={!fd.playground.canRun || preparing}
+          title={runTitle}
+          aria-label={runTitle}
         >
           <Icon icon="mdi:play" />
-          {actions.run}
+          {preparing ? actions.saving : saveFirst ? actions.saveAndRun : actions.run}
         </button>
       {/if}
     </div>

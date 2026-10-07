@@ -78,6 +78,10 @@
     showSessionList?: boolean;
     /** The first send creates the session: see ChatInput's `sessionOptional`. */
     sessionOptional?: boolean;
+    /** Runs before a send or Run goes out; `false` holds it back. See ChatInput. */
+    beforeSend?: () => Promise<boolean>;
+    /** Unsaved edits: the button reads "Save & send". See ChatInput. */
+    saveFirst?: boolean;
     style?: string;
   }
 
@@ -110,6 +114,8 @@
     showNewSessionButton = true,
     showSessionList = true,
     sessionOptional = false,
+    beforeSend,
+    saveFirst = false,
     style
   }: Props = $props();
 
@@ -334,6 +340,8 @@
     {commandFeedback}
     {onDismissCommandFeedback}
     {sessionOptional}
+    {beforeSend}
+    {saveFirst}
   />
 </section>
 

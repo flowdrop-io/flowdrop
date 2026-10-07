@@ -486,8 +486,21 @@ export const defaultMessages = {
       send: 'Send',
       runTitle: 'Run workflow',
       runWaitingTitle: 'Waiting for workflow to be ready...',
-      run: 'Run'
+      run: 'Run',
+      // The editor's Playground while the workflow has unsaved edits: the
+      // action saves first, then goes.
+      saveAndSend: 'Save & send',
+      saveAndSendTitle: 'Save the workflow, then send the message',
+      saveAndRun: 'Save & run',
+      saveAndRunTitle: 'Save the workflow, then run it',
+      saving: 'Saving…'
     },
+    // Shown in the conversation where the workflow was saved (a new version).
+    versionDivider: 'Saved — new version',
+    // Save & send, when the save did not happen: nothing is sent.
+    saveFailed: ({ message }: { message: string }) =>
+      `Not sent: the workflow was not saved. ${message}`,
+    saveNotDone: 'Not sent: the workflow was not saved.',
     // Message author labels.
     roles: {
       you: 'You',
