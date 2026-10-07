@@ -7,12 +7,11 @@
   after the run ends. The node status badges fade with it: dismissing the run
   clears `fd.playground.nodeStatuses`.
 
-  While the run is live this component also keeps the badges current, since
-  nothing else loads node status in Edit mode.
+  Node statuses are not loaded here: `App` owns that (one coalesced
+  `fd.runs.requestNodeStatuses()` for Test mode and the Edit-mode run).
 -->
 
 <script lang="ts">
-  import { untrack } from 'svelte';
   import { getInstance } from '../stores/getInstance.svelte.js';
   import { getMessages } from '../messages/context.js';
   import { TERMINAL_RUN_STATUSES } from '../stores/runController.svelte.js';
@@ -25,11 +24,9 @@
     onOpen?: () => void;
     /** How long a finished run's bar stays, in milliseconds. @default 4500 */
     fadeMs?: number;
-    /** How often node status is refreshed while the run is live, in milliseconds. @default 1500 */
-    refreshMs?: number;
   }
 
-  let { onOpen, fadeMs = 4500, refreshMs = 1500 }: Props = $props();
+  let { onOpen, fadeMs = 4500 }: Props = $props();
 
   const fd = getInstance();
   const getMsgs = getMessages();
@@ -40,7 +37,6 @@
 
   const run = $derived(fd.runs.activeRun);
   const status = $derived(run?.status ?? null);
-  const runId = $derived(run?.runId ?? null);
   const endedAt = $derived(run?.endedAt ?? null);
   const live = $derived(status === 'running' || status === 'waiting');
   const ended = $derived(status !== null && TERMINAL_RUN_STATUSES.includes(status));
@@ -76,18 +72,6 @@
       clearTimeout(fadeTimer);
       clearTimeout(dismissTimer);
     };
-  });
-
-  // Keep the node badges current: once on every change, and on a timer while
-  // the run is live. The last load, at the end, is the final state the badges
-  // show until the bar fades.
-  $effect(() => {
-    if (status === null) return;
-    const id = runId ?? undefined;
-    untrack(() => void fd.runs.loadNodeStatuses(id));
-    if (!live) return;
-    const timer = setInterval(() => void fd.runs.loadNodeStatuses(id), refreshMs);
-    return () => clearInterval(timer);
   });
 </script>
 

@@ -328,21 +328,45 @@
     }
   }
 
-  // Badges follow a run while it is watched: in Test mode always (the shown
-  // run, live or finished), in Edit mode only while a run is going. They are
-  // dropped when neither holds, so Edit mode at rest has none.
-  const followRun = $derived(!pipelineId && (testMode || fd.runs.isLive));
+  // Badges follow a run while it is watched, and this effect is the one owner
+  // of loading them (through the coalesced fd.runs.requestNodeStatuses): in
+  // Test mode always (the shown run, live or finished), in Edit mode while a
+  // run exists (live, or ended and still on the run bar, whose fade drops it).
+  // They are dropped when neither holds, so Edit mode at rest has none.
+  const followRun = $derived(
+    !pipelineId && (testMode || fd.runs.activeRun !== null || fd.runs.isLive)
+  );
+  const EDIT_STATUS_REFRESH_MS = 1500;
   $effect(() => {
     if (!followRun) return;
-    // Tracked: the shown run, its status, and every batch of new messages.
+    // Tracked: the shown run, its status (a host run changes nothing else),
+    // and every batch of new messages.
     void fd.playground.activeExecutionId;
     void fd.playground.sessionStatus;
     void fd.playground.pipelineRefreshTrigger;
+    void fd.runs.activeRun?.runId;
+    void fd.runs.activeRun?.status;
     untrack(() => fd.runs.requestNodeStatuses());
+  });
+  // Edit mode has no Playground poll to ride on (and a host run has none at
+  // all), so while a run is live the badges are also asked for on a timer.
+  $effect(() => {
+    if (!followRun || testMode || !fd.runs.isLive) return;
+    const timer = setInterval(() => fd.runs.requestNodeStatuses(), EDIT_STATUS_REFRESH_MS);
+    return () => clearInterval(timer);
   });
   $effect(() => {
     if (!followRun) return;
     return () => fd.runs.clearNodeStatuses();
+  });
+  // Crossing between Edit and Test drops a run that has already ended, so the
+  // bar does not come back stale. A live run keeps its state.
+  $effect(() => {
+    void testMode;
+    untrack(() => {
+      const run = fd.runs.activeRun;
+      if (run && run.endedAt !== null) fd.runs.dismissRun();
+    });
   });
 
   // Messages: merge consumer overrides over defaults; expose via context as a
@@ -1934,6 +1958,8 @@
         {contextMenu}
         gridVariant={themeConfig?.canvas?.grid ?? 'dots'}
         consoleOpen={consoleActive}
+        showRunBar={!fd.editorMode.isTest}
+        onOpenTest={testModeAvailable ? () => fd.editorMode.set('test') : undefined}
         onToggleConsole={consoleGroupOffered ? toggleConsole : undefined}
         consoleToggleLabel={consoleTabOffered
           ? undefined

@@ -441,6 +441,35 @@ describe('RunController', () => {
     });
   });
 
+  describe('node statuses of a host run', () => {
+    it('requestNodeStatuses loads the host run, and isLive follows it', async () => {
+      const { runs, editor } = setup();
+      editor.initialize({
+        ...workflow('wf'),
+        nodes: [{ id: 'n1' }] as unknown as Workflow['nodes']
+      });
+      const spy = vi
+        .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
+        .mockResolvedValue({});
+      let status = 'running';
+      const hooks = runs.wrapHostHooks({
+        onRun: async () => ({ ok: true, data: { runId: 'host-1', status } }),
+        onRunStatus: async (runId: string) => ({ ok: true, data: { runId, status } })
+      } as never);
+      await hooks.onRun!({});
+      expect(runs.isLive).toBe(true);
+
+      runs.requestNodeStatuses();
+      await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
+      expect(spy.mock.calls[0][2]).toBe('host-1');
+
+      status = 'completed';
+      await hooks.onRunStatus!('host-1');
+      expect(runs.isLive).toBe(false);
+      runs.dismissRun();
+    });
+  });
+
   describe('isLive', () => {
     it('is true while a run is going or waiting for someone, false otherwise', () => {
       const { runs, playground } = setup();

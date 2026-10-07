@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `session send`), the Assistant, or a WebMCP agent. `WorkflowEditor` takes
   `showRunBar` (default `true`; Test mode sets it `false`) and `onOpenTest`
   (the Open button is shown only when it is set). New messages under `runBar`.
+  `App` wires both: Open enters Test mode, and a run that has ended is dropped
+  when crossing between Edit and Test so the bar never returns stale. Node
+  statuses have one loader, the coalesced `fd.runs.requestNodeStatuses()`, which
+  also loads a host run by its own id; `fd.runs.isLive` now counts the shown run
+  (host runs too), not only the session.
 - `fd.runs.activeRun` (`ActiveRun`: `origin`, `runId`, `status`, `startedAt`,
   `endedAt`; reactive, `null` at rest), `fd.runs.stopRun()` and
   `fd.runs.dismissRun()`. Per instance.

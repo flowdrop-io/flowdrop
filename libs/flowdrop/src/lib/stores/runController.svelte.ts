@@ -879,7 +879,8 @@ export class RunController {
       try {
         do {
           this.#statusAgain = false;
-          await this.loadNodeStatuses();
+          // A host run has no session execution id: name the run being shown.
+          await this.loadNodeStatuses(this.activeRun?.runId);
         } while (this.#statusAgain);
       } finally {
         this.#statusLoading = false;
@@ -895,14 +896,19 @@ export class RunController {
   }
 
   /**
-   * Whether the current session has a run that is going or waiting for
-   * someone (running, or awaiting input). The one fact "a run needs
-   * watching" is read from here: the dot on the Test switch, and the
-   * badges that follow a run in Edit mode.
+   * Whether a run is going or waiting for someone: the shown run
+   * ({@link activeRun}, session or host) is running or waiting, or the
+   * current session is running or awaiting input (a Playground turn that no
+   * bar tracks). The one fact "a run needs watching" is read from here: the
+   * dot on the Test switch, and the badges that follow a run in Edit mode.
+   * For a tracked session run it agrees with the run bar by construction,
+   * since the bar's status is derived from the session's.
    */
   get isLive(): boolean {
-    const status = this.#playground.sessionStatus;
-    return status === 'running' || status === 'awaiting_input';
+    const status = this.activeRun?.status;
+    if (status === 'running' || status === 'waiting') return true;
+    const session = this.#playground.sessionStatus;
+    return session === 'running' || session === 'awaiting_input';
   }
 
   /** Fetch what is new for the current session and tail it when it is running. */

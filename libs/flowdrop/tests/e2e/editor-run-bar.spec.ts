@@ -31,11 +31,13 @@ interface Stub {
   seen: { launches: number; stops: number };
   /** The run ends by itself: the session reports completed from now on. */
   finish: () => void;
+  /** The run waits for a person: the session reports awaiting_input from now on. */
+  wait: () => void;
 }
 
 async function stubBackend(page: Page): Promise<Stub> {
   const seen = { launches: 0, stops: 0 };
-  let sessionStatus: 'idle' | 'running' | 'completed' = 'idle';
+  let sessionStatus: 'idle' | 'running' | 'completed' | 'awaiting_input' = 'idle';
   await page.route('**/api/flowdrop/**', async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname.replace('/api/flowdrop', '');
@@ -63,6 +65,9 @@ async function stubBackend(page: Page): Promise<Stub> {
     seen,
     finish: () => {
       sessionStatus = 'completed';
+    },
+    wait: () => {
+      sessionStatus = 'awaiting_input';
     }
   };
 }
@@ -123,6 +128,36 @@ test.describe('Run bar', () => {
     await expect.poll(() => stub.seen.stops).toBe(1);
     await expect(page.locator('.flowdrop-run-bar')).toContainText('Stopped');
     await expect(page.locator('.flowdrop-run-bar')).toHaveCount(0, { timeout: 10000 });
+  });
+
+  test('Open on a waiting run goes to Test mode, where the bar is hidden; back in Edit, an ended run leaves no bar', async ({
+    page
+  }) => {
+    const stub = await stubBackend(page);
+    await gotoEditor(page);
+    await startRun(page);
+    stub.wait();
+
+    const bar = page.locator('.flowdrop-run-bar');
+    await expect(bar).toContainText('Waiting', { timeout: 10000 });
+    await bar.getByRole('button', { name: 'Open' }).click();
+
+    const modeSwitch = page.getByRole('group', { name: 'Editor mode' });
+    await expect(modeSwitch.getByRole('button', { name: 'Test' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(bar).toHaveCount(0);
+
+    // The run ends while the person is in Test mode.
+    stub.finish();
+    await page.waitForTimeout(2500);
+    await modeSwitch.getByRole('button', { name: 'Edit' }).click();
+    await expect(modeSwitch.getByRole('button', { name: 'Edit' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(bar).toHaveCount(0);
   });
 
   test('stays inside the canvas, clear of the minimap, at a narrow width', async ({ page }) => {

@@ -151,18 +151,16 @@ describe('RunBar', () => {
     fd.destroy();
   });
 
-  it('keeps the node badges current while the run is live, not after', async () => {
+  it('leaves loading node statuses to App: the bar never asks for them', async () => {
     const { fd, set } = await withHostRun('bar-refresh', 'running');
     const load = fd.runs.loadNodeStatuses as ReturnType<typeof vi.fn>;
-    render(fd, { refreshMs: 500 });
+    const request = vi.spyOn(fd.runs, 'requestNodeStatuses');
+    render(fd);
     load.mockClear();
-    await vi.advanceTimersByTimeAsync(1100);
-    expect(load.mock.calls.length).toBeGreaterThanOrEqual(2);
-
+    await vi.advanceTimersByTimeAsync(3000);
     await set('completed');
-    load.mockClear();
-    await vi.advanceTimersByTimeAsync(400);
-    expect(load.mock.calls.length).toBeLessThanOrEqual(1);
+    expect(load).not.toHaveBeenCalled();
+    expect(request).not.toHaveBeenCalled();
     fd.destroy();
   });
 });
