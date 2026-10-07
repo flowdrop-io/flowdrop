@@ -7,6 +7,7 @@
     - ?workflow=complex  -> branching workflow with 4 nodes, 3 edges
     - (default)          -> simple workflow with 2 nodes, 1 edge
     - ?mode=readonly|locked -> editor mode (default 'edit')
+    - ?editorMode=test   -> start in Test mode (the Edit | Test axis, not `mode`)
     - ?workflow=caption  -> a text input plus two captions (short, long); also
                            offers the caption node type
     - ?caption=1         -> offer the caption node type (the pane menu then has
@@ -48,6 +49,11 @@
     (['readonly', 'locked'].includes($page.url.searchParams.get('mode') ?? '')
       ? $page.url.searchParams.get('mode')
       : 'edit') as 'edit' | 'readonly' | 'locked'
+  );
+
+  // --- Query param for the Edit | Test axis (?editorMode=test) ---
+  let editorTestMode = $derived(
+    $page.url.searchParams.get('editorMode') === 'test' ? ('test' as const) : undefined
   );
 
   // --- Consumer context-menu entry (?contextMenu=extra) ---
@@ -569,6 +575,7 @@
     workflow={selectedWorkflow}
     theme={themeName}
     mode={editorMode}
+    editorMode={editorTestMode}
     {contextMenu}
   />
 </div>
