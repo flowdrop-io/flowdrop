@@ -10,6 +10,10 @@
     parseCommand,
     executeCommand,
     executeBatch,
+    parseSessionCommand,
+    executeSessionCommand,
+    isSessionLine,
+    SESSION_HELP,
     type UIAction,
     type CommandContext,
     type CommandResultOk,
@@ -36,6 +40,8 @@
     formatInfo,
     formatHelp
   } from './formatters.js';
+
+  const SESSION_HEADING = 'Session (editor Console only):';
 
   interface Props {
     /** Available node types for command execution */
@@ -86,6 +92,23 @@
     updateSettings({ ui: { consoleOpen: false } });
   }
 
+  /**
+   * Run a `session …` line. These are asynchronous and talk to the backend, so
+   * they have their own lane: the input stays usable while one is in flight and
+   * its result is added when it lands.
+   */
+  async function handleSessionSubmit(line: string) {
+    const parsed = parseSessionCommand(line);
+    if (!parsed.ok) {
+      outputEntries.push({ type: 'error', text: parsed.error });
+      return;
+    }
+    const result = await executeSessionCommand(parsed.command, fd.runs);
+    outputEntries.push(
+      result.ok ? { type: 'success', text: result.message } : { type: 'error', text: result.error }
+    );
+  }
+
   function handleCommandSubmit(value: string) {
     const trimmed = value.trim();
     if (!trimmed) return;
@@ -96,6 +119,18 @@
     // Handle cls command (clear console output; use 'clear' to clear the canvas)
     if (trimmed.toLowerCase() === 'cls') {
       outputEntries = [];
+      return;
+    }
+
+    // `help session` is answered here: the editing DSL does not know the verb.
+    if (/^help\s+session$/i.test(trimmed)) {
+      outputEntries.push({ type: 'formatted', text: formatHelp({ commands: SESSION_HELP }) });
+      return;
+    }
+
+    // Session commands run in their own, asynchronous lane.
+    if (isSessionLine(trimmed)) {
+      void handleSessionSubmit(trimmed);
       return;
     }
 
@@ -121,12 +156,30 @@
       } else {
         outputEntries.push({ type: 'success', text: result.message });
       }
+      // The Console also knows the session commands; `help` lists them too.
+      if (parseResult.command.type === 'help' && !parseResult.command.command) {
+        outputEntries.push({
+          type: 'formatted',
+          text: `${SESSION_HEADING}\n${formatHelp({ commands: SESSION_HELP })}`
+        });
+      }
     } else {
       outputEntries.push({ type: 'error', text: result.error });
     }
   }
 
   function handleBatchSubmit(lines: string[]) {
+    // A batch is all-or-nothing and synchronous; a run is neither. Refuse
+    // before anything executes.
+    if (lines.some(isSessionLine)) {
+      for (const line of lines) outputEntries.push({ type: 'input', text: line });
+      outputEntries.push({
+        type: 'error',
+        text: 'session commands cannot be part of a batch. Nothing was run; send them one at a time.'
+      });
+      return;
+    }
+
     if (!commandContext) {
       outputEntries.push({ type: 'error', text: 'No workflow loaded' });
       return;

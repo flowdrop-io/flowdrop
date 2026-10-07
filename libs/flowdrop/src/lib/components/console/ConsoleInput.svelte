@@ -74,7 +74,8 @@
     'swap',
     'move',
     'layout',
-    'canvas'
+    'canvas',
+    'session'
   ];
 
   /** Verbs that take a nodeId as their first argument */
@@ -294,6 +295,13 @@
       { value: 'nodes', detail: 'List all workflow nodes' },
       { value: 'edges', detail: 'List all connections' },
       { value: 'types', detail: 'List available node types' }
+    ],
+    session: [
+      { value: 'send', detail: 'Send a chat turn to the test session' },
+      { value: 'run', detail: 'Run the workflow (session run key=value …)' },
+      { value: 'stop', detail: 'Stop the running test session' },
+      { value: 'new', detail: 'Start a fresh test session' },
+      { value: 'status', detail: 'Show the session, its status and latest reply' }
     ],
     canvas: [
       { value: 'fitview', detail: 'Fit all nodes into the viewport' },
@@ -517,7 +525,7 @@
     if (!text || !text.includes('\n')) return;
 
     // If already typing a set command, treat multiline paste as the value
-    const setMatch = inputValue.match(/^(set\s+\S+?:\S+)\s*(.*)$/i);
+    const setMatch = inputValue.match(/^(set\s+\S+?:\S+|session\s+send\b)\s*(.*)$/i);
     if (setMatch) {
       event.preventDefault();
       enterMultilineMode(setMatch[1], (setMatch[2] ? setMatch[2] + '\n' : '') + text);
@@ -587,7 +595,7 @@
 
     if (event.key === 'Enter' && event.shiftKey) {
       // Shift+Enter on a set command → expand to multiline textarea
-      const setMatch = inputValue.match(/^(set\s+\S+?:\S+)\s*(.*)$/i);
+      const setMatch = inputValue.match(/^(set\s+\S+?:\S+|session\s+send\b)\s*(.*)$/i);
       if (setMatch) {
         event.preventDefault();
         enterMultilineMode(setMatch[1], setMatch[2]);
