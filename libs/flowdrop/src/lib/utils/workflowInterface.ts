@@ -41,6 +41,7 @@ import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
 import {
   isPlaygroundChatHalfSet,
+  normalizePlaygroundChat,
   playgroundBoundInputs,
   resolvePlaygroundChat,
   type ResolvedPlaygroundChat
@@ -285,15 +286,27 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
     }
   }
 
+  // Deprecated `turn` marks. With stored Playground settings the server
+  // ignores them, so they warrant no warning (the Playground tab offers to
+  // remove them). Without a `playground` key (a server before FlowDrop
+  // 2.7.0) they are still the only chat set-up, and the selector is offered.
+  const checkTurns = !workflow.playground?.chat;
+  const turnHint =
+    workflow.playground === undefined
+      ? 'a workflow takes at most one input per turn value.'
+      : 'only the first one counts. Set the chat up in the Playground settings instead.';
+  const directionHint =
+    workflow.playground === undefined ? '' : ' Set the chat up in the Playground settings instead.';
+
   for (const entry of workflow.interface.inputs ?? []) {
-    const otherId = turnTakenBy(workflow.interface.inputs ?? [], entry);
+    const otherId = checkTurns ? turnTakenBy(workflow.interface.inputs ?? [], entry) : undefined;
     if (otherId !== undefined) {
       issues.push({
         entryId: entry.id,
         direction: 'input',
         severity: 'warning',
         code: 'interface-turn-duplicate',
-        message: `Interface input "${entry.id}" has the deprecated chat turn "${entry.turn}", which input "${otherId}" already has; only the first one counts. Set the chat up in the Playground settings instead.`
+        message: `Interface input "${entry.id}" has the deprecated chat turn "${entry.turn}", which input "${otherId}" already has; ${turnHint}`
       });
     }
   }
@@ -303,6 +316,7 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
       (direction === 'input' ? workflow.interface.inputs : workflow.interface.outputs) ?? [];
     for (const entry of entries) {
       if (
+        checkTurns &&
         entry.turn !== undefined &&
         isKnownTurn(entry.turn) &&
         !turnsFor(direction).includes(entry.turn)
@@ -312,7 +326,7 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
           direction,
           severity: 'warning',
           code: 'interface-turn-direction',
-          message: `Interface ${direction} "${entry.id}" has the deprecated chat turn "${entry.turn}", which only applies to ${direction === 'input' ? 'outputs' : 'inputs'}. Set the chat up in the Playground settings instead.`
+          message: `Interface ${direction} "${entry.id}" has the deprecated chat turn "${entry.turn}", which only applies to ${direction === 'input' ? 'outputs' : 'inputs'}.${directionHint}`
         });
       }
     }
@@ -904,13 +918,17 @@ export interface PlaygroundChatIssue {
  * editor shows what the save would refuse. A reply's port is judged against
  * the node's static and dynamic outputs; a node without metadata is not
  * judged. The one warning is a half-set binding (a message input but no
- * reply). Defaults to the workflow's stored binding.
+ * reply). Defaults to the workflow's stored binding. The binding is
+ * normalised first, so one from the wire that leaves out its nullable keys
+ * (the schema requires only `replies`) reads as unbound there, not as bound
+ * to an input that is missing.
  */
 export function playgroundChatIssues(
   workflow: Workflow,
-  chat: PlaygroundChatBinding | null = workflow.playground?.chat ?? null
+  binding: PlaygroundChatBinding | null = workflow.playground?.chat ?? null
 ): PlaygroundChatIssue[] {
-  if (chat === null) return [];
+  if (!binding) return [];
+  const chat = normalizePlaygroundChat(binding);
   const issues: PlaygroundChatIssue[] = [];
   const inputIds = new Set((workflow.interface?.inputs ?? []).map((entry) => entry.id));
   const named: Array<[PlaygroundChatInputKey, string | null]> = [
@@ -981,15 +999,36 @@ export function playgroundChatIssues(
   return issues;
 }
 
-/** A node's output port ids (static and dynamic), or `null` without metadata. */
-function nodeOutputPortIds(node: WorkflowNode): Set<string> | null {
+/** A node's output ports (static and dynamic), or `null` without metadata. */
+function nodeOutputPorts(node: WorkflowNode): NodePort[] | null {
   const metadata = node.data?.metadata;
   if (!metadata) return null;
   const dynamic = (node.data?.config?.dynamicOutputs as DynamicPort[] | undefined) ?? [];
-  return new Set([
-    ...(metadata.outputs ?? []).map((port) => port.id),
-    ...dynamic.map((port) => dynamicPortToNodePort(port, 'output').id)
-  ]);
+  return [
+    ...(metadata.outputs ?? []),
+    ...dynamic.map((port) => dynamicPortToNodePort(port, 'output'))
+  ];
+}
+
+/** A node's output port ids, or `null` without metadata. */
+function nodeOutputPortIds(node: WorkflowNode): Set<string> | null {
+  const ports = nodeOutputPorts(node);
+  return ports && new Set(ports.map((port) => port.id));
+}
+
+/**
+ * The node output port a reply names, with the node's label: any output the
+ * node has, exposed on the canvas or not (the same ports
+ * `playgroundChatIssues` accepts). `null` when the node or port is gone, or
+ * the node carries no metadata to tell.
+ */
+export function findReplyPort(
+  workflow: Workflow,
+  reply: PlaygroundReplyPort
+): { nodeLabel: string; port: NodePort } | null {
+  const node = workflow.nodes.find((candidate) => candidate.id === reply.node_id);
+  const port = node && nodeOutputPorts(node)?.find((candidate) => candidate.id === reply.port);
+  return node && port ? { nodeLabel: node.data?.label ?? node.id, port } : null;
 }
 
 /** JSON Schema `type` for an interface entry's lane, when its schema states none. */

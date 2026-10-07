@@ -1,7 +1,10 @@
 /**
  * The interface editor's deprecated `turn` marks (`WorkflowInterfaceEntry.turn`).
- * The Chat turn selector is gone: the chat is set up in the Playground
+ * With Playground settings (a workflow carrying `playground`, FlowDrop 2.7.0
+ * on) the Chat turn selector is gone: the chat is set up in the Playground
  * settings, and an entry that still carries a `turn` shows it read-only.
+ * Without them (an older server) the selector is still offered, since `turn`
+ * is the only way to set the chat up there.
  * Mounted for real (client build, happy-dom), so the editor's patch path is
  * what the round-trip assertions go through:
  *   - an entry with a turn shows a deprecated chip and a note naming it
@@ -15,7 +18,13 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
-import type { Workflow, WorkflowInterface, WorkflowInterfaceEntry } from '$lib/types/index.js';
+import type {
+  Workflow,
+  WorkflowInterface,
+  WorkflowInterfaceEntry,
+  WorkflowPlayground
+} from '$lib/types/index.js';
+import type { InterfaceInputEdit } from '$lib/utils/playgroundChat.js';
 
 let mounted: ReturnType<typeof mount> | null = null;
 
@@ -25,7 +34,11 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-function makeWorkflow(workflowInterface: WorkflowInterface): Workflow {
+function makeWorkflow(
+  workflowInterface: WorkflowInterface,
+  /** `null` = no `playground` key (a server before FlowDrop 2.7.0). */
+  playground: WorkflowPlayground | null = { chat: null }
+): Workflow {
   return {
     id: 'wf-1',
     name: 'Test Workflow',
@@ -36,7 +49,8 @@ function makeWorkflow(workflowInterface: WorkflowInterface): Workflow {
       createdAt: new Date(0).toISOString(),
       updatedAt: new Date(0).toISOString()
     },
-    interface: workflowInterface
+    interface: workflowInterface,
+    ...(playground !== null && { playground })
   };
 }
 
@@ -44,13 +58,22 @@ function entry(overrides: Partial<WorkflowInterfaceEntry>): WorkflowInterfaceEnt
   return { id: 'e', dataType: 'string', bindings: [], ...overrides };
 }
 
-function render(workflowInterface: WorkflowInterface, onOpenPlaygroundSettings?: () => void) {
-  const onChange = vi.fn<(next: WorkflowInterface | undefined) => void>();
+function render(
+  workflowInterface: WorkflowInterface,
+  onOpenPlaygroundSettings?: () => void,
+  playground: WorkflowPlayground | null = { chat: null }
+) {
+  const onChange =
+    vi.fn<(next: WorkflowInterface | undefined, edit?: InterfaceInputEdit) => void>();
   const target = document.createElement('div');
   document.body.appendChild(target);
   mounted = mount(WorkflowInterfaceEditor, {
     target,
-    props: { workflow: makeWorkflow(workflowInterface), onChange, onOpenPlaygroundSettings }
+    props: {
+      workflow: makeWorkflow(workflowInterface, playground),
+      onChange,
+      onOpenPlaygroundSettings
+    }
   });
   flushSync();
   return { target, onChange };
@@ -186,5 +209,195 @@ describe('deprecated chat turn', () => {
     required.dispatchEvent(new Event('change', { bubbles: true }));
     flushSync();
     expect(onChange.mock.lastCall?.[0]?.inputs?.[0]).toMatchObject({ id: 'in', turn: 'message' });
+  });
+});
+
+/** The Chat turn select of the n-th card in the document. */
+function turnSelect(target: HTMLElement, card = 0): HTMLSelectElement {
+  const cards = target.querySelectorAll('.wf-interface__entry');
+  const label = Array.from(cards[card].querySelectorAll('label')).find((l) =>
+    l.textContent?.includes('Chat turn')
+  );
+  const select = label?.querySelector('select');
+  if (!select) throw new Error('no Chat turn select');
+  return select;
+}
+
+function choose(select: HTMLSelectElement, value: string): void {
+  select.value = value;
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+  flushSync();
+}
+
+function optionValues(select: HTMLSelectElement): string[] {
+  return Array.from(select.options).map((option) => option.value);
+}
+
+function renderWithout(workflowInterface: WorkflowInterface) {
+  return render(workflowInterface, undefined, null);
+}
+
+describe('Chat turn selector, for a workflow without Playground settings', () => {
+  // A server before FlowDrop 2.7.0: no `playground` key on the workflow.
+  const render = (workflowInterface: WorkflowInterface) => renderWithout(workflowInterface);
+
+  it('offers the input vocabulary on inputs and reply on outputs', () => {
+    const { target } = render({
+      inputs: [entry({ id: 'in' })],
+      outputs: [entry({ id: 'out' })]
+    });
+    expect(optionValues(turnSelect(target, 0))).toEqual([
+      '',
+      'message',
+      'history',
+      'session_id',
+      'message_id'
+    ]);
+    expect(optionValues(turnSelect(target, 1))).toEqual(['', 'reply']);
+  });
+
+  it('writes the chosen turn', () => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'in' })] });
+    choose(turnSelect(target), 'message');
+    expect(onChange).toHaveBeenLastCalledWith({
+      inputs: [{ id: 'in', dataType: 'string', bindings: [], turn: 'message' }],
+      outputs: undefined
+    });
+  });
+
+  it('removes the turn key when set back to None', () => {
+    const { target, onChange } = render({ outputs: [entry({ id: 'out', turn: 'reply' })] });
+    choose(turnSelect(target), '');
+    const next = onChange.mock.lastCall?.[0];
+    expect(next?.outputs?.[0]).toEqual({ id: 'out', dataType: 'string', bindings: [] });
+    expect(next?.outputs?.[0] && 'turn' in next.outputs[0]).toBe(false);
+  });
+
+  it('shows a limit field for history that writes meta.limit', () => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'h', turn: 'history' })] });
+    const input = target.querySelector<HTMLInputElement>('input[type="number"]');
+    expect(input).not.toBeNull();
+    expect(input?.placeholder).toContain('10');
+    if (!input) return;
+    input.value = '25';
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    flushSync();
+    expect(onChange.mock.lastCall?.[0]?.inputs?.[0]).toEqual({
+      id: 'h',
+      dataType: 'string',
+      bindings: [],
+      turn: 'history',
+      meta: { limit: 25 }
+    });
+  });
+
+  it('has no limit field for other turns', () => {
+    const { target } = render({ inputs: [entry({ id: 'm', turn: 'message' })] });
+    expect(target.querySelector('input[type="number"]')).toBeNull();
+  });
+
+  it('warns inline on the second input with the same turn', () => {
+    const { target } = render({
+      inputs: [entry({ id: 'first', turn: 'message' }), entry({ id: 'second', turn: 'message' })]
+    });
+    const cards = target.querySelectorAll('.wf-interface__entry');
+    expect(cards[0].textContent).not.toContain('already has this chat turn');
+    expect(cards[1].textContent).toContain('Input "first" already has this chat turn');
+  });
+
+  it('lists an unknown stored turn and keeps it through an edit to another field', () => {
+    const unknown = 'entity_context';
+    const { target, onChange } = render({
+      inputs: [entry({ id: 'ctx', turn: unknown, meta: { limit: 3 } })]
+    });
+    const select = turnSelect(target);
+    expect(optionValues(select)).toContain('entity_context');
+    expect(select.value).toBe('entity_context');
+
+    const required = target.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    if (!required) throw new Error('no Required checkbox');
+    required.checked = true;
+    required.dispatchEvent(new Event('change', { bubbles: true }));
+    flushSync();
+    expect(onChange.mock.lastCall?.[0]?.inputs?.[0]).toEqual({
+      id: 'ctx',
+      dataType: 'string',
+      bindings: [],
+      turn: 'entity_context',
+      meta: { limit: 3 },
+      required: true
+    });
+  });
+});
+
+describe('deprecated chat turn, once Playground settings are stored', () => {
+  it('does not warn about two inputs with the same turn (the server ignores turn then)', () => {
+    const { target } = render(
+      {
+        inputs: [entry({ id: 'first', turn: 'message' }), entry({ id: 'second', turn: 'message' })]
+      },
+      undefined,
+      {
+        chat: {
+          message: 'first',
+          history: null,
+          session_id: null,
+          message_id: null,
+          replies: [],
+          sub_workflow_replies: false
+        }
+      }
+    );
+    expect(target.textContent).not.toContain('already has this chat turn');
+  });
+});
+
+describe('input id edits reported for the chat binding', () => {
+  function idField(target: HTMLElement, card = 0): HTMLInputElement {
+    const cards = target.querySelectorAll('.wf-interface__entry');
+    const label = Array.from(cards[card].querySelectorAll('label')).find((l) =>
+      l.textContent?.trim().startsWith('ID')
+    );
+    const input = label?.querySelector('input');
+    if (!input) throw new Error('no ID field');
+    return input;
+  }
+
+  function removeButton(target: HTMLElement, card = 0): HTMLButtonElement {
+    const cards = target.querySelectorAll('.wf-interface__entry');
+    const button = cards[card].querySelector<HTMLButtonElement>('button[aria-label^="Remove"]');
+    if (!button) throw new Error('no Remove button');
+    return button;
+  }
+
+  function rename(input: HTMLInputElement, value: string): void {
+    input.value = value;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    flushSync();
+  }
+
+  it('reports a renamed input', () => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'q' })] });
+    rename(idField(target), 'prompt');
+    expect(onChange.mock.lastCall?.[1]).toEqual({ kind: 'rename', id: 'q', to: 'prompt' });
+  });
+
+  it('reports a removed input', () => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'q' }), entry({ id: 'topic' })] });
+    removeButton(target, 0).click();
+    flushSync();
+    expect(onChange.mock.lastCall?.[1]).toEqual({ kind: 'remove', id: 'q' });
+  });
+
+  it('reports nothing when another input still has the old id', () => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'q' }), entry({ id: 'q' })] });
+    rename(idField(target, 0), 'prompt');
+    expect(onChange.mock.lastCall).toHaveLength(1);
+  });
+
+  it('reports nothing for outputs', () => {
+    const { target, onChange } = render({ outputs: [entry({ id: 'out' })] });
+    rename(idField(target), 'answer');
+    expect(onChange.mock.lastCall).toHaveLength(1);
   });
 });

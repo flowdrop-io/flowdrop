@@ -28,6 +28,7 @@ import {
   interfaceFormEntries,
   resolvePlaygroundInputMode,
   playgroundChatIssues,
+  findReplyPort,
   interfaceFormSchema,
   interfaceFormInputs,
   collectInterfaceInputs
@@ -1354,6 +1355,12 @@ describe('playgroundChatIssues', () => {
     expect(playgroundChatIssues(wf)).toEqual([]);
   });
 
+  it('reads a binding from the wire that leaves out its nullable keys as unbound there', () => {
+    // The schema requires only `replies`.
+    const sparse = { replies: [reply] } as unknown as PlaygroundChatBinding;
+    expect(playgroundChatIssues(workflowWith(sparse))).toEqual([]);
+  });
+
   it('defaults to the stored binding, and judges an explicit one instead', () => {
     const wf = workflowWith(chat({ message: 'gone', replies: [reply] }));
     expect(playgroundChatIssues(wf).map((i) => i.code)).toEqual(['playground-input-missing']);
@@ -1456,5 +1463,76 @@ describe('playgroundChatIssues', () => {
   it('reports an error and the half-set warning together', () => {
     const issues = playgroundChatIssues(workflowWith(chat({ message: 'gone' })));
     expect(issues.map((i) => i.code)).toEqual(['playground-input-missing', 'playground-half-set']);
+  });
+});
+
+describe('findReplyPort', () => {
+  const out = (id: string, name = id) => makePort(id, 'string', { type: 'output', name });
+
+  it('finds any output of the node, exposed on the canvas or not', () => {
+    const hidden = { outputs: [{ id: 'secret', exposed: false }] } as PortsConfig;
+    const wf = makeWorkflow([
+      makeNode('n1', [], [out('text', 'Text'), out('secret', 'Secret')], hidden)
+    ]);
+    expect(listBindablePorts(wf, 'output').map((c) => c.port.id)).not.toContain('secret');
+    expect(findReplyPort(wf, { node_id: 'n1', port: 'secret' })).toEqual({
+      nodeLabel: 'n1',
+      port: expect.objectContaining({ id: 'secret', name: 'Secret' })
+    });
+  });
+
+  it('is null for a node or port that is gone', () => {
+    const wf = makeWorkflow([makeNode('n1', [], [out('text')])]);
+    expect(findReplyPort(wf, { node_id: 'ghost', port: 'text' })).toBeNull();
+    expect(findReplyPort(wf, { node_id: 'n1', port: 'nope' })).toBeNull();
+  });
+});
+
+describe('validateWorkflowInterface: deprecated turn marks', () => {
+  const twoMessages = (): Workflow['interface'] => ({
+    inputs: [
+      makeEntry({ id: 'first', bindings: [], turn: 'message' }),
+      makeEntry({ id: 'second', bindings: [], turn: 'message' })
+    ],
+    outputs: [makeEntry({ id: 'out', bindings: [], turn: 'message' })]
+  });
+  const turnCodes = (wf: Workflow) =>
+    validateWorkflowInterface(wf)
+      .filter((issue) => issue.code.startsWith('interface-turn'))
+      .map((issue) => issue.code);
+
+  it('warns, without pointing at Playground settings, for a workflow without them (older server)', () => {
+    const wf = makeWorkflow([], [], twoMessages());
+    const issues = validateWorkflowInterface(wf).filter((i) => i.code.startsWith('interface-turn'));
+    expect(issues.map((i) => i.code).sort()).toEqual([
+      'interface-turn-direction',
+      'interface-turn-duplicate'
+    ]);
+    for (const issue of issues) expect(issue.message).not.toContain('Playground settings');
+  });
+
+  it('warns, pointing at Playground settings, when the workflow has none stored yet', () => {
+    const wf = { ...makeWorkflow([], [], twoMessages()), playground: { chat: null } };
+    const issues = validateWorkflowInterface(wf).filter((i) => i.code.startsWith('interface-turn'));
+    expect(issues).toHaveLength(2);
+    for (const issue of issues) expect(issue.message).toContain('Playground settings');
+  });
+
+  it('says nothing about them once settings are stored (the server ignores turn then)', () => {
+    const wf = {
+      ...makeWorkflow([], [], twoMessages()),
+      playground: { chat: { ...noChat(), message: 'first' } }
+    };
+    expect(turnCodes(wf)).toEqual([]);
+  });
+
+  it('still reports the checks after them (duplicate ids)', () => {
+    const wf = {
+      ...makeWorkflow([], [], {
+        inputs: [makeEntry({ id: 'x', bindings: [] }), makeEntry({ id: 'x', bindings: [] })]
+      }),
+      playground: { chat: { ...noChat(), message: 'x' } }
+    };
+    expect(validateWorkflowInterface(wf).map((i) => i.code)).toContain('interface-duplicate-id');
   });
 });

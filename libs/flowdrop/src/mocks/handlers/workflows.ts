@@ -18,6 +18,7 @@ import type {
   WorkflowsResponse
 } from '../../lib/types/index.js';
 import { normalizePlaygroundChat, resolvePlaygroundChat } from '../../lib/utils/playgroundChat.js';
+import { playgroundChatIssues } from '../../lib/utils/workflowInterface.js';
 
 /** Base API path for flowdrop endpoints */
 const API_BASE = '/api/flowdrop';
@@ -56,20 +57,6 @@ function chatFromSaveBody(body: Record<string, unknown>): PlaygroundChatBinding 
   }
   const chat = (playground as { chat: unknown }).chat;
   return chat === null || chat === undefined ? null : normalizePlaygroundChat(chat);
-}
-
-/** Names in the binding that the workflow's interface does not declare. */
-function chatProblems(chat: PlaygroundChatBinding, workflow: Workflow): string[] {
-  const inputIds = new Set((workflow.interface?.inputs ?? []).map((entry) => entry.id));
-  const named: [string, string | null][] = [
-    ['message', chat.message],
-    ['history', chat.history?.input ?? null],
-    ['session_id', chat.session_id],
-    ['message_id', chat.message_id]
-  ];
-  return named
-    .filter(([, id]) => id !== null && !inputIds.has(id))
-    .map(([field, id]) => `${field}: the workflow has no interface input "${id}"`);
 }
 
 /**
@@ -284,8 +271,21 @@ export const updateWorkflowHandler = http.put(
 
       const chat = chatFromSaveBody(body);
       const existing = getWorkflowById(workflowId);
+      const savedInterface = body.interface as Workflow['interface'] | undefined;
       if (chat && existing) {
-        const problems = chatProblems(chat, existing);
+        // Judge the binding against the workflow as this save leaves it (its
+        // interface and nodes, when the body carries them), with the same
+        // checks the editor shows, as the real server does.
+        const problems = playgroundChatIssues(
+          {
+            ...existing,
+            interface: savedInterface ?? existing.interface,
+            nodes: (body.nodes as Workflow['nodes'] | undefined) ?? existing.nodes
+          },
+          chat
+        )
+          .filter((issue) => issue.severity === 'error')
+          .map((issue) => issue.message);
         if (problems.length > 0) {
           return HttpResponse.json(
             {
@@ -300,6 +300,7 @@ export const updateWorkflowHandler = http.put(
       }
       const updated = updateWorkflow(workflowId, {
         ...(chat !== undefined ? { playground: { chat } } : {}),
+        ...(savedInterface !== undefined ? { interface: savedInterface } : {}),
         name: body.name as string | undefined,
         description: body.description as string | undefined,
         nodes: body.nodes as Workflow['nodes'] | undefined,

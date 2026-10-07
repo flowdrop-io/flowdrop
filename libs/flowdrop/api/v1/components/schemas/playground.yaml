@@ -398,9 +398,11 @@ PlaygroundMessageRequest:
     `content` fills the interface input named by the workflow's chat binding
     (`playground.resolved.message`). A workflow whose binding has no message
     input is form-only: it runs on `inputs` alone and the server refuses
-    `content` with a 400 whose message names the fix. A workflow with no
-    binding at all keeps the server's older behaviour (deprecated) and still
-    needs `content`.
+    `content` with a 400 whose message names the fix. That includes a
+    workflow with no binding at all (`playground.source: none`): it has no
+    chat until somebody sets one up, and nothing is guessed from its nodes.
+    Only a server before FlowDrop 2.7.0, which sends no `playground`, still
+    guesses the message input from the nodes (deprecated).
   properties:
     content:
       type: string

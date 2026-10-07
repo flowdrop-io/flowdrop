@@ -19,6 +19,7 @@ import { WORKFLOW_SCHEMA_VERSION } from '$lib/schemas/index.js';
 import type { PortMapping } from '../utils/nodeSwap.js';
 import type { WorkflowInterfaceEntry } from '$lib/types/index.js';
 import { interfaceBoundHandles, rewriteInterfaceBindings } from '../utils/workflowInterface.js';
+import { rewritePlaygroundReplies } from '../utils/playgroundChat.js';
 
 type WorkflowMetadata = Workflow['metadata'];
 
@@ -874,7 +875,17 @@ export class WorkflowStore {
   }): void {
     if (!this.#workflow) return;
     // Node swap is the one mutation that actively moves interface bindings —
-    // every other mutation (including delete) leaves them untouched.
+    // every other mutation (including delete) leaves them untouched. The chat
+    // binding's replies name node ports directly, so they move with it.
+    const playgroundAfterSwap =
+      updates.oldNodeId && updates.newNodeId
+        ? rewritePlaygroundReplies(
+            this.#workflow.playground,
+            updates.oldNodeId,
+            updates.newNodeId,
+            updates.portMappings ?? []
+          )
+        : this.#workflow.playground;
     const interfaceAfterSwap =
       updates.oldNodeId && updates.newNodeId
         ? rewriteInterfaceBindings(
@@ -889,6 +900,7 @@ export class WorkflowStore {
       nodes: updates.nodes,
       edges: updates.edges,
       interface: interfaceAfterSwap,
+      ...(playgroundAfterSwap !== undefined && { playground: playgroundAfterSwap }),
       metadata: buildMetadata(this.#workflow.metadata)
     };
     this.#pushToHistory(updates.description ?? 'Swap node');

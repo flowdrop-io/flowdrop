@@ -686,6 +686,62 @@ describe('WorkflowStore', () => {
     });
   });
 
+  describe('workflow.playground through a node swap', () => {
+    it('moves replies on the swapped node to its mapped output, in the same history entry', () => {
+      const oldNode = createTestNode({ id: 'agent-1' });
+      const newNode = createTestNode({ id: 'agent-2' });
+      fd.workflow.initialize(
+        createTestWorkflow({
+          nodes: [oldNode],
+          playground: {
+            chat: {
+              message: null,
+              history: null,
+              session_id: null,
+              message_id: null,
+              replies: [{ node_id: 'agent-1', port: 'response' }],
+              sub_workflow_replies: false
+            }
+          }
+        })
+      );
+      const versionBefore = fd.workflow.editVersion;
+
+      fd.workflow.swapNode({
+        nodes: [newNode],
+        edges: [],
+        oldNodeId: 'agent-1',
+        newNodeId: 'agent-2',
+        portMappings: [
+          {
+            oldHandleId: 'agent-1-output-response',
+            newHandleId: 'agent-2-output-answer',
+            oldPortId: 'response',
+            newPortId: 'answer',
+            direction: 'output'
+          }
+        ]
+      });
+
+      expect(fd.workflow.current?.playground?.chat?.replies).toEqual([
+        { node_id: 'agent-2', port: 'answer' }
+      ]);
+      expect(fd.workflow.editVersion).toBe(versionBefore + 1);
+    });
+
+    it('adds no playground key to a workflow without one', () => {
+      fd.workflow.initialize(createTestWorkflow({ nodes: [createTestNode({ id: 'a' })] }));
+      fd.workflow.swapNode({
+        nodes: [createTestNode({ id: 'b' })],
+        edges: [],
+        oldNodeId: 'a',
+        newNodeId: 'b',
+        portMappings: []
+      });
+      expect(fd.workflow.current && 'playground' in fd.workflow.current).toBe(false);
+    });
+  });
+
   describe('workflow.interface round-trip', () => {
     /** An interface carrying an unrecognized `meta` key — the passthrough guarantee. */
     function interfaceFixture(): WorkflowInterface {

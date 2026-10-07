@@ -36,12 +36,14 @@
   import { DEFAULT_HISTORY_TURN_LIMIT } from '$lib/types/index.js';
   import {
     emptyPlaygroundChat,
+    hasKnownInterfaceTurns,
     interfaceTurnChat,
     isPlaygroundChatSet,
     normalizePlaygroundChat,
     withPlaygroundChat
   } from '$lib/utils/playgroundChat.js';
   import {
+    findReplyPort,
     listBindablePorts,
     playgroundChatIssues,
     type PlaygroundChatInputKey,
@@ -79,7 +81,12 @@
   const errors = $derived(issues.filter((issue) => issue.severity === 'error'));
   const halfSet = $derived(issues.some((issue) => issue.code === 'playground-half-set'));
 
-  /** Output ports a reply can print from, plus stored replies no longer offered. */
+  /**
+   * Output ports a reply can print from (the exposed ones), plus every stored
+   * reply not among them: one on a port that is not exposed on the canvas
+   * reads like any other (the server accepts it), one on a node or port that
+   * is gone is marked missing.
+   */
   const replyOptions = $derived.by(() => {
     const options = listBindablePorts(workflow, 'output').map((candidate) => ({
       reply: { node_id: candidate.nodeId, port: candidate.port.id },
@@ -88,11 +95,23 @@
     }));
     for (const reply of chat.replies) {
       if (!options.some((option) => sameReply(option.reply, reply))) {
-        options.push({ reply, label: `${reply.node_id} · ${reply.port}`, missing: true });
+        const found = findReplyPort(workflow, reply);
+        options.push(
+          found
+            ? {
+                reply,
+                label: `${found.nodeLabel} · ${found.port.name ?? found.port.id}`,
+                missing: false
+              }
+            : { reply, label: `${reply.node_id} · ${reply.port}`, missing: true }
+        );
       }
     }
     return options;
   });
+
+  /** Deprecated `turn` marks left on the interface once settings are stored (ignored). */
+  const leftoverTurns = $derived(stored !== null && hasKnownInterfaceTurns(workflow.interface));
 
   /** Whether either id input is bound: the disclosure is then open. */
   const idsBound = $derived(chat.session_id !== null || chat.message_id !== null);
@@ -239,6 +258,17 @@
         <p>{m().playgroundSettings.notSetUp}</p>
       </div>
     {/if}
+  {/if}
+
+  {#if leftoverTurns}
+    <div class="wf-playground__note" role="note">
+      <p>{m().playgroundSettings.leftoverTurns}</p>
+      {#if onMoveTurns}
+        <Button variant="secondary" size="sm" onclick={() => stored && onMoveTurns?.(stored)}>
+          {m().playgroundSettings.removeTurns}
+        </Button>
+      {/if}
+    </div>
   {/if}
 
   {#if inputs.length === 0}

@@ -122,8 +122,19 @@ async function settle(): Promise<void> {
   flushSync();
 }
 
-async function render(workflow: Workflow | undefined, config: PlaygroundConfig = {}) {
-  const fd = createFlowDropInstance();
+/**
+ * `baseUrl`: the Playground remembers, per base URL and for the page, a server
+ * that sends no Playground settings. A test that teaches it that uses its own
+ * URL, so no other test inherits it.
+ */
+async function render(
+  workflow: Workflow | undefined,
+  config: PlaygroundConfig = {},
+  {
+    fd = createFlowDropInstance(),
+    baseUrl
+  }: { fd?: ReturnType<typeof createFlowDropInstance>; baseUrl?: string } = {}
+) {
   const target = document.createElement('div');
   document.body.appendChild(target);
   mounted = mount(Playground, {
@@ -135,6 +146,7 @@ async function render(workflow: Workflow | undefined, config: PlaygroundConfig =
       // No retries: a refused request must not outlive the test.
       endpointConfig: {
         ...structuredClone(defaultEndpointConfig),
+        ...(baseUrl !== undefined && { baseUrl }),
         retry: { enabled: false, maxAttempts: 1, delay: 0 }
       },
       config,
@@ -454,7 +466,11 @@ describe('Playground input mode with Playground settings', () => {
       success: true,
       data: workflowWith({ inputs: [topic] }, { chat: null })
     };
-    const { fd } = await render(workflowWith({ inputs: [plain('msg'), topic] }));
+    const { fd } = await render(
+      workflowWith({ inputs: [plain('msg'), topic] }),
+      {},
+      { baseUrl: 'http://with-settings.test/api/flowdrop' }
+    );
 
     expect(calls.some((c) => c.method === 'GET' && c.url.endsWith('/workflows/wf'))).toBe(true);
     expect(fd.playground.inputMode).toBe('form');
@@ -465,10 +481,35 @@ describe('Playground input mode with Playground settings', () => {
     // The caller's (unsaved) interface marks a message turn; the saved copy
     // has none, and taking it would drop the Playground back to legacy.
     workflowsGetBody = { success: true, data: workflowWith({ inputs: [topic] }) };
-    const { fd } = await render(workflowWith({ inputs: [message, topic], outputs: [reply] }));
+    const { fd } = await render(
+      workflowWith({ inputs: [message, topic], outputs: [reply] }),
+      {},
+      { baseUrl: 'http://pre-27.test/api/flowdrop' }
+    );
 
     expect(fd.playground.chatBinding).toBeNull();
     expect(fd.playground.inputMode).toBe('chat');
+  });
+
+  it('asks a server that sent no Playground settings only once per page', async () => {
+    const baseUrl = 'http://pre-27-once.test/api/flowdrop';
+    const loads = () =>
+      calls.filter((c) => c.method === 'GET' && c.url.endsWith('/workflows/wf')).length;
+    workflowsGetBody = { success: true, data: workflowWith({ inputs: [topic] }) };
+    const passed = workflowWith({ inputs: [topic] });
+
+    const { fd } = await render(passed, {}, { baseUrl });
+    expect(loads()).toBe(1);
+    unmount(mounted!);
+    mounted = null;
+    await render(passed, {}, { fd, baseUrl });
+    expect(loads()).toBe(1);
+
+    // Another server is asked anew.
+    unmount(mounted!);
+    mounted = null;
+    await render(passed, {}, { baseUrl: 'http://other.test/api/flowdrop' });
+    expect(loads()).toBe(2);
   });
 
   it('says nothing will reply when a message input is bound and no reply is', async () => {
@@ -479,6 +520,17 @@ describe('Playground input mode with Playground settings', () => {
     expect(target.querySelector('.control-panel__notice')?.textContent).toContain(
       'Nothing will reply here'
     );
+  });
+
+  it('says there is no chat when the stored binding no longer binds anything', async () => {
+    // `message` names an input the interface no longer has: resolved, it
+    // binds nothing, though `source` is still `settings`.
+    const { target, fd } = await render(
+      workflowWith({ inputs: [topic] }, { chat: { ...emptyChat, message: 'gone' } })
+    );
+
+    expect(fd.playground.chatBinding?.source).toBe('settings');
+    expect(target.querySelector('.control-panel__notice')?.textContent).toContain('No chat yet');
   });
 
   it('shows no notice when the chat is bound with a reply', async () => {

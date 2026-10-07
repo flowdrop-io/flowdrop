@@ -585,3 +585,65 @@ describe('WorkflowPlaygroundSettings: session and message ids', () => {
     expect(details(target).open).toBe(true);
   });
 });
+
+describe('WorkflowPlaygroundSettings: leftover turn marks', () => {
+  const stored = (): PlaygroundChatBinding => ({
+    ...emptyChat(),
+    message: 'msg',
+    replies: [{ node_id: 'n1', port: 'text' }]
+  });
+  const withLeftovers = () =>
+    makeWorkflow({
+      interface: {
+        inputs: [entry('msg', { turn: 'message' }), entry('hist')],
+        outputs: [entry('r', { turn: 'reply', bindings: [{ nodeId: 'n1', portId: 'text' }] })]
+      },
+      playground: { chat: stored() }
+    });
+
+  it('says they are ignored, and "Remove them" hands the stored binding to onMoveTurns', () => {
+    const { target, onMoveTurns, onChange } = render(withLeftovers());
+    expect(target.textContent).toContain('They are ignored while these settings are set.');
+    const button = Array.from(target.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('Remove them')
+    );
+    button?.click();
+    flushSync();
+    expect(onMoveTurns).toHaveBeenCalledWith(stored());
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('is not shown without marks, or for marks this library does not know', () => {
+    const { target } = render(makeWorkflow({ playground: { chat: stored() } }));
+    expect(target.textContent).not.toContain('Remove them');
+    unmount(mounted!);
+    mounted = null;
+    document.body.innerHTML = '';
+    const unknown = render(
+      makeWorkflow({
+        interface: { inputs: [entry('msg', { turn: 'from_the_future' })] },
+        playground: { chat: stored() }
+      })
+    );
+    expect(unknown.target.textContent).not.toContain('Remove them');
+  });
+});
+
+describe('WorkflowPlaygroundSettings: a reply on an output not exposed on the canvas', () => {
+  it('reads like any other reply, with its node label and port name, not as missing', () => {
+    const writer = node('n1', 'Writer', [outPort('text', 'Text'), outPort('secret', 'Secret')]);
+    writer.data.config = { ports: { outputs: [{ id: 'secret', exposed: false }] } };
+    const { target } = render(
+      makeWorkflow({
+        nodes: [writer],
+        playground: { chat: { ...emptyChat(), replies: [{ node_id: 'n1', port: 'secret' }] } }
+      })
+    );
+    const label = Array.from(target.querySelectorAll('label')).find((l) =>
+      l.textContent?.includes('Writer · Secret')
+    );
+    expect(label).toBeDefined();
+    expect(label?.classList).not.toContain('wf-playground__check--missing');
+    expect(checkboxFor(target, 'Writer · Secret').checked).toBe(true);
+  });
+});

@@ -18,7 +18,10 @@
   Stateless: reads `workflow` as a prop and reports the next `WorkflowInterface`
   via `onChange`. The caller (`App.svelte`) is responsible for routing that
   through the workflow store (`fd.workflow.batchUpdate({ interface: next })`),
-  so every edit here goes through the store's normal history path.
+  so every edit here goes through the store's normal history path. When an
+  edit renames or removes an input id, `onChange` also says so, so the caller
+  can carry the workflow's chat binding (`playground.chat`, which names inputs
+  by id) along in the same update (`followInterfaceInputEdit`).
 
   `meta` is never editable here (design decision 4) — it round-trips verbatim
   and is shown as a read-only JSON disclosure when present. One exception: the
@@ -40,6 +43,7 @@
     WorkflowInterface,
     WorkflowInterfaceEntry
   } from '$lib/types/index.js';
+  import type { InterfaceInputEdit } from '$lib/utils/playgroundChat.js';
   import {
     entryFromBindablePort,
     rankBindablePorts,
@@ -53,7 +57,12 @@
 
   interface Props {
     workflow: Workflow;
-    onChange: (next: WorkflowInterface | undefined) => void;
+    /**
+     * The next interface, after an edit. `edit` is set when the edit renamed
+     * or removed an input id (and no other input still has the old one), so
+     * the caller can follow it in the chat binding.
+     */
+    onChange: (next: WorkflowInterface | undefined, edit?: InterfaceInputEdit) => void;
     /**
      * Opens the workflow's Playground settings. Entries that still carry the
      * deprecated chat `turn` link there; omit when the host has none.
@@ -236,13 +245,24 @@
    * not linger as `{}`) still holds: a workflow nobody has authored an
    * interface for never reaches this function, and keeps its absent key.
    */
-  function commit(direction: Direction, next: WorkflowInterfaceEntry[]): void {
+  function commit(
+    direction: Direction,
+    next: WorkflowInterfaceEntry[],
+    edit?: InterfaceInputEdit
+  ): void {
     const inputs = direction === 'inputs' ? next : (workflow.interface?.inputs ?? []);
     const outputs = direction === 'outputs' ? next : (workflow.interface?.outputs ?? []);
-    onChange({
+    const nextInterface = {
       inputs: inputs.length > 0 ? inputs : undefined,
       outputs: outputs.length > 0 ? outputs : undefined
-    });
+    };
+    // An id another input still carries is still on the interface: nothing
+    // the binding names went away.
+    if (direction === 'inputs' && edit && !inputs.some((entry) => entry.id === edit.id)) {
+      onChange(nextInterface, edit);
+    } else {
+      onChange(nextInterface);
+    }
   }
 
   /**
@@ -282,10 +302,12 @@
   function removeEntry(direction: Direction, index: number): void {
     // Dropping the row id destroys that card's component, and its disclosure
     // state with it — no bookkeeping to keep in step.
+    const removed = entriesFor(direction)[index];
     rowIds[direction].splice(index, 1);
     commit(
       direction,
-      entriesFor(direction).filter((_, i) => i !== index)
+      entriesFor(direction).filter((_, i) => i !== index),
+      removed && { kind: 'remove', id: removed.id }
     );
   }
 
@@ -306,10 +328,15 @@
     index: number,
     patch: Partial<WorkflowInterfaceEntry>
   ): void {
+    const before = entriesFor(direction)[index];
     const list = entriesFor(direction).map((entry, i) =>
       i === index ? applyPatch(entry, patch) : entry
     );
-    commit(direction, list);
+    const renamed: InterfaceInputEdit | undefined =
+      before && typeof patch.id === 'string' && patch.id !== before.id
+        ? { kind: 'rename', id: before.id, to: patch.id }
+        : undefined;
+    commit(direction, list, renamed);
   }
 
   /**
@@ -369,10 +396,11 @@
                 'interface-input-already-connected'
               )}
               conflictingSource={conflictingSourceLabel(entry)}
-              turnTakenBy={section.key === 'inputs'
+              turnTakenBy={section.key === 'inputs' && !workflow.playground?.chat
                 ? turnTakenBy(entriesFor('inputs'), entry)
                 : undefined}
               {onOpenPlaygroundSettings}
+              turnSelector={workflow.playground === undefined}
               isFirst={index === 0}
               isLast={index === list.length - 1}
               onPatch={(patch: Partial<WorkflowInterfaceEntry>) =>

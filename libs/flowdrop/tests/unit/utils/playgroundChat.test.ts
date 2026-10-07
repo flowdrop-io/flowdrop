@@ -18,7 +18,10 @@ import {
   isPlaygroundChatHalfSet,
   withPlaygroundChat,
   playgroundForSave,
-  withoutInterfaceTurns
+  withoutInterfaceTurns,
+  followInterfaceInputEdit,
+  rewritePlaygroundReplies,
+  hasKnownInterfaceTurns
 } from '$lib/utils/playgroundChat.js';
 import {
   DEFAULT_HISTORY_TURN_LIMIT,
@@ -466,5 +469,121 @@ describe('withoutInterfaceTurns', () => {
     const result = withoutInterfaceTurns(source);
     expect(source).toEqual(copy);
     expect(result).not.toHaveProperty('outputs');
+  });
+});
+
+describe('followInterfaceInputEdit', () => {
+  const stored = (chat: PlaygroundChatBinding) => ({
+    chat,
+    resolved: chat,
+    source: 'settings' as const
+  });
+
+  it('renames every key bound to the renamed input, and drops resolved/source', () => {
+    const playground = stored(
+      binding({
+        message: 'q',
+        history: { input: 'q', limit: 4 },
+        replies: [{ node_id: 'n', port: 'p' }]
+      })
+    );
+    expect(followInterfaceInputEdit(playground, { kind: 'rename', id: 'q', to: 'prompt' })).toEqual(
+      {
+        chat: binding({
+          message: 'prompt',
+          history: { input: 'prompt', limit: 4 },
+          replies: [{ node_id: 'n', port: 'p' }]
+        })
+      }
+    );
+  });
+
+  it('unbinds a removed input, keeping the rest', () => {
+    const playground = stored(
+      binding({ message: 'q', session_id: 'sid', replies: [{ node_id: 'n', port: 'p' }] })
+    );
+    expect(followInterfaceInputEdit(playground, { kind: 'remove', id: 'q' })?.chat).toEqual(
+      binding({ session_id: 'sid', replies: [{ node_id: 'n', port: 'p' }] })
+    );
+  });
+
+  it('clears the binding when the removed input was all it bound', () => {
+    const playground = stored(binding({ history: { input: 'h', limit: 3 } }));
+    expect(followInterfaceInputEdit(playground, { kind: 'remove', id: 'h' })).toEqual({
+      chat: null
+    });
+  });
+
+  it('treats a rename to an empty id as a removal', () => {
+    const playground = stored(binding({ message: 'q', replies: [{ node_id: 'n', port: 'p' }] }));
+    expect(
+      followInterfaceInputEdit(playground, { kind: 'rename', id: 'q', to: '' })?.chat?.message
+    ).toBeNull();
+  });
+
+  it('returns the same object when the binding does not name the input, or nothing is stored', () => {
+    const playground = stored(binding({ message: 'q' }));
+    expect(followInterfaceInputEdit(playground, { kind: 'remove', id: 'other' })).toBe(playground);
+    const none = { chat: null };
+    expect(followInterfaceInputEdit(none, { kind: 'remove', id: 'q' })).toBe(none);
+    expect(followInterfaceInputEdit(undefined, { kind: 'remove', id: 'q' })).toBeUndefined();
+  });
+});
+
+describe('rewritePlaygroundReplies', () => {
+  const mapping = (
+    oldPortId: string,
+    newPortId: string,
+    direction: 'input' | 'output' = 'output'
+  ) => ({
+    oldPortId,
+    newPortId,
+    direction
+  });
+
+  it('moves replies on the swapped node to the mapped output port', () => {
+    const playground = {
+      chat: binding({
+        message: 'm',
+        replies: [
+          { node_id: 'old', port: 'response' },
+          { node_id: 'other', port: 'text' }
+        ]
+      })
+    };
+    const next = rewritePlaygroundReplies(playground, 'old', 'new', [
+      mapping('response', 'response', 'input'),
+      mapping('response', 'answer')
+    ]);
+    expect(next?.chat?.replies).toEqual([
+      { node_id: 'new', port: 'answer' },
+      { node_id: 'other', port: 'text' }
+    ]);
+    expect(next?.chat?.message).toBe('m');
+  });
+
+  it('leaves a reply whose port has no mapping as it was (shown as missing, not dropped)', () => {
+    const playground = { chat: binding({ replies: [{ node_id: 'old', port: 'gone' }] }) };
+    expect(rewritePlaygroundReplies(playground, 'old', 'new', [])?.chat?.replies).toEqual([
+      { node_id: 'old', port: 'gone' }
+    ]);
+  });
+
+  it('returns the same object when no reply is on the old node, or nothing is stored', () => {
+    const playground = { chat: binding({ replies: [{ node_id: 'other', port: 'p' }] }) };
+    expect(rewritePlaygroundReplies(playground, 'old', 'new', [])).toBe(playground);
+    expect(rewritePlaygroundReplies(undefined, 'old', 'new', [])).toBeUndefined();
+  });
+});
+
+describe('hasKnownInterfaceTurns', () => {
+  it('is true for a known turn on either side, false for none or only unknown values', () => {
+    expect(hasKnownInterfaceTurns({ outputs: [entry('r', { turn: 'reply' })] })).toBe(true);
+    expect(hasKnownInterfaceTurns({ inputs: [entry('m', { turn: 'message' })] })).toBe(true);
+    expect(hasKnownInterfaceTurns({ inputs: [entry('x', { turn: 'from_the_future' })] })).toBe(
+      false
+    );
+    expect(hasKnownInterfaceTurns({ inputs: [entry('t')] })).toBe(false);
+    expect(hasKnownInterfaceTurns(undefined)).toBe(false);
   });
 });

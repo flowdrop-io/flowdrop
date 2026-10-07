@@ -10,6 +10,18 @@
   /workflow/[id]/playground/[sessionId] route.
 -->
 
+<script lang="ts" module>
+  /**
+   * API base URLs whose server sent a workflow without `playground` (before
+   * FlowDrop 2.7.0). Such a server sends none for any workflow, so once one
+   * load has said so, a caller that passes the interface needs no further
+   * load. Keyed by base URL, not by client: mounting with `endpointConfig`
+   * rebuilds the client every time. Lasts for the page; an upgraded server
+   * is seen on the next page load.
+   */
+  const serversWithoutPlaygroundSettings = new Set<string>();
+</script>
+
 <script lang="ts">
   import { onMount, onDestroy, untrack } from 'svelte';
   import Icon from '@iconify/svelte';
@@ -39,7 +51,7 @@
     type CommandOutcome
   } from '../../playground/commands/index.js';
   import { resolveRunAction } from '../../playground/runAction.js';
-  import { isPlaygroundChatHalfSet } from '../../utils/playgroundChat.js';
+  import { isPlaygroundChatHalfSet, isPlaygroundChatSet } from '../../utils/playgroundChat.js';
   import type { PlaygroundMessageRequest } from '../../types/playground.js';
 
   interface Props {
@@ -84,13 +96,14 @@
 
   /**
    * One line above the composer when the chat binding cannot chat: nothing
-   * set up (the form or Run still work), or a message input with no reply,
-   * which would take what the person types and never answer.
+   * set up, or a stored binding that no longer binds anything (its inputs
+   * were removed) — the form or Run still work — or a message input with no
+   * reply, which would take what the person types and never answer.
    */
   const chatNotice = $derived.by(() => {
     const resolved = fd.playground.chatBinding;
     if (resolved === null) return undefined;
-    if (resolved.source === 'none') return messages().playground.chatNotSetUp;
+    if (!isPlaygroundChatSet(resolved.binding)) return messages().playground.chatNotSetUp;
     if (isPlaygroundChatHalfSet(resolved.binding)) return messages().playground.chatHalfSet;
     return undefined;
   });
@@ -264,14 +277,17 @@
    * before turn ports.
    */
   async function ensureWorkflowInterface(): Promise<void> {
+    if (!fd.api.config) return;
+    const server = fd.api.config.baseUrl;
     if (
-      (workflow?.interface !== undefined && workflow?.playground !== undefined) ||
-      !fd.api.config
+      workflow?.interface !== undefined &&
+      (workflow.playground !== undefined || serversWithoutPlaygroundSettings.has(server))
     ) {
       return;
     }
     try {
       const loaded = await fd.api.client.loadWorkflow(workflowId);
+      if (loaded.playground === undefined) serversWithoutPlaygroundSettings.add(server);
       if (!workflow) {
         if (loaded.interface !== undefined || loaded.playground !== undefined) {
           fd.playground.setWorkflow(loaded);

@@ -222,6 +222,84 @@ export function playgroundForSave(
 }
 
 /**
+ * An interface edit that changes which input ids exist: one renamed (`id` →
+ * `to`) or removed. Reported by `WorkflowInterfaceEditor` only when no other
+ * input still carries `id`.
+ */
+export type InterfaceInputEdit =
+  | { kind: 'rename'; id: string; to: string }
+  | { kind: 'remove'; id: string };
+
+/**
+ * The `playground` value that follows an interface edit: a renamed input is
+ * renamed in the stored binding, a removed one is unbound (so the binding
+ * never names an input the interface no longer has, which the server refuses
+ * on save). The same object when the binding does not name the input, or
+ * nothing is stored.
+ */
+export function followInterfaceInputEdit(
+  playground: WorkflowPlayground | undefined,
+  edit: InterfaceInputEdit
+): WorkflowPlayground | undefined {
+  if (!playground?.chat) return playground;
+  const chat = normalizePlaygroundChat(playground.chat);
+  if (!playgroundBoundInputs(chat).has(edit.id)) return playground;
+  const to = edit.kind === 'rename' && edit.to !== '' ? edit.to : null;
+  const swap = (id: string | null) => (id === edit.id ? to : id);
+  return withPlaygroundChat(playground, {
+    ...chat,
+    message: swap(chat.message),
+    history:
+      chat.history && chat.history.input === edit.id
+        ? to === null
+          ? null
+          : { ...chat.history, input: to }
+        : chat.history,
+    session_id: swap(chat.session_id),
+    message_id: swap(chat.message_id)
+  });
+}
+
+/**
+ * The `playground` value after a node swap: replies on `oldNodeId` move to
+ * `newNodeId`, each on the output port its mapping names. A reply whose port
+ * has no mapping is left as it was, so it shows as a reply on a missing node
+ * rather than vanishing (as interface bindings do). The same object when no
+ * reply is on the old node.
+ */
+export function rewritePlaygroundReplies(
+  playground: WorkflowPlayground | undefined,
+  oldNodeId: string,
+  newNodeId: string,
+  portMappings: ReadonlyArray<{
+    direction: 'input' | 'output';
+    oldPortId: string;
+    newPortId: string;
+  }>
+): WorkflowPlayground | undefined {
+  if (!playground?.chat) return playground;
+  const chat = normalizePlaygroundChat(playground.chat);
+  if (!chat.replies.some((reply) => reply.node_id === oldNodeId)) return playground;
+  const replies = chat.replies.map((reply) => {
+    if (reply.node_id !== oldNodeId) return reply;
+    const mapping = portMappings.find(
+      (candidate) => candidate.direction === 'output' && candidate.oldPortId === reply.port
+    );
+    return mapping ? { node_id: newNodeId, port: mapping.newPortId } : reply;
+  });
+  return withPlaygroundChat(playground, { ...chat, replies });
+}
+
+/**
+ * Whether the interface still carries a deprecated `turn` mark this library
+ * knows (one `withoutInterfaceTurns` removes).
+ */
+export function hasKnownInterfaceTurns(workflowInterface: WorkflowInterface | undefined): boolean {
+  const entries = [...(workflowInterface?.inputs ?? []), ...(workflowInterface?.outputs ?? [])];
+  return entries.some((entry) => entry.turn !== undefined && KNOWN_TURNS.has(entry.turn));
+}
+
+/**
  * The interface with every deprecated `turn` mark this library knows removed
  * (and a history entry's `meta.limit`, which only `turn: history` gave a
  * meaning), for the step that moves the marks into Playground settings. Other

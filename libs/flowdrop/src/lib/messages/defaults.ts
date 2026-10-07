@@ -596,11 +596,11 @@ export const defaultMessages = {
     moveUp: ({ id }: { id: string }) => `Move "${id}" up`,
     moveDown: ({ id }: { id: string }) => `Move "${id}" down`,
     metaDisclosure: 'Server metadata (read-only)',
-    // A port's chat `turn`: deprecated since 2.11.0, read-only. The chat is set
-    // up in the Playground settings tab. `turnLabel`, `turnNone`,
-    // `turnDescriptions`, `turnUnknown`, `historyLimitLabel` and
-    // `historyLimitPlaceholder` belonged to the removed selector and are no
-    // longer shown; they stay until 3.0 so overrides keep type-checking.
+    // A port's chat `turn`: deprecated since 2.11.0. With Playground settings
+    // (a server from FlowDrop 2.7.0 on) it is read-only and the chat is set up
+    // in the Playground settings tab. Without them, the Chat turn selector
+    // (`turnLabel`, `turnNone`, `turnDescriptions`, `turnUnknown`,
+    // `historyLimitLabel`, `historyLimitPlaceholder`) is still offered, until 3.0.
     turnDeprecated: ({ turn, limit }: { turn: string; limit?: number }) =>
       `Chat turn "${turn}"${limit !== undefined ? ` (${limit} messages)` : ''} is deprecated: the chat is set up in the Playground settings now.`,
     turnOpenPlayground: 'Open Playground settings',
@@ -659,6 +659,9 @@ export const defaultMessages = {
     turnSource:
       'This workflow chats through "Chat turn" marks on its interface, which are deprecated. The fields below show what they set up. Move them here to keep the chat as it is; changing any field moves them too.',
     moveTurns: 'Move them here',
+    leftoverTurns:
+      'The interface still carries deprecated "Chat turn" marks. They are ignored while these settings are set.',
+    removeTurns: 'Remove them',
     noInputs: 'The workflow interface has no inputs yet. Add one on the Interface tab first.',
     messageLabel: 'Message goes to',
     messageNone: 'Nothing (form only)',

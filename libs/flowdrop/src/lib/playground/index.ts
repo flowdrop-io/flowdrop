@@ -230,6 +230,7 @@ export {
   playgroundChatIssues,
   interfaceFormEntriesFor,
   playgroundInputModeFor,
+  findReplyPort,
   type InterfaceInputsResult,
   type PlaygroundInputMode,
   type PlaygroundChatIssue,
@@ -244,6 +245,10 @@ export {
   isPlaygroundChatHalfSet,
   playgroundBoundInputs,
   withPlaygroundChat,
+  followInterfaceInputEdit,
+  rewritePlaygroundReplies,
+  hasKnownInterfaceTurns,
+  type InterfaceInputEdit,
   type ResolvedPlaygroundChat
 } from '../utils/playgroundChat.js';
 
