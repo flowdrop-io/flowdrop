@@ -29,6 +29,7 @@ import {
   type InterfaceInputsResult,
   type PlaygroundInputMode
 } from '../utils/workflowInterface.js';
+import { resolvePlaygroundChat, type ResolvedPlaygroundChat } from '../utils/playgroundChat.js';
 import { logger } from '../utils/logger.js';
 
 // =========================================================================
@@ -145,12 +146,19 @@ export class PlaygroundStore {
   /** Current workflow being tested */
   #currentWorkflow = $state<Workflow | null>(null);
 
-  /** Input mode from the workflow interface — see {@link inputMode}. */
-  #inputMode = $derived(resolvePlaygroundInputMode(this.#currentWorkflow?.interface));
+  /** Input mode from the workflow's chat binding — see {@link inputMode}. */
+  #inputMode = $derived(
+    resolvePlaygroundInputMode(this.#currentWorkflow?.interface, this.#currentWorkflow?.playground)
+  );
+
+  /** The chat binding in effect — see {@link chatBinding}. */
+  #chatBinding = $derived(resolvePlaygroundChat(this.#currentWorkflow));
 
   /** Form entries from the workflow interface — see {@link interfaceFormEntries}. */
   #interfaceFormEntries = $derived(
-    this.#inputMode === 'legacy' ? [] : interfaceFormEntries(this.#currentWorkflow?.interface)
+    this.#inputMode === 'legacy'
+      ? []
+      : interfaceFormEntries(this.#currentWorkflow?.interface, this.#currentWorkflow?.playground)
   );
 
   /** Values of the interface input form, keyed by entry id. */
@@ -432,6 +440,16 @@ export class PlaygroundStore {
    */
   get inputMode(): PlaygroundInputMode {
     return this.#inputMode;
+  }
+
+  /**
+   * The chat binding in effect for the current workflow and where it came
+   * from (`settings`, the deprecated interface `turn`, or `none`), or `null`
+   * when the server sends no Playground settings (before FlowDrop 2.7.0).
+   * `source: 'none'` is a workflow with no chat until somebody sets it up.
+   */
+  get chatBinding(): ResolvedPlaygroundChat | null {
+    return this.#chatBinding;
   }
 
   /**

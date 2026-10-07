@@ -27,6 +27,7 @@ import {
   declaresTurnPorts,
   interfaceFormEntries,
   resolvePlaygroundInputMode,
+  playgroundChatIssues,
   interfaceFormSchema,
   interfaceFormInputs,
   collectInterfaceInputs
@@ -35,6 +36,8 @@ import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
 import type {
   NodeMetadata,
+  PlaygroundChatBinding,
+  WorkflowPlayground,
   NodePort,
   PortsConfig,
   Workflow,
@@ -1239,5 +1242,219 @@ describe('Playground input mode', () => {
     expect(
       collectInterfaceInputs([entry('topic', { required: true, defaultValue: 'x' })], {})
     ).toEqual({ ok: true, inputs: {} });
+  });
+});
+
+// =========================================================================
+// Playground input mode with Playground settings
+// =========================================================================
+
+const noChat = (): PlaygroundChatBinding => ({
+  message: null,
+  history: null,
+  session_id: null,
+  message_id: null,
+  replies: [],
+  sub_workflow_replies: false
+});
+const chatWith = (overrides: Partial<PlaygroundChatBinding>): WorkflowPlayground => ({
+  chat: { ...noChat(), ...overrides }
+});
+
+describe('Playground input mode with a playground argument', () => {
+  const entry = (
+    id: string,
+    extra: Partial<WorkflowInterfaceEntry> = {}
+  ): WorkflowInterfaceEntry => ({ id, dataType: 'string', bindings: [], ...extra });
+
+  it('is chat when the stored chat binds a message input', () => {
+    const iface = { inputs: [entry('msg'), entry('topic')] };
+    expect(resolvePlaygroundInputMode(iface, chatWith({ message: 'msg' }))).toBe('chat');
+  });
+
+  it('keeps the other inputs as the form beside the chat box, bound ones excluded', () => {
+    const iface = {
+      inputs: [entry('msg'), entry('hist'), entry('sid'), entry('mid'), entry('topic')]
+    };
+    const playground = chatWith({
+      message: 'msg',
+      history: { input: 'hist', limit: 3 },
+      session_id: 'sid',
+      message_id: 'mid'
+    });
+    expect(interfaceFormEntries(iface, playground).map((e) => e.id)).toEqual(['topic']);
+  });
+
+  it('is form when chat is null, nothing is marked, and there are inputs', () => {
+    const iface = { inputs: [entry('topic')] };
+    expect(resolvePlaygroundInputMode(iface, { chat: null })).toBe('form');
+    expect(interfaceFormEntries(iface, { chat: null }).map((e) => e.id)).toEqual(['topic']);
+  });
+
+  it('is run, never legacy, when nothing is set up and nothing is left to fill', () => {
+    expect(resolvePlaygroundInputMode(undefined, { chat: null })).toBe('run');
+    expect(resolvePlaygroundInputMode({}, { chat: null })).toBe('run');
+    expect(resolvePlaygroundInputMode({ outputs: [entry('o')] }, { chat: null })).toBe('run');
+  });
+
+  it('is run when every input is bound to the chat but no message', () => {
+    const iface = { inputs: [entry('sid')] };
+    expect(resolvePlaygroundInputMode(iface, chatWith({ session_id: 'sid' }))).toBe('run');
+  });
+
+  it('is form when the stored chat binds no message and an input is left', () => {
+    const iface = { inputs: [entry('sid'), entry('topic')] };
+    expect(resolvePlaygroundInputMode(iface, chatWith({ session_id: 'sid' }))).toBe('form');
+  });
+
+  it('stored settings win over a message turn on the interface', () => {
+    const iface = { inputs: [entry('m', { turn: 'message' }), entry('topic')] };
+    const playground = chatWith({ session_id: 'topic' });
+    expect(resolvePlaygroundInputMode(iface, playground)).toBe('form');
+    // The turn input is no longer the session's to fill: it is a form field.
+    expect(interfaceFormEntries(iface, playground).map((e) => e.id)).toEqual(['m']);
+  });
+
+  it('still reads the interface turn when chat is null', () => {
+    const iface = { inputs: [entry('m', { turn: 'message' }), entry('topic')] };
+    expect(resolvePlaygroundInputMode(iface, { chat: null })).toBe('chat');
+    expect(interfaceFormEntries(iface, { chat: null }).map((e) => e.id)).toEqual(['topic']);
+  });
+
+  it('a bound name that is not on the interface binds nothing', () => {
+    const iface = { inputs: [entry('topic')] };
+    expect(resolvePlaygroundInputMode(iface, chatWith({ message: 'gone' }))).toBe('form');
+  });
+});
+
+describe('playgroundChatIssues', () => {
+  const entry = (id: string): WorkflowInterfaceEntry => ({ id, dataType: 'string', bindings: [] });
+  const out = (id: string) => makePort(id, 'string', { type: 'output' });
+  const chat = (overrides: Partial<PlaygroundChatBinding>): PlaygroundChatBinding => ({
+    ...noChat(),
+    ...overrides
+  });
+  const reply = { node_id: 'n1', port: 'text' };
+
+  function workflowWith(
+    playgroundChat: PlaygroundChatBinding | null,
+    nodes: WorkflowNode[] = [makeNode('n1', [], [out('text')])],
+    inputs: WorkflowInterfaceEntry[] = [entry('msg'), entry('hist'), entry('sid')]
+  ): Workflow {
+    return { ...makeWorkflow(nodes, [], { inputs }), playground: { chat: playgroundChat } };
+  }
+
+  it('is [] without a binding', () => {
+    expect(playgroundChatIssues(workflowWith(null))).toEqual([]);
+    expect(playgroundChatIssues(makeWorkflow([]))).toEqual([]);
+  });
+
+  it('is [] for a sound binding', () => {
+    const wf = workflowWith(chat({ message: 'msg', replies: [reply] }));
+    expect(playgroundChatIssues(wf)).toEqual([]);
+  });
+
+  it('defaults to the stored binding, and judges an explicit one instead', () => {
+    const wf = workflowWith(chat({ message: 'gone', replies: [reply] }));
+    expect(playgroundChatIssues(wf).map((i) => i.code)).toEqual(['playground-input-missing']);
+    expect(playgroundChatIssues(wf, chat({ message: 'msg', replies: [reply] }))).toEqual([]);
+    expect(playgroundChatIssues(wf, null)).toEqual([]);
+  });
+
+  it('reports a name that is not on the interface, per key', () => {
+    const wf = workflowWith(
+      chat({
+        message: 'a',
+        history: { input: 'b', limit: 2 },
+        session_id: 'c',
+        message_id: 'd',
+        replies: [reply]
+      })
+    );
+    const issues = playgroundChatIssues(wf);
+    expect(issues.map((i) => [i.code, i.severity, i.key])).toEqual([
+      ['playground-input-missing', 'error', 'message'],
+      ['playground-input-missing', 'error', 'history'],
+      ['playground-input-missing', 'error', 'session_id'],
+      ['playground-input-missing', 'error', 'message_id']
+    ]);
+    expect(issues[0].message).toContain('"a"');
+  });
+
+  it('reports an input bound twice, on the later key', () => {
+    const wf = workflowWith(
+      chat({ message: 'msg', history: { input: 'msg', limit: 2 }, replies: [reply] })
+    );
+    const issues = playgroundChatIssues(wf);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      code: 'playground-input-duplicate',
+      severity: 'error',
+      key: 'history'
+    });
+    expect(issues[0].message).toContain('"message"');
+  });
+
+  it('reports a reply on a node that is not in the workflow', () => {
+    const wf = workflowWith(chat({ replies: [{ node_id: 'ghost', port: 'text' }] }));
+    const issues = playgroundChatIssues(wf);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      code: 'playground-reply-node-missing',
+      severity: 'error',
+      reply: { node_id: 'ghost', port: 'text' }
+    });
+  });
+
+  it('reports a reply on a port the node metadata does not list', () => {
+    const wf = workflowWith(chat({ replies: [{ node_id: 'n1', port: 'nope' }] }));
+    const issues = playgroundChatIssues(wf);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      code: 'playground-reply-port-missing',
+      severity: 'error',
+      reply: { node_id: 'n1', port: 'nope' }
+    });
+  });
+
+  it('accepts a reply on a dynamic output of the node', () => {
+    const node = makeNode('n1', [], [out('text')]);
+    node.data.config = { dynamicOutputs: [{ name: 'extra', dataType: 'string' }] };
+    const wf = workflowWith(chat({ replies: [{ node_id: 'n1', port: 'extra' }] }), [node]);
+    expect(playgroundChatIssues(wf)).toEqual([]);
+  });
+
+  it('does not judge the port of a node without metadata', () => {
+    const node = makeNode('n1', [], []);
+    delete node.data.metadata;
+    const wf = workflowWith(chat({ replies: [{ node_id: 'n1', port: 'anything' }] }), [node]);
+    expect(playgroundChatIssues(wf)).toEqual([]);
+  });
+
+  it('still reports a missing node when the node list is empty', () => {
+    const wf = workflowWith(chat({ replies: [reply] }), []);
+    expect(playgroundChatIssues(wf).map((i) => i.code)).toEqual(['playground-reply-node-missing']);
+  });
+
+  it('warns about a half-set binding: a message but no reply', () => {
+    const issues = playgroundChatIssues(workflowWith(chat({ message: 'msg' })));
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      code: 'playground-half-set',
+      severity: 'warning',
+      key: 'message'
+    });
+  });
+
+  it('does not warn without a message input, or with a reply', () => {
+    expect(playgroundChatIssues(workflowWith(chat({ session_id: 'sid' })))).toEqual([]);
+    expect(playgroundChatIssues(workflowWith(chat({ message: 'msg', replies: [reply] })))).toEqual(
+      []
+    );
+  });
+
+  it('reports an error and the half-set warning together', () => {
+    const issues = playgroundChatIssues(workflowWith(chat({ message: 'gone' })));
+    expect(issues.map((i) => i.code)).toEqual(['playground-input-missing', 'playground-half-set']);
   });
 });

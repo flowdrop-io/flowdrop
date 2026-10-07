@@ -227,9 +227,30 @@ export {
   interfaceFormEntries,
   interfaceFormSchema,
   collectInterfaceInputs,
+  playgroundChatIssues,
   type InterfaceInputsResult,
-  type PlaygroundInputMode
+  type PlaygroundInputMode,
+  type PlaygroundChatIssue,
+  type PlaygroundChatInputKey
 } from '../utils/workflowInterface.js';
+
+export {
+  resolvePlaygroundChat,
+  normalizePlaygroundChat,
+  emptyPlaygroundChat,
+  isPlaygroundChatSet,
+  isPlaygroundChatHalfSet,
+  playgroundBoundInputs,
+  withPlaygroundChat,
+  type ResolvedPlaygroundChat
+} from '../utils/playgroundChat.js';
+
+export type {
+  WorkflowPlayground,
+  PlaygroundChatBinding,
+  PlaygroundReplyPort,
+  PlaygroundChatSource
+} from '../types/index.js';
 
 export {
   isChatInputNode,

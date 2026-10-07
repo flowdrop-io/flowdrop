@@ -160,6 +160,8 @@ export interface WorkflowStoreActions {
     config?: Record<string, unknown>;
     /** The workflow's public contract. Omit to leave it untouched. */
     interface?: Workflow['interface'];
+    /** The workflow's Playground settings. Omit to leave them untouched. */
+    playground?: Workflow['playground'];
   }) => void;
   swapNode: (updates: {
     nodes: WorkflowNode[];
@@ -831,6 +833,7 @@ export class WorkflowStore {
     metadata?: Partial<Workflow['metadata']>;
     config?: Record<string, unknown>;
     interface?: Workflow['interface'];
+    playground?: Workflow['playground'];
   }): void {
     if (!this.#workflow) return;
     this.#workflow = {
@@ -847,6 +850,7 @@ export class WorkflowStore {
       // able to say so. Testing `!== undefined` silently dropped that update and
       // left the old contract in place.
       ...('interface' in updates && { interface: updates.interface }),
+      ...('playground' in updates && { playground: updates.playground }),
       metadata: buildMetadata(this.#workflow.metadata, updates.metadata ?? undefined)
     };
     this.#pushToHistory('Batch update');

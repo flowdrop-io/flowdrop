@@ -24,7 +24,10 @@ import type {
   WorkflowInterface,
   WorkflowInterfaceEntry,
   WorkflowInterfaceTurn,
-  WorkflowNode
+  WorkflowNode,
+  WorkflowPlayground,
+  PlaygroundChatBinding,
+  PlaygroundReplyPort
 } from '$lib/types/index.js';
 import {
   dynamicPortToNodePort,
@@ -36,6 +39,11 @@ import { LOOPBACK_PORT_NAME } from '$lib/utils/connections.js';
 import { PORTS_CONFIG_KEY } from '$lib/utils/nodeFormSchema.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
+import {
+  isPlaygroundChatHalfSet,
+  playgroundBoundInputs,
+  resolvePlaygroundChat
+} from '$lib/utils/playgroundChat.js';
 
 /**
  * A binding resolved against the live node graph: the node and port it
@@ -284,7 +292,7 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
         direction: 'input',
         severity: 'warning',
         code: 'interface-turn-duplicate',
-        message: `Interface input "${entry.id}" has chat turn "${entry.turn}", which input "${otherId}" already has; a workflow takes at most one input per turn value.`
+        message: `Interface input "${entry.id}" has the deprecated chat turn "${entry.turn}", which input "${otherId}" already has; only the first one counts. Set the chat up in the Playground settings instead.`
       });
     }
   }
@@ -303,7 +311,7 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
           direction,
           severity: 'warning',
           code: 'interface-turn-direction',
-          message: `Interface ${direction} "${entry.id}" has chat turn "${entry.turn}", which only applies to ${direction === 'input' ? 'outputs' : 'inputs'}.`
+          message: `Interface ${direction} "${entry.id}" has the deprecated chat turn "${entry.turn}", which only applies to ${direction === 'input' ? 'outputs' : 'inputs'}. Set the chat up in the Playground settings instead.`
         });
       }
     }
@@ -681,7 +689,9 @@ export function entryFromBindablePort(
 }
 
 // ---------------------------------------------------------------------------
-// Chat turn ports
+// Chat turn ports — deprecated since 2.11.0, removed in 3.0 with interface
+// `turn`. The chat binding lives in the Playground settings
+// (`utils/playgroundChat.ts`); these stay only so a stored `turn` still reads.
 // ---------------------------------------------------------------------------
 
 /** The turn values an entry of this direction may carry, in selector order. */
@@ -767,46 +777,181 @@ function metaWithLimit(
 // ---------------------------------------------------------------------------
 
 /**
- * How the Playground collects a turn, read from the workflow interface.
+ * How the Playground collects a turn, read from the workflow's chat binding.
  *
- * - `chat`: an input carries `turn: message`. The chat box sends `content`;
- *   any other non-turn inputs render as a form beside it.
- * - `form`: the interface declares turn ports but no `message` input, and has
- *   non-turn inputs. A form and a Run button; the turn sends `inputs` only
- *   (the server refuses `content` for such a workflow).
- * - `run`: the interface declares turn ports, no `message` input and no
- *   non-turn input. Just a Run button.
- * - `legacy`: the interface is absent or declares no `turn` on any entry.
- *   The server falls back to guessing the chat input from the nodes
- *   (deprecated, until FlowDrop 3.0), so the Playground keeps its old
- *   behaviour too. Also what every server that predates turn ports gets.
+ * - `chat`: an input is bound to the message. The chat box sends `content`;
+ *   any other unbound inputs render as a form beside it.
+ * - `form`: no message input is bound, and the interface has unbound inputs.
+ *   A form and a Run button; the turn sends `inputs` only (the server refuses
+ *   `content` for such a workflow).
+ * - `run`: no message input and no unbound input. Just a Run button.
+ * - `legacy`: only for a server before FlowDrop 2.7.0 (the workflow carries
+ *   no `playground` key) whose interface declares no `turn` either. That
+ *   server guesses the chat input from the nodes, so the Playground keeps its
+ *   old behaviour too.
+ *
+ * The binding is the workflow's Playground settings, else the deprecated
+ * interface `turn` (see `resolvePlaygroundChat`). A workflow with neither has
+ * no chat until somebody sets it up: `form` or `run`, never `legacy`.
  */
 export type PlaygroundInputMode = 'chat' | 'form' | 'run' | 'legacy';
 
-/** Whether any entry of the interface, on either side, declares a `turn`. */
+/**
+ * Whether any entry of the interface, on either side, declares a `turn`.
+ *
+ * @deprecated since 2.11.0, removed in 3.0 with interface `turn`.
+ */
 export function declaresTurnPorts(workflowInterface: WorkflowInterface | undefined): boolean {
   const entries = [...(workflowInterface?.inputs ?? []), ...(workflowInterface?.outputs ?? [])];
   return entries.some((entry) => Boolean(entry.turn));
 }
 
 /**
- * The input entries a person fills in: every input without a `turn`. Turn
- * inputs (`message`, `history`, `session_id`, `message_id`, and any value a
- * newer server adds) are filled by the session, never by the form.
+ * The input entries a person fills in: every input the chat binding does not
+ * fill. With `playground` (a server from FlowDrop 2.7.0 on) those are the
+ * inputs its binding names; without it, the inputs carrying a `turn`
+ * (`message`, `history`, `session_id`, `message_id`, and any value a newer
+ * server adds). The session fills those, never the form.
  */
 export function interfaceFormEntries(
-  workflowInterface: WorkflowInterface | undefined
+  workflowInterface: WorkflowInterface | undefined,
+  playground?: WorkflowPlayground
 ): WorkflowInterfaceEntry[] {
-  return (workflowInterface?.inputs ?? []).filter((entry) => !entry.turn);
+  const inputs = workflowInterface?.inputs ?? [];
+  const resolved = resolvePlaygroundChat({ interface: workflowInterface, playground });
+  if (resolved === null) return inputs.filter((entry) => !entry.turn);
+  const bound = playgroundBoundInputs(resolved.binding);
+  return inputs.filter((entry) => !bound.has(entry.id));
 }
 
-/** Resolve the Playground's input mode from a workflow interface. */
+/**
+ * Resolve the Playground's input mode from a workflow's interface and, from
+ * FlowDrop 2.7.0 on, its Playground settings (`workflow.playground`).
+ */
 export function resolvePlaygroundInputMode(
-  workflowInterface: WorkflowInterface | undefined
+  workflowInterface: WorkflowInterface | undefined,
+  playground?: WorkflowPlayground
 ): PlaygroundInputMode {
-  if (!declaresTurnPorts(workflowInterface)) return 'legacy';
-  if ((workflowInterface?.inputs ?? []).some((entry) => entry.turn === 'message')) return 'chat';
-  return interfaceFormEntries(workflowInterface).length > 0 ? 'form' : 'run';
+  const resolved = resolvePlaygroundChat({ interface: workflowInterface, playground });
+  if (resolved === null) {
+    if (!declaresTurnPorts(workflowInterface)) return 'legacy';
+    if ((workflowInterface?.inputs ?? []).some((entry) => entry.turn === 'message')) return 'chat';
+  } else if (resolved.binding.message !== null) {
+    return 'chat';
+  }
+  return interfaceFormEntries(workflowInterface, playground).length > 0 ? 'form' : 'run';
+}
+
+/** Which part of a chat binding names an interface input. */
+export type PlaygroundChatInputKey = 'message' | 'history' | 'session_id' | 'message_id';
+
+/** Something wrong, or worth knowing, about a workflow's chat binding. */
+export interface PlaygroundChatIssue {
+  severity: 'error' | 'warning';
+  code:
+    | 'playground-input-missing'
+    | 'playground-input-duplicate'
+    | 'playground-reply-node-missing'
+    | 'playground-reply-port-missing'
+    | 'playground-half-set';
+  message: string;
+  /** The binding key an input issue is about. */
+  key?: PlaygroundChatInputKey;
+  /** The reply a reply issue is about. */
+  reply?: PlaygroundReplyPort;
+}
+
+/**
+ * What is wrong with a chat binding against the workflow as it is now.
+ *
+ * Errors mirror the server's checks (an input the interface no longer has,
+ * an input bound twice, a reply on a node or port that is gone), so the
+ * editor shows what the save would refuse. A reply's port is judged against
+ * the node's static and dynamic outputs; a node without metadata is not
+ * judged. The one warning is a half-set binding (a message input but no
+ * reply). Defaults to the workflow's stored binding.
+ */
+export function playgroundChatIssues(
+  workflow: Workflow,
+  chat: PlaygroundChatBinding | null = workflow.playground?.chat ?? null
+): PlaygroundChatIssue[] {
+  if (chat === null) return [];
+  const issues: PlaygroundChatIssue[] = [];
+  const inputIds = new Set((workflow.interface?.inputs ?? []).map((entry) => entry.id));
+  const named: Array<[PlaygroundChatInputKey, string | null]> = [
+    ['message', chat.message],
+    ['history', chat.history?.input ?? null],
+    ['session_id', chat.session_id],
+    ['message_id', chat.message_id]
+  ];
+  const used = new Map<string, PlaygroundChatInputKey>();
+  for (const [key, id] of named) {
+    if (id === null) continue;
+    if (!inputIds.has(id)) {
+      issues.push({
+        severity: 'error',
+        code: 'playground-input-missing',
+        key,
+        message: `"${key}" is bound to the input "${id}", which is not on the workflow interface.`
+      });
+      continue;
+    }
+    const other = used.get(id);
+    if (other !== undefined) {
+      issues.push({
+        severity: 'error',
+        code: 'playground-input-duplicate',
+        key,
+        message: `Input "${id}" is bound twice ("${other}" and "${key}").`
+      });
+      continue;
+    }
+    used.set(id, key);
+  }
+
+  const nodes = new Map(workflow.nodes.map((node) => [node.id, node]));
+  for (const reply of chat.replies) {
+    const node = nodes.get(reply.node_id);
+    if (!node) {
+      issues.push({
+        severity: 'error',
+        code: 'playground-reply-node-missing',
+        reply,
+        message: `A reply prints port "${reply.port}" of node "${reply.node_id}", which is not in the workflow.`
+      });
+      continue;
+    }
+    const ports = nodeOutputPortIds(node);
+    if (ports !== null && !ports.has(reply.port)) {
+      issues.push({
+        severity: 'error',
+        code: 'playground-reply-port-missing',
+        reply,
+        message: `A reply prints port "${reply.port}" of node "${node.data?.label ?? node.id}", which has no such output.`
+      });
+    }
+  }
+
+  if (isPlaygroundChatHalfSet(chat)) {
+    issues.push({
+      severity: 'warning',
+      code: 'playground-half-set',
+      key: 'message',
+      message: 'A message input is bound but no reply is, so nothing answers in the chat.'
+    });
+  }
+  return issues;
+}
+
+/** A node's output port ids (static and dynamic), or `null` without metadata. */
+function nodeOutputPortIds(node: WorkflowNode): Set<string> | null {
+  const metadata = node.data?.metadata;
+  if (!metadata) return null;
+  const dynamic = (node.data?.config?.dynamicOutputs as DynamicPort[] | undefined) ?? [];
+  return new Set([
+    ...(metadata.outputs ?? []).map((port) => port.id),
+    ...dynamic.map((port) => dynamicPortToNodePort(port, 'output').id)
+  ]);
 }
 
 /** JSON Schema `type` for an interface entry's lane, when its schema states none. */

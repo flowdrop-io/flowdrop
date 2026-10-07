@@ -16,7 +16,7 @@ import Playground from '$lib/components/playground/Playground.svelte';
 import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
 import { defaultEndpointConfig } from '$lib/config/endpoints.js';
 import { playgroundService } from '$lib/services/playgroundService.js';
-import type { Workflow, WorkflowInterface } from '$lib/types/index.js';
+import type { Workflow, WorkflowInterface, WorkflowPlayground } from '$lib/types/index.js';
 import type { PlaygroundConfig } from '$lib/types/playground.js';
 
 // Iconify fetches icon data with the fetch it captured at load, which would
@@ -102,14 +102,15 @@ afterEach(() => {
   workflowsGetBody = { success: true, data: { id: 'wf', name: 'wf', nodes: [] } };
 });
 
-function workflowWith(iface?: WorkflowInterface): Workflow {
+function workflowWith(iface?: WorkflowInterface, playground?: WorkflowPlayground): Workflow {
   return {
     id: 'wf',
     name: 'wf',
     nodes: [],
     edges: [],
     metadata: { schemaVersion: '1', createdAt: '', updatedAt: '' },
-    ...(iface ? { interface: iface } : {})
+    ...(iface ? { interface: iface } : {}),
+    ...(playground ? { playground } : {})
   };
 }
 
@@ -338,5 +339,112 @@ describe('Playground input mode', () => {
     // The command ran (no turn was taken), and nothing is left to unlock Run.
     expect(turnCalls()).toHaveLength(0);
     expect(runButton(target)?.disabled).toBe(false);
+  });
+});
+
+describe('Playground input mode with Playground settings', () => {
+  const plain = (id: string) => ({ id, dataType: 'string', bindings: [] });
+  const emptyChat = {
+    message: null,
+    history: null,
+    session_id: null,
+    message_id: null,
+    replies: [],
+    sub_workflow_replies: false
+  };
+
+  it('chat: a bound message input gets the chat box, the other inputs a form beside it', async () => {
+    const { target, fd } = await render(
+      workflowWith(
+        { inputs: [plain('msg'), plain('hist'), topic], outputs: [] },
+        {
+          chat: {
+            ...emptyChat,
+            message: 'msg',
+            history: { input: 'hist', limit: 5 },
+            replies: [{ node_id: 'n', port: 'p' }]
+          }
+        }
+      )
+    );
+
+    expect(fd.playground.inputMode).toBe('chat');
+    expect(fd.playground.chatBinding?.source).toBe('settings');
+    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    const form = target.querySelector('.interface-input-form');
+    expect(form?.textContent).toContain('Topic');
+    expect(form?.textContent).not.toContain('msg');
+    expect(form?.textContent).not.toContain('hist');
+  });
+
+  it('chat: a bound message wins over a legacy-looking interface without turns', async () => {
+    const { target, fd } = await render(
+      workflowWith({ inputs: [plain('msg')] }, { chat: { ...emptyChat, message: 'msg' } })
+    );
+
+    expect(fd.playground.inputMode).toBe('chat');
+    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    expect(target.querySelector('.interface-input-form')).toBeNull();
+  });
+
+  it('form: settings with no chat and no turns show the form, never the chat box', async () => {
+    const { target, fd } = await render(workflowWith({ inputs: [topic] }, { chat: null }));
+
+    expect(fd.playground.inputMode).toBe('form');
+    expect(fd.playground.chatBinding?.source).toBe('none');
+    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+    expect(target.querySelector('.interface-input-form')?.textContent).toContain('Topic');
+  });
+
+  it('form: sends inputs and no content when nothing is bound', async () => {
+    const { target } = await render(workflowWith({ inputs: [topic] }, { chat: null }));
+    const field = target.querySelector<HTMLInputElement>('.interface-input-form input');
+    field!.value = 'cats';
+    field!.dispatchEvent(new Event('input', { bubbles: true }));
+    flushSync();
+
+    runButton(target)?.click();
+    await settle();
+
+    expect(turnCalls()).toHaveLength(1);
+    expect(turnCalls()[0].body).toEqual({ inputs: { topic: 'cats' } });
+  });
+
+  it('run: settings with no chat and no inputs give Run alone, not legacy', async () => {
+    const { target, fd } = await render(workflowWith({ outputs: [plain('out')] }, { chat: null }));
+
+    expect(fd.playground.inputMode).toBe('run');
+    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+    expect(target.querySelector('.interface-input-form')).toBeNull();
+
+    runButton(target)?.click();
+    await settle();
+    expect(turnCalls()[0].body).toEqual({ inputs: {} });
+  });
+
+  it('run: a workflow with settings and no interface at all is run, not legacy', async () => {
+    const { target, fd } = await render(workflowWith(undefined, { chat: null }));
+
+    expect(fd.playground.inputMode).toBe('run');
+    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+  });
+
+  it('chat: a workflow with null chat still chats through the deprecated turn', async () => {
+    const { target, fd } = await render(
+      workflowWith({ inputs: [message, topic], outputs: [reply] }, { chat: null })
+    );
+
+    expect(fd.playground.inputMode).toBe('chat');
+    expect(fd.playground.chatBinding?.source).toBe('interface_turn');
+    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+  });
+
+  it('a bound name that is not on the interface binds nothing: form, not chat', async () => {
+    const { target, fd } = await render(
+      workflowWith({ inputs: [topic] }, { chat: { ...emptyChat, message: 'gone' } })
+    );
+
+    expect(fd.playground.inputMode).toBe('form');
+    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
   });
 });

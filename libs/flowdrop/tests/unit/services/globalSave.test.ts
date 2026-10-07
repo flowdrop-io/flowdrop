@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { globalSaveWorkflow } from '$lib/services/globalSave.js';
+import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
 import { createTestWorkflow } from '../../utils/index.js';
 
 // ---------------------------------------------------------------------------
@@ -393,6 +393,117 @@ describe('globalSaveWorkflow', () => {
 
       const payload = mockClientUpdate.mock.calls[0][1] as Record<string, unknown>;
       expect('interface' in payload).toBe(false);
+    });
+  });
+  describe('Playground settings serialization', () => {
+    const chat = {
+      message: 'msg',
+      history: { input: 'hist', limit: 5 },
+      session_id: null,
+      message_id: null,
+      replies: [{ node_id: 'n1', port: 'text' }],
+      sub_workflow_replies: false
+    };
+
+    it('sends only { chat } on update, dropping resolved and source', async () => {
+      mockGetWorkflowStore.mockReturnValue({
+        ...storeWorkflow('wf-1'),
+        playground: { chat, resolved: { ...chat, message: 'stale' }, source: 'settings' }
+      });
+      mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+
+      await globalSaveWorkflow();
+
+      const payload = mockClientUpdate.mock.calls[0][1] as Record<string, unknown>;
+      expect(payload.playground).toEqual({ chat });
+      expect(Object.keys(payload.playground as object)).toEqual(['chat']);
+    });
+
+    it('sends only { chat } on create', async () => {
+      mockGetWorkflowStore.mockReturnValue({ ...storeWorkflow(''), playground: { chat } });
+      mockClientSave.mockResolvedValue(backendWorkflow('new-id'));
+
+      await globalSaveWorkflow();
+
+      expect(mockClientSave).toHaveBeenCalledWith(
+        expect.objectContaining({ playground: { chat } })
+      );
+    });
+
+    it('sends { chat: null } when the workflow carries settings with no stored chat', async () => {
+      mockGetWorkflowStore.mockReturnValue({
+        ...storeWorkflow('wf-1'),
+        playground: { chat: null, resolved: chat, source: 'interface_turn' }
+      });
+      mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+
+      await globalSaveWorkflow();
+
+      const payload = mockClientUpdate.mock.calls[0][1] as Record<string, unknown>;
+      expect(payload.playground).toEqual({ chat: null });
+    });
+
+    it('omits the playground key entirely when the workflow has none', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow('wf-1'));
+      mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+
+      await globalSaveWorkflow();
+
+      const payload = mockClientUpdate.mock.calls[0][1] as Record<string, unknown>;
+      expect('playground' in payload).toBe(false);
+    });
+  });
+
+  describe('Playground settings in the export', () => {
+    /** Run an export and return the JSON it downloaded. */
+    async function exportedJson(): Promise<Record<string, unknown>> {
+      let blob: Blob | undefined;
+      const create = vi.fn((b: Blob) => {
+        blob = b;
+        return 'blob:test';
+      });
+      const originalCreate = URL.createObjectURL;
+      const originalRevoke = URL.revokeObjectURL;
+      URL.createObjectURL = create as unknown as typeof URL.createObjectURL;
+      URL.revokeObjectURL = vi.fn();
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+      try {
+        await globalExportWorkflow({ features: { showToasts: false } });
+      } finally {
+        URL.createObjectURL = originalCreate;
+        URL.revokeObjectURL = originalRevoke;
+        click.mockRestore();
+      }
+      if (!blob) throw new Error('nothing was exported');
+      return JSON.parse(await blob.text());
+    }
+
+    const chat = {
+      message: 'msg',
+      history: null,
+      session_id: null,
+      message_id: null,
+      replies: [{ node_id: 'n1', port: 'text' }],
+      sub_workflow_replies: true
+    };
+
+    it('carries { chat } only', async () => {
+      mockGetWorkflowStore.mockReturnValue({
+        ...storeWorkflow('wf-1'),
+        playground: { chat, resolved: chat, source: 'settings' }
+      });
+
+      const exported = await exportedJson();
+
+      expect(exported.playground).toEqual({ chat });
+    });
+
+    it('omits playground when the workflow has none', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow('wf-1'));
+
+      const exported = await exportedJson();
+
+      expect('playground' in exported).toBe(false);
     });
   });
 });

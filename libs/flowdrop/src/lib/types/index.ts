@@ -1539,7 +1539,13 @@ export interface WorkflowInterfaceEntry {
   meta?: Record<string, unknown>;
   /**
    * What this port is for in a chat turn (see {@link WorkflowInterfaceTurn}).
-   * Absent means the port plays no part in a turn. Validated by the server
+   * Absent means the port plays no part in a turn.
+   *
+   * @deprecated since 2.11.0, removed in 3.0. The chat binding lives in the
+   * workflow's Playground settings ({@link Workflow.playground}); a server
+   * from FlowDrop 2.7.0 on reads `turn` only for a workflow without them.
+   * Still read here, and still round-tripped, until 3.0.
+   * Validated by the server
    * against its vocabulary; a value this library does not know (from a newer
    * server) round-trips verbatim, which is why the type admits any string
    * beside the known values. Narrow with `isKnownTurn` before indexing by it.
@@ -1559,10 +1565,16 @@ export interface WorkflowInterfaceEntry {
  *
  * Outputs (any number):
  * - `reply`: each value becomes one assistant message
+ *
+ * @deprecated since 2.11.0, removed in 3.0. See {@link PlaygroundChatBinding}.
  */
 export type WorkflowInterfaceTurn = 'message' | 'history' | 'session_id' | 'message_id' | 'reply';
 
-/** Turn values valid on an input entry, in selector order. */
+/**
+ * Turn values valid on an input entry, in selector order.
+ *
+ * @deprecated since 2.11.0, removed in 3.0, with {@link WorkflowInterfaceEntry.turn}.
+ */
 export const WORKFLOW_INTERFACE_INPUT_TURNS: readonly WorkflowInterfaceTurn[] = [
   'message',
   'history',
@@ -1570,11 +1582,75 @@ export const WORKFLOW_INTERFACE_INPUT_TURNS: readonly WorkflowInterfaceTurn[] = 
   'message_id'
 ];
 
-/** Turn values valid on an output entry, in selector order. */
+/**
+ * Turn values valid on an output entry, in selector order.
+ *
+ * @deprecated since 2.11.0, removed in 3.0, with {@link WorkflowInterfaceEntry.turn}.
+ */
 export const WORKFLOW_INTERFACE_OUTPUT_TURNS: readonly WorkflowInterfaceTurn[] = ['reply'];
 
-/** `meta.limit` the server assumes for a `history` port that states none. */
+/**
+ * How many recent messages the server passes to a history input that states
+ * no limit: a `history` port without `meta.limit`, or Playground settings
+ * whose `history` gives none.
+ */
 export const DEFAULT_HISTORY_TURN_LIMIT = 10;
+
+/**
+ * A workflow's chat binding, stored in its Playground settings: which
+ * interface input the person's message fills, which one receives recent
+ * messages and the two ids, and which node output ports print as replies.
+ *
+ * Inputs are named by interface entry `id` (the name the server matches
+ * inputs on); replies by node port, so a reply needs no interface entry.
+ * `null` means "not bound".
+ */
+export interface PlaygroundChatBinding {
+  /** The input the chat message fills. `null` = no chat box. */
+  message: string | null;
+  /** The input that receives recent user and assistant messages. */
+  history: { input: string; limit: number } | null;
+  /** The input that receives the session's id. */
+  session_id: string | null;
+  /** The input that receives the id of the person's message. */
+  message_id: string | null;
+  /** Node output ports whose results print as replies, in order. */
+  replies: PlaygroundReplyPort[];
+  /** Whether sub-workflows running in the session post their own replies. */
+  sub_workflow_replies: boolean;
+}
+
+/** A node output port whose result prints as a reply. */
+export interface PlaygroundReplyPort {
+  node_id: string;
+  port: string;
+}
+
+/**
+ * Where the binding in effect comes from: the workflow's Playground
+ * settings, the deprecated interface `turn` annotations (a workflow without
+ * settings, until 3.0), or nowhere (no chat until somebody sets it up).
+ */
+export type PlaygroundChatSource = 'settings' | 'interface_turn' | 'none';
+
+/**
+ * A workflow's Playground settings, as a server from FlowDrop 2.7.0 on sends
+ * them with the workflow and saves them with it (one Save, versioned with the
+ * workflow).
+ *
+ * Only `chat` is written back on save; `resolved` and `source` are what the
+ * server computed when it sent the workflow, and go stale as soon as the
+ * settings or the interface are edited (use `resolvePlaygroundChat`, which
+ * applies the same rule to the workflow as it is now).
+ */
+export interface WorkflowPlayground {
+  /** The stored binding, or `null` when the workflow has none. */
+  chat: PlaygroundChatBinding | null;
+  /** The binding in effect when the server sent the workflow. */
+  resolved?: PlaygroundChatBinding;
+  /** Where `resolved` came from. A newer server may send other values. */
+  source?: PlaygroundChatSource | (string & {});
+}
 
 /** A workflow's public contract. Array order is the caller-facing order. */
 export interface WorkflowInterface {
@@ -1607,6 +1683,13 @@ export interface Workflow {
   config?: Record<string, unknown>;
   /** Public contract for callers. Absent = the workflow declares no interface. */
   interface?: WorkflowInterface;
+  /**
+   * The workflow's Playground settings (the chat binding). Absent = the server
+   * predates them (before FlowDrop 2.7.0), so the Playground falls back to
+   * interface `turn` and then to guessing; present with `chat: null` = this
+   * workflow has no chat until somebody sets it up.
+   */
+  playground?: WorkflowPlayground;
   /**
    * What the current user may do with this workflow, computed by the host and
    * passed through untouched (`save`, `run`, …). The browser-agent tools

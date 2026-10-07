@@ -14,6 +14,7 @@ import { createEndpointConfig } from '$lib/config/endpoints.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { Workflow } from '$lib/types/index.js';
 import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
+import { playgroundForSave } from '$lib/utils/playgroundChat.js';
 import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 import { DEFAULT_FEATURES } from '$lib/types/events.js';
@@ -198,6 +199,12 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       // omitting `interface` silently strips the declared contract on save
       // (absent means "declares no interface" to the server).
       ...(currentWorkflow.interface !== undefined && { interface: currentWorkflow.interface }),
+      // Same rule for the Playground settings (the chat binding, saved with
+      // the workflow). Only `chat` goes back; a workflow from a server that
+      // sends no `playground` key sends none either.
+      ...(currentWorkflow.playground !== undefined && {
+        playground: playgroundForSave(currentWorkflow.playground)
+      }),
       // The revision the editor loaded, so a server that checks it can refuse
       // a stale write (409 CONFLICT) instead of letting the last write win.
       ...(currentWorkflow.revision !== undefined && { revision: currentWorkflow.revision })
@@ -319,7 +326,10 @@ export async function globalExportWorkflow(options: GlobalExportOptions = {}): P
       },
       // Same rule as the save path: the export must carry the declared
       // contract, or a re-import round-trip loses `interface`.
-      ...(currentWorkflow.interface !== undefined && { interface: currentWorkflow.interface })
+      ...(currentWorkflow.interface !== undefined && { interface: currentWorkflow.interface }),
+      ...(currentWorkflow.playground !== undefined && {
+        playground: playgroundForSave(currentWorkflow.playground)
+      })
     };
 
     // Trigger browser download
