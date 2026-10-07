@@ -10,6 +10,7 @@ import { PlaygroundStore } from '$lib/stores/playgroundStore.svelte.js';
 import { WorkflowStore } from '$lib/stores/workflowStore.svelte.js';
 import { ApiContext } from '$lib/stores/apiContext.js';
 import { HistoryService } from '$lib/services/historyService.js';
+import { nodeExecutionService } from '$lib/services/nodeExecutionService.js';
 import { workflowLaunchService } from '$lib/services/workflowLaunchService.js';
 import type { PlaygroundService } from '$lib/services/playgroundService.js';
 import type { EndpointConfig } from '$lib/config/endpoints.js';
@@ -324,6 +325,74 @@ describe('RunController', () => {
         expect.anything()
       );
       expect(playground.currentSession?.status).toBe('idle');
+    });
+  });
+
+  describe('loadNodeStatuses', () => {
+    const done = { status: 'completed', executionCount: 1, isExecuting: false } as const;
+    const wf = () => ({
+      ...workflow('wf'),
+      nodes: [{ id: 'n1' }, { id: 'n2' }] as unknown as Workflow['nodes']
+    });
+
+    it('puts the run status in the instance playground store, scoped to workflow and run', async () => {
+      const { runs, playground } = setup();
+      const spy = vi
+        .spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo')
+        .mockResolvedValue({ n1: done });
+
+      await runs.loadNodeStatuses('p1', wf());
+
+      expect(spy).toHaveBeenCalledWith(expect.anything(), ['n1', 'n2'], 'p1');
+      expect(playground.nodeStatusFor('n1')).toEqual(done);
+      expect(playground.nodeStatusScope).toEqual({ workflowId: 'wf', pipelineId: 'p1' });
+    });
+
+    it('survives the editor workflow changing', async () => {
+      const { runs, playground, editor } = setup();
+      editor.initialize(wf());
+      vi.spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo').mockResolvedValue({
+        n1: done
+      });
+      await runs.loadNodeStatuses('p1');
+      editor.updateName('Renamed');
+      expect(playground.nodeStatusFor('n1')).toEqual(done);
+    });
+
+    it('lets the last load win when an earlier one resolves after it', async () => {
+      const { runs, playground } = setup();
+      const slow = deferred<Record<string, typeof done>>();
+      vi.spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo').mockImplementation(
+        async (_c, _ids, run) => (run === 'slow' ? slow.promise : { n2: done })
+      );
+
+      const first = runs.loadNodeStatuses('slow', wf());
+      await runs.loadNodeStatuses('fast', wf());
+      slow.resolve({ n1: done });
+      await first;
+
+      expect(playground.nodeStatusScope?.pipelineId).toBe('fast');
+      expect(playground.nodeStatusFor('n1')).toBeUndefined();
+    });
+
+    it('clearNodeStatuses discards a load still in flight', async () => {
+      const { runs, playground } = setup();
+      const slow = deferred<Record<string, typeof done>>();
+      vi.spyOn(nodeExecutionService, 'getMultipleNodeExecutionInfo').mockReturnValue(slow.promise);
+
+      const load = runs.loadNodeStatuses('p1', wf());
+      runs.clearNodeStatuses();
+      slow.resolve({ n1: done });
+      await load;
+
+      expect(playground.nodeStatusFor('n1')).toBeUndefined();
+    });
+
+    it('clears when there is no run to show', async () => {
+      const { runs, playground } = setup();
+      playground.setNodeStatuses({ n1: done }, { workflowId: 'wf', pipelineId: 'p1' });
+      await runs.loadNodeStatuses(null, wf());
+      expect(playground.nodeStatuses).toEqual({});
     });
   });
 });

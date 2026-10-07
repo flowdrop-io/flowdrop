@@ -192,6 +192,7 @@ export {
 // ============================================================================
 
 export { PlaygroundStore } from '../stores/playgroundStore.svelte.js';
+export type { NodeStatusScope } from '../stores/playgroundStore.svelte.js';
 
 // ============================================================================
 // Run Controller

@@ -21,7 +21,12 @@ import type {
   PlaygroundExecution
 } from '../types/playground.js';
 import { hasEnableRunFlag, isChatInputNode } from '../types/playground.js';
-import type { Workflow, WorkflowInterfaceEntry, WorkflowNode } from '../types/index.js';
+import type {
+  NodeExecutionInfo,
+  Workflow,
+  WorkflowInterfaceEntry,
+  WorkflowNode
+} from '../types/index.js';
 import {
   collectInterfaceInputs,
   interfaceFormEntriesFor,
@@ -31,6 +36,12 @@ import {
 } from '../utils/workflowInterface.js';
 import { resolvePlaygroundChat, type ResolvedPlaygroundChat } from '../utils/playgroundChat.js';
 import { logger } from '../utils/logger.js';
+
+/** Which workflow and run a set of node statuses was loaded for. */
+export interface NodeStatusScope {
+  workflowId: string;
+  pipelineId: string;
+}
 
 // =========================================================================
 // Helper Functions (pure, instance-independent)
@@ -178,6 +189,16 @@ export class PlaygroundStore {
 
   /** Incremented on every message batch that should trigger a pipeline re-fetch */
   #pipelineRefreshTrigger = $state(0);
+
+  /**
+   * Run status of the nodes of the workflow on the canvas, keyed by node id.
+   * `$state.raw`: replaced as a whole on each load, never mutated, so the
+   * canvas nodes (which read single entries) are not deep-proxied.
+   */
+  #nodeStatuses = $state.raw<Record<string, NodeExecutionInfo>>({});
+
+  /** Which workflow and run {@link #nodeStatuses} belongs to; null when empty. */
+  #nodeStatusScope = $state.raw<NodeStatusScope | null>(null);
 
   /** Whether log messages are visible in the execution console */
   #showLogs = $state<boolean>(true);
@@ -527,6 +548,40 @@ export class PlaygroundStore {
     return this.#pipelineRefreshTrigger;
   }
 
+  /**
+   * Per-node run status for the workflow on the canvas, keyed by node id.
+   *
+   * This is the single source the node status overlay draws from. It is kept
+   * here, off the node data, so an edit to the graph can neither wipe it nor
+   * carry it into the saved workflow.
+   */
+  get nodeStatuses(): Readonly<Record<string, NodeExecutionInfo>> {
+    return this.#nodeStatuses;
+  }
+
+  /** The workflow and run the statuses belong to, or null when there are none. */
+  get nodeStatusScope(): NodeStatusScope | null {
+    return this.#nodeStatusScope;
+  }
+
+  /** One node's run status, or undefined when the shown run has none for it. */
+  nodeStatusFor(nodeId: string): NodeExecutionInfo | undefined {
+    return this.#nodeStatuses[nodeId];
+  }
+
+  /** Replace all node statuses with those of one run. */
+  setNodeStatuses(statuses: Record<string, NodeExecutionInfo>, scope: NodeStatusScope): void {
+    this.#nodeStatuses = statuses;
+    this.#nodeStatusScope = scope;
+  }
+
+  /** Forget the node statuses (a different workflow or run is shown, or none). */
+  clearNodeStatuses(): void {
+    if (this.#nodeStatusScope === null && Object.keys(this.#nodeStatuses).length === 0) return;
+    this.#nodeStatuses = {};
+    this.#nodeStatusScope = null;
+  }
+
   /** Whether log messages should be shown in the execution console. */
   get showLogs(): boolean {
     return this.#showLogs;
@@ -780,6 +835,7 @@ export class PlaygroundStore {
     this.#currentWorkflow = null;
     this.#lastPollSequenceNumber = null;
     this.#pipelineRefreshTrigger = 0;
+    this.clearNodeStatuses();
     this.#turnPending = false;
     this.#runLockedAt = null;
     this.#formValues = {};

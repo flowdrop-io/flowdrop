@@ -26,6 +26,7 @@ import type { PlaygroundStore } from './playgroundStore.svelte.js';
 import type { WorkflowStore } from './workflowStore.svelte.js';
 import type { ApiContext } from './apiContext.js';
 import type { PlaygroundService } from '../services/playgroundService.js';
+import { nodeExecutionService } from '../services/nodeExecutionService.js';
 import { pipelineSignalService } from '../services/pipelineSignalService.js';
 import { workflowLaunchService, type LaunchResult } from '../services/workflowLaunchService.js';
 import type { CommandHandlers } from '../playground/commands/dispatch.js';
@@ -102,6 +103,9 @@ export class RunController {
   // the user switches sessions faster than the network responds (last-load
   // wins).
   #loadToken = 0;
+
+  // Same idea as #loadToken, for node status loads.
+  #statusToken = 0;
 
   #pendingSignal = $state<{ pipelineId: string; signal: string } | null>(null);
   #isRefreshing = $state(false);
@@ -729,6 +733,44 @@ export class RunController {
   /** Stop this instance's poller. */
   stopPolling(): void {
     this.#service.stopPolling();
+  }
+
+  /**
+   * Load one run's per-node status into `fd.playground` (`nodeStatuses`).
+   *
+   * The node status overlay draws from that store, so the result survives
+   * edits to the graph. Without arguments it follows the session's active run
+   * and the editor's workflow. A newer call, or {@link clearNodeStatuses},
+   * discards the result of one still in flight. Without a run or a saved
+   * workflow it clears instead.
+   */
+  async loadNodeStatuses(pipelineId?: string | null, workflow?: Workflow | null): Promise<void> {
+    const runId = pipelineId ?? this.#playground.activeExecutionId;
+    const target = workflow ?? this.#workflow.current;
+    const token = ++this.#statusToken;
+    if (!runId || !target?.id) {
+      this.#playground.clearNodeStatuses();
+      return;
+    }
+    try {
+      const statuses = await nodeExecutionService.getMultipleNodeExecutionInfo(
+        this.#api.config,
+        target.nodes.map((node) => node.id),
+        runId
+      );
+      if (token !== this.#statusToken) return;
+      this.#playground.setNodeStatuses(statuses, { workflowId: target.id, pipelineId: runId });
+    } catch (error) {
+      if (token === this.#statusToken) {
+        logger.error('Failed to load node execution info:', error);
+      }
+    }
+  }
+
+  /** Drop the node statuses and any load still in flight. */
+  clearNodeStatuses(): void {
+    this.#statusToken++;
+    this.#playground.clearNodeStatuses();
   }
 
   /** Fetch what is new for the current session and tail it when it is running. */
