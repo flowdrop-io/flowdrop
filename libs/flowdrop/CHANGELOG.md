@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Message-to-node links and a Last run tab, in Test mode. A reply's "via
+  <node>" label becomes a link when the node is on the canvas now (messages from
+  a deleted node or a sub-workflow stay plain). Clicking it selects the node,
+  opens the inspector on its new **Last run** tab and brings the node into view;
+  nothing else moves the view. Hovering the link lights the node on the canvas,
+  and hovering or opening a node lights the messages from it
+  (`fd.highlight`: `NodeHighlightStore`). In Test mode a node in the inspector
+  has tabs Config | Last run (Edit mode keeps no tab strip). Last run shows the
+  node's status, duration, timestamps, tokens when its output reports them, and
+  input, output and error (long payloads cut, with Show all), from the shown
+  run; a node that did not run shows an empty state. `NodeJobExecution` gains
+  `input` and `output` (the pipeline payload's `input_data` / `output_data`).
+  `canvasFocusNode(id)` on `WorkflowEditor`. New messages: `nodeInspector`,
+  `playground.messageTooltips.showNodeLastRun`.
 - Run status of the nodes lives in the instance's playground store:
   `fd.playground.nodeStatuses` (`nodeStatusFor(id)`, `setNodeStatuses`,
   `clearNodeStatuses`, scoped to a workflow and run). The node status overlay

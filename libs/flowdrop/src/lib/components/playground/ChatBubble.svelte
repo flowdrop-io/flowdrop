@@ -13,6 +13,8 @@
   import MessageMarkdown from './MessageMarkdown.svelte';
   import { formatDuration, formatTimestamp, getRoleIcon, getRoleLabel } from './messageDisplay.js';
   import { m } from '$lib/messages/index.js';
+  import { getInstance } from '../../stores/getInstance.svelte.js';
+  import { resolveMessageNodeLink } from '../../utils/messageNodeLink.js';
 
   interface Props {
     message: PlaygroundMessage;
@@ -22,6 +24,20 @@
   }
 
   let { message, showTimestamp = true, isLast = false, enableMarkdown = true }: Props = $props();
+
+  const fd = getInstance();
+
+  // The node this message came from, when it is on the canvas now and the
+  // editor can show it: the label becomes a link. Anywhere else (a deleted
+  // node, a sub-workflow's node, the standalone Playground) it stays plain.
+  const linkedNodeId = $derived(
+    fd.highlight.canReveal ? resolveMessageNodeLink(message, fd.workflow.current?.nodes) : null
+  );
+  const nodeLabel = $derived(message.metadata?.nodeLabel ?? message.nodeId ?? '');
+  // The node open or hovered on the canvas lights the messages it produced.
+  const fromHighlighted = $derived(
+    !!message.nodeId && fd.highlight.messageNodeId === message.nodeId
+  );
 
   const hierarchy = $derived(message.hierarchy ?? []);
   const tags = $derived(message.tags ?? []);
@@ -37,6 +53,7 @@
   class:message-bubble--assistant={message.role === 'assistant'}
   class:message-bubble--system={message.role === 'system'}
   class:message-bubble--last={isLast}
+  class:message-bubble--from-highlighted={fromHighlighted}
   aria-label="{roleLabel} message"
 >
   <div class="message-bubble__avatar" aria-hidden="true">
@@ -68,13 +85,31 @@
     {#if hasFooter}
       <div class="message-bubble__footer">
         {#if message.nodeId}
-          <span
-            class="message-bubble__node"
-            title={m().playground.messageTooltips.nodeId({ id: message.nodeId })}
-          >
-            <Icon icon="mdi:vector-square" aria-hidden="true" />
-            via {message.metadata?.nodeLabel ?? message.nodeId}
-          </span>
+          {#if linkedNodeId}
+            <button
+              type="button"
+              class="message-bubble__node message-bubble__node--link"
+              data-testid="message-node-link"
+              data-node-id={linkedNodeId}
+              title={m().playground.messageTooltips.showNodeLastRun({ label: nodeLabel })}
+              onclick={() => fd.highlight.reveal(linkedNodeId)}
+              onmouseenter={() => fd.highlight.hoverLink(linkedNodeId)}
+              onmouseleave={() => fd.highlight.hoverLink(null)}
+              onfocus={() => fd.highlight.hoverLink(linkedNodeId)}
+              onblur={() => fd.highlight.hoverLink(null)}
+            >
+              <Icon icon="mdi:vector-square" aria-hidden="true" />
+              via {nodeLabel}
+            </button>
+          {:else}
+            <span
+              class="message-bubble__node"
+              title={m().playground.messageTooltips.nodeId({ id: message.nodeId })}
+            >
+              <Icon icon="mdi:vector-square" aria-hidden="true" />
+              via {nodeLabel}
+            </span>
+          {/if}
         {/if}
         {#if message.metadata?.duration !== undefined}
           <span
@@ -262,6 +297,27 @@
     display: flex;
     align-items: center;
     gap: var(--fd-space-3xs);
+  }
+
+  /* The node label as a link: a jump on request, never automatic. */
+  .message-bubble__node--link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--fd-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  .message-bubble--user .message-bubble__node--link {
+    color: inherit;
+  }
+
+  /* Lit while the node it came from is hovered or open on the canvas. */
+  .message-bubble--from-highlighted .message-bubble__content {
+    box-shadow: 0 0 0 2px var(--fd-primary);
   }
 
   @media (max-width: 640px) {
