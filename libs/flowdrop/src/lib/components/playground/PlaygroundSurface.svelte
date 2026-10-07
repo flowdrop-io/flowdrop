@@ -64,6 +64,11 @@
      * @default false
      */
     followWorkflow?: boolean;
+    /**
+     * Where the workflow's Playground settings are, for a caller that has such
+     * a place (the editor). Offered as a link on the "no chat yet" notice.
+     */
+    onOpenSettings?: () => void;
   }
 
   let {
@@ -80,7 +85,8 @@
     onSessionNavigate,
     instance,
     retainSession = false,
-    followWorkflow = false
+    followWorkflow = false,
+    onOpenSettings
   }: Props = $props();
 
   // Resolve/provide once at init; the instance prop is a fixed mount-time choice.
@@ -491,6 +497,7 @@
             : config.predefinedMessage}
           formEntries={fd.playground.interfaceFormEntries}
           notice={chatNotice}
+          onNoticeAction={onOpenSettings}
           formValues={fd.playground.formValues}
           onFormChange={(values) => fd.playground.setFormValues(values)}
           showSessionHeader={config.showSessionHeader ?? true}

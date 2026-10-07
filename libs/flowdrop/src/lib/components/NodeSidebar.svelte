@@ -24,6 +24,12 @@
     activeFormat?: WorkflowFormat;
     /** Whether category <details> accordions start open (card mode). Default: false */
     categoriesDefaultOpen?: boolean;
+    /**
+     * Render as a popover body: always expanded, as wide as its container,
+     * whatever the persisted sidebar width or collapsed state say. Test mode
+     * shows the library this way (N).
+     */
+    popover?: boolean;
   }
 
   let props: Props = $props();
@@ -44,7 +50,7 @@
   }
 
   /** Effective collapsed state — driven by persisted UI setting */
-  let isCollapsed = $derived(getUiSettings().sidebarCollapsed);
+  let isCollapsed = $derived(!props.popover && getUiSettings().sidebarCollapsed);
 
   /** Nodes filtered by format compatibility */
   let formatCompatibleNodes = $derived((props.nodes || []).filter(isNodeCompatibleWithFormat));
@@ -157,7 +163,8 @@
   class="flowdrop-sidebar flowdrop-sidebar--container"
   class:flowdrop-sidebar--collapsed={isCollapsed}
   class:flowdrop-sidebar--compact={getUiSettings().compactMode}
-  style:width="{isCollapsed ? 0 : getUiSettings().sidebarWidth}px"
+  class:flowdrop-sidebar--popover={props.popover}
+  style:width={props.popover ? '100%' : `${isCollapsed ? 0 : getUiSettings().sidebarWidth}px`}
   aria-label={m().layout.componentsSidebar}
 >
   <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
@@ -421,6 +428,14 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+  }
+
+  /* Popover body (Test mode's node library): the popover owns the frame. */
+  .flowdrop-sidebar--popover {
+    border-right: none;
+    box-shadow: none;
+    background-color: transparent;
+    transition: none;
   }
 
   /* Collapsed state — fully hidden */

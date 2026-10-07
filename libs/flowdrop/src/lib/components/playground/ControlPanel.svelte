@@ -62,6 +62,12 @@
      * has no chat until somebody sets it up. Absent renders nothing.
      */
     notice?: string;
+    /**
+     * A way from the notice to where it says to go (the workflow's Playground
+     * settings). Offered by a surface that has such a place: the docked
+     * Playground in the editor.
+     */
+    onNoticeAction?: () => void;
     /** Current form values, keyed by entry id. */
     formValues?: Record<string, unknown>;
     /** Called with the complete form values on every change. */
@@ -95,6 +101,7 @@
     placeholder,
     formEntries = [],
     notice,
+    onNoticeAction,
     formValues = {},
     onFormChange,
     showSessionHeader = true,
@@ -294,6 +301,11 @@
     <p class="control-panel__notice" role="note">
       <Icon icon="mdi:information-outline" />
       <span>{notice}</span>
+      {#if onNoticeAction}
+        <button type="button" class="control-panel__notice-action" onclick={onNoticeAction}>
+          {cp.openPlaygroundSettings}
+        </button>
+      {/if}
     </p>
   {/if}
 
@@ -340,6 +352,19 @@
     color: var(--fd-muted-foreground);
     font-size: var(--fd-text-xs);
     line-height: 1.5;
+  }
+
+  .control-panel__notice-action {
+    flex: none;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fd-primary);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
   }
 
   .control-panel__notice :global(svg) {

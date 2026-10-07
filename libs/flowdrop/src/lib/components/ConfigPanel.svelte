@@ -38,8 +38,8 @@
     details?: DetailItem[];
     /** Title for the configuration section */
     configTitle?: string;
-    /** Callback function when the panel is closed */
-    onClose: () => void;
+    /** Callback function when the panel is closed. Without it the panel has no close control. */
+    onClose?: () => void;
     /** Optional callback to initiate node swap — when provided, shows swap button */
     onSwap?: () => void;
     /**
@@ -144,13 +144,15 @@
           <Icon icon="heroicons:arrows-pointing-out" />
         </button>
       {/if}
-      <button
-        class="config-panel__close"
-        onclick={onClose}
-        aria-label={m().layout.closeConfigPanel}
-      >
-        ×
-      </button>
+      {#if onClose}
+        <button
+          class="config-panel__close"
+          onclick={onClose}
+          aria-label={m().layout.closeConfigPanel}
+        >
+          ×
+        </button>
+      {/if}
     </div>
   </div>
 
@@ -192,13 +194,15 @@
           >
             <Icon icon="heroicons:arrows-pointing-in" />
           </button>
-          <button
-            class="config-panel__close"
-            onclick={onClose}
-            aria-label={m().layout.closeConfigPanel}
-          >
-            ×
-          </button>
+          {#if onClose}
+            <button
+              class="config-panel__close"
+              onclick={onClose}
+              aria-label={m().layout.closeConfigPanel}
+            >
+              ×
+            </button>
+          {/if}
         </div>
       </div>
 

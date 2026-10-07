@@ -237,6 +237,14 @@ export const defaultMessages = {
     bottomPanel: {
       console: 'Console',
       chat: 'AI Assistant'
+    },
+    // The Edit | Test switch in the navbar.
+    editorMode: {
+      label: 'Editor mode',
+      edit: 'Edit',
+      test: 'Test',
+      // Title of the dot on Test while a run is going or waiting (Edit mode).
+      runActive: 'A test run is going or waiting'
     }
   },
 
@@ -268,6 +276,11 @@ export const defaultMessages = {
     resizeBottomPanel: 'Resize bottom panel',
     expandSidebar: 'Expand sidebar',
     collapseSidebar: 'Collapse sidebar',
+    // Test mode on a narrow screen: the Playground is a drawer over the canvas.
+    showPlayground: 'Show Playground',
+    hidePlayground: 'Hide Playground',
+    // Test mode: the node library as a popover (N).
+    nodeLibrary: 'Node library',
     closePlaygroundModal: 'Close playground modal',
     closeLogsSidebar: 'Close logs sidebar',
     closeConfigPanel: 'Close panel',
@@ -485,6 +498,7 @@ export const defaultMessages = {
       hidePipeline: 'Hide pipeline',
       refresh: 'Refresh',
       refreshTitle: 'Refresh status',
+      openPlaygroundSettings: 'Playground settings',
       logs: 'Logs',
       showLogs: 'Show log messages',
       hideLogs: 'Hide log messages',
