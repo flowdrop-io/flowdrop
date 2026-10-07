@@ -16,6 +16,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with `fd.runs.loadNodeStatuses(pipelineId?, workflow?)`; the editor does so
   for its `pipelineId` and `refreshTrigger` props. Two editors, or an editor
   and a Playground, on one page never share statuses.
+- A run bar on the editor canvas while a run exists, at the top centre: its
+  status (running, waiting, failed, done, stopped), Stop while the run is live,
+  and Open while it waits for a person. There is no bar at rest. It fades a few
+  seconds after the run ends, and the node status badges fade with it. Status
+  changes are announced politely to screen readers; Stop and Open are buttons.
+  A run starts the bar when it comes from the Console (`session run`,
+  `session send`), the Assistant, or a WebMCP agent. `WorkflowEditor` takes
+  `showRunBar` (default `true`; Test mode sets it `false`) and `onOpenTest`
+  (the Open button is shown only when it is set). New messages under `runBar`.
+- `fd.runs.activeRun` (`ActiveRun`: `origin`, `runId`, `status`, `startedAt`,
+  `endedAt`; reactive, `null` at rest), `fd.runs.stopRun()` and
+  `fd.runs.dismissRun()`. Per instance.
+- `fd.runs.wrapHostHooks(hooks)` routes a host's `onRun` and `onRunStatus`
+  through the run controller: the run a host hook starts becomes `activeRun`,
+  and `fd.runs` reads its status from `onRunStatus` until it ends. The hooks
+  answer exactly as before. The chat panel's tool loop and the WebMCP adapter
+  use it, so `run` / `run_status` land in the same run state as Console runs.
+  A host run is followed only when the host supplies `onRunStatus`.
 - `stripExecutionInfo(nodes)`, exported from `core`.
 - `fd.runs`, a per-instance run controller (`RunController`, exported from
   `playground`, types from `core`). It holds the session and run executors that
