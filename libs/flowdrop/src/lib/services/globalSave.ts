@@ -243,6 +243,10 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       fd.workflow.markAsSaved();
     }
 
+    // A conversation open in the editor's Playground marks the new version.
+    // Not awaited: it asks the server which version this save made.
+    void fd.runs.noteWorkflowSaved();
+
     // Notify caller with the definitive saved workflow (server-assigned ID)
     if (onSaved) {
       onSaved(savedWorkflow);

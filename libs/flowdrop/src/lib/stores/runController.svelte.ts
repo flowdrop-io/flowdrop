@@ -20,7 +20,8 @@ import type { Workflow } from '../types/index.js';
 import type {
   PlaygroundMessageRequest,
   PlaygroundMessagesApiResponse,
-  PlaygroundSessionStatus
+  PlaygroundSessionStatus,
+  SessionRunsResult
 } from '../types/playground.js';
 import type { PlaygroundStore } from './playgroundStore.svelte.js';
 import type { WorkflowStore } from './workflowStore.svelte.js';
@@ -35,6 +36,7 @@ import { resolveRunAction } from '../playground/runAction.js';
 import { defaultMessages } from '../messages/defaults.js';
 import type { Messages } from '../messages/types.js';
 import { logger } from '../utils/logger.js';
+import { playgroundSessionsOf, versionDividersFromRuns, isRunStale } from '../utils/sessionRuns.js';
 import type { HostHooks } from '../webmcp/types.js';
 
 /**
@@ -46,6 +48,14 @@ import type { HostHooks } from '../webmcp/types.js';
  * is seen on the next page load.
  */
 const serversWithoutPlaygroundSettings = new Set<string>();
+
+/**
+ * API base URLs whose server has no session runs endpoint (it answered 404,
+ * or the instance has no `sessions` group). Asked once per page, like
+ * {@link serversWithoutPlaygroundSettings}: such a server shows no version
+ * dividers and is not asked again.
+ */
+const serversWithoutSessionRuns = new Set<string>();
 
 /**
  * Where a run stands, as the Edit-mode run bar words it. `waiting` is a run
@@ -149,6 +159,21 @@ export interface RunControllerOptions {
   onSessionNavigate?: (sessionId: string) => void;
   /** Host-configured opening message for Run. */
   predefinedMessage?: string;
+  /**
+   * Save the workflow through the editor's own save path. Resolves `true` when
+   * it was written, `false` when nothing was saved (a host cancelled it) and
+   * throws when the request failed. Given by the editor's Playground only:
+   * with it, {@link RunController.needsSave} says whether a send must save
+   * first and {@link RunController.saveFirst} does it.
+   */
+  saveWorkflow?: () => Promise<boolean>;
+  /**
+   * List only the sessions the Playground created (the third-party mark the
+   * server stamps on them): the editor's Playground shows its own sessions, not
+   * every session of the workflow. A server that does not expose the mark
+   * lists them all. A session created here is named by the server.
+   */
+  playgroundSessionsOnly?: boolean;
   /**
    * Message getter, read at call time so a locale switch is picked up. Default
    * `() => defaultMessages`. Never resolved from Svelte context here.
@@ -383,7 +408,9 @@ export class RunController {
         undefined,
         this.#api.authProvider
       );
-      this.#playground.setSessions(sessionList);
+      this.#playground.setSessions(
+        this.#options.playgroundSessionsOnly ? playgroundSessionsOf(sessionList) : sessionList
+      );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions';
       this.#playground.setError(errorMessage);
@@ -429,6 +456,12 @@ export class RunController {
         // Seed polling from the newest loaded message so it tails live updates
         // instead of crawling forward from the start of the conversation.
         this.startPolling(sessionId, true);
+      }
+      // The version dividers of a conversation loaded from the server (the
+      // editor's Playground shows them). Not awaited: the feed is usable now
+      // and the dividers appear when known.
+      if (this.#options.saveWorkflow !== undefined) {
+        void this.loadSessionRuns(sessionId, { rebuildDividers: true });
       }
     } catch (err) {
       if (token !== this.#loadToken) return; // don't surface a superseded load's error
@@ -488,7 +521,14 @@ export class RunController {
     this.#playground.setError(null);
 
     try {
-      const sessionName = `Session ${this.#playground.sessions.length + 1}`;
+      // A list that is not the whole story (the editor lists only the
+      // Playground's sessions; the Console never loaded one) cannot number
+      // the next session without repeating a name, so the server names it.
+      // The standalone Playground lists every session and keeps counting.
+      const sessionName =
+        this.#hasConfiguredWorkflow && !this.#options.playgroundSessionsOnly
+          ? `Session ${this.#playground.sessions.length + 1}`
+          : undefined;
       const session = await this.#service.createSession(
         this.#api.config,
         this.#requireWorkflowId(),
@@ -517,6 +557,130 @@ export class RunController {
     } finally {
       this.#playground.setLoading(false);
     }
+  }
+
+  // -----------------------------------------------------------------------
+  // Save and versions
+  // -----------------------------------------------------------------------
+
+  /**
+   * Whether a send must save the workflow first: the surface can save and the
+   * editor's workflow has unsaved edits (its Playground settings count, they
+   * are part of the workflow).
+   */
+  get needsSave(): boolean {
+    return (
+      this.#options.saveWorkflow !== undefined &&
+      this.#workflow.current !== null &&
+      this.#workflow.isDirty
+    );
+  }
+
+  /**
+   * Save the workflow if it has unsaved edits, so the run that follows is on
+   * what the person sees. Resolves `true` when there is nothing to save or the
+   * save was written. A failed or cancelled save resolves `false` and shows why
+   * in the Playground: the caller sends nothing.
+   */
+  async saveFirst(): Promise<boolean> {
+    if (!this.needsSave) return true;
+    const messages = this.#messages.playground;
+    try {
+      const saved = await this.#options.saveWorkflow?.();
+      if (saved === false) {
+        this.#playground.setError(messages.saveNotDone);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : '';
+      this.#playground.setError(messages.saveFailed({ message: reason }));
+      return false;
+    }
+  }
+
+  /**
+   * Load the current session's runs from the runs endpoint into
+   * `playground.sessionRuns`, optionally rebuilding the conversation's version
+   * dividers from them. Resolves `null` (and changes nothing) on a server
+   * without the endpoint, which is asked only once per page, and when the
+   * request fails: version information is an extra, never an error.
+   */
+  async loadSessionRuns(
+    sessionId?: string,
+    options: { rebuildDividers?: boolean } = {}
+  ): Promise<SessionRunsResult | null> {
+    const id = sessionId ?? this.#playground.currentSession?.id;
+    const server = this.#api.config?.baseUrl;
+    if (
+      !id ||
+      !this.#api.config ||
+      (server !== undefined && serversWithoutSessionRuns.has(server))
+    ) {
+      return null;
+    }
+    try {
+      const result = await this.#service.getSessionRuns(
+        this.#api.config,
+        id,
+        undefined,
+        this.#api.authProvider
+      );
+      if (result === null) {
+        if (server !== undefined) serversWithoutSessionRuns.add(server);
+        this.#playground.setSessionRuns(id, null);
+        this.#playground.setVersionDividers(id, []);
+        return null;
+      }
+      // A newer session may have been loaded meanwhile: its runs are not these.
+      if (this.#playground.currentSession?.id !== id) return result;
+      this.#playground.setSessionRuns(id, result);
+      if (options.rebuildDividers) {
+        this.#playground.setVersionDividers(id, versionDividersFromRuns(result));
+      }
+      return result;
+    } catch (err) {
+      logger.debug('[Playground] Session runs unavailable:', err);
+      return null;
+    }
+  }
+
+  /**
+   * The workflow was just saved. When a conversation is open, put a "Saved,
+   * new version" divider below its last message, so the feed reads in the
+   * order things happened. No divider without a conversation, on a server
+   * without the runs endpoint, or when the save did not change the version
+   * the last run ran on (a node dragged to another place, say).
+   */
+  async noteWorkflowSaved(): Promise<void> {
+    const playground = this.#playground;
+    const session = playground.currentSession;
+    const last = playground.messages.at(-1);
+    if (!session || !last) return;
+    // A conversation retained from another workflow is not this save's.
+    const editorId = this.#workflow.current?.id;
+    if (editorId !== undefined && playground.currentWorkflow?.id !== editorId) return;
+    const sessionId = session.id;
+
+    // The divider goes where the conversation ends now, not where it ends when
+    // the runs answer below arrives (`last` is read before the first await).
+    const result = await this.loadSessionRuns(sessionId);
+    if (result === null) return;
+    let lastVersion: string | null | undefined;
+    for (const run of result.runs) {
+      if (run.workflowVersion != null) lastVersion = run.workflowVersion;
+    }
+    if (
+      lastVersion != null &&
+      result.workflowVersion != null &&
+      !isRunStale(lastVersion, result.workflowVersion)
+    ) {
+      return;
+    }
+    playground.addVersionDivider(sessionId, {
+      id: `save:${last.id}`,
+      anchor: { kind: 'after-message', messageId: last.id }
+    });
   }
 
   async selectSession(sessionId: string): Promise<void> {

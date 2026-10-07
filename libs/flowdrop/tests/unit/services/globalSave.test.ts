@@ -33,7 +33,8 @@ const {
   mockClientUpdate,
   mockApiIsConfigured,
   mockApiConfigure,
-  mockStoreAcknowledgeServer
+  mockStoreAcknowledgeServer,
+  mockNoteWorkflowSaved
 } = vi.hoisted(() => ({
   mockGetWorkflowStore: vi.fn(),
   mockWorkflowActionsBatchUpdate: vi.fn(),
@@ -42,7 +43,8 @@ const {
   mockClientUpdate: vi.fn(),
   mockApiIsConfigured: vi.fn(),
   mockApiConfigure: vi.fn(),
-  mockStoreAcknowledgeServer: vi.fn()
+  mockStoreAcknowledgeServer: vi.fn(),
+  mockNoteWorkflowSaved: vi.fn()
 }));
 
 // globalSave resolves its target via getDefaultInstance(). Mock the instance
@@ -58,6 +60,9 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
       batchUpdate: (...args: unknown[]) => mockWorkflowActionsBatchUpdate(...args),
       markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args),
       acknowledgeServer: (...args: unknown[]) => mockStoreAcknowledgeServer(...args)
+    },
+    runs: {
+      noteWorkflowSaved: (...args: unknown[]) => mockNoteWorkflowSaved(...args)
     },
     api: {
       isConfigured: (...args: unknown[]) => mockApiIsConfigured(...args),
@@ -206,6 +211,27 @@ describe('globalSaveWorkflow', () => {
       await globalSaveWorkflow({ eventHandlers: { onBeforeSave } });
 
       expect(mockClientSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('tells the run controller after a write, so an open conversation marks the version', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      mockClientSave.mockResolvedValue(backendWorkflow('backend-id'));
+
+      await globalSaveWorkflow({});
+
+      expect(mockNoteWorkflowSaved).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not tell the run controller when the save fails or is cancelled', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      mockClientSave.mockRejectedValue(new Error('boom'));
+      await expect(globalSaveWorkflow({})).rejects.toThrow('boom');
+
+      await globalSaveWorkflow({
+        eventHandlers: { onBeforeSave: vi.fn().mockResolvedValue(false) }
+      });
+
+      expect(mockNoteWorkflowSaved).not.toHaveBeenCalled();
     });
 
     it('calls onAfterSave with the saved workflow on success', async () => {

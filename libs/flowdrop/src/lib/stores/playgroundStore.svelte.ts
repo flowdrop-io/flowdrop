@@ -18,7 +18,9 @@ import type {
   PlaygroundInputField,
   PlaygroundSessionStatus,
   PlaygroundMessagesApiResponse,
-  PlaygroundExecution
+  PlaygroundExecution,
+  SessionRunsResult,
+  VersionDivider
 } from '../types/playground.js';
 import { hasEnableRunFlag, isChatInputNode } from '../types/playground.js';
 import type {
@@ -108,6 +110,9 @@ export interface PlaygroundStoreActions {
   addMessage: (message: PlaygroundMessage) => void;
   addMessages: (newMessages: PlaygroundMessage[]) => void;
   clearMessages: () => void;
+  setSessionRuns: (sessionId: string, result: SessionRunsResult | null) => void;
+  setVersionDividers: (sessionId: string, items: VersionDivider[]) => void;
+  addVersionDivider: (sessionId: string, divider: VersionDivider) => void;
   setLoading: (loading: boolean) => void;
   setError: (errorMessage: string | null) => void;
   updateLastPollSequenceNumber: (seq: number) => void;
@@ -147,6 +152,16 @@ export class PlaygroundStore {
    * set is replaced (session switch / clear).
    */
   #hasOlder = $state<boolean>(false);
+
+  /**
+   * The runs of one session as the runs endpoint last reported them, with the
+   * session they belong to. Read through {@link sessionRuns}, which answers
+   * only for the current session.
+   */
+  #runsOf = $state.raw<{ sessionId: string; result: SessionRunsResult } | null>(null);
+
+  /** The version dividers of one session — see {@link versionDividers}. */
+  #dividersOf = $state.raw<{ sessionId: string; items: VersionDivider[] } | null>(null);
 
   /** Whether we are currently loading data */
   #isLoading = $state<boolean>(false);
@@ -267,6 +282,9 @@ export class PlaygroundStore {
       addMessage: this.addMessage.bind(this),
       addMessages: this.addMessages.bind(this),
       clearMessages: this.clearMessages.bind(this),
+      setSessionRuns: this.setSessionRuns.bind(this),
+      setVersionDividers: this.setVersionDividers.bind(this),
+      addVersionDivider: this.addVersionDivider.bind(this),
       setLoading: this.setLoading.bind(this),
       setError: this.setError.bind(this),
       updateLastPollSequenceNumber: this.updateLastPollSequenceNumber.bind(this),
@@ -592,6 +610,42 @@ export class PlaygroundStore {
     return this.#currentSession?.id ?? null;
   }
 
+  /**
+   * The current session's runs from the runs endpoint (oldest first, each
+   * stamped with the workflow version it ran), or `null` before the first load
+   * and on a server without the endpoint. The one place the list of a
+   * session's runs lives: the dividers are derived from it, and "attach a
+   * run" lists it.
+   */
+  get sessionRuns(): SessionRunsResult | null {
+    const held = this.#runsOf;
+    return held && held.sessionId === this.#currentSession?.id ? held.result : null;
+  }
+
+  /** The "Saved, new version" dividers of the current session's feed. */
+  get versionDividers(): VersionDivider[] {
+    const held = this.#dividersOf;
+    return held && held.sessionId === this.#currentSession?.id ? held.items : [];
+  }
+
+  /** Keep the runs of a session (`null` forgets them). */
+  setSessionRuns(sessionId: string, result: SessionRunsResult | null): void {
+    this.#runsOf = result ? { sessionId, result } : null;
+  }
+
+  /** Replace a session's dividers. */
+  setVersionDividers(sessionId: string, items: VersionDivider[]): void {
+    this.#dividersOf = { sessionId, items };
+  }
+
+  /** Add a divider to a session's feed; one with the same id is not added twice. */
+  addVersionDivider(sessionId: string, divider: VersionDivider): void {
+    const held = this.#dividersOf;
+    const items = held && held.sessionId === sessionId ? held.items : [];
+    if (items.some((d) => d.id === divider.id)) return;
+    this.#dividersOf = { sessionId, items: [...items, divider] };
+  }
+
   /** Whether older messages exist before the oldest one currently loaded. */
   get hasOlder(): boolean {
     return this.#hasOlder;
@@ -830,6 +884,8 @@ export class PlaygroundStore {
     this.#currentSession = null;
     this.#sessions = [];
     this.#messages = [];
+    this.#runsOf = null;
+    this.#dividersOf = null;
     this.#isLoading = false;
     this.#error = null;
     this.#currentWorkflow = null;
