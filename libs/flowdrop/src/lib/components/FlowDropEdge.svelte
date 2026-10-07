@@ -15,6 +15,8 @@
   import { BaseEdge } from '@xyflow/svelte';
   import type { BezierEdgeProps } from '@xyflow/svelte';
   import { ARROW_LENGTH_PX, ARROW_HALF_WIDTH_PX } from '../config/constants.js';
+  import { getInstance } from '../stores/getInstance.svelte.js';
+  import { isEdgeHot } from '../utils/runEdges.js';
 
   let {
     id,
@@ -24,6 +26,8 @@
     markerEnd: _markerEnd,
     markerStart,
     pathOptions,
+    source,
+    target,
     sourcePosition,
     sourceX,
     sourceY,
@@ -31,12 +35,28 @@
     targetPosition,
     targetX,
     targetY
-  }: BezierEdgeProps = $props();
+  }: BezierEdgeProps & { source?: string; target?: string } = $props();
+
+  const fd = getInstance();
+
+  /**
+   * Hot: the shown run passed this edge (see utils/runEdges.ts). Read from the
+   * instance's status store at draw time, so it never touches the edge data
+   * that is saved with the workflow.
+   */
+  let hot = $derived(
+    isEdgeHot(fd.playground.nodeStatusFor(source ?? ''), fd.playground.nodeStatusFor(target ?? ''))
+  );
+
+  // Later declarations win inside one inline style, so the hot stroke is appended.
+  const HOT_STROKE = 'var(--fd-success, #10b981)';
+  let drawnStyle = $derived(hot ? `${style ?? ''};stroke:${HOT_STROKE};stroke-width:2.5;` : style);
 
   /**
    * Extract stroke color from the edge's inline style for the arrowhead fill.
    */
   let strokeColor = $derived.by(() => {
+    if (hot) return HOT_STROKE;
     if (!style) return 'var(--fd-edge-data, #64748b)';
     const match = style.match(/stroke:\s*([^;]+)/);
     return match ? match[1].trim() : 'var(--fd-edge-data, #64748b)';
@@ -106,7 +126,8 @@
   {labelStyle}
   {markerStart}
   {interactionWidth}
-  {style}
+  style={drawnStyle}
+  class={hot ? 'flowdrop-edge--hot' : undefined}
 />
 
 <!-- Manual arrowhead: tip at origin pointing right, rotated to the bezier tangent -->
