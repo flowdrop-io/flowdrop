@@ -140,6 +140,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instance instead of sharing the default, and destroying it no longer
   resets or stops the first one. The first mount still owns the default
   instance, as before.
+- A skin's tokens no longer land on the host page's `:root`. Each editor
+  scopes them to its own root (`data-fd-scope`), so two editors with different
+  skins stop overwriting each other and the page around the editor gets no
+  `--fd-*` variables. Aliases that follow a token the skin sets (`--fd-panel-bg`
+  and the like) are redeclared in the scope, and overlays moved to `<body>`
+  (config panel, surface overlay) carry the scope along. Light/dark stays the
+  page-wide `data-theme` on `<html>`. A host that styled its own page with a
+  skin's `--fd-*` variables must set them itself.
 
 ## [2.10.1] - 2026-10-07
 

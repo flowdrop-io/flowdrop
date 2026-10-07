@@ -24,9 +24,9 @@ export interface FlowDropSkin {
    * <App skin={{ name: 'minimal', tokens: { primary: '#e11d48' } }} />
    */
   name?: FlowDropSkinName | (string & {});
-  /** CSS token overrides injected as :root rules — active in light mode (and as base) */
+  /** CSS token overrides injected on the editor's own scope element (not :root) — active in light mode (and as base) */
   tokens?: FlowDropSkinTokens;
-  /** CSS token overrides injected as [data-theme='dark'] rules — active in dark mode only */
+  /** CSS token overrides injected under [data-theme='dark'] on the editor's scope element — active in dark mode only */
   darkTokens?: FlowDropSkinTokens;
 }
 

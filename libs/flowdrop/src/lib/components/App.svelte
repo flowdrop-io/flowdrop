@@ -51,7 +51,7 @@
   import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
   import { mergeFeatures } from '$lib/types/events.js';
   import type { FlowDropTheme, FlowDropThemeName } from '$lib/types/theme.js';
-  import type { FlowDropSkinTokens } from '$lib/types/skin.js';
+  import { buildScopedSkinCss } from '$lib/themes/scopedSkinCss.js';
   import { resolveTheme } from '$lib/themes/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
@@ -319,29 +319,21 @@
   let resolvedTheme = $derived(resolveTheme(themeProp ?? getUiSettings().theme));
   let themeConfig = $derived(resolvedTheme.config);
 
-  // Inject skin tokens as a style tag so light/dark palettes can coexist.
-  // tokens     → :root { ... }              (light mode / base)
-  // darkTokens → [data-theme='dark'] { ... } (dark mode override)
-  // The tag is appended after tokens.css so it wins via source order.
+  // Skin tokens are scoped to this instance (data-fd-scope on .flowdrop-root,
+  // copied onto portalled overlays), so two editors with different skins do
+  // not overwrite each other and the host page gets no --fd-* variables.
+  // See themes/scopedSkinCss.ts. data-theme stays page-global on <html>.
+  const scopeId = $props.id();
+
   $effect(() => {
-    const skin = resolvedTheme.skin;
-    const tokens = skin?.tokens;
-    const darkTokens = skin?.darkTokens;
-    if ((!tokens && !darkTokens) || typeof document === 'undefined') return;
-
-    const toRules = (dict: FlowDropSkinTokens) =>
-      Object.entries(dict)
-        .map(([k, v]) => `  --fd-${k}: ${v};`)
-        .join('\n');
-
-    let css = '';
-    if (tokens) css += `:root {\n${toRules(tokens)}\n}\n`;
-    if (darkTokens) css += `[data-theme='dark'] {\n${toRules(darkTokens)}\n}\n`;
+    if (typeof document === 'undefined') return;
+    const css = buildScopedSkinCss(scopeId, resolvedTheme.skin);
+    if (!css) return;
 
     const style = document.createElement('style');
-    style.id = 'fd-skin-tokens';
-    document.head.appendChild(style);
+    style.setAttribute('data-fd-skin', scopeId);
     style.textContent = css;
+    document.head.appendChild(style);
 
     return () => style.remove();
   });
@@ -1534,7 +1526,7 @@
 {/snippet}
 
 <!-- MainLayout wrapper for workflow editor -->
-<div class="flowdrop-root">
+<div class="flowdrop-root" data-fd-scope={scopeId}>
   <MainLayout
     {height}
     {width}
