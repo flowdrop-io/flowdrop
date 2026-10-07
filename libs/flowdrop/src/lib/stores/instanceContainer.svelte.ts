@@ -269,6 +269,8 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     () => playground.dispose(),
     // Drop the surface's options (callbacks into a mounted component).
     () => runs.configure({}),
+    // Its host-run poll and session-status subscription.
+    () => runs.dispose(),
     // An owned service stops with its instance. The default one is the shared
     // singleton and keeps the legacy behavior (outlives its mounts).
     () => {

@@ -35,6 +35,7 @@ import { resolveRunAction } from '../playground/runAction.js';
 import { defaultMessages } from '../messages/defaults.js';
 import type { Messages } from '../messages/types.js';
 import { logger } from '../utils/logger.js';
+import type { HostHooks } from '../webmcp/types.js';
 
 /**
  * API base URLs whose server sent a workflow without `playground` (before
@@ -45,6 +46,75 @@ import { logger } from '../utils/logger.js';
  * is seen on the next page load.
  */
 const serversWithoutPlaygroundSettings = new Set<string>();
+
+/**
+ * Where a run stands, as the Edit-mode run bar words it. `waiting` is a run
+ * paused for a person (an approval or input); `stopped` is a run someone
+ * cancelled.
+ */
+export type ActiveRunStatus = 'running' | 'waiting' | 'failed' | 'done' | 'stopped';
+
+/** Statuses a run does not leave. */
+export const TERMINAL_RUN_STATUSES: readonly ActiveRunStatus[] = ['failed', 'done', 'stopped'];
+
+/**
+ * The run the instance is showing: the last one started through `fd.runs`
+ * (Console `session run` / `session send`, the Playground) or reported through
+ * the host's `onRun` (the Assistant, WebMCP). There is at most one.
+ */
+export interface ActiveRun {
+  /** `session`: a turn or launch in the test session. `host`: started through `host.onRun`. */
+  origin: 'session' | 'host';
+  /** The pipeline to read node status from; `null` until a session run's pipeline is known. */
+  runId: string | null;
+  status: ActiveRunStatus;
+  startedAt: number;
+  /** When the run reached a terminal status (ms epoch), `null` while it is live. */
+  endedAt: number | null;
+}
+
+interface TrackedRun {
+  origin: 'session' | 'host';
+  runId: string | null;
+  sessionId: string | null;
+  startedAt: number;
+  stopped: boolean;
+  hostStatus: ActiveRunStatus;
+}
+
+function sessionRunStatus(status: PlaygroundSessionStatus, stopped: boolean): ActiveRunStatus {
+  switch (status) {
+    case 'running':
+      return 'running';
+    case 'awaiting_input':
+      return 'waiting';
+    case 'failed':
+      return 'failed';
+    case 'completed':
+      return 'done';
+    default:
+      // idle: the poller's resting state. A stop lands here; so does a run that
+      // finished while nobody was looking.
+      return stopped ? 'stopped' : 'done';
+  }
+}
+
+/** A host's run status vocabulary ({@link import('../webmcp/types.js').RunStatus}) in the bar's. */
+function hostRunStatus(status: string | undefined): ActiveRunStatus {
+  switch (status) {
+    case 'paused':
+    case 'interrupted':
+      return 'waiting';
+    case 'completed':
+      return 'done';
+    case 'failed':
+      return 'failed';
+    case 'cancelled':
+      return 'stopped';
+    default:
+      return 'running';
+  }
+}
 
 /** What a {@link RunController} is built from: the instance's own pieces. */
 export interface RunControllerDeps {
@@ -111,6 +181,19 @@ export class RunController {
   #statusAgain = false;
 
   #pendingSignal = $state<{ pipelineId: string; signal: string } | null>(null);
+
+  // The run the instance shows (see ActiveRun). Replaced, never mutated.
+  #tracked = $state.raw<TrackedRun | null>(null);
+  #endedAt = $state<number | null>(null);
+  #unsubscribeSessionStatus: (() => void) | null = null;
+  #hostStatusHook: HostHooks['onRunStatus'] | undefined;
+  #hostPoll: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Milliseconds between status reads of a host run (`onRunStatus`). A public
+   * field, like a timeout in a client: tests and slow backends set it.
+   */
+  hostPollInterval = 2000;
   #isRefreshing = $state(false);
 
   constructor(deps: RunControllerDeps) {
@@ -519,6 +602,7 @@ export class RunController {
       if (!this.#service.isPolling()) {
         this.startPolling(sessionId, true);
       }
+      this.#beginSessionRun(sessionId);
     }
 
     return result;
@@ -679,6 +763,7 @@ export class RunController {
         if (!this.#service.isPolling()) {
           this.startPolling(sessionId, true);
         }
+        this.#beginSessionRun(sessionId);
         return true;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
@@ -696,6 +781,13 @@ export class RunController {
   async stopExecution(): Promise<void> {
     const sessionId = this.#playground.currentSession?.id;
     if (!sessionId) return;
+
+    // Whoever stops (the bar, the Playground, `session stop`), the run reads
+    // as stopped, not as done, once the session goes idle.
+    const tracked = this.#tracked;
+    if (tracked?.origin === 'session' && tracked.sessionId === sessionId) {
+      this.#tracked = { ...tracked, stopped: true };
+    }
 
     try {
       await this.#service.stopExecution(this.#api.config, sessionId, this.#api.authProvider);
@@ -877,6 +969,187 @@ export class RunController {
   /** Whether this instance's service is polling a session. */
   get isPolling(): boolean {
     return this.#service.isPolling();
+  }
+
+  // -----------------------------------------------------------------------
+  // The run being shown
+  // -----------------------------------------------------------------------
+
+  /**
+   * The run the instance is showing, or `null`. Reactive. A session run's
+   * status follows the session; a host run's follows `onRunStatus`.
+   */
+  get activeRun(): ActiveRun | null {
+    const tracked = this.#tracked;
+    if (!tracked) return null;
+    let status: ActiveRunStatus;
+    let runId = tracked.runId;
+    if (tracked.origin === 'session') {
+      // Another conversation took over: that run is not the one we followed.
+      if (this.#playground.currentSession?.id !== tracked.sessionId) return null;
+      status = sessionRunStatus(this.#playground.sessionStatus, tracked.stopped);
+      runId = this.#playground.activeExecutionId;
+    } else {
+      status = tracked.hostStatus;
+    }
+    return {
+      origin: tracked.origin,
+      runId,
+      status,
+      startedAt: tracked.startedAt,
+      endedAt: TERMINAL_RUN_STATUSES.includes(status) ? (this.#endedAt ?? Date.now()) : null
+    };
+  }
+
+  /**
+   * Stop the run being shown: the session's stop for a session run, a cancel
+   * signal on the pipeline for a host run (the next status read reports it).
+   */
+  async stopRun(): Promise<void> {
+    const tracked = this.#tracked;
+    if (!tracked) return;
+    if (tracked.origin === 'session') {
+      await this.stopExecution();
+      return;
+    }
+    if (!tracked.runId) return;
+    const result = await this.sendSignal('cancel', tracked.runId);
+    if (result.status === 'accepted') this.#scheduleHostPoll(tracked.runId, 0);
+  }
+
+  /**
+   * Forget the shown run and its node statuses. The run bar calls it when it
+   * fades; the statuses go with it so the Edit canvas is back to normal.
+   */
+  dismissRun(): void {
+    this.#clearHostPoll();
+    this.#tracked = null;
+    this.#endedAt = null;
+    this.clearNodeStatuses();
+  }
+
+  /**
+   * The host's `onRun` / `onRunStatus` routed through this controller: runs
+   * they start become the shown run, and the status they report moves it.
+   * Hands back hooks that behave exactly as the given ones (same arguments,
+   * same envelopes, same rejections); use them wherever the originals went.
+   * A run is followed only when the host also supplies `onRunStatus`: without
+   * it there is no way to know the run ended.
+   */
+  wrapHostHooks(hooks: HostHooks): HostHooks {
+    const { onRun, onRunStatus } = hooks;
+    const out: HostHooks = { ...hooks };
+    if (onRunStatus) {
+      this.#hostStatusHook = onRunStatus;
+      out.onRunStatus = async (runId) => {
+        const envelope = await onRunStatus(runId);
+        this.#applyHostStatus(runId, envelope.ok ? envelope.data?.status : undefined);
+        return envelope;
+      };
+    }
+    if (onRun) {
+      out.onRun = async (inputs) => {
+        const envelope = await onRun(inputs);
+        if (envelope.ok && envelope.data?.runId) {
+          this.#beginHostRun(envelope.data.runId, envelope.data.status);
+        }
+        return envelope;
+      };
+    }
+    return out;
+  }
+
+  /** Stop the timers and subscriptions this controller started. */
+  dispose(): void {
+    this.#clearHostPoll();
+    this.#unsubscribeSessionStatus?.();
+    this.#unsubscribeSessionStatus = null;
+  }
+
+  #beginSessionRun(sessionId: string): void {
+    this.#clearHostPoll();
+    this.#tracked = {
+      origin: 'session',
+      runId: null,
+      sessionId,
+      startedAt: Date.now(),
+      stopped: false,
+      hostStatus: 'running'
+    };
+    this.#endedAt = null;
+    // The moment a run ends is the one thing the session status cannot say on
+    // its own; note it as the status moves.
+    this.#unsubscribeSessionStatus ??= this.#playground.subscribeToSessionStatus((status) => {
+      const tracked = this.#tracked;
+      if (tracked?.origin !== 'session') return;
+      const next = sessionRunStatus(status, tracked.stopped);
+      this.#endedAt = TERMINAL_RUN_STATUSES.includes(next) ? Date.now() : null;
+    });
+  }
+
+  #beginHostRun(runId: string, status: string | undefined): void {
+    if (!this.#hostStatusHook) return;
+    const hostStatus = hostRunStatus(status);
+    this.#clearHostPoll();
+    this.#tracked = {
+      origin: 'host',
+      runId,
+      sessionId: null,
+      startedAt: Date.now(),
+      stopped: false,
+      hostStatus
+    };
+    this.#endedAt = TERMINAL_RUN_STATUSES.includes(hostStatus) ? Date.now() : null;
+    if (!TERMINAL_RUN_STATUSES.includes(hostStatus)) {
+      this.#scheduleHostPoll(runId, this.hostPollInterval);
+    }
+  }
+
+  #applyHostStatus(runId: string, status: string | undefined): void {
+    const tracked = this.#tracked;
+    if (tracked?.origin !== 'host' || tracked.runId !== runId || status === undefined) return;
+    const next = hostRunStatus(status);
+    if (next === tracked.hostStatus) return;
+    this.#tracked = { ...tracked, hostStatus: next };
+    if (TERMINAL_RUN_STATUSES.includes(next)) {
+      this.#endedAt = Date.now();
+      this.#clearHostPoll();
+    } else {
+      this.#endedAt = null;
+    }
+  }
+
+  #scheduleHostPoll(runId: string, delay: number): void {
+    this.#clearHostPoll();
+    this.#hostPoll = setTimeout(() => {
+      this.#hostPoll = null;
+      void this.#pollHost(runId);
+    }, delay);
+  }
+
+  async #pollHost(runId: string): Promise<void> {
+    const hook = this.#hostStatusHook;
+    const tracked = this.#tracked;
+    if (!hook || tracked?.origin !== 'host' || tracked.runId !== runId) return;
+    try {
+      const envelope = await hook(runId);
+      this.#applyHostStatus(runId, envelope.ok ? envelope.data?.status : undefined);
+    } catch (err) {
+      logger.error('Failed to read host run status:', err);
+    }
+    const now = this.#tracked;
+    if (
+      now?.origin === 'host' &&
+      now.runId === runId &&
+      !TERMINAL_RUN_STATUSES.includes(now.hostStatus)
+    ) {
+      this.#scheduleHostPoll(runId, this.hostPollInterval);
+    }
+  }
+
+  #clearHostPoll(): void {
+    if (this.#hostPoll !== null) clearTimeout(this.#hostPoll);
+    this.#hostPoll = null;
   }
 
   // -----------------------------------------------------------------------
