@@ -104,6 +104,17 @@ export interface FlowDropMountOptions {
    * @default 'edit'
    */
   mode?: 'edit' | 'readonly' | 'locked';
+  /**
+   * Start in Test mode (`'test'`): the Playground docked beside the canvas,
+   * the inspector always open. Edit | Test is a second axis beside `mode`: it
+   * only takes effect on an editable canvas with a saved workflow and no
+   * `pipelineId`, and `features.testMode` not off.
+   *
+   * Seeds `app.instance.editorMode`, the store that holds the mode from then
+   * on; change it later with `app.instance.editorMode.set('edit' | 'test')`.
+   * @default 'edit'
+   */
+  editorMode?: 'edit' | 'test';
 
   // Pipeline mode
   /** Pipeline ID for status display */
@@ -484,6 +495,7 @@ export async function mountFlowDropApp(
     configPlacement,
     consolePlacement,
     mode,
+    editorMode,
     pipelineId,
     navbarTitle,
     navbarActions,
@@ -572,6 +584,7 @@ export async function mountFlowDropApp(
       configPlacement,
       consolePlacement,
       mode,
+      editorMode,
       pipelineId,
       navbarTitle,
       navbarActions,

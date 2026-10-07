@@ -10,6 +10,8 @@
   import MainLayout from '$lib/components/layouts/MainLayout.svelte';
   import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
   import NodeSidebar from '$lib/components/NodeSidebar.svelte';
+  import DockedPlayground from '$lib/components/playground/DockedPlayground.svelte';
+  import EditorModeSwitch from '$lib/components/EditorModeSwitch.svelte';
   import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
   import EditorStatusBar from '$lib/components/EditorStatusBar.svelte';
   import MenuIcon from '$lib/components/icons/MenuIcon.svelte';
@@ -68,6 +70,7 @@
   import { resolveInspectorSurface, closeTarget } from '../utils/inspectorSurface.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
+  import type { EditorMode } from '../stores/editorModeStore.svelte.js';
   import { defaultMessages, mergeMessages, setMessages } from '$lib/messages/index.js';
   import type { MessagesOverride } from '$lib/messages/index.js';
 
@@ -123,6 +126,20 @@
      * @default 'edit'
      */
     mode?: 'edit' | 'readonly' | 'locked';
+    /**
+     * Start in, or switch to, Test mode: the Playground docked beside the
+     * canvas and the inspector always open. A second axis beside `mode`: it
+     * only takes effect on an editable canvas (`mode: 'edit'`) with a saved
+     * workflow and no `pipelineId`, and `features.testMode` not off.
+     *
+     * Seeds `instance.editorMode`, the per-instance store that is the source
+     * of truth afterwards (the navbar's Edit | Test switch writes it, and so
+     * can a host: `instance.editorMode.set('test')`). A later change of this
+     * prop sets the store again.
+     *
+     * @default 'edit'
+     */
+    editorMode?: EditorMode;
     /** Pipeline ID for fetching node execution info */
     pipelineId?: string;
     /** Increments to force a refresh of pipeline node status from the server */
@@ -210,6 +227,7 @@
     configPlacement: configPlacementProp,
     consolePlacement: consolePlacementProp,
     mode = 'edit',
+    editorMode: editorModeProp,
     pipelineId,
     refreshTrigger = 0,
     navbarTitle,
@@ -249,10 +267,83 @@
   // svelte-ignore state_referenced_locally
   const features = mergeFeatures(propFeatures);
 
+  // Test mode: the `editorMode` prop seeds the instance's store (the source of
+  // truth from then on); a later change of the prop sets it again.
+  // svelte-ignore state_referenced_locally
+  if (editorModeProp) fd.editorMode.set(editorModeProp);
+  // svelte-ignore state_referenced_locally
+  let lastEditorModeProp = editorModeProp;
+  $effect(() => {
+    const requested = editorModeProp;
+    if (requested === lastEditorModeProp) return;
+    lastEditorModeProp = requested;
+    if (requested) fd.editorMode.set(requested);
+  });
+
   // `mode` is the public API; internally the canvas only cares whether editing
   // is disabled. 'readonly' and 'locked' both disable the same interactions
   // (see the `mode` prop JSDoc for the full matrix).
   const canvasEditable = $derived(mode === 'edit');
+
+  /**
+   * Test mode can be entered: it is offered, the canvas is editable, this is
+   * not a pipeline view, and the workflow is saved (the Playground runs the
+   * saved workflow's id).
+   */
+  const testModeAvailable = $derived(
+    features.testMode && canvasEditable && !pipelineId && !!fd.workflow.current?.id
+  );
+  /** Test mode is in effect: requested, and available. */
+  const testMode = $derived(testModeAvailable && fd.editorMode.isTest);
+  const effectiveEditorMode = $derived<EditorMode>(testMode ? 'test' : 'edit');
+
+  /** Narrow screens: the Playground is a drawer over the canvas, not a column. */
+  let narrow = $state(false);
+  let drawerOpen = $state(true);
+  $effect(() => {
+    // Entering Test mode shows the Playground.
+    if (testMode) untrack(() => (drawerOpen = true));
+  });
+
+  /** The node library popover of Test mode (N). */
+  let libraryOpen = $state(false);
+  let libraryEl = $state<HTMLElement | null>(null);
+  $effect(() => {
+    if (!testMode) libraryOpen = false;
+  });
+  $effect(() => {
+    if (!libraryOpen) return;
+    const closeOnOutside = (event: PointerEvent) => {
+      if (libraryEl && !libraryEl.contains(event.target as Node)) libraryOpen = false;
+    };
+    window.addEventListener('pointerdown', closeOnOutside, true);
+    return () => window.removeEventListener('pointerdown', closeOnOutside, true);
+  });
+  function toggleLibrary(): void {
+    libraryOpen = !libraryOpen;
+    if (libraryOpen) {
+      void tick().then(() =>
+        libraryEl?.querySelector<HTMLInputElement>('.flowdrop-sidebar__search input')?.focus()
+      );
+    }
+  }
+
+  // Badges follow a run while it is watched: in Test mode always (the shown
+  // run, live or finished), in Edit mode only while a run is going. They are
+  // dropped when neither holds, so Edit mode at rest has none.
+  const followRun = $derived(!pipelineId && (testMode || fd.runs.isLive));
+  $effect(() => {
+    if (!followRun) return;
+    // Tracked: the shown run, its status, and every batch of new messages.
+    void fd.playground.activeExecutionId;
+    void fd.playground.sessionStatus;
+    void fd.playground.pipelineRefreshTrigger;
+    untrack(() => fd.runs.requestNodeStatuses());
+  });
+  $effect(() => {
+    if (!followRun) return;
+    return () => fd.runs.clearNodeStatuses();
+  });
 
   // Messages: merge consumer overrides over defaults; expose via context as a
   // getter so consumer-side reactivity (e.g. paraglide-js locale switches)
@@ -671,10 +762,31 @@
    * Toggle workflow settings sidebar
    */
   function toggleWorkflowSettings(): void {
+    if (testMode) {
+      // The workflow tabs are Test mode's resting inspector: this brings them
+      // back from a node, and there is nothing to close.
+      closeConfigSidebar();
+      return;
+    }
     isWorkflowSettingsOpen = !isWorkflowSettingsOpen;
     // Close config sidebar if opening workflow settings
     if (isWorkflowSettingsOpen) {
       closeConfigSidebar();
+      activeSurface = 'config';
+    }
+  }
+
+  /**
+   * Show the workflow's Playground settings: the workflow tabs with the
+   * Playground tab selected, in Test mode's resting inspector or, in Edit
+   * mode, as the workflow-settings surface. The docked Playground links here.
+   */
+  function openPlaygroundSettings(): void {
+    if (fd.workflow.current?.playground === undefined) return;
+    workflowSettingsTab = 'playground';
+    closeConfigSidebar();
+    if (!testMode) {
+      isWorkflowSettingsOpen = true;
       activeSurface = 'config';
     }
   }
@@ -990,6 +1102,12 @@
       }
     })();
 
+    // Narrow screens: Test mode's Playground is a drawer over the canvas.
+    const narrowQuery = window.matchMedia('(max-width: 1199px)');
+    narrow = narrowQuery.matches;
+    const handleNarrowChange = (event: MediaQueryListEvent) => (narrow = event.matches);
+    narrowQuery.addEventListener('change', handleNarrowChange);
+
     // Listen for workflow settings toggle from main navbar
     const handleWorkflowSettingsToggle = () => {
       toggleWorkflowSettings();
@@ -1014,6 +1132,7 @@
 
     return () => {
       window.removeEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
+      narrowQuery.removeEventListener('change', handleNarrowChange);
       cleanupAutoSave();
     };
   });
@@ -1022,11 +1141,13 @@
   // Surface placement — where the config panel and console/chat are hosted.
   // =========================================================================
 
-  const configPlacement = $derived(getUiSettings().configPlacement);
+  // Test mode always shows the inspector in the right sidebar, whatever
+  // placement the person chose for Edit mode.
+  const configPlacement = $derived(testMode ? 'sidebar' : getUiSettings().configPlacement);
   const consolePlacement = $derived(getUiSettings().consolePlacement);
 
-  /** Config surface has something to show (node config or workflow settings). */
-  const configActive = $derived(isWorkflowSettingsOpen || !!selectedNodeForConfig);
+  /** Config surface has something to show (node config or workflow settings). Test mode always has. */
+  const configActive = $derived(isWorkflowSettingsOpen || !!selectedNodeForConfig || testMode);
   /** The Command Console tab is offered by this mount. */
   const consoleTabOffered = features.console;
   /** The AI Assistant tab is offered: switched on, and a chat backend exists. */
@@ -1077,9 +1198,12 @@
   const inspectorSurface = $derived(
     resolveInspectorSurface({
       hasNode: !!selectedNodeForConfig,
-      workflowOpen: isWorkflowSettingsOpen
+      workflowOpen: isWorkflowSettingsOpen,
+      editorMode: effectiveEditorMode
     })
   );
+  /** The inspector can be closed: not the workflow tabs of Test mode, which rest there. */
+  const configClosable = $derived(closeTarget(inspectorSurface, effectiveEditorMode) !== null);
 
   const activeConfig = $derived.by(() => {
     if (inspectorSurface === 'workflow') {
@@ -1118,9 +1242,10 @@
   function closeActiveConfig(): void {
     // A node closes first; the inspector then falls back to the workflow tabs
     // if they are open. Closing the workflow tabs closes the surface.
-    if (closeTarget(inspectorSurface) === 'node') {
+    const target = closeTarget(inspectorSurface, effectiveEditorMode);
+    if (target === 'node') {
       closeConfigSidebar();
-    } else {
+    } else if (target === 'workflow') {
       isWorkflowSettingsOpen = false;
     }
   }
@@ -1134,15 +1259,26 @@
   }
 
   const showRightPanel = $derived(
-    !disableSidebar && (swapActive || configHere('sidebar') || consoleHere('sidebar'))
+    (!disableSidebar || testMode) && (swapActive || configHere('sidebar') || consoleHere('sidebar'))
   );
+
+  /** Test mode's docked Playground column; resizable, and a drawer when narrow. */
+  const TEST_DOCK_WIDTH = 360;
+  const dockedInColumn = $derived(testMode && !narrow);
 
   /**
    * Calculate left sidebar width based on collapsed state
-   * When collapsed, use 0; otherwise use user-configured width
+   * When collapsed, use 0; otherwise use user-configured width.
+   * In Test mode the left slot holds the Playground: its own width, never collapsed.
    */
   const leftSidebarWidth = $derived(
-    getUiSettings().sidebarCollapsed ? 0 : getUiSettings().sidebarWidth
+    testMode
+      ? dockedInColumn
+        ? TEST_DOCK_WIDTH
+        : 0
+      : getUiSettings().sidebarCollapsed
+        ? 0
+        : getUiSettings().sidebarWidth
   );
 
   /** Whether the sidebar is collapsed */
@@ -1166,7 +1302,10 @@
     // Dead key on international keyboards — do not intercept
     if (event.key === 'Dead') return;
 
-    if (event.key !== '`') return;
+    // N opens the node library in Test mode, where the sidebar is the Playground.
+    const isLibraryKey = testMode && (event.key === 'n' || event.key === 'N');
+    if (event.key !== '`' && !isLibraryKey) return;
+    if (isLibraryKey && (event.metaKey || event.ctrlKey || event.altKey)) return;
 
     // Don't intercept when user is typing in an input, textarea, or contenteditable
     const target = event.target as HTMLElement;
@@ -1174,6 +1313,11 @@
       target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
     if (isInputElement) return;
+    if (isLibraryKey) {
+      event.preventDefault();
+      toggleLibrary();
+      return;
+    }
     if (!consoleGroupOffered) return;
 
     event.preventDefault();
@@ -1456,13 +1600,15 @@
       {#if showHeader}
         <div class="config-surface__header">
           <h2 class="config-surface__title">{activeConfig.title}</h2>
-          <button
-            class="config-surface__close"
-            onclick={closeActiveConfig}
-            aria-label={mergedMessages.layout.closeConfigPanel}
-          >
-            ×
-          </button>
+          {#if configClosable}
+            <button
+              class="config-surface__close"
+              onclick={closeActiveConfig}
+              aria-label={mergedMessages.layout.closeConfigPanel}
+            >
+              ×
+            </button>
+          {/if}
         </div>
       {/if}
       {#if activeConfig.id}
@@ -1532,7 +1678,7 @@
       description={activeConfig.description}
       details={activeConfig.details}
       configTitle={activeConfig.configTitle ?? 'Configuration'}
-      onClose={closeActiveConfig}
+      onClose={configClosable ? closeActiveConfig : undefined}
       onSwap={activeConfig.kind === 'node' && canvasEditable && features.enableNodeSwap
         ? startSwap
         : undefined}
@@ -1546,13 +1692,36 @@
   {/if}
 {/snippet}
 
+<!-- The Edit | Test switch, in the navbar's trailing region -->
+{#snippet editorModeEnd()}
+  {#if testModeAvailable}
+    <EditorModeSwitch
+      mode={effectiveEditorMode}
+      onChange={(next) => fd.editorMode.set(next)}
+      runActive={fd.runs.isLive}
+    />
+  {/if}
+{/snippet}
+
+<!-- Test mode's Playground, in the left slot or, on a narrow screen, a drawer -->
+{#snippet dockedPlayground()}
+  {#if fd.workflow.current}
+    <DockedPlayground
+      workflow={fd.workflow.current}
+      onOpenSettings={fd.workflow.current.playground !== undefined
+        ? openPlaygroundSettings
+        : undefined}
+    />
+  {/if}
+{/snippet}
+
 <!-- MainLayout wrapper for workflow editor -->
 <div class="flowdrop-root" data-fd-scope={scopeId}>
   <MainLayout
     {height}
     {width}
     showHeader={showNavbar}
-    showLeftSidebar={!disableSidebar}
+    showLeftSidebar={testMode ? dockedInColumn : !disableSidebar}
     showRightSidebar={showRightPanel}
     showBottomPanel={anyHere('below')}
     bottomPanelHeight={getUiSettings().consoleHeight}
@@ -1560,11 +1729,11 @@
     headerHeight={60}
     {leftSidebarWidth}
     rightSidebarWidth={400}
-    leftSidebarMinWidth={getUiSettings().sidebarCollapsed ? 0 : 280}
-    leftSidebarMaxWidth={getUiSettings().sidebarCollapsed ? 0 : 450}
+    leftSidebarMinWidth={testMode ? 300 : getUiSettings().sidebarCollapsed ? 0 : 280}
+    leftSidebarMaxWidth={testMode ? 560 : getUiSettings().sidebarCollapsed ? 0 : 450}
     rightSidebarMinWidth={320}
     rightSidebarMaxWidth={550}
-    enableLeftSplitPane={false}
+    enableLeftSplitPane={dockedInColumn}
     enableRightSplitPane={true}
     class="flowdrop-app-layout"
   >
@@ -1578,17 +1747,22 @@
         {settingsCategories}
         {showSettingsSyncButton}
         {showSettingsResetButton}
+        end={editorModeEnd}
       />
     {/snippet}
 
-    <!-- Left Sidebar: Node Components -->
+    <!-- Left Sidebar: Node Components; in Test mode, the Playground -->
     {#snippet leftSidebar()}
-      <NodeSidebar
-        {nodes}
-        loading={nodeTypesLoading}
-        activeFormat={fd.workflow.format}
-        categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
-      />
+      {#if testMode}
+        {@render dockedPlayground()}
+      {:else}
+        <NodeSidebar
+          {nodes}
+          loading={nodeTypesLoading}
+          activeFormat={fd.workflow.format}
+          categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
+        />
+      {/if}
     {/snippet}
 
     <!--
@@ -1678,30 +1852,74 @@
     <div
       class="flowdrop-editor-main"
       class:pipeline-view={!!pipelineId}
-      style="--fd-canvas-left-offset: {!disableSidebar ? leftSidebarWidth + 'px' : '0px'}"
+      style="--fd-canvas-left-offset: {testMode || !disableSidebar
+        ? leftSidebarWidth + 'px'
+        : '0px'}"
       onclick={handleCanvasClick}
-      onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()}
+      onkeydown={(e) => {
+        if (e.key !== 'Escape') return;
+        // The topmost transient surface first (the node library), then the selection.
+        if (libraryOpen) libraryOpen = false;
+        else closeConfigSidebar();
+      }}
       role="region"
       aria-label={mergedMessages.layout.workflowCanvas}
     >
-      <!-- Floating sidebar toggle — always visible on the canvas top-left -->
-      {#if !disableSidebar}
+      <!--
+        Floating sidebar toggle — always visible on the canvas top-left. In
+        Test mode the sidebar is the Playground: a column that needs no
+        toggle, or on a narrow screen a drawer that this button opens.
+      -->
+      {#if testMode ? narrow : !disableSidebar}
         <CanvasIconButton
-          class="flowdrop-sidebar-fab"
-          label={isSidebarCollapsed
-            ? mergedMessages.layout.expandSidebar
-            : mergedMessages.layout.collapseSidebar}
-          active={!isSidebarCollapsed}
-          onclick={toggleSidebar}
+          class="flowdrop-sidebar-fab {testMode && drawerOpen
+            ? 'flowdrop-sidebar-fab--beside-drawer'
+            : ''}"
+          label={testMode
+            ? drawerOpen
+              ? mergedMessages.layout.hidePlayground
+              : mergedMessages.layout.showPlayground
+            : isSidebarCollapsed
+              ? mergedMessages.layout.expandSidebar
+              : mergedMessages.layout.collapseSidebar}
+          active={testMode ? drawerOpen : !isSidebarCollapsed}
+          onclick={testMode ? () => (drawerOpen = !drawerOpen) : toggleSidebar}
         >
           {#snippet icon()}
-            {#if isSidebarCollapsed}
+            {#if testMode ? !drawerOpen : isSidebarCollapsed}
               <MenuIcon />
             {:else}
               <MenuOpenIcon />
             {/if}
           {/snippet}
         </CanvasIconButton>
+      {/if}
+
+      <!-- Test mode, narrow screen: the Playground as a drawer over the canvas -->
+      {#if testMode && narrow}
+        <div class="test-drawer" data-testid="test-drawer" hidden={!drawerOpen}>
+          {@render dockedPlayground()}
+        </div>
+      {/if}
+
+      <!-- Test mode: the node library as a popover (N) -->
+      {#if testMode && libraryOpen}
+        <div
+          class="node-library-popover"
+          class:node-library-popover--beside-drawer={narrow && drawerOpen}
+          data-testid="node-library-popover"
+          role="dialog"
+          aria-label={mergedMessages.layout.nodeLibrary}
+          bind:this={libraryEl}
+        >
+          <NodeSidebar
+            popover={true}
+            {nodes}
+            loading={nodeTypesLoading}
+            activeFormat={fd.workflow.format}
+            categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
+          />
+        </div>
       {/if}
 
       <WorkflowEditor
@@ -1775,6 +1993,44 @@
     top: 12px;
     left: 12px;
     z-index: 50;
+  }
+
+  /* Test mode on a narrow screen: the Playground over the canvas's left edge. */
+  .test-drawer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 55;
+    width: min(380px, 92%);
+    background: var(--fd-background);
+    border-right: 1px solid var(--fd-border);
+    box-shadow: var(--fd-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+  }
+
+  :global(.flowdrop-sidebar-fab--beside-drawer) {
+    left: calc(min(380px, 92%) + 12px) !important;
+  }
+
+  /* Test mode's node library, over the canvas's top-left corner. */
+  .node-library-popover {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 60;
+    width: 280px;
+    max-height: calc(100% - 24px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--fd-panel-bg, var(--fd-background));
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-lg, 8px);
+    box-shadow: var(--fd-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+  }
+
+  .node-library-popover--beside-drawer {
+    left: calc(min(380px, 92%) + 60px);
   }
 
   /* Main editor area */

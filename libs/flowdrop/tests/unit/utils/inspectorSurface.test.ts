@@ -50,4 +50,3 @@ describe('Test mode', () => {
     expect(closeTarget('workflow', 'edit')).toBe('workflow');
   });
 });
-
