@@ -65,6 +65,7 @@
     initializeTheme
   } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
+  import { resolveInspectorSurface, closeTarget } from '../utils/inspectorSurface.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
   import { defaultMessages, mergeMessages, setMessages } from '$lib/messages/index.js';
@@ -1073,8 +1074,15 @@
    * Metadata for the active config surface, independent of its host. The form
    * itself is rendered by the host via the `configBody` snippet.
    */
+  const inspectorSurface = $derived(
+    resolveInspectorSurface({
+      hasNode: !!selectedNodeForConfig,
+      workflowOpen: isWorkflowSettingsOpen
+    })
+  );
+
   const activeConfig = $derived.by(() => {
-    if (isWorkflowSettingsOpen) {
+    if (inspectorSurface === 'workflow') {
       return {
         kind: 'workflow' as const,
         title: mergedMessages.navigation.workflowSettingsPanelTitle,
@@ -1087,7 +1095,7 @@
         configTitle: mergedMessages.navigation.workflowSettingsPanelSubtitle
       };
     }
-    const node = selectedNodeForConfig;
+    const node = inspectorSurface === 'node' ? selectedNodeForConfig : null;
     if (node) {
       return {
         kind: 'node' as const,
@@ -1108,10 +1116,12 @@
 
   /** Close whichever config surface is currently open. */
   function closeActiveConfig(): void {
-    if (isWorkflowSettingsOpen) {
-      isWorkflowSettingsOpen = false;
-    } else {
+    // A node closes first; the inspector then falls back to the workflow tabs
+    // if they are open. Closing the workflow tabs closes the surface.
+    if (closeTarget(inspectorSurface) === 'node') {
       closeConfigSidebar();
+    } else {
+      isWorkflowSettingsOpen = false;
     }
   }
 
@@ -1870,6 +1880,7 @@
 
   .workflow-settings-tabs__bar {
     display: flex;
+    flex-wrap: wrap;
     gap: 0;
     border-bottom: 1px solid var(--fd-border);
   }
