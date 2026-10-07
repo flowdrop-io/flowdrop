@@ -15,9 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   messages (and how many), which inputs receive the session and message IDs,
   which node output ports print as replies, and whether sub-workflows print
   their own replies. New types `WorkflowPlayground`, `PlaygroundChatBinding`,
-  `PlaygroundReplyPort` and `PlaygroundChatSource` (from `core`), and the
-  helpers `resolvePlaygroundChat`, `normalizePlaygroundChat`,
-  `playgroundChatIssues` and friends (from `playground`). A server from FlowDrop
+  `PlaygroundReplyPort` and `PlaygroundChatSource` (from `core`), and from
+  `playground`: `resolvePlaygroundChat` (the binding in effect and where it
+  came from, `ResolvedPlaygroundChat`), `playgroundChatIssues` (what is wrong
+  with a binding, `PlaygroundChatIssue`, `PlaygroundChatInputKey`) and
+  `PlaygroundStore.chatBinding`. A server from FlowDrop
   2.7.0 on sends `playground: {chat, resolved, source}` with every workflow and
   saves `playground.chat` with it. `chat: null` means the workflow has no chat
   until somebody sets it up.
@@ -36,25 +38,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   does not know (from a newer server) stays on the interface. An invalid
   message count is refused with a reason instead of falling back to 10.
   Problems are worded through the message catalogue
-  (`playgroundSettings.issues`); `PlaygroundChatIssue` gains `input` and
-  `otherKey` for that, and `message` stays English for logs and agents.
-  Renaming an interface input renames it in the binding, and removing one
-  unbinds it, in the same undo step (`WorkflowInterfaceEditor`'s `onChange`
-  now reports such edits as a second argument, `InterfaceInputEdit`; see
-  `followInterfaceInputEdit`). A node swap moves replies to the new node's
-  mapped output (`rewritePlaygroundReplies`). A reply on an output that is
-  not exposed on the canvas is listed like any other (`findReplyPort`).
-  When settings are stored but the interface still carries `turn` marks,
-  the tab says they are ignored and offers **Remove them**.
+  (`playgroundSettings.issues`); an issue's `message` stays English for logs
+  and agents. Renaming an interface input renames it in the binding, and
+  removing one unbinds it, in the same undo step. Emptying an input's id puts
+  the old one back, since an input needs an id. A node swap moves replies to
+  the new node's mapped output. A reply on an output that is not exposed on
+  the canvas is listed like any other. When settings are stored but the
+  interface still carries `turn` marks, the tab says they are ignored and
+  offers **Remove them**; any edit in the tab removes them too, so clearing
+  the binding (there, or by removing its last input on the interface) never
+  falls back to them.
   Edits mark the workflow dirty and are saved with it.
 - The Playground shows one line, _No chat yet…_, when the workflow's settings
   bind no chat. The form or the Run button still work. It shows _Nothing will
   reply here…_ when a message input is bound but no reply is. A stored binding
   that no longer binds anything (its inputs were removed) gets the _No chat
   yet…_ line too.
-- `interfaceFormEntriesFor` and `playgroundInputModeFor` (from `playground`):
-  the same as `interfaceFormEntries` and `resolvePlaygroundInputMode`, for a
-  binding already resolved with `resolvePlaygroundChat`.
 
 ### Changed
 
@@ -65,6 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   present, a workflow that binds no message input gets a form or Run, never
   `legacy`. `resolvePlaygroundInputMode` and `interfaceFormEntries` take the
   settings as an optional second argument. Existing calls behave as before.
+  While the chat comes from `turn` marks, an input marked with a `turn` value
+  this library does not know (a newer server's) stays out of the form, as it
+  did before.
 - Save and export send `playground: {chat}` when the workflow has a
   `playground` key, and send nothing for it otherwise.
 - `fd.workflow.batchUpdate` accepts `playground`, keyed on presence like
@@ -97,6 +99,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   worded as deprecation warnings that point at the Playground settings, and
   are no longer reported once settings are stored (the server ignores `turn`
   then).
+
+### Fixed
+
+- `@iconify/svelte` is a required peer dependency. It was marked optional, so
+  npm and pnpm did not install it, yet almost every entry point imports it:
+  a fresh install failed on the first import with "Failed to resolve import
+  '@iconify/svelte'". Install it beside the library if your app does not
+  have it.
+- Every relative import in the package carries its file extension. Three in
+  the skins (reached from `core`) and two in node components had none, which
+  Node ESM and webpack refuse in a `"type": "module"` package. A new
+  `prepack` check (`scripts/check-extensions.mjs`) keeps it that way. The
+  workflow schema JSON is imported `with { type: 'json' }`.
+- The `svelte` peer range says what the code needs: `^5.29.0` (the library
+  uses attachments, and `@xyflow/svelte` already asks for 5.25). An older
+  Svelte failed to compile the shipped components. `engines.node` is
+  `>=20`, as `marked` and `dompurify` already require.
+- Storybook stories and their mock modules are no longer in the tarball.
 
 ## [2.10.1] - 2026-10-07
 

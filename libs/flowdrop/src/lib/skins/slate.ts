@@ -1,4 +1,4 @@
-import type { FlowDropSkin } from '../types/skin';
+import type { FlowDropSkin } from '../types/skin.js';
 
 export const slateSkin: FlowDropSkin = {
   tokens: {

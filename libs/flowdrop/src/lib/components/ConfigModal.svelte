@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ConfigSchema, ConfigValues } from '$lib/types';
+  import type { ConfigSchema, ConfigValues } from '$lib/types/index.js';
   import ConfigForm from './ConfigForm.svelte';
   import { m } from '$lib/messages/index.js';
 

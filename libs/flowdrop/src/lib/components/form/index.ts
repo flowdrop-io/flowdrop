@@ -9,8 +9,8 @@
  * @example
  * ```svelte
  * <script>
- *   import { FormField } from "$lib/components/form";
- *   import type { FieldSchema } from "$lib/components/form";
+ *   import { FormField } from "@flowdrop/flowdrop/form";
+ *   import type { FieldSchema } from "@flowdrop/flowdrop/form";
  *
  *   const schema: FieldSchema = {
  *     type: "string",

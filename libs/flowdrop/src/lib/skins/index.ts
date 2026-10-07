@@ -1,7 +1,7 @@
-import type { FlowDropSkin, FlowDropSkinName } from '../types/skin';
-import { defaultSkin } from './default';
-import { slateSkin } from './slate';
-import { drafterSkin } from './drafter';
+import type { FlowDropSkin, FlowDropSkinName } from '../types/skin.js';
+import { defaultSkin } from './default.js';
+import { slateSkin } from './slate.js';
+import { drafterSkin } from './drafter.js';
 
 const builtinSkins: Record<FlowDropSkinName, FlowDropSkin> = {
   default: defaultSkin,

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getDataTypeColor } from '$lib/utils/colors';
+  import { getDataTypeColor } from '$lib/utils/colors.js';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { useConnection } from '@xyflow/svelte';
 

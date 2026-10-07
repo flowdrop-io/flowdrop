@@ -18,7 +18,7 @@
  * @module schemas
  */
 
-import workflowSchema from './v1/workflow.schema.json';
+import workflowSchema from './v1/workflow.schema.json' with { type: 'json' };
 
 /** Current workflow schema format version */
 export const WORKFLOW_SCHEMA_VERSION = '1.0.0';

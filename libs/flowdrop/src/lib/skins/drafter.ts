@@ -1,4 +1,4 @@
-import type { FlowDropSkin } from '../types/skin';
+import type { FlowDropSkin } from '../types/skin.js';
 
 /**
  * Drafter — a fresh, modern "drafting workspace" skin for the whole editor

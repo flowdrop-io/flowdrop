@@ -11,7 +11,7 @@
  * @module stores/workflowStore
  */
 
-import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types';
+import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types/index.js';
 import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
 import type { WorkflowChangeType } from '$lib/types/events.js';
 import type { HistoryService } from '../services/historyService.js';

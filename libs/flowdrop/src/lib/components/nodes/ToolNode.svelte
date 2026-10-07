@@ -7,7 +7,7 @@
 <script lang="ts">
   import { Position, Handle } from '@xyflow/svelte';
   import Icon from '@iconify/svelte';
-  import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors';
+  import { getDataTypeColor, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import type { ConfigValues, NodeMetadata, NodePort } from '../../types/index.js';
   import NodeConfigButton from './NodeConfigButton.svelte';

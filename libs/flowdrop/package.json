@@ -18,7 +18,7 @@
     "watch:build": "npm-watch build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
-    "prepack": "svelte-kit sync && svelte-package && node scripts/check-dts.mjs && node scripts/copy-openapi.mjs && publint",
+    "prepack": "svelte-kit sync && svelte-package && node scripts/check-dts.mjs && node scripts/check-extensions.mjs && node scripts/copy-openapi.mjs && publint",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:bundle": "node scripts/check-bundle.mjs",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -79,6 +79,9 @@
     "!dist/**/*.test.*",
     "!dist/**/*.spec.*",
     "!dist/**/*.map",
+    "!dist/**/*.stories.*",
+    "!dist/stories",
+    "!dist/mocks",
     "CHANGELOG.md",
     "MIGRATION-2.0.md"
   ],
@@ -182,7 +185,7 @@
     "@iconify/svelte": "^5.0.0",
     "@xyflow/svelte": "^1.2",
     "codemirror": "^6.0.2",
-    "svelte": "^5.0.0"
+    "svelte": "^5.29.0"
   },
   "peerDependenciesMeta": {
     "@codemirror/autocomplete": {
@@ -210,9 +213,6 @@
       "optional": true
     },
     "@codemirror/view": {
-      "optional": true
-    },
-    "@iconify/svelte": {
       "optional": true
     },
     "codemirror": {
@@ -284,7 +284,7 @@
     "yaml": "^2.8.3"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "keywords": [
     "svelte",
