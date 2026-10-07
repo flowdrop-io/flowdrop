@@ -616,15 +616,8 @@ export const defaultMessages = {
     // resolved status label (typically from `getStatusLabel()` so it stays
     // consistent with status icons elsewhere); the wrapper text is localized.
     overlay: {
-      tooltip: ({ status, count }: { status: string; count: number }) =>
-        `${status} - Executed ${count} times`,
+      tooltip: ({ status }: { status: string }) => status,
       ariaLabel: ({ status }: { status: string }) => `Node execution status: ${status}`,
-      statusLabel: 'Status:',
-      executionsLabel: 'Executions:',
-      lastRunLabel: 'Last Run:',
-      durationLabel: 'Duration:',
-      errorLabel: 'Error:',
-      historyLabel: 'Runs:',
       edited: 'edited',
       editedTooltip: 'Changed since this run started. The result may be out of date.'
     }

@@ -177,7 +177,7 @@
 
   <!-- Status overlay - only show if there's meaningful status information -->
   {#if shouldShowStatus}
-    <NodeStatusOverlay nodeId={id} {executionInfo} size={getStatusSize()} showDetails={true} />
+    <NodeStatusOverlay nodeId={id} {executionInfo} size={getStatusSize()} />
   {/if}
 </div>
 

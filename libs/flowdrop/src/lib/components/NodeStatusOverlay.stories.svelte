@@ -11,7 +11,7 @@
   });
 </script>
 
-<Story name="Idle (with history)">
+<Story name="Idle">
   <div
     style="position: relative; width: 220px; height: 100px; margin-top: 60px; border: 1px solid var(--fd-border, #e5e7eb); border-radius: 8px; background: var(--fd-card, white);"
   >
@@ -22,7 +22,6 @@
         isExecuting: false,
         lastExecuted: new Date().toISOString()
       }}
-      showDetails
     />
     <div style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);">
       Node Content
@@ -59,7 +58,6 @@
         lastExecuted: new Date().toISOString(),
         lastExecutionDuration: 1250
       }}
-      showDetails
     />
     <div style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);">Done!</div>
   </div>
@@ -78,7 +76,6 @@
         lastExecuted: new Date().toISOString(),
         lastExecutionDuration: 30000
       }}
-      showDetails
     />
     <div style="padding: 1rem; text-align: center; color: var(--fd-text, #374151);">Error</div>
   </div>
