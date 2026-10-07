@@ -235,7 +235,11 @@ export type CommandErrorCode =
   | 'EMPTY_QUERY'
   | 'CONFIG_VALIDATION_ERROR'
   | 'UNDO_UNAVAILABLE'
-  | 'REDO_UNAVAILABLE';
+  | 'REDO_UNAVAILABLE'
+  /** A Console `session` command refused: busy, wrong input mode, nothing to act on. */
+  | 'SESSION_REFUSED'
+  /** A Console `session` command reached the backend and it failed. */
+  | 'SESSION_FAILED';
 
 // ============================================================================
 // Command Result Types

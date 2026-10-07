@@ -76,6 +76,16 @@ export { parseCommand } from './parser.js';
 // Executor
 export { executeCommand, toShortId, toShortTypeId, resolveNode, COMMAND_HELP } from './executor.js';
 
+// Session commands (editor Console only; not part of the Command union)
+export {
+  parseSessionCommand,
+  executeSessionCommand,
+  isSessionLine,
+  SESSION_HELP,
+  type SessionCommand,
+  type SessionParseResult
+} from './session.js';
+
 // Batch executor
 export { executeBatch } from './batch.js';
 

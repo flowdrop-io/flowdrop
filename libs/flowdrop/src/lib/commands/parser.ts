@@ -334,6 +334,17 @@ export function parseCommand(input: string): ParseResult {
     };
   }
 
+  // `session …` belongs to the editor Console, not the editing DSL. Say so, so
+  // an agent that reads this error knows the verb is not available to it.
+  if (/^session(\s|$)/i.test(trimmed)) {
+    return {
+      ok: false,
+      error:
+        '`session` commands run only in the editor Console; they are not part of the editing commands.',
+      input
+    };
+  }
+
   for (const rule of rules) {
     const match = trimmed.match(rule.pattern);
     if (match) {
