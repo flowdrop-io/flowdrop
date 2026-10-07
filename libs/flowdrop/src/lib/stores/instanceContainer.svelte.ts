@@ -22,6 +22,7 @@ import { WorkflowStore } from './workflowStore.svelte.js';
 import { HistoryStore } from './historyStore.svelte.js';
 import { PlaygroundStore } from './playgroundStore.svelte.js';
 import { InterruptStore } from './interruptStore.svelte.js';
+import { RunController } from './runController.svelte.js';
 import { CategoriesStore } from './categoriesStore.svelte.js';
 import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
@@ -68,6 +69,13 @@ export interface FlowDropInstance {
    * instance owns a separate service, so sessions poll independently.
    */
   readonly playgroundService: PlaygroundService;
+  /**
+   * The session and run executors of this instance: load, create and select
+   * sessions, take a turn, launch a run, signal, stop, poll. The Playground
+   * and the editor Console both drive them from here, so there is one code
+   * path; the controller Test mode builds on.
+   */
+  readonly runs: RunController;
   /** Pending interrupt/confirmation dialogs. */
   readonly interrupts: InterruptStore;
   /** Endpoint configuration, auth provider, and API client for this instance. */
@@ -237,6 +245,13 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
 
   const playground = new PlaygroundStore();
   const instancePlaygroundService = isDefault ? playgroundService : new PlaygroundService();
+  const api = new ApiContext();
+  const runs = new RunController({
+    playground,
+    service: instancePlaygroundService,
+    api,
+    workflow
+  });
 
   const cleanups: Array<() => void> = [
     () => historyBindings.cleanup(),
@@ -245,6 +260,8 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     () => workflow.setOnDirtyStateChange(null),
     () => workflow.setOnWorkflowChange(null),
     () => playground.dispose(),
+    // Drop the surface's options (callbacks into a mounted component).
+    () => runs.configure({}),
     // An owned service stops with its instance. The default one is the shared
     // singleton and keeps the legacy behavior (outlives its mounts).
     () => {
@@ -261,8 +278,9 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     historyBindings,
     playground,
     playgroundService: instancePlaygroundService,
+    runs,
     interrupts: new InterruptStore(),
-    api: new ApiContext(),
+    api,
     nodes: new NodeComponentRegistry({
       registrations: BUILTIN_NODE_COMPONENTS,
       defaultType: 'workflowNode'

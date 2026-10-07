@@ -192,6 +192,11 @@ export type {
 export { isChatInputNode, CHAT_INPUT_PATTERNS } from '../types/playground.js';
 export type { PlaygroundInputMode } from '../utils/workflowInterface.js';
 
+// The per-instance run controller (`fd.runs`) that Test mode builds on. Types
+// only: the class itself ships from `@flowdrop/flowdrop/playground`, so core
+// stays free of the playground services.
+export type { RunController, RunControllerOptions } from '../stores/runController.svelte.js';
+
 // Endpoint config types
 export type { EndpointConfig } from '../config/endpoints.js';
 

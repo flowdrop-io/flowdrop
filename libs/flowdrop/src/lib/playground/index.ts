@@ -194,6 +194,20 @@ export {
 export { PlaygroundStore } from '../stores/playgroundStore.svelte.js';
 
 // ============================================================================
+// Run Controller
+// ============================================================================
+
+/**
+ * The per-instance session/run executors (`fd.runs`): the controller Test
+ * mode builds on.
+ */
+export {
+  RunController,
+  type RunControllerOptions,
+  type RunControllerDeps
+} from '../stores/runController.svelte.js';
+
+// ============================================================================
 // Playground Types
 // ============================================================================
 
