@@ -287,7 +287,12 @@
           size="sm"
           type="text"
           value={entry.id}
-          onchange={(e) => onPatch({ id: e.currentTarget.value })}
+          onchange={(e) => {
+            // An input needs an id: an emptied field goes back to the old one
+            // (else the chat binding would lose the input for good).
+            if (e.currentTarget.value.trim() === '') e.currentTarget.value = entry.id;
+            else onPatch({ id: e.currentTarget.value });
+          }}
         />
       </label>
       <div class="wf-interface__field wf-interface__field--binding">

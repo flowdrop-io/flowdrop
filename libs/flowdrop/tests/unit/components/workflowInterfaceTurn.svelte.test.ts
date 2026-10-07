@@ -382,6 +382,14 @@ describe('input id edits reported for the chat binding', () => {
     expect(onChange.mock.lastCall?.[1]).toEqual({ kind: 'rename', id: 'q', to: 'prompt' });
   });
 
+  it('puts the old id back when the field is emptied, so the binding keeps its input', () => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'q' })] });
+    const field = idField(target);
+    rename(field, '  ');
+    expect(onChange).not.toHaveBeenCalled();
+    expect(field.value).toBe('q');
+  });
+
   it('reports a removed input', () => {
     const { target, onChange } = render({ inputs: [entry({ id: 'q' }), entry({ id: 'topic' })] });
     removeButton(target, 0).click();

@@ -1322,6 +1322,13 @@ describe('Playground input mode with a playground argument', () => {
     expect(interfaceFormEntries(iface, { chat: null }).map((e) => e.id)).toEqual(['topic']);
   });
 
+  it('keeps a turn value it does not know out of the form while the chat comes from turns', () => {
+    const iface = {
+      inputs: [entry('m', { turn: 'message' }), entry('a', { turn: 'attachments' }), entry('topic')]
+    };
+    expect(interfaceFormEntries(iface, { chat: null }).map((e) => e.id)).toEqual(['topic']);
+  });
+
   it('a bound name that is not on the interface binds nothing', () => {
     const iface = { inputs: [entry('topic')] };
     expect(resolvePlaygroundInputMode(iface, chatWith({ message: 'gone' }))).toBe('form');

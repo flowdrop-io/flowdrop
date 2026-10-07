@@ -824,7 +824,8 @@ export function declaresTurnPorts(workflowInterface: WorkflowInterface | undefin
 /**
  * The input entries a person fills in: every input the chat binding does not
  * fill. With `playground` (a server from FlowDrop 2.7.0 on) those are the
- * inputs its binding names; without it, the inputs carrying a `turn`
+ * inputs its binding names (and, while the binding comes from `turn` marks,
+ * every input carrying one); without it, the inputs carrying a `turn`
  * (`message`, `history`, `session_id`, `message_id`, and any value a newer
  * server adds). The session fills those, never the form.
  */
@@ -849,7 +850,10 @@ export function interfaceFormEntriesFor(
   const inputs = workflowInterface?.inputs ?? [];
   if (resolved === null) return inputs.filter((entry) => !entry.turn);
   const bound = playgroundBoundInputs(resolved.binding);
-  return inputs.filter((entry) => !bound.has(entry.id));
+  // While the chat comes from `turn` marks, an input marked with a value this
+  // library does not know (a newer server's) is the session's too.
+  const turnFilled = resolved.source === 'interface_turn';
+  return inputs.filter((entry) => !bound.has(entry.id) && !(turnFilled && entry.turn));
 }
 
 /**

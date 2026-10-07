@@ -613,6 +613,13 @@ describe('WorkflowPlaygroundSettings: leftover turn marks', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('an edit removes them, so clearing the binding never falls back to them', () => {
+    const { target, onMoveTurns, onChange } = render(withLeftovers());
+    choose(selectFor(target, 'Message goes to'), '');
+    expect(onMoveTurns).toHaveBeenCalledWith({ ...stored(), message: null });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('is not shown without marks, or for marks this library does not know', () => {
     const { target } = render(makeWorkflow({ playground: { chat: stored() } }));
     expect(target.textContent).not.toContain('Remove them');

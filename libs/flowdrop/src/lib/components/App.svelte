@@ -1330,8 +1330,11 @@
         // the interface no longer has.
         const playground = fd.workflow.current?.playground;
         const followed = edit ? followInterfaceInputEdit(playground, edit) : playground;
+        // Settings that no longer bind anything must not fall back to `turn`
+        // marks left on the interface: they go in the same update.
+        const cleared = followed !== playground && followed?.chat === null;
         fd.workflow.batchUpdate({
-          interface: next,
+          interface: cleared ? withoutInterfaceTurns(next) : next,
           ...(followed !== playground && { playground: followed })
         });
       }}

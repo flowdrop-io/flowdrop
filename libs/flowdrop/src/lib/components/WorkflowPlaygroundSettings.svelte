@@ -58,7 +58,9 @@
      * Move the deprecated interface `turn` marks into these settings: called
      * with the binding to store (the one they declare, or it with the first
      * edit applied). The caller stores it and clears `turn` from the
-     * interface in one update. Omit to hide the action; edits then go to
+     * interface in one update. Also called for every edit while marks are
+     * left on the interface beside stored settings, so clearing the binding
+     * never falls back to them. Omit to hide the action; edits then go to
      * `onChange` and the marks stay, so clearing every field falls back to
      * them.
      */
@@ -140,7 +142,9 @@
 
   function update(patch: Partial<PlaygroundChatBinding>): void {
     const next = { ...chat, ...patch };
-    if (stored === null && turnChat !== null && onMoveTurns) onMoveTurns(next);
+    // Any edit while known marks are on the interface removes them: else an
+    // edit that clears the binding would let the chat fall back to them.
+    if (onMoveTurns && (turnChat !== null || leftoverTurns)) onMoveTurns(next);
     else onChange(withPlaygroundChat(workflow.playground, next));
   }
 
