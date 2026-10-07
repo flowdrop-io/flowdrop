@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Run status of the nodes lives in the instance's playground store:
+  `fd.playground.nodeStatuses` (`nodeStatusFor(id)`, `setNodeStatuses`,
+  `clearNodeStatuses`, scoped to a workflow and run). The node status overlay
+  draws from it, so an edit to the graph no longer wipes the badges. Load it
+  with `fd.runs.loadNodeStatuses(pipelineId?, workflow?)`; the editor does so
+  for its `pipelineId` and `refreshTrigger` props. Two editors, or an editor
+  and a Playground, on one page never share statuses.
+- `stripExecutionInfo(nodes)`, exported from `core`.
 - `fd.runs`, a per-instance run controller (`RunController`, exported from
   `playground`, types from `core`). It holds the session and run executors that
   lived inside the Playground component: load, create, select, delete and reset
@@ -27,10 +35,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A saved or exported workflow can no longer contain a node's `executionInfo`: the
+  canvas-to-store sync, save and export all strip it.
 - Internal: the Playground delegates its session and run executors to
   `fd.runs`; what it shows and does is unchanged, except that a
   `predefinedMessage` starting with `/` is now sent as typed instead of being
   read as a slash command.
+
+### Deprecated
+
+- `data.executionInfo` on a node: read run status from
+  `fd.playground.nodeStatusFor(id)`. Hosts that still write it keep working (the
+  overlay falls back to it when the store has no entry), but it is no longer
+  saved, exported or kept across edits. `NodeOperationsHelper.applyExecutionInfo`
+  is deprecated with it. Both go in 3.0.
 
 ## [2.11.0] - 2026-10-07
 
