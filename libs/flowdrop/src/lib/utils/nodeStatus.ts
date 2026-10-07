@@ -213,3 +213,21 @@ export function formatLastExecuted(timestamp?: string): string {
     return date.toLocaleDateString();
   }
 }
+
+/**
+ * Remove `data.executionInfo` from every node.
+ *
+ * Run status belongs to a run, not to the workflow: it lives in the
+ * instance's `PlaygroundStore` (`fd.playground.nodeStatuses`) and must never
+ * be written into a workflow that is synced to the store, saved or exported.
+ * Returns the same array when no node carries it, otherwise new node objects
+ * for those that did.
+ */
+export function stripExecutionInfo<T extends { data: object }>(nodes: T[]): T[] {
+  if (!nodes.some((node) => 'executionInfo' in node.data)) return nodes;
+  return nodes.map((node) => {
+    if (!('executionInfo' in node.data)) return node;
+    const { executionInfo: _dropped, ...data } = node.data as Record<string, unknown>;
+    return { ...node, data } as T;
+  });
+}

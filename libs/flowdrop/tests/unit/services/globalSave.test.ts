@@ -15,8 +15,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { Workflow } from '$lib/types/index.js';
 import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
-import { createTestWorkflow } from '../../utils/index.js';
+import { createTestNode, createTestWorkflow } from '../../utils/index.js';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -98,6 +99,11 @@ vi.mock('uuid', () => ({ v4: () => FIXED_UUID }));
 /** Returns a workflow with the given id (use '' or undefined for new) */
 function storeWorkflow(id: string) {
   return createTestWorkflow({ id });
+}
+
+/** A workflow with the given id and nodes */
+function storeWorkflowWith(id: string, nodes: Workflow['nodes']) {
+  return createTestWorkflow({ id, nodes });
 }
 
 /** Saved workflow returned by the backend */
@@ -395,6 +401,35 @@ describe('globalSaveWorkflow', () => {
       expect('interface' in payload).toBe(false);
     });
   });
+  describe('run status is never saved', () => {
+    const status = { status: 'completed', executionCount: 1, isExecuting: false };
+    function withStatus(id: string) {
+      const node = createTestNode({ id: 'n1' });
+      return storeWorkflowWith(id, [{ ...node, data: { ...node.data, executionInfo: status } }]);
+    }
+
+    it('strips executionInfo from the nodes sent on update', async () => {
+      mockGetWorkflowStore.mockReturnValue(withStatus('wf-1'));
+      mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+
+      await globalSaveWorkflow();
+
+      const payload = mockClientUpdate.mock.calls[0][1] as { nodes: { data: object }[] };
+      expect(payload.nodes.length).toBeGreaterThan(0);
+      for (const node of payload.nodes) expect('executionInfo' in node.data).toBe(false);
+    });
+
+    it('strips executionInfo from the nodes sent on create', async () => {
+      mockGetWorkflowStore.mockReturnValue(withStatus(''));
+      mockClientSave.mockResolvedValue(backendWorkflow('new-id'));
+
+      await globalSaveWorkflow();
+
+      const payload = mockClientSave.mock.calls[0][0] as { nodes: { data: object }[] };
+      for (const node of payload.nodes) expect('executionInfo' in node.data).toBe(false);
+    });
+  });
+
   describe('Playground settings serialization', () => {
     const chat = {
       message: 'msg',
@@ -504,6 +539,24 @@ describe('globalSaveWorkflow', () => {
       const exported = await exportedJson();
 
       expect('playground' in exported).toBe(false);
+    });
+
+    it('strips executionInfo from the exported nodes', async () => {
+      const node = createTestNode({ id: 'n1' });
+      mockGetWorkflowStore.mockReturnValue(
+        storeWorkflowWith('wf-1', [
+          {
+            ...node,
+            data: { ...node.data, executionInfo: { status: 'failed', executionCount: 2 } }
+          }
+        ])
+      );
+
+      const exported = await exportedJson();
+
+      const nodes = exported.nodes as { data: object }[];
+      expect(nodes.length).toBeGreaterThan(0);
+      for (const node of nodes) expect('executionInfo' in node.data).toBe(false);
     });
   });
 });

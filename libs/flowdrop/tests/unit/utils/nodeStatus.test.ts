@@ -6,6 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  stripExecutionInfo,
   getStatusColor,
   getStatusIcon,
   getStatusLabel,
@@ -303,5 +304,31 @@ describe('Node Status Utilities', () => {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       expect(formatLastExecuted(oneHourAgo)).toBe('1h ago');
     });
+  });
+});
+
+describe('stripExecutionInfo', () => {
+  const info = { status: 'completed', executionCount: 1, isExecuting: false } as const;
+
+  it('removes executionInfo and keeps every other data key', () => {
+    const nodes = [
+      { id: 'a', data: { label: 'A', config: { x: 1 }, executionInfo: info } },
+      { id: 'b', data: { label: 'B' } }
+    ];
+    const result = stripExecutionInfo(nodes);
+    expect(result[0].data).toEqual({ label: 'A', config: { x: 1 } });
+    expect('executionInfo' in result[0].data).toBe(false);
+    expect(result[1]).toBe(nodes[1]);
+  });
+
+  it('does not mutate its input', () => {
+    const nodes = [{ id: 'a', data: { executionInfo: info } }];
+    stripExecutionInfo(nodes);
+    expect(nodes[0].data.executionInfo).toBe(info);
+  });
+
+  it('returns the same array when no node carries it', () => {
+    const nodes = [{ id: 'a', data: { label: 'A' } }];
+    expect(stripExecutionInfo(nodes)).toBe(nodes);
   });
 });

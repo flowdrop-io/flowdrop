@@ -195,6 +195,7 @@ export type { PlaygroundInputMode } from '../utils/workflowInterface.js';
 // The per-instance run controller (`fd.runs`) that Test mode builds on. Types
 // only: the class itself ships from `@flowdrop/flowdrop/playground`, so core
 // stays free of the playground services.
+export type { NodeStatusScope } from '../stores/playgroundStore.svelte.js';
 export type { RunController, RunControllerOptions } from '../stores/runController.svelte.js';
 
 // Endpoint config types
@@ -231,6 +232,7 @@ export {
   updateExecutionComplete,
   updateExecutionFailed,
   resetExecutionInfo,
+  stripExecutionInfo,
   formatExecutionDuration,
   formatLastExecuted
 } from '../utils/nodeStatus.js';

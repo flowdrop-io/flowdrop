@@ -15,6 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getDefaultInstance, type FlowDropInstance } from '../stores/instanceContainer.svelte.js';
 import type { ApiContext } from '../stores/apiContext.js';
 import type { AuthProvider } from '../types/auth.js';
+import { stripExecutionInfo } from '../utils/nodeStatus.js';
 import { nodeExecutionService } from '../services/nodeExecutionService.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { WorkflowAdapter } from '../adapters/WorkflowAdapter.js';
@@ -172,6 +173,9 @@ export class NodeOperationsHelper {
    * run never reached does not keep an older status). With `null`, any
    * executionInfo is removed. Pure: returns new node objects only where
    * something changes, and the same array when nothing does.
+   *
+   * @deprecated The editor no longer paints status onto nodes: it is kept in
+   * `fd.playground.nodeStatuses` and read by the overlay. Removed in 3.0.
    */
   static applyExecutionInfo<T extends { id: string; data: Record<string, unknown> }>(
     nodes: T[],
@@ -284,7 +288,8 @@ export class WorkflowOperationsHelper {
   ): Workflow {
     return {
       ...workflow,
-      nodes,
+      // Run status never goes into the workflow: it lives in fd.playground.
+      nodes: stripExecutionInfo(nodes),
       edges,
       metadata: this.generateMetadata(workflow.metadata)
     };
@@ -363,7 +368,7 @@ export class WorkflowOperationsHelper {
       const workflowToSave: Workflow = {
         id: workflowId,
         name: workflow.name || 'Untitled Workflow',
-        nodes: workflow.nodes || [],
+        nodes: stripExecutionInfo(workflow.nodes || []),
         edges: workflow.edges || [],
         metadata: {
           schemaVersion: workflow.metadata?.schemaVersion || '1.0.0',
@@ -412,7 +417,7 @@ export class WorkflowOperationsHelper {
     const workflowToExport: Workflow = {
       id: workflowId,
       name: workflow.name || 'Untitled Workflow',
-      nodes: workflow.nodes || [],
+      nodes: stripExecutionInfo(workflow.nodes || []),
       edges: workflow.edges || [],
       metadata: {
         schemaVersion: workflow.metadata?.schemaVersion || '1.0.0',

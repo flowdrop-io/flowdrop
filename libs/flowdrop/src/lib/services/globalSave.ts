@@ -14,6 +14,7 @@ import { createEndpointConfig } from '$lib/config/endpoints.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { Workflow } from '$lib/types/index.js';
 import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
+import { stripExecutionInfo } from '$lib/utils/nodeStatus.js';
 import { playgroundForSave } from '$lib/utils/playgroundChat.js';
 import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
@@ -186,7 +187,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       id: workflowId,
       name: currentWorkflow.name || 'Untitled Workflow',
       description: currentWorkflow.description || '',
-      nodes: currentWorkflow.nodes || [],
+      nodes: stripExecutionInfo(currentWorkflow.nodes || []),
       edges: currentWorkflow.edges || [],
       metadata: {
         ...currentWorkflow.metadata,
@@ -315,7 +316,7 @@ export async function globalExportWorkflow(options: GlobalExportOptions = {}): P
       id: currentWorkflow.id || 'untitled-workflow',
       name: currentWorkflow.name || 'Untitled Workflow',
       description: currentWorkflow.description || '',
-      nodes: currentWorkflow.nodes || [],
+      nodes: stripExecutionInfo(currentWorkflow.nodes || []),
       edges: currentWorkflow.edges || [],
       metadata: {
         ...currentWorkflow.metadata,
