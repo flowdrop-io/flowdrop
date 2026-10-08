@@ -40,7 +40,13 @@
   const linkedNodeId = $derived(
     fd.highlight.canReveal ? resolveMessageNodeLink(message, fd.workflow.current?.nodes) : null
   );
-  const nodeLabel = $derived(message.metadata?.nodeLabel ?? message.nodeId ?? '');
+  // The node's name on the canvas reads better than its id ("Chat Output", not "chat_output.2").
+  const canvasLabel = $derived(
+    message.nodeId
+      ? fd.workflow.current?.nodes?.find((node) => node.id === message.nodeId)?.data?.label
+      : undefined
+  );
+  const nodeLabel = $derived(message.metadata?.nodeLabel ?? canvasLabel ?? message.nodeId ?? '');
   // The node open or hovered on the canvas lights the messages it produced.
   const fromHighlighted = $derived(
     !!message.nodeId && fd.highlight.messageNodeId === message.nodeId

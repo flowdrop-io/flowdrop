@@ -389,7 +389,7 @@ export const defaultMessages = {
     requiresBackend: 'AI Assistant requires backend configuration',
     loadWorkflow: 'Load a workflow to start chatting',
     helpBuild: 'Ask the AI to help build your workflow',
-    placeholder: 'Describe what you want to build...',
+    placeholder: 'Describe a change…',
     send: 'Send message',
     // The run attached to the Assistant, above the composer.
     attach: {

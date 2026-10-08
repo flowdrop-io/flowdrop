@@ -220,16 +220,16 @@ test.describe('Assistant in the left slot', () => {
     await expect(chip).toContainText(`Run #${RUN_ID}`);
     await expect(page.getByTestId('assistant-run-chip-status')).toContainText('failed');
 
-    await page.getByPlaceholder('Describe what you want to build...').fill('why did it fail?');
-    await page.getByPlaceholder('Describe what you want to build...').press('Enter');
+    await page.getByPlaceholder('Describe a change…').fill('why did it fail?');
+    await page.getByPlaceholder('Describe a change…').press('Enter');
     await expect.poll(() => backend.chatRequests.length, { timeout: 10000 }).toBe(1);
     expect(backend.chatRequests[0].attachedRunId).toBe(RUN_ID);
 
     // Detaching drops it from the next request.
     await page.getByTestId('assistant-run-detach').click();
     await expect(chip).toHaveCount(0);
-    await page.getByPlaceholder('Describe what you want to build...').fill('and now?');
-    await page.getByPlaceholder('Describe what you want to build...').press('Enter');
+    await page.getByPlaceholder('Describe a change…').fill('and now?');
+    await page.getByPlaceholder('Describe a change…').press('Enter');
     await expect.poll(() => backend.chatRequests.length, { timeout: 10000 }).toBe(2);
     expect(backend.chatRequests[1]).not.toHaveProperty('attachedRunId');
   });
