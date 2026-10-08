@@ -118,8 +118,8 @@ describe('MessageStream — steps row', () => {
       Array.from(tr.querySelectorAll('td')).map((td) => td.textContent?.replace(/\s+/g, ' ').trim())
     );
     expect(rows).toEqual([
-      ['Chat Input', 'Completed', '', '0.1 ms'],
-      ['Calculator', 'Completed', '×2', '44 ms']
+      ['Chat Input', 'Done', '', '0.1 ms'],
+      ['Calculator', 'Done', '×2', '44 ms']
     ]);
   });
 
