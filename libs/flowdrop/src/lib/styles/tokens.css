@@ -443,6 +443,16 @@
   --fd-node-status-edge: 0px; /* @internal  extra thickness of a status-coloured node border */
   --fd-node-status-ring: 0px; /* @internal  soft halo of a node that waits for you */
 
+  /* ----- CONVERSATION TOKENS (@internal) -----
+     Deliberately NOT declared here. The Playground and the AI Assistant read each of
+     these as var(--fd-msg-*, <the look the component always had>), so an unset token is
+     today's bubbles. `FlowDropDisplayConfig.messages: 'document'` (themes/scopedSkinCss.ts,
+     DOCUMENT_MESSAGE_TOKENS) sets them: avatar/header/meta display, reply and user
+     bubble shape, gutters, the interrupt card (--fd-interrupt-card-*), the composer
+     (--fd-composer-*) and quiet markdown. The Graphite skin sets the colours
+     (--fd-msg-user-bg/fg) and the form-first field look (--fd-inputs-frame-*,
+     --fd-field-*). */
+
   /* ----- COMPONENT SIZES ----- */
   --fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
   --fd-size-btn-min: 2.5rem; /* @internal  40px — may change with component redesigns */

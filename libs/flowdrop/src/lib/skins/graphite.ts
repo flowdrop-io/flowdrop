@@ -287,6 +287,22 @@ export const graphiteSkin: FlowDropSkin = {
     'scrollbar-radius': '9999px',
     'scrollbar-size': '8px',
 
+    /* ----- Form-first inputs: no card around the form; a 32px control, a type tag in mono, dashed example pills ----- */
+    'inputs-frame-border': '0',
+    'inputs-frame-bg': 'transparent',
+    'inputs-frame-pad': '0',
+    'field-control-height': '2rem',
+    'field-control-border': '#cfd4db',
+    'field-control-radius': '6px',
+    'field-textarea-min': '4rem',
+    'field-focus-border': '#2457d6',
+    'field-focus-ring': '0 0 0 3px #e8effd',
+    'field-help-size': '0.75rem',
+    'field-tag-bg': 'transparent',
+    'field-tag-pad': '0',
+    'field-example-border-style': 'dashed',
+    'field-example-bg': 'transparent',
+
     'sidebar-category-color': '#5a6270',
     'sidebar-flat-item-color': '#16191f',
 
@@ -417,6 +433,14 @@ export const graphiteSkin: FlowDropSkin = {
     'navbar-icon-bg': 'transparent',
     'navbar-icon-border': 'transparent',
     'navbar-icon-border-hover': 'transparent',
-    'navbar-status-order': '2'
+    'navbar-status-order': '2',
+
+    'field-control-border': '#353a43',
+    'field-focus-border': '#7aa2ff',
+    'field-focus-ring': '0 0 0 3px #1c2640',
+
+    /* Your own message: a dark-grey bubble, not the light primary */
+    'msg-user-bg': '#2a2f3a',
+    'msg-user-fg': '#eceef2'
   }
 };

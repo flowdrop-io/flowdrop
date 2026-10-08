@@ -109,6 +109,10 @@ describe('graphite theme', () => {
       // Canvas anatomy: sizes, and colours written as var() references, which resolve per mode.
       /^(node-(header-(gap|title-height|min-height|padding-x|row-gap)|title-|terminal-|dim-|icon-(size|glyph-size|radius)|port|selected-|status-)|handle-visual-size|status-pill-|toolbar-segment|zoom-|controls-button|minimap-(radius|shadow|border|bg|mask-stroke|node))/.test(
         k
+      ) ||
+      // Form-first inputs: shape and structure, the same in both modes (the colours have dark values).
+      /^(inputs-frame-(border|bg|pad)|field-(control-height|control-radius|textarea-min|help-size|tag-bg|tag-pad|example-border-style|example-bg))$/.test(
+        k
       );
     const missing = Object.keys(graphiteSkin.tokens ?? {}).filter(
       (k) => !structural(k) && !(k in (graphiteSkin.darkTokens ?? {}))

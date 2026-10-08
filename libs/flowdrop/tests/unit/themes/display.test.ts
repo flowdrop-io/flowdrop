@@ -28,6 +28,25 @@ describe('displayTokens', () => {
     });
   });
 
+  it('messages: document sets the conversation tokens, bubbles sets none', () => {
+    const doc = displayTokens({ messages: 'document' });
+    expect(doc['msg-avatar-display']).toBe('none');
+    expect(doc['msg-header-display']).toBe('none');
+    expect(doc['msg-meta-display']).toBe('flex');
+    expect(doc['msg-user-max']).toBe('85%');
+    expect(doc['msg-reply-max']).toBe('100%');
+    expect(doc['interrupt-card-shadow']).toBe('none');
+    expect(Object.keys(doc).every((k) => /^(msg|interrupt-card|composer)-/.test(k))).toBe(true);
+    expect(displayTokens({ messages: 'bubbles' })).toEqual({});
+  });
+
+  it('graphite asks for the document layout, the other themes do not', () => {
+    expect(resolveTheme('graphite').config?.display?.messages).toBe('document');
+    for (const name of ['default', 'minimal', 'drafter'] as const) {
+      expect(resolveTheme(name).config?.display?.messages).toBeUndefined();
+    }
+  });
+
   it('maps the default variants back to the tokens.css defaults', () => {
     expect(
       displayTokens({ nodeIcon: 'squircle', sidebarList: 'cards', navbarActions: 'dropdown' })

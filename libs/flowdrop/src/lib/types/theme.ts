@@ -38,6 +38,13 @@ export interface FlowDropDisplayConfig {
   nodeDetails?: 'full' | 'compact';
   /** Navbar actions: a primary action plus a dropdown ('dropdown', default) or all actions as separate buttons ('split'). */
   navbarActions?: 'dropdown' | 'split';
+  /**
+   * Message anatomy in the Playground and the AI Assistant: bubbles with avatars and
+   * role labels ('bubbles', default), or a document ('document'): your own messages
+   * as a right-aligned bubble, replies as plain full-width text with one meta line
+   * (origin node, time) under them, no avatars, no role labels.
+   */
+  messages?: 'bubbles' | 'document';
 }
 
 /**
