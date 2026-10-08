@@ -29,6 +29,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `playground.header` and `playground.jsonInput`. `controlPanel.openPlaygroundSettings`
   is no longer shown and `ControlPanel`'s `onNoticeAction` prop is gone.
 
+- Run context for the Assistant. A run can be attached to the AI Assistant, so
+  what you just tested travels with you into Edit mode: a **run chip** above the
+  composer (run number, how it ended, when it started, an "older version" mark
+  when the workflow changed since, and an x to detach), **+ Attach a run**
+  (this test session's runs, newest first, loaded when the list opens; an empty
+  state says when the server has no runs endpoint), and **Ask the Assistant** on
+  a failed node's **Last run** tab and on the run bar of a failed run. That
+  button switches to Edit mode, opens the Assistant beside Nodes and attaches
+  the run. While a run is attached the tool-calling chat request carries
+  `attachedRunId` (a digit string; `ChatRequest.attachedRunId`); a server
+  without run tools ignores it. `fd.attachedRun` (`AttachedRunStore`: `id`,
+  `hint`, `attach(id, hint?)`, `detach()`) is the one home, per instance; it is
+  cleared when another workflow is opened. `RunBar` and `WorkflowEditor` take
+  `onAskAssistant`. New messages `chat.attach`, `runBar.askAssistant`,
+  `runBar.askAssistantLabel`, `nodeInspector.askAssistant`, `layout.nodesTab`. Needs fddo 2.7.0 (`site_get_run`, `site_get_node_run`).
 - Message-to-node links and a Last run tab, in Test mode. A reply's "via
   <node>" label becomes a link when the node is on the canvas now (messages from
   a deleted node or a sub-workflow stay plain). Clicking it selects the node,
@@ -165,6 +180,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the run changes. New messages `status.overlay.edited` and `editedTooltip`.
 
 ### Changed
+
+- The AI Assistant moves out of the console group into a **Nodes | Assistant**
+  tab strip in the left slot, in Edit mode only. Test mode has no Assistant and
+  no strip (its left slot is the Playground); the Assistant keeps its
+  conversation across tab switches and a trip through Test mode.
+  `consolePlacement` now places the Command Console alone, and the console
+  toggle opens the Console only. No stored default changes, and
+  `consolePlacement: 'sidebar'` stays valid. `features.assistant: false` still
+  hides the Assistant. A host that set `disableSidebar` has no left slot, so for
+  it the Assistant stays a tab of the console group (until 3.0).
+  `bottomPanelTab: 'chat'` in stored settings is still accepted and ignored.
+- Test mode opens its right panel on the inspector. After `?mode=test`, a
+  reload in Test mode, or switching to it, the panel no longer lands on the
+  Console tab that was last focused.
 
 - The node status badge no longer opens a hover details panel (status,
   executions, last run, duration, error, job history). Those facts live in the
