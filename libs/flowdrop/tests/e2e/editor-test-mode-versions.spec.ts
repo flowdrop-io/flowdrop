@@ -153,6 +153,8 @@ async function openSession(page: Page, name: string): Promise<void> {
 /** Edit a node's config, so the workflow has unsaved edits, and go back to the Playground. */
 async function makeAnEdit(page: Page): Promise<void> {
   await openNodeConfig(page, 0);
+  // Test mode opens a node's sheet on Last run; the edit is on Config.
+  await page.getByTestId('inspector-sheet').getByRole('tab', { name: 'Config' }).click();
   const field = page.locator('.config-form input#defaultValue');
   await field.click();
   await field.press('End');
