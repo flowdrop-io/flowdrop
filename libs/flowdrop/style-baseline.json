@@ -137,9 +137,6 @@
     "font-size": 4,
     "radius": 5
   },
-  "src/lib/components/chat/CommandPreview.svelte": {
-    "button": 2
-  },
   "src/lib/components/form/FieldFactory.svelte": {
     "font-size": 2
   },
@@ -177,30 +174,13 @@
   "src/lib/components/form/FormToggle.svelte": {
     "radius": 2
   },
-  "src/lib/components/interrupt/ChoicePrompt.svelte": {
-    "button": 1,
-    "font-size": 1,
-    "radius": 1,
-    "shadow": 2
-  },
-  "src/lib/components/interrupt/ConfirmationPrompt.svelte": {
-    "button": 2,
-    "radius": 1,
-    "shadow": 4
-  },
-  "src/lib/components/interrupt/InterruptBubble.svelte": {
-    "button": 2,
-    "shadow": 4
-  },
   "src/lib/components/interrupt/ReviewPrompt.svelte": {
     "button": 6,
     "font-size": 1,
     "radius": 1
   },
   "src/lib/components/interrupt/TextInputPrompt.svelte": {
-    "button": 1,
-    "radius": 1,
-    "shadow": 2
+    "shadow": 1
   },
   "src/lib/components/layouts/MainLayout.svelte": {
     "colour": 5,
@@ -278,9 +258,6 @@
   },
   "src/lib/components/playground/ExecutionLogs.svelte": {
     "button": 6
-  },
-  "src/lib/components/playground/HeaderMenu.svelte": {
-    "radius": 1
   },
   "src/lib/components/playground/HierarchyTrail.svelte": {
     "font-size": 1

@@ -27,6 +27,8 @@
     - ?playground=chatform -> a chat bound to a `message` input, plus the required
                            `topic` input: Test mode folds the inputs into a row
                            above the composer
+    - ?playground=chat   -> a chat bound to a `message` input and one reply port, no
+                           other inputs: Test mode runs as a plain conversation
     - ?settingsDefaults=light|dark|auto -> seed host settings defaults
       before mounting, mirroring mountFlowDropApp({ settings }) — used by
       the settings persistence tests
@@ -585,7 +587,8 @@
       playgroundVariant !== 'none' &&
       playgroundVariant !== 'turn' &&
       playgroundVariant !== 'form' &&
-      playgroundVariant !== 'chatform'
+      playgroundVariant !== 'chatform' &&
+      playgroundVariant !== 'chat'
     ) {
       return baseWorkflow;
     }
@@ -615,6 +618,24 @@
             required: true
           }
         ]
+      };
+    }
+    if (playgroundVariant === 'chat') {
+      withSettings.interface = {
+        inputs: [
+          { id: 'msg', dataType: 'string', bindings: [{ nodeId: 'node-input', portId: 'value' }] }
+        ]
+      };
+      withSettings.playground = {
+        chat: {
+          message: 'msg',
+          history: null,
+          session_id: null,
+          message_id: null,
+          replies: [{ node_id: 'node-output', port: 'value' }],
+          sub_workflow_replies: false
+        },
+        source: 'settings'
       };
     }
     if (playgroundVariant === 'chatform') {
