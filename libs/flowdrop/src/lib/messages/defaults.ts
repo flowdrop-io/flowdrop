@@ -558,9 +558,30 @@ export const defaultMessages = {
       interrupt: 'Interrupt',
       postedBy: ({ origin }: { origin: string }) => `Posted by: ${origin}`
     },
-    // Collapsible run of adjacent log lines.
+    /** @deprecated Unused since the steps row; log lines fold into `steps`. */
     logGroup: {
       summary: ({ count }: { count: number }) => `${count} log lines`
+    },
+    // One row per turn that folds the node steps: "4 steps · 46 ms · 1 waiting".
+    steps: {
+      summary: ({ count }: { count: number }) => `${count} ${count === 1 ? 'step' : 'steps'}`,
+      waiting: ({ count }: { count: number }) => `${count} waiting`,
+      failed: ({ count }: { count: number }) => `${count} failed`,
+      tableLabel: 'Steps of this turn',
+      columnNode: 'Node',
+      columnStatus: 'Status',
+      columnCount: 'Runs',
+      columnDuration: 'Time',
+      repeated: ({ count }: { count: number }) => `Ran ${count} times`,
+      pendingNode: 'Waiting for input',
+      // Short names for the table's status column (the pill's own are long).
+      status: {
+        running: 'Running',
+        completed: 'Done',
+        waiting: 'Waiting',
+        failed: 'Failed',
+        skipped: 'Skipped'
+      }
     },
     // A turn the person started without typing (Run on a form or run-only
     // workflow): what its otherwise empty bubble says instead.
@@ -594,6 +615,7 @@ export const defaultMessages = {
       daysAgo: ({ n }: { n: number }) => `${n}d ago`
     },
     executionConsole: {
+      /** @deprecated The console no longer draws a header row. */
       header: 'Execution',
       noExecutionTitle: 'No execution yet',
       noExecutionText:
@@ -618,8 +640,8 @@ export const defaultMessages = {
       staleRun: 'older version',
       currentRun: 'shown',
       moreActions: 'More actions',
-      showSteps: 'Show steps',
-      showStepsHint: 'Adds a row per node to the conversation',
+      showSteps: 'Expand steps by default',
+      showStepsHint: 'Each turn shows its steps open instead of one folded row',
       jsonView: 'JSON view',
       jsonViewHint: 'Edit the inputs as JSON',
       refresh: 'Refresh',

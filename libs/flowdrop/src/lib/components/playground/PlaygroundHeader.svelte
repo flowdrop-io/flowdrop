@@ -7,7 +7,7 @@
      lists the Conversations (the sessions the Playground created) and the
      Runs of the open one, newest first, older-version runs marked. Picking a
      conversation opens it; picking a run shows that run (the canvas follows).
-   - the ⋯ menu: Show steps, JSON view (a form workflow), Refresh, Reset,
+   - the ⋯ menu: Expand steps by default, JSON view (a form workflow), Refresh, Reset,
      Playground settings, and whatever a host adds through `menuItems`.
 
   Each fact has one home: which conversation or run is shown lives in the
@@ -207,12 +207,12 @@
       <button
         type="button"
         role="menuitemcheckbox"
-        aria-checked={fd.playground.showLogs}
+        aria-checked={fd.playground.expandSteps}
         class="header-menu__item"
-        onclick={() => act(() => fd.playground.toggleShowLogs(), close)}
+        onclick={() => act(() => fd.playground.toggleExpandSteps(), close)}
       >
         <span class="header-menu__item-label">
-          {#if fd.playground.showLogs}<Icon icon="mdi:check" />{/if}<span>{t.showSteps}</span>
+          {#if fd.playground.expandSteps}<Icon icon="mdi:check" />{/if}<span>{t.showSteps}</span>
         </span>
         <span class="header-menu__item-hint">{t.showStepsHint}</span>
       </button>

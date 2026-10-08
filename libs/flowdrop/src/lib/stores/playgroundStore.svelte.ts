@@ -122,6 +122,8 @@ export interface PlaygroundStoreActions {
   pinExecution: (executionId: string | null) => void;
   setShowLogs: (value: boolean) => void;
   toggleShowLogs: () => void;
+  setExpandSteps: (value: boolean) => void;
+  toggleExpandSteps: () => void;
   setTurnPending: (value: boolean) => void;
   lockRunUntilEnabled: () => void;
   releaseRunLock: () => void;
@@ -250,6 +252,9 @@ export class PlaygroundStore {
   /** Whether log messages are visible in the execution console */
   #showLogs = $state<boolean>(true);
 
+  /** Whether each turn's steps start expanded (default: folded to one row). */
+  #expandSteps = $state<boolean>(false);
+
   /**
    * The main pipeline runs — the single source of truth for "what's selectable".
    * Sub-flow runs are tracked for classification but excluded here: selecting one
@@ -330,6 +335,8 @@ export class PlaygroundStore {
       pinExecution: this.pinExecution.bind(this),
       setShowLogs: this.setShowLogs.bind(this),
       toggleShowLogs: this.toggleShowLogs.bind(this),
+      setExpandSteps: this.setExpandSteps.bind(this),
+      toggleExpandSteps: this.toggleExpandSteps.bind(this),
       setTurnPending: this.setTurnPending.bind(this),
       lockRunUntilEnabled: this.lockRunUntilEnabled.bind(this),
       releaseRunLock: this.releaseRunLock.bind(this),
@@ -646,6 +653,11 @@ export class PlaygroundStore {
   /** Whether log messages should be shown in the execution console. */
   get showLogs(): boolean {
     return this.#showLogs;
+  }
+
+  /** Whether each turn's steps start expanded in the conversation. */
+  get expandSteps(): boolean {
+    return this.#expandSteps;
   }
 
   /** The current session ID, or null. */
@@ -978,6 +990,16 @@ export class PlaygroundStore {
   /** Toggle log message visibility. */
   toggleShowLogs(): void {
     this.#showLogs = !this.#showLogs;
+  }
+
+  /** Set whether turns' steps start expanded. */
+  setExpandSteps(value: boolean): void {
+    this.#expandSteps = value;
+  }
+
+  /** Toggle whether turns' steps start expanded. */
+  toggleExpandSteps(): void {
+    this.#expandSteps = !this.#expandSteps;
   }
 
   /** Mark a turn request as in flight (or finished). */

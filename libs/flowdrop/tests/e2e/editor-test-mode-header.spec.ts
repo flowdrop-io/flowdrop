@@ -2,7 +2,7 @@
  * E2E Test: the docked Playground's header (Test mode).
  *
  * Two controls and nothing else: the history chip (Conversations and the runs
- * of the open one, older-version runs marked) and the ⋯ menu (Show steps,
+ * of the open one, older-version runs marked) and the ⋯ menu (Expand steps by default,
  * Refresh, Reset, Playground settings). Both are keyboard menus. The backend
  * is stubbed at the network edge; the test page serves the `sessions` endpoint
  * group (`?sessions=1`) and simulates a backend with Playground settings
@@ -205,20 +205,21 @@ test.describe('Test mode: the Playground header', () => {
     await expect.poll(() => backend.log).toEqual(['reset']);
   });
 
-  test('⋯ → Show steps toggles, and Escape closes the menu with focus back', async ({ page }) => {
+  test('⋯ → Expand steps by default toggles, and Escape closes the menu with focus back', async ({
+    page
+  }) => {
     await stubBackend(page);
     await gotoTestMode(page);
 
     await more(page).click();
-    const steps = page.getByRole('menuitemcheckbox', { name: /Show steps/ });
-    await expect(steps).toHaveAttribute('aria-checked', 'true');
+    const steps = page.getByRole('menuitemcheckbox', { name: /Expand steps by default/ });
+    await expect(steps).toHaveAttribute('aria-checked', 'false');
     await steps.click();
 
     await more(page).click();
-    await expect(page.getByRole('menuitemcheckbox', { name: /Show steps/ })).toHaveAttribute(
-      'aria-checked',
-      'false'
-    );
+    await expect(
+      page.getByRole('menuitemcheckbox', { name: /Expand steps by default/ })
+    ).toHaveAttribute('aria-checked', 'true');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('menu', { name: 'More actions' })).toHaveCount(0);
     await expect(more(page)).toBeFocused();

@@ -101,12 +101,12 @@ export function getEmptyTurnLabel(
 
 /**
  * Origins that earn a badge. `user` and `workflow` are the conversation
- * itself and stay unbadged; everything else was posted by a component
+ * itself and stay unbadged, and so does `playground`: the Playground is
+ * where the reader already is. What is left was posted by a component
  * around the conversation and is marked so a reader can tell it apart.
  */
 const BADGED_ORIGINS: ReadonlySet<PlaygroundMessageOrigin> = new Set<PlaygroundMessageOrigin>([
   'engine',
-  'playground',
   'interrupt'
 ]);
 

@@ -6,7 +6,7 @@
  * and the Drupal admin pages render identical values.
  */
 import { describe, it, expect } from 'vitest';
-import { formatMicroseconds } from '$lib/utils/duration.js';
+import { formatMicroseconds, formatStepDuration, parseDurationMs } from '$lib/utils/duration.js';
 
 describe('formatMicroseconds', () => {
   it('returns null for missing or invalid input', () => {
@@ -42,5 +42,48 @@ describe('formatMicroseconds', () => {
     expect(formatMicroseconds(120_000_000)).toBe('2m');
     expect(formatMicroseconds(5_400_000_000)).toBe('1h 30m');
     expect(formatMicroseconds(3_600_000_000)).toBe('1h');
+  });
+});
+
+describe('parseDurationMs', () => {
+  it('reads the backend duration tiers into milliseconds', () => {
+    expect(parseDurationMs('150µs')).toBeCloseTo(0.15);
+    expect(parseDurationMs('2.5ms')).toBe(2.5);
+    expect(parseDurationMs('1.23s')).toBeCloseTo(1230);
+    expect(parseDurationMs('2m 30s')).toBe(150_000);
+    expect(parseDurationMs('1h 30m')).toBe(5_400_000);
+  });
+
+  it('returns null when there is no duration', () => {
+    expect(parseDurationMs('')).toBeNull();
+    expect(parseDurationMs(undefined)).toBeNull();
+    expect(parseDurationMs('boom')).toBeNull();
+  });
+});
+
+describe('formatStepDuration', () => {
+  it('uses one decimal under 10 ms', () => {
+    expect(formatStepDuration(0)).toBe('0.0 ms');
+    expect(formatStepDuration(0.15)).toBe('0.2 ms');
+    expect(formatStepDuration(0.8)).toBe('0.8 ms');
+    expect(formatStepDuration(9.94)).toBe('9.9 ms');
+  });
+
+  it('uses whole milliseconds up to a second', () => {
+    expect(formatStepDuration(10)).toBe('10 ms');
+    expect(formatStepDuration(42.4)).toBe('42 ms');
+    expect(formatStepDuration(998)).toBe('998 ms');
+  });
+
+  it('uses seconds with one decimal from a second on', () => {
+    expect(formatStepDuration(999.6)).toBe('1.0 s');
+    expect(formatStepDuration(1234)).toBe('1.2 s');
+    expect(formatStepDuration(65_000)).toBe('65.0 s');
+  });
+
+  it('is null for a missing or invalid value', () => {
+    expect(formatStepDuration(null)).toBeNull();
+    expect(formatStepDuration(-1)).toBeNull();
+    expect(formatStepDuration(Number.NaN)).toBeNull();
   });
 });

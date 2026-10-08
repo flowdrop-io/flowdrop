@@ -47,11 +47,6 @@
 </script>
 
 <section class="execution-console">
-  <header class="execution-console__header">
-    <Icon icon="mdi:console-line" class="execution-console__icon" />
-    <span class="execution-console__title">{ec.header}</span>
-  </header>
-
   <MessageStream
     {showTimestamps}
     {autoScroll}
@@ -95,29 +90,6 @@
     flex-direction: column;
     overflow: hidden;
     background-color: var(--fd-background);
-  }
-
-  .execution-console__header {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: 0 var(--fd-space-xl);
-    height: var(--fd-playground-header-height);
-    min-height: var(--fd-playground-header-height);
-    border-bottom: 1px solid var(--fd-border);
-    flex-shrink: 0;
-  }
-
-  :global(.execution-console__icon) {
-    font-size: var(--fd-text-base);
-    color: var(--fd-muted-foreground);
-    flex-shrink: 0;
-  }
-
-  .execution-console__title {
-    font-size: var(--fd-text-sm);
-    font-weight: 600;
-    color: var(--fd-foreground);
   }
 
   .execution-console__placeholder {

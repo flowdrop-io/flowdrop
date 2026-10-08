@@ -122,15 +122,15 @@ describe('getRoleLabel', () => {
 });
 
 describe('getOriginBadge', () => {
-  it('badges engine, playground and interrupt', () => {
+  it('badges engine and interrupt', () => {
     expect(getOriginBadge({ origin: 'engine' })).toBe('engine');
-    expect(getOriginBadge({ origin: 'playground' })).toBe('playground');
     expect(getOriginBadge({ origin: 'interrupt' })).toBe('interrupt');
   });
 
   it('never badges the conversation itself or an absent origin', () => {
     expect(getOriginBadge({ origin: 'user' })).toBeNull();
     expect(getOriginBadge({ origin: 'workflow' })).toBeNull();
+    expect(getOriginBadge({ origin: 'playground' })).toBeNull();
     expect(getOriginBadge({})).toBeNull();
   });
 });

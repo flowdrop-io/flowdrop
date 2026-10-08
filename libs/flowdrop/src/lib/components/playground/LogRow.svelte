@@ -1,13 +1,15 @@
 <!--
-  LogRow — dense terminal-style entry for log messages.
-  Width-based reshaping is driven by `@container fd-message-stream` rules
-  declared in MessageStream.svelte (the file that also sets the container).
+  LogRow — dense terminal-style entry for one log message.
+
+  The conversation no longer renders these: MessageStream folds a turn's log
+  rows into one StepsSummary row. LogRow stays for consumers that render a
+  single message through MessageBubble. It carries no breadcrumb trail, and
+  the origin chip (OriginBadge) is not drawn for the Playground's own rows.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { PlaygroundMessage } from '../../types/playground.js';
-  import HierarchyTrail from './HierarchyTrail.svelte';
   import MessageTagStrip from './MessageTagStrip.svelte';
   import OriginBadge from './OriginBadge.svelte';
   import { formatTimestamp, getLogLevelIcon } from './messageDisplay.js';
@@ -20,7 +22,6 @@
   let { message, showTimestamp = true }: Props = $props();
 
   const level = $derived(message.metadata?.level);
-  const hierarchy = $derived(message.hierarchy ?? []);
   const tags = $derived(message.tags ?? []);
 </script>
 
@@ -41,7 +42,6 @@
       <span class="log-row__source">{message.metadata.source}</span>
     {/if}
     <OriginBadge {message} />
-    <HierarchyTrail items={hierarchy} />
     {#if message.metadata?.nodeLabel ?? message.nodeId}
       <span class="log-row__node">{message.metadata?.nodeLabel ?? message.nodeId}</span>
     {/if}
@@ -162,10 +162,7 @@
     opacity: 0.8;
   }
 
-  /* Wrapper around the tag strip. Owns its grid-area in the @container
-     queries (see MessageStream.svelte) without those rules reaching into
-     MessageTagStrip's scope. inline-flex so the strip lays out naturally
-     in the default wide layout. */
+  /* Wrapper around the tag strip. */
   .log-row__tags {
     display: inline-flex;
     min-width: 0;

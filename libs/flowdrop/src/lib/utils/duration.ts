@@ -44,3 +44,41 @@ export function formatMicroseconds(microseconds: number | null | undefined): str
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }
+
+/**
+ * Parses a duration string as produced by {@link formatMicroseconds}
+ * (`150µs`, `2.5ms`, `1.23s`, `2m 30s`, `1h 30m`) into milliseconds.
+ * Returns null when the text holds no duration.
+ */
+export function parseDurationMs(text: string | null | undefined): number | null {
+  if (!text) return null;
+  const unitMs: Record<string, number> = {
+    µs: 0.001,
+    μs: 0.001,
+    us: 0.001,
+    ms: 1,
+    s: 1000,
+    m: 60_000,
+    h: 3_600_000
+  };
+  let total = 0;
+  let found = false;
+  for (const match of text.matchAll(/(\d+(?:\.\d+)?)\s*(µs|μs|us|ms|s|m|h)(?![a-z])/gi)) {
+    total += parseFloat(match[1]) * unitMs[match[2].toLowerCase()];
+    found = true;
+  }
+  return found ? total : null;
+}
+
+/**
+ * Step duration for the Playground's steps table, from milliseconds: one
+ * decimal under 10 ms (`0.8 ms`), whole milliseconds up to a second
+ * (`42 ms`), seconds with one decimal from a second on (`1.2 s`).
+ * Returns null for a missing or invalid value.
+ */
+export function formatStepDuration(ms: number | null | undefined): string | null {
+  if (ms == null || !Number.isFinite(ms) || ms < 0) return null;
+  if (ms < 10) return `${(Math.round(ms * 10) / 10).toFixed(1)} ms`;
+  if (ms < 999.5) return `${Math.round(ms)} ms`;
+  return `${(Math.round(ms / 100) / 10).toFixed(1)} s`;
+}

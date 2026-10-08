@@ -4,6 +4,10 @@
   Collapsible panel for displaying execution logs in the playground.
   Shows real-time log entries with filtering and export capabilities.
   Styled with BEM syntax.
+
+  @deprecated Not used by the Playground surfaces any more: the conversation
+  folds each turn's steps into one summary row (StepsSummary). Kept exported
+  for existing consumers.
 -->
 
 <script lang="ts">

@@ -18,7 +18,8 @@
     resolveMessageDisplay,
     type PlaygroundMessage
   } from '../../types/playground.js';
-  import { groupAdjacent } from './messageDisplay.js';
+  import StepsSummary from './StepsSummary.svelte';
+  import { summarizeSteps, type PendingStep } from './stepSummary.js';
   import { placeVersionDividers } from '../../utils/sessionRuns.js';
   import {
     isInterruptMetadata,
@@ -95,15 +96,64 @@
     placeVersionDividers(fd.playground.versionDividers, fd.playground.messages, visibleMessages)
   );
 
-  /** Runs of three or more adjacent log-layout rows fold into a collapsible group. */
-  const rows = $derived(
-    groupAdjacent(
-      visibleMessages,
-      (msg) =>
-        !isInterruptMessage(msg) && resolveMessageDisplay(msg, { compactSystemMessages }) === 'log',
-      (msg) => msg.id
-    )
-  );
+  /**
+   * One row per turn for the node steps. A turn runs from a user message to the
+   * next one; its log-layout rows leave the flow and fold into a single summary
+   * where the first of them stood. A version divider that followed a folded row
+   * stays where it was.
+   */
+  type StreamItem =
+    | { kind: 'message'; message: PlaygroundMessage }
+    | { kind: 'steps'; key: string; logs: PlaygroundMessage[]; pending: PendingStep[] }
+    | { kind: 'divider'; afterId: string };
+
+  const rows = $derived.by(() => {
+    const items: StreamItem[] = [];
+    const stepsOfTurn = new Map<number, Extract<StreamItem, { kind: 'steps' }>>();
+    let turn = 0;
+    for (const msg of visibleMessages) {
+      if (msg.role === 'user') turn += 1;
+      const isInterrupt = isInterruptMessage(msg);
+      if (
+        msg.role !== 'user' &&
+        !isInterrupt &&
+        resolveMessageDisplay(msg, { compactSystemMessages }) === 'log'
+      ) {
+        let steps = stepsOfTurn.get(turn);
+        if (!steps) {
+          steps = { kind: 'steps', key: msg.id, logs: [], pending: [] };
+          stepsOfTurn.set(turn, steps);
+          items.push(steps);
+        }
+        steps.logs.push(msg);
+        if (dividerAfter.has(msg.id)) items.push({ kind: 'divider', afterId: msg.id });
+        continue;
+      }
+      if (isInterrupt) {
+        const interrupt = getInterruptForMessage(msg);
+        const steps = stepsOfTurn.get(turn);
+        if (steps && interrupt?.status === 'pending') {
+          steps.pending.push({
+            key: msg.id,
+            label: msg.metadata?.nodeLabel ?? interrupt.nodeId ?? m().playground.steps.pendingNode
+          });
+        }
+      }
+      items.push({ kind: 'message', message: msg });
+    }
+    return items;
+  });
+
+  /** Turns the person opened (true) or folded (false), against the default. */
+  let stepsOverride = $state<Record<string, boolean>>({});
+
+  function isStepsExpanded(key: string): boolean {
+    return stepsOverride[key] ?? fd.playground.expandSteps;
+  }
+
+  function toggleSteps(key: string): void {
+    stepsOverride = { ...stepsOverride, [key]: !isStepsExpanded(key) };
+  }
 
   const lastVisibleId = $derived(visibleMessages.at(-1)?.id);
 
@@ -306,20 +356,19 @@
         <span class="message-stream__loading-older-spinner"></span>
       </div>
     {/if}
-    {#each rows as row (row.kind === 'group' ? `group:${row.key}` : row.item.id)}
-      {#if row.kind === 'group'}
-        <details class="message-stream__log-group" open>
-          <summary class="message-stream__log-group-summary">
-            {m().playground.logGroup.summary({ count: row.items.length })}
-          </summary>
-          {#each row.items as message (message.id)}
-            {@render messageRow(message)}
-            {@render dividerRow(message.id)}
-          {/each}
-        </details>
+    {#each rows as row (row.kind === 'steps' ? `steps:${row.key}` : row.kind === 'divider' ? `divider:${row.afterId}` : row.message.id)}
+      {#if row.kind === 'steps'}
+        <StepsSummary
+          id="steps-{row.key}"
+          summary={summarizeSteps(row.logs, row.pending)}
+          expanded={isStepsExpanded(row.key)}
+          onToggle={() => toggleSteps(row.key)}
+        />
+      {:else if row.kind === 'divider'}
+        {@render dividerRow(row.afterId)}
       {:else}
-        {@render messageRow(row.item)}
-        {@render dividerRow(row.item.id)}
+        {@render messageRow(row.message)}
+        {@render dividerRow(row.message.id)}
       {/if}
     {/each}
 
@@ -345,9 +394,7 @@
     padding: var(--fd-space-3xl);
 
     /* Establish a containment context so message rows can adapt to the
-       stream's actual width (not the viewport's). The matching @container
-       queries (for .log-row) live below in the same <style> block, so
-       renaming the container only requires editing this file. */
+       stream's actual width (not the viewport's). */
     container-type: inline-size;
     container-name: fd-message-stream;
   }
@@ -395,96 +442,6 @@
     :global(.message-card) {
       animation: none;
     }
-  }
-
-  /* Container-query reshaping for log rows. Lives next to the
-     container-name declaration so the coupling is local — selectors are
-     :global because .log-row is a sibling component's class.
-
-       Tier 1 (≤720px): two rows — level/body, then tags/timestamp.
-       Tier 2 (≤480px): collapse further; body forces internal line break. */
-  @container fd-message-stream (max-width: 720px) {
-    :global(.log-row) {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      grid-template-areas:
-        'level body      body'
-        '.     tags      timestamp';
-      align-items: baseline;
-      row-gap: var(--fd-space-2xs);
-      column-gap: var(--fd-space-sm);
-    }
-    :global(.log-row__level) {
-      grid-area: level;
-    }
-    :global(.log-row__body) {
-      grid-area: body;
-      min-width: 0;
-    }
-    :global(.log-row__tags) {
-      grid-area: tags;
-      justify-self: start;
-    }
-    :global(.log-row__timestamp) {
-      grid-area: timestamp;
-      justify-self: end;
-    }
-  }
-
-  @container fd-message-stream (max-width: 480px) {
-    :global(.log-row) {
-      grid-template-columns: auto 1fr;
-      grid-template-areas:
-        'level body'
-        '.     tags';
-    }
-    :global(.log-row__text) {
-      flex-basis: 100%;
-      min-width: 0;
-    }
-    :global(.log-row__timestamp) {
-      display: none;
-    }
-    /* Drop the source + node chips: source is implied by the level
-       colour, node duplicates the hierarchy trail's last entry. Keeping
-       them at this width forced each chip onto its own line and made
-       log rows 5–6 lines tall. */
-    :global(.log-row__source),
-    :global(.log-row__node) {
-      display: none;
-    }
-    /* Reclaim horizontal room by tightening the row's own padding —
-       can't shrink the stream's padding from inside its own
-       container query. */
-    :global(.log-row) {
-      padding-left: var(--fd-space-xs);
-      padding-right: var(--fd-space-xs);
-    }
-  }
-
-  /* A run of adjacent log rows, collapsible. Muted, no chrome beyond a
-     hairline so it reads as one quiet block rather than a card. */
-  .message-stream__log-group {
-    margin: var(--fd-space-3xs) 0;
-  }
-
-  .message-stream__log-group-summary {
-    cursor: pointer;
-    padding: var(--fd-space-3xs) var(--fd-space-xl);
-    font-family: var(--fd-font-mono);
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
-    opacity: 0.8;
-    user-select: none;
-  }
-
-  .message-stream__log-group-summary:hover {
-    opacity: 1;
-  }
-
-  .message-stream__log-group-summary:focus-visible {
-    outline: 2px solid var(--fd-ring);
-    outline-offset: -2px;
   }
 
   /* Overlay, out of flow — its presence must not shift message layout, or it
