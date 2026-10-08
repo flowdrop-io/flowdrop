@@ -297,7 +297,6 @@ export const graphiteSkin: FlowDropSkin = {
     'field-textarea-min': '4rem',
     'field-focus-border': '#2457d6',
     'field-focus-ring': '0 0 0 3px #e8effd',
-    'field-help-size': '0.75rem',
     'field-tag-bg': 'transparent',
     'field-tag-pad': '0',
     'field-example-border-style': 'dashed',
