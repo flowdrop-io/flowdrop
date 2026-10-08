@@ -220,9 +220,7 @@
         onpointerup={handleResizerPointerUp}
         onpointercancel={handleResizerPointerUp}
         onkeydown={handleResizerKeyDown}
-      >
-        <div class="playground-studio__resizer-handle"></div>
-      </div>
+      ></div>
     {/if}
 
     <div
@@ -300,45 +298,39 @@
     display: none;
   }
 
-  /* Drag handle between the two panes */
+  /* Divider between the two panes: a 1px rule with an 8px invisible hit area
+     and a 2px accent line on hover, drag and keyboard focus. */
   .playground-studio__resizer {
-    width: 8px;
+    position: relative;
+    width: 1px;
     flex-shrink: 0;
     cursor: col-resize;
-    background-color: var(--fd-background);
-    border-right: 1px solid var(--fd-border);
-    border-left: 1px solid var(--fd-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background-color: var(--fd-border);
     touch-action: none;
     z-index: 1;
-    transition: background-color var(--fd-transition-normal);
+    outline: none;
   }
 
-  .playground-studio__resizer:hover,
-  .playground-studio__resizer--active {
-    background-color: var(--fd-primary-muted);
+  .playground-studio__resizer::before {
+    content: '';
+    position: absolute;
+    inset: 0 -4px;
   }
 
-  .playground-studio__resizer-handle {
-    width: 4px;
-    height: 48px;
-    background-color: var(--fd-border-strong);
-    border-radius: var(--fd-radius-sm);
-    transition:
-      background-color var(--fd-transition-normal),
-      transform var(--fd-transition-normal);
+  .playground-studio__resizer::after {
+    content: '';
+    position: absolute;
+    inset: 0 -1px;
+    background-color: var(--fd-ring);
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+    pointer-events: none;
   }
 
-  .playground-studio__resizer:hover .playground-studio__resizer-handle {
-    background-color: var(--fd-primary);
-    transform: scaleY(1.2);
-  }
-
-  .playground-studio__resizer--active .playground-studio__resizer-handle {
-    background-color: var(--fd-primary-hover);
-    transform: scaleY(1.4);
+  .playground-studio__resizer:hover::after,
+  .playground-studio__resizer:focus-visible::after,
+  .playground-studio__resizer--active::after {
+    opacity: 1;
   }
 
   /* Chat pane — fills remaining space */

@@ -352,9 +352,7 @@
           aria-valuemax={leftSidebarMaxWidth}
           aria-label={m().layout.resizeLeftSidebar}
           tabindex="0"
-        >
-          <div class="flowdrop-main-layout__divider-handle"></div>
-        </div>
+        ></div>
       {/if}
     {/if}
 
@@ -387,11 +385,7 @@
           aria-valuemax={bottomPanelMaxHeight}
           aria-label={m().layout.resizeBottomPanel}
           tabindex="0"
-        >
-          <div
-            class="flowdrop-main-layout__divider-handle flowdrop-main-layout__divider-handle--horizontal"
-          ></div>
-        </div>
+        ></div>
       {/if}
 
       <!-- Bottom Panel -->
@@ -418,9 +412,7 @@
         aria-valuemax={rightSidebarMaxWidth}
         aria-label={m().layout.resizeRightSidebar}
         tabindex="0"
-      >
-        <div class="flowdrop-main-layout__divider-handle"></div>
-      </div>
+      ></div>
     {/if}
 
     <!-- Right Sidebar -->
@@ -527,7 +519,6 @@
     width: var(--layout-left-sidebar-width);
     min-width: var(--layout-left-sidebar-width);
     border-right: 1px solid var(--fd-border);
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
   }
 
   /* Right Sidebar */
@@ -559,87 +550,59 @@
 
   /* When bottom panel is shown, main area should shrink */
   .flowdrop-main-layout__main-wrapper--with-bottom .flowdrop-main-layout__main {
-    height: calc(100% - var(--layout-bottom-panel-height) - 8px);
+    height: calc(100% - var(--layout-bottom-panel-height));
   }
 
-  /* Divider (Resize Handle) Base Styles */
+  /*
+   * Divider (resize handle). The visible 1px rule is the neighbouring panel's
+   * own border; the divider itself takes no space. It carries an 8px invisible
+   * hit area and draws a 2px accent line on hover, drag and keyboard focus.
+   */
   .flowdrop-main-layout__divider {
-    width: 8px;
+    width: 0;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     cursor: col-resize;
-    background-color: var(--fd-background);
     position: relative;
     z-index: 20;
     flex-shrink: 0;
-    transition: background-color 0.2s ease;
-    border-right: 1px solid var(--fd-border);
-    border-left: 1px solid var(--fd-border);
+    outline: none;
   }
 
-  .flowdrop-main-layout__divider:hover,
-  .flowdrop-main-layout__divider:focus {
-    background-color: var(--fd-primary-muted);
+  .flowdrop-main-layout__divider::before {
+    content: '';
+    position: absolute;
+    inset: 0 -4px;
   }
 
-  .flowdrop-main-layout__divider:focus {
-    background-color: var(--fd-primary-muted);
+  .flowdrop-main-layout__divider::after {
+    content: '';
+    position: absolute;
+    inset: 0 -1px;
+    background: var(--fd-ring);
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+    pointer-events: none;
   }
 
-  .flowdrop-main-layout__divider--active {
-    background-color: var(--fd-primary-muted);
-  }
-
-  /* Divider Handle (Visual Indicator) */
-  .flowdrop-main-layout__divider-handle {
-    width: 4px;
-    height: 48px;
-    background-color: var(--fd-border-strong);
-    border-radius: 4px;
-    transition:
-      background-color 0.2s ease,
-      transform 0.2s ease;
-  }
-
-  .flowdrop-main-layout__divider:hover .flowdrop-main-layout__divider-handle,
-  .flowdrop-main-layout__divider:focus .flowdrop-main-layout__divider-handle {
-    background-color: var(--fd-primary);
-    transform: scaleY(1.2);
-  }
-
-  .flowdrop-main-layout__divider--active .flowdrop-main-layout__divider-handle {
-    background-color: var(--fd-primary-hover);
-    transform: scaleY(1.4);
+  .flowdrop-main-layout__divider:hover::after,
+  .flowdrop-main-layout__divider:focus-visible::after,
+  .flowdrop-main-layout__divider--active::after {
+    opacity: 1;
   }
 
   /* Bottom Divider (Horizontal) */
   .flowdrop-main-layout__divider--bottom {
     width: 100%;
-    height: 8px;
+    height: 0;
     cursor: row-resize;
-    flex-shrink: 0;
-    border-top: 1px solid var(--fd-border);
-    border-bottom: 1px solid var(--fd-border);
-    border-left: none;
-    border-right: none;
   }
 
-  /* Horizontal Divider Handle */
-  .flowdrop-main-layout__divider-handle--horizontal {
-    width: 48px;
-    height: 4px;
+  .flowdrop-main-layout__divider--bottom::before {
+    inset: -4px 0;
   }
 
-  .flowdrop-main-layout__divider--bottom:hover .flowdrop-main-layout__divider-handle--horizontal,
-  .flowdrop-main-layout__divider--bottom:focus .flowdrop-main-layout__divider-handle--horizontal {
-    transform: scaleX(1.2);
-  }
-
-  .flowdrop-main-layout__divider--bottom.flowdrop-main-layout__divider--active
-    .flowdrop-main-layout__divider-handle--horizontal {
-    transform: scaleX(1.4);
+  .flowdrop-main-layout__divider--bottom::after {
+    inset: -1px 0;
   }
 
   /* Bottom Panel Styles */
