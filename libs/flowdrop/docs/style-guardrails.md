@@ -18,7 +18,7 @@ except `src/lib/styles/tokens.css` and `src/lib/skins/**` (where literals belong
 | `button`     | a raw `<button` element in `src/lib/components/**/*.svelte` outside `components/primitives/` |
 
 `var(--fd-x)`, `var(--fd-x, fallback)`, `currentColor`, `transparent`, `inherit` and
-`color-mix()` over tokens pass. Not covered: `src/routes/**` (dev app), stories and tests, inline
+`color-mix()` over tokens pass. Not covered: `src/routes/**` (dev app), stories, `src/lib/stories/**` (Storybook helpers) and tests, inline
 `style=""` attributes, and the `font` shorthand.
 
 ## The ratchet

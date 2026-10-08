@@ -143,7 +143,11 @@
 
   .flowdrop-ui-status-pill__icon {
     display: inline-flex;
-    font-size: 1.1em;
+    font-size: var(--fd-text-sm);
+  }
+
+  .flowdrop-ui-status-pill--sm .flowdrop-ui-status-pill__icon {
+    font-size: var(--fd-text-xs);
   }
 
   .flowdrop-ui-status-pill--running .flowdrop-ui-status-pill__icon {

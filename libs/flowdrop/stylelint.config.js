@@ -15,8 +15,9 @@ const tokenOnly = [
 
 /** @type {import('stylelint').Config} */
 export default {
-  // Token definitions and skins are where literals legitimately live.
-  ignoreFiles: ['src/lib/styles/tokens.css', 'src/lib/skins/**'],
+  // Token definitions and skins are where literals legitimately live. src/lib/stories/ is
+  // Storybook-only helper UI (the Tokens pages), not shipped in the package.
+  ignoreFiles: ['src/lib/styles/tokens.css', 'src/lib/skins/**', 'src/lib/stories/**'],
   overrides: [{ files: ['**/*.svelte'], customSyntax: 'postcss-html' }],
   rules: {
     // colour

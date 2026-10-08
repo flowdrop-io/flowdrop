@@ -4,9 +4,6 @@
     "colour": 2,
     "font-size": 2
   },
-  "src/lib/components/Button.svelte": {
-    "button": 1
-  },
   "src/lib/components/CanvasBanner.svelte": {
     "colour": 2,
     "font-size": 3
@@ -395,11 +392,6 @@
   },
   "src/lib/components/toast/DismissibleToast.svelte": {
     "button": 1
-  },
-  "src/lib/stories/WebMCPFakeAgent.svelte": {
-    "colour": 11,
-    "font-size": 3,
-    "radius": 3
   },
   "src/lib/styles/base.css": {
     "colour": 37,
