@@ -60,24 +60,22 @@
 
 <style>
   .interface-json-input {
-    flex: 1 1 auto;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-md) 0;
   }
 
   .interface-json-input__text {
-    flex: 1;
-    min-height: 80px;
-    resize: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
     padding: var(--fd-space-sm);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-md);
     background: var(--fd-background);
     color: var(--fd-foreground);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-family: var(--fd-font-mono);
     font-size: var(--fd-text-xs);
     line-height: 1.5;
   }

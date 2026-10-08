@@ -24,6 +24,9 @@
                            the deprecated `turn: message`
     - ?playground=form   -> as `none`, plus one required interface input and no
                            message port, so Test mode runs as a form (Run button)
+    - ?playground=chatform -> a chat bound to a `message` input, plus the required
+                           `topic` input: Test mode folds the inputs into a row
+                           above the composer
     - ?settingsDefaults=light|dark|auto -> seed host settings defaults
       before mounting, mirroring mountFlowDropApp({ settings }) — used by
       the settings persistence tests
@@ -557,7 +560,8 @@
     if (
       playgroundVariant !== 'none' &&
       playgroundVariant !== 'turn' &&
-      playgroundVariant !== 'form'
+      playgroundVariant !== 'form' &&
+      playgroundVariant !== 'chatform'
     ) {
       return baseWorkflow;
     }
@@ -587,6 +591,30 @@
             required: true
           }
         ]
+      };
+    }
+    if (playgroundVariant === 'chatform') {
+      withSettings.interface = {
+        inputs: [
+          { id: 'msg', dataType: 'string', bindings: [{ nodeId: 'node-input', portId: 'value' }] },
+          {
+            id: 'topic',
+            dataType: 'string',
+            bindings: [{ nodeId: 'node-input', portId: 'value' }],
+            required: true
+          }
+        ]
+      };
+      withSettings.playground = {
+        chat: {
+          message: 'msg',
+          history: null,
+          session_id: null,
+          message_id: null,
+          replies: [{ node_id: 'node-output', port: 'value' }],
+          sub_workflow_replies: false
+        },
+        source: 'settings'
       };
     }
     return withSettings;

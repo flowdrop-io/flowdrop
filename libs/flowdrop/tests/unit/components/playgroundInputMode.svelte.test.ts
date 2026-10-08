@@ -58,6 +58,7 @@ let turnResponse: { status: number; body: unknown } = {
     }
   }
 };
+let sessionMessages: unknown[] = [];
 let workflowsGetBody: unknown = { success: true, data: { id: 'wf', name: 'wf', nodes: [] } };
 let mounted: ReturnType<typeof mount> | null = null;
 const originalFetch = global.fetch;
@@ -84,7 +85,12 @@ beforeEach(() => {
       return json(turnResponse.status, turnResponse.body);
     }
     if (url.includes('/playground/sessions/s-1/messages')) {
-      return json(200, { success: true, data: [], sessionStatus: 'idle', hasOlder: false });
+      return json(200, {
+        success: true,
+        data: sessionMessages,
+        sessionStatus: 'idle',
+        hasOlder: false
+      });
     }
     if (url.includes('/playground/sessions/s-1'))
       return json(200, { success: true, data: SESSION });
@@ -99,6 +105,7 @@ afterEach(() => {
   document.body.innerHTML = '';
   global.fetch = originalFetch;
   turnResponse = { ...turnResponse, status: 200 };
+  sessionMessages = [];
   workflowsGetBody = { success: true, data: { id: 'wf', name: 'wf', nodes: [] } };
 });
 
@@ -161,8 +168,25 @@ function turnCalls(): Call[] {
   return calls.filter((c) => c.method === 'POST' && c.url.includes('/messages'));
 }
 
+/** Run: the inputs card's blue button, or the composer's when there is no card. */
 function runButton(target: HTMLElement): HTMLButtonElement | null {
-  return target.querySelector<HTMLButtonElement>('.chat-input__run-btn');
+  return (
+    target.querySelector<HTMLButtonElement>('.interface-input-form__actions button') ??
+    target.querySelector<HTMLButtonElement>('.chat-input__run-btn')
+  );
+}
+
+/** Type into an input or textarea the way a person does. */
+function type(field: HTMLInputElement | HTMLTextAreaElement | null, text: string): void {
+  field!.value = text;
+  field!.dispatchEvent(new Event('input', { bubbles: true }));
+  flushSync();
+}
+
+/** Open the folded Inputs row above a chat composer. */
+async function openInputs(target: HTMLElement): Promise<void> {
+  target.querySelector<HTMLButtonElement>('.control-panel__inputs-row')?.click();
+  await settle();
 }
 
 const message = {
@@ -233,7 +257,7 @@ describe('Playground input mode', () => {
     // Under the Run button, not in the banner.
     expect(fd.playground.launchError).toContain('Topic');
     expect(fd.playground.error).toBeNull();
-    expect(target.querySelector('.chat-input__launch-error')?.textContent).toContain('Topic');
+    expect(target.querySelector('.interface-input-form__error')?.textContent).toContain('Topic');
     expect(runButton(target)?.disabled).toBe(false);
   });
 
@@ -305,6 +329,157 @@ describe('Playground input mode', () => {
     await settle();
 
     expect(turnCalls()).toHaveLength(2);
+  });
+
+  it('form: Cmd+Enter and Ctrl+Enter run from inside a field; plain Enter does not', async () => {
+    const { target } = await render(workflowWith({ inputs: [topic], outputs: [reply] }));
+    const field = target.querySelector<HTMLInputElement>('.interface-input-form input');
+    type(field, 'cats');
+
+    const press = (init: KeyboardEventInit) =>
+      field!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, ...init }));
+    press({});
+    await settle();
+    expect(turnCalls()).toHaveLength(0);
+
+    press({ metaKey: true });
+    await settle();
+    expect(turnCalls()).toHaveLength(1);
+    expect(turnCalls()[0].body).toEqual({ inputs: { topic: 'cats' } });
+  });
+
+  it('form: Ctrl+Enter refuses a blank required input the way Run does', async () => {
+    const { target, fd } = await render(workflowWith({ inputs: [topic], outputs: [reply] }));
+    const field = target.querySelector<HTMLInputElement>('.interface-input-form input');
+
+    field!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true })
+    );
+    await settle();
+
+    expect(turnCalls()).toHaveLength(0);
+    expect(fd.playground.launchError).toContain('Topic');
+  });
+
+  it('form: an array typed as JSON is sent parsed, and bad JSON is named under Run', async () => {
+    const tags = { id: 'tags', name: 'Tags', dataType: 'array', bindings: [] };
+    const { target, fd } = await render(workflowWith({ inputs: [tags], outputs: [reply] }));
+    const box = target.querySelector<HTMLTextAreaElement>('.interface-input-form textarea');
+    expect(box).not.toBeNull();
+
+    type(box, '[1, 2');
+    runButton(target)?.click();
+    await settle();
+    expect(turnCalls()).toHaveLength(0);
+    expect(fd.playground.launchError).toContain('Tags');
+    expect(target.querySelector('.interface-input-form__error')?.textContent).toContain('Tags');
+
+    type(box, '[1, 2]');
+    runButton(target)?.click();
+    await settle();
+    expect(turnCalls()[0].body).toEqual({ inputs: { tags: [1, 2] } });
+  });
+
+  it('form: an example chip fills the field from the interface definition', async () => {
+    const tags = {
+      id: 'tags',
+      name: 'Tags',
+      dataType: 'array',
+      bindings: [],
+      examples: [['a', 'b']]
+    };
+    const { target } = await render(workflowWith({ inputs: [tags], outputs: [reply] }));
+
+    const chip = target.querySelector<HTMLButtonElement>('.flowdrop-ui-field__examples button');
+    expect(chip?.textContent).toContain('["a","b"]');
+    chip!.click();
+    await settle();
+
+    const box = target.querySelector<HTMLTextAreaElement>('.interface-input-form textarea');
+    expect(box?.value).toBe('["a","b"]');
+    runButton(target)?.click();
+    await settle();
+    expect(turnCalls()[0].body).toEqual({ inputs: { tags: ['a', 'b'] } });
+  });
+
+  it('form: Fill from last run and the earlier-runs list refill the fields without running', async () => {
+    const turn = (id: string, topicValue: string) => ({
+      id,
+      sessionId: 's-1',
+      role: 'user',
+      content: '',
+      timestamp: '2026-10-06T10:00:01Z',
+      sequenceNumber: Number(id.slice(-1)),
+      metadata: { inputs: { topic: topicValue, gone: 'x' } }
+    });
+    sessionMessages = [turn('m-1', 'dogs'), turn('m-2', 'cats')];
+    const { target } = await render(workflowWith({ inputs: [topic], outputs: [reply] }));
+
+    const field = () => target.querySelector<HTMLInputElement>('.interface-input-form input');
+    expect(field()?.value).toBe('');
+    const rows = [...target.querySelectorAll<HTMLButtonElement>('.interface-input-form__run')];
+    // Newest first; an input the interface no longer has is not listed.
+    expect(rows.map((row) => row.textContent)).toEqual([
+      expect.stringContaining('Topic: cats'),
+      expect.stringContaining('Topic: dogs')
+    ]);
+    expect(rows[0].textContent).not.toContain('gone');
+
+    const fill = [
+      ...target.querySelectorAll<HTMLButtonElement>('.interface-input-form button')
+    ].find((button) => button.textContent?.includes('Fill from last run'));
+    fill!.click();
+    await settle();
+    expect(field()?.value).toBe('cats');
+
+    rows[1].click();
+    await settle();
+    expect(field()?.value).toBe('dogs');
+    expect(turnCalls()).toHaveLength(0);
+  });
+
+  it('form: no earlier run, no Fill from last run', async () => {
+    const { target } = await render(workflowWith({ inputs: [topic], outputs: [reply] }));
+
+    expect(target.querySelector('.interface-input-form__runs')).toBeNull();
+    expect(target.textContent).not.toContain('Fill from last run');
+  });
+
+  it('form: no "Ready to run" empty state, and no resize handle', async () => {
+    const { target } = await render(workflowWith({ inputs: [topic], outputs: [reply] }));
+
+    expect(target.textContent).not.toContain('Ready to run');
+    expect(target.querySelector('[role="separator"]')).toBeNull();
+  });
+
+  it('chat + form: the inputs open from the folded row, and a refused Run opens them', async () => {
+    const plain = (id: string) => ({ id, dataType: 'string', bindings: [] });
+    const { target, fd } = await render(
+      workflowWith(
+        { inputs: [plain('msg'), topic], outputs: [] },
+        {
+          chat: {
+            message: 'msg',
+            history: null,
+            session_id: null,
+            message_id: null,
+            replies: [{ node_id: 'n', port: 'p' }],
+            sub_workflow_replies: false
+          }
+        }
+      )
+    );
+    const row = target.querySelector<HTMLButtonElement>('.control-panel__inputs-row');
+    expect(row?.getAttribute('aria-expanded')).toBe('false');
+    expect(row?.textContent).toContain('0 of 1 filled');
+
+    fd.playground.setLaunchError('Fill in the required inputs: Topic');
+    await settle();
+    expect(row?.getAttribute('aria-expanded')).toBe('true');
+    expect(target.querySelector('.interface-input-form')).not.toBeNull();
+
+    type(target.querySelector<HTMLInputElement>('.interface-input-form input'), 'cats');
+    expect(row?.textContent).toContain('1 of 1 filled');
   });
 
   it('legacy: an interface without turn ports keeps the chat box', async () => {
@@ -389,8 +564,14 @@ describe('Playground input mode with Playground settings', () => {
     expect(fd.playground.inputMode).toBe('chat');
     expect(fd.playground.chatBinding?.source).toBe('settings');
     expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    // Folded into one row above the composer until opened.
+    expect(target.querySelector('.interface-input-form')).toBeNull();
+    expect(target.querySelector('.control-panel__inputs-row')?.textContent).toContain('Inputs');
+    await openInputs(target);
     const form = target.querySelector('.interface-input-form');
     expect(form?.textContent).toContain('Topic');
+    // The composer's Send takes the turn: the card has no Run of its own.
+    expect(form?.querySelector('.interface-input-form__actions')).toBeNull();
     expect(form?.textContent).not.toContain('msg');
     expect(form?.textContent).not.toContain('hist');
   });

@@ -1,17 +1,22 @@
 <!--
   FormPrompt Component
   
-  Renders a JSON Schema-based form for form-type interrupts.
-  Wraps the existing SchemaForm component for consistent form handling.
+  Renders a JSON Schema-based form for form-type interrupts: the same card of
+  fields the Playground's inputs form uses (InputFields), inside the
+  interrupt's "needs you" frame, with a primary Submit. An array or object
+  field is typed as JSON and sent parsed.
   Shows the submitted form data when resolved.
   Styled with BEM syntax.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
-  import SchemaForm from '../SchemaForm.svelte';
+  import Card from '../primitives/Card.svelte';
+  import Button from '../primitives/Button.svelte';
+  import InputFields from '../playground/InputFields.svelte';
   import type { FormConfig } from '../../types/interrupt.js';
-  import { getMessages, m, mergeMessages, setMessages } from '$lib/messages/index.js';
+  import { m } from '$lib/messages/index.js';
+  import { mergeWithDefaults } from '../../utils/formMerge.js';
 
   /**
    * Component props
@@ -61,14 +66,55 @@
   function handleChange(values: Record<string, unknown>): void {
     if (isResolved || isSubmitting) return;
     formValues = values;
+    problem = null;
   }
 
+  /** Why the last Submit did not go out (a blank required field, bad JSON). */
+  let problem = $state<string | null>(null);
+
+  const requiredKeys = $derived(config.schema.required ?? []);
+  const title = (key: string): string =>
+    ((config.schema.properties?.[key] as Record<string, unknown> | undefined)?.title as string) ??
+    key;
+
   /**
-   * Handle form submission
+   * Handle form submission: defaults filled in, array and object fields
+   * parsed from their JSON text.
    */
-  function handleSave(values: Record<string, unknown>): void {
+  function handleSave(): void {
     if (isResolved || isSubmitting) return;
-    onSubmit(values);
+    const merged = mergeWithDefaults(config.schema, config.defaultValues ?? {}, formValues);
+    const invalid: string[] = [];
+    for (const [key, property] of Object.entries(config.schema.properties ?? {})) {
+      const value = merged[key];
+      if (
+        (property.type === 'array' || property.type === 'object') &&
+        typeof value === 'string' &&
+        value.trim() !== ''
+      ) {
+        try {
+          merged[key] = JSON.parse(value);
+        } catch {
+          invalid.push(title(key));
+        }
+      }
+    }
+    const missing = requiredKeys.filter(
+      (key) => merged[key] === undefined || merged[key] === null || merged[key] === ''
+    );
+    if (missing.length > 0 || invalid.length > 0) {
+      problem = [
+        missing.length > 0
+          ? interrupt.form.missingRequired({ names: missing.map(title).join(', ') })
+          : null,
+        invalid.length > 0 ? interrupt.form.invalidJson({ names: invalid.join(', ') }) : null
+      ]
+        .filter((line) => line !== null)
+        .join('. ');
+      return;
+    }
+    problem = null;
+    onSubmit(merged);
   }
 
   /**
@@ -81,21 +127,6 @@
     if (typeof value === 'object') return JSON.stringify(value, null, 2);
     return String(value);
   }
-
-  // Scope a messages override for the inner SchemaForm so its Save button reads
-  // the interrupt-specific submit label (e.g. "Submit"), and the cancel button
-  // remains empty — historical behavior that effectively hid it. Avoids passing
-  // deprecated `saveLabel` / `cancelLabel` props on SchemaForm.
-  // Merges over the parent's tree so consumer-supplied overrides higher up
-  // (e.g. translations from <FlowDrop messages={...} />) still apply.
-  const parentMessages = getMessages();
-  const scopedMessages = $derived.by(() => {
-    const base = parentMessages();
-    return mergeMessages(base, {
-      form: { schema: { save: base.interrupt.form.submit, cancel: '' } }
-    });
-  });
-  setMessages(() => scopedMessages);
 </script>
 
 <div
@@ -116,17 +147,22 @@
 
   <!-- Form -->
   {#if !isResolved}
-    <div class="form-prompt__form-wrapper">
-      <SchemaForm
+    <Card padding="md">
+      <InputFields
         schema={config.schema}
         values={formValues}
         onChange={handleChange}
-        onSave={handleSave}
-        showActions={true}
-        loading={isSubmitting}
-        disabled={isResolved}
+        disabled={isSubmitting}
       />
-    </div>
+      {#if problem}
+        <p class="form-prompt__problem" role="alert">{problem}</p>
+      {/if}
+      {#snippet footer()}
+        <Button variant="primary" loading={isSubmitting} onclick={handleSave}>
+          {interrupt.form.submit}
+        </Button>
+      {/snippet}
+    </Card>
   {:else}
     <!-- Resolved state: Show submitted values as read-only -->
     <div class="form-prompt__resolved-values">
@@ -193,11 +229,10 @@
     font-size: var(--fd-interrupt-font-error);
   }
 
-  .form-prompt__form-wrapper {
-    background-color: var(--fd-muted);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    padding: var(--fd-space-xl);
+  .form-prompt__problem {
+    margin: var(--fd-space-sm) 0 0;
+    color: var(--fd-error);
+    font-size: var(--fd-text-xs);
   }
 
   /* Resolved values - neutral blue theme */

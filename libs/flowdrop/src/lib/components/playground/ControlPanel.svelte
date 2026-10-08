@@ -5,16 +5,23 @@
   (Run/Stop via ChatInput), and toolbar buttons (Pipeline toggle, Refresh,
   Logs). Owns the session chip popover; delegates input behaviour to the
   shared ChatInput primitive.
+
+  A workflow whose interface has inputs but no chat is form-first: the inputs
+  card (InterfaceInputForm) is the panel, with its own Run, and there is no
+  composer. With a chat as well, the inputs fold into one row above the
+  composer that opens the same card.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from '../primitives/Button.svelte';
   import ChatInput from './ChatInput.svelte';
   import InterfaceInputForm from './InterfaceInputForm.svelte';
-  import InterfaceJsonInput from './InterfaceJsonInput.svelte';
   import type { WorkflowInterfaceEntry } from '../../types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
+  import { resolveRunAction } from '../../playground/runAction.js';
+  import { isCommandInput } from '../../playground/commands/index.js';
   import type { CommandOutcome } from '../../playground/commands/index.js';
 
   const fd = getInstance();
@@ -117,6 +124,65 @@
   }: Props = $props();
 
   const cp = $derived(m().playground.controlPanel);
+  const inputForm = $derived(m().playground.inputForm);
+  const actions = $derived(m().playground.actions);
+  const chatLabels = $derived(m().playground.chat);
+
+  /** The inputs are the panel: a form and Run, no composer. */
+  const formFirst = $derived(formEntries.length > 0 && !showChatInput);
+  /** Chat and inputs both: the inputs fold into a row above the composer. */
+  const foldedInputs = $derived(formEntries.length > 0 && showChatInput);
+
+  let inputsOpen = $state(false);
+  /** `beforeSend` is running (a save before the run). */
+  let preparing = $state(false);
+
+  // A refused Run is named under the inputs, so open them for it.
+  $effect(() => {
+    if (foldedInputs && fd.playground.launchError) inputsOpen = true;
+  });
+
+  const filledCount = $derived(
+    formEntries.filter((entry) => {
+      const value = formValues[entry.id];
+      return value !== undefined && value !== '';
+    }).length
+  );
+
+  async function runForm(): Promise<void> {
+    if (!fd.playground.canRun || preparing) return;
+    if (beforeSend) {
+      preparing = true;
+      try {
+        if (!(await beforeSend())) return;
+      } finally {
+        preparing = false;
+      }
+      if (!fd.playground.canRun) return;
+    }
+    if (awaitEnableRun) fd.playground.lockRunUntilEnabled();
+
+    const action = resolveRunAction({
+      canLaunch: onRunWorkflow != null,
+      predefinedMessage,
+      defaultMessage: chatLabels.predefinedRun
+    });
+    if (action.kind === 'launch') {
+      onRunWorkflow?.();
+      return;
+    }
+    onSendMessage(action.content);
+    if (awaitEnableRun && isCommandInput(action.content)) fd.playground.releaseRunLock();
+  }
+
+  const runTitle = $derived(
+    fd.playground.canRun
+      ? saveFirst
+        ? actions.saveAndRunTitle
+        : actions.runTitle
+      : actions.runWaitingTitle
+  );
+
   const logsTitle = $derived(fd.playground.showLogs ? cp.hideLogs : cp.showLogs);
 
   let sessionDropdownOpen = $state(false);
@@ -163,7 +229,12 @@
   }
 </script>
 
-<section class="control-panel" class:control-panel--notice={!!notice} {style}>
+<section
+  class="control-panel"
+  class:control-panel--notice={!!notice}
+  class:control-panel--form={formFirst}
+  {style}
+>
   {#if showSessionHeader}
     <header class="control-panel__header">
       <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
@@ -310,46 +381,117 @@
     </p>
   {/if}
 
-  {#if formEntries.length > 0 && formJson}
-    <InterfaceJsonInput
-      values={formValues}
-      onChange={(values) => onFormChange?.(values)}
-      disabled={fd.playground.isExecuting}
-    />
-  {:else if formEntries.length > 0}
+  {#if formFirst}
     <InterfaceInputForm
       entries={formEntries}
       values={formValues}
       onChange={(values) => onFormChange?.(values)}
+      json={formJson}
       disabled={fd.playground.isExecuting}
+      onRun={showRunButton ? runForm : undefined}
+      onStop={onStopExecution}
+      running={fd.playground.isExecuting}
+      runDisabled={!fd.playground.canRun}
+      runBusy={preparing}
+      runLabel={saveFirst ? actions.saveAndRun : actions.run}
+      {runTitle}
+      error={fd.playground.launchError}
+      notice={commandFeedback?.message ?? null}
     />
+  {:else if foldedInputs}
+    <div class="control-panel__inputs">
+      <Button
+        variant="ghost"
+        class="control-panel__inputs-row"
+        aria-expanded={inputsOpen}
+        title={inputsOpen ? inputForm.foldedHide : inputForm.foldedShow}
+        onclick={() => (inputsOpen = !inputsOpen)}
+      >
+        <Icon icon={inputsOpen ? 'mdi:chevron-down' : 'mdi:chevron-right'} />
+        <span class="control-panel__inputs-title">{inputForm.folded}</span>
+        <span class="control-panel__inputs-count">
+          {inputForm.foldedCount({ filled: filledCount, total: formEntries.length })}
+        </span>
+      </Button>
+      {#if inputsOpen}
+        <InterfaceInputForm
+          entries={formEntries}
+          values={formValues}
+          onChange={(values) => onFormChange?.(values)}
+          json={formJson}
+          disabled={fd.playground.isExecuting}
+        />
+      {/if}
+    </div>
   {/if}
 
-  <ChatInput
-    showTextarea={showChatInput}
-    {showRunButton}
-    {placeholder}
-    {predefinedMessage}
-    {onSendMessage}
-    {onStopExecution}
-    {onRunWorkflow}
-    {awaitEnableRun}
-    {enableCommands}
-    {commandFeedback}
-    {onDismissCommandFeedback}
-    {sessionOptional}
-    {beforeSend}
-    {saveFirst}
-  />
+  {#if !formFirst || !showRunButton}
+    <ChatInput
+      showTextarea={showChatInput}
+      {showRunButton}
+      {placeholder}
+      {predefinedMessage}
+      {onSendMessage}
+      {onStopExecution}
+      {onRunWorkflow}
+      {awaitEnableRun}
+      {enableCommands}
+      {commandFeedback}
+      {onDismissCommandFeedback}
+      {sessionOptional}
+      {beforeSend}
+      {saveFirst}
+    />
+  {/if}
 </section>
 
 <style>
   .control-panel {
     display: flex;
+    flex: none;
     flex-direction: column;
     min-height: 0;
     background-color: var(--fd-background);
     border-top: 1px solid var(--fd-border);
+  }
+
+  /* Form-first: the card sits on top of the conversation and scrolls itself
+     when the inputs are many, leaving the output its share. */
+  .control-panel--form {
+    flex: 0 1 auto;
+    max-height: 60%;
+    overflow-y: auto;
+    border-top: none;
+    border-bottom: 1px solid var(--fd-border);
+  }
+
+  .control-panel__inputs {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    max-height: 50vh;
+  }
+
+  .control-panel__inputs :global(.control-panel__inputs-row) {
+    width: 100%;
+    justify-content: flex-start;
+    border-radius: 0;
+    padding: 0 var(--fd-space-xl);
+  }
+
+  .control-panel__inputs :global(.control-panel__inputs-row .flowdrop-ui-button__label) {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+  }
+
+  .control-panel__inputs-title {
+    font-weight: 600;
+  }
+
+  .control-panel__inputs-count {
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
   }
 
   /* A notice is taller than the 140px the split gives the panel by default;

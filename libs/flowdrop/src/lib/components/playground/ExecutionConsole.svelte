@@ -55,8 +55,7 @@
     {compactSystemMessages}
     {onInterruptResolved}
     {onLoadOlder}
-    welcome={sessionOptional ? readyState : welcomeState}
-    emptySession={readyState}
+    welcome={sessionOptional ? undefined : welcomeState}
   />
 </section>
 
@@ -71,14 +70,6 @@
         {ec.newSession}
       </button>
     {/if}
-  </div>
-{/snippet}
-
-{#snippet readyState()}
-  <div class="execution-console__placeholder">
-    <Icon icon="mdi:play-circle-outline" class="execution-console__placeholder-icon" />
-    <h2 class="execution-console__placeholder-title">{ec.readyTitle}</h2>
-    <p class="execution-console__placeholder-text">{ec.readyText}</p>
   </div>
 {/snippet}
 

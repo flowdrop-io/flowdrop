@@ -2,8 +2,8 @@
   PlaygroundSurface
 
   The Playground's conversation surface: ExecutionConsole (top) and
-  ControlPanel (bottom) with a draggable vertical resizer between them, and
-  the session and run wiring around them. It holds no layout opinion of its
+  ControlPanel (bottom, or on top for a form-first workflow) and the session
+  and run wiring around them. It holds no layout opinion of its
   own beyond that: no pipeline panel, no minimum width.
 
   Two kinds of caller:
@@ -220,72 +220,6 @@
     });
   });
 
-  // Vertical resizer state for the ExecutionConsole ↔ ControlPanel split.
-  let playgroundContentEl = $state<HTMLElement | null>(null);
-  let controlPanelHeight = $state(140);
-  let isVerticalResizing = $state(false);
-  let containerHeight = $state(0);
-  let dragContainerBottom = 0;
-
-  $effect(() => {
-    if (!playgroundContentEl) return;
-    const observer = new ResizeObserver(([entry]) => {
-      containerHeight = entry.contentRect.height;
-    });
-    observer.observe(playgroundContentEl);
-    return () => observer.disconnect();
-  });
-
-  $effect(() => {
-    if (containerHeight > 0) {
-      controlPanelHeight = clampControlPanelHeight(untrack(() => controlPanelHeight));
-    }
-  });
-
-  // A form arriving with the workflow interface needs room beside the
-  // composer: grow the panel once (the user can still drag it back).
-  let formRoomGiven = false;
-  $effect(() => {
-    if (fd.playground.interfaceFormEntries.length === 0 || formRoomGiven) return;
-    formRoomGiven = true;
-    untrack(() => {
-      controlPanelHeight = clampControlPanelHeight(Math.max(controlPanelHeight, 320));
-    });
-  });
-
-  const maxControlPanelHeight = $derived(containerHeight ? Math.round(containerHeight * 0.6) : 600);
-
-  function clampControlPanelHeight(h: number): number {
-    return Math.min(Math.max(h, 140), maxControlPanelHeight);
-  }
-
-  function handleVerticalResizerPointerDown(e: PointerEvent) {
-    if (playgroundContentEl)
-      dragContainerBottom = playgroundContentEl.getBoundingClientRect().bottom;
-    isVerticalResizing = true;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }
-
-  function handleVerticalResizerPointerMove(e: PointerEvent) {
-    if (!isVerticalResizing) return;
-    controlPanelHeight = clampControlPanelHeight(dragContainerBottom - e.clientY);
-  }
-
-  function handleVerticalResizerPointerUp() {
-    isVerticalResizing = false;
-  }
-
-  function handleVerticalResizerKeyDown(e: KeyboardEvent) {
-    const step = e.shiftKey ? 50 : 20;
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      controlPanelHeight = clampControlPanelHeight(controlPanelHeight + step);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      controlPanelHeight = clampControlPanelHeight(controlPanelHeight - step);
-    }
-  }
-
   onMount(() => {
     if (endpointConfig) fd.api.configure(endpointConfig, authProvider);
     // A retained session belongs to the workflow it was started on.
@@ -477,7 +411,7 @@
       </div>
     {/if}
 
-    <div class="playground__content" bind:this={playgroundContentEl}>
+    <div class="playground__content">
       {#if fd.playground.isLoading && !fd.playground.currentSession}
         <div class="playground__loading">
           <Icon icon="mdi:loading" class="playground__loading-icon" />
@@ -496,30 +430,7 @@
           onLoadOlder={() => fd.runs.loadOlderMessages()}
         />
 
-        <!-- Focusable ARIA splitter: keyboard/pointer handlers drive the resize -->
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <div
-          class="playground__vertical-resizer"
-          class:playground__vertical-resizer--active={isVerticalResizing}
-          role="separator"
-          aria-orientation="horizontal"
-          aria-valuenow={Math.round(controlPanelHeight)}
-          aria-valuemin={140}
-          aria-valuemax={maxControlPanelHeight}
-          aria-label="Resize execution console"
-          tabindex="0"
-          onpointerdown={handleVerticalResizerPointerDown}
-          onpointermove={handleVerticalResizerPointerMove}
-          onpointerup={handleVerticalResizerPointerUp}
-          onpointercancel={handleVerticalResizerPointerUp}
-          onkeydown={handleVerticalResizerKeyDown}
-        >
-          <div class="playground__vertical-resizer-handle"></div>
-        </div>
-
         <ControlPanel
-          style="height: {controlPanelHeight}px; flex-shrink: 0;"
           {isPipelinePanelOpen}
           {onTogglePanel}
           isRefreshing={fd.runs.isRefreshing}
@@ -646,44 +557,9 @@
     flex-direction: column;
   }
 
-  .playground__vertical-resizer {
-    height: 8px;
-    flex-shrink: 0;
-    cursor: row-resize;
-    background-color: var(--fd-background);
-    border-top: 1px solid var(--fd-border);
-    border-bottom: 1px solid var(--fd-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    touch-action: none;
-    z-index: 1;
-    transition: background-color var(--fd-transition-normal);
-  }
-
-  .playground__vertical-resizer:hover,
-  .playground__vertical-resizer--active {
-    background-color: var(--fd-primary-muted);
-  }
-
-  .playground__vertical-resizer-handle {
-    width: 48px;
-    height: 4px;
-    background-color: var(--fd-border-strong);
-    border-radius: var(--fd-radius-sm);
-    transition:
-      background-color var(--fd-transition-normal),
-      transform var(--fd-transition-normal);
-  }
-
-  .playground__vertical-resizer:hover .playground__vertical-resizer-handle {
-    background-color: var(--fd-primary);
-    transform: scaleX(1.1);
-  }
-
-  .playground__vertical-resizer--active .playground__vertical-resizer-handle {
-    background-color: var(--fd-primary-hover);
-    transform: scaleX(1.2);
+  /* A form-first panel (the inputs card) sits above the conversation. */
+  .playground__content > :global(.control-panel--form) {
+    order: -1;
   }
 
   .playground__loading {

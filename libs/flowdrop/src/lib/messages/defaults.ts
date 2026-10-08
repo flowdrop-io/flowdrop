@@ -170,6 +170,8 @@ export const defaultMessages = {
 
     form: {
       submit: 'Submit',
+      missingRequired: ({ names }: { names: string }) => `Fill in the required fields: ${names}`,
+      invalidJson: ({ names }: { names: string }) => `Not valid JSON for its type: ${names}`,
       // Boolean and empty-cell rendering in the submitted-values readout.
       yes: 'Yes',
       no: 'No',
@@ -454,7 +456,18 @@ export const defaultMessages = {
     // The form a workflow's interface inputs render as (inputs without a chat
     // turn; the session fills the others).
     inputForm: {
-      title: 'Workflow inputs',
+      title: 'Inputs',
+      fillFromLast: 'Fill from last run',
+      fillFromLastTitle: 'Fill the inputs with what the last run was started with',
+      runsTitle: 'Earlier runs',
+      runsLabel: 'Earlier runs of this session',
+      useRun: ({ summary }: { summary: string }) => `Fill the inputs with: ${summary}`,
+      folded: 'Inputs',
+      foldedCount: ({ filled, total }: { filled: number; total: number }) =>
+        `${filled} of ${total} filled`,
+      foldedShow: 'Show the inputs',
+      foldedHide: 'Hide the inputs',
+      jsonHint: 'JSON',
       missingRequired: ({ names }: { names: string }) => `Fill in the required inputs: ${names}`,
       invalidJson: ({ names }: { names: string }) => `Not valid JSON for its type: ${names}`
     },
@@ -630,7 +643,9 @@ export const defaultMessages = {
       noExecutionTitle: 'No execution yet',
       noExecutionText:
         'Create or select a session below, then run your workflow to see execution output here.',
+      /** @deprecated The "Ready to run" state is gone; an empty session shows nothing. */
       readyTitle: 'Ready to run',
+      /** @deprecated See `readyTitle`. */
       readyText:
         'Use the controls below to start the workflow. Output and interactive prompts will appear here.',
       newSession: 'New session'
