@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The docked Playground's header in Test mode is two controls: a **history
+  chip** and a **⋯ menu**. The chip names the open conversation (and the run,
+  once one is picked) and lists the Conversations (the sessions the Playground
+  created, plus **New conversation**) and the Runs of the open one, newest
+  first, with runs of an older workflow version marked. Picking a conversation
+  opens it; picking a run shows it (`fd.playground.pinExecution`, so the canvas
+  follows). The menu holds **Show steps**, **JSON view** (a workflow with an
+  input form: edit the inputs as JSON), **Playground settings** (the
+  inspector's Playground tab), **Refresh** and **Reset stuck session** (only
+  for a backend that can reset). Both are keyboard menus: arrow keys, Home/End,
+  Escape closes and returns focus. These replace the control panel's session
+  chip, Refresh and Logs buttons in the dock, and the settings link on the
+  "no chat yet" notice (the friendly line stays). Hosts can add entries to the
+  ⋯ menu through the new `menuItems` snippet of `DockedPlayground` (buttons with
+  `class="header-menu__item"`, `role="menuitem"`). The standalone Playground
+  keeps its header. New: `PlaygroundSurface` props `historyHeader` and
+  `menuItems`; `historyGroups()` (`utils/playgroundHistory`); messages
+  `playground.header` and `playground.jsonInput`. `controlPanel.openPlaygroundSettings`
+  is no longer shown and `ControlPanel`'s `onNoticeAction` prop is gone.
+
 - Message-to-node links and a Last run tab, in Test mode. A reply's "via
   <node>" label becomes a link when the node is on the canvas now (messages from
   a deleted node or a sub-workflow stay plain). Clicking it selects the node,

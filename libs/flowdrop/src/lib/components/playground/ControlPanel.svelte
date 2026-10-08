@@ -11,6 +11,7 @@
   import Icon from '@iconify/svelte';
   import ChatInput from './ChatInput.svelte';
   import InterfaceInputForm from './InterfaceInputForm.svelte';
+  import InterfaceJsonInput from './InterfaceJsonInput.svelte';
   import type { WorkflowInterfaceEntry } from '../../types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
@@ -62,12 +63,8 @@
      * has no chat until somebody sets it up. Absent renders nothing.
      */
     notice?: string;
-    /**
-     * A way from the notice to where it says to go (the workflow's Playground
-     * settings). Offered by a surface that has such a place: the docked
-     * Playground in the editor.
-     */
-    onNoticeAction?: () => void;
+    /** Show the form's values as JSON instead of the typed form. */
+    formJson?: boolean;
     /** Current form values, keyed by entry id. */
     formValues?: Record<string, unknown>;
     /** Called with the complete form values on every change. */
@@ -107,7 +104,7 @@
     placeholder,
     formEntries = [],
     notice,
-    onNoticeAction,
+    formJson = false,
     formValues = {},
     onFormChange,
     showSessionHeader = true,
@@ -310,15 +307,16 @@
     <p class="control-panel__notice" role="note">
       <Icon icon="mdi:information-outline" />
       <span>{notice}</span>
-      {#if onNoticeAction}
-        <button type="button" class="control-panel__notice-action" onclick={onNoticeAction}>
-          {cp.openPlaygroundSettings}
-        </button>
-      {/if}
     </p>
   {/if}
 
-  {#if formEntries.length > 0}
+  {#if formEntries.length > 0 && formJson}
+    <InterfaceJsonInput
+      values={formValues}
+      onChange={(values) => onFormChange?.(values)}
+      disabled={fd.playground.isExecuting}
+    />
+  {:else if formEntries.length > 0}
     <InterfaceInputForm
       entries={formEntries}
       values={formValues}
@@ -370,19 +368,6 @@
     color: var(--fd-muted-foreground);
     font-size: var(--fd-text-xs);
     line-height: 1.5;
-  }
-
-  .control-panel__notice-action {
-    flex: none;
-    margin-left: auto;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--fd-primary);
-    font: inherit;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    cursor: pointer;
   }
 
   .control-panel__notice :global(svg) {

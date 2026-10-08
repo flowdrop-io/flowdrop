@@ -145,9 +145,9 @@ async function gotoTestMode(page: Page): Promise<void> {
 
 /** Open the history chip and pick a session. */
 async function openSession(page: Page, name: string): Promise<void> {
-  await page.locator('.control-panel__session-chip').click();
-  await page.getByRole('menuitem', { name }).click();
-  await expect(page.locator('.control-panel__session-chip')).toContainText(name);
+  await page.getByTestId('playground-history').click();
+  await page.getByRole('menuitemradio', { name }).click();
+  await expect(page.getByTestId('playground-history')).toContainText(name);
 }
 
 /** Edit a node's config, so the workflow has unsaved edits, and go back to the Playground. */
@@ -172,10 +172,10 @@ test.describe('Test mode: sessions and freshness', () => {
     await stubBackend(page);
     await gotoTestMode(page);
 
-    await page.locator('.control-panel__session-chip').click();
+    await page.getByTestId('playground-history').click();
 
-    await expect(page.getByRole('menuitem', { name: 'Marked session' })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: 'Other session' })).toHaveCount(0);
+    await expect(page.getByRole('menuitemradio', { name: 'Marked session' })).toBeVisible();
+    await expect(page.getByRole('menuitemradio', { name: 'Other session' })).toHaveCount(0);
   });
 
   test('a conversation loaded from the server shows a divider where the version changed', async ({
@@ -230,7 +230,7 @@ test.describe('Test mode: sessions and freshness', () => {
     // Saved: the button is plain again, the conversation is where it was, and a
     // divider marks the new version below it.
     await expect(sendButton(page)).toHaveText('Send');
-    await expect(page.locator('.control-panel__session-chip')).toContainText('Marked session');
+    await expect(page.getByTestId('playground-history')).toContainText('Marked session');
     await expect(dock(page).getByText('assistant 4')).toBeVisible();
     await expect(dock(page).getByTestId('version-divider')).toHaveCount(2);
   });

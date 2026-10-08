@@ -16,10 +16,11 @@
 -->
 
 <script lang="ts">
-  import { onMount, onDestroy, untrack } from 'svelte';
+  import { onMount, onDestroy, untrack, type Snippet } from 'svelte';
   import Icon from '@iconify/svelte';
   import ExecutionConsole from './ExecutionConsole.svelte';
   import ControlPanel from './ControlPanel.svelte';
+  import PlaygroundHeader from './PlaygroundHeader.svelte';
   import type { Workflow } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
   import type { AuthProvider } from '../../types/auth.js';
@@ -66,7 +67,7 @@
     followWorkflow?: boolean;
     /**
      * Where the workflow's Playground settings are, for a caller that has such
-     * a place (the editor). Offered as a link on the "no chat yet" notice.
+     * a place (the editor). Offered in the history header's ⋯ menu.
      */
     onOpenSettings?: () => void;
     /**
@@ -90,6 +91,18 @@
      * @default false
      */
     playgroundSessionsOnly?: boolean;
+    /**
+     * The docked Playground's header: a history chip (Conversations and Runs)
+     * and a ⋯ menu, on top, in place of the session header the control panel
+     * carries (session chip, Refresh, Logs).
+     * @default false
+     */
+    historyHeader?: boolean;
+    /**
+     * Extra entries at the end of the ⋯ menu of the history header. See
+     * PlaygroundHeader's `menuItems`.
+     */
+    menuItems?: Snippet<[{ close: () => void }]>;
   }
 
   let {
@@ -110,7 +123,9 @@
     onOpenSettings,
     sessionOptional = false,
     onSave,
-    playgroundSessionsOnly = false
+    playgroundSessionsOnly = false,
+    historyHeader = false,
+    menuItems
   }: Props = $props();
 
   // Resolve/provide once at init; the instance prop is a fixed mount-time choice.
@@ -135,6 +150,9 @@
     if (isPlaygroundChatHalfSet(resolved.binding)) return messages().playground.chatHalfSet;
     return undefined;
   });
+
+  /** The form shown as JSON (the header menu's JSON view). */
+  let jsonView = $state(false);
 
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
@@ -445,6 +463,16 @@
   class:playground--modal={mode === 'modal'}
 >
   <main class="playground__main">
+    {#if historyHeader}
+      <PlaygroundHeader
+        hasForm={fd.playground.interfaceFormEntries.length > 0}
+        {jsonView}
+        onToggleJsonView={() => (jsonView = !jsonView)}
+        {onOpenSettings}
+        {menuItems}
+      />
+    {/if}
+
     {#if fd.playground.error}
       <div class="playground__error">
         <Icon icon="mdi:alert-circle" />
@@ -527,10 +555,10 @@
           {sessionOptional}
           beforeSend={onSave ? () => fd.runs.saveFirst() : undefined}
           saveFirst={fd.runs.needsSave}
-          onNoticeAction={onOpenSettings}
+          formJson={jsonView}
           formValues={fd.playground.formValues}
           onFormChange={(values) => fd.playground.setFormValues(values)}
-          showSessionHeader={config.showSessionHeader ?? true}
+          showSessionHeader={historyHeader ? false : (config.showSessionHeader ?? true)}
           showNewSessionButton={config.showNewSessionButton ?? true}
           showSessionList={config.showSessionList ?? true}
         />

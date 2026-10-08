@@ -558,6 +558,37 @@ export const defaultMessages = {
         'Use the controls below to start the workflow. Output and interactive prompts will appear here.',
       newSession: 'New session'
     },
+    // The docked Playground's header (Test mode): the history chip and the
+    // overflow menu. One line under each action says when it is needed.
+    header: {
+      history: 'Conversation and run history',
+      noConversation: 'New conversation',
+      conversations: 'Conversations',
+      runs: 'Runs',
+      newConversation: 'New conversation',
+      newConversationHint: 'The current one stays on the sessions page',
+      noRuns: 'No runs yet',
+      noRunsHint: 'Send a message or press Run to make one',
+      run: ({ number }: { number: number }) => `Run ${number}`,
+      staleRun: 'older version',
+      currentRun: 'shown',
+      moreActions: 'More actions',
+      showSteps: 'Show steps',
+      showStepsHint: 'Adds a row per node to the conversation',
+      jsonView: 'JSON view',
+      jsonViewHint: 'Edit the inputs as JSON',
+      refresh: 'Refresh',
+      refreshHint: 'If a run looks stuck. It also refreshes on focus.',
+      reset: 'Reset stuck session',
+      resetHint: "Clears the session's state when a run cannot continue",
+      playgroundSettings: 'Playground settings',
+      playgroundSettingsHint: 'What the chat fills and what it prints'
+    },
+    jsonInput: {
+      label: 'Inputs as JSON',
+      invalid: 'Not valid JSON: the form keeps its last good values.',
+      notObject: 'The inputs must be a JSON object.'
+    },
     controlPanel: {
       sessionsLabel: 'Session',
       noSession: 'No session',
@@ -568,6 +599,7 @@ export const defaultMessages = {
       hidePipeline: 'Hide pipeline',
       refresh: 'Refresh',
       refreshTitle: 'Refresh status',
+      // No longer shown (the docked header's menu has `header.playgroundSettings`); kept so host overrides still type-check.
       openPlaygroundSettings: 'Playground settings',
       logs: 'Logs',
       showLogs: 'Show log messages',

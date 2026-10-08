@@ -23,6 +23,7 @@ export function warnStandalonePlaygroundDeprecated(): void {
   const scope = globalThis as unknown as Record<symbol, boolean>;
   if (scope[STANDALONE_PLAYGROUND_FLAG]) return;
   scope[STANDALONE_PLAYGROUND_FLAG] = true;
+  // eslint-disable-next-line no-console -- the one-time deprecation notice is the point
   console.warn(STANDALONE_PLAYGROUND_DEPRECATION);
 }
 
