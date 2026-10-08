@@ -192,8 +192,7 @@
     flex-direction: column;
     width: 90vw;
     max-width: 640px;
-    height: 80vh;
-    max-height: 700px;
+    max-height: min(80vh, 700px);
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-modal-radius);
@@ -223,10 +222,17 @@
 
   /* Content */
   .flowdrop-settings-modal__content {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+
+  .flowdrop-settings-modal__content :global(.flowdrop-settings-panel) {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
   }
 
   /* Responsive adjustments */

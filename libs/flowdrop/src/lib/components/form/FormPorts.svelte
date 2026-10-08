@@ -210,8 +210,8 @@
 
   .fd-ports__group-label {
     font-size: var(--fd-text-xs);
-    font-weight: 600;
-    color: var(--fd-text-muted);
+    font-weight: 500;
+    color: var(--fd-muted-foreground);
   }
 
   .fd-ports__list {

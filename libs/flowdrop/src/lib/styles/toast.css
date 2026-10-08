@@ -23,7 +23,7 @@
   color: var(--fd-card-foreground) !important;
   border: 1px solid var(--fd-border) !important;
   border-radius: var(--fd-radius-lg) !important;
-  box-shadow: var(--fd-shadow-md) !important;
+  box-shadow: var(--fd-elevation-float) !important;
   padding: var(--fd-space-xs) var(--fd-space-md) !important;
   max-width: 350px;
   font-size: var(--fd-text-sm);

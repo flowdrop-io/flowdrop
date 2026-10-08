@@ -87,4 +87,9 @@
   .node-inspector__bar {
     margin-bottom: var(--fd-space-md);
   }
+
+  /* The first tab's text lines up with the meta text above it. */
+  .node-inspector__bar :global(.flowdrop-ui-tabs) {
+    margin-left: calc(-1 * var(--fd-space-md));
+  }
 </style>
