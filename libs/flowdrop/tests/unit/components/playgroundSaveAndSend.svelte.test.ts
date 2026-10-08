@@ -143,25 +143,30 @@ async function render(onSave: () => Promise<boolean>) {
 }
 
 function sendButton(target: HTMLElement): HTMLButtonElement {
-  return target.querySelector<HTMLButtonElement>('.chat-input__send-btn')!;
+  return target.querySelector<HTMLButtonElement>(
+    'button[aria-label="Send message"], button[aria-label="Save the workflow, then send the message"]'
+  )!;
 }
 
 async function type(target: HTMLElement, text: string): Promise<void> {
-  const input = target.querySelector<HTMLTextAreaElement>('textarea.chat-input__textarea')!;
+  const input = target.querySelector<HTMLTextAreaElement>('textarea')!;
   input.value = text;
   input.dispatchEvent(new Event('input', { bubbles: true }));
   await settle();
 }
 
 describe('Save & send', () => {
-  it('reads Send while the workflow is saved, and Save & send once it has edits', async () => {
+  it('names Send while the workflow is saved, and Save & send once it has edits', async () => {
     const { fd, target } = await render(async () => true);
-    expect(sendButton(target).textContent?.trim()).toBe('Send');
+    expect(sendButton(target).getAttribute('aria-label')).toBe('Send message');
 
     fd.workflow.batchUpdate({ name: 'edited' });
     await settle();
 
-    expect(sendButton(target).textContent?.trim()).toBe('Save & send');
+    expect(sendButton(target).getAttribute('aria-label')).toBe(
+      'Save the workflow, then send the message'
+    );
+    expect(target.textContent).toContain('Unsaved edits');
   });
 
   it('saves first, then sends', async () => {
@@ -204,9 +209,7 @@ describe('Save & send', () => {
 
     expect(log).not.toContain('send');
     expect(log).not.toContain('create-session');
-    expect(target.querySelector<HTMLTextAreaElement>('textarea.chat-input__textarea')!.value).toBe(
-      'hi'
-    );
+    expect(target.querySelector<HTMLTextAreaElement>('textarea')!.value).toBe('hi');
     expect(target.textContent).toContain('Validation failed');
   });
 });

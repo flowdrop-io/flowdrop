@@ -172,7 +172,7 @@ function turnCalls(): Call[] {
 function runButton(target: HTMLElement): HTMLButtonElement | null {
   return (
     target.querySelector<HTMLButtonElement>('.interface-input-form__actions button') ??
-    target.querySelector<HTMLButtonElement>('.chat-input__run-btn')
+    target.querySelector<HTMLButtonElement>('.chat-input .flowdrop-ui-button--primary')
   );
 }
 
@@ -217,7 +217,7 @@ describe('Playground input mode', () => {
     );
 
     expect(fd.playground.inputMode).toBe('chat');
-    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    expect(target.querySelector('textarea')).not.toBeNull();
     expect(target.querySelector('.interface-input-form')).toBeNull();
   });
 
@@ -227,7 +227,7 @@ describe('Playground input mode', () => {
     );
 
     expect(fd.playground.inputMode).toBe('form');
-    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+    expect(target.querySelector('textarea')).toBeNull();
     const form = target.querySelector('.interface-input-form');
     expect(form).not.toBeNull();
     // Only the non-turn input: history is the session's to fill.
@@ -265,7 +265,7 @@ describe('Playground input mode', () => {
     const { target, fd } = await render(workflowWith({ inputs: [history], outputs: [reply] }));
 
     expect(fd.playground.inputMode).toBe('run');
-    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+    expect(target.querySelector('textarea')).toBeNull();
     expect(target.querySelector('.interface-input-form')).toBeNull();
 
     runButton(target)?.click();
@@ -486,7 +486,7 @@ describe('Playground input mode', () => {
     const { target, fd } = await render(workflowWith({ inputs: [topic] }));
 
     expect(fd.playground.inputMode).toBe('legacy');
-    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    expect(target.querySelector('textarea')).not.toBeNull();
     expect(target.querySelector('.interface-input-form')).toBeNull();
   });
 
@@ -506,7 +506,7 @@ describe('Playground input mode', () => {
     const { target, fd } = await render(undefined);
 
     expect(fd.playground.inputMode).toBe('legacy');
-    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    expect(target.querySelector('textarea')).not.toBeNull();
   });
 
   it('legacy: Run still launches, and a refused launch is reported (messages read at init)', async () => {
@@ -563,7 +563,7 @@ describe('Playground input mode with Playground settings', () => {
 
     expect(fd.playground.inputMode).toBe('chat');
     expect(fd.playground.chatBinding?.source).toBe('settings');
-    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    expect(target.querySelector('textarea')).not.toBeNull();
     // Folded into one row above the composer until opened.
     expect(target.querySelector('.interface-input-form')).toBeNull();
     expect(target.querySelector('.control-panel__inputs-row')?.textContent).toContain('Inputs');
@@ -582,7 +582,7 @@ describe('Playground input mode with Playground settings', () => {
     );
 
     expect(fd.playground.inputMode).toBe('chat');
-    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    expect(target.querySelector('textarea')).not.toBeNull();
     expect(target.querySelector('.interface-input-form')).toBeNull();
   });
 
@@ -591,7 +591,7 @@ describe('Playground input mode with Playground settings', () => {
 
     expect(fd.playground.inputMode).toBe('form');
     expect(fd.playground.chatBinding?.source).toBe('none');
-    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+    expect(target.querySelector('textarea')).toBeNull();
     expect(target.querySelector('.interface-input-form')?.textContent).toContain('Topic');
   });
 
@@ -613,7 +613,7 @@ describe('Playground input mode with Playground settings', () => {
     const { target, fd } = await render(workflowWith({ outputs: [plain('out')] }, { chat: null }));
 
     expect(fd.playground.inputMode).toBe('run');
-    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+    expect(target.querySelector('textarea')).toBeNull();
     expect(target.querySelector('.interface-input-form')).toBeNull();
 
     runButton(target)?.click();
@@ -625,7 +625,7 @@ describe('Playground input mode with Playground settings', () => {
     const { target, fd } = await render(workflowWith(undefined, { chat: null }));
 
     expect(fd.playground.inputMode).toBe('run');
-    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+    expect(target.querySelector('textarea')).toBeNull();
   });
 
   it('chat: a workflow with null chat still chats through the deprecated turn', async () => {
@@ -635,7 +635,7 @@ describe('Playground input mode with Playground settings', () => {
 
     expect(fd.playground.inputMode).toBe('chat');
     expect(fd.playground.chatBinding?.source).toBe('interface_turn');
-    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    expect(target.querySelector('textarea')).not.toBeNull();
   });
 
   it('a bound name that is not on the interface binds nothing: form, not chat', async () => {
@@ -644,7 +644,7 @@ describe('Playground input mode with Playground settings', () => {
     );
 
     expect(fd.playground.inputMode).toBe('form');
-    expect(target.querySelector('textarea.chat-input__textarea')).toBeNull();
+    expect(target.querySelector('textarea')).toBeNull();
   });
   it("keeps the caller's interface and takes only the missing playground from workflows.get", async () => {
     // The editor passes its live workflow, unsaved interface edits and all;
@@ -704,7 +704,7 @@ describe('Playground input mode with Playground settings', () => {
       workflowWith({ inputs: [plain('msg')] }, { chat: { ...emptyChat, message: 'msg' } })
     );
 
-    expect(target.querySelector('.control-panel__notice')?.textContent).toContain(
+    expect(target.querySelector('[data-testid="playground-notice"]')?.textContent).toContain(
       'Nothing will reply here'
     );
   });
@@ -717,7 +717,9 @@ describe('Playground input mode with Playground settings', () => {
     );
 
     expect(fd.playground.chatBinding?.source).toBe('settings');
-    expect(target.querySelector('.control-panel__notice')?.textContent).toContain('No chat yet');
+    expect(target.querySelector('[data-testid="playground-notice"]')?.textContent).toContain(
+      'No chat yet'
+    );
   });
 
   it('shows no notice when the chat is bound with a reply', async () => {
@@ -728,6 +730,6 @@ describe('Playground input mode with Playground settings', () => {
       )
     );
 
-    expect(target.querySelector('.control-panel__notice')).toBeNull();
+    expect(target.querySelector('[data-testid="playground-notice"]')).toBeNull();
   });
 });

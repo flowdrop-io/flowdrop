@@ -138,7 +138,7 @@
   const messages = getMessages();
 
   /**
-   * One line above the composer when the chat binding cannot chat: nothing
+   * One line in the empty conversation when the chat binding cannot chat: nothing
    * set up, or a stored binding that no longer binds anything (its inputs
    * were removed) — the form or Run still work — or a message input with no
    * reply, which would take what the person types and never answer.
@@ -424,6 +424,8 @@
           enableMarkdown={config.enableMarkdown ?? true}
           onInterruptResolved={() => fd.runs.catchUp({ restartPolling: true })}
           {sessionOptional}
+          notice={chatNotice}
+          {onOpenSettings}
           onCreateSession={fd.playground.sessions.length === 0 && !sessionOptional
             ? () => fd.runs.createSession()
             : undefined}
@@ -452,7 +454,6 @@
             ? undefined
             : config.predefinedMessage}
           formEntries={fd.playground.interfaceFormEntries}
-          notice={chatNotice}
           {sessionOptional}
           beforeSend={onSave ? () => fd.runs.saveFirst() : undefined}
           saveFirst={fd.runs.needsSave}

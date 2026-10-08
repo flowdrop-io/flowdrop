@@ -10,6 +10,8 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import MessageStream from './MessageStream.svelte';
+  import Button from '../primitives/Button.svelte';
+  import Notice from '../primitives/Notice.svelte';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -29,6 +31,13 @@
      * state, not a prompt to create one.
      */
     sessionOptional?: boolean;
+    /**
+     * One line shown in the empty conversation (the chat cannot reply yet) and
+     * gone once any message exists. Absent renders nothing.
+     */
+    notice?: string;
+    /** Adds a "Playground settings" action to the notice. */
+    onOpenSettings?: () => void;
   }
 
   let {
@@ -40,10 +49,13 @@
     onInterruptResolved,
     onCreateSession,
     onLoadOlder,
-    sessionOptional = false
+    sessionOptional = false,
+    notice,
+    onOpenSettings
   }: Props = $props();
 
   const ec = $derived(m().playground.executionConsole);
+  const settingsLabel = $derived(m().playground.header.playgroundSettings);
 </script>
 
 <section class="execution-console">
@@ -55,7 +67,8 @@
     {compactSystemMessages}
     {onInterruptResolved}
     {onLoadOlder}
-    welcome={sessionOptional ? undefined : welcomeState}
+    welcome={sessionOptional ? (notice ? noticeState : undefined) : welcomeState}
+    emptySession={notice ? noticeState : undefined}
   />
 </section>
 
@@ -64,6 +77,9 @@
     <Icon icon="mdi:play-circle-outline" class="execution-console__placeholder-icon" />
     <h2 class="execution-console__placeholder-title">{ec.noExecutionTitle}</h2>
     <p class="execution-console__placeholder-text">{ec.noExecutionText}</p>
+    {#if notice}
+      {@render noticeBlock()}
+    {/if}
     {#if onCreateSession}
       <button type="button" class="execution-console__cta" onclick={onCreateSession}>
         <Icon icon="mdi:plus" />
@@ -73,7 +89,40 @@
   </div>
 {/snippet}
 
+{#snippet noticeBlock()}
+  <div class="execution-console__notice" data-testid="playground-notice">
+    <Notice tone="info" role="note">
+      {notice}
+      {#snippet actions()}
+        {#if onOpenSettings}
+          <Button size="sm" onclick={onOpenSettings}>{settingsLabel}</Button>
+        {/if}
+      {/snippet}
+    </Notice>
+  </div>
+{/snippet}
+
+{#snippet noticeState()}
+  <div class="execution-console__empty">
+    {@render noticeBlock()}
+  </div>
+{/snippet}
+
 <style>
+  .execution-console__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: var(--fd-space-md);
+  }
+
+  .execution-console__notice {
+    max-width: 420px;
+    margin-top: var(--fd-space-xl);
+    text-align: left;
+  }
+
   .execution-console {
     flex: 1;
     min-height: 0;

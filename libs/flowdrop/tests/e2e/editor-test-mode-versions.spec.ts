@@ -163,7 +163,7 @@ async function makeAnEdit(page: Page): Promise<void> {
 }
 
 const dock = (page: Page) => page.getByTestId('docked-playground');
-const sendButton = (page: Page) => dock(page).locator('.chat-input__send-btn');
+const sendButton = (page: Page) => dock(page).locator('.chat-input').getByRole('button', { name: /send/i });
 
 test.describe('Test mode: sessions and freshness', () => {
   test.beforeEach(({}, testInfo) => {
@@ -220,10 +220,10 @@ test.describe('Test mode: sessions and freshness', () => {
     await gotoTestMode(page);
     await openSession(page, 'Marked session');
     await expect(dock(page).getByTestId('version-divider')).toHaveCount(1);
-    await expect(sendButton(page)).toHaveText('Send');
+    await expect(sendButton(page)).toHaveAttribute('aria-label', 'Send message');
 
     await makeAnEdit(page);
-    await expect(sendButton(page)).toHaveText('Save & send');
+    await expect(sendButton(page)).toHaveAttribute('aria-label', 'Save the workflow, then send the message');
 
     await dock(page).getByPlaceholder('Type your message...').fill('hello');
     await sendButton(page).click();
@@ -231,7 +231,7 @@ test.describe('Test mode: sessions and freshness', () => {
     await expect.poll(() => backend.log).toEqual(['save', 'turn']);
     // Saved: the button is plain again, the conversation is where it was, and a
     // divider marks the new version below it.
-    await expect(sendButton(page)).toHaveText('Send');
+    await expect(sendButton(page)).toHaveAttribute('aria-label', 'Send message');
     await expect(page.getByTestId('playground-history')).toContainText('Marked session');
     await expect(dock(page).getByText('assistant 4')).toBeVisible();
     await expect(dock(page).getByTestId('version-divider')).toHaveCount(2);
@@ -251,6 +251,6 @@ test.describe('Test mode: sessions and freshness', () => {
     await expect(dock(page).locator('.playground__error')).toContainText('not saved');
     await expect(input).toHaveValue('hello');
     expect(backend.log).toEqual([]);
-    await expect(sendButton(page)).toHaveText('Save & send');
+    await expect(sendButton(page)).toHaveAttribute('aria-label', 'Save the workflow, then send the message');
   });
 });

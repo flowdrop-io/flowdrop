@@ -549,6 +549,8 @@ export const defaultMessages = {
       // action saves first, then goes.
       saveAndSend: 'Save & send',
       saveAndSendTitle: 'Save the workflow, then send the message',
+      // Under the composer while the workflow has unsaved edits.
+      saveFirstHint: 'Unsaved edits: sending saves the workflow first.',
       saveAndRun: 'Save & run',
       saveAndRunTitle: 'Save the workflow, then run it',
       saving: 'Saving…'

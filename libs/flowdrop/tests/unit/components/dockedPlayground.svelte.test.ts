@@ -132,7 +132,7 @@ describe('DockedPlayground', () => {
     await settle();
 
     expect(fd.playground.currentSession).toBeNull();
-    const textarea = target.querySelector<HTMLTextAreaElement>('textarea.chat-input__textarea');
+    const textarea = target.querySelector<HTMLTextAreaElement>('textarea');
     expect(textarea).not.toBeNull();
     expect(textarea!.disabled).toBe(false);
     // No call to create a session is offered up front.
@@ -141,7 +141,11 @@ describe('DockedPlayground', () => {
     textarea!.value = 'hi';
     textarea!.dispatchEvent(new Event('input', { bubbles: true }));
     flushSync();
-    target.querySelector<HTMLButtonElement>('.chat-input__send-btn')!.click();
+    target
+      .querySelector<HTMLButtonElement>(
+        'button[aria-label="Send message"], button[aria-label="Save the workflow, then send the message"]'
+      )!
+      .click();
     await settle();
 
     const creates = calls.filter(
@@ -155,11 +159,15 @@ describe('DockedPlayground', () => {
   it('keeps the session and its polling when it goes away, and finds them again', async () => {
     const target = render(workflow());
     await settle();
-    const textarea = target.querySelector<HTMLTextAreaElement>('textarea.chat-input__textarea')!;
+    const textarea = target.querySelector<HTMLTextAreaElement>('textarea')!;
     textarea.value = 'hi';
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
     flushSync();
-    target.querySelector<HTMLButtonElement>('.chat-input__send-btn')!.click();
+    target
+      .querySelector<HTMLButtonElement>(
+        'button[aria-label="Send message"], button[aria-label="Save the workflow, then send the message"]'
+      )!
+      .click();
     await settle();
     expect(fd.runs.isLive).toBe(true);
     expect(fd.runs.isPolling).toBe(true);
@@ -213,6 +221,6 @@ describe('DockedPlayground', () => {
     };
     await settle();
     expect(fd.playground.inputMode).toBe('chat');
-    expect(target.querySelector('textarea.chat-input__textarea')).not.toBeNull();
+    expect(target.querySelector('textarea')).not.toBeNull();
   });
 });

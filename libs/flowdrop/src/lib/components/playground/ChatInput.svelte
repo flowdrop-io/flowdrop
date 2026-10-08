@@ -1,8 +1,9 @@
 <!--
   ChatInput Component
 
-  The textarea + Run/Send/Stop button. Reusable input primitive shared by
-  ChatPanel (conversational) and ControlPanel (orchestration controls).
+  The Composer + slash-command palette, or the Run button for a workflow with
+  no chat. Shared by ChatPanel (conversational) and ControlPanel
+  (orchestration controls).
 
   Reads execution state from playgroundStore. Owns its own input string and
   textarea ref; emits sent content via onSendMessage.
@@ -19,7 +20,10 @@
     type CommandOutcome,
     type CommandSuggestion
   } from '../../playground/commands/index.js';
-  import { resolveRunAction } from '../../playground/runAction.js';
+  import { performRun } from '../../playground/runAction.js';
+  import Button from '../primitives/Button.svelte';
+  import Composer from '../primitives/Composer.svelte';
+  import Notice from '../primitives/Notice.svelte';
   import ConsoleAutocomplete from '../console/ConsoleAutocomplete.svelte';
 
   const fd = getInstance();
@@ -162,27 +166,11 @@
     paletteSuggestions.length === 0 ? 0 : Math.min(paletteCursor, paletteSuggestions.length - 1)
   );
 
-  /**
-   * Match the textarea's height to its content, capped.
-   *
-   * Called from every path that changes `inputValue`, not just typing — the
-   * height is a function of the content, so anything that sets the content owes
-   * it an update.
-   */
-  function resizeTextarea(): void {
-    if (!inputField) return;
-    inputField.style.height = 'auto';
-    inputField.style.height = `${Math.min(inputField.scrollHeight, 120)}px`;
-  }
-
   function acceptSuggestion(suggestion: CommandSuggestion): void {
     inputValue = suggestion.value;
     paletteDismissed = true;
     paletteCursor = 0;
-    tick().then(() => {
-      resizeTextarea();
-      inputField?.focus({ preventScroll: true });
-    });
+    tick().then(() => inputField?.focus({ preventScroll: true }));
   }
 
   /**
@@ -237,13 +225,12 @@
     onSendMessage?.(trimmedValue);
     inputValue = '';
 
-    tick().then(() => {
-      resizeTextarea();
-      inputField?.focus({ preventScroll: true });
-    });
+    tick().then(() => inputField?.focus({ preventScroll: true }));
   }
 
   function handleKeydown(event: KeyboardEvent): void {
+    // IME: Enter / arrows pick a candidate, not a palette entry (keyCode 229 is Safari).
+    if (event.isComposing || event.keyCode === 229) return;
     // The palette owns navigation keys while it is open, mirroring the editor
     // console so the two surfaces behave identically.
     if (paletteVisible) {
@@ -286,37 +273,25 @@
       }
     }
 
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
+    // Plain Enter is the Composer's: it submits through `onsubmit`.
   }
 
   function handleStop(): void {
     onStopExecution?.();
   }
 
-  async function handleRun(): Promise<void> {
-    if (!fd.playground.canRun || preparing) return;
-    if (beforeSend && (!(await prepare()) || !fd.playground.canRun)) return;
-    if (awaitEnableRun) fd.playground.lockRunUntilEnabled();
-
-    const action = resolveRunAction({
-      canLaunch: onRunWorkflow != null,
+  function handleRun(): Promise<void> {
+    return performRun({
+      playground: fd.playground,
+      preparing,
+      beforeSend,
+      setPreparing: (value) => (preparing = value),
+      awaitEnableRun,
+      onRunWorkflow,
+      onSendMessage,
       predefinedMessage,
       defaultMessage: resolvedPredefinedMessage
     });
-
-    if (action.kind === 'launch') {
-      onRunWorkflow?.();
-      return;
-    }
-
-    onSendMessage?.(action.content);
-
-    // A slash command (a `predefinedMessage` of `/help`, say) runs without
-    // taking a turn, so no `enableRun` message will ever follow to free the lock.
-    if (awaitEnableRun && isCommandInput(action.content)) fd.playground.releaseRunLock();
   }
 
   function handleInput(): void {
@@ -329,17 +304,12 @@
     // happens to be third in the *new* list, which is not what you were aiming
     // at. Clamping keeps it in range; only resetting keeps it meaningful.
     paletteCursor = 0;
-
-    resizeTextarea();
   }
 </script>
 
 <div class="chat-input">
   {#if noInputsAvailable}
-    <div class="chat-input__no-inputs">
-      <Icon icon="mdi:information-outline" />
-      <span>{states.viewOnlyHelp}</span>
-    </div>
+    <Notice tone="info" role="note" class="chat-input__no-inputs">{states.viewOnlyHelp}</Notice>
   {:else}
     <!--
       The live region is always present and only its *contents* come and go.
@@ -352,23 +322,24 @@
     -->
     <div class="chat-input__command-feedback-region" role="status" aria-live="polite">
       {#if commandFeedback}
-        <div
+        <Notice
           class="chat-input__command-feedback chat-input__command-feedback--{commandFeedback.status}"
+          tone={commandFeedback.status === 'ok'
+            ? 'success'
+            : commandFeedback.status === 'error'
+              ? 'error'
+              : 'info'}
+          role="status"
+          dismissLabel={commandMessages.dismiss}
+          ondismiss={() => onDismissCommandFeedback?.()}
         >
           <span class="chat-input__command-feedback-text">{commandFeedback.message}</span>
-          <button
-            type="button"
-            class="chat-input__command-feedback-dismiss"
-            onclick={() => onDismissCommandFeedback?.()}
-            aria-label={commandMessages.dismiss}
-          >
-            <Icon icon="mdi:close" />
-          </button>
-        </div>
+        </Notice>
       {/if}
     </div>
     <div class="chat-input__container" class:chat-input__container--run-only={!showTextarea}>
       {#if showTextarea}
+        <!-- Positioning context for the command palette, which sits above the composer. -->
         <div class="chat-input__wrapper">
           {#if enableCommands}
             <ConsoleAutocomplete
@@ -395,72 +366,64 @@
             comparable chat composers ship. Revisit if ARIA gains a real pattern
             for this, or if testing shows a screen reader handles it badly.
           -->
-          <textarea
-            bind:this={inputField}
+          <Composer
             bind:value={inputValue}
-            class="chat-input__textarea"
+            bind:element={inputField}
             placeholder={resolvedPlaceholder}
-            rows="1"
             disabled={fd.playground.isExecuting ||
               preparing ||
               (!sessionOptional && !fd.playground.currentSession)}
+            busy={fd.playground.isExecuting}
+            onstop={handleStop}
+            sendDisabled={!canSubmit}
+            sendLabel={saveFirst ? actions.saveAndSendTitle : actions.sendTitle}
+            hint={preparing ? actions.saving : saveFirst ? actions.saveFirstHint : undefined}
+            onsubmit={() => void handleSend()}
             onkeydown={handleKeydown}
             oninput={handleInput}
             onblur={() => (paletteDismissed = true)}
-            autocomplete="off"
-            role={enableCommands ? 'combobox' : undefined}
-            aria-expanded={enableCommands ? paletteVisible : undefined}
-            aria-controls={enableCommands ? listboxId : undefined}
-            aria-activedescendant={paletteVisible
-              ? `${listboxId}-option-${paletteIndex}`
-              : undefined}
-          ></textarea>
+            inputProps={{
+              autocomplete: 'off',
+              role: enableCommands ? 'combobox' : undefined,
+              'aria-expanded': enableCommands ? paletteVisible : undefined,
+              'aria-controls': enableCommands ? listboxId : undefined,
+              'aria-activedescendant': paletteVisible
+                ? `${listboxId}-option-${paletteIndex}`
+                : undefined
+            }}
+          />
         </div>
-      {/if}
-
-      {#if fd.playground.isExecuting}
-        <button
-          type="button"
-          class="chat-input__stop-btn"
+      {:else if fd.playground.isExecuting}
+        <Button
+          variant="danger"
           onclick={handleStop}
           title={actions.stopTitle}
-          aria-label={actions.stopTitle}
+          ariaLabel={actions.stopTitle}
         >
-          <Icon icon="mdi:stop" />
+          {#snippet leadingIcon()}<Icon icon="mdi:stop" />{/snippet}
           {actions.stop}
-        </button>
-      {:else if showTextarea}
-        <button
-          type="button"
-          class="chat-input__send-btn"
-          onclick={handleSend}
-          disabled={!canSubmit}
-          title={saveFirst ? actions.saveAndSendTitle : actions.sendTitle}
-          aria-label={saveFirst ? actions.saveAndSendTitle : actions.sendTitle}
-        >
-          {preparing ? actions.saving : saveFirst ? actions.saveAndSend : actions.send}
-        </button>
+        </Button>
       {:else if showRunButton}
         {@const runTitle = fd.playground.canRun
           ? saveFirst
             ? actions.saveAndRunTitle
             : actions.runTitle
           : actions.runWaitingTitle}
-        <button
-          type="button"
-          class="chat-input__run-btn"
+        <Button
+          variant="primary"
           onclick={handleRun}
           disabled={!fd.playground.canRun || preparing}
+          loading={preparing}
           title={runTitle}
-          aria-label={runTitle}
+          ariaLabel={runTitle}
         >
-          <Icon icon="mdi:play" />
+          {#snippet leadingIcon()}<Icon icon="mdi:play" />{/snippet}
           {preparing ? actions.saving : saveFirst ? actions.saveAndRun : actions.run}
-        </button>
+        </Button>
       {/if}
     </div>
     {#if fd.playground.launchError}
-      <p class="chat-input__launch-error" role="alert">{fd.playground.launchError}</p>
+      <Notice tone="error" class="chat-input__launch-error">{fd.playground.launchError}</Notice>
     {/if}
   {/if}
 </div>
@@ -468,7 +431,7 @@
 <style>
   .chat-input {
     flex-shrink: 0;
-    padding: var(--fd-space-xl) var(--fd-space-3xl) var(--fd-space-3xl);
+    padding: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-sm);
     background-color: var(--fd-background);
     border-top: 1px solid var(--fd-border-muted);
   }
@@ -476,7 +439,6 @@
   .chat-input__container {
     display: flex;
     align-items: flex-end;
-    gap: var(--fd-space-md);
     max-width: 760px;
     margin: 0 auto;
   }
@@ -485,216 +447,27 @@
     justify-content: flex-end;
   }
 
-  .chat-input__command-feedback {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--fd-space-sm);
-    max-width: 760px;
-    margin: 0 auto var(--fd-space-sm);
-    padding: var(--fd-space-sm) var(--fd-space-md);
-    border-radius: var(--fd-radius-md);
-    font-size: var(--fd-font-size-sm);
-    line-height: 1.4;
+  .chat-input__wrapper {
+    flex: 1;
+    /* Lets the field shrink so a narrow dock keeps the buttons inside. */
+    min-width: 0;
+    /* Positioning context for the command palette, which sits above the composer. */
+    position: relative;
   }
 
-  .chat-input__launch-error {
-    margin: var(--fd-space-sm) 0 0;
-    padding: var(--fd-space-sm) var(--fd-space-md);
-    border-radius: var(--fd-radius-md);
-    background-color: var(--fd-error-muted);
-    color: var(--fd-error);
-    font-size: var(--fd-font-size-sm);
-    line-height: 1.4;
-    overflow-wrap: anywhere;
+  .chat-input :global(.chat-input__command-feedback),
+  .chat-input :global(.chat-input__launch-error) {
+    max-width: 760px;
+    margin: 0 auto var(--fd-space-xs);
   }
 
   .chat-input__command-feedback-text {
-    flex: 1;
     /* /help returns a newline-separated list — keep its shape. */
     white-space: pre-wrap;
   }
 
-  /*
-   * Status tokens, not literals: `--fd-*-muted` is a translucent tint that is
-   * redefined for dark mode, so these follow the theme. Hardcoded pastels do
-   * not, and rendered as bright blocks on a dark UI.
-   */
-  .chat-input__command-feedback--ok {
-    background-color: var(--fd-success-muted);
-    color: var(--fd-success);
-  }
-
-  .chat-input__command-feedback--info {
-    background-color: var(--fd-info-muted);
-    color: var(--fd-info);
-  }
-
-  .chat-input__command-feedback--error {
-    background-color: var(--fd-error-muted);
-    color: var(--fd-error);
-  }
-
-  .chat-input__command-feedback-dismiss {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: inherit;
-    opacity: 0.7;
-  }
-
-  .chat-input__command-feedback-dismiss:hover {
-    opacity: 1;
-  }
-
-  .chat-input__wrapper {
-    flex: 1;
-    /* Lets the field shrink so a long label (Save & send) keeps the button inside a narrow dock. */
-    min-width: 0;
-    display: flex;
-    align-items: flex-end;
-    /* Positioning context for the command palette, which sits above the input. */
-    position: relative;
-    background-color: var(--fd-background);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-xl);
-    padding: var(--fd-space-sm) var(--fd-space-md);
-    transition:
-      border-color var(--fd-transition-fast),
-      box-shadow var(--fd-transition-fast);
-  }
-
-  .chat-input__wrapper:focus-within {
-    border-color: var(--fd-primary);
-  }
-
-  .chat-input__textarea {
-    flex: 1;
-    min-width: 0;
-    border: none;
-    outline: none;
-    resize: none;
-    font-family: inherit;
-    font-size: var(--fd-text-base);
-    line-height: var(--fd-leading-normal);
-    max-height: 120px;
-    background: transparent;
-    color: var(--fd-foreground);
-  }
-
-  .chat-input__textarea::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .chat-input__textarea:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  .chat-input__send-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--fd-space-sm) var(--fd-space-2xl);
-    border: none;
-    border-radius: var(--fd-radius-lg);
-    background-color: var(--fd-foreground);
-    color: var(--fd-background);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
-
-  .chat-input__send-btn:hover:not(:disabled) {
-    opacity: 0.85;
-  }
-
-  .chat-input__send-btn:disabled {
-    background-color: var(--fd-foreground);
-    color: var(--fd-background);
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .chat-input__stop-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    padding: var(--fd-space-sm) var(--fd-space-xl);
-    border: none;
-    border-radius: var(--fd-radius-lg);
-    background-color: var(--fd-error);
-    color: var(--fd-error-foreground);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color var(--fd-transition-fast);
-    flex-shrink: 0;
-  }
-
-  .chat-input__stop-btn:hover {
-    background-color: var(--fd-error-hover);
-  }
-
-  .chat-input__run-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    padding: var(--fd-space-sm) var(--fd-space-2xl);
-    border: none;
-    border-radius: var(--fd-radius-lg);
-    background-color: var(--fd-success);
-    color: var(--fd-success-foreground);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    flex-shrink: 0;
-  }
-
-  .chat-input__run-btn:hover:not(:disabled) {
-    background-color: var(--fd-success-hover);
-  }
-
-  .chat-input__run-btn:disabled {
-    background-color: var(--fd-border);
-    color: var(--fd-muted-foreground);
-    cursor: not-allowed;
-  }
-
-  .chat-input__no-inputs {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background-color: var(--fd-muted);
-    border-radius: var(--fd-radius-lg);
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-sm);
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  @media (max-width: 640px) {
-    .chat-input {
-      padding: var(--fd-space-md) var(--fd-space-xl) var(--fd-space-xl);
-    }
-
-    .chat-input__container {
-      gap: var(--fd-space-xs);
-    }
-
-    .chat-input__send-btn,
-    .chat-input__stop-btn,
-    .chat-input__run-btn {
-      padding: var(--fd-space-xs) var(--fd-space-xl);
-    }
+  .chat-input :global(.chat-input__launch-error) {
+    margin: var(--fd-space-xs) auto 0;
+    overflow-wrap: anywhere;
   }
 </style>

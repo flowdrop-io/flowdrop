@@ -274,9 +274,6 @@
     "font-size": 2,
     "shadow": 2
   },
-  "src/lib/components/playground/ChatInput.svelte": {
-    "button": 4
-  },
   "src/lib/components/playground/ChatPanel.svelte": {
     "button": 1
   },
