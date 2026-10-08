@@ -257,6 +257,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A refused Run in Test mode (a missing required input, or the server's 400) is
+  now shown directly under the Run button as an inline alert, naming the inputs
+  or giving the server's message as is, instead of in the banner above the
+  panel. Chat send and session errors keep the banner. New
+  `fd.playground.launchError` / `setLaunchError`; it clears when a run starts
+  or the inputs change.
+
 - The run bar's end time and the pending-signal lock no longer depend on an
   effect seeing every session status change: the run controller hears each
   change synchronously, so two changes in one flush are both counted and a

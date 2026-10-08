@@ -805,7 +805,7 @@ export class RunController {
     // A workflow that declares turn ports but no message port runs as a turn
     // on its inputs: no fabricated message, which its server would refuse.
     if (inputMode === 'form' || inputMode === 'run') {
-      await this.takeTurn({});
+      await this.takeTurn({}, { launch: true });
       return null;
     }
 
@@ -879,9 +879,14 @@ export class RunController {
    * legacy mode). A refusal (a 400 naming the fix, a 409, …) is shown with the
    * server's own message and leaves the session idle.
    *
+   * @param options.launch The turn is a Run click: a refusal is shown under
+   *   the Run button (`launchError`) rather than in the banner.
    * @returns Whether the turn was accepted
    */
-  async takeTurn(request: PlaygroundMessageRequest): Promise<boolean> {
+  async takeTurn(
+    request: PlaygroundMessageRequest,
+    options: { launch?: boolean } = {}
+  ): Promise<boolean> {
     const playground = this.#playground;
     this.adoptEditorWorkflow();
 
@@ -891,13 +896,16 @@ export class RunController {
       return false;
     }
     playground.setTurnPending(true);
+    const report = (message: string): void =>
+      options.launch ? playground.setLaunchError(message) : playground.setError(message);
+    playground.setLaunchError(null);
 
     try {
       // In legacy mode there are no interface form entries, so `inputs` is
       // `{}` — exactly what the legacy door was always sent.
       const turnInputs = playground.turnInputs;
       if (!turnInputs.ok) {
-        playground.setError(
+        report(
           this.#messages.playground.inputForm.missingRequired({
             names: turnInputs.missing.map((entry) => entry.name ?? entry.id).join(', ')
           })
@@ -946,7 +954,7 @@ export class RunController {
         return true;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-        playground.setError(errorMessage);
+        report(errorMessage);
         playground.updateSessionStatus('idle');
         playground.releaseRunLock();
         logger.error('Failed to send message:', err);

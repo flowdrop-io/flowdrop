@@ -459,6 +459,9 @@
         </button>
       {/if}
     </div>
+    {#if fd.playground.launchError}
+      <p class="chat-input__launch-error" role="alert">{fd.playground.launchError}</p>
+    {/if}
   {/if}
 </div>
 
@@ -492,6 +495,17 @@
     border-radius: var(--fd-radius-md);
     font-size: var(--fd-font-size-sm);
     line-height: 1.4;
+  }
+
+  .chat-input__launch-error {
+    margin: var(--fd-space-sm) 0 0;
+    padding: var(--fd-space-sm) var(--fd-space-md);
+    border-radius: var(--fd-radius-md);
+    background-color: var(--fd-error-muted);
+    color: var(--fd-error);
+    font-size: var(--fd-font-size-sm);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 
   .chat-input__command-feedback-text {

@@ -22,6 +22,8 @@
                            settings surface shows the Playground tab
     - ?playground=turn   -> as `none`, plus an interface input that still has
                            the deprecated `turn: message`
+    - ?playground=form   -> as `none`, plus one required interface input and no
+                           message port, so Test mode runs as a form (Run button)
     - ?settingsDefaults=light|dark|auto -> seed host settings defaults
       before mounting, mirroring mountFlowDropApp({ settings }) — used by
       the settings persistence tests
@@ -552,7 +554,13 @@
   // --- Playground settings, as a FlowDrop 2.7.0 backend sends them ---
   let playgroundVariant = $derived($page.url.searchParams.get('playground'));
   let selectedWorkflow = $derived.by((): Workflow => {
-    if (playgroundVariant !== 'none' && playgroundVariant !== 'turn') return baseWorkflow;
+    if (
+      playgroundVariant !== 'none' &&
+      playgroundVariant !== 'turn' &&
+      playgroundVariant !== 'form'
+    ) {
+      return baseWorkflow;
+    }
     const withSettings: Workflow = {
       ...baseWorkflow,
       playground: { chat: null, source: 'none' }
@@ -565,6 +573,18 @@
             dataType: 'string',
             bindings: [{ nodeId: 'node-output', portId: 'value' }],
             turn: 'message'
+          }
+        ]
+      };
+    }
+    if (playgroundVariant === 'form') {
+      withSettings.interface = {
+        inputs: [
+          {
+            id: 'topic',
+            dataType: 'string',
+            bindings: [{ nodeId: 'node-input', portId: 'value' }],
+            required: true
           }
         ]
       };

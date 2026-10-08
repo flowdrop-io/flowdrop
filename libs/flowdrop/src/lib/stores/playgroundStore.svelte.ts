@@ -115,6 +115,7 @@ export interface PlaygroundStoreActions {
   addVersionDivider: (sessionId: string, divider: VersionDivider) => void;
   setLoading: (loading: boolean) => void;
   setError: (errorMessage: string | null) => void;
+  setLaunchError: (errorMessage: string | null) => void;
   updateLastPollSequenceNumber: (seq: number) => void;
   reset: () => void;
   switchSession: (sessionId: string) => void;
@@ -192,6 +193,13 @@ export class PlaygroundStore {
 
   /** Current error message, if any */
   #error = $state<string | null>(null);
+
+  /**
+   * Why the last Run click did not start a run — shown under the Run button,
+   * where the click happened, not in the banner. Cleared when a run starts or
+   * the inputs change.
+   */
+  #launchError = $state<string | null>(null);
 
   /** Current workflow being tested */
   #currentWorkflow = $state<Workflow | null>(null);
@@ -325,6 +333,7 @@ export class PlaygroundStore {
       setTurnPending: this.setTurnPending.bind(this),
       lockRunUntilEnabled: this.lockRunUntilEnabled.bind(this),
       releaseRunLock: this.releaseRunLock.bind(this),
+      setLaunchError: this.setLaunchError.bind(this),
       setFormValues: this.setFormValues.bind(this),
       setLastTurn: this.setLastTurn.bind(this)
     });
@@ -382,6 +391,11 @@ export class PlaygroundStore {
   /** Error state. */
   get error(): string | null {
     return this.#error;
+  }
+
+  /** The refusal of the last Run click, for the message under Run. */
+  get launchError(): string | null {
+    return this.#launchError;
   }
 
   /** The current workflow. */
@@ -759,7 +773,10 @@ export class PlaygroundStore {
   /** Set the current workflow. */
   setWorkflow(workflow: Workflow | null): void {
     // Values typed for one workflow's inputs mean nothing for another's.
-    if (workflow?.id !== this.#currentWorkflow?.id) this.#formValues = {};
+    if (workflow?.id !== this.#currentWorkflow?.id) {
+      this.#formValues = {};
+      this.#launchError = null;
+    }
     this.#currentWorkflow = workflow;
   }
 
@@ -903,6 +920,11 @@ export class PlaygroundStore {
     this.#error = errorMessage;
   }
 
+  /** Set the Run click's refusal (or null to clear). */
+  setLaunchError(errorMessage: string | null): void {
+    this.#launchError = errorMessage;
+  }
+
   /** Update the last poll cursor. */
   updateLastPollSequenceNumber(seq: number): void {
     this.#lastPollSequenceNumber = seq;
@@ -917,6 +939,7 @@ export class PlaygroundStore {
     this.#dividersOf = null;
     this.#isLoading = false;
     this.#error = null;
+    this.#launchError = null;
     this.#currentWorkflow = null;
     this.#lastPollSequenceNumber = null;
     this.#pipelineRefreshTrigger = 0;
@@ -974,6 +997,7 @@ export class PlaygroundStore {
   /** Replace the interface input form's values. */
   setFormValues(values: Record<string, unknown>): void {
     this.#formValues = values;
+    this.#launchError = null;
   }
 
   /** Record the sessions door's answer for the turn just taken (`null` clears it). */

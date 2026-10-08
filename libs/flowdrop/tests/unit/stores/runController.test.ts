@@ -155,6 +155,67 @@ describe('RunController', () => {
       expect(playground.turnPending).toBe(false);
     });
 
+    it('files a refused Run click under Run, not in the banner', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      playground.setCurrentSession(session('s1'));
+      service.sendTurn.mockRejectedValue(new Error('Input "topic" is not declared'));
+
+      expect(await runs.takeTurn({}, { launch: true })).toBe(false);
+
+      expect(playground.launchError).toBe('Input "topic" is not declared');
+      expect(playground.error).toBeNull();
+    });
+
+    it('keeps a chat send failure in the banner', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      playground.setCurrentSession(session('s1'));
+      service.sendTurn.mockRejectedValue(new Error('boom'));
+
+      await runs.takeTurn({ content: 'hi' });
+
+      expect(playground.error).toBe('boom');
+      expect(playground.launchError).toBeNull();
+    });
+
+    it('names the missing inputs under Run, and clears them when the inputs change', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      const wf: Workflow = {
+        ...workflow('wf'),
+        interface: {
+          inputs: [
+            { id: 'topic', dataType: 'string', bindings: [], required: true },
+            { id: 'reply', dataType: 'string', bindings: [], turn: 'history' }
+          ]
+        }
+      };
+      playground.setWorkflow(wf);
+
+      expect(await runs.takeTurn({}, { launch: true })).toBe(false);
+      expect(playground.launchError).toContain('topic');
+      expect(playground.error).toBeNull();
+      expect(service.sendTurn).not.toHaveBeenCalled();
+
+      playground.setFormValues({ topic: 'cats' });
+      expect(playground.launchError).toBeNull();
+    });
+
+    it('clears an earlier launch error when the next run starts', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      playground.setCurrentSession(session('s1'));
+      playground.setLaunchError('old refusal');
+      service.sendTurn.mockResolvedValue({
+        kind: 'turn',
+        result: { sessionId: 's1', userMessageId: 'u1', pipelineId: 'p1', status: 'running' }
+      });
+
+      expect(await runs.takeTurn({}, { launch: true })).toBe(true);
+      expect(playground.launchError).toBeNull();
+    });
+
     it('does not send while a run is in flight, and frees the lock', async () => {
       const { runs, playground, service } = setup();
       runs.configure({ workflowId: 'wf' });
