@@ -71,7 +71,7 @@ async function openTestMode(page: Page, variant: string): Promise<void> {
 }
 
 test.describe('Test mode: form-first inputs', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
+  test.beforeEach(async ({}, testInfo) => {
     test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
   });
 
