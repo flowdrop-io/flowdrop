@@ -654,7 +654,7 @@
     Variant: {workflowVariant}
   </div>
   <App
-    height="100vh"
+    height="100%"
     width="100%"
     showNavbar={true}
     nodes={offerCaption ? [...testNodeTypes, captionNodeType] : testNodeTypes}
@@ -669,8 +669,11 @@
 </div>
 
 <style>
+  /* Fill the demo shell's main, not the viewport: the shell has its own navbar
+     above, and a 100vh page overflowed it by that much, so Playwright's dragTo
+     scrolled the shell mid-drag. */
   .editor-test-page {
-    height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
   }
