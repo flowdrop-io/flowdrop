@@ -13,7 +13,6 @@
   import type { EditorMode } from '../stores/editorModeStore.svelte.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
   import Toolbar from './primitives/Toolbar.svelte';
-  import ToolbarSeparator from './primitives/ToolbarSeparator.svelte';
   import Segmented from './primitives/Segmented.svelte';
   import IconButton from './primitives/IconButton.svelte';
   import RunBar from './RunBar.svelte';
@@ -71,6 +70,7 @@
       {#if onEditorModeChange}
         <Segmented
           size="md"
+          float
           ariaLabel={nav.label}
           {options}
           value={editorMode}
@@ -81,18 +81,17 @@
         <RunBar mode={editorMode} {onAskAssistant} onOpen={onOpenTest} />
       {/if}
       {#if onToggleConsole}
-        {#if onEditorModeChange || (showRun && fd.runs.activeRun)}
-          <ToolbarSeparator />
-        {/if}
-        <IconButton
-          size="md"
-          ariaLabel={consoleLabel ?? commandConsole}
-          title={consoleLabel ?? commandConsole}
-          active={consoleOpen}
-          onclick={onToggleConsole}
-        >
-          <span class="flowdrop-canvas-toolbar__icon"><CommandLineIcon /></span>
-        </IconButton>
+        <span class="flowdrop-canvas-toolbar__float">
+          <IconButton
+            size="md"
+            ariaLabel={consoleLabel ?? commandConsole}
+            title={consoleLabel ?? commandConsole}
+            active={consoleOpen}
+            onclick={onToggleConsole}
+          >
+            <span class="flowdrop-canvas-toolbar__icon"><CommandLineIcon /></span>
+          </IconButton>
+        </span>
       {/if}
     </Toolbar>
   </div>
@@ -116,6 +115,19 @@
           max(var(--fd-canvas-left-offset, 0px), var(--fd-canvas-toolbar-inset, 0px))
       );
     }
+  }
+
+  /* The Console button floats on its own: a 34px square. */
+  .flowdrop-canvas-toolbar__float {
+    display: inline-grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 34px;
+    height: 34px;
+    background-color: var(--fd-background);
+    border: 1px solid var(--fd-float-border);
+    border-radius: var(--fd-radius-surface);
+    box-shadow: var(--fd-elevation-float);
   }
 
   .flowdrop-canvas-toolbar__icon {

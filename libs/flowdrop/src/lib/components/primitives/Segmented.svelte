@@ -32,6 +32,11 @@
     size?: 'sm' | 'md';
     /** Accessible name of the group */
     ariaLabel: string;
+    /**
+     * Float: the switch is itself a floating control (surface, rule and float
+     * elevation), as in the canvas toolbar. Look comes from `--fd-toolbar-segmented-*`.
+     */
+    float?: boolean;
     /** Extra classes appended to the root */
     class?: string;
   }
@@ -42,6 +47,7 @@
     onchange,
     size = 'md',
     ariaLabel,
+    float = false,
     class: className = ''
   }: Props = $props();
 
@@ -89,6 +95,7 @@
 
 <div
   class="flowdrop-ui-segmented flowdrop-ui-segmented--{size} {className}"
+  class:flowdrop-ui-segmented--float={float}
   role="radiogroup"
   aria-label={ariaLabel}
 >
@@ -157,6 +164,22 @@
     font-size: var(--fd-text-xs);
   }
 
+  /* Floating switch: a surface of its own over the canvas. */
+  .flowdrop-ui-segmented--float {
+    padding: 2px;
+    gap: 2px;
+    background-color: var(--fd-toolbar-segmented-bg);
+    border-color: var(--fd-toolbar-segmented-border);
+    border-radius: var(--fd-toolbar-segmented-radius);
+    box-shadow: var(--fd-elevation-float);
+  }
+  .flowdrop-ui-segmented--float .flowdrop-ui-segmented__item {
+    border-radius: var(--fd-toolbar-segment-radius);
+  }
+  .flowdrop-ui-segmented--float.flowdrop-ui-segmented--md .flowdrop-ui-segmented__item {
+    height: var(--fd-control-md);
+  }
+
   .flowdrop-ui-segmented__item:hover:not(.flowdrop-ui-segmented__item--selected) {
     color: var(--fd-foreground);
   }
@@ -165,5 +188,10 @@
     background-color: var(--fd-background);
     color: var(--fd-foreground);
     box-shadow: var(--fd-shadow-sm);
+  }
+  .flowdrop-ui-segmented--float .flowdrop-ui-segmented__item--selected {
+    background-color: var(--fd-toolbar-segmented-selected-bg);
+    color: var(--fd-toolbar-segmented-selected-fg);
+    box-shadow: var(--fd-toolbar-segmented-selected-shadow);
   }
 </style>

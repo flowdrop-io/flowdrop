@@ -1,5 +1,7 @@
 <!--
-  Toolbar primitive — a floating group container for canvas controls.
+  Toolbar primitive — a bare row (or column) that groups canvas controls for
+  keyboard navigation. It draws nothing itself: each control inside floats on its
+  own (Segmented `float`, a FloatingControl, the run pill).
 
   role="toolbar" with roving focus: Tab enters the group once, arrow keys
   (Left/Right for horizontal, Up/Down for vertical), Home and End move between
@@ -79,12 +81,7 @@
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
-    gap: var(--fd-space-2xs);
-    padding: var(--fd-space-3xs);
-    background-color: var(--fd-card);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-xl);
-    box-shadow: var(--fd-shadow-md);
+    gap: 6px;
     color: var(--fd-foreground);
   }
 

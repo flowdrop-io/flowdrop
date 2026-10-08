@@ -15,7 +15,7 @@
 
   interface Props extends Omit<HTMLButtonAttributes, 'children' | 'class' | 'type' | 'title'> {
     /** Visual style */
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'destructive';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'destructive' | 'danger-ghost';
     /** Height: `sm` = --fd-control-sm (24), `md` = --fd-control-md (28), `lg` = --fd-control-lg (32) */
     size?: 'sm' | 'md' | 'lg';
     /** Native button type */
@@ -176,6 +176,15 @@
   .flowdrop-ui-button--destructive:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
     background-color: var(--fd-error-hover);
     border-color: var(--fd-error-hover);
+  }
+
+  /* Destructive without the weight: error-coloured text on a ghost button. */
+  .flowdrop-ui-button--danger-ghost {
+    background-color: transparent;
+    color: var(--fd-error);
+  }
+  .flowdrop-ui-button--danger-ghost:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+    background-color: var(--fd-error-muted);
   }
 
   .flowdrop-ui-button:disabled {

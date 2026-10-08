@@ -14,17 +14,16 @@
   Node statuses are not loaded here: `App` owns that (one coalesced
   `fd.runs.requestNodeStatuses()` for Test mode and the Edit-mode run).
 
-  Renders inline (a separator plus the pill), meant to sit inside a `Toolbar`.
+  Renders the pill as a floating control of its own (status dot, label, Stop),
+  meant to sit inside a `Toolbar`.
 -->
 
 <script lang="ts">
   import { getInstance } from '../stores/getInstance.svelte.js';
   import { getMessages } from '../messages/context.js';
   import { TERMINAL_RUN_STATUSES } from '../stores/runController.svelte.js';
-  import type { StatusPillStatus } from './primitives/StatusPill.svelte';
-  import StatusPill from './primitives/StatusPill.svelte';
   import Button from './primitives/Button.svelte';
-  import ToolbarSeparator from './primitives/ToolbarSeparator.svelte';
+  import type { StatusPillStatus } from './primitives/StatusPill.svelte';
 
   interface Props {
     /**
@@ -111,7 +110,6 @@
 </div>
 
 {#if run && status && pillStatus && visible}
-  <ToolbarSeparator />
   <div
     class="flowdrop-run-bar flowdrop-run-bar--{status}"
     class:flowdrop-run-bar--fading={fading}
@@ -122,7 +120,8 @@
     onfocusin={hold}
     onfocusout={release}
   >
-    <StatusPill status={pillStatus} label={statusLabel} size="sm" />
+    <span class="flowdrop-run-bar__dot" aria-hidden="true"></span>
+    <span class="flowdrop-run-bar__label">{statusLabel}</span>
     {#if status === 'waiting' && onOpen && mode === 'edit'}
       <Button variant="primary" size="sm" ariaLabel={msgs.openLabel} onclick={onOpen}>
         {msgs.open}
@@ -142,7 +141,7 @@
     {/if}
     {#if live}
       <Button
-        variant="danger"
+        variant="danger-ghost"
         size="sm"
         ariaLabel={msgs.stopLabel}
         onclick={() => void fd.runs.stopRun()}
@@ -163,12 +162,53 @@
     white-space: nowrap;
   }
 
+  /* A floating control of its own: dot, label, then the actions. */
   .flowdrop-run-bar {
+    --_status: var(--fd-status-skipped);
+    --_soft: var(--fd-status-skipped-soft);
+    --_halo: 0 0 0 3px var(--_soft);
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-xs);
+    box-sizing: border-box;
+    height: 34px;
+    padding: 0 var(--fd-space-2xs) 0 var(--fd-space-md);
+    background-color: var(--fd-background);
+    border: 1px solid var(--fd-float-border);
+    border-radius: var(--fd-radius-surface);
+    box-shadow: var(--fd-elevation-float);
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-sm);
+    font-weight: 500;
     opacity: 1;
     transition: opacity 300ms ease;
+  }
+  .flowdrop-run-bar--running {
+    --_status: var(--fd-status-running);
+    --_soft: var(--fd-status-running-soft);
+  }
+  .flowdrop-run-bar--done {
+    --_status: var(--fd-status-completed);
+    --_soft: var(--fd-status-completed-soft);
+  }
+  .flowdrop-run-bar--waiting {
+    --_status: var(--fd-status-waiting);
+    --_soft: var(--fd-status-waiting-soft);
+  }
+  .flowdrop-run-bar--failed {
+    --_status: var(--fd-status-failed);
+    --_soft: var(--fd-status-failed-soft);
+  }
+  .flowdrop-run-bar__dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--fd-radius-full);
+    background-color: var(--_status);
+    box-shadow: var(--_halo);
+  }
+  .flowdrop-run-bar__label {
+    white-space: nowrap;
   }
   .flowdrop-run-bar--fading {
     opacity: 0;
