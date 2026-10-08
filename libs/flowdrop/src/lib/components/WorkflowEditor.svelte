@@ -98,6 +98,8 @@
     // Console toggle
     consoleOpen?: boolean;
     onToggleConsole?: () => void;
+    /** Take a failed run on the run bar to the Assistant. */
+    onAskAssistant?: (runId: string) => void;
     /** Label of the console-group toggle; defaults to the Command Console wording. */
     consoleToggleLabel?: string;
     /** Per-instance state container (created by mount functions). Defaults to the page-default instance. */
@@ -1341,7 +1343,7 @@
       </FlowDropZone>
 
       {#if canvasEditable && (props.showRunBar ?? true)}
-        <RunBar onOpen={props.onOpenTest} />
+        <RunBar onOpen={props.onOpenTest} onAskAssistant={props.onAskAssistant} />
       {/if}
 
       {#if openMenu}

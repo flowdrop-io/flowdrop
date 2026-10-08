@@ -164,3 +164,28 @@ describe('RunBar', () => {
     fd.destroy();
   });
 });
+
+describe('RunBar: Ask the Assistant', () => {
+  it('offers it on a failed run with a known pipeline, and hands over the run id', async () => {
+    const { fd } = await withHostRun('ask-failed', 'failed');
+    const onAsk = vi.fn();
+    const t = render(fd, { onAskAssistant: onAsk });
+    const button = t.querySelector<HTMLButtonElement>('[data-testid="run-bar-ask-assistant"]');
+    expect(button).not.toBeNull();
+    button!.click();
+    expect(onAsk).toHaveBeenCalledWith('r1');
+  });
+
+  it('is absent on a run that did not fail, and without a handler', async () => {
+    const running = await withHostRun('ask-running', 'running');
+    const t = render(running.fd, { onAskAssistant: vi.fn() });
+    expect(t.querySelector('[data-testid="run-bar-ask-assistant"]')).toBeNull();
+    if (app) unmount(app);
+    app = null;
+    document.body.innerHTML = '';
+
+    const failed = await withHostRun('ask-nohandler', 'failed');
+    const t2 = render(failed.fd);
+    expect(t2.querySelector('[data-testid="run-bar-ask-assistant"]')).toBeNull();
+  });
+});

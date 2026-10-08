@@ -537,6 +537,17 @@
   // focuses it wherever it lives (sidebar/modal/below).
   let activeSurface = $state<string>(getUiSettings().bottomPanelTab);
 
+  // Test mode rests on the inspector: whatever surface was last focused (the
+  // persisted Console tab, say), entering Test mode, or loading into it with
+  // `?mode=test`, shows the config. Later picks of the Console stick.
+  $effect.pre(() => {
+    if (testMode) untrack(() => (activeSurface = 'config'));
+  });
+
+  // Edit mode's left slot: Nodes | Assistant. Both stay mounted, so the
+  // conversation survives tab switches and a trip through Test mode.
+  let leftTab = $state<'nodes' | 'assistant'>('nodes');
+
   // Node swap state
   let swapMode = $state<'idle' | 'picking' | 'mapping'>('idle');
   let swapInteractiveState = $state<InteractiveSwapState | null>(null);
@@ -1240,19 +1251,29 @@
   const configActive = $derived(isWorkflowSettingsOpen || !!selectedNodeForConfig || testMode);
   /** The Command Console tab is offered by this mount. */
   const consoleTabOffered = features.console;
-  /** The AI Assistant tab is offered: switched on, and a chat backend exists. */
+  /** The AI Assistant is offered: switched on, and a chat backend exists. */
   const chatTabOffered = $derived(
     features.assistant && endpointConfig?.endpoints?.chat !== undefined
   );
-  /** At least one surface of the console/chat group is offered. */
-  const consoleGroupOffered = $derived(consoleTabOffered || chatTabOffered);
-  /** Console/chat group is available (offered, editable canvas, console toggled open). */
+  /**
+   * The Assistant lives in the left slot, as a tab beside Nodes (Edit mode).
+   * A host that disabled the sidebar has no left slot, so the Assistant keeps
+   * its old place in the console group for it (until 3.0). Test mode has no
+   * Assistant at all: it is the Edit-mode helper.
+   */
+  const chatInConsoleGroup = $derived(chatTabOffered && disableSidebar && !testMode);
+  /** The Assistant is a tab beside Nodes in the left slot. */
+  const chatInLeftSlot = $derived(chatTabOffered && !chatInConsoleGroup);
+  /** At least one surface of the console group is offered. */
+  const consoleGroupOffered = $derived(consoleTabOffered || chatInConsoleGroup);
+  /** Console group is available (offered, editable canvas, console toggled open). */
   const consoleActive = $derived(
     consoleGroupOffered && getUiSettings().consoleOpen && canvasEditable
   );
 
   /**
-   * The console-group tabs this mount offers, for whichever host renders them.
+   * The console-group tabs this mount offers, for whichever host renders them:
+   * the Console, plus the Assistant only where there is no left slot for it.
    * Snippets are passed in because they are declared in the template.
    */
   function consoleGroupTabs(consoleBody: Snippet, chatBody: Snippet): SurfaceTab[] {
@@ -1267,7 +1288,7 @@
             }
           ]
         : []),
-      ...(chatTabOffered
+      ...(chatInConsoleGroup
         ? [{ id: 'chat', label: mergedMessages.navigation.bottomPanel.chat, content: chatBody }]
         : [])
     ];
@@ -1437,6 +1458,30 @@
     }
   }
 
+  /** Show the Assistant: its tab beside Nodes, or the console group where there is no left slot. */
+  function openAssistant(): void {
+    if (chatInConsoleGroup) {
+      activeSurface = 'chat';
+      updateSettings({ ui: { consoleOpen: true } });
+      return;
+    }
+    leftTab = 'assistant';
+    if (getUiSettings().sidebarCollapsed) updateSettings({ ui: { sidebarCollapsed: false } });
+  }
+
+  /**
+   * "Ask the Assistant about this run": the Assistant is an Edit-mode helper,
+   * so the editor goes back to Edit mode, opens the Assistant beside Nodes and
+   * attaches the run.
+   */
+  function askAssistantAboutRun(runId: string): void {
+    if (!chatTabOffered || !fd.attachedRun.attach(runId, { status: 'failed' })) return;
+    fd.editorMode.set('edit');
+    openAssistant();
+  }
+  /** The ask-the-Assistant actions are offered when there is an Assistant to ask. */
+  const askAssistant = $derived(chatTabOffered ? askAssistantAboutRun : undefined);
+
   function toggleConsole(): void {
     const currentOpen = getUiSettings().consoleOpen;
     updateSettings({ ui: { consoleOpen: !currentOpen } });
@@ -1513,6 +1558,21 @@
   />
 {/snippet}
 
+<!-- Last run of a failed node: take the run to the Assistant -->
+{#snippet askAboutRunAction()}
+  {@const runId = fd.playground.nodeStatusScope?.pipelineId}
+  {#if runId}
+    <button
+      type="button"
+      class="ask-about-run"
+      data-testid="last-run-ask-assistant"
+      onclick={() => askAssistant?.(runId)}
+    >
+      {mergedMessages.nodeInspector.askAssistant}
+    </button>
+  {/if}
+{/snippet}
+
 {#snippet nodeInspectorEl(node: WorkflowNode)}
   <NodeInspector
     editorMode={effectiveEditorMode}
@@ -1520,6 +1580,11 @@
     onTabChange={(tab) => (nodeTabPick = { nodeId: node.id, tab })}
     info={fd.playground.nodeStatusFor(node.id)}
     runShown={fd.playground.nodeStatusScope !== null}
+    lastRunActions={askAssistant &&
+    fd.playground.nodeStatusFor(node.id)?.status === 'failed' &&
+    fd.playground.nodeStatusScope?.pipelineId
+      ? askAboutRunAction
+      : undefined}
   >
     {#snippet config()}
       {@render nodeConfigFormEl(node)}
@@ -1752,6 +1817,17 @@
   <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
 {/snippet}
 
+{#snippet nodesTabContent()}
+  {#if !testMode}
+    <NodeSidebar
+      {nodes}
+      loading={nodeTypesLoading}
+      activeFormat={fd.workflow.format}
+      categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
+    />
+  {/if}
+{/snippet}
+
 {#snippet chatSurfaceBody()}
   <AIChatPanel
     nodeTypes={nodes}
@@ -1860,13 +1936,33 @@
     {#snippet leftSidebar()}
       {#if testMode}
         {@render dockedPlayground()}
-      {:else}
-        <NodeSidebar
-          {nodes}
-          loading={nodeTypesLoading}
-          activeFormat={fd.workflow.format}
-          categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
-        />
+      {/if}
+      {#if chatInLeftSlot}
+        <!-- Kept mounted (hidden) in Test mode, so the conversation survives the trip -->
+        <div
+          class="left-slot"
+          data-testid="left-slot"
+          style:display={testMode || isSidebarCollapsed ? 'none' : null}
+        >
+          <TabbedSurface
+            tabs={[
+              {
+                id: 'nodes',
+                label: mergedMessages.layout.nodesTab,
+                content: nodesTabContent
+              },
+              {
+                id: 'assistant',
+                label: mergedMessages.navigation.bottomPanel.chat,
+                content: chatSurfaceBody
+              }
+            ]}
+            activeId={leftTab}
+            onSelect={(id) => (leftTab = id === 'assistant' ? 'assistant' : 'nodes')}
+          />
+        </div>
+      {:else if !testMode}
+        {@render nodesTabContent()}
       {/if}
     {/snippet}
 
@@ -2045,6 +2141,7 @@
         consoleToggleLabel={consoleTabOffered
           ? undefined
           : mergedMessages.navigation.bottomPanel.chat}
+        onAskAssistant={askAssistant}
       />
     </div>
   </MainLayout>
@@ -2080,7 +2177,7 @@
   </SurfaceOverlay>
 {:else if consoleHere('modal')}
   <SurfaceOverlay
-    title={activeSurface === 'chat' || !consoleTabOffered
+    title={(activeSurface === 'chat' && chatInConsoleGroup) || !consoleTabOffered
       ? mergedMessages.navigation.bottomPanel.chat
       : mergedMessages.navigation.bottomPanel.console}
     closeLabel={mergedMessages.layout.closeConfigPanel}
@@ -2093,6 +2190,36 @@
 <style>
   .flowdrop-root {
     display: contents;
+  }
+
+  /* Edit mode's left slot: the Nodes | Assistant tab strip fills it. */
+  .left-slot {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    min-width: 0;
+  }
+
+  .left-slot :global(.tabbed-surface__panel) {
+    min-width: 0;
+  }
+
+  .ask-about-run {
+    align-self: flex-start;
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md, 0.5rem);
+    background: var(--fd-background);
+    color: var(--fd-primary);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .ask-about-run:hover {
+    background: var(--fd-muted);
   }
 
   /* Floating sidebar toggle button — placement only; visuals live in CanvasIconButton */

@@ -22,11 +22,17 @@
      * when this is set.
      */
     onOpen?: () => void;
+    /**
+     * Take a failed run to the Assistant (Edit mode, run attached). The
+     * "Ask the Assistant" button is shown only when this is set and the run
+     * failed with a known pipeline.
+     */
+    onAskAssistant?: (runId: string) => void;
     /** How long a finished run's bar stays, in milliseconds. @default 4500 */
     fadeMs?: number;
   }
 
-  let { onOpen, fadeMs = 4500 }: Props = $props();
+  let { onOpen, onAskAssistant, fadeMs = 4500 }: Props = $props();
 
   const fd = getInstance();
   const getMsgs = getMessages();
@@ -100,6 +106,18 @@
         onclick={onOpen}
       >
         {msgs.open}
+      </button>
+    {/if}
+    {#if status === 'failed' && run.runId && onAskAssistant}
+      {@const failedRunId = run.runId}
+      <button
+        type="button"
+        class="flowdrop-run-bar__pill flowdrop-run-bar__pill--primary"
+        data-testid="run-bar-ask-assistant"
+        aria-label={msgs.askAssistantLabel}
+        onclick={() => onAskAssistant(failedRunId)}
+      >
+        {msgs.askAssistant}
       </button>
     {/if}
     {#if live}
