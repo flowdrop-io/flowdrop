@@ -5,7 +5,7 @@
 
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import Host from './CanvasZoomControlsHost.svelte';
+import Host from '$lib/stories/CanvasZoomControlsHost.svelte';
 import {
   MINIMAP_WIDTH,
   MINIMAP_HEIGHT,
