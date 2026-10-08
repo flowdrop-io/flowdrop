@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { defaultMessages } from '$lib/messages/defaults.js';
 import { RunController } from '$lib/stores/runController.svelte.js';
 import { PlaygroundStore } from '$lib/stores/playgroundStore.svelte.js';
 import { WorkflowStore } from '$lib/stores/workflowStore.svelte.js';
@@ -292,7 +293,7 @@ describe('RunController', () => {
       const { runs, playground, service } = setup();
       await runs.createSession();
       expect(service.createSession).not.toHaveBeenCalled();
-      expect(playground.error).toBe('Save the workflow first');
+      expect(playground.error).toBe(defaultMessages.playground.saveFirst);
     });
   });
 

@@ -16,6 +16,7 @@
  * @module stores/runController
  */
 
+import { SvelteSet } from 'svelte/reactivity';
 import type { Workflow } from '../types/index.js';
 import type {
   PlaygroundMessageRequest,
@@ -193,7 +194,7 @@ export class RunController {
   readonly #api: ApiContext;
   readonly #workflow: WorkflowStore;
 
-  #options: RunControllerOptions = {};
+  #options = $state.raw<RunControllerOptions>({});
   // Monotonic token so a slow session load can't overwrite a newer one when
   // the user switches sessions faster than the network responds (last-load
   // wins).
@@ -215,7 +216,7 @@ export class RunController {
    * still reads `completed` (the turn finished; its run did not), so the
    * session status alone would show such a run as done.
    */
-  #failedRunIds = $state<string[]>([]);
+  #failedRunIds = new SvelteSet<string>();
   #unsubscribeSessionStatus: (() => void) | null = null;
   #hostStatusHook: HostHooks['onRunStatus'] | undefined;
   #hostPoll: ReturnType<typeof setTimeout> | null = null;
@@ -232,6 +233,17 @@ export class RunController {
     this.#service = deps.service;
     this.#api = deps.api;
     this.#workflow = deps.workflow;
+    // The moment a run ends is the one thing the session status cannot say on
+    // its own; note it as the status moves. Synchronous, so two changes in one
+    // flush are both seen and the time is the transition's, not the flush's.
+    this.#unsubscribeSessionStatus = this.#playground.onSessionStatusChange((status) => {
+      this.clearPendingSignal();
+      const tracked = this.#tracked;
+      if (tracked?.origin !== 'session') return;
+      const next = sessionRunStatus(status, tracked.stopped);
+      this.#endedAt = TERMINAL_RUN_STATUSES.includes(next) ? Date.now() : null;
+      if (next === 'done' && tracked.sessionId) void this.#noteRunFailure(tracked.sessionId);
+    });
   }
 
   // -----------------------------------------------------------------------
@@ -313,7 +325,7 @@ export class RunController {
 
   #requireWorkflowId(): string {
     const id = this.workflowId;
-    if (!id) throw new Error('Save the workflow first');
+    if (!id) throw new Error(this.#messages.playground.saveFirst);
     return id;
   }
 
@@ -672,10 +684,7 @@ export class RunController {
     // the runs answer below arrives (`last` is read before the first await).
     const result = await this.loadSessionRuns(sessionId);
     if (result === null) return;
-    let lastVersion: string | null | undefined;
-    for (const run of result.runs) {
-      if (run.workflowVersion != null) lastVersion = run.workflowVersion;
-    }
+    const lastVersion = result.runs.findLast((run) => run.workflowVersion != null)?.workflowVersion;
     if (
       lastVersion != null &&
       result.workflowVersion != null &&
@@ -1170,6 +1179,11 @@ export class RunController {
    * status follows the session; a host run's follows `onRunStatus`.
    */
   get activeRun(): ActiveRun | null {
+    return this.#activeRun;
+  }
+
+  /** Memoised: the same object until something it reads changes. */
+  #activeRun = $derived.by((): ActiveRun | null => {
     const tracked = this.#tracked;
     if (!tracked) return null;
     let status: ActiveRunStatus;
@@ -1179,7 +1193,7 @@ export class RunController {
       if (this.#playground.currentSession?.id !== tracked.sessionId) return null;
       status = sessionRunStatus(this.#playground.sessionStatus, tracked.stopped);
       runId = this.#playground.activeExecutionId;
-      if (status === 'done' && runId && this.#failedRunIds.includes(runId)) status = 'failed';
+      if (status === 'done' && runId && this.#failedRunIds.has(runId)) status = 'failed';
     } else {
       status = tracked.hostStatus;
     }
@@ -1188,9 +1202,9 @@ export class RunController {
       runId,
       status,
       startedAt: tracked.startedAt,
-      endedAt: TERMINAL_RUN_STATUSES.includes(status) ? (this.#endedAt ?? Date.now()) : null
+      endedAt: TERMINAL_RUN_STATUSES.includes(status) ? (this.#endedAt ?? tracked.startedAt) : null
     };
-  }
+  });
 
   /**
    * Stop the run being shown: the session's stop for a session run, a cancel
@@ -1268,15 +1282,6 @@ export class RunController {
       hostStatus: 'running'
     };
     this.#endedAt = null;
-    // The moment a run ends is the one thing the session status cannot say on
-    // its own; note it as the status moves.
-    this.#unsubscribeSessionStatus ??= this.#playground.subscribeToSessionStatus((status) => {
-      const tracked = this.#tracked;
-      if (tracked?.origin !== 'session') return;
-      const next = sessionRunStatus(status, tracked.stopped);
-      this.#endedAt = TERMINAL_RUN_STATUSES.includes(next) ? Date.now() : null;
-      if (next === 'done' && tracked.sessionId) void this.#noteRunFailure(tracked.sessionId);
-    });
   }
 
   /** A finished session run may have failed: ask the runs list, once, when it ends. */
@@ -1284,9 +1289,7 @@ export class RunController {
     const result = await this.loadSessionRuns(sessionId);
     const runId = this.#playground.activeExecutionId;
     const run = result?.runs.find((r) => r.id === runId);
-    if (run?.status === 'failed' && !this.#failedRunIds.includes(run.id)) {
-      this.#failedRunIds = [...this.#failedRunIds, run.id];
-    }
+    if (run?.status === 'failed') this.#failedRunIds.add(run.id);
   }
 
   #beginHostRun(runId: string, status: string | undefined): void {

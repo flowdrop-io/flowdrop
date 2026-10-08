@@ -138,7 +138,31 @@ export interface PlaygroundStoreActions {
  */
 export class PlaygroundStore {
   /** Currently active playground session */
-  #currentSession = $state<PlaygroundSession | null>(null);
+  #sessionState = $state<PlaygroundSession | null>(null);
+
+  /** The current session. Every write goes through the setter below. */
+  get #currentSession(): PlaygroundSession | null {
+    return this.#sessionState;
+  }
+
+  /**
+   * Every write to the current session lands here, so the synchronous
+   * status listeners hear each real change of `sessionStatus`, once, at the
+   * moment it happens.
+   */
+  set #currentSession(session: PlaygroundSession | null) {
+    const previous = this.sessionStatus;
+    this.#sessionState = session;
+    const status = this.sessionStatus;
+    if (status === previous) return;
+    for (const listener of [...this.#statusListeners]) {
+      try {
+        listener(status, previous);
+      } catch (err) {
+        logger.error('[Playground] Session status listener failed:', err);
+      }
+    }
+  }
 
   /** List of all sessions for the current workflow */
   #sessions = $state<PlaygroundSession[]>([]);
@@ -266,6 +290,11 @@ export class PlaygroundStore {
 
   /** Cleanups for active subscribeToSessionStatus effect roots. */
   readonly #statusSubscriptions = new Set<() => void>();
+
+  /** Synchronous listeners, see {@link onSessionStatusChange}. */
+  readonly #statusListeners = new Set<
+    (status: PlaygroundSessionStatus, previous: PlaygroundSessionStatus) => void
+  >();
 
   /** Bound mutation facade — see {@link PlaygroundStoreActions}. */
   readonly actions: PlaygroundStoreActions;
@@ -1001,6 +1030,25 @@ export class PlaygroundStore {
   }
 
   /**
+   * Listen for session status changes, synchronously.
+   *
+   * Unlike {@link subscribeToSessionStatus}, which rides an effect and so
+   * batches (two changes inside one flush read as one, or as none), the
+   * listener runs inside the write that changed the status: once per real
+   * change, in order, at the moment it happened. Cleared by {@link dispose}.
+   *
+   * @returns Function that removes the listener
+   */
+  onSessionStatusChange(
+    listener: (status: PlaygroundSessionStatus, previous: PlaygroundSessionStatus) => void
+  ): () => void {
+    this.#statusListeners.add(listener);
+    return () => {
+      this.#statusListeners.delete(listener);
+    };
+  }
+
+  /**
    * Subscribe to session status changes using $effect.root.
    * This is designed for use in non-component contexts (e.g., mount.ts).
    *
@@ -1040,6 +1088,7 @@ export class PlaygroundStore {
     for (const cleanup of [...this.#statusSubscriptions]) {
       cleanup();
     }
+    this.#statusListeners.clear();
   }
 
   /**

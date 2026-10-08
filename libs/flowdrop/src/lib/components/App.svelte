@@ -7,6 +7,8 @@
 <script lang="ts">
   import type { ContextMenuOptions } from '../editor/contextMenu.js';
   import { onMount, tick, untrack } from 'svelte';
+  import { MediaQuery } from 'svelte/reactivity';
+  import { on } from 'svelte/events';
   import MainLayout from '$lib/components/layouts/MainLayout.svelte';
   import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
   import NodeSidebar from '$lib/components/NodeSidebar.svelte';
@@ -282,26 +284,19 @@
   const features = mergeFeatures(propFeatures);
 
   // Test mode: the `editorMode` prop seeds the instance's store (the source of
-  // truth from then on); a later change of the prop sets it again.
+  // truth from then on); a later change of the prop sets it again. Setting the
+  // value it already holds changes nothing, so the first run is harmless.
   // svelte-ignore state_referenced_locally
   if (editorModeProp) fd.editorMode.set(editorModeProp);
-  // svelte-ignore state_referenced_locally
-  let lastEditorModeProp = editorModeProp;
-  $effect(() => {
+  $effect.pre(() => {
     const requested = editorModeProp;
-    if (requested === lastEditorModeProp) return;
-    lastEditorModeProp = requested;
-    if (requested) fd.editorMode.set(requested);
+    if (requested) untrack(() => fd.editorMode.set(requested));
   });
 
-  // Tell the host when the mode moves (never for the value it started with).
-  let reportedEditorMode = fd.editorMode.current;
-  $effect(() => {
-    const current = fd.editorMode.current;
-    if (current === reportedEditorMode) return;
-    reportedEditorMode = current;
-    onEditorModeChange?.(current);
-  });
+  // Tell the host when the mode moves. The listener is added after the seed,
+  // so the value the editor started with is never reported; the callback is
+  // read when it fires, so a changed callback prop is the one used.
+  onMount(() => fd.editorMode.onChange((mode) => onEditorModeChange?.(mode)));
 
   // `mode` is the public API; internally the canvas only cares whether editing
   // is disabled. 'readonly' and 'locked' both disable the same interactions
@@ -321,12 +316,10 @@
   const effectiveEditorMode = $derived<EditorMode>(testMode ? 'test' : 'edit');
 
   /** Narrow screens: the Playground is a drawer over the canvas, not a column. */
-  let narrow = $state(false);
-  let drawerOpen = $state(true);
-  $effect(() => {
-    // Entering Test mode shows the Playground.
-    if (testMode) untrack(() => (drawerOpen = true));
-  });
+  const narrowQuery = new MediaQuery('(max-width: 1199px)');
+  const narrow = $derived(narrowQuery.current);
+  /** Entering Test mode opens the Playground drawer; the person can still close it. */
+  let drawerOpen = $derived(testMode);
 
   /** The node library popover of Test mode (N). */
   let libraryOpen = $state(false);
@@ -339,8 +332,7 @@
     const closeOnOutside = (event: PointerEvent) => {
       if (libraryEl && !libraryEl.contains(event.target as Node)) libraryOpen = false;
     };
-    window.addEventListener('pointerdown', closeOnOutside, true);
-    return () => window.removeEventListener('pointerdown', closeOnOutside, true);
+    return on(window, 'pointerdown', closeOnOutside, { capture: true });
   });
   function toggleLibrary(): void {
     libraryOpen = !libraryOpen;
@@ -360,15 +352,24 @@
     !pipelineId && (testMode || fd.runs.activeRun !== null || fd.runs.isLive)
   );
   const EDIT_STATUS_REFRESH_MS = 1500;
+  /**
+   * Changes whenever the shown run's node statuses may have moved; null when no
+   * run is followed. Built from the shown run, its status (a host run changes
+   * nothing else) and every batch of new messages.
+   */
+  const runStatusKey = $derived(
+    followRun
+      ? [
+          fd.playground.activeExecutionId,
+          fd.playground.sessionStatus,
+          fd.playground.pipelineRefreshTrigger,
+          fd.runs.activeRun?.runId,
+          fd.runs.activeRun?.status
+        ].join('|')
+      : null
+  );
   $effect(() => {
-    if (!followRun) return;
-    // Tracked: the shown run, its status (a host run changes nothing else),
-    // and every batch of new messages.
-    void fd.playground.activeExecutionId;
-    void fd.playground.sessionStatus;
-    void fd.playground.pipelineRefreshTrigger;
-    void fd.runs.activeRun?.runId;
-    void fd.runs.activeRun?.status;
+    if (runStatusKey === null) return;
     untrack(() => fd.runs.requestNodeStatuses());
   });
   // Edit mode has no Playground poll to ride on (and a host run has none at
@@ -830,23 +831,18 @@
   // Which tab the open node shows. Picked when the node opens (Last run in Test
   // mode if it ran in the shown run, else Config) and kept until another node
   // opens, so a node that starts running under the cursor does not change the
-  // tab by itself. Edit mode always resolves to Config (`NodeInspector`).
-  let nodeTabPick = $state<{ nodeId: string; tab: NodeInspectorTab } | null>(null);
-  $effect.pre(() => {
-    const id = selectedNodeId;
-    untrack(() => {
-      if (!id) {
-        nodeTabPick = null;
-      } else if (nodeTabPick?.nodeId !== id) {
-        nodeTabPick = {
-          nodeId: id,
-          tab: openingNodeTab(effectiveEditorMode, hasRun(fd.playground.nodeStatusFor(id)))
-        };
-      }
-    });
-  });
-  const nodeInspectorTab = $derived<NodeInspectorTab>(
-    nodeTabPick && nodeTabPick.nodeId === selectedNodeId ? nodeTabPick.tab : 'config'
+  // tab by itself: the only dependency is the selected node, the mode and the
+  // statuses are read untracked. The person's pick is a plain assignment. Edit
+  // mode always resolves to Config (`NodeInspector`).
+  let nodeInspectorTab = $derived<NodeInspectorTab>(
+    selectedNodeId
+      ? untrack(() =>
+          openingNodeTab(
+            effectiveEditorMode,
+            hasRun(fd.playground.nodeStatusFor(selectedNodeId as string))
+          )
+        )
+      : 'config'
   );
 
   // Messages and canvas nodes light each other up through fd.highlight; the
@@ -864,8 +860,9 @@
   function revealNodeLastRun(nodeId: string): boolean {
     const node = fd.workflow.current?.nodes.find((n) => n.id === nodeId);
     if (!testMode || !node) return false;
-    nodeTabPick = { nodeId, tab: 'lastRun' };
+    // Select first: assigning the node afterwards would recompute the tab.
     selectedNodeId = nodeId;
+    nodeInspectorTab = 'lastRun';
     isConfigSidebarOpen = true;
     activeSurface = 'config';
     swapMode = 'idle';
@@ -1219,12 +1216,6 @@
       }
     })();
 
-    // Narrow screens: Test mode's Playground is a drawer over the canvas.
-    const narrowQuery = window.matchMedia('(max-width: 1199px)');
-    narrow = narrowQuery.matches;
-    const handleNarrowChange = (event: MediaQueryListEvent) => (narrow = event.matches);
-    narrowQuery.addEventListener('change', handleNarrowChange);
-
     // Listen for workflow settings toggle from main navbar
     const handleWorkflowSettingsToggle = () => {
       toggleWorkflowSettings();
@@ -1249,7 +1240,6 @@
 
     return () => {
       window.removeEventListener('workflow-settings-toggle', handleWorkflowSettingsToggle);
-      narrowQuery.removeEventListener('change', handleNarrowChange);
       cleanupAutoSave();
     };
   });
@@ -1593,7 +1583,7 @@
   <NodeInspector
     editorMode={effectiveEditorMode}
     tab={nodeInspectorTab}
-    onTabChange={(tab) => (nodeTabPick = { nodeId: node.id, tab })}
+    onTabChange={(tab) => (nodeInspectorTab = tab)}
     info={fd.playground.nodeStatusFor(node.id)}
     runShown={fd.playground.nodeStatusScope !== null}
     lastRunActions={askAssistant &&

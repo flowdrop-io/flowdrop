@@ -390,16 +390,6 @@
   }
 
   /**
-   * Clear a pending signal once the session status moves: that transition is
-   * the signal taking effect (or the run ending on its own).
-   */
-  $effect(() => {
-    // Track the status so this re-runs on every change.
-    void fd.playground.currentSession?.status;
-    untrack(() => fd.runs.clearPendingSignal());
-  });
-
-  /**
    * Run a slash command and surface its outcome as transient composer feedback.
    *
    * Commands are never posted as session messages — control traffic must not

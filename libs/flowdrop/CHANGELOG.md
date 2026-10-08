@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `fd.editorMode.onChange(listener)` and `fd.playground.onSessionStatusChange(listener)`:
+  synchronous listeners, called once per real change at the moment it happens
+  (unlike `subscribeToSessionStatus`, which rides an effect and batches). Each
+  returns its unsubscribe function.
+
 - The docked Playground's header in Test mode is two controls: a **history
   chip** and a **⋯ menu**. The chip names the open conversation (and the run,
   once one is picked) and lists the Conversations (the sessions the Playground
@@ -251,6 +256,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is deprecated with it. Both go in 3.0.
 
 ### Fixed
+
+- The run bar's end time and the pending-signal lock no longer depend on an
+  effect seeing every session status change: the run controller hears each
+  change synchronously, so two changes in one flush are both counted and a
+  run ends at the moment it ended, not when the next flush ran. `fd.runs.activeRun`
+  is memoised (the same object until something it reads changes).
+- Refusing a run on an unsaved workflow now uses the configured messages
+  (`playground.saveFirst`) instead of hardcoded English.
 
 - Test mode on a narrow screen: the Playground drawer ran under the 400px
   inspector at 768px and below, where the layout lays the inspector over the

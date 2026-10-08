@@ -531,6 +531,8 @@ export const defaultMessages = {
     saveFailed: ({ message }: { message: string }) =>
       `Not sent: the workflow was not saved. ${message}`,
     saveNotDone: 'Not sent: the workflow was not saved.',
+    // A run or test session needs a saved workflow and there is none yet.
+    saveFirst: 'Save the workflow first: a test session needs a saved workflow.',
     // Message author labels.
     roles: {
       you: 'You',

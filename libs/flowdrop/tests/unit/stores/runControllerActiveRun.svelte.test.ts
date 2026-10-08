@@ -301,3 +301,81 @@ describe('activeRun: host runs', () => {
     expect(given.onRunStatus).not.toHaveBeenCalled();
   });
 });
+
+describe('synchronous session status listener', () => {
+  it('fires once per real change, including two changes in one block', () => {
+    const playground = new PlaygroundStore();
+    const seen: Array<[string, string]> = [];
+    const off = playground.onSessionStatusChange((status, previous) =>
+      seen.push([status, previous])
+    );
+
+    playground.setCurrentSession(session('s1', 'running'));
+    playground.updateSessionStatus('running'); // no change
+    playground.updateSessionStatus('awaiting_input');
+    playground.updateSessionStatus('running');
+    expect(seen).toEqual([
+      ['running', 'idle'],
+      ['awaiting_input', 'running'],
+      ['running', 'awaiting_input']
+    ]);
+
+    playground.reset(); // clearing the session is a change back to idle
+    expect(seen.at(-1)).toEqual(['idle', 'running']);
+
+    off();
+    playground.setCurrentSession(session('s2', 'failed'));
+    expect(seen).toHaveLength(4);
+  });
+
+  it('is cleared by dispose', () => {
+    const playground = new PlaygroundStore();
+    const listener = vi.fn();
+    playground.onSessionStatusChange(listener);
+    playground.dispose();
+    playground.setCurrentSession(session('s1', 'running'));
+    expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe('activeRun: memoised', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('returns the same object across reads when nothing changed', async () => {
+    const { runs } = setup();
+    await runs.takeTurn({ content: 'hi' });
+    const first = runs.activeRun;
+    expect(first).not.toBeNull();
+    expect(runs.activeRun).toBe(first);
+    runs.dispose();
+  });
+
+  it('stamps endedAt at the terminal transition, not at read time', async () => {
+    const { runs, playground } = setup();
+    await runs.takeTurn({ content: 'hi' });
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-01T00:00:00Z'));
+    const at = Date.now();
+    // Two changes in one synchronous block: both are seen, the last wins.
+    playground.updateSessionStatus('awaiting_input');
+    playground.updateSessionStatus('completed');
+    vi.setSystemTime(new Date('2026-02-01T01:00:00Z'));
+    expect(runs.activeRun?.status).toBe('done');
+    expect(runs.activeRun?.endedAt).toBe(at);
+    runs.dispose();
+  });
+});
+
+describe('pending signal', () => {
+  it('is cleared when the session status changes', async () => {
+    const { runs, playground } = setup();
+    vi.spyOn(pipelineSignalService, 'pause').mockResolvedValue({ status: 'accepted' } as never);
+    await runs.takeTurn({ content: 'hi' });
+    await runs.sendSignal('pause', 'p1');
+    expect(runs.pendingSignal).not.toBeNull();
+
+    playground.updateSessionStatus('awaiting_input');
+    expect(runs.pendingSignal).toBeNull();
+    runs.dispose();
+  });
+});
