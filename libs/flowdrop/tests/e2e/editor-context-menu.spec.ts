@@ -9,7 +9,7 @@
 
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { gotoEditor, assertStatusBar, selectNode } from './helpers/editor-helpers';
+import { gotoEditor, assertStatusBar, assertNodeCount, selectNode } from './helpers/editor-helpers';
 
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 
@@ -80,7 +80,7 @@ test.describe('Canvas context menu', () => {
     await expect(menu(page).getByRole('menuitem')).toHaveText([/Delete 2 nodes/]);
 
     await menu(page).getByRole('menuitem', { name: 'Delete 2 nodes' }).click();
-    await expect(page.locator('.flowdrop-status-bar')).toContainText('0 nodes');
+    await assertNodeCount(page, 0);
   });
 
   test('Configure opens the config panel', async ({ page }) => {

@@ -8,7 +8,6 @@
   import {
     SvelteFlow,
     ConnectionLineType,
-    Controls,
     Background,
     BackgroundVariant,
     MiniMap,
@@ -24,6 +23,7 @@
   import CanvasBanner from './CanvasBanner.svelte';
   import CanvasToolbar from './CanvasToolbar.svelte';
   import CanvasController from './CanvasController.svelte';
+  import CanvasZoomControls from './CanvasZoomControls.svelte';
   import CanvasContextMenu from './CanvasContextMenu.svelte';
   import {
     resolveContextMenuEntries,
@@ -69,6 +69,12 @@
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import { suppressPortDragSelection } from '../utils/canvasSelection.js';
+  import {
+    MINIMAP_WIDTH,
+    MINIMAP_HEIGHT,
+    MINIMAP_BORDER,
+    shouldShowMinimap
+  } from '../utils/minimapVisibility.js';
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
   import { DEV } from 'esm-env';
 
@@ -766,6 +772,21 @@
   let openMenu = $state.raw<OpenContextMenu | null>(null);
   let canvasEl: HTMLDivElement | undefined = $state();
 
+  // Canvas width, tracked on the canvas element (not the window): the editor can
+  // sit in a narrow column of a wider page. Drives the minimap's 800 px rule.
+  let canvasWidth: number | undefined = $state();
+  $effect(() => {
+    if (!canvasEl) return;
+    const el = canvasEl;
+    canvasWidth = el.clientWidth;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[entries.length - 1];
+      if (entry) canvasWidth = entry.contentRect.width;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
+
   // A message link's node lights up here, and the node under the pointer
   // lights its messages (fd.highlight). A class on xyflow's own node wrapper,
   // so every node type gets it without knowing about it.
@@ -1298,7 +1319,11 @@
               rebuildTrigger={portCoordRebuildTrigger}
               nodes={flowNodes}
             />
-            <Controls />
+            <CanvasZoomControls
+              nodeCount={flowNodes.length}
+              edgeCount={flowEdges.length}
+              {hasCycles}
+            />
             <!-- Always render Background for consistent bg color in dark/light mode -->
             <Background
               gap={getEditorSettings().gridSize}
@@ -1309,8 +1334,11 @@
                 ? 'var(--fd-grid-pattern-color)'
                 : 'transparent'}
             />
-            {#if getEditorSettings().showMinimap}
-              <MiniMap />
+            {#if shouldShowMinimap(getEditorSettings().showMinimap, canvasWidth)}
+              <MiniMap
+                width={MINIMAP_WIDTH - 2 * MINIMAP_BORDER}
+                height={MINIMAP_HEIGHT - 2 * MINIMAP_BORDER}
+              />
             {/if}
           </SvelteFlow>
         {/key}
@@ -1366,24 +1394,6 @@
         />
       {/if}
     </div>
-
-    <!-- Status Bar: aria-live announces dynamic changes (node/edge counts, cycle warnings) -->
-    <div class="flowdrop-status-bar" aria-live="polite" aria-atomic="true">
-      <div class="flowdrop-status-bar__content">
-        <div class="flowdrop-flex flowdrop-gap--4">
-          <span class="flowdrop-text--xs flowdrop-text--gray">{flowNodes.length} nodes</span>
-          <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
-          <span class="flowdrop-text--xs flowdrop-text--gray">{flowEdges.length} connections</span>
-
-          {#if hasCycles}
-            <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
-            <span class="flowdrop-text--xs flowdrop-font--medium flowdrop-text--error"
-              >⚠️ Cycles detected</span
-            >
-          {/if}
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1413,34 +1423,11 @@
     transition: margin-left 0.3s ease-in-out;
   }
 
-  .flowdrop-text--error {
-    color: var(--fd-error);
-  }
-
   .flowdrop-canvas {
     flex: 1;
     min-height: 0;
     position: relative;
     background: transparent;
-  }
-
-  .flowdrop-status-bar {
-    background-color: var(--fd-backdrop);
-    backdrop-filter: var(--fd-backdrop-blur);
-    border-top: 1px solid var(--fd-border);
-    padding: 0.75rem;
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-  }
-
-  .flowdrop-status-bar__content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
   }
 
   :global(.flowdrop-workflow-editor .svelte-flow__node:hover) {

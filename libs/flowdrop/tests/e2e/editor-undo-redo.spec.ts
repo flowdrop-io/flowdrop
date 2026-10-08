@@ -5,14 +5,13 @@
  * after performing workflow operations like node deletion.
  */
 
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { gotoEditor, assertStatusBar, selectNode } from './helpers/editor-helpers';
+import { gotoEditor, assertStatusBar, assertNodeCount, selectNode } from './helpers/editor-helpers';
 
-/** Poll the status bar until it reports exactly `expected` nodes. */
+/** Poll the zoom-control tally until it reports exactly `expected` nodes. */
 async function expectNodeCount(page: Page, expected: number): Promise<void> {
-  const statusBar = page.locator('.flowdrop-status-bar');
-  await expect(statusBar).toContainText(`${expected} nodes`, { timeout: 5000 });
+  await assertNodeCount(page, expected);
 }
 
 test.describe('Undo/Redo', () => {

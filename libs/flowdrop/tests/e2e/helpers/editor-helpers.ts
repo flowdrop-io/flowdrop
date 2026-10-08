@@ -66,16 +66,20 @@ export async function getNodeCount(page: Page): Promise<number> {
   return page.locator('.svelte-flow__node').count();
 }
 
+/** The node/connection tally beside the zoom controls (replaced the status bar). */
+export function canvasCountLocator(page: Page) {
+  return page.locator('.fd-zoom-status__count');
+}
+
 /**
- * Get the edge count from the status bar text.
+ * Get the edge count from the tally beside the zoom controls.
  * SvelteFlow renders edges as SVG elements that may not be immediately
- * queryable via DOM selectors, so we read the count from the status bar
- * which reflects the internal state.
+ * queryable via DOM selectors, so we read the count from the tally's
+ * accessible name ("2 nodes · 1 connection"), which reflects the internal state.
  */
 export async function getEdgeCount(page: Page): Promise<number> {
-  const statusBar = page.locator('.flowdrop-status-bar');
-  const text = await statusBar.textContent({ timeout: 5000 });
-  const match = text?.match(/(\d+)\s*connections/);
+  const label = await canvasCountLocator(page).getAttribute('aria-label', { timeout: 5000 });
+  const match = label?.match(/(\d+)\s*connections?/);
   return match ? parseInt(match[1], 10) : 0;
 }
 
@@ -83,19 +87,27 @@ export async function getEdgeCount(page: Page): Promise<number> {
 // Assertions
 // ---------------------------------------------------------------------------
 
-/** Assert the status bar shows expected node and edge counts */
+/** Assert the canvas shows expected node and edge counts (zoom-control tally) */
 export async function assertStatusBar(
   page: Page,
   expectedNodes: number,
   expectedEdges: number
 ): Promise<void> {
-  const statusBar = page.locator('.flowdrop-status-bar');
-  await expect(statusBar).toContainText(`${expectedNodes} nodes`, {
-    timeout: 5000
-  });
-  await expect(statusBar).toContainText(`${expectedEdges} connections`, {
-    timeout: 5000
-  });
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  await expect(canvasCountLocator(page)).toHaveAttribute(
+    'aria-label',
+    `${plural(expectedNodes, 'node')} · ${plural(expectedEdges, 'connection')}`,
+    { timeout: 5000 }
+  );
+}
+
+/** Assert the canvas shows the expected node count (any connection count) */
+export async function assertNodeCount(page: Page, expectedNodes: number): Promise<void> {
+  await expect(canvasCountLocator(page)).toHaveAttribute(
+    'aria-label',
+    new RegExp(`^${expectedNodes} nodes? · `),
+    { timeout: 5000 }
+  );
 }
 
 // ---------------------------------------------------------------------------

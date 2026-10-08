@@ -57,11 +57,14 @@ test.describe('Editor Performance — large graph', () => {
         : null;
     });
 
-    // Status bar reflects node count and the trigger-chain connections (N-1).
-    const statusBar = page.locator('.flowdrop-status-bar');
-    if (await statusBar.count()) {
-      await expect(statusBar).toContainText(`${NODE_COUNT} nodes`, { timeout: 5000 });
-      await expect(statusBar).toContainText(`${NODE_COUNT - 1} connections`, { timeout: 5000 });
+    // The tally beside the zoom controls reflects node count and the trigger-chain connections (N-1).
+    const tally = page.locator('.fd-zoom-status__count');
+    if (await tally.count()) {
+      await expect(tally).toHaveAttribute(
+        'aria-label',
+        `${NODE_COUNT} nodes · ${NODE_COUNT - 1} connections`,
+        { timeout: 5000 }
+      );
     }
 
     console.log('\n── Editor perf (large graph) ──────────────────────────');

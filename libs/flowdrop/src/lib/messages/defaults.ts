@@ -254,6 +254,16 @@ export const defaultMessages = {
     }
   },
 
+  // The node count (and cycle warning) beside the canvas zoom controls.
+  canvasStatus: {
+    nodeCount: ({ n }: { n: number }) => `${n} node${n !== 1 ? 's' : ''}`,
+    // Title / accessible name of the count: the full tally.
+    summary: ({ nodes, edges }: { nodes: number; edges: number }) =>
+      `${nodes} node${nodes !== 1 ? 's' : ''} · ${edges} connection${edges !== 1 ? 's' : ''}`,
+    cycles: 'Cycles detected',
+    cyclesTitle: 'The workflow contains a cycle'
+  },
+
   contextMenu: {
     // aria-label of the canvas context menu.
     menuLabel: 'Canvas actions',
