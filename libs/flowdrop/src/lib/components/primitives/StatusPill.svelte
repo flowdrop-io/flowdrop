@@ -86,6 +86,29 @@
   <span class="flowdrop-ui-status-pill__icon" aria-hidden="true">
     <Icon icon={ICONS[status]} />
   </span>
+  <!-- Plain glyphs for themes that set --fd-status-pill-glyph-display (Graphite): no circle outlines. -->
+  <svg
+    class="flowdrop-ui-status-pill__glyph"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    {#if status === 'completed'}
+      <path d="M3.5 8.5l3 3 6-7" />
+    {:else if status === 'waiting'}
+      <path d="M6 4v8M10 4v8" />
+    {:else if status === 'failed'}
+      <path d="M4 4l8 8M12 4l-8 8" />
+    {:else if status === 'running'}
+      <path d="M8 2.5a5.5 5.5 0 1 0 5.5 5.5" />
+    {:else}
+      <path d="M4 8h8" />
+    {/if}
+  </svg>
   <span class="flowdrop-ui-status-pill__label">{text}</span>
   {#if showCount}
     <span class="flowdrop-ui-status-pill__count">{count}</span>
@@ -142,15 +165,23 @@
   }
 
   .flowdrop-ui-status-pill__icon {
-    display: inline-flex;
+    display: var(--fd-status-pill-icon-display);
     font-size: var(--fd-status-pill-icon-size);
+  }
+
+  .flowdrop-ui-status-pill__glyph {
+    display: var(--fd-status-pill-glyph-display);
+    flex: none;
+    width: var(--fd-status-pill-icon-size);
+    height: var(--fd-status-pill-icon-size);
   }
 
   .flowdrop-ui-status-pill--sm .flowdrop-ui-status-pill__icon {
     font-size: var(--fd-text-xs);
   }
 
-  .flowdrop-ui-status-pill--running .flowdrop-ui-status-pill__icon {
+  .flowdrop-ui-status-pill--running .flowdrop-ui-status-pill__icon,
+  .flowdrop-ui-status-pill--running .flowdrop-ui-status-pill__glyph {
     animation: flowdrop-ui-status-pill-spin 1.2s linear infinite;
   }
 
@@ -179,7 +210,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .flowdrop-ui-status-pill--running .flowdrop-ui-status-pill__icon {
+    .flowdrop-ui-status-pill--running .flowdrop-ui-status-pill__icon,
+    .flowdrop-ui-status-pill--running .flowdrop-ui-status-pill__glyph {
       animation: none;
     }
   }

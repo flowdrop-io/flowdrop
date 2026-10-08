@@ -434,8 +434,9 @@
   .flowdrop-terminal-node__content {
     width: var(--fd-node-terminal-size);
     height: var(--fd-node-terminal-size);
-    background-color: var(--fd-background);
-    border: 3px solid var(--terminal-color, var(--fd-muted-foreground));
+    background-color: var(--fd-node-terminal-bg);
+    border: var(--fd-node-terminal-border-width) solid
+      var(--fd-node-terminal-border-color, var(--terminal-color, var(--fd-muted-foreground)));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -452,14 +453,18 @@
   .flowdrop-terminal-node--selected .flowdrop-terminal-node__content {
     box-shadow:
       var(--fd-node-shadow-hover),
-      0 0 0 3px color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-terminal-ring-width))
+        var(--fd-node-terminal-ring);
     border-color: var(--fd-node-selected-border);
   }
 
   .flowdrop-terminal-node--selected:hover .flowdrop-terminal-node__content {
     box-shadow:
       var(--fd-node-shadow-hover),
-      0 0 0 3px color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-terminal-ring-width))
+        var(--fd-node-terminal-ring);
     border-color: var(--fd-node-selected-border);
     transform: scale(1.05);
   }
@@ -478,43 +483,61 @@
 
   /* Variant-specific glow effects */
   .flowdrop-terminal-node--start .flowdrop-terminal-node__content {
-    box-shadow:
+    box-shadow: var(
+      --fd-node-terminal-shadow,
       0 4px 6px -1px color-mix(in srgb, var(--fd-success) 20%, transparent),
-      0 2px 4px -1px color-mix(in srgb, var(--fd-success) 10%, transparent);
+      0 2px 4px -1px color-mix(in srgb, var(--fd-success) 10%, transparent)
+    );
   }
 
   .flowdrop-terminal-node--start:hover .flowdrop-terminal-node__content {
-    box-shadow:
+    box-shadow: var(
+      --fd-node-terminal-shadow-hover,
       0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
-      0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent);
+      0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent)
+    );
   }
 
   .flowdrop-terminal-node--start.flowdrop-terminal-node--selected:hover
     .flowdrop-terminal-node__content {
     box-shadow:
-      0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
-      0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent),
-      0 0 0 3px color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+      var(
+        --fd-node-terminal-shadow-hover,
+        0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
+        0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent)
+      ),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-terminal-ring-width))
+        var(--fd-node-terminal-ring);
   }
 
   .flowdrop-terminal-node--exit .flowdrop-terminal-node__content {
-    box-shadow:
+    box-shadow: var(
+      --fd-node-terminal-shadow,
       0 4px 6px -1px color-mix(in srgb, var(--fd-error) 20%, transparent),
-      0 2px 4px -1px color-mix(in srgb, var(--fd-error) 10%, transparent);
+      0 2px 4px -1px color-mix(in srgb, var(--fd-error) 10%, transparent)
+    );
   }
 
   .flowdrop-terminal-node--exit:hover .flowdrop-terminal-node__content {
-    box-shadow:
+    box-shadow: var(
+      --fd-node-terminal-shadow-hover,
       0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
-      0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent);
+      0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent)
+    );
   }
 
   .flowdrop-terminal-node--exit.flowdrop-terminal-node--selected:hover
     .flowdrop-terminal-node__content {
     box-shadow:
-      0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
-      0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent),
-      0 0 0 3px color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+      var(
+        --fd-node-terminal-shadow-hover,
+        0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
+        0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent)
+      ),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-terminal-ring-width))
+        var(--fd-node-terminal-ring);
   }
 
   /* Squircle icon wrapper - px (not rem) so the icon stays grid-locked
@@ -526,23 +549,25 @@
     width: 44px;
     height: 44px;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
+    background: var(
+      --fd-node-terminal-icon-bg,
+      color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent)
+    );
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
   }
 
   .flowdrop-terminal-node:hover .flowdrop-terminal-node__icon-wrapper {
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity-hover),
-      transparent
+    background: var(
+      --fd-node-terminal-icon-bg,
+      color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity-hover), transparent)
     );
   }
 
   .flowdrop-terminal-node__icon-wrapper :global(.flowdrop-terminal-node__icon) {
-    width: 24px;
-    height: 24px;
-    color: var(--fd-node-icon);
+    width: var(--fd-node-terminal-icon-size);
+    height: var(--fd-node-terminal-icon-size);
+    color: var(--fd-node-terminal-icon-color, var(--fd-node-icon));
   }
 
   .flowdrop-terminal-node__label-container {
@@ -550,16 +575,16 @@
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    background-color: var(--fd-backdrop);
+    background-color: var(--fd-node-terminal-label-bg);
     padding: 4px 8px;
     border-radius: var(--fd-radius-sm);
-    box-shadow: var(--fd-shadow-sm);
+    box-shadow: var(--fd-node-terminal-label-shadow);
     max-width: 140px;
   }
 
   .flowdrop-terminal-node__label {
     font-size: var(--fd-text-xs);
-    font-weight: 500;
+    font-weight: var(--fd-node-terminal-label-weight);
     color: var(--fd-foreground);
     text-align: center;
     overflow: hidden;

@@ -407,6 +407,8 @@
   --fd-status-pill-padding: 0 var(--fd-space-xs); /* @internal */
   --fd-status-pill-border-width: 1px; /* @internal */
   --fd-status-pill-icon-size: var(--fd-text-sm); /* @internal */
+  --fd-status-pill-icon-display: inline-flex; /* @internal  icon-set glyph (circled) */
+  --fd-status-pill-glyph-display: none; /* @internal  plain inline glyph, no circle */
   /* The count after the label: left at `initial` it is a filled chip; a theme may set
      bg / fg / font / opacity / rule / pad / min / radius / prefix to make it a "×3" suffix. */
   --fd-status-pill-count-bg: initial; /* @internal */
@@ -418,6 +420,26 @@
   --fd-status-pill-count-min: initial; /* @internal */
   --fd-status-pill-count-radius: initial; /* @internal */
   --fd-status-pill-count-prefix: initial; /* @internal */
+  /* Terminal (start / end / exit) circle. Left at `initial`, the border takes the variant colour and the
+     variant glows apply; a theme sets them to match the other nodes. */
+  --fd-node-terminal-bg: var(--fd-background); /* @internal */
+  --fd-node-terminal-border-width: 3px; /* @internal */
+  --fd-node-terminal-border-color: initial; /* @internal */
+  --fd-node-terminal-shadow: initial; /* @internal */
+  --fd-node-terminal-shadow-hover: initial; /* @internal */
+  --fd-node-terminal-ring: color-mix(
+    in srgb,
+    var(--fd-node-selected-border) 50%,
+    transparent
+  ); /* @internal */
+  --fd-node-terminal-ring-width: 3px; /* @internal */
+  --fd-node-terminal-icon-bg: initial; /* @internal  tinted squircle unless set */
+  --fd-node-terminal-icon-color: initial; /* @internal */
+  --fd-node-terminal-icon-size: 24px; /* @internal */
+  --fd-node-terminal-label-bg: var(--fd-backdrop); /* @internal */
+  --fd-node-terminal-label-shadow: var(--fd-shadow-sm); /* @internal */
+  --fd-node-terminal-label-weight: 500; /* @internal */
+  --fd-node-dim-opacity: 1; /* @internal  Test mode: nodes without a status in the shown run */
   --fd-node-status-edge: 0px; /* @internal  extra thickness of a status-coloured node border */
   --fd-node-status-ring: 0px; /* @internal  soft halo of a node that waits for you */
 
@@ -587,9 +609,15 @@
   --fd-node-port-chip-size: 10px; /* @internal */
   --fd-node-port-chip-border: var(--fd-border); /* @internal */
   --fd-node-port-chip-pad: 0 4px; /* @internal */
-  --fd-node-port-required-bg: var(--fd-error); /* @internal  "Required" marker on an input port */
-  --fd-node-port-required-fg: var(--fd-error-foreground); /* @internal */
-  --fd-node-port-required-pad: 2px 4px; /* @internal */
+  /* "Required" on an input port: the badge by default; a theme may show an asterisk after the
+     name instead and visually hide the word (it stays for screen readers). The word-* tokens
+     are left at `initial` unless hidden. */
+  --fd-node-port-required-mark-display: none; /* @internal */
+  --fd-node-port-required-mark-size: 11px; /* @internal */
+  --fd-node-port-required-word-position: initial; /* @internal */
+  --fd-node-port-required-word-size: initial; /* @internal */
+  --fd-node-port-required-word-overflow: initial; /* @internal */
+  --fd-node-port-required-word-clip: initial; /* @internal */
   --fd-node-port-symbol-display: inline-flex; /* @internal  shape glyph beside the name */
   --fd-node-port-out-name-order: 0; /* @internal  output row: name, type tag, glyph order */
   --fd-node-port-out-chip-order: 0; /* @internal */

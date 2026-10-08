@@ -172,10 +172,22 @@
   font-size: var(--fd-node-port-chip-size);
 }
 
+/* "Required" on a port: the badge, or (Graphite) a small asterisk after the
+   name with the word kept for screen readers. */
 .svelte-flow__node .fd-port-label .fd-port-label__required {
-  padding: var(--fd-node-port-required-pad);
-  background-color: var(--fd-node-port-required-bg);
-  color: var(--fd-node-port-required-fg);
+  position: var(--fd-node-port-required-word-position, static);
+  width: var(--fd-node-port-required-word-size, auto);
+  height: var(--fd-node-port-required-word-size, auto);
+  overflow: var(--fd-node-port-required-word-overflow, visible);
+  clip-path: var(--fd-node-port-required-word-clip, none);
+}
+
+.svelte-flow__node .fd-port-label .fd-port-label__required-mark {
+  display: var(--fd-node-port-required-mark-display);
+  color: var(--fd-error);
+  font-size: var(--fd-node-port-required-mark-size);
+  font-weight: 600;
+  line-height: 1;
 }
 
 .svelte-flow__node .fd-port-label__name {

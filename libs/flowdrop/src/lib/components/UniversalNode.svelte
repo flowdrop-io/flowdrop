@@ -84,6 +84,21 @@
   );
 
   /**
+   * Test mode with a run on screen: a node that has no status in that run is
+   * dimmed (by `--fd-node-dim-opacity`, 1 unless a theme sets it); hover and
+   * selection bring it back.
+   */
+  let isAnnotation = $derived(
+    resolvedComponentName === 'note' || resolvedComponentName === 'caption'
+  );
+  let dimmed = $derived(
+    fd.editedNodes.visible &&
+      Object.keys(fd.playground.nodeStatuses).length > 0 &&
+      !shouldShowStatus &&
+      !isAnnotation
+  );
+
+  /**
    * Canvas zoom for the pill's counter-scaling. Read only while a status is
    * shown, so a node without one never subscribes to the viewport (panning
    * would otherwise re-evaluate every node). Outside a SvelteFlow (unit
@@ -165,8 +180,11 @@
 <div
   class="universal-node"
   class:universal-node--status-border={borderStatus}
+  class:universal-node--dim={dimmed}
+  class:universal-node--terminal={resolvedComponentName === 'terminal'}
+  class:universal-node--selected={selected}
   style={borderStatus
-    ? `--fd-node-border: var(--fd-status-${borderStatus}); --fd-node-border-hover: var(--fd-status-${borderStatus});`
+    ? `--fd-node-border: var(--fd-status-${borderStatus}); --fd-node-border-hover: var(--fd-status-${borderStatus}); --fd-node-terminal-border-color: var(--fd-status-${borderStatus});`
     : undefined}
   bind:this={universalNodeEl}
 >
@@ -201,6 +219,24 @@
      (--fd-node-status-edge) and add a soft halo while a node waits. */
   .universal-node--status-border :global(.node-status-overlay__frame) {
     box-shadow: var(--_frame);
+  }
+
+  /* The circle of a terminal node carries the status frame, not the whole box. */
+  .universal-node--terminal :global(.node-status-overlay__frame) {
+    inset: 0 auto auto 50%;
+    width: var(--fd-node-terminal-size);
+    height: var(--fd-node-terminal-size);
+    translate: -50% 0;
+    border-radius: var(--fd-radius-full);
+  }
+
+  .universal-node--dim {
+    opacity: var(--fd-node-dim-opacity);
+    transition: opacity var(--fd-transition-fast);
+  }
+  .universal-node--dim:hover,
+  .universal-node--dim.universal-node--selected {
+    opacity: 1;
   }
 
   .universal-node__edited {

@@ -107,7 +107,7 @@ describe('graphite theme', () => {
       shared.has(k) ||
       /^(node-radius|node-border-width|node-shadow|node-shadow-hover|scrollbar-radius)$/.test(k) ||
       // Canvas anatomy: sizes, and colours written as var() references, which resolve per mode.
-      /^(node-(header-(gap|title-height|min-height|padding-x|row-gap)|title-|icon-(size|glyph-size|radius)|port|selected-|status-)|handle-visual-size|status-pill-|toolbar-segment|zoom-|controls-button|minimap-(radius|shadow|border|bg|mask-stroke|node))/.test(
+      /^(node-(header-(gap|title-height|min-height|padding-x|row-gap)|title-|terminal-|dim-|icon-(size|glyph-size|radius)|port|selected-|status-)|handle-visual-size|status-pill-|toolbar-segment|zoom-|controls-button|minimap-(radius|shadow|border|bg|mask-stroke|node))/.test(
         k
       );
     const missing = Object.keys(graphiteSkin.tokens ?? {}).filter(

@@ -81,7 +81,12 @@
     <PortShapeSymbol {checker} {port} />
   {:else}
     <PortShapeSymbol {checker} {port} />
-    <span class="fd-port-label__name" class:fd-port-label__name--active={active}>{text}</span>
+    <span class="fd-port-label__name" class:fd-port-label__name--active={active}
+      >{text}{#if showRequired && port.required}<span
+          class="fd-port-label__required-mark"
+          aria-hidden="true">*</span
+        >{/if}</span
+    >
     <PortLaneChip {checker} {port} />
     {#if showRequired && port.required}
       <span class="flowdrop-badge flowdrop-badge--sm fd-port-label__required">{requiredLabel}</span>
@@ -122,6 +127,13 @@
   .fd-port-label__name--active {
     color: var(--fd-success);
     font-weight: 600;
+  }
+
+  /* The asterisk after the name is for themes that replace the "Required" badge
+     with it (it is hidden unless a node's tokens show it, see base.css); the
+     badge text stays in the DOM for screen readers either way. */
+  .fd-port-label__required-mark {
+    display: none;
   }
 
   /* Matches the solid error badge the node components already drew. */
