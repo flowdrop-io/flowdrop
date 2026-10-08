@@ -213,6 +213,8 @@ test.describe('Run badges', () => {
 
     // Changing its config does.
     await node(page, 'node-input').dblclick({ force: true });
+    // Test mode opens a node's sheet on Last run; the edit is on Config.
+    await page.getByTestId('inspector-sheet').getByRole('tab', { name: 'Config' }).click();
     const defaultValue = page.locator('.config-form input#defaultValue');
     await defaultValue.click();
     await defaultValue.press('End');
