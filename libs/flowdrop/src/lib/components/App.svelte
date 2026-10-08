@@ -13,7 +13,6 @@
   import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
   import NodeSidebar from '$lib/components/NodeSidebar.svelte';
   import DockedPlayground from '$lib/components/playground/DockedPlayground.svelte';
-  import EditorModeSwitch from '$lib/components/EditorModeSwitch.svelte';
   import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
   import EditorStatusBar from '$lib/components/EditorStatusBar.svelte';
   import MenuIcon from '$lib/components/icons/MenuIcon.svelte';
@@ -142,7 +141,7 @@
      * workflow and no `pipelineId`, and `features.testMode` not off.
      *
      * Seeds `instance.editorMode`, the per-instance store that is the source
-     * of truth afterwards (the navbar's Edit | Test switch writes it, and so
+     * of truth afterwards (the canvas toolbar's Edit | Test switch writes it, and so
      * can a host: `instance.editorMode.set('test')`). A later change of this
      * prop sets the store again.
      *
@@ -150,8 +149,8 @@
      */
     editorMode?: EditorMode;
     /**
-     * Called when the Edit | Test mode changes after mount (the navbar switch,
-     * the run bar's "Open", `instance.editorMode.set`). Not called for the
+     * Called when the Edit | Test mode changes after mount (the canvas toolbar switch,
+     * the T shortcut, the run pill's "Open", `instance.editorMode.set`). Not called for the
      * initial value. A host uses it to keep its URL in step.
      */
     onEditorModeChange?: (mode: EditorMode) => void;
@@ -1442,15 +1441,31 @@
 
     // N opens the node library in Test mode, where the sidebar is the Playground.
     const isLibraryKey = testMode && (event.key === 'n' || event.key === 'N');
-    if (event.key !== '`' && !isLibraryKey) return;
-    if (isLibraryKey && (event.metaKey || event.ctrlKey || event.altKey)) return;
+    // T toggles Edit | Test where Test mode is offered.
+    const isModeKey = testModeAvailable && (event.key === 't' || event.key === 'T');
+    if (event.key !== '`' && !isLibraryKey && !isModeKey) return;
+    if (
+      (isLibraryKey || isModeKey) &&
+      (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.repeat)
+    ) {
+      return;
+    }
 
-    // Don't intercept when user is typing in an input, textarea, or contenteditable
+    // Don't intercept when user is typing in an input, textarea, contenteditable
+    // or code editor (CodeMirror's content is contenteditable, the closest() is a backstop)
     const target = event.target as HTMLElement;
     const isInputElement =
-      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable ||
+      !!target.closest?.('.cm-editor');
 
     if (isInputElement) return;
+    if (isModeKey) {
+      event.preventDefault();
+      fd.editorMode.set(testMode ? 'edit' : 'test');
+      return;
+    }
     if (isLibraryKey) {
       event.preventDefault();
       toggleLibrary();
@@ -1899,17 +1914,6 @@
   {/if}
 {/snippet}
 
-<!-- The Edit | Test switch, in the navbar's trailing region -->
-{#snippet editorModeEnd()}
-  {#if testModeAvailable}
-    <EditorModeSwitch
-      mode={effectiveEditorMode}
-      onChange={(next) => fd.editorMode.set(next)}
-      runActive={fd.runs.isLive}
-    />
-  {/if}
-{/snippet}
-
 <!-- Test mode's Playground, in the left slot or, on a narrow screen, a drawer -->
 {#snippet dockedPlayground()}
   {#if fd.workflow.current}
@@ -1955,7 +1959,6 @@
         {settingsCategories}
         {showSettingsSyncButton}
         {showSettingsResetButton}
-        end={editorModeEnd}
       />
     {/snippet}
 
@@ -2082,6 +2085,8 @@
       class:pipeline-view={!!pipelineId}
       style="--fd-canvas-left-offset: {testMode || !disableSidebar
         ? leftSidebarWidth + 'px'
+        : '0px'}; --fd-canvas-toolbar-inset: {testMode && narrow && drawerOpen
+        ? 'var(--fd-test-drawer-width)'
         : '0px'}"
       onclick={handleCanvasClick}
       onkeydown={(e) => {
@@ -2184,7 +2189,8 @@
         {contextMenu}
         gridVariant={themeConfig?.canvas?.grid ?? 'dots'}
         consoleOpen={consoleActive}
-        showRunBar={!fd.editorMode.isTest}
+        editorMode={effectiveEditorMode}
+        onEditorModeChange={testModeAvailable ? (next) => fd.editorMode.set(next) : undefined}
         onOpenTest={testModeAvailable ? () => fd.editorMode.set('test') : undefined}
         onToggleConsole={consoleGroupOffered ? toggleConsole : undefined}
         consoleToggleLabel={consoleTabOffered
@@ -2273,7 +2279,8 @@
 
   /* Floating sidebar toggle button — placement only; visuals live in CanvasIconButton */
   :global(.flowdrop-sidebar-fab) {
-    top: 12px;
+    /* Below the canvas toolbar, which holds the top-left corner. */
+    top: 56px;
     left: 12px;
     z-index: 50;
   }
@@ -2308,14 +2315,14 @@
     box-shadow: var(--fd-shadow-lg);
   }
 
-  /* Test mode's node library, over the canvas's top-left corner. */
+  /* Test mode's node library, over the canvas's top-left corner, below the canvas toolbar. */
   .node-library-popover {
     position: absolute;
-    top: 12px;
+    top: 56px;
     left: 12px;
     z-index: 60;
     width: 280px;
-    max-height: calc(100% - 24px);
+    max-height: calc(100% - 68px);
     display: flex;
     flex-direction: column;
     overflow: hidden;

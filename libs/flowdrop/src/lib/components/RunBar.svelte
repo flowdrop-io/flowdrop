@@ -1,20 +1,30 @@
 <!--
-  RunBar — the Edit-mode run bar at the top centre of the canvas.
+  RunBar — the run pill in the canvas toolbar (`CanvasToolbar` renders it).
 
   Shown only while the instance has a run (`fd.runs.activeRun`): there is no
-  idle bar. It says where the run stands, offers Stop while the run is live and
-  Open (to Test mode) when it waits for a person, and fades out a few seconds
-  after the run ends. The node status badges fade with it: dismissing the run
-  clears `fd.playground.nodeStatuses`.
+  idle pill. It says where the run stands, offers Stop while the run is live and
+  Open (to Test mode) when it waits for a person, and, in Edit mode, fades out
+  a few seconds after the run ends. The node status badges fade with it:
+  dismissing the run clears `fd.playground.nodeStatuses`.
+
+  In Test mode (`mode="test"`) the pill shows only while the run is live (status
+  and Stop; no Open, you are already there) and never dismisses the run: the
+  Playground owns the run's record there.
 
   Node statuses are not loaded here: `App` owns that (one coalesced
   `fd.runs.requestNodeStatuses()` for Test mode and the Edit-mode run).
+
+  Renders inline (a separator plus the pill), meant to sit inside a `Toolbar`.
 -->
 
 <script lang="ts">
   import { getInstance } from '../stores/getInstance.svelte.js';
   import { getMessages } from '../messages/context.js';
   import { TERMINAL_RUN_STATUSES } from '../stores/runController.svelte.js';
+  import type { StatusPillStatus } from './primitives/StatusPill.svelte';
+  import StatusPill from './primitives/StatusPill.svelte';
+  import Button from './primitives/Button.svelte';
+  import ToolbarSeparator from './primitives/ToolbarSeparator.svelte';
 
   interface Props {
     /**
@@ -28,11 +38,13 @@
      * failed with a known pipeline.
      */
     onAskAssistant?: (runId: string) => void;
-    /** How long a finished run's bar stays, in milliseconds. @default 4500 */
+    /** How long a finished run's pill stays, in milliseconds. @default 4500 */
     fadeMs?: number;
+    /** Editor mode the pill is shown in. @default 'edit' */
+    mode?: 'edit' | 'test';
   }
 
-  let { onOpen, onAskAssistant, fadeMs = 4500 }: Props = $props();
+  let { onOpen, onAskAssistant, fadeMs = 4500, mode = 'edit' }: Props = $props();
 
   const fd = getInstance();
   const getMsgs = getMessages();
@@ -46,6 +58,18 @@
   const endedAt = $derived(run?.endedAt ?? null);
   const live = $derived(status === 'running' || status === 'waiting');
   const ended = $derived(status !== null && TERMINAL_RUN_STATUSES.includes(status));
+
+  const pillStatus = $derived<StatusPillStatus | null>(
+    status === null
+      ? null
+      : status === 'done'
+        ? 'completed'
+        : status === 'stopped'
+          ? 'skipped'
+          : status
+  );
+  /** Test mode shows the pill only while the run is live. */
+  const visible = $derived(mode === 'test' ? live : status !== null);
 
   const statusLabel = $derived(status ? msgs[status] : '');
   const announcement = $derived(status ? msgs.announce[status] : '');
@@ -66,7 +90,7 @@
 
   // Fade after the run ends, then drop the run (and with it the badges).
   $effect(() => {
-    if (!ended || held) {
+    if (mode !== 'edit' || !ended || held) {
       fading = false;
       return;
     }
@@ -86,7 +110,8 @@
   {announcement}
 </div>
 
-{#if run && status}
+{#if run && status && pillStatus && visible}
+  <ToolbarSeparator />
   <div
     class="flowdrop-run-bar flowdrop-run-bar--{status}"
     class:flowdrop-run-bar--fading={fading}
@@ -97,38 +122,33 @@
     onfocusin={hold}
     onfocusout={release}
   >
-    <span class="flowdrop-run-bar__status">{statusLabel}</span>
-    {#if status === 'waiting' && onOpen}
-      <button
-        type="button"
-        class="flowdrop-run-bar__pill flowdrop-run-bar__pill--primary"
-        aria-label={msgs.openLabel}
-        onclick={onOpen}
-      >
+    <StatusPill status={pillStatus} label={statusLabel} size="sm" />
+    {#if status === 'waiting' && onOpen && mode === 'edit'}
+      <Button variant="primary" size="sm" ariaLabel={msgs.openLabel} onclick={onOpen}>
         {msgs.open}
-      </button>
+      </Button>
     {/if}
     {#if status === 'failed' && run.runId && onAskAssistant}
       {@const failedRunId = run.runId}
-      <button
-        type="button"
-        class="flowdrop-run-bar__pill flowdrop-run-bar__pill--primary"
+      <Button
+        variant="primary"
+        size="sm"
         data-testid="run-bar-ask-assistant"
-        aria-label={msgs.askAssistantLabel}
+        ariaLabel={msgs.askAssistantLabel}
         onclick={() => onAskAssistant(failedRunId)}
       >
         {msgs.askAssistant}
-      </button>
+      </Button>
     {/if}
     {#if live}
-      <button
-        type="button"
-        class="flowdrop-run-bar__pill flowdrop-run-bar__pill--stop"
-        aria-label={msgs.stopLabel}
+      <Button
+        variant="danger"
+        size="sm"
+        ariaLabel={msgs.stopLabel}
         onclick={() => void fd.runs.stopRun()}
       >
         {msgs.stop}
-      </button>
+      </Button>
     {/if}
   </div>
 {/if}
@@ -144,74 +164,14 @@
   }
 
   .flowdrop-run-bar {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    /* Above the canvas furniture, below menus and dialogs. */
-    z-index: 6;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    /* Never wider than the canvas, with room either side for its corners. */
-    max-width: calc(100% - 2rem);
-    padding: 0.3rem 0.4rem 0.3rem 0.8rem;
-    background: var(--fd-card, var(--fd-background));
-    color: var(--fd-foreground);
-    border: 1px solid var(--fd-border);
-    border-top: 0;
-    border-radius: 0 0 0.75rem 0.75rem;
-    box-shadow: var(--fd-shadow-md);
-    font-size: 0.75rem;
-    transition: opacity 0.3s ease;
+    gap: var(--fd-space-xs);
+    opacity: 1;
+    transition: opacity 300ms ease;
   }
-
-  .flowdrop-run-bar--waiting {
-    border-color: var(--fd-warning);
-  }
-  .flowdrop-run-bar--failed {
-    border-color: var(--fd-error);
-  }
-  .flowdrop-run-bar--done {
-    border-color: var(--fd-success);
-  }
-
   .flowdrop-run-bar--fading {
     opacity: 0;
-  }
-
-  .flowdrop-run-bar__status {
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    font-size: 0.6875rem;
-    color: var(--fd-muted-foreground);
-    white-space: nowrap;
-  }
-
-  .flowdrop-run-bar__pill {
-    border: 1px solid var(--fd-border);
-    border-radius: 999px;
-    padding: 0.2rem 0.65rem;
-    background: var(--fd-muted);
-    color: inherit;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .flowdrop-run-bar__pill:focus-visible {
-    outline: 2px solid var(--fd-primary);
-    outline-offset: 2px;
-  }
-  .flowdrop-run-bar__pill--primary {
-    background: var(--fd-primary);
-    border-color: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-  }
-  .flowdrop-run-bar__pill--stop {
-    color: var(--fd-error);
-    border-color: var(--fd-error);
   }
 
   @media (prefers-reduced-motion: reduce) {

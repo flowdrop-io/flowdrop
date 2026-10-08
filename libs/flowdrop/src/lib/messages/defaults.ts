@@ -238,12 +238,18 @@ export const defaultMessages = {
       console: 'Console',
       chat: 'AI Assistant'
     },
-    // The Edit | Test switch in the navbar.
+    // The Edit | Test switch in the canvas toolbar.
     editorMode: {
       label: 'Editor mode',
       edit: 'Edit',
       test: 'Test',
-      // Title of the dot on Test while a run is going or waiting (Edit mode).
+      // Tooltips: the shortcut toggles the mode.
+      editTitle: 'Edit the workflow (T)',
+      testTitle: 'Test the workflow (T)',
+      // Accessible name of the canvas toolbar that holds the switch.
+      toolbarLabel: 'Canvas',
+      // Title of the dot on Test while a run is going or waiting. Unused since
+      // the run pill replaced the dot; kept so existing overrides still type-check.
       runActive: 'A test run is going or waiting'
     }
   },

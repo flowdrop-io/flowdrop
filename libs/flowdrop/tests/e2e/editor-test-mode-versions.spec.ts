@@ -137,8 +137,8 @@ async function gotoTestMode(page: Page): Promise<void> {
   await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
   await waitForSidebar(page);
   await page
-    .getByRole('group', { name: 'Editor mode' })
-    .getByRole('button', { name: 'Test' })
+    .getByRole('radiogroup', { name: 'Editor mode' })
+    .getByRole('radio', { name: 'Test' })
     .click();
   await expect(page.getByTestId('docked-playground')).toBeVisible();
 }

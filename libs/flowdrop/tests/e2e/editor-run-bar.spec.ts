@@ -1,9 +1,10 @@
 /**
- * E2E Test: the Edit-mode run bar.
+ * E2E Test: the run pill in the canvas toolbar.
  *
- * A run started from the Console (`session run`) shows the bar at the top of
- * the canvas; Stop stops it; a finished run's bar fades. At rest there is no
- * bar. The backend is stubbed at the network edge, as in
+ * A run started from the Console (`session run`) shows the pill in the toolbar
+ * at the top left of the canvas; Stop stops it; a finished run's pill fades in
+ * Edit mode. At rest there is no pill. The Edit | Test switch and the T
+ * shortcut live in the same toolbar. The backend is stubbed at the network edge, as in
  * editor-console-session.spec.ts.
  */
 
@@ -130,7 +131,7 @@ test.describe('Run bar', () => {
     await expect(page.locator('.flowdrop-run-bar')).toHaveCount(0, { timeout: 10000 });
   });
 
-  test('Open on a waiting run goes to Test mode, where the bar is hidden; back in Edit, an ended run leaves no bar', async ({
+  test('Open on a waiting run goes to Test mode, where the pill stays while the run is live and has no Open; back in Edit, an ended run leaves no pill', async ({
     page
   }) => {
     const stub = await stubBackend(page);
@@ -142,22 +143,52 @@ test.describe('Run bar', () => {
     await expect(bar).toContainText('Waiting', { timeout: 10000 });
     await bar.getByRole('button', { name: 'Open' }).click();
 
-    const modeSwitch = page.getByRole('group', { name: 'Editor mode' });
-    await expect(modeSwitch.getByRole('button', { name: 'Test' })).toHaveAttribute(
-      'aria-pressed',
+    const modeSwitch = page.getByRole('radiogroup', { name: 'Editor mode' });
+    await expect(modeSwitch.getByRole('radio', { name: 'Test' })).toHaveAttribute(
+      'aria-checked',
       'true'
     );
-    await expect(bar).toHaveCount(0);
+    // In Test mode the pill shows the live run (status, Stop) but not Open.
+    await expect(bar).toContainText('Waiting');
+    await expect(bar.getByRole('button', { name: 'Open' })).toHaveCount(0);
+    await expect(bar.getByRole('button', { name: 'Stop the run' })).toBeVisible();
 
-    // The run ends while the person is in Test mode.
+    // The run ends while the person is in Test mode: the pill goes, nothing is dismissed.
     stub.finish();
+    await expect(bar).toHaveCount(0, { timeout: 10000 });
     await page.waitForTimeout(2500);
-    await modeSwitch.getByRole('button', { name: 'Edit' }).click();
-    await expect(modeSwitch.getByRole('button', { name: 'Edit' })).toHaveAttribute(
-      'aria-pressed',
+    await modeSwitch.getByRole('radio', { name: 'Edit' }).click();
+    await expect(modeSwitch.getByRole('radio', { name: 'Edit' })).toHaveAttribute(
+      'aria-checked',
       'true'
     );
     await expect(bar).toHaveCount(0);
+  });
+
+  test('T toggles Edit | Test, except while typing', async ({ page }) => {
+    await stubBackend(page);
+    await gotoEditor(page);
+    const toolbar = page.getByRole('toolbar', { name: 'Canvas' });
+    await expect(toolbar).toBeVisible();
+    const edit = toolbar.getByRole('radio', { name: 'Edit' });
+    const test_ = toolbar.getByRole('radio', { name: 'Test' });
+    await expect(edit).toHaveAttribute('aria-checked', 'true');
+
+    await page.keyboard.press('t');
+    await expect(test_).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('Shift+T');
+    await expect(test_).toHaveAttribute('aria-checked', 'true');
+    await page.keyboard.press('t');
+    await expect(edit).toHaveAttribute('aria-checked', 'true');
+
+    // Typing a t in a text field does not switch.
+    await page.keyboard.press('t');
+    await expect(test_).toHaveAttribute('aria-checked', 'true');
+    const input = page.getByPlaceholder('Type your message...');
+    await input.fill('');
+    await input.press('t');
+    await expect(test_).toHaveAttribute('aria-checked', 'true');
+    await expect(input).toHaveValue('t');
   });
 
   test('stays inside the canvas, clear of the minimap, at a narrow width', async ({ page }) => {

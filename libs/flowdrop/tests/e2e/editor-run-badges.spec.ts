@@ -111,9 +111,9 @@ async function stubBackend(page: Page): Promise<Backend> {
   };
 }
 
-const modeSwitch = (page: Page) => page.getByRole('group', { name: 'Editor mode' });
-const testButton = (page: Page) => modeSwitch(page).getByRole('button', { name: 'Test' });
-const editButton = (page: Page) => modeSwitch(page).getByRole('button', { name: 'Edit' });
+const modeSwitch = (page: Page) => page.getByRole('radiogroup', { name: 'Editor mode' });
+const testButton = (page: Page) => modeSwitch(page).getByRole('radio', { name: 'Test' });
+const editButton = (page: Page) => modeSwitch(page).getByRole('radio', { name: 'Edit' });
 const node = (page: Page, id: string) => page.locator(`.svelte-flow__node[data-id="${id}"]`);
 const hotEdges = (page: Page) => page.locator('.svelte-flow__edge path.flowdrop-edge--hot');
 

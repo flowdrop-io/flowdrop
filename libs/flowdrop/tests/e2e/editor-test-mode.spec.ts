@@ -91,9 +91,9 @@ async function stubBackend(page: Page): Promise<Backend> {
   return { setStatus: (next) => (status = next) };
 }
 
-const modeSwitch = (page: Page) => page.getByRole('group', { name: 'Editor mode' });
-const testButton = (page: Page) => modeSwitch(page).getByRole('button', { name: 'Test' });
-const editButton = (page: Page) => modeSwitch(page).getByRole('button', { name: 'Edit' });
+const modeSwitch = (page: Page) => page.getByRole('radiogroup', { name: 'Editor mode' });
+const testButton = (page: Page) => modeSwitch(page).getByRole('radio', { name: 'Test' });
+const editButton = (page: Page) => modeSwitch(page).getByRole('radio', { name: 'Edit' });
 
 async function clickBackground(page: Page): Promise<void> {
   const box = await page.locator('.svelte-flow__pane').boundingBox();
@@ -112,12 +112,12 @@ test.describe('Test mode', () => {
 
   test('Edit mode at rest is the editor as it was, plus the switch', async ({ page }) => {
     await expect(modeSwitch(page)).toBeVisible();
-    await expect(editButton(page)).toHaveAttribute('aria-pressed', 'true');
-    await expect(testButton(page)).toHaveAttribute('aria-pressed', 'false');
+    await expect(editButton(page)).toHaveAttribute('aria-checked', 'true');
+    await expect(testButton(page)).toHaveAttribute('aria-checked', 'false');
     await expect(page.locator('.flowdrop-sidebar')).toBeVisible();
     await expect(page.getByTestId('docked-playground')).toHaveCount(0);
     await expect(page.locator('.config-panel')).toHaveCount(0);
-    await expect(page.getByTestId('test-run-dot')).toHaveCount(0);
+    await expect(page.locator('.flowdrop-run-bar')).toHaveCount(0);
   });
 
   test('Test docks the Playground on the left and leaves the canvas the rest', async ({ page }) => {
@@ -260,7 +260,7 @@ test.describe('Test mode', () => {
 
     await page.keyboard.press('Escape');
     await expect(popover).toHaveCount(0);
-    await expect(testButton(page)).toHaveAttribute('aria-pressed', 'true');
+    await expect(testButton(page)).toHaveAttribute('aria-checked', 'true');
 
     // Typing an n in the search box searches; it does not toggle the popover.
     await clickBackground(page);
@@ -285,7 +285,7 @@ test.describe('Test mode', () => {
     await expect(page.locator('.config-panel')).toHaveCount(0);
   });
 
-  test('badges follow a live run, and the dot marks it from Edit mode until it ends', async ({
+  test('badges follow a live run, and the run pill marks it from Edit mode until it ends', async ({
     page
   }) => {
     await testButton(page).click();
@@ -299,15 +299,15 @@ test.describe('Test mode', () => {
     const bordered = page.locator('.universal-node--status-border');
     await expect(bordered.first()).toBeVisible();
 
-    // Edit mode, run still going: a dot on Test, the pill stays, the border does not take its colour.
+    // Edit mode, run still going: the run pill, the badge stays, the border does not take its colour.
     await editButton(page).click();
-    await expect(page.getByTestId('test-run-dot')).toBeVisible();
+    await expect(page.locator('.flowdrop-run-bar')).toBeVisible();
     await expect(badge).toBeVisible();
     await expect(bordered).toHaveCount(0);
 
-    // The run ends: the dot and the badges go, Edit mode is at rest again.
+    // The run ends: the pill and the badges go, Edit mode is at rest again.
     backend.setStatus('completed');
-    await expect(page.getByTestId('test-run-dot')).toHaveCount(0, { timeout: 10000 });
+    await expect(page.locator('.flowdrop-run-bar')).toHaveCount(0, { timeout: 10000 });
     await expect(badge).toHaveCount(0);
 
     // Back in Test mode the finished run's badges are shown again.
@@ -319,7 +319,7 @@ test.describe('Test mode', () => {
     await page.goto('/test/editor?editorMode=test');
     await page.waitForSelector('[data-testid="editor-test"]', { timeout: 15000 });
     await expect(page.getByTestId('docked-playground')).toBeVisible();
-    await expect(testButton(page)).toHaveAttribute('aria-pressed', 'true');
+    await expect(testButton(page)).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByTestId('inspector-sheet')).toHaveCount(0);
     await editButton(page).click();
     await expect(page.locator('.flowdrop-sidebar')).toBeVisible();

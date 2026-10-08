@@ -100,8 +100,8 @@ async function stubBackend(page: Page): Promise<void> {
   });
 }
 
-const modeSwitch = (page: Page) => page.getByRole('group', { name: 'Editor mode' });
-const testButton = (page: Page) => modeSwitch(page).getByRole('button', { name: 'Test' });
+const modeSwitch = (page: Page) => page.getByRole('radiogroup', { name: 'Editor mode' });
+const testButton = (page: Page) => modeSwitch(page).getByRole('radio', { name: 'Test' });
 
 test.describe('Message links and Last run', () => {
   test.beforeEach(async ({ page }, testInfo) => {

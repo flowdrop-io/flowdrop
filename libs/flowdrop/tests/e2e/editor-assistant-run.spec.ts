@@ -140,9 +140,9 @@ async function stubBackend(page: Page, options: { runsEndpoint?: boolean } = {})
   return { chatRequests };
 }
 
-const modeSwitch = (page: Page) => page.getByRole('group', { name: 'Editor mode' });
-const testButton = (page: Page) => modeSwitch(page).getByRole('button', { name: 'Test' });
-const editButton = (page: Page) => modeSwitch(page).getByRole('button', { name: 'Edit' });
+const modeSwitch = (page: Page) => page.getByRole('radiogroup', { name: 'Editor mode' });
+const testButton = (page: Page) => modeSwitch(page).getByRole('radio', { name: 'Test' });
+const editButton = (page: Page) => modeSwitch(page).getByRole('radio', { name: 'Edit' });
 const leftTab = (page: Page, name: string) =>
   page.getByTestId('left-slot').getByRole('tab', { name });
 
@@ -213,7 +213,7 @@ test.describe('Assistant in the left slot', () => {
     await expect(page.getByTestId('node-last-run-error')).toContainText('url has no scheme');
     await page.getByTestId('last-run-ask-assistant').click();
 
-    await expect(testButton(page)).toHaveAttribute('aria-pressed', 'false');
+    await expect(testButton(page)).toHaveAttribute('aria-checked', 'false');
     await expect(leftTab(page, 'Assistant')).toHaveAttribute('aria-selected', 'true');
     const chip = page.getByTestId('assistant-run-chip');
     await expect(chip).toBeVisible();

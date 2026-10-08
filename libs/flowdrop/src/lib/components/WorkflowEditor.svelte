@@ -22,7 +22,7 @@
   } from '../stores/settingsStore.svelte.js';
   import type { WorkflowNode as WorkflowNodeType, Workflow, WorkflowEdge } from '../types/index.js';
   import CanvasBanner from './CanvasBanner.svelte';
-  import RunBar from './RunBar.svelte';
+  import CanvasToolbar from './CanvasToolbar.svelte';
   import CanvasController from './CanvasController.svelte';
   import CanvasContextMenu from './CanvasContextMenu.svelte';
   import {
@@ -44,7 +44,7 @@
   import type { AuthProvider } from '../types/auth.js';
   import ConnectionLine from './ConnectionLine.svelte';
   import FlowDropEdge from './FlowDropEdge.svelte';
-  import { m, getMessages } from '$lib/messages/index.js';
+  import { getMessages } from '$lib/messages/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import type { FlowDropGridVariant } from '../types/theme.js';
@@ -70,8 +70,6 @@
   import { validateWorkflowData } from '../utils/validation.js';
   import { suppressPortDragSelection } from '../utils/canvasSelection.js';
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
-  import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
-  import CommandLineIcon from '$lib/components/icons/CommandLineIcon.svelte';
   import { DEV } from 'esm-env';
 
   interface Props {
@@ -100,7 +98,7 @@
     // Console toggle
     consoleOpen?: boolean;
     onToggleConsole?: () => void;
-    /** Take a failed run on the run bar to the Assistant. */
+    /** Take a failed run on the run pill to the Assistant. */
     onAskAssistant?: (runId: string) => void;
     /** Label of the console-group toggle; defaults to the Command Console wording. */
     consoleToggleLabel?: string;
@@ -130,18 +128,22 @@
      */
     contextMenu?: ContextMenuOptions;
     /**
-     * Show the run bar on the canvas while a run exists (a Console
+     * Show the run pill in the canvas toolbar while a run exists (a Console
      * `session run`, an Assistant run). It appears only for an editable
-     * canvas and never at rest. Hosts that show runs another way (Test mode)
-     * set `false`.
+     * canvas and never at rest. In Test mode it shows only while the run is
+     * live. Hosts that show runs another way set `false`.
      * @default true
      */
     showRunBar?: boolean;
     /**
-     * Take the person to the run in Test mode: the run bar's Open button, shown
+     * Take the person to the run in Test mode: the run pill's Open button, shown
      * while a run waits for them. Without it the button is not shown.
      */
     onOpenTest?: () => void;
+    /** Current editor mode, shown in the canvas toolbar's Edit | Test switch. @default 'edit' */
+    editorMode?: 'edit' | 'test';
+    /** Switch the editor mode. The toolbar's Edit | Test switch is shown only when this is set. */
+    onEditorModeChange?: (mode: 'edit' | 'test') => void;
   }
 
   let props: Props = $props();
@@ -1297,18 +1299,6 @@
               nodes={flowNodes}
             />
             <Controls />
-            {#if canvasEditable && props.onToggleConsole}
-              <CanvasIconButton
-                class="flowdrop-console-toggle"
-                label={props.consoleToggleLabel ?? m().layout.commandConsole}
-                active={props.consoleOpen}
-                onclick={props.onToggleConsole}
-              >
-                {#snippet icon()}
-                  <CommandLineIcon />
-                {/snippet}
-              </CanvasIconButton>
-            {/if}
             <!-- Always render Background for consistent bg color in dark/light mode -->
             <Background
               gap={getEditorSettings().gridSize}
@@ -1353,8 +1343,17 @@
         {/if}
       </FlowDropZone>
 
-      {#if canvasEditable && (props.showRunBar ?? true)}
-        <RunBar onOpen={props.onOpenTest} onAskAssistant={props.onAskAssistant} />
+      {#if canvasEditable}
+        <CanvasToolbar
+          editorMode={props.editorMode}
+          onEditorModeChange={props.onEditorModeChange}
+          onOpenTest={props.onOpenTest}
+          onAskAssistant={props.onAskAssistant}
+          showRun={props.showRunBar ?? true}
+          onToggleConsole={props.onToggleConsole}
+          consoleOpen={props.consoleOpen}
+          consoleLabel={props.consoleToggleLabel}
+        />
       {/if}
 
       {#if openMenu}
@@ -1442,13 +1441,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-  }
-
-  /* Console toggle — placement only; visuals live in CanvasIconButton */
-  :global(.flowdrop-console-toggle) {
-    bottom: 140px;
-    left: 12px;
-    z-index: 5;
   }
 
   :global(.flowdrop-workflow-editor .svelte-flow__node:hover) {

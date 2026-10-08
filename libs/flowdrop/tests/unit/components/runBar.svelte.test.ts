@@ -1,5 +1,5 @@
 /**
- * The Edit-mode run bar: absent at rest, tracks `fd.runs.activeRun`, Stop and
+ * The run pill: absent at rest, tracks `fd.runs.activeRun`, Stop and
  * Open are buttons, and it fades (taking the node badges with it) after the
  * run ends.
  */
@@ -187,5 +187,22 @@ describe('RunBar: Ask the Assistant', () => {
     const failed = await withHostRun('ask-nohandler', 'failed');
     const t2 = render(failed.fd);
     expect(t2.querySelector('[data-testid="run-bar-ask-assistant"]')).toBeNull();
+  });
+
+  it('in Test mode shows a live run without Open, and never dismisses a finished one', async () => {
+    const { fd, set } = await withHostRun('bar-test-mode', 'paused');
+    const dismiss = vi.spyOn(fd.runs, 'dismissRun');
+    const target = render(fd, { mode: 'test', onOpen: () => {}, fadeMs: 1000 });
+    expect(bar(target)?.textContent).toContain('Waiting');
+    expect(target.querySelector('button[aria-label^="Open"]')).toBeNull();
+    expect(target.querySelector('button[aria-label="Stop the run"]')).not.toBeNull();
+
+    await set('completed');
+    await vi.advanceTimersByTimeAsync(2000);
+    flushSync();
+    expect(bar(target)).toBeNull();
+    expect(dismiss).not.toHaveBeenCalled();
+    expect(fd.runs.activeRun).not.toBeNull();
+    fd.destroy();
   });
 });

@@ -36,12 +36,6 @@
     "colour": 2,
     "font-size": 7
   },
-  "src/lib/components/EditorModeSwitch.svelte": {
-    "button": 2,
-    "colour": 2,
-    "radius": 1,
-    "shadow": 1
-  },
   "src/lib/components/EditorStatusBar.svelte": {
     "radius": 1
   },
@@ -92,11 +86,6 @@
   "src/lib/components/ReadOnlyDetails.svelte": {
     "button": 1,
     "font-size": 5
-  },
-  "src/lib/components/RunBar.svelte": {
-    "button": 3,
-    "font-size": 2,
-    "radius": 2
   },
   "src/lib/components/SchemaForm.svelte": {
     "button": 2,
