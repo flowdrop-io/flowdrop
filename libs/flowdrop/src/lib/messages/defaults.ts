@@ -872,5 +872,26 @@ export const defaultMessages = {
       `${count} changes — ${parts}. Applied together, undone together.`,
     rememberEdits:
       'Apply further edits from any agent on this page without asking, until this page is closed'
+  },
+
+  // Design-system primitives (components/primitives). Defaults only; every
+  // primitive also accepts the visible text as a prop.
+  statusPill: {
+    running: 'Running',
+    completed: 'Completed',
+    waiting: 'Waiting for you',
+    failed: 'Failed',
+    skipped: 'Skipped'
+  },
+
+  composer: {
+    placeholder: 'Type a message',
+    send: 'Send',
+    stop: 'Stop',
+    attach: 'Attach'
+  },
+
+  notice: {
+    dismiss: 'Dismiss'
   }
 } as const;
