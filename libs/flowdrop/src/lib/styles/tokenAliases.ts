@@ -80,7 +80,17 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'review-space-sm': 'var(--fd-space-2xs)',
   'review-toggle-height': 'var(--fd-size-icon-btn)',
   'sidebar-category-color': 'var(--fd-muted-foreground)',
-  'sidebar-flat-item-color': 'var(--fd-foreground)'
+  'sidebar-flat-item-color': 'var(--fd-foreground)',
+  'status-completed': 'var(--fd-success)',
+  'status-completed-soft': 'var(--fd-success-muted)',
+  'status-failed': 'var(--fd-error)',
+  'status-failed-soft': 'var(--fd-error-muted)',
+  'status-running': 'var(--fd-info)',
+  'status-running-soft': 'var(--fd-info-muted)',
+  'status-skipped': 'var(--fd-muted-foreground)',
+  'status-skipped-soft': 'var(--fd-muted)',
+  'status-waiting': 'var(--fd-warning)',
+  'status-waiting-soft': 'var(--fd-warning-muted)'
 };
 
 /** Dark overrides ([data-theme='dark']): aliases, plus literal dark values of light aliases. */

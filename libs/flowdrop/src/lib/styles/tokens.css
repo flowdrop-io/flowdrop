@@ -232,6 +232,21 @@
   --fd-info-foreground: #ffffff; /* @public */
   --fd-info-muted: var(--_blue-1); /* @public */
 
+  /* ----- RUN STATUS ROLES -----
+     What a node or run is doing, named by status rather than by hue, so a theme
+     can recolour "running" without touching "info". `-soft` is the tinted
+     background behind the status colour. */
+  --fd-status-running: var(--fd-info); /* @public */
+  --fd-status-running-soft: var(--fd-info-muted); /* @public */
+  --fd-status-completed: var(--fd-success); /* @public */
+  --fd-status-completed-soft: var(--fd-success-muted); /* @public */
+  --fd-status-waiting: var(--fd-warning); /* @public */
+  --fd-status-waiting-soft: var(--fd-warning-muted); /* @public */
+  --fd-status-failed: var(--fd-error); /* @public */
+  --fd-status-failed-soft: var(--fd-error-muted); /* @public */
+  --fd-status-skipped: var(--fd-muted-foreground); /* @public */
+  --fd-status-skipped-soft: var(--fd-muted); /* @public */
+
   /* ----- SPACING SCALE (Named sizes) ----- */
   --fd-space-0: 0; /* @public */
   --fd-space-3xs: 0.25rem; /* @public  4px */
@@ -294,6 +309,12 @@
     system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* @public */
   --fd-font-mono:
     ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; /* @public */
+
+  /* ----- CONTROL AND PANEL HEIGHTS ----- */
+  --fd-control-sm: 1.5rem; /* @public  24px */
+  --fd-control-md: 1.75rem; /* @public  28px */
+  --fd-control-lg: 2rem; /* @public  32px */
+  --fd-panel-header: 2.5rem; /* @public  40px */
 
   /* ----- COMPONENT SIZES ----- */
   --fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
