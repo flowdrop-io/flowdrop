@@ -4,11 +4,15 @@
   Container component for rendering interrupt prompts inline in the chat flow.
   Displays the appropriate prompt component based on interrupt type.
   Handles resolve/cancel actions using state machine for safe transitions.
-  Styled with BEM syntax similar to MessageBubble.
+
+  One card: a title line (warning icon and the prompt), the prompt's content and its
+  actions. No header band, no footer band, no timestamp. Once answered it folds to
+  one muted line ("Confirmed · Yes"). Used by the Playground and the AI Assistant.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from '../primitives/Button.svelte';
   import ConfirmationPrompt from './ConfirmationPrompt.svelte';
   import ChoicePrompt from './ChoicePrompt.svelte';
   import TextInputPrompt from './TextInputPrompt.svelte';
@@ -45,8 +49,6 @@
   interface Props {
     /** The interrupt to display (initial data, used for ID lookup) */
     interrupt: Interrupt | InterruptWithState;
-    /** Whether to show the timestamp */
-    showTimestamp?: boolean;
     /** Callback to refresh messages after interrupt resolution */
     onResolved?: () => void;
     /**
@@ -61,13 +63,7 @@
     tags?: MessageTag[];
   }
 
-  let {
-    interrupt: initialInterrupt,
-    showTimestamp = true,
-    onResolved,
-    hierarchy,
-    tags
-  }: Props = $props();
+  let { interrupt: initialInterrupt, onResolved, hierarchy, tags }: Props = $props();
 
   const fd = getInstance();
 
@@ -81,8 +77,7 @@
 
   const hierarchyItems = $derived(hierarchy ?? []);
   const tagItems = $derived(tags ?? []);
-  const hasHierarchy = $derived(hierarchyItems.length > 0);
-  const hasTags = $derived(tagItems.length > 0);
+  const hasAttribution = $derived(hierarchyItems.length > 0 || tagItems.length > 0);
 
   /**
    * Helper to ensure interrupt has machine state
@@ -109,26 +104,6 @@
   /** Resolved value for display */
   const resolvedValue = $derived(getResolvedValue(currentInterrupt.machineState));
 
-  /**
-   * Get the icon for the interrupt type
-   */
-  function getTypeIcon(type: InterruptType): string {
-    switch (type) {
-      case 'confirmation':
-        return 'mdi:help-circle';
-      case 'choice':
-        return 'mdi:format-list-bulleted';
-      case 'text':
-        return 'mdi:text-box';
-      case 'form':
-        return 'mdi:form-select';
-      case 'review':
-        return 'mdi:file-compare';
-      default:
-        return 'mdi:bell';
-    }
-  }
-
   // Hoist the bubble branch — five reads inside the header alone.
   const t = $derived(m().interrupt.bubble);
 
@@ -151,38 +126,6 @@
       default:
         return required.default;
     }
-  }
-
-  /** Get resolved label for the header when resolved */
-  function getResolvedLabel(type: InterruptType): string {
-    const submitted = t.submitted;
-    switch (type) {
-      case 'confirmation':
-        return submitted.confirmation;
-      case 'choice':
-        return submitted.selection;
-      case 'text':
-        return submitted.input;
-      case 'form':
-        return submitted.form;
-      case 'review':
-        return submitted.review;
-      default:
-        return submitted.default;
-    }
-  }
-
-  /**
-   * Format timestamp for display
-   */
-  function formatTimestamp(timestamp: string): string {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
   }
 
   /**
@@ -271,6 +214,43 @@
   // Determine the actual resolved value to pass to prompt components
   const displayResolvedValue = $derived(resolvedValue ?? currentInterrupt.responseValue);
 
+  /** The prompt, as the card's title line. */
+  const title = $derived(
+    currentInterrupt.message ?? (currentInterrupt.config as { message?: string }).message ?? ''
+  );
+
+  /** What the card says once it is answered: one line, e.g. "Confirmed · Yes". */
+  const resolvedLine = $derived.by((): string => {
+    if (currentInterrupt.machineState.status === 'cancelled') return t.cancelled;
+    const value = displayResolvedValue;
+    let line: string = t.resolved.submitted;
+    switch (currentInterrupt.type) {
+      case 'confirmation': {
+        const config = confirmationConfig;
+        const yes = config.confirmLabel ?? m().interrupt.confirmation.yes;
+        const no = config.cancelLabel ?? m().interrupt.confirmation.no;
+        line =
+          value === false
+            ? t.resolved.declined({ value: no })
+            : t.resolved.confirmed({ value: yes });
+        break;
+      }
+      case 'choice': {
+        const chosen = (Array.isArray(value) ? value : value === undefined ? [] : [value]).map(
+          (v) => choiceConfig.options.find((o) => o.value === v)?.label ?? String(v)
+        );
+        if (chosen.length > 0) line = t.resolved.chose({ value: chosen.join(', ') });
+        break;
+      }
+      case 'text':
+        if (typeof value === 'string' && value !== '') {
+          line = t.resolved.submittedValue({ value });
+        }
+        break;
+    }
+    return resolvedByUserName ? `${line} ${t.resolved.by({ name: resolvedByUserName })}` : line;
+  });
+
   /**
    * Extract the username of who resolved the interrupt from metadata.
    * This is provided by the backend when the interrupt is resolved.
@@ -282,153 +262,134 @@
   );
 </script>
 
-<div
-  class="interrupt-bubble"
-  class:interrupt-bubble--completed={currentInterrupt.machineState.status === 'resolved'}
-  class:interrupt-bubble--cancelled={currentInterrupt.machineState.status === 'cancelled'}
-  class:interrupt-bubble--submitting={isSubmitting}
-  class:interrupt-bubble--error={currentInterrupt.machineState.status === 'error'}
-  role="group"
-  aria-label={getTypeLabel(currentInterrupt.type)}
->
-  <!-- Header -->
-  <div class="interrupt-bubble__header">
-    <span class="interrupt-bubble__type">
-      <Icon icon={getTypeIcon(currentInterrupt.type)} aria-hidden="true" />
-      {#if isResolved}
-        {currentInterrupt.machineState.status === 'cancelled'
-          ? t.cancelled
-          : getResolvedLabel(currentInterrupt.type)}
-      {:else if currentInterrupt.machineState.status === 'error'}
-        {t.errorRetry}
-      {:else}
-        {getTypeLabel(currentInterrupt.type)}
-      {/if}
-    </span>
-    {#if showTimestamp}
-      <time
-        class="interrupt-bubble__timestamp"
-        datetime={currentInterrupt.resolvedAt ?? currentInterrupt.createdAt}
-        aria-label="sent at {formatTimestamp(
-          currentInterrupt.resolvedAt ?? currentInterrupt.createdAt
-        )}"
-      >
-        {formatTimestamp(currentInterrupt.resolvedAt ?? currentInterrupt.createdAt)}
-      </time>
-    {/if}
+{#if isResolved}
+  <!-- Answered: one muted line. -->
+  <div
+    class="interrupt-resolved"
+    class:interrupt-resolved--cancelled={currentInterrupt.machineState.status === 'cancelled'}
+    role="group"
+    aria-label={getTypeLabel(currentInterrupt.type)}
+  >
+    <Icon
+      icon={currentInterrupt.machineState.status === 'cancelled' ? 'mdi:close' : 'mdi:check'}
+      class="interrupt-resolved__icon"
+      aria-hidden="true"
+    />
+    <span class="interrupt-resolved__text">{resolvedLine}</span>
   </div>
-
-  <!-- Error message with retry button -->
-  {#if currentInterrupt.machineState.status === 'error'}
-    <div class="interrupt-bubble__error">
-      <Icon icon="mdi:alert-circle" />
-      <span>{error}</span>
-      <button type="button" class="interrupt-bubble__retry-btn" onclick={handleRetry}>
-        <Icon icon="mdi:refresh" />
-        {t.retry}
-      </button>
-    </div>
-  {/if}
-
-  <!-- Prompt content based on type -->
-  <div class="interrupt-bubble__body">
-    {#if currentInterrupt.type === 'confirmation'}
-      <ConfirmationPrompt
-        config={confirmationConfig}
-        {isResolved}
-        resolvedValue={displayResolvedValue as boolean | undefined}
-        {isSubmitting}
-        {error}
-        {resolvedByUserName}
-        onConfirm={() => handleResolve(true)}
-        onDecline={() => handleResolve(false)}
-      />
-    {:else if currentInterrupt.type === 'choice'}
-      <ChoicePrompt
-        config={choiceConfig}
-        {isResolved}
-        resolvedValue={displayResolvedValue as string | string[] | undefined}
-        {isSubmitting}
-        {error}
-        {resolvedByUserName}
-        onSubmit={(value) => handleResolve(value)}
-      />
-    {:else if currentInterrupt.type === 'text'}
-      <TextInputPrompt
-        config={textConfig}
-        {isResolved}
-        resolvedValue={displayResolvedValue as string | undefined}
-        {isSubmitting}
-        {error}
-        {resolvedByUserName}
-        onSubmit={(value) => handleResolve(value)}
-      />
-    {:else if currentInterrupt.type === 'form'}
-      <FormPrompt
-        config={formConfig}
-        {isResolved}
-        resolvedValue={displayResolvedValue as Record<string, unknown> | undefined}
-        {isSubmitting}
-        {error}
-        {resolvedByUserName}
-        onSubmit={(value) => handleResolve(value)}
-      />
-    {:else if currentInterrupt.type === 'review'}
-      <ReviewPrompt
-        config={reviewConfig}
-        {isResolved}
-        resolvedValue={displayResolvedValue as ReviewResolution | undefined}
-        {isSubmitting}
-        {error}
-        {resolvedByUserName}
-        onSubmit={(value) => handleResolve(value)}
-      />
-    {/if}
-  </div>
-
-  <!-- Footer -->
-  {#if currentInterrupt.nodeId || hasHierarchy || hasTags || (currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation')}
-    <div class="interrupt-bubble__footer">
-      <div class="interrupt-bubble__attribution">
-        {#if currentInterrupt.nodeId}
-          <span
-            class="interrupt-bubble__node"
-            title={t.nodeIdTooltip({ id: currentInterrupt.nodeId })}
-          >
-            <Icon icon="mdi:graph" aria-hidden="true" />
-            <span>{t.fromWorkflow}</span>
-          </span>
-        {/if}
-        <HierarchyTrail items={hierarchyItems} />
-        <MessageTagStrip tags={tagItems} />
-      </div>
-      {#if currentInterrupt.allowCancel && !isResolved && currentInterrupt.type !== 'confirmation'}
-        <button
-          type="button"
-          class="interrupt-bubble__cancel-btn"
+{:else}
+  <div
+    class="interrupt-bubble"
+    class:interrupt-bubble--submitting={isSubmitting}
+    class:interrupt-bubble--error={currentInterrupt.machineState.status === 'error'}
+    role="group"
+    aria-label={getTypeLabel(currentInterrupt.type)}
+  >
+    <!-- Title: what is being asked -->
+    <div class="interrupt-bubble__title">
+      <Icon icon="mdi:alert-circle-outline" class="interrupt-bubble__icon" aria-hidden="true" />
+      <span class="interrupt-bubble__title-text">{title}</span>
+      {#if currentInterrupt.allowCancel && currentInterrupt.type !== 'confirmation'}
+        <Button
+          variant="ghost"
+          size="sm"
+          class="interrupt-bubble__cancel"
           onclick={handleCancel}
           disabled={isSubmitting}
         >
-          <Icon icon="mdi:close" aria-hidden="true" />
-          <span>{t.cancel}</span>
-        </button>
+          {t.cancel}
+        </Button>
       {/if}
     </div>
-  {/if}
-</div>
+
+    <!-- Error message with retry button -->
+    {#if currentInterrupt.machineState.status === 'error'}
+      <div class="interrupt-bubble__error">
+        <Icon icon="mdi:alert-circle" />
+        <span>{error}</span>
+        <Button variant="secondary" size="sm" onclick={handleRetry}>
+          {#snippet leadingIcon()}<Icon icon="mdi:refresh" />{/snippet}
+          {t.retry}
+        </Button>
+      </div>
+    {/if}
+
+    <!-- Prompt content based on type -->
+    <div class="interrupt-bubble__body">
+      {#if currentInterrupt.type === 'confirmation'}
+        <ConfirmationPrompt
+          config={confirmationConfig}
+          {isResolved}
+          {isSubmitting}
+          {error}
+          onConfirm={() => handleResolve(true)}
+          onDecline={() => handleResolve(false)}
+        />
+      {:else if currentInterrupt.type === 'choice'}
+        <ChoicePrompt
+          config={choiceConfig}
+          {isResolved}
+          resolvedValue={displayResolvedValue as string | string[] | undefined}
+          {isSubmitting}
+          {error}
+          onSubmit={(value) => handleResolve(value)}
+        />
+      {:else if currentInterrupt.type === 'text'}
+        <TextInputPrompt
+          config={textConfig}
+          {isResolved}
+          resolvedValue={displayResolvedValue as string | undefined}
+          {isSubmitting}
+          {error}
+          onSubmit={(value) => handleResolve(value)}
+        />
+      {:else if currentInterrupt.type === 'form'}
+        <FormPrompt
+          config={formConfig}
+          {isResolved}
+          {isSubmitting}
+          {error}
+          onSubmit={(value) => handleResolve(value)}
+        />
+      {:else if currentInterrupt.type === 'review'}
+        <ReviewPrompt
+          config={reviewConfig}
+          {isResolved}
+          resolvedValue={displayResolvedValue as ReviewResolution | undefined}
+          {isSubmitting}
+          {error}
+          {resolvedByUserName}
+          onSubmit={(value) => handleResolve(value)}
+        />
+      {/if}
+    </div>
+
+    {#if hasAttribution}
+      <div class="interrupt-bubble__attribution">
+        <HierarchyTrail items={hierarchyItems} />
+        <MessageTagStrip tags={tagItems} />
+      </div>
+    {/if}
+  </div>
+{/if}
 
 <style>
-  /* Uses design tokens from base.css: --fd-interrupt-* */
+  /*
+    One card. The `--fd-interrupt-card-*` tokens are unset unless the theme asks for the
+    document layout (display.messages: 'document'); the value after the comma is the look
+    the card has always had. Uses --fd-interrupt-* from base.css.
+  */
   .interrupt-bubble {
     display: flex;
     flex-direction: column;
-    margin: var(--fd-space-md) var(--fd-space-xl);
-    border-radius: var(--fd-radius-xl);
-    background-color: var(--fd-interrupt-prompt-bg);
-    border: 1px solid var(--fd-interrupt-prompt-border-pending);
-    box-shadow: 0 2px 8px var(--fd-interrupt-pending-shadow);
+    gap: var(--fd-space-sm);
+    margin: var(--fd-space-md) var(--fd-msg-gutter, var(--fd-space-xl));
+    padding: var(--fd-interrupt-card-pad, var(--fd-space-xl));
+    border-radius: var(--fd-interrupt-card-radius, var(--fd-radius-xl));
+    background-color: var(--fd-interrupt-card-bg, var(--fd-interrupt-prompt-bg));
+    border: 1px solid var(--fd-interrupt-card-border, var(--fd-interrupt-prompt-border-pending));
+    box-shadow: var(--fd-interrupt-card-shadow, 0 2px 8px var(--fd-interrupt-pending-shadow));
     animation: interruptSlideIn 0.3s ease-out;
-    overflow: hidden;
   }
 
   @keyframes interruptSlideIn {
@@ -442,97 +403,51 @@
     }
   }
 
-  /* State border colors */
-  .interrupt-bubble--completed {
-    border-color: var(--fd-interrupt-prompt-border-completed);
-    box-shadow: 0 2px 8px var(--fd-interrupt-completed-shadow);
-  }
-
-  .interrupt-bubble--cancelled {
-    border-color: var(--fd-interrupt-prompt-border-cancelled);
-    box-shadow: 0 2px 8px var(--fd-interrupt-cancelled-shadow);
-  }
-
   .interrupt-bubble--error {
     border-color: var(--fd-interrupt-prompt-border-error);
-    box-shadow: 0 2px 8px var(--fd-interrupt-error-shadow);
   }
 
   .interrupt-bubble--submitting {
     opacity: 0.9;
   }
 
-  /* Header */
-  .interrupt-bubble__header {
+  /* Title line: the icon, the prompt, and the way out on the right. */
+  .interrupt-bubble__title {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: flex-start;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background: var(--fd-interrupt-pending-bg);
-    border-bottom: 1px solid var(--fd-interrupt-prompt-border-pending);
-  }
-
-  .interrupt-bubble--completed .interrupt-bubble__header {
-    background: var(--fd-interrupt-completed-bg);
-    border-bottom-color: var(--fd-interrupt-prompt-border-completed);
-  }
-
-  .interrupt-bubble--cancelled .interrupt-bubble__header {
-    background: var(--fd-interrupt-cancelled-bg);
-    border-bottom-color: var(--fd-interrupt-prompt-border-cancelled);
-  }
-
-  .interrupt-bubble--error .interrupt-bubble__header {
-    background: var(--fd-interrupt-error-bg);
-    border-bottom-color: var(--fd-interrupt-prompt-border-error);
-  }
-
-  .interrupt-bubble__type {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-2xs);
+    min-width: 0;
     font-weight: 600;
     font-size: var(--fd-text-sm);
+    line-height: 1.4;
+    color: var(--fd-foreground);
+  }
+
+  :global(.interrupt-bubble__icon) {
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    margin-top: 0.1em;
     color: var(--fd-interrupt-pending-text);
   }
 
-  .interrupt-bubble--completed .interrupt-bubble__type {
-    color: var(--fd-interrupt-completed-text);
+  .interrupt-bubble__title-text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
-  .interrupt-bubble--cancelled .interrupt-bubble__type {
-    color: var(--fd-interrupt-cancelled-text);
+  :global(.interrupt-bubble__cancel) {
+    flex-shrink: 0;
+    margin-block: -0.15rem;
+    color: var(--fd-muted-foreground);
   }
 
-  .interrupt-bubble--error .interrupt-bubble__type {
-    color: var(--fd-interrupt-error-text);
-  }
-
-  .interrupt-bubble__timestamp {
-    font-size: var(--fd-text-2xs);
-    color: var(--fd-interrupt-pending-text-light);
-    font-family: var(--fd-font-mono);
-  }
-
-  .interrupt-bubble--completed .interrupt-bubble__timestamp {
-    color: var(--fd-interrupt-completed-text-light);
-  }
-
-  .interrupt-bubble--cancelled .interrupt-bubble__timestamp {
-    color: var(--fd-interrupt-cancelled-text-light);
-  }
-
-  .interrupt-bubble--error .interrupt-bubble__timestamp {
-    color: var(--fd-interrupt-error-text-light);
-  }
-
-  /* Error message */
+  /* Error message with retry */
   .interrupt-bubble__error {
     display: flex;
     align-items: center;
     gap: var(--fd-space-xs);
-    margin: var(--fd-space-md) var(--fd-space-xl) 0;
     padding: var(--fd-space-xs) var(--fd-space-md);
     background-color: var(--fd-error-muted);
     border-radius: var(--fd-radius-md);
@@ -540,34 +455,12 @@
     font-size: var(--fd-interrupt-font-error);
   }
 
-  .interrupt-bubble__retry-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
+  .interrupt-bubble__error :global(.flowdrop-ui-button) {
     margin-left: auto;
-    padding: var(--fd-space-3xs) var(--fd-space-xs);
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    font-family: inherit;
-    color: var(--fd-error-foreground);
-    background-color: var(--fd-interrupt-error-avatar);
-    border: none;
-    border-radius: var(--fd-radius-sm);
-    cursor: pointer;
-    transition: background-color var(--fd-transition-fast);
   }
 
-  .interrupt-bubble__retry-btn:hover {
-    background-color: var(--fd-error-hover);
-  }
-
-  /* Body - prompt content area, full width */
   .interrupt-bubble__body {
-    padding: var(--fd-space-xl);
-  }
-
-  .interrupt-bubble--cancelled .interrupt-bubble__body {
-    opacity: 0.75;
+    min-width: 0;
   }
 
   /* Desaturate body content in error state to reduce visual noise from green/red colors */
@@ -576,76 +469,41 @@
     opacity: 0.7;
   }
 
-  /* Footer */
-  .interrupt-bubble__footer {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background: var(--fd-interrupt-pending-bg);
-    border-top: 1px solid var(--fd-interrupt-prompt-border-pending);
-  }
-
-  .interrupt-bubble--completed .interrupt-bubble__footer {
-    background: var(--fd-interrupt-completed-bg);
-    border-top-color: var(--fd-interrupt-prompt-border-completed);
-  }
-
-  .interrupt-bubble--cancelled .interrupt-bubble__footer {
-    background: var(--fd-interrupt-cancelled-bg);
-    border-top-color: var(--fd-interrupt-prompt-border-cancelled);
-  }
-
-  .interrupt-bubble--error .interrupt-bubble__footer {
-    background: var(--fd-interrupt-error-bg);
-    border-top-color: var(--fd-interrupt-prompt-border-error);
-  }
-
   .interrupt-bubble__attribution {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--fd-space-xs);
     min-width: 0;
-    flex: 1 1 auto;
+    font-size: var(--fd-text-meta);
+    color: var(--fd-muted-foreground);
   }
 
-  .interrupt-bubble__node {
+  /* Answered: one quiet line with a green check. */
+  .interrupt-resolved {
     display: flex;
     align-items: center;
-    gap: var(--fd-space-3xs);
-    font-size: var(--fd-text-2xs);
+    gap: var(--fd-space-xs);
+    margin: var(--fd-space-xs) var(--fd-msg-gutter, var(--fd-space-xl));
+    font-size: var(--fd-text-meta);
+    color: var(--fd-muted-foreground);
+    min-width: 0;
+  }
+
+  :global(.interrupt-resolved__icon) {
+    flex-shrink: 0;
+    color: var(--fd-success);
+  }
+
+  .interrupt-resolved--cancelled :global(.interrupt-resolved__icon) {
     color: var(--fd-muted-foreground);
   }
 
-  .interrupt-bubble__cancel-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-2xs);
-    margin-left: auto;
-    padding: var(--fd-space-2xs) var(--fd-space-md);
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    font-family: inherit;
-    color: var(--fd-muted-foreground);
-    background-color: transparent;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-  }
-
-  .interrupt-bubble__cancel-btn:hover:not(:disabled) {
-    color: var(--fd-error);
-    border-color: var(--fd-error);
-    background-color: var(--fd-error-muted);
-  }
-
-  .interrupt-bubble__cancel-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .interrupt-resolved__text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* Responsive */
@@ -653,26 +511,11 @@
     .interrupt-bubble {
       margin: var(--fd-space-xs);
     }
-
-    .interrupt-bubble__header,
-    .interrupt-bubble__body,
-    .interrupt-bubble__footer {
-      padding-left: var(--fd-space-lg);
-      padding-right: var(--fd-space-lg);
-    }
-
-    .interrupt-bubble__cancel-btn {
-      min-height: 2.5rem;
-      padding: var(--fd-space-xs) var(--fd-space-md);
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .interrupt-bubble {
       animation: none;
-    }
-    .interrupt-bubble__cancel-btn {
-      transition: none;
     }
   }
 </style>

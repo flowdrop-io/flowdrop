@@ -9,6 +9,7 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from '../primitives/Button.svelte';
   import type { ChoiceConfig, InterruptChoice } from '../../types/interrupt.js';
   import { m } from '$lib/messages/index.js';
 
@@ -26,21 +27,11 @@
     isSubmitting: boolean;
     /** Error message if submission failed */
     error?: string;
-    /** Username of the person who resolved the interrupt */
-    resolvedByUserName?: string;
     /** Callback when user submits selection */
     onSubmit: (value: string | string[]) => void;
   }
 
-  let {
-    config,
-    isResolved,
-    resolvedValue,
-    isSubmitting,
-    error,
-    resolvedByUserName,
-    onSubmit
-  }: Props = $props();
+  let { config, isResolved, resolvedValue, isSubmitting, error, onSubmit }: Props = $props();
 
   // Hoist the choice branch — counter, min, max, submit reads.
   const t = $derived(m().interrupt.choice);
@@ -51,6 +42,9 @@
 
   /** Local state for selected values */
   let selectedValues = $state<Set<string>>(new Set());
+
+  /** Options with a description stack as rows; plain ones sit side by side as pills. */
+  const hasDescriptions = $derived(config.options.some((o) => !!o.description));
 
   /** Whether multiple selection is enabled */
   const isMultiple = $derived(config.multiple ?? false);
@@ -123,9 +117,6 @@
   class:choice-prompt--resolved={isResolved}
   class:choice-prompt--submitting={isSubmitting}
 >
-  <!-- Message -->
-  <p class="choice-prompt__message">{config.message}</p>
-
   <!-- Error message -->
   {#if error}
     <div class="choice-prompt__error">
@@ -137,6 +128,7 @@
   <!-- Options -->
   <div
     class="choice-prompt__options"
+    class:choice-prompt__options--stacked={hasDescriptions}
     role={isMultiple ? 'group' : 'radiogroup'}
     aria-label={config.message}
   >
@@ -156,13 +148,9 @@
           onchange={(e) => handleOptionChange(option, (e.target as HTMLInputElement).checked)}
           class="choice-prompt__input"
         />
-        <span class="choice-prompt__checkmark">
-          {#if isChecked}
-            <Icon icon={isMultiple ? 'mdi:checkbox-marked' : 'mdi:radiobox-marked'} />
-          {:else}
-            <Icon icon={isMultiple ? 'mdi:checkbox-blank-outline' : 'mdi:radiobox-blank'} />
-          {/if}
-        </span>
+        {#if isMultiple && isChecked}
+          <Icon icon="mdi:check" class="choice-prompt__checkmark" aria-hidden="true" />
+        {/if}
         <span class="choice-prompt__option-content">
           <span class="choice-prompt__option-label">{option.label}</span>
           {#if option.description}
@@ -191,34 +179,17 @@
     </div>
   {/if}
 
-  <!-- Submit button (only for explicit submission) -->
+  <!-- Submit (only for explicit submission) -->
   {#if !isResolved}
     <div class="choice-prompt__actions">
-      <button
-        type="button"
-        class="choice-prompt__submit"
+      <Button
+        variant="primary"
+        loading={isSubmitting}
         onclick={handleSubmit}
         disabled={!isValidSelection || isSubmitting}
       >
-        {#if isSubmitting}
-          <span class="choice-prompt__spinner"></span>
-        {:else}
-          <Icon icon="mdi:check" />
-        {/if}
-        <span>{t.submit}</span>
-      </button>
-    </div>
-  {/if}
-
-  <!-- Resolved indicator -->
-  {#if isResolved}
-    <div class="choice-prompt__resolved-badge">
-      <Icon icon="mdi:check-circle" />
-      <span>
-        {resolvedByUserName
-          ? m().interrupt.responseSubmittedBy({ name: resolvedByUserName })
-          : m().interrupt.responseSubmitted}
-      </span>
+        {t.submit}
+      </Button>
     </div>
   {/if}
 </div>
@@ -228,7 +199,7 @@
   .choice-prompt {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-md);
+    gap: var(--fd-space-sm);
   }
 
   .choice-prompt--resolved {
@@ -237,13 +208,6 @@
 
   .choice-prompt--submitting {
     pointer-events: none;
-  }
-
-  .choice-prompt__message {
-    margin: 0;
-    font-size: var(--fd-interrupt-font-message);
-    line-height: var(--fd-interrupt-line-height);
-    color: var(--fd-foreground);
   }
 
   .choice-prompt__error {
@@ -257,48 +221,57 @@
     font-size: var(--fd-interrupt-font-error);
   }
 
+  /* Options are pills side by side; with descriptions they stack as rows. */
   .choice-prompt__options {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: var(--fd-space-xs);
   }
 
+  .choice-prompt__options--stacked {
+    flex-direction: column;
+    flex-wrap: nowrap;
+  }
+
   .choice-prompt__option {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--fd-space-md);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background-color: var(--fd-muted);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-2xs);
+    min-height: var(--fd-control-md);
+    padding: 0 var(--fd-space-md);
+    background-color: var(--fd-background);
+    border: 1px solid var(--fd-border-strong);
+    border-radius: var(--fd-control-radius);
+    color: var(--fd-foreground);
     cursor: pointer;
-    transition: all var(--fd-transition-fast);
+    transition: background-color var(--fd-transition-fast);
   }
 
-  .choice-prompt__option:hover:not(.choice-prompt--resolved .choice-prompt__option) {
+  .choice-prompt__options--stacked .choice-prompt__option {
+    padding-block: var(--fd-space-xs);
+  }
+
+  .choice-prompt__option:hover {
     background-color: var(--fd-subtle);
-    border-color: var(--fd-border-strong);
   }
 
-  .choice-prompt__option--selected {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-interrupt-completed-border);
+  .choice-prompt__option:has(:focus-visible) {
+    outline: 2px solid var(--fd-ring);
+    outline-offset: 1px;
   }
 
-  .choice-prompt__option--selected:hover:not(.choice-prompt--resolved .choice-prompt__option) {
-    background-color: var(--fd-primary-muted);
+  .choice-prompt__option--selected,
+  .choice-prompt__option--selected:hover {
+    background-color: var(--fd-accent-muted);
+    border-color: var(--fd-accent);
   }
 
-  /* Resolved option - neutral blue theme */
-  .choice-prompt__option--resolved {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-interrupt-completed-border);
+  .choice-prompt--resolved .choice-prompt__option {
     cursor: default;
   }
 
   .choice-prompt--resolved .choice-prompt__option:not(.choice-prompt__option--resolved) {
     opacity: var(--fd-interrupt-not-selected-opacity);
-    cursor: default;
   }
 
   .choice-prompt__input {
@@ -313,21 +286,9 @@
     border: 0;
   }
 
-  .choice-prompt__checkmark {
+  :global(.choice-prompt__checkmark) {
     flex-shrink: 0;
-    font-size: 1.25rem;
-    color: var(--fd-muted-foreground);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .choice-prompt__option--selected .choice-prompt__checkmark {
-    color: var(--fd-interrupt-completed-border);
-  }
-
-  .choice-prompt__option--resolved .choice-prompt__checkmark {
-    color: var(--fd-interrupt-completed-border);
+    color: var(--fd-accent);
   }
 
   .choice-prompt__option-content {
@@ -343,81 +304,19 @@
   }
 
   .choice-prompt__option-description {
-    font-size: var(--fd-interrupt-font-error);
+    font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
     line-height: var(--fd-leading-tight);
   }
 
   .choice-prompt__info {
-    font-size: var(--fd-text-xs);
+    font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
-    padding-left: var(--fd-space-3xs);
   }
 
   .choice-prompt__actions {
     display: flex;
-    gap: var(--fd-space-md);
-    margin-top: var(--fd-space-3xs);
-  }
-
-  .choice-prompt__submit {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-sm) var(--fd-space-2xl);
-    border-radius: var(--fd-radius-lg);
-    font-size: var(--fd-text-sm);
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all var(--fd-transition-normal);
-    border: none;
-    min-height: var(--fd-interrupt-btn-min-height);
-    background: var(--fd-interrupt-btn-primary-bg);
-    color: var(--fd-primary-foreground);
-    box-shadow: 0 1px 3px var(--fd-interrupt-btn-primary-shadow);
-  }
-
-  .choice-prompt__submit:hover:not(:disabled) {
-    background: var(--fd-interrupt-btn-primary-bg-hover);
-    box-shadow: 0 4px 12px var(--fd-interrupt-btn-primary-shadow);
-    transform: translateY(-1px);
-  }
-
-  .choice-prompt__submit:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  .choice-prompt__spinner {
-    width: var(--fd-interrupt-spinner-size);
-    height: var(--fd-interrupt-spinner-size);
-    border: 2px solid var(--fd-border);
-    border-top-color: currentColor;
-    border-radius: 50%;
-    animation: choice-spin 0.6s linear infinite;
-  }
-
-  @keyframes choice-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  /* Resolved badge - neutral blue theme */
-  .choice-prompt__resolved-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-2xs);
-    padding: var(--fd-space-2xs) var(--fd-space-md);
-    background-color: var(--fd-interrupt-badge-completed-bg);
-    border-radius: var(--fd-radius-full);
-    color: var(--fd-interrupt-badge-completed-text);
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    align-self: flex-start;
   }
 </style>

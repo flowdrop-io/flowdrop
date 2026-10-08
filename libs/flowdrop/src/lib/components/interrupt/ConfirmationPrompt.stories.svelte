@@ -32,22 +32,6 @@
 />
 
 <Story
-  name="Confirmed"
-  args={{
-    isResolved: true,
-    resolvedValue: true
-  }}
-/>
-
-<Story
-  name="Declined"
-  args={{
-    isResolved: true,
-    resolvedValue: false
-  }}
-/>
-
-<Story
   name="Submitting"
   args={{
     isSubmitting: true
@@ -58,14 +42,5 @@
   name="With Error"
   args={{
     error: 'Network error: Failed to submit response'
-  }}
-/>
-
-<Story
-  name="Resolved By User"
-  args={{
-    isResolved: true,
-    resolvedValue: true,
-    resolvedByUserName: 'Alice'
   }}
 />

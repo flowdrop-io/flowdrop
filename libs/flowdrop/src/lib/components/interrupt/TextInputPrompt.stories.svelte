@@ -45,7 +45,6 @@
   name="Resolved"
   args={{
     isResolved: true,
-    resolvedValue: 'The workflow completed successfully with all checks passed.',
-    resolvedByUserName: 'Charlie'
+    resolvedValue: 'The workflow completed successfully with all checks passed.'
   }}
 />

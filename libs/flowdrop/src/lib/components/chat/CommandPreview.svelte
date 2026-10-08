@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { CommandPreviewItem } from '../../types/chat.js';
   import Icon from '@iconify/svelte';
+  import Button from '../primitives/Button.svelte';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -30,7 +31,12 @@
   const t = $derived(m().chat.commandPreview);
 </script>
 
-<div class="command-preview" role="region" aria-label={t.ariaLabel}>
+<div
+  class="command-preview"
+  class:command-preview--resolved={resolvedAction !== null}
+  role="region"
+  aria-label={t.ariaLabel}
+>
   <div class="command-preview__list">
     <!-- Fixed positional batch (raw strings may repeat) — index is the identity -->
     {#each commands as command, i (i)}
@@ -73,46 +79,49 @@
         {t.dismissed}
       </span>
     {:else}
-      <button
-        class="command-preview__btn command-preview__btn--approve"
-        onclick={handleApprove}
-        disabled={!hasPending || isExecuting}
-      >
-        <Icon icon="mdi:check-all" />
-        {t.applyAll}
-      </button>
-      <button
-        class="command-preview__btn command-preview__btn--cancel"
-        onclick={handleCancel}
-        disabled={isExecuting}
-      >
+      <Button variant="secondary" onclick={handleCancel} disabled={isExecuting}>
         {t.cancel}
-      </button>
+      </Button>
+      <Button variant="primary" onclick={handleApprove} disabled={!hasPending || isExecuting}>
+        {#snippet leadingIcon()}<Icon icon="mdi:check-all" />{/snippet}
+        {t.applyAll}
+      </Button>
     {/if}
   </div>
 </div>
 
 <style>
+  /* The same card as an interrupt in the Playground (`--fd-interrupt-card-*`), so a person
+     is asked the same way in both places. Answered, it drops its frame. */
   .command-preview {
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background: var(--fd-card);
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-interrupt-card-pad, var(--fd-space-xs));
+    border: 1px solid var(--fd-interrupt-card-border, var(--fd-border));
+    border-radius: var(--fd-interrupt-card-radius, var(--fd-radius-md));
+    background: var(--fd-interrupt-card-bg, var(--fd-card));
+    box-shadow: var(--fd-interrupt-card-shadow, none);
+  }
+
+  .command-preview--resolved {
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
   }
 
   .command-preview__list {
     display: flex;
     flex-direction: column;
-    padding: var(--fd-space-xs);
     gap: var(--fd-space-3xs);
   }
 
   .command-preview__item {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
     gap: var(--fd-space-2xs);
-    padding: var(--fd-space-3xs) var(--fd-space-xs);
-    border-radius: var(--fd-radius-sm);
+    padding: var(--fd-space-3xs) 0;
   }
 
   .command-preview__status {
@@ -174,67 +183,36 @@
 
   .command-preview__error {
     display: block;
+    flex-basis: 100%;
+    padding-inline-start: 1.25rem;
     font-size: var(--fd-text-xs);
     color: var(--fd-error);
     margin-top: var(--fd-space-3xs);
   }
 
+  /* Cancel, then Apply, on the right. */
   .command-preview__actions {
     display: flex;
+    justify-content: flex-end;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs);
-    border-top: 1px solid var(--fd-border);
-    background: var(--fd-muted);
-  }
-
-  .command-preview__btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    padding: var(--fd-space-3xs) var(--fd-space-sm);
-    border: none;
-    border-radius: var(--fd-radius-sm);
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-      background-color var(--fd-transition-fast),
-      color var(--fd-transition-fast);
-  }
-
-  .command-preview__btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .command-preview__btn--approve {
-    background: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-  }
-
-  .command-preview__btn--approve:hover:not(:disabled) {
-    background: var(--fd-primary-hover);
-  }
-
-  .command-preview__btn--cancel {
-    background: var(--fd-secondary);
-    color: var(--fd-secondary-foreground);
-  }
-
-  .command-preview__btn--cancel:hover:not(:disabled) {
-    background: var(--fd-secondary-hover);
   }
 
   .command-preview__resolved {
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-3xs);
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    padding: var(--fd-space-3xs) var(--fd-space-xs);
+    font-size: var(--fd-text-meta);
+  }
+
+  .command-preview--resolved .command-preview__actions {
+    justify-content: flex-start;
   }
 
   .command-preview__resolved--applied {
+    color: var(--fd-muted-foreground);
+  }
+
+  .command-preview__resolved--applied :global(svg) {
     color: var(--fd-success);
   }
 

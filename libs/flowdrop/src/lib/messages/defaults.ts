@@ -203,6 +203,15 @@ export const defaultMessages = {
         default: 'Response Submitted'
       },
       cancelled: 'Cancelled',
+      // The one line an answered prompt folds to.
+      resolved: {
+        confirmed: ({ value }: { value: string }) => `Confirmed · ${value}`,
+        declined: ({ value }: { value: string }) => `Declined · ${value}`,
+        chose: ({ value }: { value: string }) => `Chose · ${value}`,
+        submitted: 'Submitted',
+        submittedValue: ({ value }: { value: string }) => `Submitted · ${value}`,
+        by: ({ name }: { name: string }) => `by ${name}`
+      },
       errorRetry: 'Error - Click to Retry',
       retry: 'Retry',
       cancel: 'Cancel',

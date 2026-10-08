@@ -55,8 +55,7 @@
   name="Resolved"
   args={{
     isResolved: true,
-    resolvedValue: 'high',
-    resolvedByUserName: 'Bob'
+    resolvedValue: 'high'
   }}
 />
 

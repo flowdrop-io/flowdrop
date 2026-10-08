@@ -229,9 +229,6 @@
   class:review-prompt--resolved={isResolved}
   class:review-prompt--submitting={isSubmitting}
 >
-  <!-- Message -->
-  <p class="review-prompt__message">{config.message}</p>
-
   <!-- Error message -->
   {#if error}
     <div class="review-prompt__error">
@@ -474,13 +471,6 @@
 
   .review-prompt--submitting {
     pointer-events: none;
-  }
-
-  .review-prompt__message {
-    margin: 0;
-    font-size: var(--fd-review-font-size-message);
-    line-height: var(--fd-review-line-height);
-    color: var(--fd-foreground);
   }
 
   .review-prompt__error {

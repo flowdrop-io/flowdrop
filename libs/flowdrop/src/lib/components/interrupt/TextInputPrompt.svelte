@@ -9,6 +9,7 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from '../primitives/Button.svelte';
   import type { TextConfig } from '../../types/interrupt.js';
   import { m } from '$lib/messages/index.js';
 
@@ -26,21 +27,11 @@
     isSubmitting: boolean;
     /** Error message if submission failed */
     error?: string;
-    /** Username of the person who resolved the interrupt */
-    resolvedByUserName?: string;
     /** Callback when user submits text */
     onSubmit: (value: string) => void;
   }
 
-  let {
-    config,
-    isResolved,
-    resolvedValue,
-    isSubmitting,
-    error,
-    resolvedByUserName,
-    onSubmit
-  }: Props = $props();
+  let { config, isResolved, resolvedValue, isSubmitting, error, onSubmit }: Props = $props();
 
   // Hoist the text branch — placeholder/min/submit reads, including duplicate
   // placeholder in single- vs. multiline branches.
@@ -100,9 +91,6 @@
   class:text-prompt--resolved={isResolved}
   class:text-prompt--submitting={isSubmitting}
 >
-  <!-- Message -->
-  <p class="text-prompt__message">{config.message}</p>
-
   <!-- Error message -->
   {#if error}
     <div class="text-prompt__error">
@@ -163,31 +151,14 @@
   <!-- Submit button -->
   {#if !isResolved}
     <div class="text-prompt__actions">
-      <button
-        type="button"
-        class="text-prompt__submit"
+      <Button
+        variant="primary"
+        loading={isSubmitting}
         onclick={handleSubmit}
         disabled={!isValidInput || isSubmitting}
       >
-        {#if isSubmitting}
-          <span class="text-prompt__spinner"></span>
-        {:else}
-          <Icon icon="mdi:send" />
-        {/if}
-        <span>{t.submit}</span>
-      </button>
-    </div>
-  {/if}
-
-  <!-- Resolved indicator -->
-  {#if isResolved}
-    <div class="text-prompt__resolved-badge">
-      <Icon icon="mdi:check-circle" />
-      <span>
-        {resolvedByUserName
-          ? m().interrupt.responseSubmittedBy({ name: resolvedByUserName })
-          : m().interrupt.responseSubmitted}
-      </span>
+        {t.submit}
+      </Button>
     </div>
   {/if}
 </div>
@@ -197,7 +168,7 @@
   .text-prompt {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-md);
+    gap: var(--fd-space-sm);
   }
 
   .text-prompt--resolved {
@@ -206,13 +177,6 @@
 
   .text-prompt--submitting {
     pointer-events: none;
-  }
-
-  .text-prompt__message {
-    margin: 0;
-    font-size: var(--fd-interrupt-font-message);
-    line-height: var(--fd-interrupt-line-height);
-    color: var(--fd-foreground);
   }
 
   .text-prompt__error {
@@ -231,19 +195,23 @@
     flex-direction: column;
   }
 
+  /* The Field control: 32 px (a textarea 64 px), 6 px radius, a strong rule, a ring on focus. */
   .text-prompt__input,
   .text-prompt__textarea {
     width: 100%;
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    font-size: var(--fd-interrupt-font-message);
+    padding: 0 var(--fd-space-md);
+    font-size: var(--fd-text-sm);
     font-family: inherit;
-    line-height: var(--fd-interrupt-line-height);
     color: var(--fd-foreground);
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border-strong);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     outline: none;
     transition: all var(--fd-transition-fast);
+  }
+
+  .text-prompt__input {
+    height: var(--fd-control-lg, 2rem);
   }
 
   .text-prompt__input::placeholder,
@@ -253,7 +221,8 @@
 
   .text-prompt__input:focus,
   .text-prompt__textarea:focus {
-    border-color: var(--fd-interrupt-completed-border);
+    border-color: var(--fd-accent);
+    box-shadow: 0 0 0 3px var(--fd-accent-muted);
   }
 
   .text-prompt__input:disabled,
@@ -262,23 +231,17 @@
     cursor: not-allowed;
   }
 
-  /* Resolved state - neutral blue to match other interrupt prompts */
-  .text-prompt__input--resolved,
-  .text-prompt__textarea--resolved {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-interrupt-completed-border);
-  }
-
   .text-prompt__textarea {
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    line-height: 1.45;
     resize: vertical;
-    min-height: 100px;
+    min-height: 4rem;
   }
 
   .text-prompt__char-count {
-    font-size: var(--fd-text-xs);
+    font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
     text-align: right;
-    padding-right: var(--fd-space-3xs);
   }
 
   .text-prompt__char-count--warning {
@@ -287,67 +250,7 @@
 
   .text-prompt__actions {
     display: flex;
-    gap: var(--fd-space-md);
-  }
-
-  .text-prompt__submit {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-sm) var(--fd-space-2xl);
-    border-radius: var(--fd-radius-lg);
-    font-size: var(--fd-text-sm);
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all var(--fd-transition-normal);
-    border: none;
-    min-height: var(--fd-interrupt-btn-min-height);
-    background: var(--fd-interrupt-btn-primary-bg);
-    color: var(--fd-primary-foreground);
-    box-shadow: 0 1px 3px var(--fd-interrupt-btn-primary-shadow);
-  }
-
-  .text-prompt__submit:hover:not(:disabled) {
-    background: var(--fd-interrupt-btn-primary-bg-hover);
-    box-shadow: 0 4px 12px var(--fd-interrupt-btn-primary-shadow);
-    transform: translateY(-1px);
-  }
-
-  .text-prompt__submit:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  .text-prompt__spinner {
-    width: var(--fd-interrupt-spinner-size);
-    height: var(--fd-interrupt-spinner-size);
-    border: 2px solid var(--fd-border);
-    border-top-color: currentColor;
-    border-radius: 50%;
-    animation: text-spin 0.6s linear infinite;
-  }
-
-  @keyframes text-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  /* Resolved badge - neutral blue theme */
-  .text-prompt__resolved-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-2xs);
-    padding: var(--fd-space-2xs) var(--fd-space-md);
-    background-color: var(--fd-interrupt-badge-completed-bg);
-    border-radius: var(--fd-radius-full);
-    color: var(--fd-interrupt-badge-completed-text);
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    align-self: flex-start;
   }
 </style>
