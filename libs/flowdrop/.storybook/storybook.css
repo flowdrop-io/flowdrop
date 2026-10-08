@@ -2,6 +2,8 @@
 /* Imports library styles without dev-global.css (which sets overflow: hidden) */
 @import '../src/lib/styles/base.css';
 @import '../src/lib/styles/toast.css';
+/* Graphite names Inter; the library does not load it on its own. */
+@import '../src/lib/styles/fonts/inter.css';
 
 body {
   font-family:
