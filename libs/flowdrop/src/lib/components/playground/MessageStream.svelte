@@ -101,6 +101,11 @@
    * next one; its log-layout rows leave the flow and fold into a single summary
    * where the first of them stood. A version divider that followed a folded row
    * stays where it was.
+   *
+   * A turn with steps also absorbs its run-lifecycle notices ("Calculator User
+   * started", a sub-workflow's "completed in 59.1ms"): the steps table already
+   * says that. Warnings and errors stay in the flow, and a turn without steps
+   * (logs off) keeps its notices.
    */
   type StreamItem =
     | { kind: 'message'; message: PlaygroundMessage }
@@ -108,24 +113,44 @@
     | { kind: 'divider'; afterId: string };
 
   const rows = $derived.by(() => {
-    const items: StreamItem[] = [];
-    const stepsOfTurn = new Map<number, Extract<StreamItem, { kind: 'steps' }>>();
+    const isStep = (msg: PlaygroundMessage): boolean =>
+      msg.role !== 'user' &&
+      !isInterruptMessage(msg) &&
+      resolveMessageDisplay(msg, { compactSystemMessages }) === 'log';
+    const isLifecycleNotice = (msg: PlaygroundMessage): boolean => {
+      const level = msg.metadata?.level;
+      return (
+        msg.role === 'system' &&
+        Boolean(msg.executionId) &&
+        level !== 'warning' &&
+        level !== 'error' &&
+        !isInterruptMessage(msg) &&
+        resolveMessageDisplay(msg, { compactSystemMessages }) === 'notice'
+      );
+    };
+
+    const turnsWithSteps = new Set<number>();
     let turn = 0;
     for (const msg of visibleMessages) {
       if (msg.role === 'user') turn += 1;
+      else if (isStep(msg)) turnsWithSteps.add(turn);
+    }
+
+    const items: StreamItem[] = [];
+    const stepsOfTurn = new Map<number, Extract<StreamItem, { kind: 'steps' }>>();
+    turn = 0;
+    for (const msg of visibleMessages) {
+      if (msg.role === 'user') turn += 1;
       const isInterrupt = isInterruptMessage(msg);
-      if (
-        msg.role !== 'user' &&
-        !isInterrupt &&
-        resolveMessageDisplay(msg, { compactSystemMessages }) === 'log'
-      ) {
+      const step = isStep(msg);
+      if (step || (turnsWithSteps.has(turn) && isLifecycleNotice(msg))) {
         let steps = stepsOfTurn.get(turn);
         if (!steps) {
           steps = { kind: 'steps', key: msg.id, logs: [], pending: [] };
           stepsOfTurn.set(turn, steps);
           items.push(steps);
         }
-        steps.logs.push(msg);
+        if (step) steps.logs.push(msg);
         if (dividerAfter.has(msg.id)) items.push({ kind: 'divider', afterId: msg.id });
         continue;
       }

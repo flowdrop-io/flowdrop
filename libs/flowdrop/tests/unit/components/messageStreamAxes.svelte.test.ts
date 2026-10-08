@@ -175,6 +175,39 @@ describe('MessageStream — steps row', () => {
     expect(target.querySelectorAll('[data-testid="steps-summary"]')).toHaveLength(2);
   });
 
+  it('folds run-lifecycle notices into the turn, but keeps warnings and errors', () => {
+    const notice = (content: string, extra: Partial<PlaygroundMessage> = {}) =>
+      msg({ role: 'system', display: 'notice', content, executionId: 'p-1', ...extra });
+    const { target } = render([
+      msg({ role: 'user', content: 'go' }),
+      notice('started', { metadata: { level: 'info' } }),
+      log('completed in 1ms', { nodeId: 'a' }),
+      notice('completed in 59.1ms', { executionId: 'p-2', metadata: { level: 'info' } }),
+      notice('budget nearly spent', { metadata: { level: 'warning' } })
+    ]);
+    expect(target.textContent).not.toContain('started');
+    expect(target.textContent).not.toContain('59.1ms');
+    expect(target.textContent).toContain('budget nearly spent');
+    const stream = Array.from(
+      target.querySelectorAll('[data-testid="steps-summary"], .system-notice')
+    );
+    expect(stream[0].getAttribute('data-testid')).toBe('steps-summary');
+    expect(stream[0].textContent).toContain('1 step');
+  });
+
+  it('keeps lifecycle notices when the turn has no steps', () => {
+    const { target } = render(
+      [
+        msg({ role: 'user', content: 'go' }),
+        msg({ role: 'system', display: 'notice', content: 'started', executionId: 'p-1' }),
+        log('completed in 1ms', { nodeId: 'a' })
+      ],
+      { allowLogs: false }
+    );
+    expect(target.textContent).toContain('started');
+    expect(target.querySelector('[data-testid="steps-summary"]')).toBeNull();
+  });
+
   it('does not let a hidden row join a turn', () => {
     const { target } = render([
       log('completed in 1ms', { nodeId: 'a' }),
