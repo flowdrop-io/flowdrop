@@ -8,7 +8,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import tokensCss from '../../styles/tokens.css?raw';
-  import { parseTokens, groupBySection, type TokenCategory } from './parseTokens';
+  import { parseTokens, groupBySection, type TokenCategory } from './parseTokens.js';
 
   type View =
     | 'colours'
