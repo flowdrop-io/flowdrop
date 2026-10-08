@@ -269,10 +269,25 @@ describe('executeSessionCommand', () => {
     it('names the missing required inputs', async () => {
       const { runs, mock } = mockRuns({
         mode: 'form',
-        turnInputs: { ok: false, missing: [{ id: 'topic', name: 'Topic' }, { id: 'n' }] }
+        turnInputs: {
+          ok: false,
+          missing: [{ id: 'topic', name: 'Topic' }, { id: 'n' }],
+          invalid: []
+        }
       });
       const result = await run('session run', runs);
       expect(!result.ok && result.error).toContain('Topic, n');
+      expect(mock.takeTurn).not.toHaveBeenCalled();
+    });
+
+    it('names the inputs whose text is not JSON of their type', async () => {
+      const { runs, mock } = mockRuns({
+        mode: 'form',
+        turnInputs: { ok: false, missing: [], invalid: [{ id: 'values', name: 'Values' }] }
+      });
+      const result = await run('session run values=2,3', runs);
+      expect(!result.ok && result.error).toContain('Not valid JSON for its type: Values');
+      expect(!result.ok && result.error).not.toContain('Missing');
       expect(mock.takeTurn).not.toHaveBeenCalled();
     });
 

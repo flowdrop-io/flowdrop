@@ -202,6 +202,39 @@ describe('RunController', () => {
       expect(playground.launchError).toBeNull();
     });
 
+    it('names an array input that is not JSON under Run, and sends one that is parsed', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      playground.setCurrentSession(session('s1'));
+      playground.setWorkflow({
+        ...workflow('wf'),
+        interface: {
+          inputs: [
+            { id: 'values', name: 'Values', dataType: 'array', bindings: [], required: true },
+            { id: 'reply', dataType: 'string', bindings: [], turn: 'history' }
+          ]
+        }
+      });
+      service.sendTurn.mockResolvedValue({
+        kind: 'turn',
+        result: { sessionId: 's1', userMessageId: 'u1', pipelineId: 'p1', status: 'running' }
+      });
+
+      playground.setFormValues({ values: '2, 3, 4' });
+      expect(await runs.takeTurn({}, { launch: true })).toBe(false);
+      expect(playground.launchError).toBe('Not valid JSON for its type: Values');
+      expect(service.sendTurn).not.toHaveBeenCalled();
+
+      playground.setFormValues({ values: '[2, 3, 4]' });
+      expect(await runs.takeTurn({}, { launch: true })).toBe(true);
+      expect(service.sendTurn).toHaveBeenCalledWith(
+        expect.anything(),
+        's1',
+        { inputs: { values: [2, 3, 4] } },
+        expect.anything()
+      );
+    });
+
     it('clears an earlier launch error when the next run starts', async () => {
       const { runs, playground, service } = setup();
       runs.configure({ workflowId: 'wf' });

@@ -439,7 +439,8 @@ export const defaultMessages = {
     // turn; the session fills the others).
     inputForm: {
       title: 'Workflow inputs',
-      missingRequired: ({ names }: { names: string }) => `Fill in the required inputs: ${names}`
+      missingRequired: ({ names }: { names: string }) => `Fill in the required inputs: ${names}`,
+      invalidJson: ({ names }: { names: string }) => `Not valid JSON for its type: ${names}`
     },
     states: {
       newSessionTitle: 'New session',

@@ -278,6 +278,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   no longer shows as an empty user bubble: it reads "Started a run", or names
   the inputs it carried ("Ran with values, mode"). New messages
   `playground.emptyTurn.run` / `playground.emptyTurn.withInputs`.
+- A form input of array or object type (a Playground form field with no item
+  schema renders as a text box) is sent as parsed JSON: `[2, 3, 4]` reaches the
+  server as an array, not a string the server refuses. Text that is not JSON of
+  the entry's shape stops the run with "Not valid JSON for its type: <names>"
+  under Run. `InterfaceInputsResult`'s failure branch gains `invalid` (the
+  entries whose text did not parse) beside `missing`; new message
+  `playground.inputForm.invalidJson`.
 
 - The Assistant composer no longer clips its placeholder at the default panel
   width (the field is two lines tall), and "+ Attach a run" sits in the

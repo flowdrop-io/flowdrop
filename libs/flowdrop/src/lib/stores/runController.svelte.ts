@@ -905,10 +905,20 @@ export class RunController {
       // `{}` — exactly what the legacy door was always sent.
       const turnInputs = playground.turnInputs;
       if (!turnInputs.ok) {
+        const { inputForm } = this.#messages.playground;
+        const names = (entries: typeof turnInputs.missing): string =>
+          entries.map((entry) => entry.name ?? entry.id).join(', ');
         report(
-          this.#messages.playground.inputForm.missingRequired({
-            names: turnInputs.missing.map((entry) => entry.name ?? entry.id).join(', ')
-          })
+          [
+            turnInputs.missing.length > 0
+              ? inputForm.missingRequired({ names: names(turnInputs.missing) })
+              : null,
+            turnInputs.invalid.length > 0
+              ? inputForm.invalidJson({ names: names(turnInputs.invalid) })
+              : null
+          ]
+            .filter((line) => line !== null)
+            .join('. ')
         );
         playground.releaseRunLock();
         return false;

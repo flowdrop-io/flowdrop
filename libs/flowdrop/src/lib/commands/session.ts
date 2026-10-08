@@ -249,7 +249,7 @@ async function send(content: string, runs: RunController): Promise<CommandResult
 
   const turnInputs = playground.turnInputs;
   if (!turnInputs.ok) {
-    return failure(missingInputs(turnInputs.missing), 'SESSION_REFUSED');
+    return failure(refusedInputs(turnInputs), 'SESSION_REFUSED');
   }
 
   const accepted = await runs.takeTurn({ content });
@@ -257,9 +257,19 @@ async function send(content: string, runs: RunController): Promise<CommandResult
   return { ok: true, message: acceptedMessage(runs, 'Turn sent to') };
 }
 
-function missingInputs(missing: Array<{ id: string; name?: string }>): string {
-  const names = missing.map((entry) => entry.name ?? entry.id).join(', ');
-  return `Missing required inputs: ${names}. Pass them as session run key=value …`;
+function refusedInputs({
+  missing,
+  invalid
+}: {
+  missing: Array<{ id: string; name?: string }>;
+  invalid: Array<{ id: string; name?: string }>;
+}): string {
+  const names = (entries: Array<{ id: string; name?: string }>): string =>
+    entries.map((entry) => entry.name ?? entry.id).join(', ');
+  const lines: string[] = [];
+  if (missing.length > 0) lines.push(`Missing required inputs: ${names(missing)}`);
+  if (invalid.length > 0) lines.push(`Not valid JSON for its type: ${names(invalid)}`);
+  return `${lines.join('. ')}. Pass them as session run key=value …`;
 }
 
 async function run(inputs: Record<string, string>, runs: RunController): Promise<CommandResult> {
@@ -275,7 +285,7 @@ async function run(inputs: Record<string, string>, runs: RunController): Promise
     playground.setFormValues({ ...playground.formValues, ...inputs });
     const turnInputs = playground.turnInputs;
     if (!turnInputs.ok) {
-      return failure(missingInputs(turnInputs.missing), 'SESSION_REFUSED');
+      return failure(refusedInputs(turnInputs), 'SESSION_REFUSED');
     }
     const accepted = await runs.takeTurn({});
     if (!accepted) return refusal(runs, 'The run was not accepted.');
