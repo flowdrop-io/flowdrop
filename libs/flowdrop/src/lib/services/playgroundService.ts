@@ -159,7 +159,7 @@ export class PlaygroundService {
         (errorData as { error?: string; message?: string }).error ||
         (errorData as { error?: string; message?: string }).message ||
         `HTTP ${response.status}: ${response.statusText}`;
-      throw new Error(errorMessage);
+      throw Object.assign(new Error(errorMessage), { status: response.status });
     }
     return response.json();
   }
@@ -449,19 +449,27 @@ export class PlaygroundService {
     endpointConfig: EndpointConfig | null,
     sessionId: string,
     authProvider?: AuthProvider
-  ): Promise<void> {
+  ): Promise<'stopped' | 'nothing-to-stop'> {
     const config = this.getConfig(endpointConfig);
     const { url, group } = this.sessionEndpoint(config, 'stop', sessionId);
 
-    await this.request<{ success: boolean }>(
-      config,
-      url,
-      {
-        method: 'POST'
-      },
-      authProvider,
-      group
-    );
+    try {
+      await this.request<{ success: boolean }>(
+        config,
+        url,
+        {
+          method: 'POST'
+        },
+        authProvider,
+        group
+      );
+      return 'stopped';
+    } catch (err) {
+      // 409: the server found nothing running or waiting. That is the state
+      // the caller wanted, so it is a result, not a failure.
+      if ((err as { status?: number }).status === 409) return 'nothing-to-stop';
+      throw err;
+    }
   }
 
   /**

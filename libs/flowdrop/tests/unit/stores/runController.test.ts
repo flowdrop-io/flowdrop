@@ -328,6 +328,49 @@ describe('RunController', () => {
     });
   });
 
+  describe('stopExecution', () => {
+    it('on a 200 treats the session as idle and refetches it', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      playground.setCurrentSession(session('s1', 'awaiting_input'));
+      service.stopExecution.mockResolvedValue('stopped');
+
+      await runs.stopExecution();
+
+      expect(playground.currentSession?.status).toBe('idle');
+      expect(playground.error).toBeNull();
+      expect(service.getMessages).toHaveBeenCalledTimes(1);
+    });
+
+    it('on a 409 (nothing to stop) is the same: idle, refetched, no error', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      playground.setCurrentSession(session('s1', 'running'));
+      service.stopExecution.mockResolvedValue('nothing-to-stop');
+
+      await runs.stopExecution();
+
+      expect(playground.currentSession?.status).toBe('idle');
+      expect(playground.error).toBeNull();
+      expect(service.getMessages).toHaveBeenCalledTimes(1);
+    });
+
+    it('on a real failure shows the error and does not fake an idle session', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      playground.setCurrentSession(session('s1', 'running'));
+      service.stopExecution.mockRejectedValue(
+        Object.assign(new Error('Server error'), { status: 500 })
+      );
+      service.getMessages.mockResolvedValue({ data: [], sessionStatus: 'running' });
+
+      await runs.stopExecution();
+
+      expect(playground.error).toBe('Server error');
+      expect(playground.currentSession?.status).toBe('running');
+    });
+  });
+
   describe('loadNodeStatuses', () => {
     const done = { status: 'completed', executionCount: 1, isExecuting: false } as const;
     const wf = () => ({

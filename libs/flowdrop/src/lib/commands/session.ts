@@ -300,7 +300,11 @@ async function stop(runs: RunController): Promise<CommandResult> {
   if (!session) {
     return failure('There is no test session to stop.', 'SESSION_REFUSED');
   }
+  runs.playground.setError(null);
   await runs.stopExecution();
+  // A failed stop leaves the run going; say that rather than "Stopped".
+  const error = runs.playground.error;
+  if (error) return failure(error, 'SESSION_FAILED');
   return { ok: true, message: `Stopped "${session.name}".` };
 }
 

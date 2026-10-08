@@ -308,6 +308,15 @@ describe('executeSessionCommand', () => {
       expect(result).toEqual({ ok: true, message: 'Stopped "Session 1".' });
     });
 
+    it('reports a failed stop instead of claiming it stopped', async () => {
+      const { runs, mock, playground } = mockRuns();
+      mock.stopExecution.mockImplementation(async () => {
+        (playground as { error: string | null }).error = 'Server error';
+      });
+      const result = await run('session stop', runs);
+      expect(result.ok).toBe(false);
+    });
+
     it('has nothing to stop without a session', async () => {
       const { runs } = mockRuns({ session: null });
       expect((await run('session stop', runs)).ok).toBe(false);

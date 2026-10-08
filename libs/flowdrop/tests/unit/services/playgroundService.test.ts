@@ -561,10 +561,36 @@ describe('PlaygroundService', () => {
         json: async () => ({ success: true })
       });
 
-      await service.stopExecution(endpointConfig, 'session-1');
+      await expect(service.stopExecution(endpointConfig, 'session-1')).resolves.toBe('stopped');
 
       const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(fetchCall[1].method).toBe('POST');
+    });
+
+    it('reports a 409 as nothing to stop instead of throwing', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: false,
+        status: 409,
+        statusText: 'Conflict',
+        json: async () => ({ error: 'Nothing to stop' })
+      });
+
+      await expect(service.stopExecution(endpointConfig, 'session-1')).resolves.toBe(
+        'nothing-to-stop'
+      );
+    });
+
+    it('still throws other failures, with the status', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Boom',
+        json: async () => ({})
+      });
+
+      await expect(service.stopExecution(endpointConfig, 'session-1')).rejects.toMatchObject({
+        status: 500
+      });
     });
   });
 

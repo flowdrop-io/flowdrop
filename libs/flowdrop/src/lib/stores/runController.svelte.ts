@@ -954,15 +954,22 @@ export class RunController {
     }
 
     try {
+      // A 200 means the server ended the run; a 409 means there was nothing
+      // left to stop. Either way the session is idle: say so, then read the
+      // server's side of it instead of trusting a local guess.
       await this.#service.stopExecution(this.#api.config, sessionId, this.#api.authProvider);
       this.#service.stopPolling();
       this.#playground.updateSessionStatus('idle');
+      await this.refresh();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to stop execution';
-      this.#playground.setError(errorMessage);
-      this.#service.stopPolling();
-      this.#playground.updateSessionStatus('idle');
+      // A real failure (network, 5xx, 403): the run may still be going, so
+      // do not pretend it stopped. Show the error and let the server decide.
+      if (tracked?.origin === 'session' && tracked.sessionId === sessionId) {
+        this.#tracked = { ...tracked, stopped: false };
+      }
+      this.#playground.setError(err instanceof Error ? err.message : 'Failed to stop execution');
       logger.error('Failed to stop execution:', err);
+      await this.refresh();
     }
   }
 
