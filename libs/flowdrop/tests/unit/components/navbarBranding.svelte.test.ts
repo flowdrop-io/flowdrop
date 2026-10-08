@@ -57,6 +57,22 @@ describe('Navbar branding', () => {
     expect(start.querySelector('img')).toBeNull();
   });
 
+  it('name replaces appName for the wordmark label and the logo alt, logoAlt wins', () => {
+    let start = render({ name: 'Acme' });
+    expect(start.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Acme');
+    expect(start.querySelector('[role="img"]')?.getAttribute('title')).toBe('Acme');
+    unmount(app!);
+    app = null;
+    document.body.innerHTML = '';
+    start = render({ name: 'Acme', logo: '/acme.svg' });
+    expect(start.querySelector('img')?.getAttribute('alt')).toBe('Acme');
+    unmount(app!);
+    app = null;
+    document.body.innerHTML = '';
+    start = render({ name: 'Acme', logo: '/acme.svg', logoAlt: 'Acme logo' });
+    expect(start.querySelector('img')?.getAttribute('alt')).toBe('Acme logo');
+  });
+
   it('wraps the logo in a link when href is set', () => {
     const start = render({ logo: '/acme.svg', href: 'https://example.com' });
     const link = start.querySelector('a');

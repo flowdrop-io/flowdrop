@@ -30,6 +30,13 @@ export interface NavbarAction {
  */
 export interface NavbarBranding {
   /**
+   * Product name shown in the chrome in place of "FlowDrop": the page `<title>`
+   * (`{name} - {tagline}`), the default wordmark's accessible name and title, and
+   * the default for `logoAlt`. Precedence: `logoAlt` > `name` > the
+   * `navigation.appName` message.
+   */
+  name?: string;
+  /**
    * The logo. A string is an image URL, rendered as an `<img>` scaled to fit the
    * 48 px navbar (max height 24 px, width auto, clamped to the start column).
    * A Svelte component is rendered in place and must size itself to the same box.
@@ -37,7 +44,7 @@ export interface NavbarBranding {
   logo?: string | Component;
   /**
    * Accessible name for the logo (the `<img>` alt text, or the label of a
-   * component logo). Defaults to the `navigation.appName` message.
+   * component logo). Defaults to `name`, then the `navigation.appName` message.
    */
   logoAlt?: string;
   /** Wraps the logo in a link to this URL. The built-in wordmark is not linked. */

@@ -40,6 +40,17 @@ test.describe('Navbar branding', () => {
     expect(box?.height).toBeLessThanOrEqual(24);
   });
 
+  test('name replaces the product name in the title and wordmark; logoAlt wins for the logo', async ({
+    page
+  }) => {
+    await gotoEditor(page, 'workflow=simple&branding=name');
+    await expect(page).toHaveTitle('Acme Studio - Visual Workflow Manager');
+    await expect(start(page).getByRole('img', { name: 'Acme Studio' })).toBeVisible();
+    await gotoEditor(page, 'workflow=simple&branding=alt');
+    await expect(page).toHaveTitle('Acme Studio - Visual Workflow Manager');
+    await expect(start(page).getByRole('img', { name: 'Acme logo' })).toBeVisible();
+  });
+
   test('a very wide logo is clamped and the navbar does not wrap at 768px', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 800 });
     await gotoEditor(page, 'workflow=simple&branding=wide');

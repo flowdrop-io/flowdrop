@@ -115,7 +115,7 @@
     $page.url.searchParams.get('caption') === '1' || workflowVariant === 'caption'
   );
 
-  // --- White-label logo (?branding=1, or ?branding=wide for a logo far wider than the start column) ---
+  // --- White-label logo (?branding=1 name + image; =alt adds logoAlt; =name name only; =wide a logo far wider than the start column) ---
   const brandingSvg = (width: number) =>
     `data:image/svg+xml;utf8,${encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="40" viewBox="0 0 ${width} 40"><rect width="${width}" height="40" fill="#0a7"/></svg>`
@@ -123,9 +123,11 @@
   let branding = $derived.by(() => {
     const variant = $page.url.searchParams.get('branding');
     if (!variant) return undefined;
+    if (variant === 'name') return { name: 'Acme Studio' };
     return {
       logo: brandingSvg(variant === 'wide' ? 1200 : 200),
-      logoAlt: 'Acme Studio',
+      name: 'Acme Studio',
+      ...(variant === 'alt' ? { logoAlt: 'Acme logo' } : {}),
       href: 'https://example.com/acme'
     };
   });

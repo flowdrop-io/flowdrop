@@ -66,8 +66,8 @@
   // Hoist the navigation branch — six reads in the template.
   const nav = $derived(m().navigation);
 
-  // Accessible name of the logo: the consumer's alt text, else the app name.
-  const logoName = $derived(branding?.logoAlt ?? nav.appName);
+  // Accessible name of the logo: alt text, else the branded name, else the app name.
+  const logoName = $derived(branding?.logoAlt ?? branding?.name ?? nav.appName);
 
   // Flyout structure: actions after the first split into ungrouped (rendered
   // flat at the top) and groups (rendered as labeled sections). Group order

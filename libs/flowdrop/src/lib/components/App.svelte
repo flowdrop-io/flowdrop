@@ -1555,7 +1555,7 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <svelte:head>
-  <title>{m().navigation.appName} - {m().navigation.tagline}</title>
+  <title>{branding?.name ?? m().navigation.appName} - {m().navigation.tagline}</title>
   <meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
 </svelte:head>
 

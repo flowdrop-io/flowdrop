@@ -134,8 +134,8 @@ export interface FlowDropMountOptions {
   navbarActions?: NavbarAction[];
   /**
    * White-label logo for the navbar. Replaces the FlowDrop wordmark; `logo` is an
-   * image URL or a Svelte component, `logoAlt` its accessible name (default: the
-   * `navigation.appName` message), `href` an optional link around it.
+   * image URL or a Svelte component, `name` replaces the product name in the page title and the
+   * logo's accessible name, `logoAlt` overrides the logo's accessible name, `href` an optional link around it.
    */
   branding?: NavbarBranding;
   /** Show settings gear icon in navbar */
