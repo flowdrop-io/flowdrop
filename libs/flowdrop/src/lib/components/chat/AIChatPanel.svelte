@@ -31,7 +31,7 @@
   import Icon from '@iconify/svelte';
   import { getMessages, m } from '$lib/messages/index.js';
   import { isRunStale } from '../../utils/sessionRuns.js';
-  import { formatTimestamp } from '../playground/messageDisplay.js';
+  import { formatClock, formatTimestamp } from '../playground/messageDisplay.js';
 
   // =========================================================================
   // Internal Display Message Type
@@ -56,6 +56,8 @@
     commandsDismissed?: boolean;
     /** Tools mode: one compact status line per tool call of this turn */
     toolLines?: ToolLine[];
+    /** When the message was made (ISO), for the meta line under it. */
+    at?: string;
     /** Set on the assistant placeholder while its reply is still coming */
     inProgress?: boolean;
     /** Tools mode: a muted notice (legacy fallback, abort) rather than a reply */
@@ -390,14 +392,15 @@
 
   /** One user message as a tool-calling turn. */
   async function sendToolTurn(text: string): Promise<void> {
-    displayMessages.push({ role: 'user', content: text });
+    displayMessages.push({ role: 'user', content: text, at: new Date().toISOString() });
     isLoading = true;
 
     const progress: DisplayMessage = {
       role: 'assistant',
       content: '',
       toolLines: [],
-      inProgress: true
+      inProgress: true,
+      at: new Date().toISOString()
     };
     displayMessages.push(progress);
     // The pushed object is proxied by the state array; mutate the proxy.
@@ -472,7 +475,11 @@
 
     // No commands — pure chat message
     if (commands.length === 0) {
-      return { role: 'assistant', content: explanation || responseContent };
+      return {
+        role: 'assistant',
+        content: explanation || responseContent,
+        at: new Date().toISOString()
+      };
     }
 
     const context = getCommandContext();
@@ -507,7 +514,8 @@
     const msg: DisplayMessage = {
       role: 'assistant',
       content: explanation || responseContent,
-      rawContent: responseContent
+      rawContent: responseContent,
+      at: new Date().toISOString()
     };
 
     if (readOnlyResults.length > 0) {
@@ -705,7 +713,8 @@
   function appendErrorToHistory(errorMessage: string) {
     displayMessages.push({
       role: 'assistant',
-      content: `Error: ${errorMessage}`
+      content: `Error: ${errorMessage}`,
+      at: new Date().toISOString()
     });
   }
 
@@ -717,7 +726,12 @@
   async function sendMessageInternal(text: string, retryAttempt?: number) {
     if (!text || isLoading || !workflowId) return;
 
-    displayMessages.push({ role: 'user', content: text, retryAttempt });
+    displayMessages.push({
+      role: 'user',
+      content: text,
+      retryAttempt,
+      at: new Date().toISOString()
+    });
     isLoading = true;
 
     // The reply's place in the log, shown as thinking until it arrives — the
@@ -726,7 +740,8 @@
       displayMessages.push({
         role: 'assistant',
         content: '',
-        inProgress: true
+        inProgress: true,
+        at: new Date().toISOString()
       }) - 1;
 
     try {
@@ -748,7 +763,8 @@
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       displayMessages[placeholderIndex] = {
         role: 'assistant',
-        content: `Error: ${errorMessage}`
+        content: `Error: ${errorMessage}`,
+        at: new Date().toISOString()
       };
     } finally {
       isLoading = false;
@@ -844,6 +860,14 @@
             {:else}
               <div class="ai-chat-panel__bubble-content">
                 <MarkdownDisplay content={message.content} />
+              </div>
+            {/if}
+            {#if message.at && !message.inProgress && !message.notice && !message.commandPreview}
+              <div class="ai-chat-panel__meta">
+                {#if message.role === 'assistant'}<span class="ai-chat-panel__meta-origin"
+                    >{m().playground.roles.assistant}</span
+                  >{/if}
+                <time datetime={message.at}>{formatClock(message.at)}</time>
               </div>
             {/if}
             {#if message.warning}
@@ -981,7 +1005,6 @@
     align-items: flex-start;
     gap: var(--fd-space-xs);
     padding: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-sm);
-    border-top: 1px solid var(--fd-border);
     background: var(--fd-background);
     font-size: var(--fd-text-xs);
   }
@@ -1111,10 +1134,10 @@
   .ai-chat-panel__messages {
     flex: 1;
     overflow-y: auto;
-    padding: var(--fd-space-sm);
+    padding: var(--fd-msg-stream-pad, var(--fd-space-sm));
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-msg-gap, var(--fd-space-xs));
     scrollbar-width: thin;
     scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
   }
@@ -1171,13 +1194,15 @@
   }
 
   /* Message bubbles */
+  /* The same anatomy as the Playground (`--fd-msg-*`, see ChatBubble); the fallbacks are this panel's own look. */
   .ai-chat-panel__bubble {
-    max-width: 80%;
+    max-width: var(--fd-msg-reply-max, 80%);
     animation: fadeIn 0.15s ease-out;
   }
 
   .ai-chat-panel__bubble--user {
     align-self: flex-end;
+    max-width: var(--fd-msg-user-max, 80%);
   }
 
   .ai-chat-panel__bubble--assistant {
@@ -1185,24 +1210,51 @@
   }
 
   .ai-chat-panel__bubble-content {
-    padding: var(--fd-space-xs) var(--fd-space-sm);
+    padding: var(--fd-msg-reply-pad, var(--fd-space-xs) var(--fd-space-sm));
     border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-sm);
-    line-height: 1.5;
+    font-size: var(--fd-msg-text-size, var(--fd-text-sm));
+    line-height: var(--fd-msg-text-leading, 1.5);
     word-break: break-word;
   }
 
   .ai-chat-panel__bubble--user .ai-chat-panel__bubble-content {
-    background: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-    border-bottom-right-radius: var(--fd-radius-xs);
+    padding: var(--fd-msg-user-pad, var(--fd-space-xs) var(--fd-space-sm));
+    background: var(--fd-msg-user-bg, var(--fd-primary));
+    color: var(--fd-msg-user-fg, var(--fd-primary-foreground));
+    border-radius: var(--fd-msg-user-radius, var(--fd-radius-md));
+    border-bottom-right-radius: var(--fd-msg-tail-radius, var(--fd-radius-xs));
     white-space: pre-wrap;
   }
 
   .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content {
-    background: var(--fd-muted);
+    background: var(--fd-msg-reply-bg, var(--fd-muted));
     color: var(--fd-foreground);
-    border-bottom-left-radius: var(--fd-radius-xs);
+    border-radius: var(--fd-msg-reply-radius, var(--fd-radius-md));
+    border-bottom-left-radius: var(--fd-msg-reply-tail-radius, var(--fd-radius-xs));
+  }
+
+  /* One meta line under a reply (who, when); under your own message it shows on hover. */
+  .ai-chat-panel__meta {
+    display: var(--fd-msg-meta-display, none);
+    gap: var(--fd-space-3xs);
+    margin-top: var(--fd-space-3xs);
+    font-size: var(--fd-text-meta);
+    color: var(--fd-muted-foreground);
+  }
+
+  .ai-chat-panel__meta-origin::after {
+    content: ' ·';
+  }
+
+  .ai-chat-panel__bubble--user .ai-chat-panel__meta {
+    justify-content: flex-end;
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .ai-chat-panel__bubble--user:hover .ai-chat-panel__meta,
+  .ai-chat-panel__bubble--user:focus-within .ai-chat-panel__meta {
+    opacity: 1;
   }
 
   /* Markdown typography inside assistant bubbles */
@@ -1235,15 +1287,15 @@
   .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(code) {
     font-family: var(--fd-font-mono);
     font-size: 0.875em;
-    background: var(--fd-background);
+    background: var(--fd-msg-code-bg, var(--fd-background));
     padding: 0.1em 0.3em;
     border-radius: var(--fd-radius-xs);
   }
 
   .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(pre) {
-    background: var(--fd-background);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
+    background: var(--fd-msg-pre-bg, var(--fd-background));
+    border: var(--fd-msg-pre-border-width, 1px) solid var(--fd-border);
+    border-radius: var(--fd-msg-pre-radius, var(--fd-radius-sm));
     padding: var(--fd-space-xs) var(--fd-space-sm);
     overflow-x: auto;
     margin: 0.5em 0;
@@ -1382,8 +1434,8 @@
   .ai-chat-panel__thinking {
     display: flex;
     gap: 4px;
-    padding: var(--fd-space-xs) var(--fd-space-sm);
-    background: var(--fd-muted);
+    padding: var(--fd-msg-reply-pad, var(--fd-space-xs) var(--fd-space-sm));
+    background: var(--fd-msg-typing-bg, var(--fd-muted));
     border-radius: var(--fd-radius-md);
     border-bottom-left-radius: var(--fd-radius-xs);
   }

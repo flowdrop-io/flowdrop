@@ -334,7 +334,6 @@
     {#if interrupt}
       <InterruptBubble
         {interrupt}
-        showTimestamp={showTimestamps}
         onResolved={onInterruptResolved}
         hierarchy={message.hierarchy}
         tags={message.tags}
@@ -416,7 +415,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: var(--fd-space-3xl);
+    padding: var(--fd-msg-stream-pad, var(--fd-space-3xl));
 
     /* Establish a containment context so message rows can adapt to the
        stream's actual width (not the viewport's). */
@@ -509,9 +508,9 @@
     display: flex;
     align-items: center;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
+    padding: var(--fd-msg-typing-pad, var(--fd-space-md) var(--fd-space-xl));
     margin-top: var(--fd-space-xs);
-    background-color: var(--fd-muted);
+    background-color: var(--fd-msg-typing-bg, var(--fd-muted));
     border-radius: var(--fd-radius-2xl);
     width: fit-content;
   }

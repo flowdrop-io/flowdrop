@@ -25,6 +25,15 @@ export function formatTimestamp(timestamp: string): string {
   });
 }
 
+/** HH:MM, for the meta line under a message. */
+export function formatClock(timestamp: string): string {
+  return new Date(timestamp).toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 export function formatDuration(ms: number): string {
   return ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(2)}s`;
 }

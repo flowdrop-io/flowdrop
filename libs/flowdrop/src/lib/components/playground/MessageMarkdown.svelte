@@ -40,12 +40,12 @@
 
 <style>
   .message-markdown {
-    line-height: var(--fd-leading-relaxed);
+    line-height: var(--fd-msg-text-leading, var(--fd-leading-relaxed));
     word-break: break-word;
   }
 
   .message-markdown :global(p) {
-    margin: 0 0 var(--fd-space-md) 0;
+    margin: 0 0 var(--fd-msg-p-gap, var(--fd-space-md)) 0;
   }
 
   .message-markdown :global(p:last-child) {
@@ -73,13 +73,13 @@
   }
 
   .message-markdown :global(h1) {
-    font-size: var(--fd-text-xl);
+    font-size: var(--fd-msg-h1-size, var(--fd-text-xl));
   }
   .message-markdown :global(h2) {
-    font-size: var(--fd-text-lg);
+    font-size: var(--fd-msg-h2-size, var(--fd-text-lg));
   }
   .message-markdown :global(h3) {
-    font-size: var(--fd-text-base);
+    font-size: var(--fd-msg-h3-size, var(--fd-text-base));
   }
 
   .message-markdown :global(ul),
@@ -93,7 +93,7 @@
   }
 
   .message-markdown :global(code) {
-    background-color: var(--fd-secondary);
+    background-color: var(--fd-msg-code-bg, var(--fd-secondary));
     padding: 0.125rem var(--fd-space-3xs);
     border-radius: var(--fd-radius-sm);
     font-family: var(--fd-font-mono);
@@ -101,13 +101,13 @@
   }
 
   .message-markdown :global(pre) {
-    background-color: var(--fd-foreground);
-    color: var(--fd-background);
+    background-color: var(--fd-msg-pre-bg, var(--fd-foreground));
+    color: var(--fd-msg-pre-fg, var(--fd-background));
     padding: var(--fd-space-md) var(--fd-space-xl);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-msg-pre-radius, var(--fd-radius-lg));
     overflow-x: auto;
     margin: var(--fd-space-md) 0;
-    font-size: var(--fd-text-sm);
+    font-size: var(--fd-msg-pre-size, var(--fd-text-sm));
     line-height: var(--fd-leading-normal);
   }
 
@@ -124,7 +124,7 @@
     padding-left: var(--fd-space-xl);
     margin: var(--fd-space-md) 0;
     color: var(--fd-muted-foreground);
-    font-style: italic;
+    font-style: var(--fd-msg-quote-style, italic);
   }
 
   .message-markdown :global(a) {
