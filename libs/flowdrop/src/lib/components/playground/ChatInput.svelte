@@ -538,6 +538,8 @@
 
   .chat-input__wrapper {
     flex: 1;
+    /* Lets the field shrink so a long label (Save & send) keeps the button inside a narrow dock. */
+    min-width: 0;
     display: flex;
     align-items: flex-end;
     /* Positioning context for the command palette, which sits above the input. */
@@ -557,6 +559,7 @@
 
   .chat-input__textarea {
     flex: 1;
+    min-width: 0;
     border: none;
     outline: none;
     resize: none;
@@ -591,6 +594,7 @@
     cursor: pointer;
     transition: all var(--fd-transition-fast);
     flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .chat-input__send-btn:hover:not(:disabled) {

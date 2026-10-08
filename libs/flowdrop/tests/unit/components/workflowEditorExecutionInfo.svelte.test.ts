@@ -56,7 +56,9 @@ describe('WorkflowEditor run status and the sync effect', () => {
   it('keeps the loaded status in fd.playground across store rebuilds and settings changes', async () => {
     vi.stubGlobal('requestIdleCallback', (cb: () => void) => setTimeout(cb, 0));
     vi.stubGlobal('cancelIdleCallback', (id: number) => clearTimeout(id));
-    vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockResolvedValue(info as never);
+    vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockResolvedValue(
+      info as never
+    );
 
     const fd = createFlowDropInstance({ id: 'exec-info' });
     fd.workflow.initialize(workflow);
@@ -124,7 +126,9 @@ describe('WorkflowEditor run status and the sync effect', () => {
   it('keeps two instances on one page apart', async () => {
     vi.stubGlobal('requestIdleCallback', (cb: () => void) => setTimeout(cb, 0));
     vi.stubGlobal('cancelIdleCallback', (id: number) => clearTimeout(id));
-    vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockResolvedValue(info as never);
+    vi.spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo').mockResolvedValue(
+      info as never
+    );
     const a = createFlowDropInstance({ id: 'exec-info-a' });
     const b = createFlowDropInstance({ id: 'exec-info-b' });
     a.workflow.initialize(workflow);

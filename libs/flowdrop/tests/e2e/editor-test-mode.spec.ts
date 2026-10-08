@@ -242,4 +242,21 @@ test.describe('Test mode', () => {
     await expect(modeSwitch(page)).toHaveCount(0);
     await expect(page.getByTestId('docked-playground')).toHaveCount(0);
   });
+
+  for (const width of [1000, 740]) {
+    test(`at ${width}px the Playground drawer does not run under the inspector`, async ({
+      page
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await testButton(page).click();
+      const drawer = page.getByTestId('test-drawer');
+      await expect(drawer).toBeVisible();
+      const drawerBox = await drawer.boundingBox();
+      const inspectorBox = await page
+        .locator('.flowdrop-main-layout__sidebar--right')
+        .boundingBox();
+      expect(drawerBox && inspectorBox).toBeTruthy();
+      expect(drawerBox!.x + drawerBox!.width).toBeLessThanOrEqual(inspectorBox!.x + 1);
+    });
+  }
 });

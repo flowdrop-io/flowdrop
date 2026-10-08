@@ -195,10 +195,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Test mode on a narrow screen: the Playground drawer ran under the 400px
+  inspector at 768px and below, where the layout lays the inspector over the
+  canvas. The drawer now stops where the inspector starts (280px at the least).
+- The docked Playground's composer and header stay inside a narrow dock: the
+  field shrinks so a long "Save & send" label keeps its button in view, a
+  notice no longer pushes the composer out of the control panel, and the
+  session chip shrinks (its name ellipsizes) instead of clipping the actions.
 - Log rows in a narrow message stream (the docked Playground in Test mode)
   squeezed their text to a few characters per line, because the text had a
   zero flex basis and never wrapped below the origin badge and hierarchy trail.
-
 - The right-hand inspector now follows the selection. With the workflow
   settings open, opening a node for configuration used to show nothing new
   because the workflow tabs (Settings | Interface | Playground) took

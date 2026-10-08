@@ -2109,14 +2109,14 @@
     bottom: 0;
     left: 0;
     z-index: 55;
-    width: min(380px, 92%);
+    width: var(--fd-test-drawer-width);
     background: var(--fd-background);
     border-right: 1px solid var(--fd-border);
     box-shadow: var(--fd-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
   }
 
   :global(.flowdrop-sidebar-fab--beside-drawer) {
-    left: calc(min(380px, 92%) + 12px) !important;
+    left: calc(var(--fd-test-drawer-width) + 12px) !important;
   }
 
   /* Test mode's node library, over the canvas's top-left corner. */
@@ -2137,17 +2137,27 @@
   }
 
   .node-library-popover--beside-drawer {
-    left: calc(min(380px, 92%) + 60px);
+    left: calc(var(--fd-test-drawer-width) + 60px);
   }
 
   /* Main editor area */
   .flowdrop-editor-main {
+    /* Test mode's drawer width. */
+    --fd-test-drawer-width: min(380px, 92%);
     flex: 1;
     position: relative;
     min-width: 0;
     height: 100%;
     overflow: hidden;
     background: var(--fd-layout-background);
+  }
+
+  /* At 768px and below the layout lays the 400px right panel over the canvas
+     (MainLayout), so the drawer must stop where the panel starts. */
+  @media (max-width: 768px) {
+    .flowdrop-editor-main {
+      --fd-test-drawer-width: max(280px, min(380px, calc(100% - 400px)));
+    }
   }
 
   /*
