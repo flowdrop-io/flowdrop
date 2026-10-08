@@ -81,6 +81,12 @@ export function displayTokens(display: FlowDropDisplayConfig | undefined): FlowD
   if (display.sidebarHeader !== undefined) {
     out['sidebar-header-display'] = display.sidebarHeader ? 'flex' : 'none';
   }
+  if (display.nodeDetails) {
+    const compact = display.nodeDetails === 'compact';
+    out['node-desc-display'] = compact ? 'none' : '-webkit-box';
+    out['node-desc-block-display'] = compact ? 'none' : 'block';
+    out['node-port-help-display'] = compact ? 'none' : 'block';
+  }
   if (display.navbarActions) {
     const split = display.navbarActions === 'split';
     out['navbar-split-display'] = split ? 'flex' : 'none';

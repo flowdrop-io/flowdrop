@@ -377,6 +377,50 @@
   --fd-modal-header-height: var(--fd-panel-header); /* @internal  settings modal header */
   --fd-modal-title-size: var(--fd-text-sm); /* @internal  settings modal title */
 
+  /* ----- CANVAS CONTROLS (toolbar, zoom, minimap) ----- */
+  --fd-toolbar-segmented-bg: var(
+    --fd-muted
+  ); /* @internal  track of the floating Edit | Test switch */
+  --fd-toolbar-segmented-border: var(--fd-border-muted); /* @internal */
+  --fd-toolbar-segmented-selected-bg: var(--fd-background); /* @internal  selected segment fill */
+  --fd-toolbar-segmented-selected-fg: var(--fd-foreground); /* @internal */
+  --fd-toolbar-segmented-selected-shadow: var(--fd-shadow-sm); /* @internal */
+  --fd-toolbar-segmented-radius: var(--fd-control-radius); /* @internal  radius of the switch */
+  --fd-toolbar-segment-radius: var(--fd-radius-md); /* @internal  radius of one segment */
+  --fd-zoom-group-bg: var(--fd-card); /* @internal  zoom controls group */
+  --fd-zoom-group-border: none; /* @internal  shorthand */
+  --fd-zoom-group-radius: var(--fd-radius-md); /* @internal */
+  --fd-zoom-group-padding: 0px; /* @internal */
+  --fd-zoom-button-size: 26px; /* @internal */
+  --fd-zoom-button-radius: 0px; /* @internal */
+  --fd-zoom-icon-size: 12px; /* @internal */
+  --fd-zoom-group-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.08); /* @internal */
+  --fd-zoom-button-border: 1px solid var(--fd-border); /* @internal  rule between zoom buttons */
+  --fd-minimap-radius: var(--fd-radius-md); /* @internal */
+  --fd-minimap-shadow: var(--fd-shadow-md); /* @internal */
+  --fd-minimap-border: var(--fd-border-strong); /* @internal */
+
+  /* ----- RUN STATUS PILL (node status, canvas toolbar) ----- */
+  --fd-status-pill-height: var(--fd-control-md); /* @internal */
+  --fd-status-pill-size: var(--fd-text-xs); /* @internal */
+  --fd-status-pill-weight: 500; /* @internal */
+  --fd-status-pill-padding: 0 var(--fd-space-xs); /* @internal */
+  --fd-status-pill-border-width: 1px; /* @internal */
+  --fd-status-pill-icon-size: var(--fd-text-sm); /* @internal */
+  /* The count after the label: left at `initial` it is a filled chip; a theme may set
+     bg / fg / font / opacity / rule / pad / min / radius / prefix to make it a "×3" suffix. */
+  --fd-status-pill-count-bg: initial; /* @internal */
+  --fd-status-pill-count-fg: initial; /* @internal */
+  --fd-status-pill-count-font: initial; /* @internal */
+  --fd-status-pill-count-opacity: initial; /* @internal */
+  --fd-status-pill-count-rule: initial; /* @internal */
+  --fd-status-pill-count-pad: initial; /* @internal */
+  --fd-status-pill-count-min: initial; /* @internal */
+  --fd-status-pill-count-radius: initial; /* @internal */
+  --fd-status-pill-count-prefix: initial; /* @internal */
+  --fd-node-status-edge: 0px; /* @internal  extra thickness of a status-coloured node border */
+  --fd-node-status-ring: 0px; /* @internal  soft halo of a node that waits for you */
+
   /* ----- COMPONENT SIZES ----- */
   --fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
   --fd-size-btn-min: 2.5rem; /* @internal  40px — may change with component redesigns */
@@ -515,6 +559,46 @@
     --fd-border-muted
   ); /* @public — header bottom divider color */
   --fd-node-port-row-height: 20px; /* @internal */
+  /* Node anatomy knobs (defaults = the card look with a header band). */
+  --fd-node-header-min-height: calc(
+    var(--fd-node-header-gap) * 4 + var(--fd-node-header-title-height) +
+      var(--fd-node-header-desc-line) - var(--fd-node-border-width)
+  ); /* @internal  60px-grid header; compact nodes drop it */
+  --fd-node-header-padding-x: 20px; /* @internal */
+  --fd-node-header-row-gap: 20px; /* @internal  title row to description */
+  --fd-node-title-line: 20px; /* @internal */
+  --fd-node-title-size: var(--fd-text-sm); /* @internal */
+  --fd-node-title-weight: 500; /* @internal */
+  --fd-node-title-clamp: 2; /* @internal  title lines before an ellipsis */
+  --fd-node-icon-size: 36px; /* @internal  squircle edge */
+  --fd-node-icon-glyph-size: 20px; /* @internal */
+  --fd-node-icon-radius: 8px; /* @internal */
+  --fd-node-desc-display: -webkit-box; /* @internal  description under the title ('none' = compact) */
+  --fd-node-desc-block-display: block; /* @internal  same for nodes that draw it as a block */
+  --fd-node-port-help-display: block; /* @internal  per-port help line ('none' = compact) */
+  --fd-node-port-height: 60px; /* @internal  one port block */
+  --fd-node-port-handle-top: 20px; /* @internal  handle y inside a port block */
+  --fd-node-port-pad: 10px 20px 0; /* @internal  padding of a port's label block */
+  --fd-node-port-align: flex-start; /* @internal */
+  --fd-node-ports-first-pad: 20px; /* @internal  clearance under the header rule */
+  --fd-node-ports-end-pad: 0px; /* @internal  clearance under the last port */
+  --fd-node-port-name-weight: 500; /* @internal */
+  --fd-node-port-chip-font: inherit; /* @internal  type tag font */
+  --fd-node-port-chip-size: 10px; /* @internal */
+  --fd-node-port-chip-border: var(--fd-border); /* @internal */
+  --fd-node-port-chip-pad: 0 4px; /* @internal */
+  --fd-node-port-required-bg: var(--fd-error); /* @internal  "Required" marker on an input port */
+  --fd-node-port-required-fg: var(--fd-error-foreground); /* @internal */
+  --fd-node-port-required-pad: 2px 4px; /* @internal */
+  --fd-node-port-symbol-display: inline-flex; /* @internal  shape glyph beside the name */
+  --fd-node-port-out-name-order: 0; /* @internal  output row: name, type tag, glyph order */
+  --fd-node-port-out-chip-order: 0; /* @internal */
+  --fd-node-port-out-symbol-order: 0; /* @internal */
+  --fd-node-port-out-name-align: right; /* @internal */
+  --fd-node-selected-border: var(--fd-primary); /* @internal  border of a selected node */
+  --fd-node-selected-ring: var(--fd-primary-muted); /* @internal  halo of a selected node */
+  --fd-node-selected-edge: 0px; /* @internal  extra border thickness, drawn as a shadow */
+  --fd-node-selected-ring-width: 2px; /* @internal */
   --fd-node-terminal-size: 80px; /* @public */
   --fd-node-square-size: 80px; /* @public */
   --fd-node-simple-height: 80px; /* @public */

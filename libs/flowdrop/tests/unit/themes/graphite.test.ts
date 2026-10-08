@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { resolveTheme, graphiteTheme } from '../../../src/lib/themes/index.js';
 import { resolveSkin, graphiteSkin } from '../../../src/lib/skins/index.js';
 import { defaultSkin } from '../../../src/lib/skins/index.js';
-import { buildScopedSkinCss } from '../../../src/lib/themes/scopedSkinCss.js';
+import { buildScopedSkinCss, displayTokens } from '../../../src/lib/themes/scopedSkinCss.js';
 
 describe('graphite theme', () => {
   it('is registered by name as a theme and a skin', () => {
@@ -105,7 +105,11 @@ describe('graphite theme', () => {
     ]);
     const structural = (k: string) =>
       shared.has(k) ||
-      /^(node-radius|node-border-width|node-shadow|node-shadow-hover|scrollbar-radius)$/.test(k);
+      /^(node-radius|node-border-width|node-shadow|node-shadow-hover|scrollbar-radius)$/.test(k) ||
+      // Canvas anatomy: sizes, and colours written as var() references, which resolve per mode.
+      /^(node-(header-(gap|title-height|min-height|padding-x|row-gap)|title-|icon-(size|glyph-size|radius)|port|selected-|status-)|handle-visual-size|status-pill-|toolbar-segment|zoom-|controls-button|minimap-(radius|shadow|border|bg|mask-stroke|node))/.test(
+        k
+      );
     const missing = Object.keys(graphiteSkin.tokens ?? {}).filter(
       (k) => !structural(k) && !(k in (graphiteSkin.darkTokens ?? {}))
     );
@@ -144,5 +148,16 @@ describe('resolveTheme with an inline skin on a named base', () => {
       graphiteSkin.font
     );
     expect(resolveTheme({ name: 'graphite', skin: { font: 'serif' } }).skin?.font).toBe('serif');
+  });
+
+  it('shows compact nodes: title and ports only', () => {
+    expect(graphiteTheme.config?.display?.nodeDetails).toBe('compact');
+    expect(displayTokens({ nodeDetails: 'compact' })).toMatchObject({
+      'node-desc-display': 'none',
+      'node-desc-block-display': 'none',
+      'node-port-help-display': 'none'
+    });
+    expect(displayTokens({ nodeDetails: 'full' })['node-port-help-display']).toBe('block');
+    expect(displayTokens({})).toEqual({});
   });
 });

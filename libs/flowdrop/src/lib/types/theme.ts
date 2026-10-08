@@ -31,6 +31,11 @@ export interface FlowDropDisplayConfig {
   sidebarSearch?: boolean;
   /** Show the sidebar "Components" header. Defaults to true. */
   sidebarHeader?: boolean;
+  /**
+   * Node detail on the canvas: 'full' (default) shows each node's description and its ports' help
+   * text; 'compact' shows the title and ports only (the text moves to a hover tooltip and the inspector).
+   */
+  nodeDetails?: 'full' | 'compact';
   /** Navbar actions: a primary action plus a dropdown ('dropdown', default) or all actions as separate buttons ('split'). */
   navbarActions?: 'dropdown' | 'split';
 }

@@ -75,6 +75,9 @@
   "src/lib/components/ReadOnlyDetails.svelte": {
     "font-size": 1
   },
+  "src/lib/components/RunBar.svelte": {
+    "shadow": 1
+  },
   "src/lib/components/SchemaForm.svelte": {
     "button": 2,
     "colour": 6,
@@ -106,7 +109,8 @@
   },
   "src/lib/components/UniversalNode.svelte": {
     "font-size": 1,
-    "radius": 1
+    "radius": 1,
+    "shadow": 1
   },
   "src/lib/components/WorkflowEditor.svelte": {
     "colour": 2,
@@ -250,7 +254,7 @@
     "shadow": 3
   },
   "src/lib/components/nodes/WorkflowNode.svelte": {
-    "radius": 2,
+    "radius": 1,
     "shadow": 2
   },
   "src/lib/components/playground/ChatBubble.svelte": {

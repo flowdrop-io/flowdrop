@@ -6,7 +6,8 @@ export const graphiteTheme: FlowDropTheme = {
   skin: graphiteSkin,
   config: {
     display: {
-      sidebarList: 'rows'
+      sidebarList: 'rows',
+      nodeDetails: 'compact'
     },
     sidebar: {
       defaultOpen: true,

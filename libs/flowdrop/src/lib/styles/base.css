@@ -119,10 +119,80 @@
 /* Minimap: render as a clearly bounded floating panel so users don't mistake
    it for the canvas and pan unintentionally when clicking/dragging on it. */
 .svelte-flow .svelte-flow__minimap {
-  border: 1px solid var(--fd-border-strong);
-  border-radius: var(--fd-radius-md);
-  box-shadow: var(--fd-shadow-md);
+  border: 1px solid var(--fd-minimap-border);
+  border-radius: var(--fd-minimap-radius);
+  box-shadow: var(--fd-minimap-shadow);
   overflow: hidden;
+}
+
+/* Zoom controls: one group. Default keeps xyflow's bordered buttons; Graphite
+   sets the tokens to a floating group of borderless ghost buttons. */
+.svelte-flow .svelte-flow__controls {
+  box-sizing: border-box;
+  align-items: center;
+  padding: var(--fd-zoom-group-padding);
+  background: var(--fd-zoom-group-bg);
+  border: var(--fd-zoom-group-border);
+  border-radius: var(--fd-zoom-group-radius);
+  box-shadow: var(--fd-zoom-group-shadow);
+  overflow: hidden;
+}
+
+.svelte-flow .svelte-flow__controls .svelte-flow__controls-button {
+  box-sizing: border-box;
+  width: var(--fd-zoom-button-size);
+  height: var(--fd-zoom-button-size);
+  border-radius: var(--fd-zoom-button-radius);
+}
+
+.svelte-flow .svelte-flow__controls.horizontal .svelte-flow__controls-button {
+  border-right: var(--fd-zoom-button-border);
+}
+
+.svelte-flow .svelte-flow__controls.horizontal .svelte-flow__controls-button:last-child {
+  border-right: none;
+}
+
+.svelte-flow .svelte-flow__controls-button svg {
+  max-width: var(--fd-zoom-icon-size);
+  max-height: var(--fd-zoom-icon-size);
+}
+
+/* Node port rows: the type tag, the shape glyph and their order are theme
+   knobs (Graphite: small mono tag, name left, no glyph). Defaults reproduce the
+   built-in look. */
+.svelte-flow__node .flowdrop-port-symbol {
+  display: var(--fd-node-port-symbol-display);
+}
+
+.svelte-flow__node .fd-port-label .flowdrop-badge--outline {
+  padding: var(--fd-node-port-chip-pad);
+  border-color: var(--fd-node-port-chip-border);
+  font-family: var(--fd-node-port-chip-font);
+  font-size: var(--fd-node-port-chip-size);
+}
+
+.svelte-flow__node .fd-port-label .fd-port-label__required {
+  padding: var(--fd-node-port-required-pad);
+  background-color: var(--fd-node-port-required-bg);
+  color: var(--fd-node-port-required-fg);
+}
+
+.svelte-flow__node .fd-port-label__name {
+  font-weight: var(--fd-node-port-name-weight);
+}
+
+.svelte-flow__node .fd-port-label--right .fd-port-label__name {
+  order: var(--fd-node-port-out-name-order);
+  text-align: var(--fd-node-port-out-name-align);
+}
+
+.svelte-flow__node .fd-port-label--right .flowdrop-badge--outline {
+  order: var(--fd-node-port-out-chip-order);
+}
+
+.svelte-flow__node .fd-port-label--right .flowdrop-port-symbol {
+  order: var(--fd-node-port-out-symbol-order);
 }
 
 /* Flow node handles: 20px connection area, 12px visible circle (::before)
