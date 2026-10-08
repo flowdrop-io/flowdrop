@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
   import { Controls } from '@xyflow/svelte';
+  import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
   import { getMessages } from '$lib/messages/index.js';
 
   interface Props {
@@ -28,7 +29,7 @@
   const summary = $derived(msg.summary({ nodes: nodeCount, edges: edgeCount }));
 </script>
 
-<Controls orientation="horizontal">
+<Controls orientation="horizontal" fitViewOptions={{ padding: CANVAS_FIT_PADDING }}>
   {#snippet after()}
     <!-- aria-live announces count changes and cycle warnings -->
     <div class="fd-zoom-status" aria-live="polite" aria-atomic="true">

@@ -77,6 +77,7 @@
   } from '../utils/minimapVisibility.js';
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
   import { DEV } from 'esm-env';
+  import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
 
   interface Props {
     endpointConfig?: EndpointConfig;
@@ -1303,6 +1304,7 @@
             {initialViewport}
             colorMode={getResolvedTheme() as ColorMode}
             fitView={getEditorSettings().fitViewOnLoad}
+            fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
             nodesDraggable={canvasEditable}
             nodesConnectable={canvasEditable}
             elementsSelectable={canvasEditable}

@@ -6,6 +6,7 @@
 
 <script lang="ts">
   import { useSvelteFlow } from '@xyflow/svelte';
+  import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
   import { getEditorSettings } from '../stores/settingsStore.svelte.js';
 
   const {
@@ -20,7 +21,7 @@
   } = useSvelteFlow();
 
   export function canvasFitView(): void {
-    fitView({ padding: 0.2, duration: 300 });
+    fitView({ padding: CANVAS_FIT_PADDING, duration: 300 });
   }
 
   /**
