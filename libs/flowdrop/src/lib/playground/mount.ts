@@ -397,6 +397,9 @@ function buildMountedPlayground(
  *   }
  * );
  * ```
+ *
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
  */
 export async function mountPlayground(
   container: HTMLElement,
@@ -508,6 +511,9 @@ export async function mountPlayground(
  * // ... later
  * unmountPlayground(app);
  * ```
+ *
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
  */
 export function unmountPlayground(app: MountedPlayground): void {
   if (app && typeof app.destroy === 'function') {
@@ -524,6 +530,12 @@ export interface PlaygroundStudioMountOptions extends PlaygroundMountOptions {
   pipelineViews?: PipelineViewDef[];
 }
 
+/**
+ * Mount the standalone PlaygroundStudio (chat plus pipeline panel) into a container.
+ *
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export async function mountPlaygroundStudio(
   container: HTMLElement,
   options: PlaygroundStudioMountOptions
@@ -645,6 +657,9 @@ export interface PlaygroundAppMountOptions extends Omit<PlaygroundStudioMountOpt
  *   ]
  * });
  * ```
+ *
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
  */
 export async function mountPlaygroundApp(
   container: HTMLElement,

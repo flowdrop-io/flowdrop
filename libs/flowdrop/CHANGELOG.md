@@ -187,6 +187,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+- The standalone Playground, in favour of the editor's **Test mode**:
+  `Playground`, `PlaygroundStudio`, `PlaygroundApp`, `PlaygroundModal` and the
+  `mountPlayground`, `mountPlaygroundStudio`, `mountPlaygroundApp` and
+  `unmountPlayground` entries. They keep working and now warn once per page on
+  the console when mounted (not once per instance). They are removed in 3.0.
+  To migrate, embed the editor (`WorkflowEditor` / `mountFlowDropApp`) and use
+  its Test mode, which has the same conversation plus the canvas. The docked
+  Playground of Test mode is built on `PlaygroundSurface` and does not warn.
 - `data.executionInfo` on a node: read run status from
   `fd.playground.nodeStatusFor(id)`. Hosts that still write it keep working (the
   overlay falls back to it when the store has no entry), but it is no longer

@@ -10,15 +10,20 @@
   plan's T13). Keep this file a thin wrapper: anything the docked Playground
   of Test mode needs belongs in PlaygroundSurface, so it survives this
   file's removal.
+
+  It warns once per page when mounted (utils/deprecation.ts).
 -->
 
 <script lang="ts">
+  import { warnStandalonePlaygroundDeprecated } from '../../utils/deprecation.js';
   import PlaygroundSurface from './PlaygroundSurface.svelte';
   import type { Workflow } from '../../types/index.js';
   import type { EndpointConfig } from '../../config/endpoints.js';
   import type { AuthProvider } from '../../types/auth.js';
   import type { PlaygroundMode, PlaygroundConfig } from '../../types/playground.js';
   import type { FlowDropInstance } from '../../stores/instanceContainer.svelte.js';
+
+  warnStandalonePlaygroundDeprecated();
 
   interface Props {
     workflowId: string;

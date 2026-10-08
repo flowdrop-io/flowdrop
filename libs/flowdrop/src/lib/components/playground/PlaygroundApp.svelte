@@ -7,9 +7,13 @@
   When importing this component directly (rather than via mountPlaygroundApp),
   call initializeSettings() before mount — the navbar's settings modal reads
   from the settings store.
+
+  @deprecated The standalone Playground is deprecated in favour of the editor's
+  Test mode and removed in 3.0. It warns once per page when mounted.
 -->
 
 <script lang="ts">
+  import { warnStandalonePlaygroundDeprecated } from '../../utils/deprecation.js';
   import Navbar from '../Navbar.svelte';
   import PlaygroundStudio from './PlaygroundStudio.svelte';
   import type { Workflow } from '$lib/types/index.js';
@@ -19,6 +23,8 @@
   import type { PlaygroundConfig } from '$lib/types/playground.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
   import type { NavbarAction } from '$lib/types/navbar.js';
+
+  warnStandalonePlaygroundDeprecated();
 
   interface Props {
     workflowId: string;

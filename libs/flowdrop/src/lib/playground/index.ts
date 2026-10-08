@@ -115,9 +115,25 @@
 // Playground Components
 // ============================================================================
 
+/**
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export { default as Playground } from '../components/playground/Playground.svelte';
+/**
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export { default as PlaygroundStudio } from '../components/playground/PlaygroundStudio.svelte';
+/**
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export { default as PlaygroundApp } from '../components/playground/PlaygroundApp.svelte';
+/**
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
 export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
 export { default as MessageStream } from '../components/playground/MessageStream.svelte';
