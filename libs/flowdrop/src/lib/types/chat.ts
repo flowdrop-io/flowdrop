@@ -38,6 +38,12 @@ export interface ChatRequest {
   workflowState: unknown;
   /** Optional conversation history for context */
   history?: ChatHistoryMessage[];
+  /**
+   * The run the person attached (a pipeline id, digits only). Sent on
+   * tool-calling turns only, where a server with run tools reads it; a server
+   * that does not know the field ignores it.
+   */
+  attachedRunId?: string;
 }
 
 /**

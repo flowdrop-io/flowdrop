@@ -28,6 +28,7 @@ import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
 import { InlineEditStore } from './inlineEditStore.svelte.js';
 import { EditorModeStore } from './editorModeStore.svelte.js';
+import { AttachedRunStore } from './attachedRunStore.svelte.js';
 import { NodeHighlightStore } from './nodeHighlightStore.svelte.js';
 import { EditedNodesStore } from './editedNodesStore.svelte.js';
 import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
@@ -116,6 +117,11 @@ export interface FlowDropInstance {
    * writes the same store.
    */
   readonly editorMode: EditorModeStore;
+  /**
+   * The run attached to the Assistant (`fd.attachedRun.attach(id)`): the chat
+   * request carries it as `attachedRunId`, and the Assistant's run tools read it.
+   */
+  readonly attachedRun: AttachedRunStore;
   /**
    * Hover and selection shared by Playground messages and canvas nodes, and
    * the "show this node's last run" request a message link makes.
@@ -315,6 +321,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     pipelinePanel: new PipelinePanelStore(id),
     inlineEdit: new InlineEditStore(),
     editorMode: new EditorModeStore(),
+    attachedRun: new AttachedRunStore(),
     highlight: new NodeHighlightStore(),
     editedNodes: new EditedNodesStore(() => workflow.current),
     nodeTypes: new NodeTypesStore(),

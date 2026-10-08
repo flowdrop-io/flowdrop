@@ -28,6 +28,8 @@
   import { onDestroy, tick } from 'svelte';
   import Icon from '@iconify/svelte';
   import { getMessages, m } from '$lib/messages/index.js';
+  import { isRunStale } from '../../utils/sessionRuns.js';
+  import { formatTimestamp } from '../playground/messageDisplay.js';
 
   // =========================================================================
   // Internal Display Message Type
@@ -150,6 +152,58 @@
   // =========================================================================
   // Derived State
   // =========================================================================
+
+  // ---- the attached run -----------------------------------------------------
+
+  const attachedId = $derived(fd.attachedRun.id);
+  const sessionRuns = $derived(fd.playground.sessionRuns);
+  /** The attached run as the session's runs list knows it (absent: a run it does not list). */
+  const attachedRun = $derived(
+    attachedId ? (sessionRuns?.runs.find((r) => r.id === attachedId) ?? null) : null
+  );
+  const attachedStatus = $derived(attachedRun?.status ?? fd.attachedRun.hint.status ?? null);
+  const attachedStale = $derived(
+    attachedRun
+      ? isRunStale(attachedRun.workflowVersion, sessionRuns?.workflowVersion ?? null)
+      : false
+  );
+
+  /** The list of attachable runs is open. */
+  let attachOpen = $state(false);
+  /** Set once the runs request answered, so the list can tell "none" from "not loaded yet". */
+  let attachLoaded = $state(false);
+
+  function statusLabel(status: string | null): string {
+    if (!status) return '';
+    const known = t.attach.statuses as Record<string, string>;
+    return known[status] ?? status;
+  }
+
+  function runTime(run: { startedAt: string | null }): string {
+    return run.startedAt ? formatTimestamp(run.startedAt) : '';
+  }
+
+  async function toggleAttachList(): Promise<void> {
+    attachOpen = !attachOpen;
+    if (!attachOpen) return;
+    // The list is not refreshed per turn: load it when it opens.
+    attachLoaded = false;
+    await fd.runs.loadSessionRuns();
+    attachLoaded = true;
+  }
+
+  function attachRun(id: string, status: string): void {
+    fd.attachedRun.attach(id, { status });
+    attachOpen = false;
+  }
+
+  // A run belongs to its workflow: another workflow's chat starts without one.
+  let attachedFor: string | undefined;
+  $effect(() => {
+    const id = workflowId;
+    if (attachedFor !== undefined && attachedFor !== id) fd.attachedRun.detach();
+    attachedFor = id;
+  });
 
   const isDisabled = $derived(!workflowId);
   const isChatConfigured = $derived(endpointConfig?.endpoints?.chat !== undefined);
@@ -358,7 +412,9 @@
           message: text,
           workflowState: getWorkflowState(),
           history: history.slice(0, -2), // all except this message and the placeholder
-          tools: toToolDefinitions(rt)
+          tools: toToolDefinitions(rt),
+          // The run the person attached, only while one is attached.
+          ...(attachedId ? { attachedRunId: attachedId } : {})
         },
         {
           send: (request) =>
@@ -825,6 +881,91 @@
       {/each}
     </div>
 
+    <!-- The attached run: a chip, or the way to attach one -->
+    <div class="ai-chat-panel__attach" data-testid="assistant-attach">
+      {#if attachedId}
+        <span
+          class="ai-chat-panel__run-chip"
+          class:ai-chat-panel__run-chip--failed={attachedStatus === 'failed'}
+          data-testid="assistant-run-chip"
+          data-run-id={attachedId}
+          role="group"
+          aria-label={t.attach.chipLabel}
+        >
+          <span class="ai-chat-panel__run-chip-text">
+            {t.attach.run({ id: attachedId })}
+            {#if attachedStatus}
+              <span class="ai-chat-panel__run-chip-status" data-testid="assistant-run-chip-status">
+                · {statusLabel(attachedStatus)}
+              </span>
+            {/if}
+            {#if attachedRun && runTime(attachedRun)}
+              <span class="ai-chat-panel__run-chip-time">· {runTime(attachedRun)}</span>
+            {/if}
+          </span>
+          {#if attachedStale}
+            <span
+              class="ai-chat-panel__run-chip-stale"
+              data-testid="assistant-run-chip-stale"
+              title={t.attach.staleTitle}
+            >
+              {t.attach.stale}
+            </span>
+          {/if}
+          <button
+            type="button"
+            class="ai-chat-panel__run-chip-remove"
+            aria-label={t.attach.detach}
+            data-testid="assistant-run-detach"
+            onclick={() => fd.attachedRun.detach()}
+          >
+            <Icon icon="mdi:close" />
+          </button>
+        </span>
+      {:else}
+        <button
+          type="button"
+          class="ai-chat-panel__attach-add"
+          data-testid="assistant-attach-add"
+          aria-expanded={attachOpen}
+          onclick={toggleAttachList}
+        >
+          {t.attach.add}
+        </button>
+      {/if}
+      {#if attachOpen && !attachedId}
+        <ul
+          class="ai-chat-panel__attach-list"
+          aria-label={t.attach.listLabel}
+          data-testid="assistant-attach-list"
+        >
+          {#each sessionRuns ? [...sessionRuns.runs].reverse() : [] as run (run.id)}
+            <li>
+              <button
+                type="button"
+                class="ai-chat-panel__attach-item"
+                onclick={() => attachRun(run.id, run.status)}
+              >
+                <span>
+                  {t.attach.run({ id: run.id })} · {statusLabel(run.status)}
+                  {#if isRunStale(run.workflowVersion, sessionRuns?.workflowVersion ?? null)}
+                    · {t.attach.stale}
+                  {/if}
+                </span>
+                <small>{runTime(run)}{run.message ? ` · ${run.message}` : ''}</small>
+              </button>
+            </li>
+          {:else}
+            {#if attachLoaded}
+              <li class="ai-chat-panel__attach-empty" data-testid="assistant-attach-empty">
+                {sessionRuns ? t.attach.empty : t.attach.unavailable}
+              </li>
+            {/if}
+          {/each}
+        </ul>
+      {/if}
+    </div>
+
     <!-- Input area -->
     <div class="ai-chat-panel__input-area">
       <textarea
@@ -849,6 +990,120 @@
 </div>
 
 <style>
+  /* The attached run, above the composer */
+  .ai-chat-panel__attach {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-xs) var(--fd-space-sm) 0;
+    font-size: var(--fd-text-xs);
+  }
+
+  .ai-chat-panel__attach-add {
+    border: 0;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--fd-primary);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .ai-chat-panel__run-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    max-width: 100%;
+    padding: 0.125rem 0.25rem 0.125rem 0.625rem;
+    border: 1px solid var(--fd-border);
+    border-radius: 999px;
+    background: var(--fd-muted);
+    font-family: var(--fd-font-mono, monospace);
+  }
+
+  .ai-chat-panel__run-chip--failed {
+    border-color: var(--fd-error, #b03a2e);
+  }
+
+  .ai-chat-panel__run-chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ai-chat-panel__run-chip-stale {
+    flex-shrink: 0;
+    padding: 0 0.375rem;
+    border-radius: 999px;
+    background: var(--fd-warning-muted, var(--fd-background));
+    color: var(--fd-warning, #a8650c);
+  }
+
+  .ai-chat-panel__run-chip-remove {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+  }
+
+  .ai-chat-panel__run-chip-remove:hover {
+    color: var(--fd-foreground);
+    background: var(--fd-background);
+  }
+
+  .ai-chat-panel__attach-list {
+    position: absolute;
+    left: var(--fd-space-sm);
+    right: var(--fd-space-sm);
+    bottom: 100%;
+    z-index: 5;
+    margin: 0;
+    padding: 0.25rem;
+    list-style: none;
+    max-height: 14rem;
+    overflow-y: auto;
+    background: var(--fd-background);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md, 0.5rem);
+    box-shadow: var(--fd-shadow-md);
+  }
+
+  .ai-chat-panel__attach-item {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: none;
+    color: var(--fd-foreground);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .ai-chat-panel__attach-item:hover {
+    background: var(--fd-muted);
+  }
+
+  .ai-chat-panel__attach-item small,
+  .ai-chat-panel__attach-empty {
+    color: var(--fd-muted-foreground);
+  }
+
+  .ai-chat-panel__attach-empty {
+    padding: 0.25rem 0.5rem;
+  }
+
   .ai-chat-panel {
     display: flex;
     flex-direction: column;

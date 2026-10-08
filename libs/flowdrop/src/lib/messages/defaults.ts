@@ -273,6 +273,8 @@ export const defaultMessages = {
     stopLabel: 'Stop the run',
     open: 'Open',
     openLabel: 'Open the run in Test mode',
+    askAssistant: 'Ask the Assistant',
+    askAssistantLabel: 'Ask the Assistant about this run',
     // Read out politely when the status changes.
     announce: {
       running: 'Run started.',
@@ -303,6 +305,7 @@ export const defaultMessages = {
     executions: ({ n }: { n: number }) => `Ran ${n} times in this run. Showing the last.`,
     expand: 'Show all',
     collapse: 'Show less',
+    askAssistant: 'Ask the Assistant about this run',
     statuses: {
       idle: 'Idle',
       pending: 'Pending',
@@ -319,6 +322,9 @@ export const defaultMessages = {
   layout: {
     // Sidebar/main-region landmarks.
     componentsSidebar: 'Components sidebar',
+    // Edit mode's left slot: Nodes | Assistant.
+    leftTabsLabel: 'Sidebar',
+    nodesTab: 'Nodes',
     workflowCanvas: 'Workflow canvas',
     executionLogs: 'Execution logs sidebar',
     settingsCategories: 'Settings categories',
@@ -353,6 +359,31 @@ export const defaultMessages = {
     helpBuild: 'Ask the AI to help build your workflow',
     placeholder: 'Describe what you want to build...',
     send: 'Send message',
+    // The run attached to the Assistant, above the composer.
+    attach: {
+      add: '+ Attach a run',
+      chipLabel: 'Attached run',
+      detach: 'Remove the attached run',
+      listLabel: 'Runs of this test session',
+      empty: 'No runs yet. Run the workflow in Test mode first.',
+      unavailable: 'This server does not list runs.',
+      run: ({ id }: { id: string }) => `Run #${id}`,
+      failed: 'failed',
+      stale: 'older version',
+      staleTitle: 'The workflow has changed since this run.',
+      statuses: {
+        pending: 'running',
+        running: 'running',
+        waiting: 'waiting',
+        interrupted: 'waiting',
+        done: 'done',
+        completed: 'done',
+        failed: 'failed',
+        stopped: 'stopped',
+        cancelled: 'stopped',
+        unknown: 'unknown'
+      }
+    },
     autoRetry: ({ attempt, max }: { attempt: number; max: number }) =>
       `Auto-retrying (attempt ${attempt}/${max})…`,
     // Tool-calling turns (tools mode).
