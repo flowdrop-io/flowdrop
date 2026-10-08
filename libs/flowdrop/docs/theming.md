@@ -108,33 +108,36 @@ FlowDrop's token system has three tiers:
 
 ### Spacing
 
-| Token            | Value      | Pixels |
-| ---------------- | ---------- | ------ |
-| `--fd-space-0`   | `0`        | 0px    |
-| `--fd-space-3xs` | `0.25rem`  | 4px    |
-| `--fd-space-2xs` | `0.375rem` | 6px    |
-| `--fd-space-xs`  | `0.5rem`   | 8px    |
-| `--fd-space-sm`  | `0.625rem` | 10px   |
-| `--fd-space-md`  | `0.75rem`  | 12px   |
-| `--fd-space-lg`  | `0.875rem` | 14px   |
-| `--fd-space-xl`  | `1rem`     | 16px   |
-| `--fd-space-2xl` | `1.25rem`  | 20px   |
-| `--fd-space-3xl` | `1.5rem`   | 24px   |
-| `--fd-space-4xl` | `2rem`     | 32px   |
-| `--fd-space-5xl` | `2.5rem`   | 40px   |
-| `--fd-space-6xl` | `3rem`     | 48px   |
-| `--fd-space-7xl` | `4rem`     | 64px   |
+> **Values may move in minor releases; names stay stable until 3.0.** The scales below were collapsed in 2.13.0
+> (4px spacing grid, six type sizes, `--fd-radius-md` 4px). If you override a token, your value still wins.
+
+| Token            | Value     | Pixels |
+| ---------------- | --------- | ------ |
+| `--fd-space-0`   | `0`       | 0px    |
+| `--fd-space-3xs` | `0.25rem` | 4px    |
+| `--fd-space-2xs` | `0.25rem` | 4px    |
+| `--fd-space-xs`  | `0.5rem`  | 8px    |
+| `--fd-space-sm`  | `0.5rem`  | 8px    |
+| `--fd-space-md`  | `0.75rem` | 12px   |
+| `--fd-space-lg`  | `0.75rem` | 12px   |
+| `--fd-space-xl`  | `1rem`    | 16px   |
+| `--fd-space-2xl` | `1.25rem` | 20px   |
+| `--fd-space-3xl` | `1.5rem`  | 24px   |
+| `--fd-space-4xl` | `2rem`    | 32px   |
+| `--fd-space-5xl` | `2.5rem`  | 40px   |
+| `--fd-space-6xl` | `3rem`    | 48px   |
+| `--fd-space-7xl` | `4rem`    | 64px   |
 
 ### Border Radius
 
-| Token              | Value      | Pixels     |
-| ------------------ | ---------- | ---------- |
-| `--fd-radius-sm`   | `0.25rem`  | 4px        |
-| `--fd-radius-md`   | `0.375rem` | 6px        |
-| `--fd-radius-lg`   | `0.5rem`   | 8px        |
-| `--fd-radius-xl`   | `0.75rem`  | 12px       |
-| `--fd-radius-2xl`  | `1rem`     | 16px       |
-| `--fd-radius-full` | `9999px`   | Pill shape |
+| Token              | Value     | Pixels     |
+| ------------------ | --------- | ---------- |
+| `--fd-radius-sm`   | `0.25rem` | 4px        |
+| `--fd-radius-md`   | `0.25rem` | 4px        |
+| `--fd-radius-lg`   | `0.5rem`  | 8px        |
+| `--fd-radius-xl`   | `0.75rem` | 12px       |
+| `--fd-radius-2xl`  | `1rem`    | 16px       |
+| `--fd-radius-full` | `9999px`  | Pill shape |
 
 ### Shadows
 
@@ -147,14 +150,19 @@ FlowDrop's token system has three tiers:
 
 ### Typography
 
-| Token            | Value      | Pixels |
-| ---------------- | ---------- | ------ |
-| `--fd-text-xs`   | `0.75rem`  | 12px   |
-| `--fd-text-sm`   | `0.875rem` | 14px   |
-| `--fd-text-base` | `1rem`     | 16px   |
-| `--fd-text-lg`   | `1.125rem` | 18px   |
-| `--fd-text-xl`   | `1.25rem`  | 20px   |
-| `--fd-text-2xl`  | `1.5rem`   | 24px   |
+Six visible sizes: 11 meta, 12 small, 13 body, 15 title, 20 heading, 24 display. Aliased names (`sm`=`xsm`, `base`=`md`, `lg`=`xl`) are kept for compatibility.
+
+| Token            | Value       | Pixels |
+| ---------------- | ----------- | ------ |
+| `--fd-text-2xs`  | `0.6875rem` | 11px   |
+| `--fd-text-xs`   | `0.75rem`   | 12px   |
+| `--fd-text-xsm`  | `0.8125rem` | 13px   |
+| `--fd-text-sm`   | `0.8125rem` | 13px   |
+| `--fd-text-md`   | `0.9375rem` | 15px   |
+| `--fd-text-base` | `0.9375rem` | 15px   |
+| `--fd-text-lg`   | `1.25rem`   | 20px   |
+| `--fd-text-xl`   | `1.25rem`   | 20px   |
+| `--fd-text-2xl`  | `1.5rem`    | 24px   |
 
 ### Transitions
 

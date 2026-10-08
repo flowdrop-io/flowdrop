@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New `@public` design tokens: run-status roles `--fd-status-{running,completed,waiting,failed,skipped}`
+  and `-soft` (mapped onto the existing info / success / warning / error / muted colours), control heights
+  `--fd-control-sm` / `-md` / `-lg` (24 / 28 / 32 px) and `--fd-panel-header` (40 px).
 - `fd.editorMode.onChange(listener)` and `fd.playground.onSessionStatusChange(listener)`:
   synchronous listeners, called once per real change at the moment it happens
   (unlike `subscribeToSessionStatus`, which rides an effect and batches). Each
@@ -186,6 +189,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Token scales collapsed** (values move, names stay; `--fd-*` names are stable until 3.0). Sites that
+  override these tokens are unaffected, sites on the defaults get slightly smaller type and a tighter grid:
+  - Type scale is now 11 / 12 / 13 / 15 / 20 / 24 px: `--fd-text-sm` 14 → 13 px, `--fd-text-base` 16 → 15 px,
+    `--fd-text-lg` 18 → 20 px (`2xs` 11, `xs` 12, `xsm` 13, `md` 15, `xl` 20, `2xl` 24 are unchanged).
+  - Spacing sits on a 4 px grid: `--fd-space-2xs` 6 → 4 px, `--fd-space-sm` 10 → 8 px,
+    `--fd-space-lg` 14 → 12 px.
+  - `--fd-radius-md` 6 → 4 px (`sm` 4, `lg` 8, `xl` 12, `2xl` 16 are unchanged).
 - Test mode with nothing selected has **no right column**: the canvas takes the
   space the inspector used to hold (about 1070 px of a 1440 px window, beside the
   360 px Playground dock). Clicking a node (double-click still works) shows its inspector as a 360 px
