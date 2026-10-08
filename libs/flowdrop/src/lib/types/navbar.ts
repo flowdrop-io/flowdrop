@@ -1,3 +1,5 @@
+import type { Component } from 'svelte';
+
 /**
  * Navbar action button configuration.
  *
@@ -18,4 +20,26 @@ export interface NavbarAction {
    * navbar is in split mode (the inline row of buttons).
    */
   group?: string;
+}
+
+/**
+ * White-label branding for the navbar's start slot.
+ *
+ * When set, it replaces the built-in FlowDrop wordmark. Only the logo and its
+ * name are brandable; the rest of the chrome is not.
+ */
+export interface NavbarBranding {
+  /**
+   * The logo. A string is an image URL, rendered as an `<img>` scaled to fit the
+   * 48 px navbar (max height 24 px, width auto, clamped to the start column).
+   * A Svelte component is rendered in place and must size itself to the same box.
+   */
+  logo?: string | Component;
+  /**
+   * Accessible name for the logo (the `<img>` alt text, or the label of a
+   * component logo). Defaults to the `navigation.appName` message.
+   */
+  logoAlt?: string;
+  /** Wraps the logo in a link to this URL. The built-in wordmark is not linked. */
+  href?: string;
 }

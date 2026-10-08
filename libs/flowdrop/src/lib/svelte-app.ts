@@ -45,10 +45,10 @@ import {
 import { logger } from './utils/logger.js';
 import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
 
-import type { NavbarAction } from './types/navbar.js';
+import type { NavbarAction, NavbarBranding } from './types/navbar.js';
 import type { HostHooks, WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
 import { whenWorkflowLoaded } from './utils/whenWorkflowLoaded.svelte.js';
-export type { NavbarAction };
+export type { NavbarAction, NavbarBranding };
 import type { ContextMenuOptions } from './editor/contextMenu.js';
 export type { HostHooks, WebMCPHandle, WebMCPMountOptions };
 export type {
@@ -132,6 +132,12 @@ export interface FlowDropMountOptions {
   navbarTitle?: string;
   /** Custom navbar actions */
   navbarActions?: NavbarAction[];
+  /**
+   * White-label logo for the navbar. Replaces the FlowDrop wordmark; `logo` is an
+   * image URL or a Svelte component, `logoAlt` its accessible name (default: the
+   * `navigation.appName` message), `href` an optional link around it.
+   */
+  branding?: NavbarBranding;
   /** Show settings gear icon in navbar */
   showSettings?: boolean;
   /** Show the "Connected" status indicator in the navbar (default: true) */
@@ -507,6 +513,7 @@ export async function mountFlowDropApp(
     pipelineId,
     navbarTitle,
     navbarActions,
+    branding,
     showSettings,
     showStatus,
     authProvider,
@@ -597,6 +604,7 @@ export async function mountFlowDropApp(
       pipelineId,
       navbarTitle,
       navbarActions,
+      branding,
       showSettings,
       showStatus,
       endpointConfig: config,

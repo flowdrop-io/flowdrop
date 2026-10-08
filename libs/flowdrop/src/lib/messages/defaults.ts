@@ -212,7 +212,8 @@ export const defaultMessages = {
   },
 
   navigation: {
-    // Navbar branding (rendered when no consumer overrides via title prop).
+    // Product name: the navbar logo's accessible name and title, the fallback alt
+    // text of a branded logo, and the page <title>.
     appName: 'FlowDrop',
     tagline: 'Visual Workflow Manager',
     breadcrumbAriaLabel: 'Breadcrumb',

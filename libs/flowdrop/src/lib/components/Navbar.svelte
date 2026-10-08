@@ -12,7 +12,7 @@
   import LogoWordmark from './LogoWordmark.svelte';
   import SettingsModal from './SettingsModal.svelte';
   import type { SettingsCategory } from '$lib/types/settings.js';
-  import type { NavbarAction } from '$lib/types/navbar.js';
+  import type { NavbarAction, NavbarBranding } from '$lib/types/navbar.js';
   import { m } from '$lib/messages/index.js';
 
   interface BreadcrumbItem {
@@ -40,6 +40,8 @@
     showSettingsResetButton?: boolean;
     /** Custom content rendered in the trailing (right) region, before the settings gear */
     end?: Snippet;
+    /** White-label logo and name; replaces the FlowDrop wordmark when it carries a logo */
+    branding?: NavbarBranding;
   }
 
   let {
@@ -51,7 +53,8 @@
     settingsCategories,
     showSettingsSyncButton,
     showSettingsResetButton,
-    end
+    end,
+    branding
   }: Props = $props();
 
   // Dropdown state
@@ -62,6 +65,9 @@
 
   // Hoist the navigation branch — six reads in the template.
   const nav = $derived(m().navigation);
+
+  // Accessible name of the logo: the consumer's alt text, else the app name.
+  const logoName = $derived(branding?.logoAlt ?? nav.appName);
 
   // Flyout structure: actions after the first split into ungrouped (rendered
   // flat at the top) and groups (rendered as labeled sections). Group order
@@ -101,11 +107,29 @@
 
 <div class="flowdrop-navbar">
   <div class="flowdrop-navbar__start">
-    <!-- Logo (rocket + FlowDrop wordmark) -->
+    <!-- Logo: the consumer's branding when set, else the rocket + FlowDrop wordmark -->
     <div class="flowdrop-logo--container">
-      <div class="flowdrop-logo--header">
-        <LogoWordmark />
-      </div>
+      {#snippet logoContent()}
+        {#if typeof branding?.logo === 'string'}
+          <img class="flowdrop-logo--image" src={branding.logo} alt={logoName} />
+        {:else if branding?.logo}
+          {@const Logo = branding.logo}
+          <span class="flowdrop-logo--header" role="img" aria-label={logoName} title={logoName}>
+            <Logo />
+          </span>
+        {:else}
+          <span class="flowdrop-logo--header" role="img" aria-label={logoName} title={logoName}>
+            <LogoWordmark />
+          </span>
+        {/if}
+      {/snippet}
+      {#if branding?.href}
+        <a class="flowdrop-logo--link" href={branding.href} title={logoName}>
+          {@render logoContent()}
+        </a>
+      {:else}
+        {@render logoContent()}
+      {/if}
     </div>
   </div>
 
@@ -327,12 +351,31 @@
 
   .flowdrop-logo--container {
     color: var(--fd-foreground);
+    max-width: 100%;
+    min-width: 0;
   }
 
   .flowdrop-logo--header {
     /* Wordmark lockup is 5:1; keep it within the start column. */
+    display: block;
     height: 24px;
     width: 120px;
+  }
+
+  .flowdrop-logo--link {
+    display: inline-block;
+    max-width: 100%;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Consumer logos are clamped so a wide one cannot push the bar into wrapping. */
+  .flowdrop-logo--image {
+    display: block;
+    max-height: 24px;
+    max-width: 100%;
+    width: auto;
+    object-fit: contain;
   }
 
   .flowdrop-navbar__center {

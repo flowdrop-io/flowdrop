@@ -61,7 +61,7 @@ import type {
 } from '../types/playground.js';
 import type { PartialSettings, SettingsCategory } from '../types/settings.js';
 import { initializeSettings } from '../stores/settingsStore.svelte.js';
-import type { NavbarAction } from '../types/navbar.js';
+import type { NavbarAction, NavbarBranding } from '../types/navbar.js';
 import type { PipelineViewDef } from '../types/index.js';
 import {
   createFlowDropInstance,
@@ -624,6 +624,8 @@ export interface PlaygroundAppMountOptions extends Omit<PlaygroundStudioMountOpt
   navbarTitle?: string;
   /** Action buttons rendered in the navbar. Passed straight through to <Navbar primaryActions>. */
   primaryActions?: NavbarAction[];
+  /** White-label logo for the navbar (replaces the FlowDrop wordmark). */
+  branding?: NavbarBranding;
   /** Show the settings gear icon in the navbar (default: true). */
   showSettings?: boolean;
   /** Restrict which settings categories are exposed in the settings modal. */
@@ -678,6 +680,7 @@ export async function mountPlaygroundApp(
     showNavbar = false,
     navbarTitle,
     primaryActions,
+    branding,
     showSettings = true,
     settingsCategories,
     showSettingsSyncButton,
@@ -730,6 +733,7 @@ export async function mountPlaygroundApp(
       showNavbar,
       navbarTitle,
       primaryActions,
+      branding,
       showSettings,
       settingsCategories,
       showSettingsSyncButton,

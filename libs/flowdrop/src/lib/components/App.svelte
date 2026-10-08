@@ -38,7 +38,7 @@
   import NodeSwapPicker from '$lib/components/NodeSwapPicker.svelte';
   import SwapMappingEditor from '$lib/components/SwapMappingEditor.svelte';
   import Navbar from '$lib/components/Navbar.svelte';
-  import type { NavbarAction } from '$lib/types/navbar.js';
+  import type { NavbarAction, NavbarBranding } from '$lib/types/navbar.js';
   import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
   import type { InteractiveSwapState, SwapEventContext } from '$lib/utils/nodeSwap.js';
   import {
@@ -78,7 +78,7 @@
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
   import type { EditorMode } from '../stores/editorModeStore.svelte.js';
-  import { defaultMessages, mergeMessages, setMessages } from '$lib/messages/index.js';
+  import { defaultMessages, mergeMessages, setMessages, m } from '$lib/messages/index.js';
   import type { MessagesOverride } from '$lib/messages/index.js';
 
   /**
@@ -162,6 +162,8 @@
     navbarTitle?: string;
     /** Custom navbar actions */
     navbarActions?: NavbarAction[];
+    /** White-label logo for the navbar (replaces the FlowDrop wordmark) */
+    branding?: NavbarBranding;
     /** Show settings gear icon in navbar */
     showSettings?: boolean;
     /** Show the "Connected" status indicator in the navbar (default: true) */
@@ -247,6 +249,7 @@
     refreshTrigger = 0,
     navbarTitle,
     navbarActions = [],
+    branding,
     showSettings = true,
     showStatus = true,
     apiBaseUrl,
@@ -1552,7 +1555,7 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <svelte:head>
-  <title>FlowDrop - Visual Workflow Manager</title>
+  <title>{m().navigation.appName} - {m().navigation.tagline}</title>
   <meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
 </svelte:head>
 
@@ -1956,6 +1959,7 @@
         primaryActions={navbarActions.length > 0 ? navbarActions : defaultPrimaryActions}
         {showStatus}
         {showSettings}
+        {branding}
         {settingsCategories}
         {showSettingsSyncButton}
         {showSettingsResetButton}

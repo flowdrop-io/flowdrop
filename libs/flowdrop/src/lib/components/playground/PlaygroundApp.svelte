@@ -22,7 +22,7 @@
   import type { AuthProvider } from '$lib/types/auth.js';
   import type { PlaygroundConfig } from '$lib/types/playground.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
-  import type { NavbarAction } from '$lib/types/navbar.js';
+  import type { NavbarAction, NavbarBranding } from '$lib/types/navbar.js';
 
   warnStandalonePlaygroundDeprecated();
 
@@ -37,6 +37,7 @@
     showNavbar?: boolean;
     navbarTitle?: string;
     primaryActions?: NavbarAction[];
+    branding?: NavbarBranding;
     showSettings?: boolean;
     settingsCategories?: SettingsCategory[];
     showSettingsSyncButton?: boolean;
@@ -61,6 +62,7 @@
     showNavbar = false,
     navbarTitle,
     primaryActions = [],
+    branding,
     showSettings = true,
     settingsCategories,
     showSettingsSyncButton,
@@ -82,6 +84,7 @@
     <Navbar
       title={displayTitle}
       {primaryActions}
+      {branding}
       showStatus={false}
       {showSettings}
       {settingsCategories}

@@ -210,7 +210,12 @@ export type { EditorMode, EditorModeStore } from '../stores/editorModeStore.svel
 export type { EndpointConfig } from '../config/endpoints.js';
 
 // Svelte app types
-export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from '../svelte-app.js';
+export type {
+  FlowDropMountOptions,
+  MountedFlowDropApp,
+  NavbarAction,
+  NavbarBranding
+} from '../svelte-app.js';
 
 // ============================================================================
 // Authentication Providers (no dependencies)
