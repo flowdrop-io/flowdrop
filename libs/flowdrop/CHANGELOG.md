@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`graphite` theme** (`theme: 'graphite'`, light + dark), opt-in: near-black primary action, one blue accent
+  for selection, focus and running, separate green / amber / red for run status, 4 px radius, 1 px rules.
+  Every text pair passes WCAG AA in both modes. Listed in Settings → UI Theme. Its font is Inter, shipped as
+  the opt-in stylesheet `@flowdrop/flowdrop/styles/fonts/inter.css` (variable, Latin, 47 KB, OFL); without
+  it the editor uses the system font.
+- **`branding`** option on `mountFlowDropApp`, `mountPlaygroundApp` and `App`:
+  `{ logo?: string | Component; name?: string; logoAlt?: string; href?: string }`. `logo` replaces the
+  FlowDrop wordmark (image URL or component, max 24 px high), `name` replaces "FlowDrop" in the page title and
+  the logo's label, `logoAlt` overrides the alt text, `href` links the logo. Type `NavbarBranding`. The default
+  wordmark is now labelled with the `navigation.appName` message, which also drives the page title.
 - `FlowDropThemeConfig.display` (`nodeIcon: 'squircle' | 'dot'`, `sidebarList: 'cards' | 'flat'`,
   `sidebarSearch`, `sidebarHeader`, `navbarActions: 'dropdown' | 'split'`): typed layout switches in the
   theme config. The `minimal` theme uses them. A skin can name a `font` (a CSS font-family; the host
@@ -253,6 +263,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.config-panel__header|__title|__actions|__action-btn|__close`, `.config-panel-modal__header|__title`,
   `.config-modal__header|__title|__close-btn`, `.flowdrop-settings-modal__header|__title|__title-icon|__close`,
   `.surface-overlay__header|__title|__close`, `.command-console__header|__title|__close`.
+- The standalone Playground's header (`historyHeader` off) uses the shared panel header; Pipeline, Refresh
+  and Logs are icon buttons with labels in `aria-label` / `title`.
+- The logs sidebar, config form and form-template editor use theme tokens instead of fixed colours: they follow
+  dark mode and custom themes; the logs sidebar title is 15 px (was 18) and its radius 4 px.
 - **Lighter frame.** The navbar is 48 px (`--fd-navbar-height`, was 60) with a smaller wordmark. The status
   bar under the canvas is gone: the node count sits in the zoom control ("6 nodes", connections in its
   title), with the cycle warning. The minimap is 120×72 and hides when the canvas is under 800 px wide
@@ -346,6 +360,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- An inline `theme.skin` on a named theme no longer drops that theme's dark palette (`resolveTheme`).
 - A refused Run in Test mode (a missing required input, or the server's 400) is
   now shown directly under the Run button as an inline alert, naming the inputs
   or giving the server's message as is, instead of in the banner above the
