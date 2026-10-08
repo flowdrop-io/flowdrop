@@ -344,8 +344,8 @@
   .flowdrop-navbar__start {
     display: flex;
     align-items: center;
-    width: 240px;
-    min-width: 240px;
+    width: var(--fd-navbar-start-width);
+    min-width: var(--fd-navbar-start-width);
     flex-shrink: 0;
   }
 
@@ -358,8 +358,8 @@
   .flowdrop-logo--header {
     /* Wordmark lockup is 5:1; keep it within the start column. */
     display: block;
-    height: 24px;
-    width: 120px;
+    height: var(--fd-navbar-logo-height);
+    width: calc(var(--fd-navbar-logo-height) * 5);
   }
 
   .flowdrop-logo--link {
@@ -384,6 +384,17 @@
     justify-content: flex-start;
     align-items: center;
     padding-left: 1rem;
+  }
+
+  /* Graphite: a 1px x 16px rule between the logo and the workflow name. */
+  .flowdrop-navbar__center::before {
+    content: '';
+    display: var(--fd-navbar-rule-display);
+    flex: none;
+    width: 1px;
+    height: 16px;
+    margin-right: var(--fd-space-md);
+    background: var(--fd-border-strong);
   }
 
   /* One row: the 48px bar has no room to stack the status chip over the title. */
@@ -411,7 +422,7 @@
 
   .flowdrop-navbar__title-text {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--fd-navbar-title-size);
     font-weight: 600;
     color: var(--fd-foreground);
     white-space: nowrap;
@@ -472,7 +483,7 @@
     gap: 0.25rem;
     padding: 0.25rem 0.5rem;
     color: var(--fd-foreground);
-    font-size: var(--fd-text-sm);
+    font-size: var(--fd-navbar-title-size);
     font-weight: 600;
   }
 
@@ -498,6 +509,7 @@
   }
 
   .flowdrop-navbar__status-container {
+    order: var(--fd-navbar-status-order, 0);
     display: flex;
     justify-content: flex-start;
     align-items: center;
@@ -508,7 +520,7 @@
     align-items: center;
     gap: 0.375rem;
     padding: var(--fd-space-3xs) var(--fd-space-xs);
-    background-color: var(--fd-success-muted);
+    background-color: var(--fd-navbar-status-bg);
     border-radius: var(--fd-radius-md);
     font-size: var(--fd-text-xs);
     font-weight: 500;
@@ -523,7 +535,7 @@
   }
 
   .flowdrop-navbar__status-text {
-    color: var(--fd-success-hover);
+    color: var(--fd-navbar-status-fg);
     font-size: var(--fd-text-xs);
     font-weight: 500;
   }
@@ -563,54 +575,64 @@
     gap: 0.5rem;
     padding: 0.5rem 1rem;
     text-decoration: none;
-    border: 1px solid var(--fd-border-strong);
+    border: 1px solid var(--fd-navbar-action-border);
     border-radius: var(--fd-radius-md) 0 0 var(--fd-radius-md);
     transition: all var(--fd-transition-normal);
     font-weight: 500;
     font-size: var(--fd-text-sm);
-    height: var(--fd-size-btn-min);
+    height: var(--fd-navbar-action-height);
     box-sizing: border-box;
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
+    background-color: var(--fd-navbar-action-bg);
+    color: var(--fd-navbar-action-fg);
     border-right: none;
   }
 
   .flowdrop-navbar__primary-action:hover {
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
+    background-color: var(--fd-navbar-action-hover-bg);
+    color: var(--fd-navbar-action-fg);
   }
 
   .flowdrop-navbar__dropdown {
     position: relative;
     display: flex;
     align-items: center;
-    height: var(--fd-size-btn-min);
+    height: var(--fd-navbar-action-height);
   }
 
   .flowdrop-navbar__dropdown-trigger {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: var(--fd-size-btn-min);
-    border: 1px solid var(--fd-border-strong);
+    width: var(--fd-navbar-chevron-width);
+    height: var(--fd-navbar-action-height);
+    border: 1px solid var(--fd-navbar-action-border);
     border-left: none;
     border-radius: 0 var(--fd-radius-md) var(--fd-radius-md) 0;
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
+    background-color: var(--fd-navbar-action-bg);
+    color: var(--fd-navbar-action-fg);
+    position: relative;
     cursor: pointer;
     transition: all var(--fd-transition-normal);
     box-sizing: border-box;
   }
 
+  /* Graphite: the 1px inner divider that makes the split read as one button. */
+  .flowdrop-navbar__dropdown-trigger::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 1px;
+    background: var(--fd-navbar-action-divider);
+  }
+
   .flowdrop-navbar__dropdown-trigger:hover {
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
+    background-color: var(--fd-navbar-action-hover-bg);
+    color: var(--fd-navbar-action-fg);
   }
 
   .flowdrop-navbar__dropdown-trigger[aria-expanded='true'] {
-    background-color: var(--fd-subtle);
-    color: var(--fd-foreground);
+    background-color: var(--fd-navbar-action-hover-bg);
+    color: var(--fd-navbar-action-fg);
   }
 
   .flowdrop-navbar__dropdown-menu {
@@ -752,9 +774,9 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    border: 1px solid var(--fd-border);
+    border: 1px solid var(--fd-navbar-icon-border);
     border-radius: var(--fd-radius-md);
-    background-color: var(--fd-background);
+    background-color: var(--fd-navbar-icon-bg);
     color: var(--fd-muted-foreground);
     font-size: 1.25rem;
     cursor: pointer;
@@ -764,7 +786,7 @@
   .flowdrop-navbar__settings-btn:hover {
     background-color: var(--fd-muted);
     color: var(--fd-foreground);
-    border-color: var(--fd-border-strong);
+    border-color: var(--fd-navbar-icon-border-hover);
   }
 
   .flowdrop-navbar__settings-btn:active {
