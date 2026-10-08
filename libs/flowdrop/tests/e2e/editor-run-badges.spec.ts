@@ -155,7 +155,7 @@ test.describe('Run badges', () => {
     await expect(page.getByTestId('node-edited')).toHaveCount(0);
   });
 
-  test('a Test mode run shows status-only badges and heats the edge it passed', async ({
+  test('a Test mode run shows labelled status pills and heats the edge it passed', async ({
     page
   }) => {
     await connectNodes(page);
@@ -166,8 +166,13 @@ test.describe('Run badges', () => {
     const outputBadge = node(page, 'node-output').locator('.node-status-overlay');
     await expect(inputBadge).toHaveAttribute('data-status', 'completed', { timeout: 10000 });
     await expect(outputBadge).toHaveAttribute('data-status', 'running');
-    // Status only: no label text, no numbers on the canvas.
-    await expect(inputBadge).toHaveText('');
+    // A labelled pill: the status word, no count at one run, no timing.
+    await expect(inputBadge).toHaveText('Completed');
+    await expect(outputBadge).toHaveText('Running');
+    // Test mode: the node border takes the status colour.
+    await expect(node(page, 'node-input').locator('.universal-node')).toHaveClass(
+      /universal-node--status-border/
+    );
     // The source completed and the target is running: the run passed the edge.
     await expect(hotEdges(page)).toHaveCount(1);
 

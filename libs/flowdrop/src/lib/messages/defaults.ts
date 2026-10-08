@@ -702,6 +702,8 @@ export const defaultMessages = {
     overlay: {
       tooltip: ({ status }: { status: string }) => status,
       ariaLabel: ({ status }: { status: string }) => `Node execution status: ${status}`,
+      // Hover detail on the status pill: how many runs sit behind it.
+      runs: ({ count }: { count: number }) => `${count} runs`,
       edited: 'edited',
       editedTooltip: 'Changed since this run started. The result may be out of date.'
     }

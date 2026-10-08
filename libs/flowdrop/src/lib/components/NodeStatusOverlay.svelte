@@ -1,147 +1,183 @@
 <!--
   Node Status Overlay Component
-  Compact status badge on a node's top-right corner: the status icon, coloured
-  from the theme tokens, and nothing else. Durations, counts, errors and job
-  history are not drawn on the canvas: their one home is the inspector's Last
-  run tab. The badge keeps a tooltip and an accessible name with the status
-  word. Styled with BEM syntax
+  The run status of a node, drawn at screen size: a StatusPill (icon + label,
+  plus a count when the node has more than one run) centred on the node's top
+  edge and counter-scaled by the canvas zoom (clamp(1/zoom, 1, 2.2), growing
+  upward off the node). Below 35% zoom the pill gives way to a status-coloured
+  outline around the node and a count badge.
+
+  Hover shows the count and the last error line, nothing else; durations and
+  job history live in the inspector's Last run tab.
+
+  Execution statuses map onto the five pill statuses with `toPillStatus()`
+  (utils/nodeStatus.ts); a node whose status maps to nothing (idle, pending)
+  draws nothing.
+
+  `zoom` is a prop, not read from the canvas here, so the component works
+  outside a SvelteFlow (stories, tests); UniversalNode passes the viewport zoom.
+  Styled with BEM syntax
 -->
 
 <script lang="ts">
   import type { NodeExecutionInfo } from '../types/index.js';
   import Icon from '@iconify/svelte';
-  import { getStatusIcon, getStatusLabel } from '../utils/nodeStatus.js';
+  import StatusPill, { counterScale } from './primitives/StatusPill.svelte';
+  import { getStatusLabel, toPillStatus } from '../utils/nodeStatus.js';
+  import { getMessages } from '../messages/context.js';
   import { m } from '$lib/messages/index.js';
+
+  /** Below this zoom the pill becomes an outline + count badge. */
+  const COMPACT_BELOW_ZOOM = 0.35;
+
+  const ICONS = {
+    running: 'heroicons:arrow-path',
+    completed: 'heroicons:check-circle',
+    waiting: 'heroicons:hand-raised',
+    failed: 'heroicons:exclamation-circle',
+    skipped: 'heroicons:minus-circle'
+  } as const;
 
   interface Props {
     nodeId?: string;
     executionInfo?: NodeExecutionInfo;
+    /** @deprecated No effect: the pill has one size and scales with the zoom. */
     size?: 'sm' | 'md' | 'lg';
+    /** Canvas zoom factor (1 = 100%). */
+    zoom?: number;
   }
 
+  // eslint-disable-next-line svelte/no-unused-props -- `size` is a deprecated no-op kept for hosts
   let props: Props = $props();
 
-  // Default values
-  let size = $derived(props.size || 'md');
+  const zoom = $derived(props.zoom ?? 1);
+  const compact = $derived(zoom < COMPACT_BELOW_ZOOM);
 
-  // Badge diameter and icon size per size variant
-  const sizeConfig = {
-    sm: { badge: '16px', icon: '10px' },
-    md: { badge: '20px', icon: '12px' },
-    lg: { badge: '24px', icon: '14px' }
-  };
+  const executionInfo = $derived(props.executionInfo);
+  const pillStatus = $derived(executionInfo ? toPillStatus(executionInfo.status) : null);
 
-  const config = $derived(sizeConfig[size]);
+  // Loop iterations create several jobs per node, including a never-started
+  // job swept to "skipped"; the per-job history (when known) beats the count of
+  // started runs.
+  const runCount = $derived(executionInfo?.jobs?.length ?? executionInfo?.executionCount ?? 0);
 
-  // Get execution info or default
-  let executionInfo = $derived(
-    props.executionInfo || {
-      status: 'idle' as const,
-      executionCount: 0,
-      isExecuting: false
-    }
-  );
-
-  // Show overlay if there's meaningful status information
-  let shouldShow = $derived(
-    executionInfo.status !== 'idle' || executionInfo.executionCount > 0 || executionInfo.isExecuting
-  );
-
-  // Hoist the overlay branch.
+  const getMsgs = getMessages();
   const overlay = $derived(m().status.overlay);
+
+  /** Hover text: count (when above 1) and the last error's first line. */
+  const tooltip = $derived.by(() => {
+    if (!executionInfo || !pillStatus) return '';
+    const lines: string[] = [getMsgs().statusPill[pillStatus]];
+    if (runCount > 1) lines.push(overlay.runs({ count: runCount }));
+    const error = executionInfo.lastError?.trim().split('\n')[0];
+    if (error) lines.push(error);
+    return lines.join('\n');
+  });
 </script>
 
-{#if shouldShow}
+{#if executionInfo && pillStatus}
   <div
-    class="node-status-overlay node-status-overlay--{executionInfo.status}"
+    class="node-status-overlay node-status-overlay--{pillStatus}"
+    class:node-status-overlay--compact={compact}
     data-node-id={props.nodeId}
-    data-status={executionInfo.status}
-    class:node-status-overlay--sm={size === 'sm'}
-    class:node-status-overlay--md={size === 'md'}
-    class:node-status-overlay--lg={size === 'lg'}
-    style="--badge-size: {config.badge}; --icon-size: {config.icon};"
-    title={overlay.tooltip({ status: getStatusLabel(executionInfo.status) })}
+    data-status={pillStatus}
+    data-execution-status={executionInfo.status}
     role="status"
     aria-label={overlay.ariaLabel({ status: getStatusLabel(executionInfo.status) })}
   >
-    <!-- The badge: status icon only, no text and no numbers -->
-    <div class="node-status-overlay__badge">
-      <Icon icon={getStatusIcon(executionInfo.status)} class="node-status-overlay__icon" />
-    </div>
+    {#if compact}
+      <span class="node-status-overlay__outline" aria-hidden="true" style="--_stroke: {3 / zoom}px;"
+      ></span>
+      <span
+        class="node-status-overlay__badge"
+        title={tooltip}
+        style="transform: scale({counterScale(zoom)});"
+      >
+        {#if runCount > 1}
+          {runCount}
+        {:else}
+          <Icon icon={ICONS[pillStatus]} />
+        {/if}
+      </span>
+    {:else}
+      <span class="node-status-overlay__pill" title={tooltip}>
+        <StatusPill status={pillStatus} count={runCount} {zoom} screenSize />
+      </span>
+    {/if}
   </div>
 {/if}
 
 <style>
-  /* Status colours come from the theme tokens, so dark mode follows. */
   .node-status-overlay {
-    --status-color: var(--fd-muted-foreground);
+    --_status: var(--fd-status-skipped);
+    --_soft: var(--fd-status-skipped-soft);
     position: absolute;
-    top: calc(var(--badge-size) / -2);
-    right: calc(var(--badge-size) / -2);
+    inset: 0;
     z-index: 1000;
-    /* The tooltip needs the pointer; nothing else lives here. */
-    pointer-events: auto;
-  }
-
-  .node-status-overlay--completed {
-    --status-color: var(--fd-success);
-  }
-
-  .node-status-overlay--failed {
-    --status-color: var(--fd-error);
+    /* Clicks go through to the node; only the pill itself takes hover. */
+    pointer-events: none;
   }
 
   .node-status-overlay--running {
-    --status-color: var(--fd-primary);
+    --_status: var(--fd-status-running);
+    --_soft: var(--fd-status-running-soft);
+  }
+  .node-status-overlay--completed {
+    --_status: var(--fd-status-completed);
+    --_soft: var(--fd-status-completed-soft);
+  }
+  .node-status-overlay--waiting {
+    --_status: var(--fd-status-waiting);
+    --_soft: var(--fd-status-waiting-soft);
+  }
+  .node-status-overlay--failed {
+    --_status: var(--fd-status-failed);
+    --_soft: var(--fd-status-failed-soft);
   }
 
-  .node-status-overlay--pending,
-  .node-status-overlay--paused,
-  .node-status-overlay--interrupted {
-    --status-color: var(--fd-warning);
+  /* Centred on the top edge at zoom 1; the pill's own transform grows it upward. */
+  .node-status-overlay__pill {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% - var(--fd-control-md) / 2);
+    translate: -50% 0;
+    pointer-events: auto;
+    display: block;
   }
 
-  /* idle, cancelled and skipped keep the muted colour */
+  /* The pill sits on the node's border, so its tint needs an opaque backing
+     (the soft tokens are translucent in dark mode). */
+  .node-status-overlay__pill :global(.flowdrop-ui-status-pill) {
+    background: linear-gradient(var(--_soft), var(--_soft)), var(--fd-card);
+  }
+
+  .node-status-overlay__outline {
+    position: absolute;
+    /* A 3px stroke on screen whatever the zoom (--_stroke = 3px / zoom). */
+    inset: calc(var(--_stroke) * -1);
+    border: var(--_stroke) solid var(--_status);
+    border-radius: calc(var(--fd-node-radius, 8px) + var(--_stroke));
+  }
 
   .node-status-overlay__badge {
-    box-sizing: border-box;
-    width: var(--badge-size);
-    height: var(--badge-size);
+    position: absolute;
+    left: 50%;
+    top: 0;
+    translate: -50% -50%;
+    transform-origin: center;
+    pointer-events: auto;
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    border: 1.5px solid var(--status-color);
-    background: var(--fd-background);
-    color: var(--status-color);
-    box-shadow: var(--fd-shadow-sm);
-  }
-
-  .node-status-overlay :global(.node-status-overlay__icon) {
-    width: var(--icon-size);
-    height: var(--icon-size);
-  }
-
-  /* Motion only for a running or waiting node, and never under reduced motion. */
-  @media (prefers-reduced-motion: no-preference) {
-    .node-status-overlay--running :global(.node-status-overlay__icon) {
-      animation: node-status-spin 1.2s linear infinite;
-    }
-
-    .node-status-overlay--interrupted .node-status-overlay__badge,
-    .node-status-overlay--paused .node-status-overlay__badge {
-      animation: node-status-pulse 1.8s ease-in-out infinite;
-    }
-  }
-
-  @keyframes node-status-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes node-status-pulse {
-    50% {
-      box-shadow: 0 0 0 5px color-mix(in srgb, var(--status-color) 25%, transparent);
-    }
+    min-width: var(--fd-control-md);
+    height: var(--fd-control-md);
+    padding-inline: var(--fd-space-xs);
+    box-sizing: border-box;
+    border-radius: var(--fd-radius-full);
+    background: var(--_status);
+    color: var(--fd-background);
+    font-family: var(--fd-font-sans);
+    font-size: var(--fd-text-xs);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
   }
 </style>

@@ -296,11 +296,14 @@ test.describe('Test mode', () => {
     // Test mode: the node shows the run's status.
     const badge = page.locator('.svelte-flow__node').first().locator('.node-status-overlay');
     await expect(badge).toBeVisible({ timeout: 10000 });
+    const bordered = page.locator('.universal-node--status-border');
+    await expect(bordered.first()).toBeVisible();
 
-    // Edit mode, run still going: a dot on Test, and the badge stays.
+    // Edit mode, run still going: a dot on Test, the pill stays, the border does not take its colour.
     await editButton(page).click();
     await expect(page.getByTestId('test-run-dot')).toBeVisible();
     await expect(badge).toBeVisible();
+    await expect(bordered).toHaveCount(0);
 
     // The run ends: the dot and the badges go, Edit mode is at rest again.
     backend.setStatus('completed');

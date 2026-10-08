@@ -96,15 +96,15 @@ describe('UniversalNode edited mark', () => {
 });
 
 describe('node status badge', () => {
-  it('shows the status and no numbers or text on the canvas', () => {
+  it('shows the labelled status pill on the canvas', () => {
     const { fd, target } = setup();
     fd.playground.setNodeStatuses({ n1: done as never }, scope);
     flushSync();
     const badge = target.querySelector('.node-status-overlay');
     expect(badge?.getAttribute('data-status')).toBe('completed');
     expect(badge?.getAttribute('aria-label')).toContain('Completed');
-    // Duration and run count live in Last run, not on the badge.
-    expect(badge?.textContent?.trim()).toBe('');
+    // Label yes; a count only above 1; timing never (it lives in Last run).
+    expect(badge?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Completed 2');
     fd.destroy();
   });
 });

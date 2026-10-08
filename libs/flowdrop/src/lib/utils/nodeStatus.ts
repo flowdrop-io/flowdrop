@@ -6,22 +6,58 @@
 import type { NodeExecutionStatus, NodeExecutionInfo } from '../types/index.js';
 
 /**
- * Get the display color for a node execution status
+ * The five statuses a run can show on the canvas (the `StatusPill` vocabulary).
+ * Same names as `--fd-status-*` tokens.
+ */
+export type PillStatus = 'running' | 'completed' | 'waiting' | 'failed' | 'skipped';
+
+/**
+ * Map an execution status onto the pill vocabulary; `null` = draw nothing.
+ *
+ *   idle        -> null       nothing happened (a node that never ran).
+ *   pending     -> null       queued, not started: no result and no activity
+ *                             to report yet; the pill appears once it runs.
+ *   running     -> running
+ *   completed   -> completed
+ *   failed      -> failed
+ *   paused      -> waiting    the run is held, usually for a person.
+ *   interrupted -> waiting    waiting for a human ("Waiting for you").
+ *   skipped     -> skipped
+ *   cancelled   -> skipped    the node did not finish and has no result.
+ */
+export function toPillStatus(status: NodeExecutionStatus): PillStatus | null {
+  switch (status) {
+    case 'running':
+    case 'completed':
+    case 'failed':
+    case 'skipped':
+      return status;
+    case 'paused':
+    case 'interrupted':
+      return 'waiting';
+    case 'cancelled':
+      return 'skipped';
+    default:
+      return null;
+  }
+}
+
+/** The `--fd-status-*` token name for an execution status (idle falls back to skipped's muted tone). */
+function statusToken(status: NodeExecutionStatus): PillStatus {
+  switch (status) {
+    case 'pending':
+      return 'waiting';
+    default:
+      return toPillStatus(status) ?? 'skipped';
+  }
+}
+
+/**
+ * Get the display color for a node execution status, as a CSS value
+ * (`var(--fd-status-*)`), so themes and dark mode apply. Only valid in CSS.
  */
 export function getStatusColor(status: NodeExecutionStatus): string {
-  const statusColors: Record<NodeExecutionStatus, string> = {
-    idle: '#6b7280', // gray
-    pending: '#f59e0b', // amber
-    running: '#3b82f6', // blue
-    completed: '#10b981', // emerald
-    failed: '#ef4444', // red
-    cancelled: '#6b7280', // gray
-    skipped: '#8b5cf6', // violet
-    paused: '#f97316', // orange
-    interrupted: '#06b6d4' // cyan
-  };
-
-  return statusColors[status] || statusColors.idle;
+  return `var(--fd-status-${statusToken(status)})`;
 }
 
 /**
@@ -63,41 +99,19 @@ export function getStatusLabel(status: NodeExecutionStatus): string {
 }
 
 /**
- * Get the background color for a node execution status overlay
+ * Get the background color for a node execution status overlay, as a CSS value
+ * (`var(--fd-status-*-soft)`).
  */
 export function getStatusBackgroundColor(status: NodeExecutionStatus): string {
-  const statusBackgroundColors: Record<NodeExecutionStatus, string> = {
-    idle: '#f9fafb', // light gray
-    pending: '#fef3c7', // light amber
-    running: '#dbeafe', // light blue
-    completed: '#d1fae5', // light emerald
-    failed: '#fee2e2', // light red
-    cancelled: '#f3f4f6', // light gray
-    skipped: '#ede9fe', // light violet
-    paused: '#ffedd5', // light orange
-    interrupted: '#cffafe' // light cyan
-  };
-
-  return statusBackgroundColors[status] || statusBackgroundColors.idle;
+  return `var(--fd-status-${statusToken(status)}-soft)`;
 }
 
 /**
- * Get the text color for a node execution status overlay
+ * Get the text color for a node execution status overlay, as a CSS value.
+ * Same as {@link getStatusColor}: the status tokens are text-safe on `-soft`.
  */
 export function getStatusTextColor(status: NodeExecutionStatus): string {
-  const statusTextColors: Record<NodeExecutionStatus, string> = {
-    idle: '#6b7280', // gray
-    pending: '#d97706', // amber
-    running: '#1d4ed8', // blue
-    completed: '#059669', // emerald
-    failed: '#dc2626', // red
-    cancelled: '#6b7280', // gray
-    skipped: '#7c3aed', // violet
-    paused: '#ea580c', // orange
-    interrupted: '#0891b2' // cyan
-  };
-
-  return statusTextColors[status] || statusTextColors.idle;
+  return getStatusColor(status);
 }
 
 /**

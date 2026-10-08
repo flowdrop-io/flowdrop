@@ -12,6 +12,7 @@ import {
   getStatusLabel,
   getStatusBackgroundColor,
   getStatusTextColor,
+  toPillStatus,
   createDefaultExecutionInfo,
   updateExecutionStart,
   updateExecutionComplete,
@@ -24,18 +25,37 @@ import type { NodeExecutionStatus } from '$lib/types';
 
 describe('Node Status Utilities', () => {
   describe('getStatusColor', () => {
-    it('should return correct color for each status', () => {
-      expect(getStatusColor('idle')).toBe('#6b7280');
-      expect(getStatusColor('pending')).toBe('#f59e0b');
-      expect(getStatusColor('running')).toBe('#3b82f6');
-      expect(getStatusColor('completed')).toBe('#10b981');
-      expect(getStatusColor('failed')).toBe('#ef4444');
-      expect(getStatusColor('cancelled')).toBe('#6b7280');
-      expect(getStatusColor('skipped')).toBe('#8b5cf6');
+    it('returns the --fd-status token for each status', () => {
+      expect(getStatusColor('idle')).toBe('var(--fd-status-skipped)');
+      expect(getStatusColor('pending')).toBe('var(--fd-status-waiting)');
+      expect(getStatusColor('running')).toBe('var(--fd-status-running)');
+      expect(getStatusColor('completed')).toBe('var(--fd-status-completed)');
+      expect(getStatusColor('failed')).toBe('var(--fd-status-failed)');
+      expect(getStatusColor('cancelled')).toBe('var(--fd-status-skipped)');
+      expect(getStatusColor('skipped')).toBe('var(--fd-status-skipped)');
+      expect(getStatusColor('paused')).toBe('var(--fd-status-waiting)');
+      expect(getStatusColor('interrupted')).toBe('var(--fd-status-waiting)');
     });
 
-    it('should return idle color for unknown status', () => {
-      expect(getStatusColor('unknown' as NodeExecutionStatus)).toBe('#6b7280');
+    it('returns the muted token for unknown status', () => {
+      expect(getStatusColor('unknown' as NodeExecutionStatus)).toBe('var(--fd-status-skipped)');
+    });
+  });
+
+  describe('toPillStatus', () => {
+    it('maps execution statuses onto the five pill statuses', () => {
+      expect(toPillStatus('running')).toBe('running');
+      expect(toPillStatus('completed')).toBe('completed');
+      expect(toPillStatus('failed')).toBe('failed');
+      expect(toPillStatus('skipped')).toBe('skipped');
+      expect(toPillStatus('cancelled')).toBe('skipped');
+      expect(toPillStatus('paused')).toBe('waiting');
+      expect(toPillStatus('interrupted')).toBe('waiting');
+    });
+
+    it('draws nothing for idle and pending', () => {
+      expect(toPillStatus('idle')).toBeNull();
+      expect(toPillStatus('pending')).toBeNull();
     });
   });
 
@@ -72,26 +92,20 @@ describe('Node Status Utilities', () => {
   });
 
   describe('getStatusBackgroundColor', () => {
-    it('should return correct background color for each status', () => {
-      expect(getStatusBackgroundColor('idle')).toBe('#f9fafb');
-      expect(getStatusBackgroundColor('pending')).toBe('#fef3c7');
-      expect(getStatusBackgroundColor('running')).toBe('#dbeafe');
-      expect(getStatusBackgroundColor('completed')).toBe('#d1fae5');
-      expect(getStatusBackgroundColor('failed')).toBe('#fee2e2');
-      expect(getStatusBackgroundColor('cancelled')).toBe('#f3f4f6');
-      expect(getStatusBackgroundColor('skipped')).toBe('#ede9fe');
+    it('returns the --fd-status -soft token for each status', () => {
+      expect(getStatusBackgroundColor('idle')).toBe('var(--fd-status-skipped-soft)');
+      expect(getStatusBackgroundColor('pending')).toBe('var(--fd-status-waiting-soft)');
+      expect(getStatusBackgroundColor('running')).toBe('var(--fd-status-running-soft)');
+      expect(getStatusBackgroundColor('completed')).toBe('var(--fd-status-completed-soft)');
+      expect(getStatusBackgroundColor('failed')).toBe('var(--fd-status-failed-soft)');
     });
   });
 
   describe('getStatusTextColor', () => {
-    it('should return correct text color for each status', () => {
-      expect(getStatusTextColor('idle')).toBe('#6b7280');
-      expect(getStatusTextColor('pending')).toBe('#d97706');
-      expect(getStatusTextColor('running')).toBe('#1d4ed8');
-      expect(getStatusTextColor('completed')).toBe('#059669');
-      expect(getStatusTextColor('failed')).toBe('#dc2626');
-      expect(getStatusTextColor('cancelled')).toBe('#6b7280');
-      expect(getStatusTextColor('skipped')).toBe('#7c3aed');
+    it('returns the --fd-status token for each status', () => {
+      expect(getStatusTextColor('running')).toBe('var(--fd-status-running)');
+      expect(getStatusTextColor('failed')).toBe('var(--fd-status-failed)');
+      expect(getStatusTextColor('interrupted')).toBe('var(--fd-status-waiting)');
     });
   });
 

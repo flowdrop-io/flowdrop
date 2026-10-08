@@ -11,7 +11,9 @@
   import type { WorkflowNode } from '../types/index.js';
   import { resolveBuiltinAlias } from '../registry/builtinNodes.js';
   import NodeStatusOverlay from './NodeStatusOverlay.svelte';
+  import { useStore } from '@xyflow/svelte';
   import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
+  import { toPillStatus } from '../utils/nodeStatus.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
   import { m } from '../messages/index.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
@@ -81,6 +83,31 @@
       resolvedComponentName !== 'caption'
   );
 
+  /**
+   * Canvas zoom for the pill's counter-scaling. Read only while a status is
+   * shown, so a node without one never subscribes to the viewport (panning
+   * would otherwise re-evaluate every node). Outside a SvelteFlow (unit
+   * mounts) there is no viewport: zoom 1.
+   */
+  let flowStore: ReturnType<typeof useStore> | null = null;
+  try {
+    flowStore = useStore();
+  } catch {
+    flowStore = null;
+  }
+  let zoom = $derived(shouldShowStatus && flowStore ? flowStore.viewport.zoom : 1);
+
+  /**
+   * Test mode: the node border takes the status colour (nodes draw their
+   * border from `--fd-node-border`, which is inherited from here). In Edit
+   * mode with a live run the pill shows but the border stays.
+   */
+  let borderStatus = $derived(
+    shouldShowStatus && fd.editedNodes.visible && executionInfo
+      ? toPillStatus(executionInfo.status)
+      : null
+  );
+
   // Keyboard activation lives on xyflow's node wrapper — the single focusable,
   // arrow-movable element SvelteFlow manages. Because the wrapper is our
   // ancestor, its keydown events never bubble down into our markup, so we bind
@@ -133,33 +160,16 @@
     // Return the default component from registry
     return fd.nodes.getComponent('workflowNode');
   }
-
-  /**
-   * Get optimal status size for this node type.
-   * Uses registry if available, otherwise falls back to defaults.
-   */
-  function getStatusSize(): 'sm' | 'md' | 'lg' {
-    // Try registry first
-    const size = fd.nodes.getStatusSize(resolvedComponentName);
-    if (size) {
-      return size;
-    }
-
-    // Fallback based on node type
-    switch (resolvedComponentName) {
-      case 'tool':
-      case 'note':
-      case 'caption':
-      case 'square':
-        return 'sm';
-      case 'simple':
-      default:
-        return 'md';
-    }
-  }
 </script>
 
-<div class="universal-node" bind:this={universalNodeEl}>
+<div
+  class="universal-node"
+  class:universal-node--status-border={borderStatus}
+  style={borderStatus
+    ? `--fd-node-border: var(--fd-status-${borderStatus}); --fd-node-border-hover: var(--fd-status-${borderStatus});`
+    : undefined}
+  bind:this={universalNodeEl}
+>
   <!-- Render the node component dynamically (Svelte 5 dynamic component syntax) -->
   {#if nodeComponent}
     <!-- Svelte 5 dynamic component limitation; reactivity maintained via $derived -->
@@ -177,7 +187,7 @@
 
   <!-- Status overlay - only show if there's meaningful status information -->
   {#if shouldShowStatus}
-    <NodeStatusOverlay nodeId={id} {executionInfo} size={getStatusSize()} />
+    <NodeStatusOverlay nodeId={id} {executionInfo} {zoom} />
   {/if}
 </div>
 

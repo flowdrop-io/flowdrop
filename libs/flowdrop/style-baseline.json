@@ -78,12 +78,7 @@
     "radius": 2
   },
   "src/lib/components/NodeStatusOverlay.stories.svelte": {
-    "colour": 12,
-    "radius": 4
-  },
-  "src/lib/components/NodeStatusOverlay.svelte": {
-    "radius": 1,
-    "shadow": 1
+    "radius": 1
   },
   "src/lib/components/NodeSwapPicker.svelte": {
     "button": 4,
