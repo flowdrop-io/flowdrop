@@ -12,8 +12,9 @@
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import type { HTMLAttributes } from 'svelte/elements';
 
-  interface Props {
+  interface Props extends Omit<HTMLAttributes<HTMLElement>, 'class' | 'title' | 'children'> {
     /** Heading text. Not rendered when `leading` is given. */
     title?: string;
     /** Muted second line under the title. */
@@ -40,11 +41,13 @@
     leading,
     actions,
     borderless = false,
-    class: className = ''
+    class: className = '',
+    ...rest
   }: Props = $props();
 </script>
 
 <header
+  {...rest}
   class="flowdrop-ui-panel-header {className}"
   class:flowdrop-ui-panel-header--borderless={borderless}
 >

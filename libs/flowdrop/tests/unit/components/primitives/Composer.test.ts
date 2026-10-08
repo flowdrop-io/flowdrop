@@ -92,3 +92,30 @@ describe('Composer', () => {
     expect(ta().disabled).toBe(true);
   });
 });
+
+describe('Composer host hooks', () => {
+  it('lets onkeydown veto Enter with preventDefault, and passes inputProps to the textarea', () => {
+    const onsubmit = vi.fn();
+    render({
+      value: 'x',
+      onsubmit,
+      onkeydown: (e: KeyboardEvent) => e.preventDefault(),
+      inputProps: { role: 'combobox' }
+    });
+    expect(ta().getAttribute('role')).toBe('combobox');
+    press({ key: 'Enter' });
+    expect(onsubmit).not.toHaveBeenCalled();
+  });
+
+  it('sendDisabled blocks send and sendLabel renames it', () => {
+    render({ value: 'x', sendDisabled: true, sendLabel: 'Save & send' });
+    const button = target.querySelector('button[aria-label="Save & send"]') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
+
+  it('keeps stop enabled while the field is disabled', () => {
+    render({ value: 'x', disabled: true, busy: true, onstop: vi.fn() });
+    const stop = target.querySelector('button[aria-label="Stop"]') as HTMLButtonElement;
+    expect(stop.disabled).toBe(false);
+  });
+});

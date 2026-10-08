@@ -10,11 +10,20 @@
   submitting. The long placeholder is truncated with an ellipsis on one line
   instead of being clipped mid-line.
 
+  A host can intercept keys (`onkeydown` runs first; `preventDefault()` there
+  keeps the composer's own Enter handling out), listen to `oninput` / `onblur`,
+  and set extra attributes on the textarea (`inputProps`, e.g. combobox ARIA for
+  a command palette). `sendDisabled` blocks the send button on top of the
+  built-in blank/busy/disabled checks, and `sendLabel` renames it ("Save & send").
+  The stop button is never greyed out by `disabled`: a run in flight must stay
+  stoppable while the field is locked.
+
   @internal Not exported from any package entry; the API may still change.
 -->
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import type { HTMLTextareaAttributes } from 'svelte/elements';
   import Icon from '@iconify/svelte';
   import { getMessages } from '../../messages/context.js';
   import IconButton from './IconButton.svelte';
@@ -46,6 +55,18 @@
     element?: HTMLTextAreaElement;
     /** Accessible name of the textarea (falls back to the placeholder). */
     ariaLabel?: string;
+    /** Accessible name and tooltip of the send button. Defaults to the localized "Send". */
+    sendLabel?: string;
+    /** Blocks the send button (and Enter) beyond the built-in checks. */
+    sendDisabled?: boolean;
+    /** Runs on every keydown in the textarea before the composer's own Enter handling. */
+    onkeydown?: (event: KeyboardEvent) => void;
+    /** Runs on every input event of the textarea. */
+    oninput?: (event: Event) => void;
+    /** Runs when the textarea loses focus. */
+    onblur?: (event: FocusEvent) => void;
+    /** Extra attributes on the textarea (role, aria-*, autocomplete). */
+    inputProps?: HTMLTextareaAttributes;
     /** Extra classes on the root. */
     class?: string;
   }
@@ -64,13 +85,19 @@
     hint,
     element = $bindable(),
     ariaLabel,
+    sendLabel,
+    sendDisabled = false,
+    onkeydown: onHostKeydown,
+    oninput,
+    onblur,
+    inputProps,
     class: className = ''
   }: Props = $props();
 
   const getMsgs = getMessages();
 
   const placeholderText = $derived(placeholder ?? getMsgs().composer.placeholder);
-  const canSend = $derived(!disabled && !busy && value.trim().length > 0);
+  const canSend = $derived(!disabled && !busy && !sendDisabled && value.trim().length > 0);
   const showStop = $derived(busy && !!onstop);
 
   /** Resize to fit content, capped at `maxRows` lines. */
@@ -105,6 +132,8 @@
   }
 
   function onkeydown(event: KeyboardEvent) {
+    onHostKeydown?.(event);
+    if (event.defaultPrevented) return;
     if (event.key !== 'Enter' || event.shiftKey) return;
     // IME: Enter confirms a candidate; keyCode 229 covers Safari firing keydown after compositionend.
     if (event.isComposing || event.keyCode === 229) return;
@@ -127,6 +156,9 @@
       aria-label={ariaLabel ?? placeholderText}
       {disabled}
       {onkeydown}
+      {oninput}
+      {onblur}
+      {...inputProps}
     ></textarea>
     <div class="flowdrop-ui-composer__buttons">
       {#if attach}
@@ -146,7 +178,6 @@
           variant="primary"
           ariaLabel={getMsgs().composer.stop}
           title={getMsgs().composer.stop}
-          {disabled}
           onclick={onstop}
         >
           <Icon icon="heroicons:stop-solid" />
@@ -154,8 +185,8 @@
       {:else}
         <IconButton
           variant="primary"
-          ariaLabel={getMsgs().composer.send}
-          title={getMsgs().composer.send}
+          ariaLabel={sendLabel ?? getMsgs().composer.send}
+          title={sendLabel ?? getMsgs().composer.send}
           disabled={!canSend}
           onclick={submit}
         >

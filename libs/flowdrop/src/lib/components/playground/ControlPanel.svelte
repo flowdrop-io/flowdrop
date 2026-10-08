@@ -20,8 +20,7 @@
   import type { WorkflowInterfaceEntry } from '../../types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
-  import { resolveRunAction } from '../../playground/runAction.js';
-  import { isCommandInput } from '../../playground/commands/index.js';
+  import { performRun } from '../../playground/runAction.js';
   import type { CommandOutcome } from '../../playground/commands/index.js';
 
   const fd = getInstance();
@@ -65,11 +64,6 @@
      * without a chat turn). Empty or absent renders no form.
      */
     formEntries?: WorkflowInterfaceEntry[];
-    /**
-     * One friendly line above the form and composer, e.g. that the workflow
-     * has no chat until somebody sets it up. Absent renders nothing.
-     */
-    notice?: string;
     /** Show the form's values as JSON instead of the typed form. */
     formJson?: boolean;
     /** Current form values, keyed by entry id. */
@@ -110,7 +104,6 @@
     predefinedMessage,
     placeholder,
     formEntries = [],
-    notice,
     formJson = false,
     formValues = {},
     onFormChange,
@@ -149,30 +142,18 @@
     }).length
   );
 
-  async function runForm(): Promise<void> {
-    if (!fd.playground.canRun || preparing) return;
-    if (beforeSend) {
-      preparing = true;
-      try {
-        if (!(await beforeSend())) return;
-      } finally {
-        preparing = false;
-      }
-      if (!fd.playground.canRun) return;
-    }
-    if (awaitEnableRun) fd.playground.lockRunUntilEnabled();
-
-    const action = resolveRunAction({
-      canLaunch: onRunWorkflow != null,
+  function runForm(): Promise<void> {
+    return performRun({
+      playground: fd.playground,
+      preparing,
+      beforeSend,
+      setPreparing: (value) => (preparing = value),
+      awaitEnableRun,
+      onRunWorkflow,
+      onSendMessage,
       predefinedMessage,
       defaultMessage: chatLabels.predefinedRun
     });
-    if (action.kind === 'launch') {
-      onRunWorkflow?.();
-      return;
-    }
-    onSendMessage(action.content);
-    if (awaitEnableRun && isCommandInput(action.content)) fd.playground.releaseRunLock();
   }
 
   const runTitle = $derived(
@@ -229,12 +210,7 @@
   }
 </script>
 
-<section
-  class="control-panel"
-  class:control-panel--notice={!!notice}
-  class:control-panel--form={formFirst}
-  {style}
->
+<section class="control-panel" class:control-panel--form={formFirst} {style}>
   {#if showSessionHeader}
     <header class="control-panel__header">
       <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
@@ -374,13 +350,6 @@
     </header>
   {/if}
 
-  {#if notice}
-    <p class="control-panel__notice" role="note">
-      <Icon icon="mdi:information-outline" />
-      <span>{notice}</span>
-    </p>
-  {/if}
-
   {#if formFirst}
     <InterfaceInputForm
       entries={formEntries}
@@ -492,29 +461,6 @@
   .control-panel__inputs-count {
     color: var(--fd-muted-foreground);
     font-size: var(--fd-text-xs);
-  }
-
-  /* A notice is taller than the 140px the split gives the panel by default;
-     without this it pushed the composer out of the panel in a narrow dock. */
-  .control-panel--notice {
-    min-height: min-content;
-  }
-
-  .control-panel__notice {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--fd-space-xs);
-    margin: 0;
-    padding: var(--fd-space-xs) var(--fd-space-md);
-    border-bottom: 1px solid var(--fd-border);
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-xs);
-    line-height: 1.5;
-  }
-
-  .control-panel__notice :global(svg) {
-    flex: none;
-    margin-top: 0.15em;
   }
 
   .control-panel__header {
