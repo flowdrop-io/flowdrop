@@ -2,8 +2,8 @@
  * E2E Test: the Assistant in Edit mode's left slot, and runs attached to it.
  *
  * Edit mode has a Nodes | Assistant tab strip in the left slot; Test mode has
- * neither the strip nor the Assistant (the inspector rests on the workflow
- * tabs, even when the persisted console tab says chat). A failed run reaches
+ * neither the strip nor the Assistant (no right panel at rest,
+ * even when the persisted console tab says chat). A failed run reaches
  * the Assistant from its node's Last run tab, which switches to Edit mode,
  * opens the Assistant and attaches the run; the chat request carries
  * `attachedRunId`. The backend is stubbed at the network edge.
@@ -197,8 +197,8 @@ test.describe('Assistant in the left slot', () => {
     await page.goto('/test/editor?editorMode=test');
     await page.waitForSelector('[data-testid="editor-test"]', { timeout: 15000 });
     await expect(page.getByTestId('docked-playground')).toBeVisible();
-    // The right panel is on the workflow tabs, not on a console or the Assistant.
-    await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
+    // No right panel at rest: not a console, nor the Assistant.
+    await expect(page.locator('.flowdrop-main-layout__sidebar--right')).toHaveCount(0);
     await expect(page.getByTestId('assistant-attach')).toBeHidden();
   });
 

@@ -76,7 +76,6 @@
     openingNodeTab,
     type NodeInspectorTab
   } from '../utils/inspectorSurface.js';
-  import { hasRun } from '../utils/lastRun.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
   import type { EditorMode } from '../stores/editorModeStore.svelte.js';
@@ -137,7 +136,8 @@
     mode?: 'edit' | 'readonly' | 'locked';
     /**
      * Start in, or switch to, Test mode: the Playground docked beside the
-     * canvas and the inspector always open. A second axis beside `mode`: it
+     * canvas, which keeps the rest of the width (a node opens its inspector as a
+     * sheet over it). A second axis beside `mode`: it
      * only takes effect on an editable canvas (`mode: 'edit'`) with a saved
      * workflow and no `pipelineId`, and `features.testMode` not off.
      *
@@ -554,11 +554,17 @@
   // focuses it wherever it lives (sidebar/modal/below).
   let activeSurface = $state<string>(getUiSettings().bottomPanelTab);
 
-  // Test mode rests on the inspector: whatever surface was last focused (the
-  // persisted Console tab, say), entering Test mode, or loading into it with
-  // `?mode=test`, shows the config. Later picks of the Console stick.
+  // Entering Test mode, or loading into it with `?mode=test`, starts with no
+  // inspector: the canvas has the room, and a node opens its sheet. Whatever
+  // surface was last focused (the persisted Console tab, say) is reset to the
+  // config, and Edit mode's workflow tabs do not carry over. Later picks of
+  // the Console stick.
   $effect.pre(() => {
-    if (testMode) untrack(() => (activeSurface = 'config'));
+    if (testMode)
+      untrack(() => {
+        activeSurface = 'config';
+        isWorkflowSettingsOpen = false;
+      });
   });
 
   // Edit mode's left slot: Nodes | Assistant. Both stay mounted, so the
@@ -820,6 +826,21 @@
     swapInteractiveState = null;
   }
 
+  /**
+   * Test mode: a node was clicked (or double-clicked). Its sheet opens on Last
+   * run, or, if another node's sheet is open, switches to this node. Unlike
+   * `openConfigSidebar` it never toggles, so the double-click that follows a
+   * click does not close what the click opened.
+   */
+  function showNodeSheet(node: Pick<WorkflowNode, 'id'>): void {
+    if (isConfigSidebarOpen && selectedNodeId === node.id) return;
+    selectedNodeId = node.id;
+    isConfigSidebarOpen = true;
+    activeSurface = 'config';
+    swapMode = 'idle';
+    swapInteractiveState = null;
+  }
+
   function closeConfigSidebar(): void {
     isConfigSidebarOpen = false;
     selectedNodeId = null;
@@ -829,20 +850,12 @@
   }
 
   // Which tab the open node shows. Picked when the node opens (Last run in Test
-  // mode if it ran in the shown run, else Config) and kept until another node
-  // opens, so a node that starts running under the cursor does not change the
-  // tab by itself: the only dependency is the selected node, the mode and the
-  // statuses are read untracked. The person's pick is a plain assignment. Edit
+  // mode, else Config) and kept until another node opens, so a node that starts
+  // running under the cursor does not change the tab by itself: the only
+  // dependency is the selected node, the mode is read untracked. The person's pick is a plain assignment. Edit
   // mode always resolves to Config (`NodeInspector`).
   let nodeInspectorTab = $derived<NodeInspectorTab>(
-    selectedNodeId
-      ? untrack(() =>
-          openingNodeTab(
-            effectiveEditorMode,
-            hasRun(fd.playground.nodeStatusFor(selectedNodeId as string))
-          )
-        )
-      : 'config'
+    selectedNodeId ? untrack(() => openingNodeTab(effectiveEditorMode)) : 'config'
   );
 
   // Messages and canvas nodes light each other up through fd.highlight; the
@@ -876,12 +889,6 @@
    * Toggle workflow settings sidebar
    */
   function toggleWorkflowSettings(): void {
-    if (testMode) {
-      // The workflow tabs are Test mode's resting inspector: this brings them
-      // back from a node, and there is nothing to close.
-      closeConfigSidebar();
-      return;
-    }
     isWorkflowSettingsOpen = !isWorkflowSettingsOpen;
     // Close config sidebar if opening workflow settings
     if (isWorkflowSettingsOpen) {
@@ -892,17 +899,15 @@
 
   /**
    * Show the workflow's Playground settings: the workflow tabs with the
-   * Playground tab selected, in Test mode's resting inspector or, in Edit
-   * mode, as the workflow-settings surface. The docked Playground links here.
+   * Playground tab selected, as the workflow-settings surface (in Test mode,
+   * the inspector sheet). The docked Playground links here.
    */
   function openPlaygroundSettings(): void {
     if (fd.workflow.current?.playground === undefined) return;
     workflowSettingsTab = 'playground';
     closeConfigSidebar();
-    if (!testMode) {
-      isWorkflowSettingsOpen = true;
-      activeSurface = 'config';
-    }
+    isWorkflowSettingsOpen = true;
+    activeSurface = 'config';
   }
 
   /**
@@ -1151,7 +1156,15 @@
   function handleCanvasClick(event: MouseEvent): void {
     // Check if the click is outside the right sidebar
     const rightSidebar = document.querySelector('.flowdrop-main-layout__sidebar--right');
-    if (rightSidebar && !rightSidebar.contains(event.target as Node)) {
+    // Test mode's inspector sheet sits inside the canvas region: a click in it is not a pane click.
+    if ((event.target as Element).closest?.('.inspector-sheet')) return;
+    // In Test mode only a click on empty canvas closes the sheet (not a node, not a control).
+    const target = event.target as Element;
+    if (
+      testMode
+        ? !!target.closest?.('.svelte-flow__pane') && !target.closest('.svelte-flow__node')
+        : rightSidebar && !rightSidebar.contains(event.target as Node)
+    ) {
       // Close sidebar when clicking outside of it
       if (isConfigSidebarOpen) {
         closeConfigSidebar();
@@ -1248,13 +1261,22 @@
   // Surface placement — where the config panel and console/chat are hosted.
   // =========================================================================
 
-  // Test mode always shows the inspector in the right sidebar, whatever
-  // placement the person chose for Edit mode.
-  const configPlacement = $derived(testMode ? 'sidebar' : getUiSettings().configPlacement);
-  const consolePlacement = $derived(getUiSettings().consolePlacement);
+  // Test mode shows the inspector as a sheet over the canvas, whatever
+  // placement the person chose for Edit mode: no column, so the canvas keeps
+  // the width.
+  const configPlacement = $derived<SurfacePlacement | 'sheet'>(
+    testMode ? 'sheet' : getUiSettings().configPlacement
+  );
+  // Test mode has no right column, so a Console placed in the sidebar uses the
+  // bottom panel there; Edit mode keeps the person's placement.
+  const consolePlacement = $derived<SurfacePlacement>(
+    testMode && getUiSettings().consolePlacement === 'sidebar'
+      ? 'below'
+      : getUiSettings().consolePlacement
+  );
 
-  /** Config surface has something to show (node config or workflow settings). Test mode always has. */
-  const configActive = $derived(isWorkflowSettingsOpen || !!selectedNodeForConfig || testMode);
+  /** Config surface has something to show (node config or workflow settings). */
+  const configActive = $derived(isWorkflowSettingsOpen || !!selectedNodeForConfig);
   /** The Command Console tab is offered by this mount. */
   const consoleTabOffered = features.console;
   /** The AI Assistant is offered: switched on, and a chat backend exists. */
@@ -1315,12 +1337,11 @@
   const inspectorSurface = $derived(
     resolveInspectorSurface({
       hasNode: !!selectedNodeForConfig,
-      workflowOpen: isWorkflowSettingsOpen,
-      editorMode: effectiveEditorMode
+      workflowOpen: isWorkflowSettingsOpen
     })
   );
-  /** The inspector can be closed: not the workflow tabs of Test mode, which rest there. */
-  const configClosable = $derived(closeTarget(inspectorSurface, effectiveEditorMode) !== null);
+  /** The inspector can be closed. */
+  const configClosable = $derived(closeTarget(inspectorSurface) !== null);
 
   const activeConfig = $derived.by(() => {
     if (inspectorSurface === 'workflow') {
@@ -1359,7 +1380,7 @@
   function closeActiveConfig(): void {
     // A node closes first; the inspector then falls back to the workflow tabs
     // if they are open. Closing the workflow tabs closes the surface.
-    const target = closeTarget(inspectorSurface, effectiveEditorMode);
+    const target = closeTarget(inspectorSurface);
     if (target === 'node') {
       closeConfigSidebar();
     } else if (target === 'workflow') {
@@ -1865,7 +1886,7 @@
       details={activeConfig.details}
       configTitle={activeConfig.configTitle ?? 'Configuration'}
       onClose={configClosable ? closeActiveConfig : undefined}
-      onSwap={activeConfig.kind === 'node' && canvasEditable && features.enableNodeSwap
+      onSwap={activeConfig.kind === 'node' && canvasEditable && !testMode && features.enableNodeSwap
         ? startSwap
         : undefined}
     >
@@ -2067,7 +2088,17 @@
         if (e.key !== 'Escape') return;
         // The topmost transient surface first (the node library), then the selection.
         if (libraryOpen) libraryOpen = false;
-        else closeConfigSidebar();
+        else if (testMode) {
+          // The inspector sheet is inside this region: Esc in one of its fields is the field's.
+          const target = e.target as HTMLElement;
+          if (
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.isContentEditable
+          )
+            return;
+          closeActiveConfig();
+        } else closeConfigSidebar();
       }}
       role="region"
       aria-label={mergedMessages.layout.workflowCanvas}
@@ -2109,6 +2140,17 @@
         </div>
       {/if}
 
+      <!-- Test mode: the open node (or the workflow tabs) as a sheet over the canvas's right edge -->
+      {#if testMode && activeConfig}
+        <aside
+          class="inspector-sheet"
+          data-testid="inspector-sheet"
+          aria-label={activeConfig.title}
+        >
+          {@render configPanelSidebar()}
+        </aside>
+      {/if}
+
       <!-- Test mode: the node library as a popover (N) -->
       {#if testMode && libraryOpen}
         <div
@@ -2133,7 +2175,8 @@
         bind:this={workflowEditorRef}
         endpointConfig={endpointConfig ?? undefined}
         {authProvider}
-        {openConfigSidebar}
+        openConfigSidebar={testMode ? showNodeSheet : openConfigSidebar}
+        onNodeClick={testMode ? showNodeSheet : undefined}
         {mode}
         {pipelineId}
         {refreshTrigger}
@@ -2252,6 +2295,19 @@
     left: calc(var(--fd-test-drawer-width) + 12px) !important;
   }
 
+  /* Test mode's inspector: a sheet over the canvas's right edge; the canvas does not reflow. */
+  .inspector-sheet {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 56;
+    width: min(360px, 100%);
+    background: var(--fd-panel-bg, var(--fd-background));
+    border-left: 1px solid var(--fd-border);
+    box-shadow: var(--fd-shadow-lg);
+  }
+
   /* Test mode's node library, over the canvas's top-left corner. */
   .node-library-popover {
     position: absolute;
@@ -2283,14 +2339,6 @@
     height: 100%;
     overflow: hidden;
     background: var(--fd-layout-background);
-  }
-
-  /* At 768px and below the layout lays the 400px right panel over the canvas
-     (MainLayout), so the drawer must stop where the panel starts. */
-  @media (max-width: 768px) {
-    .flowdrop-editor-main {
-      --fd-test-drawer-width: max(280px, min(380px, calc(100% - 400px)));
-    }
   }
 
   /*

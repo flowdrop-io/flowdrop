@@ -186,6 +186,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Test mode with nothing selected has **no right column**: the canvas takes the
+  space the inspector used to hold (about 1070 px of a 1440 px window, beside the
+  360 px Playground dock). Clicking a node (double-click still works) shows its inspector as a 360 px
+  **sheet over the canvas** from the right edge, without reflowing the canvas;
+  clicking another node switches it, and it opens on **Last run** whether or not the node ran. Esc (not while typing in
+  a field of the sheet), a click on empty canvas, or the close button closes it.
+  The workflow tabs (Settings / Interface / Playground) no longer rest open in
+  Test mode; the docked Playground's "Playground settings" link, or the navbar's
+  workflow settings, opens them in the same sheet. Edit mode is unchanged. In
+  Test mode a Command Console placed in the sidebar opens in the bottom panel
+  instead, so the Console toggle still works and no column appears.
 - The AI Assistant moves out of the console group into a **Nodes | Assistant**
   tab strip in the left slot, in Edit mode only. Test mode has no Assistant and
   no strip (its left slot is the Playground); the Assistant keeps its

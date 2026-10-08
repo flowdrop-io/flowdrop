@@ -79,6 +79,8 @@
     /** Auth provider applied to this instance's API requests. */
     authProvider?: AuthProvider;
     openConfigSidebar?: (node: WorkflowNodeType) => void;
+    /** A node was clicked (not dragged). Test mode opens its inspector sheet from here. */
+    onNodeClick?: (node: WorkflowNodeType) => void;
     /**
      * Editor interaction mode. `'edit'` allows node drag/connect/select and
      * proximity-connect; `'readonly'` and `'locked'` disable all canvas
@@ -1253,6 +1255,15 @@
             onconnect={() => void handleConnect()}
             onbeforedelete={handleBeforeDelete}
             ondelete={handleNodesDelete}
+            onnodeclick={({ node }) => {
+              if (!props.onNodeClick) return;
+              const flowNode = {
+                id: node.id,
+                type: node.data.metadata?.type ?? 'default',
+                data: node.data
+              } as WorkflowNodeType;
+              if (!nodeEditsInPlace(flowNode)) props.onNodeClick(flowNode);
+            }}
             onnodedragstart={handleNodeDragStart}
             onnodedrag={handleNodeDrag}
             onnodedragstop={handleNodeDragStop}

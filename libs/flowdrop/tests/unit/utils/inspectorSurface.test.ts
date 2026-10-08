@@ -32,28 +32,14 @@ describe('resolveInspectorSurface', () => {
 });
 
 describe('Test mode', () => {
-  it('rests on the workflow tabs when nothing is open', () => {
-    expect(
-      resolveInspectorSurface({ hasNode: false, workflowOpen: false, editorMode: 'test' })
-    ).toBe('workflow');
+  it('has no inspector at rest: nothing open shows nothing, as in Edit mode', () => {
+    expect(resolveInspectorSurface({ hasNode: false, workflowOpen: false })).toBeNull();
   });
 
-  it('still lets a node win over the resting workflow tabs', () => {
-    expect(
-      resolveInspectorSurface({ hasNode: true, workflowOpen: false, editorMode: 'test' })
-    ).toBe('node');
-  });
-
-  it('keeps Edit mode inspector-on-demand', () => {
-    expect(
-      resolveInspectorSurface({ hasNode: false, workflowOpen: false, editorMode: 'edit' })
-    ).toBeNull();
-  });
-
-  it('offers no close control for the resting workflow tabs, only for a node', () => {
-    expect(closeTarget('workflow', 'test')).toBeNull();
-    expect(closeTarget('node', 'test')).toBe('node');
-    expect(closeTarget('workflow', 'edit')).toBe('workflow');
+  it('the workflow tabs can be closed, like the node', () => {
+    expect(closeTarget('workflow')).toBe('workflow');
+    expect(closeTarget('node')).toBe('node');
+    expect(closeTarget(null)).toBeNull();
   });
 });
 
@@ -70,10 +56,9 @@ describe('node inspector tabs', () => {
     expect(resolveNodeTab('config', 'test')).toBe('config');
   });
 
-  it('a node opens on Last run only in Test mode and only if it ran', () => {
-    expect(openingNodeTab('test', true)).toBe('lastRun');
-    expect(openingNodeTab('test', false)).toBe('config');
-    expect(openingNodeTab('edit', true)).toBe('config');
+  it('a node opens on Last run in Test mode, on Config in Edit mode', () => {
+    expect(openingNodeTab('test')).toBe('lastRun');
+    expect(openingNodeTab('edit')).toBe('config');
     expect(openingNodeTab()).toBe('config');
   });
 });

@@ -1,8 +1,8 @@
 /**
  * E2E Test: Test mode (the Edit | Test switch).
  *
- * Test mode docks the Playground in the left slot, keeps the inspector open on
- * the workflow tabs, and lets badges follow a run. The backend is stubbed at
+ * Test mode docks the Playground in the left slot, leaves the canvas the rest
+ * (a node opens its inspector as a sheet over it), and lets badges follow a run. The backend is stubbed at
  * the network edge: one session, one turn, and a pipeline whose status the
  * test controls.
  */
@@ -120,9 +120,8 @@ test.describe('Test mode', () => {
     await expect(page.getByTestId('test-run-dot')).toHaveCount(0);
   });
 
-  test('Test docks the Playground on the left and rests the inspector on the workflow tabs', async ({
-    page
-  }) => {
+  test('Test docks the Playground on the left and leaves the canvas the rest', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await testButton(page).click();
 
     const dock = page.getByTestId('docked-playground');
@@ -135,27 +134,114 @@ test.describe('Test mode', () => {
     expect(dockBox!.width).toBeLessThan(500);
     await expect(page.locator('.flowdrop-sidebar')).toHaveCount(0);
 
-    // The inspector is there with nothing selected, on the workflow tabs, and
-    // the tabs are its resting state, so there is nothing to close.
-    await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Close configuration panel' })).toHaveCount(0);
+    // With nothing selected there is no right column and no inspector: the
+    // canvas takes the width.
+    await expect(page.locator('.flowdrop-main-layout__sidebar--right')).toHaveCount(0);
+    await expect(page.getByTestId('inspector-sheet')).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'Interface' })).toHaveCount(0);
+    expect(paneBox!.width).toBeGreaterThanOrEqual(1060);
 
     // The chat box is the Playground's own.
     await expect(dock.getByPlaceholder('Type your message...')).toBeVisible();
   });
 
-  test('selecting a node shows its config; deselecting returns to the workflow tabs', async ({
+  test('clicking a node opens its sheet on Last run over the canvas; Esc or the pane closes it', async ({
     page
   }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await testButton(page).click();
-    await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
+    const pane = page.locator('.svelte-flow__pane');
+    const before = await pane.boundingBox();
+    const sheet = page.getByTestId('inspector-sheet');
+    await expect(sheet).toHaveCount(0);
 
-    await page.locator('.svelte-flow__node').first().dblclick({ force: true });
-    await expect(page.locator('.config-panel').first()).toContainText('Text Input');
-    await expect(page.getByRole('tab', { name: 'Interface' })).toHaveCount(0);
+    await page.locator('.svelte-flow__node').first().click({ force: true });
+    await expect(sheet).toBeVisible();
+    await expect(sheet).toContainText('Text Input');
+    await expect(sheet).toHaveAccessibleName(/Text Input/);
+    await expect(sheet.getByRole('tab', { name: 'Last run' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    // An overlay, not a column: 360px wide, flush right, and the canvas did not reflow.
+    const box = await sheet.boundingBox();
+    expect(Math.round(box!.width)).toBe(360);
+    expect(Math.round(box!.x + box!.width)).toBe(1440);
+    expect((await pane.boundingBox())!.width).toBe(before!.width);
+    await expect(page.locator('.flowdrop-main-layout__sidebar--right')).toHaveCount(0);
 
+    // Another node switches the sheet to it; it stays open.
+    // (It may lie under the sheet, so the click is dispatched on the node itself.)
+    await page.locator('.svelte-flow__node').nth(1).dispatchEvent('click');
+    await expect(sheet).toBeVisible();
+    await expect(sheet).not.toContainText('Text Input');
+
+    // Esc closes it...
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+
+    // ...and so does a click on empty canvas.
+    await page.locator('.svelte-flow__node').first().click({ force: true });
+    await expect(sheet).toBeVisible();
     await clickBackground(page);
-    await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
+    await expect(sheet).toHaveCount(0);
+
+    // Its close button too.
+    await page.locator('.svelte-flow__node').first().click({ force: true });
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole('button', { name: 'Close panel' }).click();
+    await expect(sheet).toHaveCount(0);
+  });
+
+  test('Esc typed in a field of the sheet does not close it', async ({ page }) => {
+    await testButton(page).click();
+    const sheet = page.getByTestId('inspector-sheet');
+    await page.locator('.svelte-flow__node').first().click({ force: true });
+    await sheet.getByRole('tab', { name: 'Config' }).click();
+    const field = sheet.locator('input[type="text"], textarea').first();
+    await field.focus();
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeVisible();
+  });
+
+  test('double-clicking a node still opens its sheet, and keeps it open', async ({ page }) => {
+    await testButton(page).click();
+    const sheet = page.getByTestId('inspector-sheet');
+    await page.locator('.svelte-flow__node').first().dblclick({ force: true });
+    await expect(sheet).toBeVisible();
+    await expect(sheet).toContainText('Text Input');
+  });
+
+  test('dragging a node does not open the sheet', async ({ page }) => {
+    await testButton(page).click();
+    const box = await page.locator('.svelte-flow__node').first().boundingBox();
+    const x = box!.x + box!.width / 2;
+    const y = box!.y + box!.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 40, y + 40, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.getByTestId('inspector-sheet')).toHaveCount(0);
+  });
+
+  test('a Console placed in the sidebar opens at the bottom in Test mode, with no right column', async ({
+    page
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'flowdrop-settings',
+        JSON.stringify({ ui: { consoleOpen: false, consolePlacement: 'sidebar' } })
+      );
+    });
+    await page.goto('/test/editor?editorMode=test');
+    await page.waitForSelector('[data-testid="editor-test"]', { timeout: 15000 });
+    await expect(page.getByTestId('docked-playground')).toBeVisible();
+    await expect(page.locator('.command-console')).toHaveCount(0);
+
+    await page.locator('.svelte-flow__pane').click({ position: { x: 300, y: 300 } });
+    await page.keyboard.press('`');
+    await expect(page.locator('.command-console')).toBeVisible();
+    await expect(page.locator('.flowdrop-main-layout__sidebar--right')).toHaveCount(0);
   });
 
   test('N opens the node library as a popover; Esc closes it and stays in Test mode', async ({
@@ -231,7 +317,7 @@ test.describe('Test mode', () => {
     await page.waitForSelector('[data-testid="editor-test"]', { timeout: 15000 });
     await expect(page.getByTestId('docked-playground')).toBeVisible();
     await expect(testButton(page)).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
+    await expect(page.getByTestId('inspector-sheet')).toHaveCount(0);
     await editButton(page).click();
     await expect(page.locator('.flowdrop-sidebar')).toBeVisible();
   });
@@ -244,19 +330,26 @@ test.describe('Test mode', () => {
   });
 
   for (const width of [1000, 740]) {
-    test(`at ${width}px the Playground drawer does not run under the inspector`, async ({
+    test(`at ${width}px the Playground is a drawer and a node's sheet overlays the canvas`, async ({
       page
     }) => {
       await page.setViewportSize({ width, height: 800 });
       await testButton(page).click();
       const drawer = page.getByTestId('test-drawer');
       await expect(drawer).toBeVisible();
-      const drawerBox = await drawer.boundingBox();
-      const inspectorBox = await page
-        .locator('.flowdrop-main-layout__sidebar--right')
-        .boundingBox();
-      expect(drawerBox && inspectorBox).toBeTruthy();
-      expect(drawerBox!.x + drawerBox!.width).toBeLessThanOrEqual(inspectorBox!.x + 1);
+      await expect(page.locator('.flowdrop-main-layout__sidebar--right')).toHaveCount(0);
+
+      // The drawer covers the canvas's left edge: put it away to reach a node.
+      await page.getByRole('button', { name: 'Hide Playground' }).click();
+      await expect(drawer).toBeHidden();
+      await page.locator('.svelte-flow__node').first().click({ force: true });
+      const sheet = page.getByTestId('inspector-sheet');
+      await expect(sheet).toBeVisible();
+      const box = await sheet.boundingBox();
+      expect(box!.x + box!.width).toBeLessThanOrEqual(width + 1);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      await page.keyboard.press('Escape');
+      await expect(sheet).toHaveCount(0);
     });
   }
 });

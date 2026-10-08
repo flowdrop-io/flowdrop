@@ -154,7 +154,7 @@ test.describe('Message links and Last run', () => {
   test('the node that is open lights its messages', async ({ page }) => {
     const dock = await sendOne(page);
     await expect(dock.getByTestId('message-node-link')).toHaveCount(1, { timeout: 10000 });
-    await page.locator('.svelte-flow__node[data-id="node-input"]').dblclick({ force: true });
+    await page.locator('.svelte-flow__node[data-id="node-input"]').click({ force: true });
     await expect(dock.locator('.message-bubble--from-highlighted')).toHaveCount(1);
   });
 
@@ -172,13 +172,16 @@ test.describe('Message links and Last run', () => {
     await expect(page.getByRole('tab', { name: 'Last run' })).toHaveCount(0);
   });
 
-  test('Test mode shows Config | Last run, with an empty state for a node that did not run', async ({
+  test('Test mode shows Config | Last run, opening on an empty state for a node that did not run', async ({
     page
   }) => {
     await testButton(page).click();
-    await page.locator('.svelte-flow__node').first().dblclick({ force: true });
+    await page.locator('.svelte-flow__node').first().click({ force: true });
     await expect(page.getByTestId('node-inspector-tabs')).toBeVisible();
-    await page.getByRole('tab', { name: 'Last run' }).click();
+    await expect(page.getByRole('tab', { name: 'Last run' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     await expect(page.getByTestId('node-last-run-empty')).toBeVisible();
   });
 });
