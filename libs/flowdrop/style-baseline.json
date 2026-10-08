@@ -1,0 +1,415 @@
+{
+  "src/lib/components/App.svelte": {
+    "button": 5,
+    "colour": 2,
+    "font-size": 2
+  },
+  "src/lib/components/Button.svelte": {
+    "button": 1
+  },
+  "src/lib/components/CanvasBanner.svelte": {
+    "colour": 2,
+    "font-size": 3
+  },
+  "src/lib/components/CanvasContextMenu.svelte": {
+    "button": 1
+  },
+  "src/lib/components/CanvasIconButton.svelte": {
+    "button": 1
+  },
+  "src/lib/components/ConfigForm.svelte": {
+    "button": 8,
+    "colour": 10,
+    "font-size": 5,
+    "radius": 3,
+    "shadow": 4
+  },
+  "src/lib/components/ConfigMappingRow.svelte": {
+    "button": 1
+  },
+  "src/lib/components/ConfigModal.svelte": {
+    "button": 1,
+    "colour": 9,
+    "font-size": 2,
+    "radius": 2,
+    "shadow": 1
+  },
+  "src/lib/components/ConfigPanel.svelte": {
+    "button": 6,
+    "colour": 2,
+    "font-size": 7
+  },
+  "src/lib/components/EditorModeSwitch.svelte": {
+    "button": 2,
+    "colour": 2,
+    "radius": 1,
+    "shadow": 1
+  },
+  "src/lib/components/EditorStatusBar.svelte": {
+    "radius": 1
+  },
+  "src/lib/components/IconButton.svelte": {
+    "button": 1
+  },
+  "src/lib/components/Logo.svelte": {
+    "colour": 8
+  },
+  "src/lib/components/LogoWordmark.svelte": {
+    "colour": 10,
+    "font-size": 1
+  },
+  "src/lib/components/LogsSidebar.svelte": {
+    "button": 3,
+    "colour": 29,
+    "font-size": 11,
+    "radius": 4,
+    "shadow": 1
+  },
+  "src/lib/components/Navbar.svelte": {
+    "button": 2,
+    "font-size": 4,
+    "radius": 2
+  },
+  "src/lib/components/NodeInspector.svelte": {
+    "button": 1
+  },
+  "src/lib/components/NodeLastRun.svelte": {
+    "button": 2,
+    "colour": 2
+  },
+  "src/lib/components/NodeSidebar.svelte": {
+    "radius": 2
+  },
+  "src/lib/components/NodeStatusOverlay.stories.svelte": {
+    "colour": 12,
+    "radius": 4
+  },
+  "src/lib/components/NodeStatusOverlay.svelte": {
+    "radius": 1,
+    "shadow": 1
+  },
+  "src/lib/components/NodeSwapPicker.svelte": {
+    "button": 4,
+    "font-size": 2,
+    "radius": 3
+  },
+  "src/lib/components/PortMappingRow.svelte": {
+    "button": 1,
+    "colour": 2
+  },
+  "src/lib/components/ReadOnlyDetails.svelte": {
+    "button": 1,
+    "font-size": 5
+  },
+  "src/lib/components/RunBar.svelte": {
+    "button": 3,
+    "font-size": 2,
+    "radius": 2
+  },
+  "src/lib/components/SchemaForm.svelte": {
+    "button": 2,
+    "colour": 6,
+    "radius": 1,
+    "shadow": 2
+  },
+  "src/lib/components/SettingsModal.svelte": {
+    "button": 1,
+    "colour": 2
+  },
+  "src/lib/components/SettingsPanel.svelte": {
+    "button": 5,
+    "colour": 2
+  },
+  "src/lib/components/StatusIcon.svelte": {
+    "colour": 2,
+    "font-size": 2,
+    "radius": 1,
+    "shadow": 1
+  },
+  "src/lib/components/StatusLabel.svelte": {
+    "colour": 2,
+    "font-size": 1
+  },
+  "src/lib/components/SwapMappingEditor.svelte": {
+    "button": 3,
+    "colour": 6,
+    "font-size": 3,
+    "radius": 1,
+    "shadow": 4
+  },
+  "src/lib/components/UniversalNode.svelte": {
+    "font-size": 1,
+    "radius": 1
+  },
+  "src/lib/components/WorkflowEditor.svelte": {
+    "colour": 2,
+    "shadow": 2
+  },
+  "src/lib/components/WorkflowInterfaceEditor.svelte": {
+    "button": 1,
+    "font-size": 2
+  },
+  "src/lib/components/WorkflowInterfaceEntryCard.svelte": {
+    "button": 5,
+    "font-size": 2
+  },
+  "src/lib/components/WorkflowInterfaceEntryComposer.svelte": {
+    "button": 2,
+    "font-size": 4
+  },
+  "src/lib/components/WorkflowPlaygroundSettings.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/chat/AIChatPanel.svelte": {
+    "button": 4,
+    "colour": 2,
+    "font-size": 4,
+    "radius": 5
+  },
+  "src/lib/components/chat/CommandPreview.svelte": {
+    "button": 2
+  },
+  "src/lib/components/console/CommandConsole.svelte": {
+    "button": 1,
+    "font-size": 2
+  },
+  "src/lib/components/console/ConsoleAutocomplete.svelte": {
+    "font-size": 2
+  },
+  "src/lib/components/console/ConsoleInput.svelte": {
+    "font-size": 5
+  },
+  "src/lib/components/console/ConsoleOutput.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/form/FieldFactory.svelte": {
+    "font-size": 2
+  },
+  "src/lib/components/form/FormArray.svelte": {
+    "button": 2,
+    "font-size": 5,
+    "radius": 2
+  },
+  "src/lib/components/form/FormAutocomplete.svelte": {
+    "button": 3,
+    "font-size": 1
+  },
+  "src/lib/components/form/FormCodeEditor.svelte": {
+    "colour": 4,
+    "font-size": 1
+  },
+  "src/lib/components/form/FormFieldWrapper.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/form/FormMarkdownEditor.svelte": {
+    "button": 1,
+    "font-size": 4
+  },
+  "src/lib/components/form/FormPorts.svelte": {
+    "button": 2,
+    "radius": 1,
+    "shadow": 1
+  },
+  "src/lib/components/form/FormRangeField.svelte": {
+    "colour": 8,
+    "radius": 6,
+    "shadow": 4
+  },
+  "src/lib/components/form/FormTemplateEditor.svelte": {
+    "button": 2,
+    "colour": 15,
+    "font-size": 7
+  },
+  "src/lib/components/form/FormToggle.svelte": {
+    "radius": 2
+  },
+  "src/lib/components/interrupt/ChoicePrompt.svelte": {
+    "button": 1,
+    "font-size": 1,
+    "radius": 1,
+    "shadow": 2
+  },
+  "src/lib/components/interrupt/ConfirmationPrompt.svelte": {
+    "button": 2,
+    "radius": 1,
+    "shadow": 4
+  },
+  "src/lib/components/interrupt/InterruptBubble.svelte": {
+    "button": 2,
+    "shadow": 4
+  },
+  "src/lib/components/interrupt/ReviewPrompt.svelte": {
+    "button": 6,
+    "font-size": 1,
+    "radius": 1
+  },
+  "src/lib/components/interrupt/TextInputPrompt.svelte": {
+    "button": 1,
+    "radius": 1,
+    "shadow": 2
+  },
+  "src/lib/components/layouts/MainLayout.svelte": {
+    "colour": 6,
+    "radius": 1,
+    "shadow": 3
+  },
+  "src/lib/components/nodes/AtomNode.svelte": {
+    "radius": 1,
+    "shadow": 1
+  },
+  "src/lib/components/nodes/CaptionNode.stories.svelte": {
+    "colour": 1
+  },
+  "src/lib/components/nodes/CaptionNode.svelte": {
+    "font-size": 1,
+    "radius": 1
+  },
+  "src/lib/components/nodes/GatewayNode.svelte": {
+    "radius": 1,
+    "shadow": 3
+  },
+  "src/lib/components/nodes/IdeaNode.svelte": {
+    "font-size": 2,
+    "radius": 2,
+    "shadow": 1
+  },
+  "src/lib/components/nodes/NodeConfigButton.svelte": {
+    "button": 1,
+    "radius": 1
+  },
+  "src/lib/components/nodes/NotesNode.svelte": {
+    "radius": 2,
+    "shadow": 2
+  },
+  "src/lib/components/nodes/SimpleNode.svelte": {
+    "radius": 3,
+    "shadow": 2
+  },
+  "src/lib/components/nodes/SquareNode.svelte": {
+    "radius": 3,
+    "shadow": 2
+  },
+  "src/lib/components/nodes/TerminalNode.svelte": {
+    "font-size": 1,
+    "radius": 4,
+    "shadow": 8
+  },
+  "src/lib/components/nodes/ToolNode.svelte": {
+    "colour": 2,
+    "font-size": 2,
+    "radius": 3,
+    "shadow": 3
+  },
+  "src/lib/components/nodes/WorkflowNode.svelte": {
+    "radius": 2,
+    "shadow": 2
+  },
+  "src/lib/components/playground/ChatBubble.svelte": {
+    "button": 1,
+    "colour": 3,
+    "font-size": 2,
+    "shadow": 2
+  },
+  "src/lib/components/playground/ChatInput.svelte": {
+    "button": 4
+  },
+  "src/lib/components/playground/ChatPanel.svelte": {
+    "button": 1
+  },
+  "src/lib/components/playground/ControlPanel.svelte": {
+    "button": 7
+  },
+  "src/lib/components/playground/ExecutionConsole.svelte": {
+    "button": 1
+  },
+  "src/lib/components/playground/ExecutionList.svelte": {
+    "colour": 2,
+    "radius": 1
+  },
+  "src/lib/components/playground/ExecutionLogs.svelte": {
+    "button": 6
+  },
+  "src/lib/components/playground/HeaderMenu.svelte": {
+    "button": 1,
+    "radius": 1
+  },
+  "src/lib/components/playground/HierarchyTrail.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/playground/InputCollector.svelte": {
+    "button": 2
+  },
+  "src/lib/components/playground/LogRow.svelte": {
+    "font-size": 4
+  },
+  "src/lib/components/playground/MessageCard.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/playground/MessageMarkdown.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/playground/MessageNotice.svelte": {
+    "font-size": 2
+  },
+  "src/lib/components/playground/MessageTagChip.svelte": {
+    "colour": 3,
+    "font-size": 1
+  },
+  "src/lib/components/playground/OriginBadge.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/playground/PipelineKanbanView.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/playground/PipelinePanel.svelte": {
+    "button": 7
+  },
+  "src/lib/components/playground/PipelineTableView.svelte": {
+    "font-size": 1
+  },
+  "src/lib/components/playground/PlaygroundHeader.svelte": {
+    "button": 8
+  },
+  "src/lib/components/playground/PlaygroundModal.svelte": {
+    "button": 1
+  },
+  "src/lib/components/playground/PlaygroundStudio.svelte": {
+    "button": 2
+  },
+  "src/lib/components/playground/PlaygroundSurface.svelte": {
+    "button": 2,
+    "colour": 4,
+    "shadow": 1
+  },
+  "src/lib/components/playground/SessionManager.svelte": {
+    "button": 5
+  },
+  "src/lib/components/surfaces/SurfaceOverlay.svelte": {
+    "button": 1,
+    "colour": 2,
+    "font-size": 2
+  },
+  "src/lib/components/surfaces/TabbedSurface.svelte": {
+    "button": 1,
+    "font-size": 1
+  },
+  "src/lib/components/toast/DismissibleToast.svelte": {
+    "button": 1
+  },
+  "src/lib/stories/WebMCPFakeAgent.svelte": {
+    "colour": 11,
+    "font-size": 3,
+    "radius": 3
+  },
+  "src/lib/styles/base.css": {
+    "colour": 37,
+    "font-size": 19,
+    "radius": 5
+  },
+  "src/lib/styles/toast.css": {
+    "colour": 2
+  },
+  "src/lib/webmcp/WebMCPConfirm.svelte": {
+    "colour": 18
+  }
+}

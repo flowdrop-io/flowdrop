@@ -1,0 +1,49 @@
+name: FlowDrop Lint
+
+on:
+  push:
+    branches:
+      - main
+      - next
+    paths:
+      - 'libs/flowdrop/**'
+      - '.github/workflows/flowdrop-lint.yml'
+  pull_request:
+    branches:
+      - main
+      - next
+    paths:
+      - 'libs/flowdrop/**'
+      - '.github/workflows/flowdrop-lint.yml'
+
+jobs:
+  lint:
+    name: Types, lint and style ratchet
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libs/flowdrop
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: libs/flowdrop/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run check
+
+      - name: Lint (eslint, prettier, style ratchet)
+        run: pnpm run lint
