@@ -89,7 +89,7 @@ test.describe('Graphite theme', () => {
     await chooseUiTheme(page, 'graphite');
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
     await expect.poll(() => token(page, 'primary')).toBe('#eceef2');
-    expect(await token(page, 'background')).toBe('#14161a');
+    expect(await token(page, 'background')).toBe('#16181d');
   });
 
   test('switching back to Default drops the graphite look', async ({ page }) => {
