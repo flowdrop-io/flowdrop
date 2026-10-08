@@ -170,8 +170,6 @@ export const defaultMessages = {
 
     form: {
       submit: 'Submit',
-      missingRequired: ({ names }: { names: string }) => `Fill in the required fields: ${names}`,
-      invalidJson: ({ names }: { names: string }) => `Not valid JSON for its type: ${names}`,
       // Boolean and empty-cell rendering in the submitted-values readout.
       yes: 'Yes',
       no: 'No',
