@@ -718,6 +718,8 @@
 
   .console-input__wrapper {
     flex: 1;
+    /* A flex child will not shrink below its content: let a long placeholder clip. */
+    min-width: 0;
     position: relative;
   }
 
@@ -731,6 +733,8 @@
     color: var(--fd-foreground);
     padding: 0;
     line-height: 1.5;
+    min-width: 0;
+    text-overflow: ellipsis;
   }
 
   .console-input__field::placeholder {

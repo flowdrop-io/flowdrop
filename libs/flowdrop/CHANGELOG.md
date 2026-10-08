@@ -264,6 +264,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `fd.playground.launchError` / `setLaunchError`; it clears when a run starts
   or the inputs change.
 
+- The Assistant composer no longer clips its placeholder at the default panel
+  width (the field is two lines tall), and "+ Attach a run" sits in the
+  composer's own row with matching padding. The Console input's placeholder
+  now truncates with an ellipsis instead of overflowing a narrow panel.
+
 - The run bar's end time and the pending-signal lock no longer depend on an
   effect seeing every session status change: the run controller hears each
   change synchronously, so two changes in one flush are both counted and a

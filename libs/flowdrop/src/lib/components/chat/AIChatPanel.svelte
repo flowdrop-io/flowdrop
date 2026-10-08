@@ -974,7 +974,7 @@
         onkeydown={handleKeydown}
         class="ai-chat-panel__input"
         placeholder={t.placeholder}
-        rows="1"
+        rows="2"
         disabled={isLoading}
       ></textarea>
       <button
@@ -997,7 +997,10 @@
     flex-direction: column;
     align-items: flex-start;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs) var(--fd-space-sm) 0;
+    /* The top of the composer: one container with the input row below it. */
+    padding: var(--fd-space-xs) var(--fd-space-sm);
+    border-top: 1px solid var(--fd-border);
+    background: var(--fd-background);
     font-size: var(--fd-text-xs);
   }
 
@@ -1455,8 +1458,7 @@
     display: flex;
     align-items: flex-end;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs) var(--fd-space-sm);
-    border-top: 1px solid var(--fd-border);
+    padding: 0 var(--fd-space-sm) var(--fd-space-sm);
     background: var(--fd-background);
   }
 
