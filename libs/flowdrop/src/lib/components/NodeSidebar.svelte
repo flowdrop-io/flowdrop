@@ -30,6 +30,11 @@
      * shows the library this way (N).
      */
     popover?: boolean;
+    /**
+     * Sidebar list style from the theme's `display.sidebarList`. `rows` draws
+     * flat 32px category rows (no card, no border) with a filled search field.
+     */
+    listStyle?: 'cards' | 'flat' | 'rows';
   }
 
   let props: Props = $props();
@@ -164,6 +169,7 @@
   class:flowdrop-sidebar--collapsed={isCollapsed}
   class:flowdrop-sidebar--compact={getUiSettings().compactMode}
   class:flowdrop-sidebar--popover={props.popover}
+  class:flowdrop-sidebar--rows={props.listStyle === 'rows'}
   style:width={props.popover ? '100%' : `${isCollapsed ? 0 : getUiSettings().sidebarWidth}px`}
   aria-label={m().layout.componentsSidebar}
 >
@@ -175,9 +181,15 @@
       aria-label={m().layout.searchComponents}
       value={searchInput}
       oninput={(e) => (searchInput = e.currentTarget.value)}
+      data-fd-library-search
     >
       {#snippet leading()}
         <Icon icon="mdi:magnify" />
+      {/snippet}
+      {#snippet trailing()}
+        {#if props.listStyle === 'rows' && !props.popover && !searchInput}
+          <kbd class="flowdrop-sidebar__kbd" aria-hidden="true">/</kbd>
+        {/if}
       {/snippet}
     </Input>
   </div>
@@ -220,7 +232,7 @@
     {:else if searchInput.trim()}
       <!-- Search Results -->
       <div class="flowdrop-p--4">
-        <div class="flowdrop-divider">
+        <div class="flowdrop-divider flowdrop-sidebar__results-head">
           <h3 class="flowdrop-divider__text">Search Results</h3>
         </div>
         {#if filteredNodes.length === 0}
@@ -260,6 +272,7 @@
                 ondragstart={(e) => handleNodeDragStart(e, nodeType)}
                 role="button"
                 tabindex="0"
+                title={nodeType.description}
               >
                 <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
                   <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
@@ -352,6 +365,7 @@
                         role="listitem"
                         draggable="true"
                         ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+                        title={nodeType.description}
                       >
                         <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
                           <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
@@ -393,21 +407,14 @@
     {/if}
   </div>
 
-  <!-- Footer -->
-  <div class="flowdrop-sidebar__footer">
-    <div class="flowdrop-flex flowdrop-gap--4">
-      <div class="flowdrop-flex flowdrop-gap--4">
-        {#if props.loading && props.nodes?.length === 0}
-          <span class="flowdrop-text--xs flowdrop-text--gray">Loading components...</span>
-        {:else}
-          <span class="flowdrop-text--xs flowdrop-text--gray"
-            >Total: {props.nodes?.length || 0} components</span
-          >
-          <span class="flowdrop-text--xs flowdrop-text--gray">Showing: {filteredNodes.length}</span>
-        {/if}
-      </div>
+  <!-- "N of M", only while a search filters -->
+  {#if searchInput.trim() && props.nodes?.length}
+    <div class="flowdrop-sidebar__footer">
+      <span class="flowdrop-text--xs flowdrop-text--gray"
+        >{filteredNodes.length} of {formatCompatibleNodes.length}</span
+      >
     </div>
-  </div>
+  {/if}
 </aside>
 
 <style>
@@ -450,10 +457,6 @@
     padding: 0.5rem 0.75rem;
   }
 
-  .flowdrop-sidebar--compact .flowdrop-sidebar__content {
-    padding-bottom: 2rem;
-  }
-
   .flowdrop-sidebar--compact .flowdrop-sidebar__footer {
     padding: 0.375rem 0.5rem;
     height: 32px;
@@ -485,7 +488,7 @@
     overflow-y: scroll; /* Changed from auto to scroll to always show scrollbar */
     scrollbar-width: thin;
     scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
-    padding-bottom: 4rem; /* Add padding to ensure content is scrollable above footer */
+    padding-bottom: 1rem;
     min-height: 0; /* Allow flex item to shrink below content size */
   }
 
@@ -673,5 +676,163 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  /*
+   * Rows list style (Graphite): quiet flat rows. No card, no border, no shadow,
+   * no totals; separation by space and tone. Nodes of an open category are
+   * indented under it without a box.
+   */
+  .flowdrop-sidebar--rows {
+    box-shadow: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__search {
+    padding: var(--fd-space-sm) var(--fd-space-sm) var(--fd-space-3xs);
+    border-bottom: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__search :global(.flowdrop-input) {
+    height: var(--fd-control-lg);
+    padding-block: 0;
+    border-color: transparent;
+    border-radius: var(--fd-radius-md);
+    background-color: var(--fd-subtle);
+    box-shadow: none;
+    font-size: var(--fd-text-body);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__search :global(.flowdrop-input:hover:not(:focus)) {
+    border-color: transparent;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__search :global(.flowdrop-input:focus) {
+    border-color: var(--fd-ring);
+  }
+
+  .flowdrop-sidebar__kbd {
+    padding: 0 var(--fd-space-3xs);
+    border: 1px solid var(--fd-border-strong);
+    border-radius: var(--fd-radius-sm);
+    color: var(--fd-muted-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-2xs);
+    line-height: 1rem;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-p--4 {
+    padding: var(--fd-space-3xs) var(--fd-space-sm) var(--fd-space-sm);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-category-list,
+  .flowdrop-sidebar--rows .flowdrop-node-list {
+    gap: 1px;
+  }
+
+  .flowdrop-sidebar--rows .fd-sidebar-card-section,
+  .flowdrop-sidebar--rows .fd-sidebar-card-section:hover,
+  .flowdrop-sidebar--rows .fd-sidebar-card-section[open] {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary {
+    height: var(--fd-control-lg);
+    padding: 0 var(--fd-space-xs);
+    border-radius: var(--fd-radius-md);
+    background: transparent;
+    font-size: var(--fd-text-body);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary:hover,
+  .flowdrop-sidebar--rows .flowdrop-node-item:hover {
+    background: var(--fd-subtle);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary .flowdrop-flex {
+    gap: 10px;
+  }
+
+  /* 20px tile with the category tint */
+  .flowdrop-sidebar--rows .flowdrop-node-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--fd-radius-md);
+    font-size: var(--fd-text-2xs);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary:hover .flowdrop-node-icon,
+  .flowdrop-sidebar--rows .flowdrop-node-item:hover .flowdrop-node-icon {
+    transform: none;
+  }
+
+  /* Count: muted mono, right-aligned, no pill */
+  .flowdrop-sidebar--rows .flowdrop-details__summary .flowdrop-badge {
+    padding: 0;
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-2xs);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__content {
+    padding: 0;
+    background: transparent;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item,
+  .flowdrop-sidebar--rows .flowdrop-node-item:hover,
+  .flowdrop-sidebar--rows .flowdrop-node-item:active {
+    border: none;
+    border-radius: var(--fd-radius-md);
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item:hover {
+    background: var(--fd-subtle);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item :global(.flowdrop-card__body) {
+    display: flex;
+    align-items: center;
+    min-height: var(--fd-control-md);
+    padding: 0 var(--fd-space-xs);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item h4 {
+    font-size: var(--fd-text-body);
+    font-weight: 400;
+  }
+
+  /* The description lives in the tooltip, not on the row. */
+  .flowdrop-sidebar--rows .flowdrop-node-item :global(p) {
+    display: none;
+  }
+
+  /* Nodes of an open category sit under its label, 20px tile + 10px gap in. */
+  .flowdrop-sidebar--rows
+    .flowdrop-details__content
+    .flowdrop-node-item
+    :global(.flowdrop-card__body) {
+    padding-left: calc(var(--fd-space-xs) + 1.25rem + 10px);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-icon {
+    display: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__results-head {
+    display: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__footer {
+    height: auto;
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    border-top: none;
+    background: transparent;
   }
 </style>

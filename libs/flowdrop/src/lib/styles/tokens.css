@@ -354,6 +354,27 @@
   --fd-navbar-height: 48px; /* @internal — controlled programmatically */
   --fd-toolbar-height: 40px; /* @internal — controlled programmatically */
 
+  /* ----- NAVBAR (defaults reproduce the Default look; Graphite sets quiet values) ----- */
+  --fd-navbar-start-width: 240px; /* @internal  width of the logo column */
+  --fd-navbar-logo-height: 24px; /* @internal  wordmark lockup height */
+  --fd-navbar-rule-display: none; /* @internal  1px x 16px rule between logo and workflow name */
+  --fd-navbar-title-size: 1rem; /* @internal  workflow name */
+  --fd-navbar-status-bg: var(--fd-success-muted); /* @internal  connection chip fill */
+  --fd-navbar-status-fg: var(--fd-success-hover); /* @internal  connection chip text */
+  --fd-navbar-action-height: var(--fd-size-btn-min); /* @internal  Save split button height */
+  --fd-navbar-action-bg: var(--fd-background); /* @internal  Save button fill */
+  --fd-navbar-action-fg: var(--fd-foreground); /* @internal  Save button text */
+  --fd-navbar-action-hover-bg: var(--fd-muted); /* @internal  Save button hover fill */
+  --fd-navbar-action-border: var(--fd-border-strong); /* @internal  Save button outline */
+  --fd-navbar-action-divider: transparent; /* @internal  inner divider of the split button */
+  --fd-navbar-chevron-width: 2rem; /* @internal  chevron half of the split button */
+  --fd-navbar-icon-bg: var(--fd-background); /* @internal  settings button fill */
+  --fd-navbar-icon-border: var(--fd-border); /* @internal  settings button outline */
+  --fd-navbar-icon-border-hover: var(
+    --fd-border-strong
+  ); /* @internal  settings button outline on hover */
+  --fd-navbar-status-order: 0; /* @internal  flex order of the connection chip next to the title */
+
   /* ----- NODE COLORS (for workflow editor) ----- */
   --fd-node-emerald: #10b981; /* @public */
   --fd-node-blue: #2563eb; /* @public */

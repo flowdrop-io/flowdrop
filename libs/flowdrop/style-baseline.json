@@ -50,7 +50,7 @@
   },
   "src/lib/components/Navbar.svelte": {
     "button": 2,
-    "font-size": 4,
+    "font-size": 3,
     "radius": 2
   },
   "src/lib/components/NodeInspector.svelte": {
@@ -207,9 +207,8 @@
     "shadow": 2
   },
   "src/lib/components/layouts/MainLayout.svelte": {
-    "colour": 6,
-    "radius": 1,
-    "shadow": 3
+    "colour": 5,
+    "shadow": 2
   },
   "src/lib/components/nodes/AtomNode.svelte": {
     "radius": 1,
@@ -340,10 +339,6 @@
   },
   "src/lib/components/surfaces/SurfaceOverlay.svelte": {
     "colour": 2
-  },
-  "src/lib/components/surfaces/TabbedSurface.svelte": {
-    "button": 1,
-    "font-size": 1
   },
   "src/lib/components/toast/DismissibleToast.svelte": {
     "button": 1

@@ -21,8 +21,12 @@ export type FlowDropGridVariant = 'dots' | 'lines' | 'cross';
 export interface FlowDropDisplayConfig {
   /** Node icon: a rounded-square icon wrapper ('squircle', default) or a small colour dot ('dot'). */
   nodeIcon?: 'squircle' | 'dot';
-  /** Sidebar node list: accordion cards per category ('cards', default) or a flat dot-and-name list ('flat'). */
-  sidebarList?: 'cards' | 'flat';
+  /**
+   * Sidebar node list: accordion cards per category ('cards', default), a flat
+   * dot-and-name list ('flat'), or quiet 32px category rows with the nodes
+   * indented under the open one ('rows').
+   */
+  sidebarList?: 'cards' | 'flat' | 'rows';
   /** Show the sidebar search input. Defaults to true. */
   sidebarSearch?: boolean;
   /** Show the sidebar "Components" header. Defaults to true. */

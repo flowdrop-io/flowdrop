@@ -136,7 +136,26 @@ export const graphiteSkin: FlowDropSkin = {
     'scrollbar-size': '8px',
 
     'sidebar-category-color': '#5a6270',
-    'sidebar-flat-item-color': '#16191f'
+    'sidebar-flat-item-color': '#16191f',
+
+    /* ----- Navbar: 48px bar, ink split Save, ghost settings ----- */
+    'navbar-start-width': 'auto',
+    'navbar-logo-height': '20px',
+    'navbar-rule-display': 'block',
+    'navbar-title-size': '0.875rem',
+    'navbar-status-bg': 'transparent',
+    'navbar-status-fg': 'var(--fd-muted-foreground)',
+    'navbar-action-height': '2rem',
+    'navbar-action-bg': 'var(--fd-primary)',
+    'navbar-action-fg': 'var(--fd-primary-foreground)',
+    'navbar-action-hover-bg': 'var(--fd-primary-hover)',
+    'navbar-action-border': 'transparent',
+    'navbar-action-divider': 'rgb(255 255 255 / 0.18)',
+    'navbar-chevron-width': '1.75rem',
+    'navbar-icon-bg': 'transparent',
+    'navbar-icon-border': 'transparent',
+    'navbar-icon-border-hover': 'transparent',
+    'navbar-status-order': '2'
   },
 
   darkTokens: {
@@ -224,6 +243,25 @@ export const graphiteSkin: FlowDropSkin = {
     'scrollbar-track': 'transparent',
 
     'sidebar-category-color': '#a0a8b5',
-    'sidebar-flat-item-color': '#eceef2'
+    'sidebar-flat-item-color': '#eceef2',
+
+    /* ----- Navbar: 48px bar, ink split Save, ghost settings ----- */
+    'navbar-start-width': 'auto',
+    'navbar-logo-height': '20px',
+    'navbar-rule-display': 'block',
+    'navbar-title-size': '0.875rem',
+    'navbar-status-bg': 'transparent',
+    'navbar-status-fg': 'var(--fd-muted-foreground)',
+    'navbar-action-height': '2rem',
+    'navbar-action-bg': 'var(--fd-primary)',
+    'navbar-action-fg': 'var(--fd-primary-foreground)',
+    'navbar-action-hover-bg': 'var(--fd-primary-hover)',
+    'navbar-action-border': 'transparent',
+    'navbar-action-divider': 'rgb(0 0 0 / 0.18)',
+    'navbar-chevron-width': '1.75rem',
+    'navbar-icon-bg': 'transparent',
+    'navbar-icon-border': 'transparent',
+    'navbar-icon-border-hover': 'transparent',
+    'navbar-status-order': '2'
   }
 };

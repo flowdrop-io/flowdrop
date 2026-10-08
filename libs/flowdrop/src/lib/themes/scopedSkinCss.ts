@@ -72,7 +72,7 @@ export function displayTokens(display: FlowDropDisplayConfig | undefined): FlowD
   }
   if (display.sidebarList) {
     const flat = display.sidebarList === 'flat';
-    out['sidebar-card-display'] = flat ? 'none' : 'block';
+    out['sidebar-card-display'] = flat ? 'none' : 'block'; // 'rows' is a card list drawn flat
     out['sidebar-flat-display'] = flat ? 'block' : 'none';
   }
   if (display.sidebarSearch !== undefined) {
