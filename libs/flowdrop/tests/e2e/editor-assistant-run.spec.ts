@@ -240,8 +240,8 @@ test.describe('Assistant in the left slot', () => {
     await page.waitForSelector('[data-testid="editor-test"]', { timeout: 15000 });
     await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
     await testButton(page).click();
-    await page.locator('.control-panel__session-chip').click();
-    await page.getByRole('menuitem', { name: 'Session 1' }).click();
+    await page.getByTestId('playground-history').click();
+    await page.getByRole('menuitemradio', { name: 'Session 1' }).click();
     await editButton(page).click();
   }
 
