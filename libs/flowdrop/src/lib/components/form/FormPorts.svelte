@@ -212,8 +212,6 @@
     font-size: var(--fd-text-xs);
     font-weight: 600;
     color: var(--fd-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
 
   .fd-ports__list {

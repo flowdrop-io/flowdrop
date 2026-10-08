@@ -362,7 +362,7 @@
 
   .form-code-editor__container {
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
     /* Match plain form fields (FormTextField/Textarea/Select): rest on the
        input surface, not the recessed --fd-muted. */
@@ -407,13 +407,13 @@
 
   /* CodeMirror styling overrides */
   .form-code-editor__container :global(.cm-editor) {
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
   }
 
   .form-code-editor__container :global(.cm-gutters) {
     background-color: var(--fd-subtle);
     border-right: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg) 0 0 var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius) 0 0 var(--fd-control-radius);
   }
 
   .form-code-editor__container--dark :global(.cm-gutters) {

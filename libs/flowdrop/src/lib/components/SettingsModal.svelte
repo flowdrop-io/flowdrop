@@ -196,7 +196,7 @@
     max-height: 700px;
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-modal-radius);
     box-shadow: var(--fd-shadow-lg, 0 25px 50px -12px rgba(0, 0, 0, 0.25));
     overflow: hidden;
     animation: flowdrop-modal-enter 0.2s ease-out;
@@ -211,6 +211,14 @@
       opacity: 1;
       transform: scale(1) translateY(0);
     }
+  }
+
+  .flowdrop-settings-modal__container :global(.flowdrop-ui-panel-header) {
+    height: var(--fd-modal-header-height);
+  }
+
+  .flowdrop-settings-modal__container :global(.flowdrop-ui-panel-header__title) {
+    font-size: var(--fd-modal-title-size);
   }
 
   /* Content */

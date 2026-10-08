@@ -15,9 +15,9 @@
 
   interface Props extends Omit<HTMLButtonAttributes, 'children' | 'class' | 'type' | 'title'> {
     /** Visual style */
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
-    /** Height: `sm` = --fd-control-sm (24), `md` = --fd-control-md (28) */
-    size?: 'sm' | 'md';
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'destructive';
+    /** Height: `sm` = --fd-control-sm (24), `md` = --fd-control-md (28), `lg` = --fd-control-lg (32) */
+    size?: 'sm' | 'md' | 'lg';
     /** Native button type */
     type?: 'button' | 'submit' | 'reset';
     /** Disabled state */
@@ -99,7 +99,7 @@
     border: 1px solid transparent;
     border-radius: var(--fd-control-radius);
     font-family: inherit;
-    font-weight: 500;
+    font-weight: var(--fd-button-font-weight);
     line-height: 1;
     white-space: nowrap;
     cursor: pointer;
@@ -122,6 +122,12 @@
     font-size: var(--fd-text-sm);
   }
 
+  .flowdrop-ui-button--lg {
+    height: var(--fd-control-lg);
+    padding: 0 var(--fd-space-lg, 0.75rem);
+    font-size: var(--fd-text-sm);
+  }
+
   .flowdrop-ui-button--primary {
     background-color: var(--fd-primary);
     border-color: var(--fd-primary);
@@ -134,7 +140,7 @@
 
   .flowdrop-ui-button--secondary {
     background-color: var(--fd-background);
-    border-color: var(--fd-border);
+    border-color: var(--fd-button-secondary-border);
     color: var(--fd-foreground);
   }
   .flowdrop-ui-button--secondary:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
@@ -147,15 +153,27 @@
     color: var(--fd-foreground);
   }
   .flowdrop-ui-button--ghost:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
-    background-color: var(--fd-muted);
+    background-color: var(--fd-button-ghost-hover);
   }
 
   .flowdrop-ui-button--danger {
+    background-color: var(--fd-button-danger-bg);
+    border-color: var(--fd-button-danger-border);
+    color: var(--fd-button-danger-fg);
+  }
+  .flowdrop-ui-button--danger:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+    background-color: var(--fd-button-danger-hover-bg);
+    border-color: var(--fd-button-danger-hover-bg);
+    color: var(--fd-button-danger-hover-fg);
+  }
+
+  /* A destructive confirm: always the red fill, in every theme. */
+  .flowdrop-ui-button--destructive {
     background-color: var(--fd-error);
     border-color: var(--fd-error);
     color: var(--fd-error-foreground);
   }
-  .flowdrop-ui-button--danger:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+  .flowdrop-ui-button--destructive:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
     background-color: var(--fd-error-hover);
     border-color: var(--fd-error-hover);
   }

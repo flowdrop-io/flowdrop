@@ -179,17 +179,15 @@
     margin: 0;
     font-size: var(--fd-text-xs);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     color: var(--fd-muted-foreground);
   }
 
   .node-last-run__pre {
     margin: 0;
     padding: var(--fd-space-sm);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background: var(--fd-muted);
+    border: var(--fd-code-block-border);
+    border-radius: var(--fd-code-block-radius);
+    background: var(--fd-code-block-bg);
     font-family: var(--fd-font-mono, ui-monospace, monospace);
     font-size: var(--fd-text-xs);
     white-space: pre-wrap;

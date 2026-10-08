@@ -331,7 +331,7 @@
         '.cm-tooltip.cm-tooltip-autocomplete': {
           backgroundColor: 'var(--fd-background, #ffffff)',
           border: '1px solid var(--fd-border, #e5e7eb)',
-          borderRadius: 'var(--fd-radius-lg, 0.5rem)',
+          borderRadius: 'var(--fd-control-radius)',
           boxShadow: 'var(--fd-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))',
           padding: '0.25rem',
           maxHeight: '200px',
@@ -627,7 +627,7 @@
 
   .form-template-editor__container {
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
     /* Match plain form fields: rest on the input surface, not --fd-muted. */
     background-color: var(--fd-background);
@@ -661,13 +661,13 @@
 
   /* CodeMirror styling overrides */
   .form-template-editor__container :global(.cm-editor) {
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
   }
 
   .form-template-editor__container :global(.cm-gutters) {
     background-color: var(--fd-subtle);
     border-right: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg) 0 0 var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius) 0 0 var(--fd-control-radius);
   }
 
   .form-template-editor__container--dark :global(.cm-gutters) {
@@ -689,8 +689,6 @@
     font-size: var(--fd-text-2xs);
     font-weight: 500;
     color: var(--fd-accent-hover);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     margin-bottom: 0.375rem;
   }
 
@@ -738,8 +736,6 @@
     font-size: var(--fd-text-2xs);
     font-weight: 500;
     color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     margin-bottom: 0.25rem;
   }
 

@@ -331,6 +331,52 @@
   --fd-text-meta: var(--fd-text-xs); /* @internal  timestamps, origins, help text */
   --fd-scrollbar-size: 10px; /* @internal  scrollbar width in the editor */
 
+  /* ----- FORM CONTROL, BUTTON, MENU, SHEET AND MODAL KNOBS -----
+     Defaults reproduce the Default theme; Graphite sets its own (skins/graphite.ts). */
+  --fd-field-height: auto; /* @internal  input/select height; auto = padding + line */
+  --fd-field-height-sm: auto; /* @internal  small input/select height */
+  --fd-field-padding: 0.625rem 0.875rem; /* @internal  input/select padding */
+  --fd-field-padding-multiline: 0.625rem 0.875rem; /* @internal  textarea padding */
+  --fd-field-min-height-multiline: 5rem; /* @internal  textarea min height */
+  --fd-field-border-color: var(--fd-border); /* @internal  resting control rule */
+  --fd-field-shadow: var(--fd-shadow-sm); /* @internal  resting control shadow */
+  --fd-field-focus-shadow: var(
+    --fd-shadow-sm
+  ); /* @internal  control shadow while focused (accent ring) */
+  --fd-field-focus-outline: var(--fd-ring-width) solid var(--fd-ring); /* @internal  focus-visible outline on text controls */
+  --fd-field-label-size: 0.8125rem; /* @internal  label above a form control */
+  --fd-field-help-size: var(--fd-text-2xs); /* @internal  help text under a form control */
+  --fd-button-secondary-border: var(--fd-border); /* @internal  secondary button rule */
+  --fd-button-ghost-hover: var(--fd-muted); /* @internal  ghost button/icon hover fill */
+  --fd-button-danger-bg: var(--fd-error); /* @internal  danger button fill */
+  --fd-button-danger-fg: var(--fd-error-foreground); /* @internal  danger button text */
+  --fd-button-danger-border: var(--fd-error); /* @internal  danger button rule */
+  --fd-button-danger-hover-bg: var(--fd-error-hover); /* @internal  danger button hover fill */
+  --fd-button-danger-hover-fg: var(--fd-error-foreground); /* @internal  danger button hover text */
+  --fd-button-font-weight: 500; /* @internal  button label weight */
+  --fd-menu-radius: var(--fd-radius-lg); /* @internal  context menu and dropdown radius */
+  --fd-menu-shadow: var(--fd-shadow-lg); /* @internal  context menu and dropdown shadow */
+  --fd-menu-item-radius: var(--fd-radius-sm); /* @internal  menu item radius */
+  --fd-menu-item-height: auto; /* @internal  menu item min height */
+  --fd-sheet-inset: 0px; /* @internal  gap between the Test-mode inspector sheet and the canvas edge */
+  --fd-sheet-radius: 0; /* @internal  inspector sheet corners */
+  --fd-sheet-border-width: 0 0 0 1px; /* @internal  inspector sheet rule widths (top right bottom left) */
+  --fd-sheet-border: var(--fd-border); /* @internal  inspector sheet rule */
+  --fd-inspector-details-bg: var(--fd-card); /* @internal  inspector meta band fill */
+  --fd-inspector-details-rule: var(
+    --fd-border-muted
+  ); /* @internal  rule under the inspector meta */
+  --fd-inspector-title-size: var(--fd-text-sm); /* @internal  inspector header title */
+  --fd-inspector-meta-size: 0.8125rem; /* @internal  value text in the inspector meta list */
+  --fd-code-block-bg: var(--fd-muted); /* @internal  fill of a code/payload block */
+  --fd-code-block-border: 1px solid var(--fd-border); /* @internal  rule around a code/payload block */
+  --fd-code-block-radius: var(--fd-radius-md); /* @internal  code/payload block corners */
+  --fd-id-chip-bg: var(--fd-subtle); /* @internal  fill behind a mono id */
+  --fd-id-chip-padding: 0.125rem 0.375rem; /* @internal  padding of a mono id */
+  --fd-modal-radius: var(--fd-radius-lg); /* @internal  settings modal radius */
+  --fd-modal-header-height: var(--fd-panel-header); /* @internal  settings modal header */
+  --fd-modal-title-size: var(--fd-text-sm); /* @internal  settings modal title */
+
   /* ----- COMPONENT SIZES ----- */
   --fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
   --fd-size-btn-min: 2.5rem; /* @internal  40px — may change with component redesigns */

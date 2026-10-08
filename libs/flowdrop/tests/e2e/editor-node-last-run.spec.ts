@@ -138,7 +138,7 @@ test.describe('Message links and Last run', () => {
       'true'
     );
     await expect(page.getByTestId('node-last-run-status')).toHaveText('Completed');
-    await expect(page.getByTestId('node-last-run-duration')).toHaveText('1.23s');
+    await expect(page.getByTestId('node-last-run-duration')).toHaveText('1.2 s');
     await expect(page.getByTestId('node-last-run-tokens')).toHaveText('42');
     await expect(page.getByTestId('node-last-run-input')).toContainText('hello there');
     await expect(page.getByTestId('node-last-run-output')).toContainText('HELLO THERE');

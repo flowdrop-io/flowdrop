@@ -16,6 +16,7 @@
   } from '../utils/inspectorSurface.js';
   import { getMessages } from '../messages/context.js';
   import NodeLastRun from './NodeLastRun.svelte';
+  import Tabs from './primitives/Tabs.svelte';
 
   interface Props {
     editorMode?: 'edit' | 'test';
@@ -53,21 +54,14 @@
   {@render config()}
 {:else}
   <div class="node-inspector" data-testid="node-inspector-tabs">
-    <div class="node-inspector__bar" role="tablist" aria-label={msgs.tabsLabel}>
-      {#each tabs as id (id)}
-        <button
-          type="button"
-          role="tab"
-          id="node-inspector-tab-{id}"
-          aria-selected={active === id}
-          aria-controls="node-inspector-panel-{id}"
-          class="node-inspector__tab"
-          class:node-inspector__tab--active={active === id}
-          onclick={() => onTabChange?.(id)}
-        >
-          {labels[id]}
-        </button>
-      {/each}
+    <div class="node-inspector__bar">
+      <Tabs
+        idBase="node-inspector"
+        ariaLabel={msgs.tabsLabel}
+        tabs={tabs.map((id) => ({ value: id, label: labels[id] }))}
+        value={active}
+        onchange={(v) => onTabChange?.(v as NodeInspectorTab)}
+      />
     </div>
     <div
       role="tabpanel"
@@ -91,30 +85,6 @@
 
 <style>
   .node-inspector__bar {
-    display: flex;
-    gap: var(--fd-space-2xs, 2px);
-    border-bottom: 1px solid var(--fd-border);
     margin-bottom: var(--fd-space-md);
-  }
-
-  .node-inspector__tab {
-    padding: 0.375rem 0.75rem;
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: var(--fd-muted-foreground);
-    transition: all var(--fd-transition-fast);
-  }
-
-  .node-inspector__tab:hover {
-    color: var(--fd-foreground);
-  }
-
-  .node-inspector__tab--active {
-    color: var(--fd-foreground);
-    border-bottom-color: var(--fd-primary);
   }
 </style>

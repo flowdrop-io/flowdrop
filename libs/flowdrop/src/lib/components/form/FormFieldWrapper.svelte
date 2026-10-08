@@ -89,7 +89,7 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    font-size: 0.8125rem;
+    font-size: var(--fd-field-label-size);
     font-weight: 600;
     color: var(--fd-foreground);
     letter-spacing: -0.01em;

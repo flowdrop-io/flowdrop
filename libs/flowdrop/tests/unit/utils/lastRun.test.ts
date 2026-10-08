@@ -60,7 +60,7 @@ describe('describeLastRun', () => {
       info({ lastExecuted: '2026-01-01T00:00:02Z', lastExecutionDuration: 1500 })
     )!;
     expect(view.status).toBe('completed');
-    expect(view.durationLabel).toBe('1.5s');
+    expect(view.durationLabel).toBe('1.5 s');
     expect(view.completed).toBe('2026-01-01T00:00:02Z');
     expect(view.input).toBeNull();
     expect(view.error).toBeNull();
@@ -85,7 +85,7 @@ describe('describeLastRun', () => {
       })
     )!;
     expect(view.executions).toBe(2);
-    expect(view.durationLabel).toBe('2.5ms');
+    expect(view.durationLabel).toBe('2.5 ms');
     expect(view.started).toBe('s');
     expect(view.input).toContain('"q": 1');
     expect(view.tokens).toBe(12);

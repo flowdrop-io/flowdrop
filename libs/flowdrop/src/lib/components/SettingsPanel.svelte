@@ -29,15 +29,13 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Tabs from './primitives/Tabs.svelte';
+  import Button from './primitives/Button.svelte';
   import { SchemaForm } from '$lib/form/index.js';
   import { m } from '$lib/messages/index.js';
   import type { ConfigSchema } from '$lib/types/index.js';
   import type { SettingsCategory } from '$lib/types/settings.js';
-  import {
-    SETTINGS_CATEGORIES,
-    SETTINGS_CATEGORY_LABELS,
-    SETTINGS_CATEGORY_ICONS
-  } from '$lib/types/settings.js';
+  import { SETTINGS_CATEGORIES, SETTINGS_CATEGORY_LABELS } from '$lib/types/settings.js';
   import {
     getSettings,
     updateSettings,
@@ -385,66 +383,18 @@
       resetSettings();
     }
   }
-
-  /**
-   * Handle tab keyboard navigation
-   */
-  function handleTabKeydown(event: KeyboardEvent, index: number): void {
-    const tabs = categories;
-    let newIndex = index;
-
-    switch (event.key) {
-      case 'ArrowLeft':
-        newIndex = index > 0 ? index - 1 : tabs.length - 1;
-        break;
-      case 'ArrowRight':
-        newIndex = index < tabs.length - 1 ? index + 1 : 0;
-        break;
-      case 'Home':
-        newIndex = 0;
-        break;
-      case 'End':
-        newIndex = tabs.length - 1;
-        break;
-      default:
-        return;
-    }
-
-    event.preventDefault();
-    activeTab = tabs[newIndex];
-
-    // Focus the new tab
-    const tabElement = document.querySelector(
-      `[data-tab="${tabs[newIndex]}"]`
-    ) as HTMLElement | null;
-    tabElement?.focus();
-  }
 </script>
 
 <div class="flowdrop-scope flowdrop-settings-panel {className}">
   <!-- Tab Navigation -->
-  <div
-    class="flowdrop-settings-panel__tabs"
-    role="tablist"
-    aria-label={m().layout.settingsCategories}
-  >
-    {#each categories as category, index (category)}
-      <button
-        class="flowdrop-settings-panel__tab"
-        class:flowdrop-settings-panel__tab--active={activeTab === category}
-        role="tab"
-        aria-selected={activeTab === category}
-        aria-controls="{uid}-panel-{category}"
-        id="{uid}-tab-{category}"
-        data-tab={category}
-        tabindex={activeTab === category ? 0 : -1}
-        onclick={() => (activeTab = category)}
-        onkeydown={(e) => handleTabKeydown(e, index)}
-      >
-        <Icon icon={SETTINGS_CATEGORY_ICONS[category]} class="flowdrop-settings-panel__tab-icon" />
-        <span class="flowdrop-settings-panel__tab-label">{SETTINGS_CATEGORY_LABELS[category]}</span>
-      </button>
-    {/each}
+  <div class="flowdrop-settings-panel__tabs">
+    <Tabs
+      idBase={uid}
+      ariaLabel={m().layout.settingsCategories}
+      tabs={categories.map((c) => ({ value: c, label: SETTINGS_CATEGORY_LABELS[c] }))}
+      value={activeTab}
+      onchange={(v) => (activeTab = v as SettingsCategory)}
+    />
   </div>
 
   <!-- Tab Panels -->
@@ -474,49 +424,41 @@
   <div class="flowdrop-settings-panel__footer">
     <div class="flowdrop-settings-panel__footer-start">
       {#if showResetButton}
-        <button
-          class="flowdrop-settings-panel__btn flowdrop-settings-panel__btn--outline"
+        <Button
+          size="lg"
+          variant="ghost"
           onclick={handleReset}
           title="Reset current category to defaults"
         >
-          <Icon icon="mdi:refresh" />
-          <span>Reset</span>
-        </button>
-        <button
-          class="flowdrop-settings-panel__btn flowdrop-settings-panel__btn--ghost"
+          Reset
+        </Button>
+        <Button
+          size="lg"
+          variant="ghost"
           onclick={handleResetAll}
           title="Reset all settings to defaults"
         >
           Reset All
-        </button>
+        </Button>
       {/if}
     </div>
 
     <div class="flowdrop-settings-panel__footer-end">
       {#if showSyncButton}
-        <button
-          class="flowdrop-settings-panel__btn flowdrop-settings-panel__btn--secondary"
+        <Button
+          size="lg"
+          variant="secondary"
           onclick={handleSync}
           disabled={isSyncing}
+          loading={isSyncing}
           title="Sync settings to cloud"
         >
-          {#if isSyncing}
-            <Icon icon="mdi:loading" class="flowdrop-settings-panel__spin" />
-            <span>Syncing...</span>
-          {:else}
-            <Icon icon="mdi:cloud-upload" />
-            <span>Sync to Cloud</span>
-          {/if}
-        </button>
+          {isSyncing ? 'Syncing...' : 'Sync to Cloud'}
+        </Button>
       {/if}
 
       {#if onClose}
-        <button
-          class="flowdrop-settings-panel__btn flowdrop-settings-panel__btn--primary"
-          onclick={onClose}
-        >
-          <span>Close</span>
-        </button>
+        <Button size="lg" variant="primary" onclick={onClose}>Close</Button>
       {/if}
     </div>
   </div>
@@ -546,46 +488,9 @@
 
   /* Tabs */
   .flowdrop-settings-panel__tabs {
-    display: flex;
-    gap: var(--fd-space-3xs);
-    padding: var(--fd-space-md);
+    padding: var(--fd-space-sm) var(--fd-space-md);
     border-bottom: 1px solid var(--fd-border);
     overflow-x: auto;
-  }
-
-  .flowdrop-settings-panel__tab {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs) var(--fd-space-md);
-    border: none;
-    border-radius: var(--fd-radius-md);
-    background-color: transparent;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    white-space: nowrap;
-  }
-
-  .flowdrop-settings-panel__tab:hover {
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
-  }
-
-  .flowdrop-settings-panel__tab--active {
-    background-color: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-  }
-
-  .flowdrop-settings-panel__tab--active:hover {
-    background-color: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-  }
-
-  :global(.flowdrop-settings-panel__tab-icon) {
-    font-size: var(--fd-text-base);
   }
 
   /* Content */
@@ -618,66 +523,6 @@
     display: flex;
     gap: var(--fd-space-xs);
     align-items: center;
-  }
-
-  /* Buttons */
-  .flowdrop-settings-panel__btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs) var(--fd-space-md);
-    border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    border: 1px solid transparent;
-  }
-
-  .flowdrop-settings-panel__btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .flowdrop-settings-panel__btn--primary {
-    background-color: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-    border-color: var(--fd-primary);
-  }
-
-  .flowdrop-settings-panel__btn--primary:hover:not(:disabled) {
-    opacity: 0.9;
-  }
-
-  .flowdrop-settings-panel__btn--secondary {
-    background-color: var(--fd-secondary);
-    color: var(--fd-secondary-foreground);
-    border-color: var(--fd-border);
-  }
-
-  .flowdrop-settings-panel__btn--secondary:hover:not(:disabled) {
-    background-color: var(--fd-muted);
-  }
-
-  .flowdrop-settings-panel__btn--outline {
-    background-color: transparent;
-    color: var(--fd-foreground);
-    border-color: var(--fd-border);
-  }
-
-  .flowdrop-settings-panel__btn--outline:hover:not(:disabled) {
-    background-color: var(--fd-muted);
-  }
-
-  .flowdrop-settings-panel__btn--ghost {
-    background-color: transparent;
-    color: var(--fd-muted-foreground);
-    border-color: transparent;
-  }
-
-  .flowdrop-settings-panel__btn--ghost:hover:not(:disabled) {
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
   }
 
   /* Status Indicators */

@@ -334,8 +334,8 @@
     padding: var(--fd-space-xs);
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    box-shadow: var(--fd-shadow-lg);
+    border-radius: var(--fd-menu-radius);
+    box-shadow: var(--fd-menu-shadow);
     font-family: var(--fd-font-sans);
   }
 
@@ -351,11 +351,13 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    justify-content: center;
     gap: 1px;
     width: 100%;
     padding: var(--fd-space-sm);
+    min-height: var(--fd-menu-item-height);
     border: none;
-    border-radius: var(--fd-radius-sm);
+    border-radius: var(--fd-menu-item-radius);
     background: transparent;
     color: var(--fd-foreground);
     font: inherit;
@@ -411,8 +413,6 @@
     color: var(--fd-muted-foreground);
     font-size: var(--fd-text-xs);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
 
   .flowdrop-ui-menu__separator {

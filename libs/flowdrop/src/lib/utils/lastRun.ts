@@ -8,7 +8,7 @@
  */
 
 import type { NodeExecutionInfo, NodeExecutionStatus } from '../types/index.js';
-import { formatMicroseconds } from './duration.js';
+import { formatStepDuration } from './duration.js';
 
 export interface LastRunView {
   status: NodeExecutionStatus;
@@ -77,7 +77,7 @@ export function describeLastRun(info: NodeExecutionInfo | undefined): LastRunVie
   return {
     status: info.status,
     executions: Math.max(info.executionCount, info.jobs?.length ?? 0, 1),
-    durationLabel: formatMicroseconds(us),
+    durationLabel: formatStepDuration(us === undefined ? undefined : us / 1000),
     started: job?.started ?? null,
     completed: job?.completed ?? info.lastExecuted ?? null,
     tokens: extractTokens(output),

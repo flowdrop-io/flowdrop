@@ -192,8 +192,8 @@
     padding: 0.25rem;
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    box-shadow: var(--fd-shadow-lg);
+    border-radius: var(--fd-menu-radius);
+    box-shadow: var(--fd-menu-shadow);
     color: var(--fd-foreground);
     font-size: var(--fd-text-sm);
     outline: none;
@@ -205,8 +205,9 @@
     gap: 0.5rem;
     width: 100%;
     padding: 0.375rem 0.5rem;
+    min-height: var(--fd-menu-item-height);
     border: none;
-    border-radius: var(--fd-radius-sm);
+    border-radius: var(--fd-menu-item-radius);
     background: none;
     color: inherit;
     font: inherit;

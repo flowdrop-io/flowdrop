@@ -799,7 +799,7 @@
     min-height: 2.625rem;
     padding: var(--fd-space-3xs) 2.5rem var(--fd-space-3xs) var(--fd-space-md);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     font-size: var(--fd-text-sm);
     font-family: inherit;
     color: var(--fd-foreground);
@@ -995,7 +995,7 @@
     list-style: none;
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     box-shadow: var(--fd-shadow-lg);
     overflow-y: auto;
     max-height: inherit;

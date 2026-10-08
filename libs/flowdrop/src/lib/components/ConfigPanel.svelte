@@ -59,7 +59,7 @@
     id,
     description,
     details = [],
-    configTitle = 'Configuration',
+    configTitle,
     onClose,
     onSwap,
     expandable = true,
@@ -114,7 +114,9 @@
   <div class="config-panel__content">
     {#if children}
       <div class="config-panel__section">
-        <h3 class="config-panel__section-title">{configTitle}</h3>
+        {#if configTitle}
+          <h3 class="config-panel__section-title">{configTitle}</h3>
+        {/if}
         {@render children()}
       </div>
     {/if}
@@ -210,9 +212,13 @@
 
   .config-panel__details {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--fd-border-muted);
-    background-color: var(--fd-card);
+    border-bottom: 1px solid var(--fd-inspector-details-rule);
+    background-color: var(--fd-inspector-details-bg);
     flex-shrink: 0;
+  }
+
+  .config-panel :global(.flowdrop-ui-panel-header__title) {
+    font-size: var(--fd-inspector-title-size);
   }
 
   .config-panel__content {
@@ -232,8 +238,6 @@
     font-size: var(--fd-text-xs);
     font-weight: 600;
     color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   /* Compact Mode Styles */

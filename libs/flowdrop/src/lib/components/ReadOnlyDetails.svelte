@@ -5,6 +5,8 @@
 -->
 
 <script lang="ts">
+  import Icon from '@iconify/svelte';
+  import IconButton from './primitives/IconButton.svelte';
   import { m } from '$lib/messages/index.js';
 
   /**
@@ -51,28 +53,15 @@
     <span class="readonly-details__label">ID</span>
     <div class="readonly-details__id-row">
       <code class="readonly-details__id">{id}</code>
-      <button
+      <IconButton
+        size="sm"
         class="readonly-details__copy-btn"
-        onclick={copyId}
         title={m().navigation.copyId}
-        aria-label={m().navigation.copyId}
+        ariaLabel={m().navigation.copyId}
+        onclick={copyId}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          stroke-width="2"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
-          />
-        </svg>
-      </button>
+        <Icon icon="heroicons:clipboard-document" />
+      </IconButton>
     </div>
 
     <!-- Dynamic label-value pairs -->
@@ -97,11 +86,9 @@
 
   .readonly-details__title {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: var(--fd-text-xs);
     font-weight: 600;
     color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   .readonly-details__grid {
@@ -112,13 +99,13 @@
   }
 
   .readonly-details__label {
-    font-size: 0.75rem;
+    font-size: var(--fd-text-xs);
     font-weight: 500;
     color: var(--fd-muted-foreground);
   }
 
   .readonly-details__value {
-    font-size: 0.8125rem;
+    font-size: var(--fd-inspector-meta-size);
     color: var(--fd-foreground);
     font-weight: 500;
   }
@@ -126,41 +113,22 @@
   .readonly-details__id-row {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem;
+    min-width: 0;
   }
 
   .readonly-details__id {
-    font-size: 0.75rem;
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+    font-size: var(--fd-text-xs);
+    font-family: var(--fd-font-mono);
     color: var(--fd-muted-foreground);
-    background-color: var(--fd-subtle);
-    padding: 0.125rem 0.375rem;
+    background-color: var(--fd-id-chip-bg);
+    padding: var(--fd-id-chip-padding);
     border-radius: var(--fd-radius-sm);
     word-break: break-all;
   }
 
-  .readonly-details__copy-btn {
-    background: transparent;
-    border: none;
-    padding: 0.25rem;
-    cursor: pointer;
-    color: var(--fd-muted-foreground);
-    border-radius: var(--fd-radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-  }
-
-  .readonly-details__copy-btn:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
-  }
-
-  .readonly-details__copy-btn:active {
-    color: var(--fd-foreground);
+  .readonly-details__id-row :global(.readonly-details__copy-btn) {
+    flex: none;
   }
 
   .readonly-details__description {

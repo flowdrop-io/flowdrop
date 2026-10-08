@@ -100,7 +100,7 @@
     color: var(--fd-muted-foreground);
   }
   .flowdrop-ui-icon-button--ghost:hover:not(:disabled) {
-    background-color: var(--fd-muted);
+    background-color: var(--fd-button-ghost-hover);
     color: var(--fd-foreground);
   }
   .flowdrop-ui-icon-button--ghost.flowdrop-ui-icon-button--active {
@@ -110,7 +110,7 @@
 
   .flowdrop-ui-icon-button--secondary {
     background-color: var(--fd-background);
-    border-color: var(--fd-border);
+    border-color: var(--fd-button-secondary-border);
     color: var(--fd-foreground);
   }
   .flowdrop-ui-icon-button--secondary:hover:not(:disabled) {

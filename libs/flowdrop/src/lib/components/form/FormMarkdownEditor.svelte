@@ -592,7 +592,7 @@
     gap: 0.125rem;
     border: 1px solid var(--fd-border);
     border-bottom: none;
-    border-radius: var(--fd-radius-lg) var(--fd-radius-lg) 0 0;
+    border-radius: var(--fd-control-radius) var(--fd-control-radius) 0 0;
     background-color: var(--fd-subtle);
     padding: 0.375rem 0.5rem;
   }
@@ -646,7 +646,7 @@
 
   .form-markdown-editor__body {
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
     /* Match plain form fields: rest on the input surface, not --fd-muted. */
     background-color: var(--fd-background);
@@ -680,7 +680,7 @@
     justify-content: flex-end;
     border: 1px solid var(--fd-border);
     border-top: none;
-    border-radius: 0 0 var(--fd-radius-lg) var(--fd-radius-lg);
+    border-radius: 0 0 var(--fd-control-radius) var(--fd-control-radius);
     background-color: var(--fd-muted);
     padding: 0.375rem 0.75rem;
     font-size: var(--fd-text-xs);
@@ -689,12 +689,12 @@
 
   /* When no toolbar, body gets top radius */
   .form-markdown-editor:not(:has(.form-markdown-editor__toolbar)) .form-markdown-editor__body {
-    border-radius: var(--fd-radius-lg) var(--fd-radius-lg) 0 0;
+    border-radius: var(--fd-control-radius) var(--fd-control-radius) 0 0;
   }
 
   /* When no status bar, body gets bottom radius */
   .form-markdown-editor:not(:has(.form-markdown-editor__status)) .form-markdown-editor__body {
-    border-radius: 0 0 var(--fd-radius-lg) var(--fd-radius-lg);
+    border-radius: 0 0 var(--fd-control-radius) var(--fd-control-radius);
   }
 
   /* When no toolbar AND no status bar, body gets full radius */
@@ -702,7 +702,7 @@
       :has(.form-markdown-editor__status)
     )
     .form-markdown-editor__body {
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
   }
 
   /* ── CM6 overrides ─────────────────────────────── */

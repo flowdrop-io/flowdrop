@@ -129,6 +129,53 @@ export const graphiteSkin: FlowDropSkin = {
     'error-foreground': '#ffffff',
     'error-muted': '#fce8eb',
 
+    /* ----- Controls: 32px, strong rule, accent border + 3px ring on focus ----- */
+    'field-height': '2rem',
+    'field-height-sm': '1.75rem',
+    'field-padding': '0 0.625rem',
+    'field-padding-multiline': '0.375rem 0.625rem',
+    'field-min-height-multiline': '4rem',
+    'field-border-color': 'var(--fd-border-strong)',
+    'field-shadow': 'none',
+    'field-focus-shadow': '0 0 0 3px var(--fd-accent-muted)',
+    'field-focus-outline': 'none',
+    'field-label-size': '0.75rem',
+    'field-help-size': '0.75rem',
+
+    /* ----- Buttons: secondary = white + strong rule, ghost = subtle hover, danger = red text ----- */
+    'size-btn-min': '2rem',
+    'button-secondary-border': 'var(--fd-border-strong)',
+    'button-ghost-hover': 'var(--fd-subtle)',
+    'button-danger-bg': 'transparent',
+    'button-danger-fg': 'var(--fd-error)',
+    'button-danger-border': 'transparent',
+    'button-danger-hover-bg': 'var(--fd-error-muted)',
+    'button-danger-hover-fg': 'var(--fd-error)',
+
+    /* ----- Menus: 8px, float elevation, 32px items ----- */
+    'menu-radius': '8px',
+    'menu-shadow': 'var(--fd-elevation-float)',
+    'menu-item-radius': '6px',
+    'menu-item-height': '2rem',
+
+    /* ----- Inspector sheet, meta list, code blocks, modal ----- */
+    'sheet-inset': '8px',
+    'sheet-radius': '8px',
+    'sheet-border-width': '1px',
+    'sheet-border': 'var(--fd-float-border)',
+    'inspector-details-bg': 'transparent',
+    'inspector-details-rule': 'transparent',
+    'inspector-title-size': '0.875rem',
+    'inspector-meta-size': '0.75rem',
+    'id-chip-bg': 'transparent',
+    'id-chip-padding': '0',
+    'code-block-bg': 'var(--fd-subtle)',
+    'code-block-border': 'none',
+    'code-block-radius': '6px',
+    'modal-radius': '12px',
+    'modal-header-height': '3rem',
+    'modal-title-size': '0.9375rem',
+
     'scrollbar-thumb': '#d5d9e0',
     'scrollbar-thumb-hover': '#b4bbc5',
     'scrollbar-track': 'transparent',

@@ -123,7 +123,7 @@
 
   .flowdrop-ui-field__label {
     color: var(--fd-foreground);
-    font-size: var(--fd-text-xs);
+    font-size: var(--fd-field-label-size, var(--fd-text-xs));
     font-weight: 600;
     line-height: 1.3;
   }
@@ -158,7 +158,7 @@
   .flowdrop-ui-field__help,
   .flowdrop-ui-field__error {
     margin: 0;
-    font-size: var(--fd-text-2xs);
+    font-size: var(--fd-field-help-size);
     line-height: 1.4;
   }
 

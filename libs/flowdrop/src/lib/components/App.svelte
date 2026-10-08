@@ -20,6 +20,7 @@
   import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
   import ConfigForm from '$lib/components/ConfigForm.svelte';
   import NodeInspector from '$lib/components/NodeInspector.svelte';
+  import Tabs from '$lib/components/primitives/Tabs.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
   import WorkflowPlaygroundSettings from '$lib/components/WorkflowPlaygroundSettings.svelte';
@@ -1758,39 +1759,24 @@
 -->
 {#snippet workflowSettingsTabs()}
   <div class="workflow-settings-tabs">
-    <div class="workflow-settings-tabs__bar" role="tablist">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={activeWorkflowSettingsTab === 'settings'}
-        class="workflow-settings-tabs__tab"
-        class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'settings'}
-        onclick={() => (workflowSettingsTab = 'settings')}
-      >
-        {mergedMessages.navigation.workflowSettingsPanelSubtitle}
-      </button>
-      <button
-        type="button"
-        role="tab"
-        aria-selected={activeWorkflowSettingsTab === 'interface'}
-        class="workflow-settings-tabs__tab"
-        class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'interface'}
-        onclick={() => (workflowSettingsTab = 'interface')}
-      >
-        {mergedMessages.navigation.workflowSettingsInterfaceTab}
-      </button>
-      {#if fd.workflow.current?.playground !== undefined}
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeWorkflowSettingsTab === 'playground'}
-          class="workflow-settings-tabs__tab"
-          class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'playground'}
-          onclick={() => (workflowSettingsTab = 'playground')}
-        >
-          {mergedMessages.navigation.workflowSettingsPlaygroundTab}
-        </button>
-      {/if}
+    <div class="workflow-settings-tabs__bar">
+      <Tabs
+        ariaLabel={mergedMessages.navigation.workflowSettingsPanelSubtitle}
+        tabs={[
+          { value: 'settings', label: mergedMessages.navigation.workflowSettingsPanelSubtitle },
+          { value: 'interface', label: mergedMessages.navigation.workflowSettingsInterfaceTab },
+          ...(fd.workflow.current?.playground !== undefined
+            ? [
+                {
+                  value: 'playground',
+                  label: mergedMessages.navigation.workflowSettingsPlaygroundTab
+                }
+              ]
+            : [])
+        ]}
+        value={activeWorkflowSettingsTab}
+        onchange={(v) => (workflowSettingsTab = v as typeof workflowSettingsTab)}
+      />
     </div>
     <div
       class="workflow-settings-tabs__panel"
@@ -1849,9 +1835,9 @@
       <div class="config-surface__content">
         {#if activeConfig.kind === 'node'}
           <div class="config-surface__section">
-            <h3 class="config-surface__section-title">
-              {activeConfig.configTitle ?? 'Configuration'}
-            </h3>
+            {#if activeConfig.configTitle}
+              <h3 class="config-surface__section-title">{activeConfig.configTitle}</h3>
+            {/if}
             {@render nodeInspectorEl(activeConfig.node)}
           </div>
         {:else}
@@ -1915,7 +1901,7 @@
       id={activeConfig.id}
       description={activeConfig.description}
       details={activeConfig.details}
-      configTitle={activeConfig.configTitle ?? 'Configuration'}
+      configTitle={activeConfig.configTitle}
       onClose={configClosable ? closeActiveConfig : undefined}
       onSwap={activeConfig.kind === 'node' && canvasEditable && !testMode && features.enableNodeSwap
         ? startSwap
@@ -2348,13 +2334,17 @@
   /* Test mode's inspector: a sheet over the canvas's right edge; the canvas does not reflow. */
   .inspector-sheet {
     position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    top: var(--fd-sheet-inset);
+    right: var(--fd-sheet-inset);
+    bottom: var(--fd-sheet-inset);
     z-index: 56;
     width: min(360px, 100%);
+    overflow: hidden;
     background: var(--fd-panel-bg, var(--fd-background));
-    border-left: 1px solid var(--fd-border);
+    border-style: solid;
+    border-width: var(--fd-sheet-border-width);
+    border-color: var(--fd-sheet-border);
+    border-radius: var(--fd-sheet-radius);
     box-shadow: var(--fd-shadow-lg);
   }
 
@@ -2442,8 +2432,8 @@
 
   .config-surface__details {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--fd-border-muted);
-    background-color: var(--fd-card);
+    border-bottom: 1px solid var(--fd-inspector-details-rule);
+    background-color: var(--fd-inspector-details-bg);
     flex-shrink: 0;
   }
 
@@ -2465,8 +2455,6 @@
     font-size: var(--fd-text-xs);
     font-weight: 600;
     color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   /*
@@ -2483,30 +2471,6 @@
   }
 
   .workflow-settings-tabs__bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-    border-bottom: 1px solid var(--fd-border);
-  }
-
-  .workflow-settings-tabs__tab {
-    padding: 0.375rem 0.75rem;
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: var(--fd-muted-foreground);
-    transition: all var(--fd-transition-fast);
-  }
-
-  .workflow-settings-tabs__tab:hover {
-    color: var(--fd-foreground);
-  }
-
-  .workflow-settings-tabs__tab--active {
-    color: var(--fd-foreground);
-    border-bottom-color: var(--fd-primary);
+    margin-bottom: var(--fd-space-xs, 0.5rem);
   }
 </style>

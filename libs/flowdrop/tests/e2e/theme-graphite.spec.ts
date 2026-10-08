@@ -14,7 +14,7 @@ const modal = (page: Page): Locator => editorRoot(page).locator('.flowdrop-setti
 async function chooseUiTheme(page: Page, value: string): Promise<void> {
   await editorRoot(page).locator('.flowdrop-navbar__settings-btn').click();
   await expect(modal(page)).toBeVisible({ timeout: 5000 });
-  await modal(page).locator('[role="tab"][data-tab="ui"]').click();
+  await modal(page).getByRole('tab', { name: 'UI', exact: true }).click();
   const select = modal(page)
     .locator('select')
     .filter({ has: page.locator('option[value="graphite"]') });

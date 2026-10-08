@@ -1,6 +1,6 @@
 {
   "src/lib/components/App.svelte": {
-    "button": 5,
+    "button": 2,
     "colour": 2,
     "font-size": 2
   },
@@ -53,9 +53,6 @@
     "font-size": 3,
     "radius": 2
   },
-  "src/lib/components/NodeInspector.svelte": {
-    "button": 1
-  },
   "src/lib/components/NodeLastRun.svelte": {
     "button": 2,
     "colour": 2
@@ -76,8 +73,7 @@
     "colour": 2
   },
   "src/lib/components/ReadOnlyDetails.svelte": {
-    "button": 1,
-    "font-size": 5
+    "font-size": 1
   },
   "src/lib/components/SchemaForm.svelte": {
     "button": 2,
@@ -89,7 +85,6 @@
     "colour": 2
   },
   "src/lib/components/SettingsPanel.svelte": {
-    "button": 5,
     "colour": 2
   },
   "src/lib/components/StatusIcon.svelte": {
@@ -155,9 +150,6 @@
   },
   "src/lib/components/form/FormCodeEditor.svelte": {
     "colour": 4,
-    "font-size": 1
-  },
-  "src/lib/components/form/FormFieldWrapper.svelte": {
     "font-size": 1
   },
   "src/lib/components/form/FormMarkdownEditor.svelte": {
