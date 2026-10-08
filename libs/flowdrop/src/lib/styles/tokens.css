@@ -303,7 +303,8 @@
   --fd-leading-relaxed: 1.6; /* @public */
 
   /* ----- FONT FAMILIES ----- */
-  /* The editor inherits the host page's font. This stack is for UI the
+  /* A skin may name a font (FlowDropSkin.font): the scoped skin rule then sets this token and
+     font-family on the editor root. Without one, the editor inherits the host page's font. This stack is for UI the
      library mounts outside the editor's subtree (the WebMCP confirm dialog
      on document.body), where "inherit" means whatever the host's body has —
      on Drupal admin themes, the browser's serif fallback. */
@@ -449,7 +450,9 @@
   ); /* @public */
 
   /* ----- SKIN DISPLAY CONTROL TOKENS ----- */
-  /* @public — override these in a skin's tokens dict to toggle visual variants */
+  /* @public @deprecated — set FlowDropThemeConfig.display (nodeIcon, sidebarList, sidebarSearch,
+     sidebarHeader, navbarActions) instead. These tokens remain a fallback until 3.0: the theme
+     config wins when it sets a value, a token set in CSS or in a skin's tokens applies otherwise. */
   --fd-node-icon-display: flex; /* @public  show squircle icon wrapper */
   --fd-node-circle-display: none; /* @public  hide circle dot */
   --fd-sidebar-search-display: flex; /* @public  show sidebar search input */

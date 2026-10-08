@@ -29,6 +29,9 @@ export function resolveTheme(theme: FlowDropTheme | FlowDropThemeName | undefine
       name: baseName,
       skin: theme.skin
         ? {
+            ...(base.skin?.font || theme.skin.font
+              ? { font: theme.skin.font ?? base.skin?.font }
+              : {}),
             tokens: {
               ...(base.skin?.tokens ?? {}),
               ...(theme.skin.tokens ?? {})
@@ -36,6 +39,10 @@ export function resolveTheme(theme: FlowDropTheme | FlowDropThemeName | undefine
           }
         : base.skin,
       config: {
+        display: {
+          ...base.config?.display,
+          ...theme.config?.display
+        },
         sidebar: {
           ...base.config?.sidebar,
           ...theme.config?.sidebar

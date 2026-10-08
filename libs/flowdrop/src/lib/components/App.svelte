@@ -489,7 +489,7 @@
 
   $effect(() => {
     if (typeof document === 'undefined') return;
-    const css = buildScopedSkinCss(scopeId, resolvedTheme.skin);
+    const css = buildScopedSkinCss(scopeId, resolvedTheme.skin, themeConfig?.display);
     if (!css) return;
 
     const style = document.createElement('style');

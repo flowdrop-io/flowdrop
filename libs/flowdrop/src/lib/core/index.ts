@@ -551,7 +551,12 @@ export { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '../schemas/index.js';
 // Theme System (FlowDrop UI themes — skin + config bundles)
 // ============================================================================
 
-export type { FlowDropTheme, FlowDropThemeName, FlowDropThemeConfig } from '../types/theme.js';
+export type {
+  FlowDropTheme,
+  FlowDropThemeName,
+  FlowDropThemeConfig,
+  FlowDropDisplayConfig
+} from '../types/theme.js';
 export { defaultTheme, minimalTheme, resolveTheme } from '../themes/index.js';
 
 // Skin primitives — for custom theme authors who need to compose skins

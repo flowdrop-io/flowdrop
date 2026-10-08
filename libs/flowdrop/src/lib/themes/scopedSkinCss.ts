@@ -1,4 +1,5 @@
 import type { FlowDropSkin, FlowDropSkinTokens } from '../types/skin.js';
+import type { FlowDropDisplayConfig } from '../types/theme.js';
 import { LIGHT_ALIASES, DARK_ALIASES } from '../styles/tokenAliases.js';
 import { SCOPE_ATTR } from '../utils/portal.js';
 
@@ -40,11 +41,64 @@ export function aliasClosure(
   return result;
 }
 
-function rule(selector: string, declarations: Record<string, string>): string {
-  const body = Object.entries(declarations)
-    .map(([k, v]) => `  --fd-${k}: ${v};`)
-    .join('\n');
+function rule(
+  selector: string,
+  declarations: Record<string, string>,
+  rawDeclarations: readonly string[] = []
+): string {
+  const body = [
+    ...Object.entries(declarations).map(([k, v]) => `  --fd-${k}: ${v};`),
+    ...rawDeclarations.map((d) => `  ${d};`)
+  ].join('\n');
   return `${selector} {\n${body}\n}\n`;
+}
+
+/**
+ * The `--fd-*-display` tokens a theme's `config.display` stands for.
+ *
+ * Structure used to be switched by skin tokens; it now lives in the theme
+ * config. The components still read the tokens, so the config is translated
+ * here, and written *after* the skin's own tokens: config wins, a token set by
+ * the skin (or by the host's CSS, when the config sets nothing) is the
+ * deprecated fallback until 3.0, and neither falls through to tokens.css.
+ */
+export function displayTokens(display: FlowDropDisplayConfig | undefined): FlowDropSkinTokens {
+  const out: FlowDropSkinTokens = {};
+  if (!display) return out;
+  if (display.nodeIcon) {
+    const dot = display.nodeIcon === 'dot';
+    out['node-icon-display'] = dot ? 'none' : 'flex';
+    out['node-circle-display'] = dot ? 'flex' : 'none';
+  }
+  if (display.sidebarList) {
+    const flat = display.sidebarList === 'flat';
+    out['sidebar-card-display'] = flat ? 'none' : 'block';
+    out['sidebar-flat-display'] = flat ? 'block' : 'none';
+  }
+  if (display.sidebarSearch !== undefined) {
+    out['sidebar-search-display'] = display.sidebarSearch ? 'flex' : 'none';
+  }
+  if (display.sidebarHeader !== undefined) {
+    out['sidebar-header-display'] = display.sidebarHeader ? 'flex' : 'none';
+  }
+  if (display.navbarActions) {
+    const split = display.navbarActions === 'split';
+    out['navbar-split-display'] = split ? 'flex' : 'none';
+    out['navbar-dropdown-display'] = split ? 'none' : 'flex';
+  }
+  return out;
+}
+
+/** A skin's light tokens with its font and the theme's display switches folded in. */
+export function effectiveSkinTokens(
+  skin: Pick<FlowDropSkin, 'tokens' | 'font'> | undefined,
+  display?: FlowDropDisplayConfig
+): FlowDropSkinTokens {
+  return {
+    ...(skin?.tokens ?? {}),
+    ...(skin?.font ? { 'font-sans': skin.font } : {}),
+    ...displayTokens(display)
+  };
 }
 
 /** Dark-mode alias values: the light ones with the dark block's overrides applied. */
@@ -73,13 +127,15 @@ export function scopeSelector(scopeId: string): string {
  *   darkTokens → [data-theme='dark'] [data-fd-scope="id"]    (dark)
  *
  * data-theme stays page-global (on <html>, or any ancestor of the scope).
- * Returns '' when the skin sets nothing.
+ * `display` (the theme config's layout switches) is merged into the light tokens.
+ * Returns '' when the skin and display set nothing.
  */
 export function buildScopedSkinCss(
   scopeId: string,
-  skin: Pick<FlowDropSkin, 'tokens' | 'darkTokens'> | undefined
+  skin: Pick<FlowDropSkin, 'tokens' | 'darkTokens' | 'font'> | undefined,
+  display?: FlowDropDisplayConfig
 ): string {
-  const tokens: FlowDropSkinTokens = skin?.tokens ?? {};
+  const tokens: FlowDropSkinTokens = effectiveSkinTokens(skin, display);
   const darkTokens: FlowDropSkinTokens = skin?.darkTokens ?? {};
   const lightKeys = Object.keys(tokens);
   const darkKeys = Object.keys(darkTokens);
@@ -93,7 +149,12 @@ export function buildScopedSkinCss(
 
   const lightAliases = aliasClosure(lightKeys, LIGHT_ALIASES, skinSet);
   if (lightKeys.length > 0) {
-    css += rule(scope, { ...lightAliases, ...tokens });
+    // A named font also has to take effect: the editor otherwise inherits the host's.
+    css += rule(
+      scope,
+      { ...lightAliases, ...tokens },
+      skin?.font ? ['font-family: var(--fd-font-sans)'] : []
+    );
   }
 
   // Every alias the light rule redeclares shadows the :root dark value, so the

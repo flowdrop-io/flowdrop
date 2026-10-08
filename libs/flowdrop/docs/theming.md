@@ -321,6 +321,41 @@ Or via JavaScript:
 document.documentElement.setAttribute('data-theme', 'dark');
 ```
 
+## Layout Switches and Skin Fonts
+
+A skin changes the **look** (colours, radii, shadows, optionally a font). Which variant of a piece of chrome is shown is **structure**, and lives in the theme's `config.display`:
+
+```ts
+<App
+  theme={{
+    name: 'minimal',
+    config: { display: { nodeIcon: 'dot', sidebarList: 'flat', sidebarSearch: false } }
+  }}
+/>
+```
+
+| `config.display` field | Values (default first)    | Replaces the deprecated token(s)                            |
+| ---------------------- | ------------------------- | ----------------------------------------------------------- |
+| `nodeIcon`             | `'squircle'` \| `'dot'`   | `--fd-node-icon-display`, `--fd-node-circle-display`        |
+| `sidebarList`          | `'cards'` \| `'flat'`     | `--fd-sidebar-card-display`, `--fd-sidebar-flat-display`    |
+| `sidebarSearch`        | `true` \| `false`         | `--fd-sidebar-search-display`                               |
+| `sidebarHeader`        | `true` \| `false`         | `--fd-sidebar-header-display`                               |
+| `navbarActions`        | `'dropdown'` \| `'split'` | `--fd-navbar-split-display`, `--fd-navbar-dropdown-display` |
+
+Resolution order for each switch: the theme config, then the deprecated token (set in a skin's `tokens`, or in your own CSS), then the built-in default. A field the config leaves unset is left alone, so CSS written for 2.x keeps working.
+
+**Deprecated, removed in 3.0:** the six `*-display` tokens above (and `navbar-*-display`) as a way to switch structure. Move them to `config.display`. The built-in `minimal` theme already has.
+
+### Skin font
+
+A skin can name a font family:
+
+```ts
+const skin: FlowDropSkin = { font: "'Inter Variable', system-ui, sans-serif", tokens: {} };
+```
+
+The editor then uses it: `--fd-font-sans` is set and `font-family` applied on the editor's scope element, so the whole editor subtree and its portalled overlays pick it up. A skin without `font` changes nothing: the editor inherits the host page's font. The skin only names the family; load the `@font-face` yourself (the host page or, in Drupal, the library). List a fallback (`system-ui`) in the value so the editor stays readable if the face is missing. Setting only `tokens['font-sans']` still just styles UI mounted outside the editor.
+
 ## Best Practices
 
 1. **Use semantic tokens** - Override `--fd-primary` instead of `--fd-node-blue`
