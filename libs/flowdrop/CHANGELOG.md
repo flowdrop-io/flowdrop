@@ -223,6 +223,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Steps fold into one row per turn** in the Playground ("8 steps · 82 ms · 1 waiting ▸"), opening a
   compact table (node · status · runs · time; loops merge into one row with ×N, nested steps indent).
   A failed step's error stays visible under the row. Durations read 0.8 ms / 42 ms / 1.2 s, never µs.
+  The turn's run notices ("<workflow> started", a sub-workflow's "completed in …") fold in with it;
+  warnings and errors stay in the conversation.
   The ⋯ menu's **Show steps** became **Expand steps by default** (`playground.expandSteps`, off).
   No origin chip for Playground runs; the "Execution" header of the execution console is gone.
   Removed classes: `.execution-console__header|__icon|__title`, `.message-stream__log-group*`,
@@ -232,6 +234,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.header-menu__menu(--start|--end)` are now `.flowdrop-ui-menu` / `.flowdrop-ui-menu__popup`.
 - `Button` (internal) wraps the new button primitive: `outline` renders as `secondary`, `lg` as `md`
   (28 px), so `ThemeToggle` and the Playground-settings buttons are smaller.
+- **Form-first Playground.** A workflow with inputs and no chat opens on an **Inputs** card: one field
+  per input (array/object inputs are JSON fields with example chips from the interface's `examples` and
+  default), a blue **Run** (also ⌘↵ / Ctrl+↵ from any field), refusals named under Run, **Fill from last
+  run**, and this session's earlier runs below the card (pick one to refill, nothing runs). Chat + inputs:
+  the inputs fold into one "Inputs · n of m filled" row above the composer. A run-only workflow gets the
+  same blue Run (was green). A form interrupt keeps its schema form, framed by the amber "needs you" card.
+  Removed: the "Ready to run" empty state, the resize splitter between conversation and form
+  (`.playground__vertical-resizer*`), `.form-prompt__form-wrapper`.
+- **One panel header and one composer.** The Playground, the configuration panel (docked and popped
+  out), the configuration and settings dialogs, overlays and the Console share one header (40 px, 13 px
+  text); the Playground and AI Assistant share one composer (icon send/stop, attach as a paperclip in the
+  AI Assistant). "Save & send" is the send button's label plus a hint under the composer. "Nothing will
+  reply here" moved into the empty conversation, with a **Playground settings** button, and goes once a
+  message exists. The Console keeps its command line (history, autocomplete) in the same frame.
+  Removed classes: `.playground-header__spacer`, `.chat-input__textarea|__send-btn|__stop-btn|__run-btn|__no-inputs|__command-feedback-dismiss`,
+  `.control-panel__notice`, `.control-panel--notice`, `.ai-chat-panel__attach-add|__input-area|__input|__send`,
+  `.config-panel__header|__title|__actions|__action-btn|__close`, `.config-panel-modal__header|__title`,
+  `.config-modal__header|__title|__close-btn`, `.flowdrop-settings-modal__header|__title|__title-icon|__close`,
+  `.surface-overlay__header|__title|__close`, `.command-console__header|__title|__close`.
+- **Lighter frame.** The navbar is 48 px (`--fd-navbar-height`, was 60) with a smaller wordmark. The status
+  bar under the canvas is gone: the node count sits in the zoom control ("6 nodes", connections in its
+  title), with the cycle warning. The minimap is 120×72 and hides when the canvas is under 800 px wide
+  (`showMinimap` still wins). Removed classes: `.flowdrop-status-bar`, `.flowdrop-status-bar__content`,
+  `.flowdrop-text--error`; new `.fd-zoom-status__count`.
 - Test mode with nothing selected has **no right column**: the canvas takes the
   space the inspector used to hold (about 1070 px of a 1440 px window, beside the
   360 px Playground dock). Clicking a node (double-click still works) shows its inspector as a 360 px
@@ -303,6 +329,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   working (the `slate` skin still sets them) and go in 3.0.
 - `NodeStatusOverlay`'s `size` prop (no effect), `ExecutionLogs` (not rendered by any surface), messages
   `playground.logGroup` and `playground.executionConsole.header`.
+- Messages `playground.executionConsole.readyTitle` / `readyText` (the "Ready to run" state is gone).
 - The standalone Playground, in favour of the editor's **Test mode**:
   `Playground`, `PlaygroundStudio`, `PlaygroundApp`, `PlaygroundModal` and the
   `mountPlayground`, `mountPlaygroundStudio`, `mountPlaygroundApp` and
