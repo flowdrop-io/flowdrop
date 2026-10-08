@@ -363,6 +363,13 @@ export const defaultMessages = {
     closeConfigPanel: 'Close panel',
     closeConsole: 'Close console',
     swapNode: 'Swap node',
+    swapNodeTitle: 'Swap node type',
+    popOutConfig: 'Pop out configuration',
+    popOutConfigTitle: 'Pop out to a larger window',
+    dockConfig: 'Dock configuration back to sidebar',
+    dockConfigTitle: 'Dock back to sidebar',
+    dockConfigButton: 'Dock back to sidebar',
+    configPoppedOut: 'Configuration is open in a larger window.',
     backToNodeSelection: 'Back to node selection',
     loadSession: ({ name }: { name: string }) => `Load session: ${name}`
   },

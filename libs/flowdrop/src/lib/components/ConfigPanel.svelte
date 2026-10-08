@@ -124,23 +124,19 @@
 <!-- Header controls, shared by the docked panel and the popped-out modal. -->
 {#snippet headerActions(popped: boolean)}
   {#if popped}
-    <IconButton
-      ariaLabel="Dock configuration back to sidebar"
-      title="Dock back to sidebar"
-      onclick={dock}
-    >
+    <IconButton ariaLabel={m().layout.dockConfig} title={m().layout.dockConfigTitle} onclick={dock}>
       <Icon icon="heroicons:arrows-pointing-in" />
     </IconButton>
   {:else}
     {#if onSwap}
-      <IconButton ariaLabel={m().layout.swapNode} title="Swap node type" onclick={onSwap}>
+      <IconButton ariaLabel={m().layout.swapNode} title={m().layout.swapNodeTitle} onclick={onSwap}>
         <Icon icon="heroicons:arrows-right-left" />
       </IconButton>
     {/if}
     {#if expandable && !expanded}
       <IconButton
-        ariaLabel="Pop out configuration"
-        title="Pop out to a larger window"
+        ariaLabel={m().layout.popOutConfig}
+        title={m().layout.popOutConfigTitle}
         onclick={() => (expanded = true)}
       >
         <Icon icon="heroicons:arrows-pointing-out" />
@@ -165,8 +161,10 @@
     <!-- Content is popped out into the modal; show a lightweight placeholder. -->
     <div class="config-panel__popped">
       <Icon icon="heroicons:window" class="config-panel__popped-icon" />
-      <p class="config-panel__popped-text">Configuration is open in a larger window.</p>
-      <button class="config-panel__popped-btn" onclick={dock}> Dock back to sidebar </button>
+      <p class="config-panel__popped-text">{m().layout.configPoppedOut}</p>
+      <button class="config-panel__popped-btn" onclick={dock}>
+        {m().layout.dockConfigButton}
+      </button>
     </div>
   {:else}
     {@render panelContent()}
