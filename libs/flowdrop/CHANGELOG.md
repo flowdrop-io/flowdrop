@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `FlowDropThemeConfig.display` (`nodeIcon: 'squircle' | 'dot'`, `sidebarList: 'cards' | 'flat'`,
+  `sidebarSearch`, `sidebarHeader`, `navbarActions: 'dropdown' | 'split'`): typed layout switches in the
+  theme config. The `minimal` theme uses them. A skin can name a `font` (a CSS font-family; the host
+  loads the face); without one the editor still inherits the host font.
 - New `@public` design tokens: run-status roles `--fd-status-{running,completed,waiting,failed,skipped}`
   and `-soft` (mapped onto the existing info / success / warning / error / muted colours), control heights
   `--fd-control-sm` / `-md` / `-lg` (24 / 28 / 32 px) and `--fd-panel-header` (40 px).
@@ -196,6 +200,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Spacing sits on a 4 px grid: `--fd-space-2xs` 6 → 4 px, `--fd-space-sm` 10 → 8 px,
     `--fd-space-lg` 14 → 12 px.
   - `--fd-radius-md` 6 → 4 px (`sm` 4, `lg` 8, `xl` 12, `2xl` 16 are unchanged).
+- **Canvas toolbar.** Edit | Test moved from the navbar to a toolbar at the canvas's top-left, with the
+  run pill and the Console toggle. The mode switch is a radio group now (`role="radiogroup"`, items
+  `role="radio"` + `aria-checked`, was `aria-pressed` buttons); `T` toggles the mode (not while typing,
+  not with modifiers). The run bar is a pill in that toolbar instead of a notch on the canvas's top edge:
+  in Edit mode as before (Open on a waiting run, Stop, fades when the run ends); in Test mode while the
+  run is live, with Stop. The sidebar toggle and Test mode's node-library popover moved down to clear
+  the toolbar. `WorkflowEditor` takes `editorMode` / `onEditorModeChange`.
+  Removed: the navbar switch, the dot on "Test" (`data-testid="test-run-dot"`), the floating Console
+  button, classes `.editor-mode-switch*`, `.flowdrop-console-toggle`, `.flowdrop-run-bar__pill*`,
+  `.flowdrop-run-bar__status` (`.flowdrop-run-bar`, `--{status}`, `--fading`, `__live` remain).
+- **Node run status is a labelled pill** (Running, Completed, Waiting for you, Failed, Skipped, with
+  ×N when a node ran more than once) centred on the node's top edge and kept at screen size when you
+  zoom out (scale `clamp(1/zoom, 1, 2.2)`); below 35% zoom it becomes a status-coloured outline plus a
+  count badge. In Test mode the node border takes the status colour. Hover shows the count and the
+  last error line. Pending nodes no longer show an indicator; cancelled shows as Skipped; paused and
+  interrupted show as Waiting. `getStatusColor` / `getStatusBackgroundColor` / `getStatusTextColor`
+  return `var(--fd-status-*)` instead of hex (valid in CSS only). Classes: `.node-status-overlay--{status}`
+  modifiers are now `--{running,completed,waiting,failed,skipped}`, `data-status` carries that status
+  (the raw one is `data-execution-status`), `.node-status-overlay__icon` is gone; new
+  `--compact`, `__pill`, `__outline`, `.universal-node--status-border`.
+- **Steps fold into one row per turn** in the Playground ("8 steps · 82 ms · 1 waiting ▸"), opening a
+  compact table (node · status · runs · time; loops merge into one row with ×N, nested steps indent).
+  A failed step's error stays visible under the row. Durations read 0.8 ms / 42 ms / 1.2 s, never µs.
+  The ⋯ menu's **Show steps** became **Expand steps by default** (`playground.expandSteps`, off).
+  No origin chip for Playground runs; the "Execution" header of the execution console is gone.
+  Removed classes: `.execution-console__header|__icon|__title`, `.message-stream__log-group*`,
+  `.log-row .hierarchy-trail`; new `.steps-summary*`.
+- `HeaderMenu` (the Playground ⋯ and history menus) is built on the new internal Menu: its props and
+  `.header-menu__item|__group|__divider|__button` classes stay; the wrappers `.header-menu`,
+  `.header-menu__menu(--start|--end)` are now `.flowdrop-ui-menu` / `.flowdrop-ui-menu__popup`.
+- `Button` (internal) wraps the new button primitive: `outline` renders as `secondary`, `lg` as `md`
+  (28 px), so `ThemeToggle` and the Playground-settings buttons are smaller.
 - Test mode with nothing selected has **no right column**: the canvas takes the
   space the inspector used to hold (about 1070 px of a 1440 px window, beside the
   360 px Playground dock). Clicking a node (double-click still works) shows its inspector as a 360 px
@@ -262,6 +298,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+- The `--fd-*-display` skin tokens (`node-icon-display`, `node-circle-display`, `sidebar-{search,header,card,flat}-display`,
+  `navbar-{split,dropdown}-display`): use `FlowDropThemeConfig.display`, which wins over them. They keep
+  working (the `slate` skin still sets them) and go in 3.0.
+- `NodeStatusOverlay`'s `size` prop (no effect), `ExecutionLogs` (not rendered by any surface), messages
+  `playground.logGroup` and `playground.executionConsole.header`.
 - The standalone Playground, in favour of the editor's **Test mode**:
   `Playground`, `PlaygroundStudio`, `PlaygroundApp`, `PlaygroundModal` and the
   `mountPlayground`, `mountPlaygroundStudio`, `mountPlaygroundApp` and
