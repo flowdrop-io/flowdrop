@@ -785,6 +785,7 @@
   .flowdrop-sidebar--rows .flowdrop-node-item,
   .flowdrop-sidebar--rows .flowdrop-node-item:hover,
   .flowdrop-sidebar--rows .flowdrop-node-item:active {
+    padding: 0;
     border: none;
     border-radius: var(--fd-radius-md);
     background: transparent;
@@ -806,6 +807,7 @@
   .flowdrop-sidebar--rows .flowdrop-node-item h4 {
     font-size: var(--fd-text-body);
     font-weight: 400;
+    line-height: var(--fd-leading-tight);
   }
 
   /* The description lives in the tooltip, not on the row. */
