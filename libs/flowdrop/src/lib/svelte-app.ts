@@ -90,8 +90,10 @@ export interface FlowDropMountOptions {
    */
   configPlacement?: SurfacePlacement;
   /**
-   * Default host for the console / AI Assistant group: `below` (default),
-   * `sidebar`, or `modal`. Seeds the user setting on first load; a later user
+   * Default host for the Command Console: `below` (default), `sidebar`, or
+   * `modal`. The AI Assistant is not placed by this: it is a tab beside Nodes
+   * in Edit mode's left slot (it stays with the Console only when the sidebar
+   * is disabled). Seeds the user setting on first load; a later user
    * change wins.
    */
   consolePlacement?: SurfacePlacement;

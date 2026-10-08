@@ -323,7 +323,6 @@ export const defaultMessages = {
     // Sidebar/main-region landmarks.
     componentsSidebar: 'Components sidebar',
     // Edit mode's left slot: Nodes | Assistant.
-    leftTabsLabel: 'Sidebar',
     nodesTab: 'Nodes',
     workflowCanvas: 'Workflow canvas',
     executionLogs: 'Execution logs sidebar',

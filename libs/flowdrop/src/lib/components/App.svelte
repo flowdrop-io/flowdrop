@@ -105,7 +105,7 @@
      */
     configPlacement?: SurfacePlacement;
     /**
-     * Default host for the console / AI Assistant group. Seeds the user setting
+     * Default host for the Command Console (the AI Assistant is a tab beside Nodes in the left slot). Seeds the user setting
      * on first load — a value the user later changes wins.
      * @default 'below'
      */

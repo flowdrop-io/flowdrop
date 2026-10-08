@@ -91,11 +91,15 @@ export interface UISettings {
   consoleOpen: boolean;
   /** Height of the command console panel in pixels */
   consoleHeight: number;
-  /** Active tab in the bottom panel */
+  /**
+   * Active tab in the console group. `chat` is kept for stored settings: the
+   * Assistant is a tab beside Nodes in Edit mode's left slot now, and only
+   * stays in this group on a host that disabled the sidebar.
+   */
   bottomPanelTab: 'console' | 'chat';
   /** Where the node/workflow configuration panel is hosted. Default `sidebar`. */
   configPlacement: SurfacePlacement;
-  /** Where the console / AI Assistant group is hosted. Default `below`. */
+  /** Where the Command Console is hosted. Default `below`. (The Assistant lives in the left slot.) */
   consolePlacement: SurfacePlacement;
 }
 

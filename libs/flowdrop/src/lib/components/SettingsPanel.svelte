@@ -216,8 +216,8 @@
         },
         consolePlacement: {
           type: 'string',
-          title: 'Console / AI Assistant Location',
-          description: 'Where the console and AI Assistant open',
+          title: 'Console Location',
+          description: 'Where the console opens',
           oneOf: [
             { const: 'sidebar', title: 'Right sidebar' },
             { const: 'modal', title: 'Modal window' },
