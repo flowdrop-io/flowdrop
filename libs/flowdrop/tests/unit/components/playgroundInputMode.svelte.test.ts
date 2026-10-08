@@ -230,7 +230,10 @@ describe('Playground input mode', () => {
     await settle();
 
     expect(turnCalls()).toHaveLength(0);
-    expect(fd.playground.error).toContain('Topic');
+    // Under the Run button, not in the banner.
+    expect(fd.playground.launchError).toContain('Topic');
+    expect(fd.playground.error).toBeNull();
+    expect(target.querySelector('.chat-input__launch-error')?.textContent).toContain('Topic');
     expect(runButton(target)?.disabled).toBe(false);
   });
 
@@ -261,8 +264,11 @@ describe('Playground input mode', () => {
     runButton(target)?.click();
     await settle();
 
-    expect(fd.playground.error).toContain('declare a `message` port');
-    expect(target.querySelector('.playground__error')?.textContent).toContain('takes no message');
+    expect(fd.playground.launchError).toContain('declare a `message` port');
+    expect(target.querySelector('.chat-input__launch-error')?.textContent).toContain(
+      'takes no message'
+    );
+    expect(target.querySelector('.playground__error')).toBeNull();
     expect(fd.playground.sessionStatus).toBe('idle');
     expect(runButton(target)?.disabled).toBe(false);
   });
