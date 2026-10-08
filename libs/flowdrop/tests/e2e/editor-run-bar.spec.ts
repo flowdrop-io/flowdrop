@@ -204,7 +204,10 @@ test.describe('Run bar', () => {
     expect(bar!.x).toBeGreaterThanOrEqual(canvas!.x);
     expect(bar!.x + bar!.width).toBeLessThanOrEqual(canvas!.x + canvas!.width);
 
-    const minimap = await page.locator('.svelte-flow__minimap').boundingBox();
+    // At this width the minimap may be hidden (canvas under 800 px); boundingBox()
+    // on a missing element waits for it, so only measure one that is there.
+    const minimapLocator = page.locator('.svelte-flow__minimap');
+    const minimap = (await minimapLocator.count()) > 0 ? await minimapLocator.boundingBox() : null;
     if (minimap) {
       const overlaps =
         bar!.x < minimap.x + minimap.width &&
