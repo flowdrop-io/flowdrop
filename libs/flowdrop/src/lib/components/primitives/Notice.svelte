@@ -15,6 +15,7 @@
   import type { Snippet } from 'svelte';
   import Icon from '@iconify/svelte';
   import { getMessages } from '../../messages/context.js';
+  import IconButton from './IconButton.svelte';
 
   interface Props {
     /** Semantic tone; selects colour, icon and default ARIA role. */
@@ -76,15 +77,14 @@
     {/if}
   </div>
   {#if ondismiss}
-    <!-- TODO(D3a): swap for primitives/IconButton -->
-    <button
-      type="button"
+    <IconButton
+      size="sm"
       class="flowdrop-ui-notice__dismiss"
-      aria-label={dismissLabel ?? getMsgs().notice.dismiss}
+      ariaLabel={dismissLabel ?? getMsgs().notice.dismiss}
       onclick={ondismiss}
     >
       <Icon icon="heroicons:x-mark" />
-    </button>
+    </IconButton>
   {/if}
 </div>
 
@@ -153,25 +153,9 @@
     margin-top: var(--fd-space-3xs);
   }
 
-  .flowdrop-ui-notice__dismiss {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  /* The dismiss button hugs the corner: negative margin keeps the 24px target inside the padding. */
+  .flowdrop-ui-notice :global(.flowdrop-ui-notice__dismiss) {
     flex: none;
-    width: var(--fd-control-sm);
-    height: var(--fd-control-sm);
     margin: calc(var(--fd-space-3xs) * -1) calc(var(--fd-space-3xs) * -1) 0 0;
-    padding: 0;
-    border: 0;
-    border-radius: var(--fd-radius-md);
-    background: transparent;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-base);
-    cursor: pointer;
-  }
-
-  .flowdrop-ui-notice__dismiss:hover {
-    background: color-mix(in srgb, var(--_fg) 15%, transparent);
-    color: var(--fd-foreground);
   }
 </style>

@@ -18,6 +18,8 @@
     title?: string;
     /** Muted second line under the title. */
     subtitle?: string;
+    /** `id` on the heading, for a dialog's `aria-labelledby`. */
+    titleId?: string;
     /** Heading element for the title. Visual size is the same for all levels. */
     as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     /** Replaces the title block on the left (chip, back button, ...). */
@@ -33,6 +35,7 @@
   let {
     title,
     subtitle,
+    titleId,
     as = 'h2',
     leading,
     actions,
@@ -50,7 +53,9 @@
       {@render leading()}
     {:else if title}
       <div class="flowdrop-ui-panel-header__text">
-        <svelte:element this={as} class="flowdrop-ui-panel-header__title">{title}</svelte:element>
+        <svelte:element this={as} id={titleId} class="flowdrop-ui-panel-header__title"
+          >{title}</svelte:element
+        >
         {#if subtitle}
           <span class="flowdrop-ui-panel-header__subtitle">{subtitle}</span>
         {/if}

@@ -17,6 +17,7 @@
   import type { Snippet } from 'svelte';
   import Icon from '@iconify/svelte';
   import { getMessages } from '../../messages/context.js';
+  import IconButton from './IconButton.svelte';
 
   interface Props {
     /** Text content (bindable). */
@@ -35,12 +36,14 @@
     onstop?: () => void;
     /** Maximum visible rows before the textarea scrolls. */
     maxRows?: number;
-    /** Slot left of the send button (e.g. an attach control). */
+    /** Replaces the plain attach button: any control(s) left of the send button ("Attach a run", ...). */
     attach?: Snippet;
     /** Shows a plain attach button when `attach` is not given. */
     onattach?: () => void;
     /** Small keyboard hint under the field, e.g. "Enter to send, Shift+Enter for a new line". */
     hint?: string;
+    /** The textarea element (bindable), e.g. to focus it after a reply. */
+    element?: HTMLTextAreaElement;
     /** Accessible name of the textarea (falls back to the placeholder). */
     ariaLabel?: string;
     /** Extra classes on the root. */
@@ -59,13 +62,12 @@
     attach,
     onattach,
     hint,
+    element = $bindable(),
     ariaLabel,
     class: className = ''
   }: Props = $props();
 
   const getMsgs = getMessages();
-
-  let textarea: HTMLTextAreaElement | undefined = $state();
 
   const placeholderText = $derived(placeholder ?? getMsgs().composer.placeholder);
   const canSend = $derived(!disabled && !busy && value.trim().length > 0);
@@ -73,7 +75,7 @@
 
   /** Resize to fit content, capped at `maxRows` lines. */
   function resize() {
-    const el = textarea;
+    const el = element;
     if (!el) return;
     el.style.height = 'auto';
     const cs = getComputedStyle(el);
@@ -117,7 +119,7 @@
 >
   <div class="flowdrop-ui-composer__row">
     <textarea
-      bind:this={textarea}
+      bind:this={element}
       bind:value
       class="flowdrop-ui-composer__input"
       rows="1"
@@ -130,42 +132,35 @@
       {#if attach}
         {@render attach()}
       {:else if onattach}
-        <!-- TODO(D3a): swap for primitives/IconButton -->
-        <button
-          type="button"
-          class="flowdrop-ui-composer__btn"
-          aria-label={getMsgs().composer.attach}
+        <IconButton
+          ariaLabel={getMsgs().composer.attach}
           title={getMsgs().composer.attach}
           {disabled}
           onclick={onattach}
         >
           <Icon icon="heroicons:paper-clip" />
-        </button>
+        </IconButton>
       {/if}
       {#if showStop}
-        <!-- TODO(D3a): swap for primitives/IconButton -->
-        <button
-          type="button"
-          class="flowdrop-ui-composer__btn flowdrop-ui-composer__btn--primary"
-          aria-label={getMsgs().composer.stop}
+        <IconButton
+          variant="primary"
+          ariaLabel={getMsgs().composer.stop}
           title={getMsgs().composer.stop}
           {disabled}
           onclick={onstop}
         >
           <Icon icon="heroicons:stop-solid" />
-        </button>
+        </IconButton>
       {:else}
-        <!-- TODO(D3a): swap for primitives/IconButton -->
-        <button
-          type="button"
-          class="flowdrop-ui-composer__btn flowdrop-ui-composer__btn--primary"
-          aria-label={getMsgs().composer.send}
+        <IconButton
+          variant="primary"
+          ariaLabel={getMsgs().composer.send}
           title={getMsgs().composer.send}
           disabled={!canSend}
           onclick={submit}
         >
           <Icon icon="heroicons:arrow-up" />
-        </button>
+        </IconButton>
       {/if}
     </div>
   </div>
@@ -214,7 +209,8 @@
     /* Row = 32px field + 2x3px padding + 2x1px border = 40px at rest. */
     min-height: var(--fd-control-lg);
     margin: 0;
-    padding: var(--fd-space-2xs) var(--fd-space-xs);
+    /* A single line sits on the button's centre: (32px - one line) / 2 above and below. */
+    padding: calc((var(--fd-control-lg) - 1.4em) / 2) var(--fd-space-xs);
     border: 0;
     border-radius: var(--fd-radius-md);
     outline: none;
@@ -245,41 +241,6 @@
     flex: none;
     /* Keeps the buttons aligned to the last line, not the middle of a tall field. */
     height: var(--fd-control-lg);
-  }
-
-  .flowdrop-ui-composer__btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--fd-control-lg);
-    height: var(--fd-control-lg);
-    padding: 0;
-    border: 0;
-    border-radius: var(--fd-radius-md);
-    background: transparent;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-base);
-    cursor: pointer;
-  }
-
-  .flowdrop-ui-composer__btn:hover:not(:disabled) {
-    background: var(--fd-muted);
-    color: var(--fd-foreground);
-  }
-
-  .flowdrop-ui-composer__btn--primary {
-    background: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-  }
-
-  .flowdrop-ui-composer__btn--primary:hover:not(:disabled) {
-    background: var(--fd-primary-hover);
-    color: var(--fd-primary-foreground);
-  }
-
-  .flowdrop-ui-composer__btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 
   .flowdrop-ui-composer__hint {

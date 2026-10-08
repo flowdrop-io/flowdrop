@@ -4,6 +4,7 @@
   import type { ComponentProps } from 'svelte';
   import Composer from './Composer.svelte';
   import Icon from '@iconify/svelte';
+  import IconButton from './IconButton.svelte';
 
   const { Story } = defineMeta({
     title: 'Primitives/Composer',
@@ -65,37 +66,14 @@
   {#snippet template(args)}{@render frame(args, 'run --input foo')}{/snippet}
 </Story>
 
-<Story name="Attach slot" asChild>
+<Story name="Attach slot (Attach a run)" asChild>
   <div style="width:420px;">
-    <Composer value="With a custom attach control">
+    <Composer value="With a custom attach control" hint="Enter to send, Shift+Enter for a new line">
       {#snippet attach()}
-        <span
-          style="display:inline-flex; align-items:center; gap:var(--fd-space-3xs); font-size:var(--fd-text-xs); color:var(--fd-muted-foreground);"
-        >
-          <Icon icon="heroicons:paper-clip" /> Run #42
-        </span>
+        <IconButton ariaLabel="Attach a run" title="Attach a run">
+          <Icon icon="heroicons:paper-clip" />
+        </IconButton>
       {/snippet}
     </Composer>
-  </div>
-</Story>
-
-<Story name="Matrix" asChild>
-  <div style="display:flex; flex-direction:column; gap:0.75rem; width:420px;">
-    {#each ['default', 'mono'] as const as variant (variant)}
-      <Composer {variant} />
-      <Composer {variant} value="Some text" hint="Enter to send" />
-      <Composer {variant} value="Busy" busy onstop={() => {}} />
-      <Composer {variant} value="Disabled" disabled />
-      <Composer {variant} value={LONG} onattach={() => {}} />
-    {/each}
-  </div>
-</Story>
-
-<Story name="Matrix (dark)" globals={{ theme: 'dark' }} asChild>
-  <div style="display:flex; flex-direction:column; gap:0.75rem; width:420px;">
-    <Composer />
-    <Composer value="Some text" hint="Enter to send" onattach={() => {}} />
-    <Composer variant="mono" value="Busy" busy onstop={() => {}} />
-    <Composer disabled value="Disabled" />
   </div>
 </Story>
