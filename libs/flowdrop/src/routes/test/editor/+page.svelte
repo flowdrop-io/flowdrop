@@ -37,6 +37,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
+  import '$lib/styles/fonts/inter.css';
   import App from '$lib/components/App.svelte';
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
   import type { Workflow, NodeMetadata } from '$lib/types/index.js';
@@ -48,9 +49,15 @@
   // --- Query param for workflow variant ---
   let workflowVariant = $derived($page.url.searchParams.get('workflow') ?? 'simple');
 
-  // --- Query param for UI theme (?theme=default|minimal|drafter) ---
+  // --- Query param for UI theme (?theme=default|minimal|drafter|graphite) ---
+  // Absent: no theme prop, so the persisted settings theme applies (the settings e2e relies on it).
   let themeName = $derived(
-    ($page.url.searchParams.get('theme') ?? 'default') as 'default' | 'minimal' | 'drafter'
+    ($page.url.searchParams.get('theme') ?? undefined) as
+      | 'default'
+      | 'minimal'
+      | 'drafter'
+      | 'graphite'
+      | undefined
   );
 
   // --- Query param for editor mode (?mode=readonly|locked) ---

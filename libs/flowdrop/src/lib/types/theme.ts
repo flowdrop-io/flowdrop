@@ -53,7 +53,7 @@ export interface FlowDropThemeConfig {
 /**
  * A FlowDrop theme bundles a visual skin (CSS tokens) with UI config (behavioral defaults).
  *
- * Built-in themes: 'default' | 'minimal' | 'drafter'
+ * Built-in themes: 'default' | 'minimal' | 'drafter' | 'graphite'
  *
  * @example
  * // Use a built-in theme by name
@@ -72,4 +72,4 @@ export interface FlowDropTheme {
   config?: FlowDropThemeConfig;
 }
 
-export type FlowDropThemeName = 'default' | 'minimal' | 'drafter';
+export type FlowDropThemeName = 'default' | 'minimal' | 'drafter' | 'graphite';

@@ -18,12 +18,13 @@
  * Pairs that already fail are listed in KNOWN_FAILURES with their measured
  * ratio. The test asserts the failing set equals that list, so fixing a colour
  * (or breaking another) shows up here. D1 deliberately changes no colours.
+ * Graphite has no entry: all its text pairs and status dots pass in both modes.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseTokenDeclarations } from '../../../scripts/parse-token-aliases.mjs';
-import { defaultSkin } from '../../../src/lib/skins/index.js';
+import { defaultSkin, graphiteSkin } from '../../../src/lib/skins/index.js';
 import { resolveTheme } from '../../../src/lib/themes/index.js';
 
 type TokenMap = Record<string, string>;
@@ -33,11 +34,12 @@ type RGBA = { r: number; g: number; b: number; a: number };
 const css = readFileSync(resolve(__dirname, '../../../src/lib/styles/tokens.css'), 'utf8');
 const root = parseTokenDeclarations(css);
 
-// Themes -> skins. minimal uses the slate skin, drafter its own (themes/index.ts).
+// Themes -> skins. minimal uses the slate skin, drafter and graphite their own (themes/index.ts).
 const skins: Record<string, { tokens?: TokenMap; darkTokens?: TokenMap }> = {
   default: defaultSkin,
   minimal: resolveTheme('minimal').skin ?? slateSkin,
-  drafter: resolveTheme('drafter').skin ?? drafterSkin
+  drafter: resolveTheme('drafter').skin ?? drafterSkin,
+  graphite: resolveTheme('graphite').skin ?? graphiteSkin
 };
 
 // Gray palette used by the root tokens (--_gray-n etc.): resolved from the same file.

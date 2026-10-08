@@ -2,11 +2,13 @@ import type { FlowDropSkin, FlowDropSkinName } from '../types/skin.js';
 import { defaultSkin } from './default.js';
 import { slateSkin } from './slate.js';
 import { drafterSkin } from './drafter.js';
+import { graphiteSkin } from './graphite.js';
 
 const builtinSkins: Record<FlowDropSkinName, FlowDropSkin> = {
   default: defaultSkin,
   slate: slateSkin,
-  drafter: drafterSkin
+  drafter: drafterSkin,
+  graphite: graphiteSkin
 };
 
 /**
@@ -33,4 +35,4 @@ export function resolveSkin(skin: FlowDropSkin | FlowDropSkinName | undefined): 
   return skin;
 }
 
-export { defaultSkin, slateSkin, drafterSkin };
+export { defaultSkin, slateSkin, drafterSkin, graphiteSkin };

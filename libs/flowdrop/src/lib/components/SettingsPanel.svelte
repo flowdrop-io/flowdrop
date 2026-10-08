@@ -199,7 +199,8 @@
           oneOf: [
             { const: 'default', title: 'Default' },
             { const: 'minimal', title: 'Minimal' },
-            { const: 'drafter', title: 'Drafter' }
+            { const: 'drafter', title: 'Drafter' },
+            { const: 'graphite', title: 'Graphite' }
           ],
           default: 'default'
         },

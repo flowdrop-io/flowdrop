@@ -2,11 +2,13 @@ import type { FlowDropTheme, FlowDropThemeName } from '../types/theme.js';
 import { defaultTheme } from './default.js';
 import { minimalTheme } from './minimal.js';
 import { drafterTheme } from './drafter.js';
+import { graphiteTheme } from './graphite.js';
 
 const builtinThemes: Record<FlowDropThemeName, FlowDropTheme> = {
   default: defaultTheme,
   minimal: minimalTheme,
-  drafter: drafterTheme
+  drafter: drafterTheme,
+  graphite: graphiteTheme
 };
 
 /**
@@ -35,7 +37,17 @@ export function resolveTheme(theme: FlowDropTheme | FlowDropThemeName | undefine
             tokens: {
               ...(base.skin?.tokens ?? {}),
               ...(theme.skin.tokens ?? {})
-            }
+            },
+            // The base's dark palette must survive an inline skin that only
+            // sets light tokens; inline dark tokens win over it.
+            ...(base.skin?.darkTokens || theme.skin.darkTokens
+              ? {
+                  darkTokens: {
+                    ...(base.skin?.darkTokens ?? {}),
+                    ...(theme.skin.darkTokens ?? {})
+                  }
+                }
+              : {})
           }
         : base.skin,
       config: {
@@ -58,4 +70,4 @@ export function resolveTheme(theme: FlowDropTheme | FlowDropThemeName | undefine
   return theme;
 }
 
-export { defaultTheme, minimalTheme, drafterTheme };
+export { defaultTheme, minimalTheme, drafterTheme, graphiteTheme };

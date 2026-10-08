@@ -43,4 +43,4 @@ export interface FlowDropSkin {
   darkTokens?: FlowDropSkinTokens;
 }
 
-export type FlowDropSkinName = 'default' | 'slate' | 'drafter';
+export type FlowDropSkinName = 'default' | 'slate' | 'drafter' | 'graphite';
