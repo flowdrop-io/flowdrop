@@ -18,6 +18,7 @@
   import type { Snippet } from 'svelte';
   import Icon from '@iconify/svelte';
   import HeaderMenu from './HeaderMenu.svelte';
+  import PanelHeader from '../primitives/PanelHeader.svelte';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
   import { resolveSessionEndpoint } from '../../config/endpoints.js';
@@ -130,160 +131,147 @@
   }
 </script>
 
-<header class="playground-header" data-testid="playground-header">
-  <HeaderMenu label={t.history} testId="playground-history" onOpen={refreshHistory}>
-    {#snippet trigger()}
-      <span class="playground-header__label">{label}</span>
-      <Icon icon="mdi:chevron-down" />
-    {/snippet}
-    {#snippet children({ close })}
-      <div class="header-menu__group" role="presentation">{t.conversations}</div>
-      <button
-        type="button"
-        role="menuitem"
-        class="header-menu__item"
-        disabled={fd.playground.isLoading}
-        onclick={() => act(() => void fd.runs.createSession(), close)}
-      >
-        <span class="header-menu__item-label"
-          ><Icon icon="mdi:plus" /><span>{t.newConversation}</span></span
-        >
-        <span class="header-menu__item-hint">{t.newConversationHint}</span>
-      </button>
-      {#each groups.conversations as conversation (conversation.id)}
+<PanelHeader data-testid="playground-header">
+  {#snippet leading()}
+    <HeaderMenu label={t.history} testId="playground-history" onOpen={refreshHistory}>
+      {#snippet trigger()}
+        <span class="playground-header__label">{label}</span>
+        <Icon icon="mdi:chevron-down" />
+      {/snippet}
+      {#snippet children({ close })}
+        <div class="header-menu__group" role="presentation">{t.conversations}</div>
         <button
           type="button"
-          role="menuitemradio"
-          aria-checked={conversation.current}
+          role="menuitem"
           class="header-menu__item"
-          data-testid="history-conversation"
-          onclick={() => pickConversation(conversation.id, close)}
+          disabled={fd.playground.isLoading}
+          onclick={() => act(() => void fd.runs.createSession(), close)}
         >
-          <span class="header-menu__item-label">
-            <Icon icon={conversation.current ? 'mdi:check' : 'mdi:message-outline'} />
-            <span>{conversation.name}</span>
-          </span>
+          <span class="header-menu__item-label"
+            ><Icon icon="mdi:plus" /><span>{t.newConversation}</span></span
+          >
+          <span class="header-menu__item-hint">{t.newConversationHint}</span>
         </button>
-      {/each}
+        {#each groups.conversations as conversation (conversation.id)}
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={conversation.current}
+            class="header-menu__item"
+            data-testid="history-conversation"
+            onclick={() => pickConversation(conversation.id, close)}
+          >
+            <span class="header-menu__item-label">
+              <Icon icon={conversation.current ? 'mdi:check' : 'mdi:message-outline'} />
+              <span>{conversation.name}</span>
+            </span>
+          </button>
+        {/each}
 
-      <div class="header-menu__divider" role="separator"></div>
-      <div class="header-menu__group" role="presentation">{t.runs}</div>
-      {#each groups.runs as run (run.id)}
-        <button
-          type="button"
-          role="menuitemradio"
-          aria-checked={run.shown}
-          class="header-menu__item"
-          data-testid="history-run"
-          data-stale={run.stale ? 'true' : undefined}
-          onclick={() => pickRun(run.id, close)}
-        >
-          <span class="header-menu__item-label">
-            <Icon icon={run.shown ? 'mdi:check' : (statusIcon[run.status] ?? 'mdi:circle-small')} />
-            <span>{runTitle(run)}</span>
-          </span>
-          <span class="header-menu__item-hint">
-            {run.status}{runWhen(run.startedAt) ? ` · ${runWhen(run.startedAt)}` : ''}{run.stale
-              ? ` · ${t.staleRun}`
-              : ''}
-          </span>
-        </button>
-      {:else}
-        <div class="playground-header__empty">
-          <span>{t.noRuns}</span>
-          <span class="header-menu__item-hint">{t.noRunsHint}</span>
-        </div>
-      {/each}
-    {/snippet}
-  </HeaderMenu>
-
-  <span class="playground-header__spacer"></span>
-
-  <HeaderMenu label={t.moreActions} testId="playground-more" variant="icon" align="end">
-    {#snippet trigger()}
-      <Icon icon="mdi:dots-horizontal" />
-    {/snippet}
-    {#snippet children({ close })}
-      <button
-        type="button"
-        role="menuitemcheckbox"
-        aria-checked={fd.playground.expandSteps}
-        class="header-menu__item"
-        onclick={() => act(() => fd.playground.toggleExpandSteps(), close)}
-      >
-        <span class="header-menu__item-label">
-          {#if fd.playground.expandSteps}<Icon icon="mdi:check" />{/if}<span>{t.showSteps}</span>
-        </span>
-        <span class="header-menu__item-hint">{t.showStepsHint}</span>
-      </button>
-      {#if hasForm}
+        <div class="header-menu__divider" role="separator"></div>
+        <div class="header-menu__group" role="presentation">{t.runs}</div>
+        {#each groups.runs as run (run.id)}
+          <button
+            type="button"
+            role="menuitemradio"
+            aria-checked={run.shown}
+            class="header-menu__item"
+            data-testid="history-run"
+            data-stale={run.stale ? 'true' : undefined}
+            onclick={() => pickRun(run.id, close)}
+          >
+            <span class="header-menu__item-label">
+              <Icon
+                icon={run.shown ? 'mdi:check' : (statusIcon[run.status] ?? 'mdi:circle-small')}
+              />
+              <span>{runTitle(run)}</span>
+            </span>
+            <span class="header-menu__item-hint">
+              {run.status}{runWhen(run.startedAt) ? ` · ${runWhen(run.startedAt)}` : ''}{run.stale
+                ? ` · ${t.staleRun}`
+                : ''}
+            </span>
+          </button>
+        {:else}
+          <div class="playground-header__empty">
+            <span>{t.noRuns}</span>
+            <span class="header-menu__item-hint">{t.noRunsHint}</span>
+          </div>
+        {/each}
+      {/snippet}
+    </HeaderMenu>
+  {/snippet}
+  {#snippet actions()}
+    <HeaderMenu label={t.moreActions} testId="playground-more" variant="icon" align="end">
+      {#snippet trigger()}
+        <Icon icon="mdi:dots-horizontal" />
+      {/snippet}
+      {#snippet children({ close })}
         <button
           type="button"
           role="menuitemcheckbox"
-          aria-checked={jsonView}
+          aria-checked={fd.playground.expandSteps}
           class="header-menu__item"
-          onclick={() => act(() => onToggleJsonView?.(), close)}
+          onclick={() => act(() => fd.playground.toggleExpandSteps(), close)}
         >
           <span class="header-menu__item-label">
-            {#if jsonView}<Icon icon="mdi:check" />{/if}<span>{t.jsonView}</span>
+            {#if fd.playground.expandSteps}<Icon icon="mdi:check" />{/if}<span>{t.showSteps}</span>
           </span>
-          <span class="header-menu__item-hint">{t.jsonViewHint}</span>
+          <span class="header-menu__item-hint">{t.showStepsHint}</span>
         </button>
-      {/if}
-      {#if onOpenSettings}
+        {#if hasForm}
+          <button
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={jsonView}
+            class="header-menu__item"
+            onclick={() => act(() => onToggleJsonView?.(), close)}
+          >
+            <span class="header-menu__item-label">
+              {#if jsonView}<Icon icon="mdi:check" />{/if}<span>{t.jsonView}</span>
+            </span>
+            <span class="header-menu__item-hint">{t.jsonViewHint}</span>
+          </button>
+        {/if}
+        {#if onOpenSettings}
+          <button
+            type="button"
+            role="menuitem"
+            class="header-menu__item"
+            onclick={() => act(onOpenSettings, close)}
+          >
+            <span class="header-menu__item-label"><span>{t.playgroundSettings}</span></span>
+            <span class="header-menu__item-hint">{t.playgroundSettingsHint}</span>
+          </button>
+        {/if}
         <button
           type="button"
           role="menuitem"
           class="header-menu__item"
-          onclick={() => act(onOpenSettings, close)}
+          disabled={!fd.playground.currentSession || fd.runs.isRefreshing}
+          onclick={() => act(() => void fd.runs.refresh(), close)}
         >
-          <span class="header-menu__item-label"><span>{t.playgroundSettings}</span></span>
-          <span class="header-menu__item-hint">{t.playgroundSettingsHint}</span>
+          <span class="header-menu__item-label"><span>{t.refresh}</span></span>
+          <span class="header-menu__item-hint">{t.refreshHint}</span>
         </button>
-      {/if}
-      <button
-        type="button"
-        role="menuitem"
-        class="header-menu__item"
-        disabled={!fd.playground.currentSession || fd.runs.isRefreshing}
-        onclick={() => act(() => void fd.runs.refresh(), close)}
-      >
-        <span class="header-menu__item-label"><span>{t.refresh}</span></span>
-        <span class="header-menu__item-hint">{t.refreshHint}</span>
-      </button>
-      {#if canReset}
-        <button
-          type="button"
-          role="menuitem"
-          class="header-menu__item"
-          onclick={() => void reset(close)}
-        >
-          <span class="header-menu__item-label"><span>{t.reset}</span></span>
-          <span class="header-menu__item-hint">{t.resetHint}</span>
-        </button>
-      {/if}
-      {@render menuItems?.({ close })}
-    {/snippet}
-  </HeaderMenu>
-</header>
+        {#if canReset}
+          <button
+            type="button"
+            role="menuitem"
+            class="header-menu__item"
+            onclick={() => void reset(close)}
+          >
+            <span class="header-menu__item-label"><span>{t.reset}</span></span>
+            <span class="header-menu__item-hint">{t.resetHint}</span>
+          </button>
+        {/if}
+        {@render menuItems?.({ close })}
+      {/snippet}
+    </HeaderMenu>
+  {/snippet}
+</PanelHeader>
 
 <style>
-  .playground-header {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: 0 var(--fd-space-md);
-    height: var(--fd-playground-header-height);
-    min-height: var(--fd-playground-header-height);
-    border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-background);
-    flex-shrink: 0;
-  }
-
-  .playground-header__spacer {
-    flex: 1;
-  }
-
   .playground-header__label {
     min-width: 0;
     max-width: 230px;
@@ -292,7 +280,8 @@
     white-space: nowrap;
   }
 
-  .playground-header :global(.header-menu:first-child) {
+  /* The chip may shrink inside the header's lead area so a long name truncates. */
+  :global(.flowdrop-ui-panel-header__lead > .header-menu) {
     flex: 0 1 auto;
     min-width: 0;
   }
