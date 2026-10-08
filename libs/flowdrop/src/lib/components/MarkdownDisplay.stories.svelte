@@ -3,7 +3,7 @@
   import MarkdownDisplay from './MarkdownDisplay.svelte';
 
   const { Story } = defineMeta({
-    title: 'Display/MarkdownDisplay',
+    title: 'Patterns/Display/MarkdownDisplay',
     component: MarkdownDisplay,
     tags: ['autodocs'],
     argTypes: {

@@ -5,7 +5,7 @@
   import type { ContextMenuEntry } from '../editor/contextMenu.js';
 
   const { Story } = defineMeta({
-    title: 'Editor/CanvasContextMenu',
+    title: 'Patterns/Editor/CanvasContextMenu',
     tags: ['autodocs'],
     parameters: {
       layout: 'centered'

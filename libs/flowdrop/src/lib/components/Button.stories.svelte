@@ -5,7 +5,7 @@
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Display/Button',
+    title: 'Patterns/Display/Button',
     component: Button,
     tags: ['autodocs'],
     parameters: {

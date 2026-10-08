@@ -4,7 +4,7 @@
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Form/FormSelect',
+    title: 'Patterns/Form/FormSelect',
     component: FormSelect,
     tags: ['autodocs'],
     argTypes: {

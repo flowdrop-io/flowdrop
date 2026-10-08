@@ -4,7 +4,7 @@
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Form/FormCheckboxGroup',
+    title: 'Patterns/Form/FormCheckboxGroup',
     component: FormCheckboxGroup,
     tags: ['autodocs'],
     argTypes: {

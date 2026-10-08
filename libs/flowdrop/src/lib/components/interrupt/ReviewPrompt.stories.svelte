@@ -5,7 +5,7 @@
   import { createReviewConfig } from '../../stories/utils.js';
 
   const { Story } = defineMeta({
-    title: 'Interrupt/ReviewPrompt',
+    title: 'Patterns/Interrupt/ReviewPrompt',
     component: ReviewPrompt,
     tags: ['autodocs'],
     args: {

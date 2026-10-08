@@ -5,7 +5,7 @@
   import { EDGE_MARKER_SIZES } from '../../lib/config/constants.js';
 
   const { Story } = defineMeta({
-    title: 'Edges/FlowDropEdge',
+    title: 'Patterns/Edges/FlowDropEdge',
     tags: ['autodocs'],
     parameters: {
       layout: 'centered'

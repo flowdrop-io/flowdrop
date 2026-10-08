@@ -4,7 +4,7 @@
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Editor/ConfigPanel',
+    title: 'Patterns/Editor/ConfigPanel',
     component: ConfigPanel,
     tags: ['autodocs'],
     parameters: {

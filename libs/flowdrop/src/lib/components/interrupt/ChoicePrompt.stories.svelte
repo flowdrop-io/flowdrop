@@ -5,7 +5,7 @@
   import { createChoiceConfig } from '../../stories/utils.js';
 
   const { Story } = defineMeta({
-    title: 'Interrupt/ChoicePrompt',
+    title: 'Patterns/Interrupt/ChoicePrompt',
     component: ChoicePrompt,
     tags: ['autodocs'],
     args: {

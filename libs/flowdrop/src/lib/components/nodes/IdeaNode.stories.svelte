@@ -3,7 +3,7 @@
   import NodeDecorator from '../../stories/NodeDecorator.svelte';
 
   const { Story } = defineMeta({
-    title: 'Nodes/IdeaNode',
+    title: 'Patterns/Nodes/IdeaNode',
     tags: ['autodocs'],
     parameters: {
       layout: 'centered'

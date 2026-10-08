@@ -5,7 +5,7 @@
   import Icon from '@iconify/svelte';
 
   const { Story } = defineMeta({
-    title: 'Display/CanvasBanner',
+    title: 'Patterns/Display/CanvasBanner',
     tags: ['autodocs'],
     parameters: {
       layout: 'centered'

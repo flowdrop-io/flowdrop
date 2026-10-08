@@ -3,7 +3,7 @@
   import Navbar from './Navbar.svelte';
 
   const { Story } = defineMeta({
-    title: 'Editor/Navbar',
+    title: 'Patterns/Editor/Navbar',
     component: Navbar,
     tags: ['autodocs'],
     parameters: {

@@ -79,7 +79,7 @@
   };
 
   const { Story } = defineMeta({
-    title: 'Integrations/WebMCP',
+    title: 'Patterns/Integrations/WebMCP',
     component: WebMCPFakeAgent,
     tags: ['autodocs'],
     parameters: {

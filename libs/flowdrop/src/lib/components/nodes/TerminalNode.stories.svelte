@@ -4,7 +4,7 @@
   import { createTerminalNodeData } from '../../stories/utils.js';
 
   const { Story } = defineMeta({
-    title: 'Nodes/TerminalNode',
+    title: 'Patterns/Nodes/TerminalNode',
     tags: ['autodocs'],
     parameters: {
       layout: 'centered'

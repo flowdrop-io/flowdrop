@@ -3,7 +3,7 @@
   import Logo from './Logo.svelte';
 
   const { Story } = defineMeta({
-    title: 'Display/Logo',
+    title: 'Patterns/Display/Logo',
     component: Logo,
     tags: ['autodocs']
   });

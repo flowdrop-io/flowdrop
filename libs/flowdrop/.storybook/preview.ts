@@ -10,7 +10,10 @@ const preview: Preview = {
         date: /Date$/i
       }
     },
-    layout: 'centered'
+    layout: 'centered',
+    options: {
+      storySort: { order: ['Tokens', 'Primitives', 'Patterns', '*'] }
+    }
   },
   decorators: [
     withThemeByDataAttribute({

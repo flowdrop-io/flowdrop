@@ -3,7 +3,7 @@
   import LoadingSpinner from './LoadingSpinner.svelte';
 
   const { Story } = defineMeta({
-    title: 'Display/LoadingSpinner',
+    title: 'Patterns/Display/LoadingSpinner',
     component: LoadingSpinner,
     tags: ['autodocs'],
     argTypes: {

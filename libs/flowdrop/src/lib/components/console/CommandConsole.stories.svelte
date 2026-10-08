@@ -90,7 +90,7 @@
   ];
 
   const { Story } = defineMeta({
-    title: 'Editor/CommandConsole',
+    title: 'Patterns/Editor/CommandConsole',
     component: CommandConsole,
     tags: ['autodocs'],
     parameters: {

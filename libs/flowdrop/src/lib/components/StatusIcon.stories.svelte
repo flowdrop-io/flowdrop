@@ -3,7 +3,7 @@
   import StatusIcon from './StatusIcon.svelte';
 
   const { Story } = defineMeta({
-    title: 'Display/StatusIcon',
+    title: 'Patterns/Display/StatusIcon',
     component: StatusIcon,
     tags: ['autodocs'],
     argTypes: {

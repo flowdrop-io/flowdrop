@@ -3,7 +3,7 @@
   import StatusLabel from './StatusLabel.svelte';
 
   const { Story } = defineMeta({
-    title: 'Display/StatusLabel',
+    title: 'Patterns/Display/StatusLabel',
     component: StatusLabel,
     tags: ['autodocs'],
     argTypes: {

@@ -4,7 +4,7 @@
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Editor/EditorStatusBar',
+    title: 'Patterns/Editor/EditorStatusBar',
     component: EditorStatusBar,
     tags: ['autodocs'],
     parameters: {

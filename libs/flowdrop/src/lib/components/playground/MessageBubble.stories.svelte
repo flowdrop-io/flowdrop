@@ -3,7 +3,7 @@
   import MessageBubble from './MessageBubble.svelte';
 
   const { Story } = defineMeta({
-    title: 'Playground/MessageBubble',
+    title: 'Patterns/Playground/MessageBubble',
     component: MessageBubble,
     tags: ['autodocs'],
     parameters: {

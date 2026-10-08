@@ -5,7 +5,7 @@
   import { createConfirmationConfig } from '../../stories/utils.js';
 
   const { Story } = defineMeta({
-    title: 'Interrupt/ConfirmationPrompt',
+    title: 'Patterns/Interrupt/ConfirmationPrompt',
     component: ConfirmationPrompt,
     tags: ['autodocs'],
     args: {

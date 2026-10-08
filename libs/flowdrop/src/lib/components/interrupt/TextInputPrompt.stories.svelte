@@ -5,7 +5,7 @@
   import { createTextConfig } from '../../stories/utils.js';
 
   const { Story } = defineMeta({
-    title: 'Interrupt/TextInputPrompt',
+    title: 'Patterns/Interrupt/TextInputPrompt',
     component: TextInputPrompt,
     tags: ['autodocs'],
     args: {

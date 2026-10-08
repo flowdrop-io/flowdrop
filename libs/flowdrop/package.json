@@ -26,6 +26,8 @@
     "lint:styles": "node scripts/style-ratchet.mjs",
     "lint:styles:update": "node scripts/style-ratchet.mjs --update",
     "test": "vitest run",
+    "test:unit": "vitest run --project=unit",
+    "test:stories": "vitest run --project=storybook",
     "generate:token-aliases": "node scripts/generate-token-aliases.mjs && prettier --write src/lib/styles/tokenAliases.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

@@ -3,7 +3,7 @@
   import FormFieldWrapper from './FormFieldWrapper.svelte';
 
   const { Story } = defineMeta({
-    title: 'Form/FormFieldWrapper',
+    title: 'Patterns/Form/FormFieldWrapper',
     component: FormFieldWrapper,
     tags: ['autodocs'],
     argTypes: {

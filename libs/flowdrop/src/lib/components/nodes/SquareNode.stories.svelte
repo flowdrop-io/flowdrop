@@ -4,7 +4,7 @@
   import { createSampleNodeData } from '../../stories/utils.js';
 
   const { Story } = defineMeta({
-    title: 'Nodes/SquareNode',
+    title: 'Patterns/Nodes/SquareNode',
     tags: ['autodocs'],
     parameters: {
       layout: 'centered'

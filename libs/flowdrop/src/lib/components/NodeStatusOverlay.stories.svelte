@@ -3,7 +3,7 @@
   import NodeStatusOverlay from './NodeStatusOverlay.svelte';
 
   const { Story } = defineMeta({
-    title: 'Editor/NodeStatusOverlay',
+    title: 'Patterns/Editor/NodeStatusOverlay',
     tags: ['autodocs'],
     parameters: {
       layout: 'centered'
