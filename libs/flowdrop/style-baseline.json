@@ -278,7 +278,7 @@
     "button": 1
   },
   "src/lib/components/playground/ControlPanel.svelte": {
-    "button": 7
+    "button": 4
   },
   "src/lib/components/playground/ExecutionConsole.svelte": {
     "button": 1

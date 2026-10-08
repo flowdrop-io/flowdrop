@@ -15,6 +15,8 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import Button from '../primitives/Button.svelte';
+  import IconButton from '../primitives/IconButton.svelte';
+  import PanelHeader from '../primitives/PanelHeader.svelte';
   import ChatInput from './ChatInput.svelte';
   import InterfaceInputForm from './InterfaceInputForm.svelte';
   import type { WorkflowInterfaceEntry } from '../../types/index.js';
@@ -212,142 +214,137 @@
 
 <section class="control-panel" class:control-panel--form={formFirst} {style}>
   {#if showSessionHeader}
-    <header class="control-panel__header">
-      <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
-      <span class="control-panel__label">{cp.sessionsLabel}</span>
+    <PanelHeader class="control-panel__header">
+      {#snippet leading()}
+        <Icon icon="mdi:message-text-outline" class="control-panel__icon" />
+        <span class="control-panel__label">{cp.sessionsLabel}</span>
 
-      {#if showSessionList}
-        <div class="control-panel__session-chip-wrap" bind:this={chipWrapEl}>
-          <button
-            type="button"
-            class="control-panel__session-chip"
-            class:control-panel__session-chip--open={sessionDropdownOpen}
-            bind:this={sessionChipEl}
-            aria-haspopup="menu"
-            aria-expanded={sessionDropdownOpen}
-            onclick={() => (sessionDropdownOpen = !sessionDropdownOpen)}
-            onkeydown={(e) => {
-              if (e.key === 'Escape') sessionDropdownOpen = false;
-            }}
-            title={cp.switchSession}
-          >
-            <span class="control-panel__session-chip-name">
-              {fd.playground.currentSession?.name ?? cp.noSession}
-            </span>
-            <Icon
-              icon={sessionDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'}
-              class="control-panel__session-chip-chevron"
-            />
-          </button>
-
-          {#if sessionDropdownOpen}
-            <div
-              class="control-panel__session-popover"
-              bind:this={sessionPopoverEl}
-              role="menu"
-              tabindex="-1"
+        {#if showSessionList}
+          <div class="control-panel__session-chip-wrap" bind:this={chipWrapEl}>
+            <button
+              type="button"
+              class="control-panel__session-chip"
+              class:control-panel__session-chip--open={sessionDropdownOpen}
+              bind:this={sessionChipEl}
+              aria-haspopup="menu"
+              aria-expanded={sessionDropdownOpen}
+              onclick={() => (sessionDropdownOpen = !sessionDropdownOpen)}
               onkeydown={(e) => {
-                if (e.key === 'Escape') {
-                  sessionDropdownOpen = false;
-                  sessionChipEl?.focus();
-                }
+                if (e.key === 'Escape') sessionDropdownOpen = false;
               }}
+              title={cp.switchSession}
             >
-              {#if showNewSessionButton}
-                <button
-                  type="button"
-                  role="menuitem"
-                  class="control-panel__session-popover-item control-panel__session-popover-item--new"
-                  disabled={fd.playground.isLoading}
-                  onclick={handleCreate}
-                >
-                  <Icon icon="mdi:plus" />
-                  <span>{cp.newSession}</span>
-                </button>
-              {/if}
-              {#if showSessionList && fd.playground.sessions.length > 0}
-                {#if showNewSessionButton}
-                  <div class="control-panel__session-popover-divider"></div>
-                {/if}
-                <div class="control-panel__session-popover-list">
-                  {#each fd.playground.sessions as session (session.id)}
-                    {@const isActive = fd.playground.currentSession?.id === session.id}
-                    <div class="control-panel__session-popover-row">
-                      <button
-                        type="button"
-                        role="menuitem"
-                        class="control-panel__session-popover-item"
-                        class:control-panel__session-popover-item--active={isActive}
-                        onclick={() => handleSelect(session.id)}
-                      >
-                        {#if isActive}
-                          <Icon icon="mdi:check" class="control-panel__session-popover-check" />
-                        {:else}
-                          <Icon icon="mdi:message-outline" />
-                        {/if}
-                        <span>{session.name}</span>
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        class="control-panel__session-popover-delete"
-                        onclick={(e) => handleDelete(e, session.id)}
-                        title={cp.deleteSession}
-                        aria-label={cp.deleteSession}
-                      >
-                        <Icon icon="mdi:delete-outline" />
-                      </button>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </div>
-          {/if}
-        </div>
-      {/if}
+              <span class="control-panel__session-chip-name">
+                {fd.playground.currentSession?.name ?? cp.noSession}
+              </span>
+              <Icon
+                icon={sessionDropdownOpen ? 'mdi:chevron-up' : 'mdi:chevron-down'}
+                class="control-panel__session-chip-chevron"
+              />
+            </button>
 
-      <div class="control-panel__header-actions">
+            {#if sessionDropdownOpen}
+              <div
+                class="control-panel__session-popover"
+                bind:this={sessionPopoverEl}
+                role="menu"
+                tabindex="-1"
+                onkeydown={(e) => {
+                  if (e.key === 'Escape') {
+                    sessionDropdownOpen = false;
+                    sessionChipEl?.focus();
+                  }
+                }}
+              >
+                {#if showNewSessionButton}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    class="control-panel__session-popover-item control-panel__session-popover-item--new"
+                    disabled={fd.playground.isLoading}
+                    onclick={handleCreate}
+                  >
+                    <Icon icon="mdi:plus" />
+                    <span>{cp.newSession}</span>
+                  </button>
+                {/if}
+                {#if showSessionList && fd.playground.sessions.length > 0}
+                  {#if showNewSessionButton}
+                    <div class="control-panel__session-popover-divider"></div>
+                  {/if}
+                  <div class="control-panel__session-popover-list">
+                    {#each fd.playground.sessions as session (session.id)}
+                      {@const isActive = fd.playground.currentSession?.id === session.id}
+                      <div class="control-panel__session-popover-row">
+                        <button
+                          type="button"
+                          role="menuitem"
+                          class="control-panel__session-popover-item"
+                          class:control-panel__session-popover-item--active={isActive}
+                          onclick={() => handleSelect(session.id)}
+                        >
+                          {#if isActive}
+                            <Icon icon="mdi:check" class="control-panel__session-popover-check" />
+                          {:else}
+                            <Icon icon="mdi:message-outline" />
+                          {/if}
+                          <span>{session.name}</span>
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          class="control-panel__session-popover-delete"
+                          onclick={(e) => handleDelete(e, session.id)}
+                          title={cp.deleteSession}
+                          aria-label={cp.deleteSession}
+                        >
+                          <Icon icon="mdi:delete-outline" />
+                        </button>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        {/if}
+      {/snippet}
+      {#snippet actions()}
         {#if onTogglePanel}
           {@const pipelineTitle = isPipelinePanelOpen ? cp.hidePipeline : cp.showPipeline}
-          <button
-            type="button"
-            class="control-panel__toolbar-btn"
-            class:control-panel__toolbar-btn--active={isPipelinePanelOpen}
-            onclick={onTogglePanel}
+          <IconButton
+            size="sm"
+            active={isPipelinePanelOpen}
+            ariaLabel={pipelineTitle}
             title={pipelineTitle}
-            aria-label={pipelineTitle}
+            onclick={onTogglePanel}
           >
             <Icon icon="mdi:source-branch" />
-            {cp.pipeline}
-          </button>
+          </IconButton>
         {/if}
         {#if fd.playground.currentSession}
-          <button
-            type="button"
-            class="control-panel__toolbar-btn"
-            class:control-panel__toolbar-btn--spinning={isRefreshing}
-            onclick={onRefresh}
+          <IconButton
+            size="sm"
+            class={isRefreshing ? 'control-panel__spinning' : ''}
             disabled={isRefreshing}
+            ariaLabel={cp.refreshTitle}
             title={cp.refreshTitle}
-            aria-label={cp.refreshTitle}
+            onclick={onRefresh}
           >
             <Icon icon="mdi:refresh" />
-            {cp.refresh}
-          </button>
+          </IconButton>
         {/if}
-        <button
-          type="button"
-          class="control-panel__toolbar-btn"
-          class:control-panel__toolbar-btn--active={fd.playground.showLogs}
-          onclick={() => fd.playground.toggleShowLogs()}
+        <IconButton
+          size="sm"
+          active={fd.playground.showLogs}
+          ariaLabel={logsTitle}
           title={logsTitle}
-          aria-label={logsTitle}
+          onclick={() => fd.playground.toggleShowLogs()}
         >
           <Icon icon="mdi:console" />
-          {cp.logs}
-        </button>
-      </div>
-    </header>
+        </IconButton>
+      {/snippet}
+    </PanelHeader>
   {/if}
 
   {#if formFirst}
@@ -463,32 +460,19 @@
     font-size: var(--fd-text-xs);
   }
 
-  .control-panel__header {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: 0 var(--fd-space-xl);
-    height: var(--fd-playground-header-height);
-    min-height: var(--fd-playground-header-height);
-    border-bottom: 1px solid var(--fd-border);
-    flex-shrink: 0;
-  }
-
+  /* Shrinks with the header (the chip's name ellipsizes) so the actions
+     stay inside a narrow dock instead of being clipped. */
   :global(.control-panel__icon) {
-    font-size: var(--fd-text-base);
-    color: var(--fd-muted-foreground);
     flex-shrink: 0;
+    color: var(--fd-muted-foreground);
   }
 
   .control-panel__label {
+    flex-shrink: 0;
     font-size: var(--fd-text-sm);
     font-weight: 600;
-    color: var(--fd-foreground);
-    flex-shrink: 0;
   }
 
-  /* Shrinks with the header (the chip's name ellipsizes) so the actions
-     stay inside a narrow dock instead of being clipped. */
   .control-panel__session-chip-wrap {
     position: relative;
     flex: 0 1 auto;
@@ -659,52 +643,7 @@
     opacity: 1;
   }
 
-  .control-panel__header-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .control-panel__toolbar-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
-    padding: var(--fd-space-3xs) var(--fd-space-sm);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background: transparent;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    line-height: 1;
-  }
-
-  .control-panel__toolbar-btn :global(svg) {
-    font-size: var(--fd-text-xs);
-  }
-
-  .control-panel__toolbar-btn:hover:not(:disabled) {
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
-    border-color: var(--fd-border-strong);
-  }
-
-  .control-panel__toolbar-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .control-panel__toolbar-btn--active {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-primary);
-    color: var(--fd-primary);
-  }
-
-  .control-panel__toolbar-btn--spinning :global(svg) {
+  :global(.control-panel__spinning svg) {
     animation: control-panel-spin 0.8s linear infinite;
   }
 
