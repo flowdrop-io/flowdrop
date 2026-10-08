@@ -9,7 +9,7 @@
   Must render inside <SvelteFlow>: xyflow's Controls reads the flow store.
 -->
 <script lang="ts">
-  import { Controls } from '@xyflow/svelte';
+  import { Controls, useStore } from '@xyflow/svelte';
   import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
   import { getMessages } from '$lib/messages/index.js';
 
@@ -26,19 +26,25 @@
 
   const getMsgs = getMessages();
   const msg = $derived(getMsgs().canvasStatus);
+  const flowStore = useStore();
+  const zoomPercent = $derived(Math.round(flowStore.viewport.zoom * 100));
   const summary = $derived(msg.summary({ nodes: nodeCount, edges: edgeCount }));
 </script>
 
 <Controls orientation="horizontal" fitViewOptions={{ padding: CANVAS_FIT_PADDING }}>
   {#snippet after()}
-    <!-- aria-live announces count changes and cycle warnings -->
-    <div class="fd-zoom-status" aria-live="polite" aria-atomic="true">
-      <span class="fd-zoom-status__count" title={summary} aria-label={summary}>
-        {msg.nodeCount({ n: nodeCount })}
+    <div class="fd-zoom-status">
+      <!-- Shown by themes that set --fd-zoom-percent-display; outside the live region so zooming is not announced -->
+      <span class="fd-zoom-status__zoom" aria-hidden="true">{zoomPercent}% ·</span>
+      <!-- aria-live announces count changes and cycle warnings -->
+      <span class="fd-zoom-status__live" aria-live="polite" aria-atomic="true">
+        <span class="fd-zoom-status__count" title={summary} aria-label={summary}>
+          {msg.nodeCount({ n: nodeCount })}
+        </span>
+        {#if hasCycles}
+          <span class="fd-zoom-status__cycles" title={msg.cyclesTitle}>{msg.cycles}</span>
+        {/if}
       </span>
-      {#if hasCycles}
-        <span class="fd-zoom-status__cycles" title={msg.cyclesTitle}>{msg.cycles}</span>
-      {/if}
     </div>
   {/snippet}
 </Controls>
@@ -52,6 +58,18 @@
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
     white-space: nowrap;
+  }
+
+  .fd-zoom-status__zoom {
+    display: var(--fd-zoom-percent-display, none);
+    margin-right: calc(-1 * var(--fd-space-2xs));
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fd-zoom-status__live {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
   }
 
   .fd-zoom-status__cycles {
