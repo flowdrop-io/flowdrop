@@ -339,7 +339,7 @@
 
   /* ----- LAYOUT ----- */
   --fd-sidebar-width: 320px; /* @internal — controlled programmatically */
-  --fd-navbar-height: 60px; /* @internal — controlled programmatically */
+  --fd-navbar-height: 48px; /* @internal — controlled programmatically */
   --fd-toolbar-height: 40px; /* @internal — controlled programmatically */
 
   /* ----- NODE COLORS (for workflow editor) ----- */

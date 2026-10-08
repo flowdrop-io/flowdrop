@@ -490,7 +490,7 @@
     showLeftSidebar={false}
     showRightSidebar={false}
     showFooter={false}
-    headerHeight={60}
+    headerHeight={48}
     enableLeftSplitPane={false}
     enableRightSplitPane={false}
   >

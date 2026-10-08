@@ -1938,7 +1938,7 @@
     showBottomPanel={anyHere('below')}
     bottomPanelHeight={getUiSettings().consoleHeight}
     showFooter={false}
-    headerHeight={60}
+    headerHeight={48}
     {leftSidebarWidth}
     rightSidebarWidth={400}
     leftSidebarMinWidth={testMode ? 300 : getUiSettings().sidebarCollapsed ? 0 : 280}

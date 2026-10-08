@@ -177,7 +177,7 @@ Six visible sizes: 11 meta, 12 small, 13 body, 15 title, 20 heading, 24 display.
 | Token                 | Description         | Default |
 | --------------------- | ------------------- | ------- |
 | `--fd-sidebar-width`  | Sidebar panel width | `320px` |
-| `--fd-navbar-height`  | Navbar height       | `60px`  |
+| `--fd-navbar-height`  | Navbar height       | `48px`  |
 | `--fd-toolbar-height` | Toolbar height      | `40px`  |
 
 ### Node Layout (10px Grid)

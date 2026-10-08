@@ -80,7 +80,7 @@
   let {
     height = '100vh',
     width = '100%',
-    headerHeight = 60,
+    headerHeight = 48,
     footerHeight = 48,
     showHeader = true,
     showFooter = false,

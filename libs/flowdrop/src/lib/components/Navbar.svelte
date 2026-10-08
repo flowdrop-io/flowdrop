@@ -320,8 +320,8 @@
   .flowdrop-navbar__start {
     display: flex;
     align-items: center;
-    width: 320px;
-    min-width: 320px;
+    width: 240px;
+    min-width: 240px;
     flex-shrink: 0;
   }
 
@@ -331,9 +331,8 @@
 
   .flowdrop-logo--header {
     /* Wordmark lockup is 5:1; keep it within the start column. */
-    height: 32px;
-    width: 160px;
-    padding: 2px 0;
+    height: 24px;
+    width: 120px;
   }
 
   .flowdrop-navbar__center {
@@ -344,12 +343,14 @@
     padding-left: 1rem;
   }
 
+  /* One row: the 48px bar has no room to stack the status chip over the title. */
   .flowdrop-navbar__center-content {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 0.25rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--fd-space-md);
+    min-width: 0;
   }
 
   .flowdrop-navbar__title-container {
@@ -706,8 +707,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-md);
     background-color: var(--fd-background);
