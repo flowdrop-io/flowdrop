@@ -210,6 +210,12 @@ export class RunController {
   // The run the instance shows (see ActiveRun). Replaced, never mutated.
   #tracked = $state.raw<TrackedRun | null>(null);
   #endedAt = $state<number | null>(null);
+  /**
+   * Runs the server's runs list calls failed. A session whose pipeline failed
+   * still reads `completed` (the turn finished; its run did not), so the
+   * session status alone would show such a run as done.
+   */
+  #failedRunIds = $state<string[]>([]);
   #unsubscribeSessionStatus: (() => void) | null = null;
   #hostStatusHook: HostHooks['onRunStatus'] | undefined;
   #hostPoll: ReturnType<typeof setTimeout> | null = null;
@@ -1173,6 +1179,7 @@ export class RunController {
       if (this.#playground.currentSession?.id !== tracked.sessionId) return null;
       status = sessionRunStatus(this.#playground.sessionStatus, tracked.stopped);
       runId = this.#playground.activeExecutionId;
+      if (status === 'done' && runId && this.#failedRunIds.includes(runId)) status = 'failed';
     } else {
       status = tracked.hostStatus;
     }
@@ -1268,7 +1275,18 @@ export class RunController {
       if (tracked?.origin !== 'session') return;
       const next = sessionRunStatus(status, tracked.stopped);
       this.#endedAt = TERMINAL_RUN_STATUSES.includes(next) ? Date.now() : null;
+      if (next === 'done') void this.#noteRunFailure(tracked.sessionId);
     });
+  }
+
+  /** A finished session run may have failed: ask the runs list, once, when it ends. */
+  async #noteRunFailure(sessionId: string): Promise<void> {
+    const result = await this.loadSessionRuns(sessionId);
+    const runId = this.#playground.activeExecutionId;
+    const run = result?.runs.find((r) => r.id === runId);
+    if (run?.status === 'failed' && !this.#failedRunIds.includes(run.id)) {
+      this.#failedRunIds = [...this.#failedRunIds, run.id];
+    }
   }
 
   #beginHostRun(runId: string, status: string | undefined): void {

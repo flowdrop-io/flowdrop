@@ -40,6 +40,7 @@ function setup() {
       kind: 'turn',
       result: { sessionId: 's1', userMessageId: 'u1', pipelineId: 'p1', status: 'running' }
     }),
+    getSessionRuns: vi.fn().mockResolvedValue({ workflowVersion: null, runs: [] }),
     startPolling: vi.fn(),
     stopPolling: vi.fn(),
     isPolling: vi.fn().mockReturnValue(false),
@@ -83,6 +84,42 @@ describe('activeRun: session runs', () => {
     playground.updateSessionStatus('failed');
     flushSync();
     expect(runs.activeRun?.status).toBe('failed');
+    runs.dispose();
+  });
+
+  it('reads a completed session whose pipeline failed as failed (runs list)', async () => {
+    const { runs, playground, service } = setup();
+    service.getSessionRuns.mockResolvedValue({
+      workflowVersion: 'v1',
+      runs: [{ id: 'p1', status: 'failed', workflowVersion: 'v1' }]
+    });
+    await runs.takeTurn({ content: 'oops' });
+    playground.setCurrentSession({
+      ...session('s1', 'running'),
+      executions: [{ id: 'p1', startedAt: '2026-01-01T00:00:00Z', status: 'running' }]
+    });
+    playground.updateSessionStatus('completed');
+    flushSync();
+    await vi.waitFor(() => expect(runs.activeRun?.status).toBe('failed'));
+    expect(runs.activeRun?.endedAt).toEqual(expect.any(Number));
+    runs.dispose();
+  });
+
+  it('keeps a completed run done when the runs list says it completed', async () => {
+    const { runs, playground, service } = setup();
+    service.getSessionRuns.mockResolvedValue({
+      workflowVersion: 'v1',
+      runs: [{ id: 'p1', status: 'completed', workflowVersion: 'v1' }]
+    });
+    await runs.takeTurn({ content: 'ok' });
+    playground.setCurrentSession({
+      ...session('s1', 'running'),
+      executions: [{ id: 'p1', startedAt: '2026-01-01T00:00:00Z', status: 'running' }]
+    });
+    playground.updateSessionStatus('completed');
+    flushSync();
+    await vi.waitFor(() => expect(service.getSessionRuns).toHaveBeenCalled());
+    expect(runs.activeRun?.status).toBe('done');
     runs.dispose();
   });
 
