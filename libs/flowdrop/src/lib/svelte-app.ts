@@ -117,6 +117,11 @@ export interface FlowDropMountOptions {
    * @default 'edit'
    */
   editorMode?: 'edit' | 'test';
+  /**
+   * Called when the Edit | Test mode changes after mount, so a host can keep
+   * its URL in step. Not called for the initial value.
+   */
+  onEditorModeChange?: (mode: 'edit' | 'test') => void;
 
   // Pipeline mode
   /** Pipeline ID for status display */
@@ -498,6 +503,7 @@ export async function mountFlowDropApp(
     consolePlacement,
     mode,
     editorMode,
+    onEditorModeChange,
     pipelineId,
     navbarTitle,
     navbarActions,
@@ -587,6 +593,7 @@ export async function mountFlowDropApp(
       consolePlacement,
       mode,
       editorMode,
+      onEditorModeChange,
       pipelineId,
       navbarTitle,
       navbarActions,

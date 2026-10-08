@@ -147,6 +147,12 @@
      * @default 'edit'
      */
     editorMode?: EditorMode;
+    /**
+     * Called when the Edit | Test mode changes after mount (the navbar switch,
+     * the run bar's "Open", `instance.editorMode.set`). Not called for the
+     * initial value. A host uses it to keep its URL in step.
+     */
+    onEditorModeChange?: (mode: EditorMode) => void;
     /** Pipeline ID for fetching node execution info */
     pipelineId?: string;
     /** Increments to force a refresh of pipeline node status from the server */
@@ -235,6 +241,7 @@
     consolePlacement: consolePlacementProp,
     mode = 'edit',
     editorMode: editorModeProp,
+    onEditorModeChange,
     pipelineId,
     refreshTrigger = 0,
     navbarTitle,
@@ -285,6 +292,16 @@
     if (requested === lastEditorModeProp) return;
     lastEditorModeProp = requested;
     if (requested) fd.editorMode.set(requested);
+  });
+
+  // Tell the host when the mode moves (never for the value it started with).
+  // svelte-ignore state_referenced_locally
+  let reportedEditorMode = fd.editorMode.current;
+  $effect(() => {
+    const current = fd.editorMode.current;
+    if (current === reportedEditorMode) return;
+    reportedEditorMode = current;
+    onEditorModeChange?.(current);
   });
 
   // `mode` is the public API; internally the canvas only cares whether editing
