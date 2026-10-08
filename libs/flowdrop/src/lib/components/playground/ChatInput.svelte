@@ -433,7 +433,6 @@
     flex-shrink: 0;
     padding: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-sm);
     background-color: var(--fd-background);
-    border-top: 1px solid var(--fd-border-muted);
   }
 
   .chat-input__container {

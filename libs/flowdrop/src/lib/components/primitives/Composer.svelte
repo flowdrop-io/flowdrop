@@ -219,14 +219,15 @@
     align-items: flex-end;
     gap: var(--fd-space-xs);
     box-sizing: border-box;
-    padding: calc(var(--fd-space-3xs) - 1px);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    padding: var(--fd-composer-pad, calc(var(--fd-space-3xs) - 1px));
+    border: 1px solid var(--fd-composer-border, var(--fd-border));
+    border-radius: var(--fd-composer-radius, var(--fd-radius-lg));
     background: var(--fd-background);
   }
 
   .flowdrop-ui-composer__row:focus-within {
     border-color: var(--fd-ring);
+    box-shadow: var(--fd-composer-focus-ring, none);
   }
 
   .flowdrop-ui-composer--disabled .flowdrop-ui-composer__row {
@@ -238,10 +239,11 @@
     min-width: 0;
     box-sizing: border-box;
     /* Row = 32px field + 2x3px padding + 2x1px border = 40px at rest. */
-    min-height: var(--fd-control-lg);
+    min-height: var(--fd-composer-field-height, var(--fd-control-lg));
     margin: 0;
-    /* A single line sits on the button's centre: (32px - one line) / 2 above and below. */
-    padding: calc((var(--fd-control-lg) - 1.4em) / 2) var(--fd-space-xs);
+    /* A single line sits on the button's centre: (field - one line) / 2 above and below. */
+    padding: calc((var(--fd-composer-field-height, var(--fd-control-lg)) - 1.4em) / 2)
+      var(--fd-composer-input-pad-x, var(--fd-space-xs));
     border: 0;
     border-radius: var(--fd-radius-md);
     outline: none;
@@ -271,7 +273,15 @@
     gap: var(--fd-space-3xs);
     flex: none;
     /* Keeps the buttons aligned to the last line, not the middle of a tall field. */
-    height: var(--fd-control-lg);
+    height: var(--fd-composer-field-height, var(--fd-control-lg));
+  }
+
+  /* Nothing to send yet: the theme may quieten the button (Graphite: a grey chip, not a faded ink one). */
+  .flowdrop-ui-composer__buttons :global(.flowdrop-ui-icon-button--primary:disabled) {
+    background-color: var(--fd-composer-send-idle-bg, var(--fd-primary));
+    border-color: var(--fd-composer-send-idle-bg, var(--fd-primary));
+    color: var(--fd-composer-send-idle-fg, var(--fd-primary-foreground));
+    opacity: var(--fd-composer-send-idle-opacity, 0.5);
   }
 
   .flowdrop-ui-composer__hint {

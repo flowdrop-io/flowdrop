@@ -17,6 +17,7 @@
 -->
 
 <script lang="ts">
+  import Icon from '@iconify/svelte';
   import Card from '../primitives/Card.svelte';
   import Button from '../primitives/Button.svelte';
   import InputFields from './InputFields.svelte';
@@ -115,6 +116,21 @@
   }
 </script>
 
+{#snippet header()}
+  <span>{labels.title}</span>
+  {#if runs.length > 0}
+    <Button
+      size="sm"
+      variant="ghost"
+      title={labels.fillFromLastTitle}
+      {disabled}
+      onclick={() => fill(runs[0].inputs)}
+    >
+      {labels.fillFromLast}
+    </Button>
+  {/if}
+{/snippet}
+
 <div class="interface-input-form">
   <!-- ⌘↵ is a shortcut over the whole card; every control inside is focusable. -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -124,22 +140,7 @@
     aria-label={labels.title}
     onkeydown={handleKeydown}
   >
-    <Card padding="md">
-      {#snippet header()}
-        <span>{labels.title}</span>
-        {#if runs.length > 0}
-          <Button
-            size="sm"
-            variant="ghost"
-            title={labels.fillFromLastTitle}
-            {disabled}
-            onclick={() => fill(runs[0].inputs)}
-          >
-            {labels.fillFromLast}
-          </Button>
-        {/if}
-      {/snippet}
-
+    <Card padding="md" class="interface-input-form__frame" header={onRun ? undefined : header}>
       <div class="interface-input-form__body">
         {#if json}
           <InterfaceJsonInput {values} {onChange} {disabled} />
@@ -149,6 +150,18 @@
 
         {#if onRun}
           <div class="interface-input-form__actions">
+            {#if runs.length > 0}
+              <Button
+                size="sm"
+                variant="ghost"
+                title={labels.fillFromLastTitle}
+                {disabled}
+                onclick={() => fill(runs[0].inputs)}
+              >
+                {labels.fillFromLast}
+              </Button>
+            {/if}
+            <span class="interface-input-form__spacer"></span>
             {#if running}
               <Button variant="danger" title={actions.stopTitle} onclick={() => onStop?.()}>
                 {actions.stop}
@@ -161,9 +174,11 @@
                 loading={runBusy}
                 onclick={() => onRun()}
               >
+                {#snippet leadingIcon()}<Icon icon="mdi:play" />{/snippet}
                 {runLabel ?? actions.run}
+                {#snippet trailingIcon()}<kbd class="interface-input-form__shortcut">{shortcut}</kbd
+                  >{/snippet}
               </Button>
-              <kbd class="interface-input-form__shortcut">{shortcut}</kbd>
             {/if}
           </div>
           {#if error}
@@ -222,16 +237,30 @@
     gap: var(--fd-space-md);
   }
 
+  /* The form's frame: a card. A theme may take the frame away (Graphite: the form sits on the panel). */
+  .interface-input-form__card :global(.interface-input-form__frame) {
+    border: var(--fd-inputs-frame-border, 1px solid var(--fd-border));
+    background-color: var(--fd-inputs-frame-bg, var(--fd-background));
+    padding: var(--fd-inputs-frame-pad, var(--fd-space-md));
+  }
+
   .interface-input-form__actions {
     display: flex;
     align-items: center;
     gap: var(--fd-space-sm);
   }
 
+  .interface-input-form__spacer {
+    flex: 1;
+  }
+
   .interface-input-form__shortcut {
-    color: var(--fd-muted-foreground);
+    padding: 0 var(--fd-space-3xs);
+    border-radius: var(--fd-radius-sm);
+    background: color-mix(in srgb, currentColor 18%, transparent);
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-2xs);
+    line-height: 1.5;
   }
 
   .interface-input-form__error,

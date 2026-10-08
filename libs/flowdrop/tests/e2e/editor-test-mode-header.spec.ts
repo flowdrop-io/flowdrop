@@ -114,7 +114,7 @@ test.describe('Test mode: the Playground header', () => {
     await stubBackend(page);
     await gotoTestMode(page);
 
-    await expect(dock(page).getByTestId('playground-header').getByRole('button')).toHaveCount(2);
+    await expect(dock(page).getByTestId('playground-header').getByRole('button')).toHaveCount(3);
     await expect(chip(page)).toBeVisible();
     await expect(more(page)).toBeVisible();
     // What they replaced is gone from the dock.

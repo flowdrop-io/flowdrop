@@ -1,7 +1,8 @@
 <!--
   PlaygroundHeader
 
-  The docked Playground's header (Test mode), two controls and nothing else:
+  The docked Playground's header (Test mode): the history chip, a + for a new
+  conversation and the ⋯ menu, and nothing else:
 
    - the history chip: which conversation (and run) the view is on. Its menu
      lists the Conversations (the sessions the Playground created) and the
@@ -19,6 +20,7 @@
   import Icon from '@iconify/svelte';
   import HeaderMenu from './HeaderMenu.svelte';
   import PanelHeader from '../primitives/PanelHeader.svelte';
+  import IconButton from '../primitives/IconButton.svelte';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { m } from '$lib/messages/index.js';
   import { resolveSessionEndpoint } from '../../config/endpoints.js';
@@ -202,6 +204,16 @@
     </HeaderMenu>
   {/snippet}
   {#snippet actions()}
+    <IconButton
+      variant="ghost"
+      ariaLabel={t.newConversation}
+      title={t.newConversation}
+      data-testid="playground-new-conversation"
+      disabled={fd.playground.isLoading}
+      onclick={() => void fd.runs.createSession()}
+    >
+      <Icon icon="mdi:plus" />
+    </IconButton>
     <HeaderMenu label={t.moreActions} testId="playground-more" variant="icon" align="end">
       {#snippet trigger()}
         <Icon icon="mdi:dots-horizontal" />

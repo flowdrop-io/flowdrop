@@ -133,9 +133,9 @@
   }
 
   .flowdrop-ui-field__tag {
-    padding: 0 var(--fd-space-2xs);
+    padding: var(--fd-field-tag-pad, 0 var(--fd-space-2xs));
     border-radius: var(--fd-radius-sm);
-    background-color: var(--fd-muted);
+    background-color: var(--fd-field-tag-bg, var(--fd-muted));
     color: var(--fd-muted-foreground);
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-2xs);
@@ -151,6 +151,8 @@
   .flowdrop-ui-field :global(.flowdrop-ui-field__example) {
     max-width: 100%;
     border-radius: var(--fd-radius-full);
+    border-style: var(--fd-field-example-border-style, solid);
+    background-color: var(--fd-field-example-bg, var(--fd-background));
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-2xs);
   }

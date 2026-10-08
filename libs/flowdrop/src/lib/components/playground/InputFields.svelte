@@ -202,19 +202,25 @@
   .input-fields__control {
     box-sizing: border-box;
     width: 100%;
-    min-height: var(--fd-control-md);
+    min-height: var(--fd-field-control-height, var(--fd-control-md));
     padding: 0 var(--fd-space-sm);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
+    border: 1px solid var(--fd-field-control-border, var(--fd-border));
+    border-radius: var(--fd-field-control-radius, var(--fd-radius-md));
     background-color: var(--fd-background);
     color: var(--fd-foreground);
     font: inherit;
     font-size: var(--fd-text-sm);
   }
 
+  .input-fields__control:focus-visible {
+    border-color: var(--fd-field-focus-border, var(--fd-ring));
+    box-shadow: var(--fd-field-focus-ring, none);
+  }
+
   .input-fields__control--text {
     padding: var(--fd-space-xs) var(--fd-space-sm);
     resize: vertical;
+    min-height: var(--fd-field-textarea-min, 0);
     line-height: 1.5;
   }
 

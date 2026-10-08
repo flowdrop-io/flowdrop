@@ -61,19 +61,22 @@
     align-items: center;
     gap: var(--fd-space-xs);
     min-width: 0;
-    border: 1px solid var(--fd-border);
-    background: var(--fd-background);
+    border: 0;
+    background: transparent;
     color: var(--fd-foreground);
     font-size: var(--fd-text-sm);
     font-weight: 500;
     line-height: 1;
     cursor: pointer;
-    transition: all var(--fd-transition-fast);
+    transition: background-color var(--fd-transition-fast);
   }
 
+  /* The session chip is a label with a chevron, not a box: a fill appears on hover. */
   :global(.header-menu__button--chip) {
-    padding: var(--fd-space-3xs) var(--fd-space-sm) var(--fd-space-3xs) var(--fd-space-md);
-    border-radius: 999px;
+    height: var(--fd-control-md);
+    padding: 0 var(--fd-space-xs);
+    border-radius: var(--fd-control-radius);
+    font-weight: 600;
     max-width: 100%;
   }
 
@@ -82,14 +85,13 @@
     width: var(--fd-size-icon-btn);
     height: var(--fd-size-icon-btn);
     padding: 0;
-    border-radius: var(--fd-radius-md);
+    border-radius: var(--fd-control-radius);
     color: var(--fd-muted-foreground);
   }
 
   :global(.header-menu__button:hover),
   :global(.header-menu__button.flowdrop-ui-menu__trigger--open) {
     background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
   }
 
   :global(.header-menu__button:focus-visible) {
