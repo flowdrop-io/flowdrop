@@ -327,7 +327,6 @@
     "button": 6
   },
   "src/lib/components/playground/HeaderMenu.svelte": {
-    "button": 1,
     "radius": 1
   },
   "src/lib/components/playground/HierarchyTrail.svelte": {

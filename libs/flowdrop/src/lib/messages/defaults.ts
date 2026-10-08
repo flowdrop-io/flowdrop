@@ -893,5 +893,14 @@ export const defaultMessages = {
 
   notice: {
     dismiss: 'Dismiss'
+  },
+
+  field: {
+    required: 'required',
+    examples: 'Examples'
+  },
+
+  menu: {
+    moreActions: 'More actions'
   }
 } as const;

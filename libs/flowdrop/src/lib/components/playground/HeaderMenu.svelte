@@ -2,11 +2,10 @@
   HeaderMenu
 
   A button that opens a menu: the one control behind both the history chip and
-  the ⋯ menu of the docked Playground's header.
+  the ⋯ menu of the docked Playground's header. A thin skin over the `Menu`
+  primitive, which owns keyboard handling (arrows, Home/End, typeahead, Escape,
+  Tab), ARIA and positioning.
 
-  Keyboard: Enter / Space / ArrowDown open it and focus the first item;
-  ArrowUp / ArrowDown / Home / End move between items (disabled ones are
-  skipped); Escape closes it and returns focus to the button; Tab closes it.
   Items are any element with `role="menuitem"`, `menuitemcheckbox` or
   `menuitemradio` inside `children`, which receives `close` so an item can
   close the menu after it acts.
@@ -14,6 +13,7 @@
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import Menu from '../primitives/Menu.svelte';
 
   interface Props {
     /** Accessible name of the button (and of the menu). */
@@ -41,127 +41,22 @@
     onOpen,
     variant = 'chip'
   }: Props = $props();
-
-  let open = $state(false);
-  let wrapEl = $state<HTMLElement | null>(null);
-  let buttonEl = $state<HTMLButtonElement | null>(null);
-  let menuEl = $state<HTMLElement | null>(null);
-
-  const ITEMS = '[role^="menuitem"]:not(:disabled):not([aria-disabled="true"])';
-
-  function items(): HTMLElement[] {
-    return menuEl ? Array.from(menuEl.querySelectorAll<HTMLElement>(ITEMS)) : [];
-  }
-
-  function show(focus: 'first' | 'last' = 'first'): void {
-    open = true;
-    onOpen?.();
-    // The menu renders on the next tick.
-    queueMicrotask(() => {
-      const all = items();
-      (focus === 'last' ? all.at(-1) : all[0])?.focus();
-    });
-  }
-
-  function close(returnFocus = true): void {
-    if (!open) return;
-    open = false;
-    if (returnFocus) buttonEl?.focus();
-  }
-
-  function onButtonKeydown(event: KeyboardEvent): void {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      if (!open) show(event.key === 'ArrowUp' ? 'last' : 'first');
-    } else if (event.key === 'Escape' && open) {
-      event.preventDefault();
-      event.stopPropagation();
-      close();
-    }
-  }
-
-  function onMenuKeydown(event: KeyboardEvent): void {
-    const all = items();
-    const index = all.indexOf(document.activeElement as HTMLElement);
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        all[(index + 1) % all.length]?.focus();
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        all[(index - 1 + all.length) % all.length]?.focus();
-        break;
-      case 'Home':
-        event.preventDefault();
-        all[0]?.focus();
-        break;
-      case 'End':
-        event.preventDefault();
-        all.at(-1)?.focus();
-        break;
-      case 'Escape':
-        // Not further: the editor clears the selection on Escape.
-        event.preventDefault();
-        event.stopPropagation();
-        close();
-        break;
-      case 'Tab':
-        close(false);
-        break;
-    }
-  }
-
-  $effect(() => {
-    if (!open) return;
-    function onOutside(event: MouseEvent): void {
-      if (!wrapEl?.contains(event.target as Node)) close(false);
-    }
-    document.addEventListener('click', onOutside);
-    return () => document.removeEventListener('click', onOutside);
-  });
 </script>
 
-<div class="header-menu" bind:this={wrapEl}>
-  <button
-    type="button"
-    class="header-menu__button header-menu__button--{variant}"
-    class:header-menu__button--open={open}
-    bind:this={buttonEl}
-    aria-haspopup="menu"
-    aria-expanded={open}
-    aria-label={label}
-    title={label}
-    data-testid={testId}
-    onclick={() => (open ? close(false) : show())}
-    onkeydown={onButtonKeydown}
-  >
-    {@render trigger()}
-  </button>
-
-  {#if open}
-    <!-- Key handling is delegated from the focused menu items. -->
-    <!-- svelte-ignore a11y_interactive_supports_focus -->
-    <div
-      class="header-menu__menu header-menu__menu--{align}"
-      role="menu"
-      aria-label={label}
-      bind:this={menuEl}
-      onkeydown={onMenuKeydown}
-    >
-      {@render children({ close: () => close() })}
-    </div>
-  {/if}
-</div>
+<Menu
+  class="header-menu"
+  {label}
+  {testId}
+  {align}
+  {onOpen}
+  {trigger}
+  {children}
+  minWidth={220}
+  triggerClass="header-menu__button header-menu__button--{variant}"
+/>
 
 <style>
-  .header-menu {
-    position: relative;
-    min-width: 0;
-    display: inline-flex;
-  }
-
-  .header-menu__button {
+  :global(.header-menu__button) {
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-xs);
@@ -176,13 +71,13 @@
     transition: all var(--fd-transition-fast);
   }
 
-  .header-menu__button--chip {
+  :global(.header-menu__button--chip) {
     padding: var(--fd-space-3xs) var(--fd-space-sm) var(--fd-space-3xs) var(--fd-space-md);
     border-radius: 999px;
     max-width: 100%;
   }
 
-  .header-menu__button--icon {
+  :global(.header-menu__button--icon) {
     justify-content: center;
     width: var(--fd-size-icon-btn);
     height: var(--fd-size-icon-btn);
@@ -191,33 +86,15 @@
     color: var(--fd-muted-foreground);
   }
 
-  .header-menu__button:hover,
-  .header-menu__button--open {
+  :global(.header-menu__button:hover),
+  :global(.header-menu__button.flowdrop-ui-menu__trigger--open) {
     background-color: var(--fd-muted);
     border-color: var(--fd-border-strong);
   }
 
-  .header-menu__button:focus-visible {
+  :global(.header-menu__button:focus-visible) {
     outline: 2px solid var(--fd-primary);
     outline-offset: 1px;
-  }
-
-  .header-menu__menu {
-    position: absolute;
-    top: calc(100% + var(--fd-space-xs));
-    z-index: 50;
-    width: max-content;
-    min-width: 220px;
-    max-width: min(300px, calc(100vw - 32px));
-    max-height: min(60vh, 420px);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    padding: var(--fd-space-xs);
-    background-color: var(--fd-background);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    box-shadow: var(--fd-shadow-lg);
   }
 
   /* Shared by every item the header (or a host, through `menuItems`) renders. */
@@ -287,13 +164,5 @@
     height: 1px;
     margin: var(--fd-space-xs) 0;
     background-color: var(--fd-border-muted);
-  }
-
-  .header-menu__menu--start {
-    left: 0;
-  }
-
-  .header-menu__menu--end {
-    right: 0;
   }
 </style>
