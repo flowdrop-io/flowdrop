@@ -16,9 +16,7 @@
   },
   "src/lib/components/ConfigForm.svelte": {
     "button": 8,
-    "colour": 10,
-    "font-size": 5,
-    "radius": 3,
+    "radius": 2,
     "shadow": 4
   },
   "src/lib/components/ConfigMappingRow.svelte": {
@@ -48,10 +46,7 @@
   },
   "src/lib/components/LogsSidebar.svelte": {
     "button": 3,
-    "colour": 29,
-    "font-size": 11,
-    "radius": 4,
-    "shadow": 1
+    "font-size": 1
   },
   "src/lib/components/Navbar.svelte": {
     "button": 2,
@@ -181,8 +176,7 @@
   },
   "src/lib/components/form/FormTemplateEditor.svelte": {
     "button": 2,
-    "colour": 15,
-    "font-size": 7
+    "colour": 4
   },
   "src/lib/components/form/FormToggle.svelte": {
     "radius": 2

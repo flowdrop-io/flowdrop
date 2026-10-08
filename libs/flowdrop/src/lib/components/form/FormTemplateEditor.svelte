@@ -686,7 +686,7 @@
 
   .form-template-editor__hints-label {
     display: block;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     font-weight: 500;
     color: var(--fd-accent-hover);
     text-transform: uppercase;
@@ -720,7 +720,7 @@
 
   .form-template-editor__hint-btn code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     color: var(--fd-accent-hover);
   }
 
@@ -735,7 +735,7 @@
 
   .form-template-editor__placeholder-label {
     display: block;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     font-weight: 500;
     color: var(--fd-muted-foreground);
     text-transform: uppercase;
@@ -757,7 +757,7 @@
     align-items: flex-start;
     gap: 0.375rem;
     margin-top: 0.5rem;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     color: var(--fd-muted-foreground);
   }
 
@@ -773,7 +773,7 @@
     background-color: var(--fd-subtle);
     border-radius: var(--fd-radius-sm);
     font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
-    font-size: 0.625rem;
+    font-size: var(--fd-text-2xs);
   }
 
   /* Loading and error banners */
@@ -784,19 +784,19 @@
     margin-top: 0.625rem;
     padding: 0.625rem 0.75rem;
     border-radius: var(--fd-radius-md);
-    font-size: 0.75rem;
+    font-size: var(--fd-text-xs);
   }
 
   .form-template-editor__banner--loading {
-    background-color: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    color: rgb(29, 78, 216);
+    background-color: color-mix(in srgb, var(--fd-info) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fd-info) 30%, transparent);
+    color: var(--fd-info);
   }
 
   .form-template-editor__banner--error {
-    background-color: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: rgb(185, 28, 28);
+    background-color: color-mix(in srgb, var(--fd-error) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fd-error) 30%, transparent);
+    color: var(--fd-error);
   }
 
   .form-template-editor__banner-icon {
@@ -821,19 +821,19 @@
   .form-template-editor__banner-btn {
     margin-left: auto;
     padding: 0.25rem 0.625rem;
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background-color: color-mix(in srgb, var(--fd-error) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fd-error) 30%, transparent);
     border-radius: var(--fd-radius-sm);
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     font-weight: 500;
-    color: rgb(185, 28, 28);
+    color: var(--fd-error);
     cursor: pointer;
     transition: all var(--fd-transition-fast);
   }
 
   .form-template-editor__banner-btn:hover {
-    background-color: rgba(239, 68, 68, 0.25);
-    border-color: rgba(239, 68, 68, 0.5);
+    background-color: color-mix(in srgb, var(--fd-error) 25%, transparent);
+    border-color: color-mix(in srgb, var(--fd-error) 50%, transparent);
   }
 
   .form-template-editor__banner-btn:active {

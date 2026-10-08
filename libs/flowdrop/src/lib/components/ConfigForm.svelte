@@ -845,8 +845,8 @@
   .config-form__button-spinner {
     width: 1rem;
     height: 1rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #ffffff;
+    border: 2px solid color-mix(in srgb, var(--fd-primary-foreground) 30%, transparent);
+    border-top-color: var(--fd-primary-foreground);
     border-radius: 50%;
     animation: config-form-spin 0.6s linear infinite;
   }
@@ -895,15 +895,15 @@
     background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
     color: var(--fd-primary-foreground);
     box-shadow:
-      0 1px 3px rgba(59, 130, 246, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 1px 3px color-mix(in srgb, var(--fd-primary) 30%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
   }
 
   .config-form__button--primary:hover {
     background: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
     box-shadow:
-      0 4px 12px rgba(59, 130, 246, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 4px 12px color-mix(in srgb, var(--fd-primary) 35%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
     transform: translateY(-1px);
   }
 
@@ -929,7 +929,7 @@
     padding: var(--fd-space-md) var(--fd-space-xl);
     background-color: var(--fd-warning-muted);
     border-bottom: 1px solid var(--fd-warning);
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     font-weight: 600;
     color: var(--fd-warning-hover);
   }
@@ -994,7 +994,7 @@
   .config-form__admin-edit {
     background: linear-gradient(135deg, var(--fd-info-muted) 0%, var(--fd-primary-muted) 100%);
     border: 1px solid var(--fd-primary);
-    border-radius: 0.625rem;
+    border-radius: var(--fd-radius-lg);
     overflow: hidden;
     margin-bottom: var(--fd-space-xl);
   }
@@ -1006,7 +1006,7 @@
     padding: var(--fd-space-md) var(--fd-space-xl);
     background: linear-gradient(135deg, var(--fd-primary-muted) 0%, var(--fd-primary-muted) 100%);
     border-bottom: 1px solid var(--fd-primary);
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     font-weight: 600;
     color: var(--fd-primary-hover);
   }
@@ -1026,7 +1026,7 @@
 
   .config-form__admin-edit-description {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-primary-hover);
     line-height: 1.5;
   }
@@ -1083,7 +1083,7 @@
     padding: var(--fd-space-md) var(--fd-space-xl);
     background-color: var(--fd-error-muted);
     border-bottom: 1px solid var(--fd-error);
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     font-weight: 600;
     color: var(--fd-error-hover);
   }
@@ -1103,7 +1103,7 @@
 
   .config-form__error-message {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-error);
     line-height: 1.5;
   }
@@ -1179,15 +1179,15 @@
     background: linear-gradient(135deg, var(--fd-accent) 0%, var(--fd-primary) 100%);
     color: var(--fd-accent-foreground);
     box-shadow:
-      0 1px 3px rgba(99, 102, 241, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 1px 3px color-mix(in srgb, var(--fd-primary) 30%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
   }
 
   .config-form__button--external:hover {
     background: linear-gradient(135deg, var(--fd-accent-hover) 0%, var(--fd-primary-hover) 100%);
     box-shadow:
-      0 4px 12px rgba(99, 102, 241, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 4px 12px color-mix(in srgb, var(--fd-primary) 35%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
     transform: translateY(-1px);
   }
 
