@@ -25,16 +25,13 @@
     "button": 1
   },
   "src/lib/components/ConfigModal.svelte": {
-    "button": 1,
-    "colour": 9,
-    "font-size": 2,
-    "radius": 2,
+    "colour": 4,
+    "radius": 1,
     "shadow": 1
   },
   "src/lib/components/ConfigPanel.svelte": {
-    "button": 6,
-    "colour": 2,
-    "font-size": 7
+    "button": 1,
+    "colour": 2
   },
   "src/lib/components/EditorStatusBar.svelte": {
     "radius": 1
@@ -94,7 +91,6 @@
     "shadow": 2
   },
   "src/lib/components/SettingsModal.svelte": {
-    "button": 1,
     "colour": 2
   },
   "src/lib/components/SettingsPanel.svelte": {
@@ -142,26 +138,13 @@
     "font-size": 1
   },
   "src/lib/components/chat/AIChatPanel.svelte": {
-    "button": 4,
+    "button": 2,
     "colour": 2,
     "font-size": 4,
     "radius": 5
   },
   "src/lib/components/chat/CommandPreview.svelte": {
     "button": 2
-  },
-  "src/lib/components/console/CommandConsole.svelte": {
-    "button": 1,
-    "font-size": 2
-  },
-  "src/lib/components/console/ConsoleAutocomplete.svelte": {
-    "font-size": 2
-  },
-  "src/lib/components/console/ConsoleInput.svelte": {
-    "font-size": 5
-  },
-  "src/lib/components/console/ConsoleOutput.svelte": {
-    "font-size": 1
   },
   "src/lib/components/form/FieldFactory.svelte": {
     "font-size": 2
@@ -365,9 +348,7 @@
     "button": 5
   },
   "src/lib/components/surfaces/SurfaceOverlay.svelte": {
-    "button": 1,
-    "colour": 2,
-    "font-size": 2
+    "colour": 2
   },
   "src/lib/components/surfaces/TabbedSurface.svelte": {
     "button": 1,

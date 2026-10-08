@@ -10,6 +10,8 @@
   import type { Snippet } from 'svelte';
   import Icon from '@iconify/svelte';
   import ReadOnlyDetails from './ReadOnlyDetails.svelte';
+  import PanelHeader from './primitives/PanelHeader.svelte';
+  import IconButton from './primitives/IconButton.svelte';
   import { getUiSettings } from '../stores/settingsStore.svelte.js';
   import { m } from '$lib/messages/index.js';
   import { portal } from '$lib/utils/portal.js';
@@ -119,42 +121,45 @@
   </div>
 {/snippet}
 
+<!-- Header controls, shared by the docked panel and the popped-out modal. -->
+{#snippet headerActions(popped: boolean)}
+  {#if popped}
+    <IconButton
+      ariaLabel="Dock configuration back to sidebar"
+      title="Dock back to sidebar"
+      onclick={dock}
+    >
+      <Icon icon="heroicons:arrows-pointing-in" />
+    </IconButton>
+  {:else}
+    {#if onSwap}
+      <IconButton ariaLabel={m().layout.swapNode} title="Swap node type" onclick={onSwap}>
+        <Icon icon="heroicons:arrows-right-left" />
+      </IconButton>
+    {/if}
+    {#if expandable && !expanded}
+      <IconButton
+        ariaLabel="Pop out configuration"
+        title="Pop out to a larger window"
+        onclick={() => (expanded = true)}
+      >
+        <Icon icon="heroicons:arrows-pointing-out" />
+      </IconButton>
+    {/if}
+  {/if}
+  {#if onClose}
+    <IconButton ariaLabel={m().layout.closeConfigPanel} onclick={onClose}>
+      <Icon icon="heroicons:x-mark" />
+    </IconButton>
+  {/if}
+{/snippet}
+
 <div class="config-panel" class:config-panel--compact={getUiSettings().compactMode}>
-  <!-- Header -->
-  <div class="config-panel__header">
-    <h2 class="config-panel__title">{title}</h2>
-    <div class="config-panel__actions">
-      {#if onSwap}
-        <button
-          class="config-panel__action-btn"
-          onclick={onSwap}
-          aria-label={m().layout.swapNode}
-          title="Swap node type"
-        >
-          <Icon icon="heroicons:arrows-right-left" />
-        </button>
-      {/if}
-      {#if expandable && !expanded}
-        <button
-          class="config-panel__action-btn"
-          onclick={() => (expanded = true)}
-          aria-label="Pop out configuration"
-          title="Pop out to a larger window"
-        >
-          <Icon icon="heroicons:arrows-pointing-out" />
-        </button>
-      {/if}
-      {#if onClose}
-        <button
-          class="config-panel__close"
-          onclick={onClose}
-          aria-label={m().layout.closeConfigPanel}
-        >
-          ×
-        </button>
-      {/if}
-    </div>
-  </div>
+  <PanelHeader {title}>
+    {#snippet actions()}
+      {@render headerActions(false)}
+    {/snippet}
+  </PanelHeader>
 
   {#if expanded}
     <!-- Content is popped out into the modal; show a lightweight placeholder. -->
@@ -183,28 +188,11 @@
       aria-labelledby={titleId}
       tabindex="-1"
     >
-      <div class="config-panel-modal__header">
-        <h2 id={titleId} class="config-panel-modal__title">{title}</h2>
-        <div class="config-panel__actions">
-          <button
-            class="config-panel__action-btn"
-            onclick={dock}
-            aria-label="Dock configuration back to sidebar"
-            title="Dock back to sidebar"
-          >
-            <Icon icon="heroicons:arrows-pointing-in" />
-          </button>
-          {#if onClose}
-            <button
-              class="config-panel__close"
-              onclick={onClose}
-              aria-label={m().layout.closeConfigPanel}
-            >
-              ×
-            </button>
-          {/if}
-        </div>
-      </div>
+      <PanelHeader {title} {titleId}>
+        {#snippet actions()}
+          {@render headerActions(true)}
+        {/snippet}
+      </PanelHeader>
 
       <div class="config-panel-modal__body">
         {@render panelContent()}
@@ -220,70 +208,6 @@
     flex-direction: column;
     background-color: var(--fd-panel-bg);
     backdrop-filter: var(--fd-panel-backdrop-filter);
-  }
-
-  .config-panel__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-card);
-    flex-shrink: 0;
-  }
-
-  .config-panel__title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--fd-foreground);
-  }
-
-  .config-panel__actions {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .config-panel__action-btn {
-    background: none;
-    border: none;
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--fd-muted-foreground);
-    padding: 0.25rem;
-    border-radius: var(--fd-radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-  }
-
-  .config-panel__action-btn:hover {
-    color: var(--fd-primary);
-    background-color: var(--fd-subtle);
-  }
-
-  .config-panel__close {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--fd-muted-foreground);
-    padding: 0.25rem;
-    border-radius: var(--fd-radius-sm);
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-  }
-
-  .config-panel__close:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
   }
 
   .config-panel__details {
@@ -315,24 +239,6 @@
   }
 
   /* Compact Mode Styles */
-  .config-panel--compact .config-panel__header {
-    padding: 0.5rem 0.75rem;
-  }
-
-  .config-panel--compact .config-panel__title {
-    font-size: 0.875rem;
-  }
-
-  .config-panel--compact .config-panel__close {
-    font-size: 1rem;
-    padding: 0.125rem;
-  }
-
-  .config-panel--compact .config-panel__action-btn {
-    font-size: 0.875rem;
-    padding: 0.125rem;
-  }
-
   .config-panel--compact .config-panel__details {
     padding: 0.5rem 0.75rem;
   }
@@ -419,23 +325,6 @@
     border-radius: var(--fd-radius-lg, 0.75rem);
     box-shadow: var(--fd-shadow-lg, 0 20px 25px -5px rgba(0, 0, 0, 0.25));
     overflow: hidden;
-  }
-
-  .config-panel-modal__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-card);
-    flex-shrink: 0;
-  }
-
-  .config-panel-modal__title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--fd-foreground);
   }
 
   .config-panel-modal__body {

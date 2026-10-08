@@ -54,7 +54,7 @@
     overflow-y: auto;
     padding: 0.5rem 1rem;
     font-family: monospace;
-    font-size: 0.875rem;
+    font-size: var(--fd-text-sm);
     line-height: 1.6;
 
     /* Custom scrollbar styling matching MainLayout pattern */

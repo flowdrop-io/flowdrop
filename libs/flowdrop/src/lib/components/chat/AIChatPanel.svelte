@@ -24,6 +24,8 @@
   // itself (dialog included) stays behind a dynamic import in ensureRuntime.
   import { describeCommand, summarizeCommands } from '../../webmcp/descriptors.js';
   import CommandPreview from './CommandPreview.svelte';
+  import Composer from '../primitives/Composer.svelte';
+  import IconButton from '../primitives/IconButton.svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
   import { onDestroy, tick } from 'svelte';
   import Icon from '@iconify/svelte';
@@ -207,9 +209,6 @@
 
   const isDisabled = $derived(!workflowId);
   const isChatConfigured = $derived(endpointConfig?.endpoints?.chat !== undefined);
-  const canSend = $derived(
-    inputValue.trim().length > 0 && !isLoading && !isDisabled && isChatConfigured
-  );
 
   // =========================================================================
   // Auto-scroll
@@ -768,13 +767,6 @@
       await sendMessageInternal(text);
     }
   }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
-  }
 </script>
 
 <div class="flowdrop-scope ai-chat-panel" role="region" aria-label={t.aiAssistant}>
@@ -881,7 +873,7 @@
       {/each}
     </div>
 
-    <!-- The attached run: a chip, or the way to attach one -->
+    <!-- The composer, with the attached run as a chip above it and the way to attach one inside it -->
     <div class="ai-chat-panel__attach" data-testid="assistant-attach">
       {#if attachedId}
         <span
@@ -922,16 +914,6 @@
             <Icon icon="mdi:close" />
           </button>
         </span>
-      {:else}
-        <button
-          type="button"
-          class="ai-chat-panel__attach-add"
-          data-testid="assistant-attach-add"
-          aria-expanded={attachOpen}
-          onclick={toggleAttachList}
-        >
-          {t.attach.add}
-        </button>
       {/if}
       {#if attachOpen && !attachedId}
         <ul
@@ -964,55 +946,44 @@
           {/each}
         </ul>
       {/if}
-    </div>
-
-    <!-- Input area -->
-    <div class="ai-chat-panel__input-area">
-      <textarea
-        bind:this={inputElement}
+      <Composer
         bind:value={inputValue}
-        onkeydown={handleKeydown}
-        class="ai-chat-panel__input"
+        bind:element={inputElement}
         placeholder={t.placeholder}
-        rows="2"
         disabled={isLoading}
-      ></textarea>
-      <button
-        class="ai-chat-panel__send"
-        onclick={sendMessage}
-        disabled={!canSend}
-        aria-label={t.send}
+        onsubmit={sendMessage}
       >
-        <Icon icon="mdi:send" />
-      </button>
+        {#snippet attach()}
+          {#if !attachedId}
+            <IconButton
+              ariaLabel={t.attach.add}
+              title={t.attach.add}
+              active={attachOpen}
+              aria-expanded={attachOpen}
+              data-testid="assistant-attach-add"
+              onclick={toggleAttachList}
+            >
+              <Icon icon="heroicons:paper-clip" />
+            </IconButton>
+          {/if}
+        {/snippet}
+      </Composer>
     </div>
   {/if}
 </div>
 
 <style>
-  /* The attached run, above the composer */
+  /* The composer's frame: the attached-run chip above it, the run list popping up over it. */
   .ai-chat-panel__attach {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: var(--fd-space-xs);
-    /* The top of the composer: one container with the input row below it. */
-    padding: var(--fd-space-xs) var(--fd-space-sm);
+    padding: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-sm);
     border-top: 1px solid var(--fd-border);
     background: var(--fd-background);
     font-size: var(--fd-text-xs);
-  }
-
-  .ai-chat-panel__attach-add {
-    border: 0;
-    background: none;
-    padding: 0;
-    cursor: pointer;
-    color: var(--fd-primary);
-    font: inherit;
-    text-decoration: underline;
-    text-underline-offset: 2px;
   }
 
   .ai-chat-panel__run-chip {
@@ -1451,69 +1422,5 @@
     30% {
       transform: translateY(-4px);
     }
-  }
-
-  /* Input area */
-  .ai-chat-panel__input-area {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--fd-space-xs);
-    padding: 0 var(--fd-space-sm) var(--fd-space-sm);
-    background: var(--fd-background);
-  }
-
-  .ai-chat-panel__input {
-    flex: 1;
-    resize: none;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    padding: var(--fd-space-xs) var(--fd-space-sm);
-    font-family: var(--fd-font-sans, inherit);
-    font-size: var(--fd-text-sm);
-    line-height: 1.4;
-    color: var(--fd-foreground);
-    background: var(--fd-card);
-    outline: none;
-    max-height: 80px;
-    overflow-y: auto;
-  }
-
-  .ai-chat-panel__input:focus {
-    border-color: var(--fd-primary);
-  }
-
-  .ai-chat-panel__input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .ai-chat-panel__input::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .ai-chat-panel__send {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: var(--fd-radius-md);
-    background: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition:
-      background-color var(--fd-transition-fast),
-      opacity var(--fd-transition-fast);
-  }
-
-  .ai-chat-panel__send:hover:not(:disabled) {
-    background: var(--fd-primary-hover);
-  }
-
-  .ai-chat-panel__send:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 </style>

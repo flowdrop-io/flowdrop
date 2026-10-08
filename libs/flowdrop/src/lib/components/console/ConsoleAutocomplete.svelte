@@ -109,7 +109,7 @@
     height: 2rem;
     cursor: pointer;
     font-family: monospace;
-    font-size: 0.875rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-foreground);
   }
 
@@ -133,7 +133,7 @@
 
   .console-autocomplete__detail {
     color: var(--fd-muted-foreground);
-    font-size: 0.75rem;
+    font-size: var(--fd-text-xs);
     margin-left: 1rem;
     white-space: nowrap;
     flex-shrink: 0;

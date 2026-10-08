@@ -699,20 +699,33 @@
 </div>
 
 <style>
+  /*
+    Same frame as primitives/Composer (40px row, border, large radius, focus
+    ring). The console keeps its own input rather than hosting Composer: it is
+    a command line (history on Up/Down, Tab-accepted autocomplete, a multiline
+    mode behind Shift+Enter, paste handling) and has no send button.
+  */
   .console-input {
     display: flex;
     align-items: center;
-    padding: 0.5rem 1rem;
-    border-top: 1px solid var(--fd-border-muted);
+    box-sizing: border-box;
+    margin: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-sm);
+    padding: calc(var(--fd-space-3xs) - 1px) var(--fd-space-sm);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-lg);
     background-color: var(--fd-background);
     flex-shrink: 0;
   }
 
+  .console-input:focus-within {
+    border-color: var(--fd-ring);
+  }
+
   .console-input__prompt {
     font-family: monospace;
-    font-size: 0.875rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-muted-foreground);
-    margin-right: 0.5rem;
+    margin-right: var(--fd-space-xs);
     user-select: none;
   }
 
@@ -729,11 +742,12 @@
     border: none;
     outline: none;
     font-family: monospace;
-    font-size: 0.875rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-foreground);
     padding: 0;
     line-height: 1.5;
     min-width: 0;
+    min-height: var(--fd-control-lg);
     text-overflow: ellipsis;
   }
 
@@ -759,14 +773,14 @@
 
   .console-input__multiline-label {
     font-family: monospace;
-    font-size: 0.875rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-foreground);
     font-weight: 500;
   }
 
   .console-input__multiline-hint {
     font-family: monospace;
-    font-size: 0.75rem;
+    font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
     opacity: 0.7;
   }
@@ -778,7 +792,7 @@
     border-radius: var(--fd-radius-sm);
     outline: none;
     font-family: monospace;
-    font-size: 0.875rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-foreground);
     padding: 0.375rem 0.5rem;
     line-height: 1.5;

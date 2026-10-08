@@ -1,5 +1,8 @@
 <script lang="ts">
   import type { ConfigSchema, ConfigValues } from '$lib/types/index.js';
+  import Icon from '@iconify/svelte';
+  import PanelHeader from './primitives/PanelHeader.svelte';
+  import IconButton from './primitives/IconButton.svelte';
   import ConfigForm from './ConfigForm.svelte';
   import { m } from '$lib/messages/index.js';
 
@@ -58,19 +61,13 @@
     <!-- Modal Container -->
     <div class="config-modal">
       <!-- Modal Header -->
-      <div class="config-modal__header">
-        <h2 id={titleId} class="config-modal__title">
-          Configure: {props.nodeLabel}
-        </h2>
-        <button
-          type="button"
-          class="config-modal__close-btn"
-          onclick={handleClose}
-          aria-label={m().navigation.closeConfigModal}
-        >
-          <span aria-hidden="true">×</span>
-        </button>
-      </div>
+      <PanelHeader title="Configure: {props.nodeLabel}" {titleId}>
+        {#snippet actions()}
+          <IconButton ariaLabel={m().navigation.closeConfigModal} onclick={handleClose}>
+            <Icon icon="heroicons:x-mark" />
+          </IconButton>
+        {/snippet}
+      </PanelHeader>
 
       <!-- Modal Content -->
       <div class="config-modal__content">
@@ -126,42 +123,6 @@
     overflow: hidden;
   }
 
-  .config-modal__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1.5rem 1.5rem 1rem 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .config-modal__title {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #111827;
-  }
-
-  .config-modal__close-btn {
-    width: 2rem;
-    height: 2rem;
-    border: none;
-    background: transparent;
-    border-radius: 0.375rem;
-    color: #6b7280;
-    font-size: 1.5rem;
-    font-weight: 400;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-
-  .config-modal__close-btn:hover {
-    background-color: #f3f4f6;
-    color: #374151;
-  }
-
   .config-modal__content {
     padding: 1.5rem;
     overflow-y: auto;
@@ -181,10 +142,6 @@
     .config-modal {
       max-width: 95vw;
       min-width: 24rem;
-    }
-
-    .config-modal__header {
-      padding: 1rem 1rem 0.75rem 1rem;
     }
 
     .config-modal__content {

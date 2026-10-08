@@ -28,6 +28,9 @@
   import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { updateSettings, getUiSettings } from '../../stores/settingsStore.svelte.js';
+  import Icon from '@iconify/svelte';
+  import PanelHeader from '../primitives/PanelHeader.svelte';
+  import IconButton from '../primitives/IconButton.svelte';
   import ConsoleInput from './ConsoleInput.svelte';
   import ConsoleOutput, { type ConsoleEntry } from './ConsoleOutput.svelte';
   import { m } from '$lib/messages/index.js';
@@ -251,17 +254,13 @@
 </script>
 
 <div class="command-console" role="region" aria-label={m().layout.commandConsole}>
-  <div class="command-console__header">
-    <h2 class="command-console__title">{m().navigation.bottomPanel.console}</h2>
-    <button
-      class="command-console__close"
-      onclick={closeConsole}
-      aria-label={m().layout.closeConsole}
-      type="button"
-    >
-      &times;
-    </button>
-  </div>
+  <PanelHeader title={m().navigation.bottomPanel.console}>
+    {#snippet actions()}
+      <IconButton ariaLabel={m().layout.closeConsole} onclick={closeConsole}>
+        <Icon icon="heroicons:x-mark" />
+      </IconButton>
+    {/snippet}
+  </PanelHeader>
   <div class="command-console__content">
     <ConsoleOutput entries={outputEntries} />
   </div>
@@ -280,42 +279,6 @@
     display: flex;
     flex-direction: column;
     background-color: var(--fd-background);
-  }
-
-  .command-console__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-muted);
-    flex-shrink: 0;
-  }
-
-  .command-console__title {
-    margin: 0;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--fd-foreground);
-  }
-
-  .command-console__close {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--fd-muted-foreground);
-    padding: 0.25rem;
-    border-radius: var(--fd-radius-sm);
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-  }
-
-  .command-console__close:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
   }
 
   .command-console__content {

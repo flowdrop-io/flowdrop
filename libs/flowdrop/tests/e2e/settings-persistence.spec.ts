@@ -42,7 +42,7 @@ async function openSettings(page: Page): Promise<void> {
 
 /** Close the editor App's settings modal */
 async function closeSettings(page: Page): Promise<void> {
-  await openModal(page).locator('.flowdrop-settings-modal__close').click();
+  await openModal(page).getByRole('button', { name: 'Close settings' }).click();
   await expect(openModal(page)).toHaveCount(0, { timeout: 5000 });
 }
 

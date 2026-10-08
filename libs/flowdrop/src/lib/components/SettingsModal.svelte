@@ -26,6 +26,8 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import SettingsPanel from './SettingsPanel.svelte';
+  import PanelHeader from './primitives/PanelHeader.svelte';
+  import IconButton from './primitives/IconButton.svelte';
   import type { SettingsCategory } from '$lib/types/settings.js';
   import { m } from '$lib/messages/index.js';
 
@@ -134,20 +136,17 @@
 >
   <div class="flowdrop-settings-modal__container">
     <!-- Header -->
-    <div class="flowdrop-settings-modal__header">
-      <h2 id={titleId} class="flowdrop-settings-modal__title">
-        <Icon icon="mdi:cog" class="flowdrop-settings-modal__title-icon" />
-        {m().navigation.settingsTitle}
-      </h2>
-      <button
-        class="flowdrop-settings-modal__close"
-        onclick={closeModal}
-        aria-label={m().navigation.closeSettings}
-        title={m().common.close}
-      >
-        <Icon icon="mdi:close" />
-      </button>
-    </div>
+    <PanelHeader title={m().navigation.settingsTitle} {titleId}>
+      {#snippet actions()}
+        <IconButton
+          ariaLabel={m().navigation.closeSettings}
+          title={m().common.close}
+          onclick={closeModal}
+        >
+          <Icon icon="mdi:close" />
+        </IconButton>
+      {/snippet}
+    </PanelHeader>
 
     <!-- Content -->
     <div class="flowdrop-settings-modal__content">
@@ -212,51 +211,6 @@
       opacity: 1;
       transform: scale(1) translateY(0);
     }
-  }
-
-  /* Header */
-  .flowdrop-settings-modal__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--fd-space-xl);
-    border-bottom: 1px solid var(--fd-border);
-    flex-shrink: 0;
-  }
-
-  .flowdrop-settings-modal__title {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    margin: 0;
-    font-size: var(--fd-text-lg);
-    font-weight: 600;
-    color: var(--fd-foreground);
-  }
-
-  :global(.flowdrop-settings-modal__title-icon) {
-    font-size: var(--fd-text-xl);
-    color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-settings-modal__close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: var(--fd-radius-md);
-    background-color: transparent;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-lg);
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-  }
-
-  .flowdrop-settings-modal__close:hover {
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
   }
 
   /* Content */

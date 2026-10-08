@@ -366,7 +366,7 @@ export const defaultMessages = {
     send: 'Send message',
     // The run attached to the Assistant, above the composer.
     attach: {
-      add: '+ Attach a run',
+      add: 'Attach a run',
       chipLabel: 'Attached run',
       detach: 'Remove the attached run',
       listLabel: 'Runs of this test session',
