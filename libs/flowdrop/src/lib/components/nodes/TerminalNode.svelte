@@ -452,15 +452,15 @@
   .flowdrop-terminal-node--selected .flowdrop-terminal-node__content {
     box-shadow:
       var(--fd-node-shadow-hover),
-      0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
-    border-color: var(--fd-primary);
+      0 0 0 3px color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+    border-color: var(--fd-node-selected-border);
   }
 
   .flowdrop-terminal-node--selected:hover .flowdrop-terminal-node__content {
     box-shadow:
       var(--fd-node-shadow-hover),
-      0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
-    border-color: var(--fd-primary);
+      0 0 0 3px color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+    border-color: var(--fd-node-selected-border);
     transform: scale(1.05);
   }
 
@@ -494,7 +494,7 @@
     box-shadow:
       0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
       0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent),
-      0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
+      0 0 0 3px color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
   }
 
   .flowdrop-terminal-node--exit .flowdrop-terminal-node__content {
@@ -514,7 +514,7 @@
     box-shadow:
       0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
       0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent),
-      0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
+      0 0 0 3px color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
   }
 
   /* Squircle icon wrapper - px (not rem) so the icon stays grid-locked
@@ -576,6 +576,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 100%;
+    display: var(--fd-node-desc-block-display);
   }
 
   .flowdrop-terminal-node__processing {

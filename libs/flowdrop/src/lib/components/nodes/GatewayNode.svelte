@@ -151,7 +151,10 @@
       </div>
 
       <!-- Node Title - uses instanceTitle override if set -->
-      <h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-flex--1">
+      <h3
+        class="flowdrop-text--sm flowdrop-font--medium flowdrop-flex--1"
+        title={displayDescription || undefined}
+      >
         {displayTitle}
       </h3>
     </div>
@@ -283,16 +286,20 @@
 
   .flowdrop-workflow-node--selected {
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
+    border-color: var(--fd-node-selected-border);
   }
 
   .flowdrop-workflow-node--selected:hover {
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
+    border-color: var(--fd-node-selected-border);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
@@ -303,7 +310,7 @@
     /* Bottom padding absorbs BOTH the node's own top border and the header
        divider, so the body below the header lands on the 20px grid measured
        from the node's outer top edge: node-border + header = 100/120/140. */
-    padding: var(--fd-node-header-gap) var(--fd-space-xl)
+    padding: var(--fd-node-header-gap) var(--fd-node-header-padding-x)
       calc(
         var(--fd-node-header-gap) - var(--fd-node-border-width) -
           var(--fd-node-header-divider-width)
@@ -314,13 +321,10 @@
     border-top-right-radius: var(--fd-node-radius);
     display: flex;
     flex-direction: column;
-    gap: calc(var(--fd-node-header-gap) * 2);
+    gap: var(--fd-node-header-row-gap);
     /* node-border (1.5) + header = 100/120/140. Header itself is
        4*gap + title + desc-line - node-border; each extra desc line adds 20. */
-    min-height: calc(
-      var(--fd-node-header-gap) * 4 + var(--fd-node-header-title-height) +
-        var(--fd-node-header-desc-line) - var(--fd-node-border-width)
-    );
+    min-height: var(--fd-node-header-min-height);
   }
 
   .flowdrop-workflow-node__header-title {
@@ -343,6 +347,7 @@
     -webkit-line-clamp: 3;
     line-clamp: 3;
     -webkit-box-orient: vertical;
+    display: var(--fd-node-desc-display);
   }
 
   /* Squircle icon wrapper - Apple-style rounded square background */

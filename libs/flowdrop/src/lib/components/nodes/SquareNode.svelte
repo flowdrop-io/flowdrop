@@ -273,16 +273,20 @@
 
   .flowdrop-square-node--selected .flowdrop-square-node__square {
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
+    border-color: var(--fd-node-selected-border);
   }
 
   .flowdrop-square-node--selected:hover .flowdrop-square-node__square {
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
+    border-color: var(--fd-node-selected-border);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node

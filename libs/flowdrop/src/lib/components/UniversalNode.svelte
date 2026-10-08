@@ -197,6 +197,12 @@
     display: inline-block;
   }
 
+  /* Test mode: the border takes the status colour; a theme may thicken it
+     (--fd-node-status-edge) and add a soft halo while a node waits. */
+  .universal-node--status-border :global(.node-status-overlay__frame) {
+    box-shadow: var(--_frame);
+  }
+
   .universal-node__edited {
     position: absolute;
     top: -9px;

@@ -341,7 +341,7 @@
     margin: 0;
     /* px line-height so the 3-line clamp lands on the 20px grid (3 × 20px) */
     line-height: 20px;
-    display: -webkit-box;
+    display: var(--fd-node-desc-display);
     -webkit-line-clamp: 3;
     line-clamp: 3;
     -webkit-box-orient: vertical;

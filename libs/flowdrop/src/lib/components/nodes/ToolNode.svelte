@@ -200,7 +200,7 @@
 
       <!-- Tool Info -->
       <div class="flowdrop-tool-node__info">
-        <h3 class="flowdrop-tool-node__title">
+        <h3 class="flowdrop-tool-node__title" title={displayDescription || undefined}>
           {displayTitle}
         </h3>
         <div class="flowdrop-tool-node__version">
@@ -416,7 +416,7 @@
     min-height: var(--fd-node-port-row-height);
     overflow: hidden;
     text-overflow: ellipsis;
-    display: -webkit-box;
+    display: var(--fd-node-desc-display);
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;

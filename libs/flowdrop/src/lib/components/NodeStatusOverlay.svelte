@@ -84,6 +84,9 @@
     role="status"
     aria-label={overlay.ariaLabel({ status: getStatusLabel(executionInfo.status) })}
   >
+    {#if !compact}
+      <span class="node-status-overlay__frame" aria-hidden="true"></span>
+    {/if}
     {#if compact}
       <span class="node-status-overlay__outline" aria-hidden="true" style="--_stroke: {3 / zoom}px;"
       ></span>
@@ -110,6 +113,8 @@
   .node-status-overlay {
     --_status: var(--fd-status-skipped);
     --_soft: var(--fd-status-skipped-soft);
+    /* Border thickening for Test mode (applied by UniversalNode); only a node that waits gets the halo. */
+    --_frame: 0 0 0 var(--fd-node-status-edge) var(--_status);
     position: absolute;
     inset: 0;
     z-index: 1000;
@@ -128,6 +133,9 @@
   .node-status-overlay--waiting {
     --_status: var(--fd-status-waiting);
     --_soft: var(--fd-status-waiting-soft);
+    --_frame:
+      0 0 0 var(--fd-node-status-edge) var(--_status),
+      0 0 0 calc(var(--fd-node-status-edge) + var(--fd-node-status-ring)) var(--_soft);
   }
   .node-status-overlay--failed {
     --_status: var(--fd-status-failed);
@@ -138,7 +146,7 @@
   .node-status-overlay__pill {
     position: absolute;
     left: 50%;
-    bottom: calc(100% - var(--fd-control-md) / 2);
+    bottom: calc(100% - var(--fd-status-pill-height) / 2);
     translate: -50% 0;
     pointer-events: auto;
     display: block;
@@ -148,6 +156,15 @@
      (the soft tokens are translucent in dark mode). */
   .node-status-overlay__pill :global(.flowdrop-ui-status-pill) {
     background: linear-gradient(var(--_soft), var(--_soft)), var(--fd-card);
+  }
+
+  /* Carries the shadows that thicken the node's status-coloured border (and
+     draw the waiting halo); UniversalNode sets them, in Test mode only. */
+  .node-status-overlay__frame {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--fd-node-radius, 8px);
+    pointer-events: none;
   }
 
   .node-status-overlay__outline {

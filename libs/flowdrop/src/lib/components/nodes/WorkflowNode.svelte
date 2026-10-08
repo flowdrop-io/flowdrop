@@ -178,7 +178,10 @@
       ></span>
 
       <!-- Node Title - Icon and Title on same line -->
-      <h3 class="flowdrop-text--sm flowdrop-font--medium flowdrop-flex--1">
+      <h3
+        class="flowdrop-text--sm flowdrop-font--medium flowdrop-flex--1"
+        title={displayDescription || undefined}
+      >
         {displayTitle}
       </h3>
 
@@ -205,7 +208,7 @@
               id={`${props.id}-input-${port.id}`}
               class="flowdrop-workflow-node__handle {boundEntry ? 'flowdrop-handle--bound' : ''}"
               title={interfaceBoundTooltip(boundEntry)}
-              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
+              style="top: var(--fd-node-port-handle-top); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
                 checker,
                 port
               )}); --fd-handle-border-color: var(--fd-handle-border);"
@@ -213,10 +216,15 @@
             />
 
             <!-- Port Info: padding lives here so handle position is simple -->
-            <div class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0">
+            <div
+              class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0"
+              title={port.description || undefined}
+            >
               <PortTypeBadge {checker} {port} showRequired />
               {#if port.description}
-                <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
+                <p
+                  class="flowdrop-workflow-node__port-help flowdrop-text--xs flowdrop-text--gray flowdrop-truncate"
+                >
                   {port.description}
                 </p>
               {/if}
@@ -237,10 +245,13 @@
             <!-- Port Info: padding lives here so handle position is simple -->
             <div
               class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right"
+              title={port.description || undefined}
             >
               <PortTypeBadge {checker} {port} align="right" />
               {#if port.description}
-                <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
+                <p
+                  class="flowdrop-workflow-node__port-help flowdrop-text--xs flowdrop-text--gray flowdrop-truncate"
+                >
                   {port.description}
                 </p>
               {/if}
@@ -253,7 +264,7 @@
               id={`${props.id}-output-${port.id}`}
               class="flowdrop-workflow-node__handle {boundEntry ? 'flowdrop-handle--bound' : ''}"
               title={interfaceBoundTooltip(boundEntry)}
-              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
+              style="top: var(--fd-node-port-handle-top); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
                 checker,
                 port
               )}); --fd-handle-border-color: var(--fd-handle-border);"
@@ -290,16 +301,20 @@
 
   .flowdrop-workflow-node--selected {
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
+    border-color: var(--fd-node-selected-border);
   }
 
   .flowdrop-workflow-node--selected:hover {
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
+    border-color: var(--fd-node-selected-border);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
@@ -310,7 +325,7 @@
     /* Bottom padding absorbs BOTH the node's own top border and the header
        divider, so the body below the header lands on the 20px grid measured
        from the node's outer top edge: node-border + header = 100/120/140. */
-    padding: var(--fd-node-header-gap) var(--fd-space-xl)
+    padding: var(--fd-node-header-gap) var(--fd-node-header-padding-x)
       calc(
         var(--fd-node-header-gap) - var(--fd-node-border-width) -
           var(--fd-node-header-divider-width)
@@ -321,13 +336,11 @@
     border-top-right-radius: var(--fd-node-radius);
     display: flex;
     flex-direction: column;
-    gap: calc(var(--fd-node-header-gap) * 2);
+    gap: var(--fd-node-header-row-gap);
     /* node-border (1.5) + header = 100/120/140. Header itself is
-       4*gap + title + desc-line - node-border; each extra desc line adds 20. */
-    min-height: calc(
-      var(--fd-node-header-gap) * 4 + var(--fd-node-header-title-height) +
-        var(--fd-node-header-desc-line) - var(--fd-node-border-width)
-    );
+       4*gap + title + desc-line - node-border; each extra desc line adds 20.
+       Compact nodes (Graphite) shrink to title height. */
+    min-height: var(--fd-node-header-min-height);
   }
 
   .flowdrop-workflow-node__header-title {
@@ -350,6 +363,7 @@
     -webkit-line-clamp: 3;
     line-clamp: 3;
     -webkit-box-orient: vertical;
+    display: var(--fd-node-desc-display);
   }
 
   /* Squircle icon wrapper - Apple-style rounded square background */
@@ -358,9 +372,9 @@
     align-items: center;
     justify-content: center;
     /* px (not rem) so the icon stays grid-locked regardless of root font-size */
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
+    width: var(--fd-node-icon-size);
+    height: var(--fd-node-icon-size);
+    border-radius: var(--fd-node-icon-radius);
     background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
@@ -376,8 +390,8 @@
   }
 
   .flowdrop-workflow-node__icon-wrapper :global(.flowdrop-workflow-node__icon) {
-    width: 20px;
-    height: 20px;
+    width: var(--fd-node-icon-glyph-size);
+    height: var(--fd-node-icon-glyph-size);
     color: var(--fd-node-icon);
   }
 
@@ -393,10 +407,12 @@
   .flowdrop-workflow-node__header-title h3 {
     margin: 0;
     /* half the title block so two lines fill it exactly on the 20px grid */
-    line-height: calc(var(--fd-node-header-title-height) / 2);
+    line-height: var(--fd-node-title-line);
+    font-size: var(--fd-node-title-size);
+    font-weight: var(--fd-node-title-weight);
     display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    -webkit-line-clamp: var(--fd-node-title-clamp);
+    line-clamp: var(--fd-node-title-clamp);
     -webkit-box-orient: vertical;
     overflow: hidden;
     min-width: 0;
@@ -431,22 +447,27 @@
   .flowdrop-workflow-node__header
     + .flowdrop-workflow-node__ports
     .flowdrop-workflow-node__ports-list {
-    padding-top: calc(var(--fd-node-header-gap) * 2);
+    padding-top: var(--fd-node-ports-first-pad);
+  }
+
+  .flowdrop-workflow-node__ports:last-of-type .flowdrop-workflow-node__ports-list {
+    padding-bottom: var(--fd-node-ports-end-pad);
   }
 
   .flowdrop-workflow-node__port {
     display: flex;
-    align-items: flex-start;
+    align-items: var(--fd-node-port-align);
     gap: 0;
     /* Fixed three-row (60px) height for every port — node height stays
-       predictable whether or not a port carries a description. */
-    height: calc(var(--fd-node-port-row-height) * 3);
+       predictable whether or not a port carries a description. Compact nodes
+       use one row and centre the handle on it. */
+    height: var(--fd-node-port-height);
     padding: 0;
     position: relative;
   }
 
   .flowdrop-workflow-node__port-content {
-    padding: var(--fd-node-header-gap) var(--fd-space-xl) 0;
+    padding: var(--fd-node-port-pad);
   }
 
   /* Each line in a port occupies one 20px grid row: a label-only port
@@ -457,6 +478,7 @@
   .flowdrop-workflow-node__port-content > p {
     min-height: var(--fd-node-port-row-height);
     line-height: var(--fd-node-port-row-height);
+    display: var(--fd-node-port-help-display);
   }
 
   /* Handle overrides: hover scale (base 20px/12px from base.css) */

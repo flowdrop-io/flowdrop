@@ -192,7 +192,7 @@
       ></span>
 
       <!-- Node Title -->
-      <h3 class="flowdrop-simple-node__title">
+      <h3 class="flowdrop-simple-node__title" title={displayDescription || undefined}>
         {displayTitle}
       </h3>
     </div>
@@ -272,16 +272,20 @@
 
   .flowdrop-simple-node--selected {
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
+    border-color: var(--fd-node-selected-border);
   }
 
   .flowdrop-simple-node--selected:hover {
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
+    border-color: var(--fd-node-selected-border);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
@@ -347,6 +351,7 @@
     color: var(--fd-muted-foreground);
     margin: var(--fd-space-3xs) 0 0 0;
     line-height: 1.3;
+    display: var(--fd-node-desc-block-display);
   }
 
   .flowdrop-simple-node__icon-wrapper :global(.flowdrop-simple-node__icon) {

@@ -100,15 +100,15 @@
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-3xs);
-    height: var(--fd-control-md);
-    padding-inline: var(--fd-space-xs);
+    height: var(--fd-status-pill-height);
+    padding: var(--fd-status-pill-padding);
     border-radius: var(--fd-radius-full);
-    border: 1px solid color-mix(in srgb, var(--_fg) 30%, transparent);
+    border: var(--fd-status-pill-border-width) solid color-mix(in srgb, var(--_fg) 30%, transparent);
     background: var(--_bg);
     color: var(--_fg);
     font-family: var(--fd-font-sans);
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
+    font-size: var(--fd-status-pill-size);
+    font-weight: var(--fd-status-pill-weight);
     line-height: 1;
     white-space: nowrap;
     user-select: none;
@@ -143,7 +143,7 @@
 
   .flowdrop-ui-status-pill__icon {
     display: inline-flex;
-    font-size: var(--fd-text-sm);
+    font-size: var(--fd-status-pill-icon-size);
   }
 
   .flowdrop-ui-status-pill--sm .flowdrop-ui-status-pill__icon {
@@ -155,13 +155,21 @@
   }
 
   .flowdrop-ui-status-pill__count {
-    min-width: 1.25em;
-    padding-inline: var(--fd-space-3xs);
-    border-radius: var(--fd-radius-full);
-    background: var(--_fg);
-    color: var(--fd-background);
+    /* Tokens left at `initial` fall back to the filled count chip. */
+    min-width: var(--fd-status-pill-count-min, 1.25em);
+    padding: var(--fd-status-pill-count-pad, 0 var(--fd-space-3xs));
+    border-left: var(--fd-status-pill-count-rule, 0px) solid currentColor;
+    border-radius: var(--fd-status-pill-count-radius, var(--fd-radius-full));
+    background: var(--fd-status-pill-count-bg, var(--_fg));
+    color: var(--fd-status-pill-count-fg, var(--fd-background));
+    font-family: var(--fd-status-pill-count-font, inherit);
+    opacity: var(--fd-status-pill-count-opacity, 1);
     text-align: center;
     font-variant-numeric: tabular-nums;
+  }
+
+  .flowdrop-ui-status-pill__count::before {
+    content: var(--fd-status-pill-count-prefix, '');
   }
 
   @keyframes flowdrop-ui-status-pill-spin {
