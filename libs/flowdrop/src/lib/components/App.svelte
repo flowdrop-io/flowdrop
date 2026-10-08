@@ -14,6 +14,7 @@
   import NodeSidebar from '$lib/components/NodeSidebar.svelte';
   import DockedPlayground from '$lib/components/playground/DockedPlayground.svelte';
   import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
+  import IconButton from '$lib/components/primitives/IconButton.svelte';
   import EditorStatusBar from '$lib/components/EditorStatusBar.svelte';
   import MenuIcon from '$lib/components/icons/MenuIcon.svelte';
   import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
@@ -1446,9 +1447,11 @@
     const isLibraryKey = testMode && (event.key === 'n' || event.key === 'N');
     // T toggles Edit | Test where Test mode is offered.
     const isModeKey = testModeAvailable && (event.key === 't' || event.key === 'T');
-    if (event.key !== '`' && !isLibraryKey && !isModeKey) return;
+    // / focuses the node library's search in Edit mode.
+    const isSearchKey = !testMode && !disableSidebar && event.key === '/';
+    if (event.key !== '`' && !isLibraryKey && !isModeKey && !isSearchKey) return;
     if (
-      (isLibraryKey || isModeKey) &&
+      (isLibraryKey || isModeKey || isSearchKey) &&
       (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.repeat)
     ) {
       return;
@@ -1464,6 +1467,15 @@
       !!target.closest?.('.cm-editor');
 
     if (isInputElement) return;
+    if (isSearchKey) {
+      event.preventDefault();
+      if (isSidebarCollapsed) toggleSidebar();
+      leftTab = 'nodes';
+      void tick().then(() =>
+        document.querySelector<HTMLInputElement>('input[data-fd-library-search]')?.focus()
+      );
+      return;
+    }
     if (isModeKey) {
       event.preventDefault();
       fd.editorMode.set(testMode ? 'edit' : 'test');
@@ -1869,6 +1881,7 @@
       loading={nodeTypesLoading}
       activeFormat={fd.workflow.format}
       categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
+      listStyle={themeConfig?.display?.sidebarList}
     />
   {/if}
 {/snippet}
@@ -1971,7 +1984,7 @@
       {#if testMode}
         {@render dockedPlayground()}
       {/if}
-      {#if chatInLeftSlot}
+      {#if chatInLeftSlot || !testMode}
         <!-- Kept mounted (hidden) in Test mode, so the conversation survives the trip -->
         <div
           class="left-slot"
@@ -1985,18 +1998,34 @@
                 label: mergedMessages.layout.nodesTab,
                 content: nodesTabContent
               },
-              {
-                id: 'assistant',
-                label: mergedMessages.navigation.bottomPanel.chat,
-                content: chatSurfaceBody
-              }
+              ...(chatInLeftSlot
+                ? [
+                    {
+                      id: 'assistant',
+                      label: mergedMessages.navigation.bottomPanel.chat,
+                      content: chatSurfaceBody
+                    }
+                  ]
+                : [])
             ]}
             activeId={leftTab}
             onSelect={(id) => (leftTab = id === 'assistant' ? 'assistant' : 'nodes')}
-          />
+            ariaLabel={mergedMessages.layout.componentsSidebar}
+          >
+            {#snippet headerActions()}
+              {#if !disableSidebar}
+                <IconButton
+                  size="md"
+                  ariaLabel={mergedMessages.layout.collapseSidebar}
+                  title={mergedMessages.layout.collapseSidebar}
+                  onclick={toggleSidebar}
+                >
+                  <MenuOpenIcon />
+                </IconButton>
+              {/if}
+            {/snippet}
+          </TabbedSurface>
         </div>
-      {:else if !testMode}
-        {@render nodesTabContent()}
       {/if}
     {/snippet}
 
@@ -2091,7 +2120,9 @@
         ? leftSidebarWidth + 'px'
         : '0px'}; --fd-canvas-toolbar-inset: {testMode && narrow && drawerOpen
         ? 'var(--fd-test-drawer-width)'
-        : '0px'}"
+        : !testMode && !disableSidebar && isSidebarCollapsed
+          ? '46px'
+          : '0px'}"
       onclick={handleCanvasClick}
       onkeydown={(e) => {
         if (e.key !== 'Escape') return;
@@ -2117,9 +2148,10 @@
         Test mode the sidebar is the Playground: a column that needs no
         toggle, or on a narrow screen a drawer that this button opens.
       -->
-      {#if testMode ? narrow : !disableSidebar}
+      {#if testMode ? narrow : !disableSidebar && isSidebarCollapsed}
         <CanvasIconButton
-          class="flowdrop-sidebar-fab {testMode && drawerOpen
+          class="flowdrop-sidebar-fab {testMode ? '' : 'flowdrop-sidebar-fab--edit'} {testMode &&
+          drawerOpen
             ? 'flowdrop-sidebar-fab--beside-drawer'
             : ''}"
           label={testMode
@@ -2176,6 +2208,7 @@
             loading={nodeTypesLoading}
             activeFormat={fd.workflow.format}
             categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
+            listStyle={themeConfig?.display?.sidebarList}
           />
         </div>
       {/if}
@@ -2283,7 +2316,7 @@
 
   /* Floating sidebar toggle button — placement only; visuals live in CanvasIconButton */
   :global(.flowdrop-sidebar-fab) {
-    /* Below the canvas toolbar, which holds the top-left corner. */
+    /* Below the canvas toolbar, which holds the top-left corner (Test mode, narrow). */
     top: 56px;
     left: 12px;
     z-index: 50;
@@ -2300,6 +2333,12 @@
     background: var(--fd-background);
     border-right: 1px solid var(--fd-border);
     box-shadow: var(--fd-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+  }
+
+  /* Edit mode, sidebar collapsed: the expand control takes the toolbar row's start;
+     the toolbar is inset by 46px (App sets --fd-canvas-toolbar-inset). */
+  :global(.flowdrop-sidebar-fab--edit) {
+    top: var(--fd-space-sm);
   }
 
   :global(.flowdrop-sidebar-fab--beside-drawer) {

@@ -12,6 +12,8 @@
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import PanelHeader from '../primitives/PanelHeader.svelte';
+  import Tabs, { tabId, tabPanelId } from '../primitives/Tabs.svelte';
 
   /** A single hostable surface. */
   export interface SurfaceTab {
@@ -36,9 +38,20 @@
     activeId: string;
     /** Called when a tab is selected. */
     onSelect: (id: string) => void;
+    /**
+     * Right-aligned controls in the 40px panel header (e.g. the sidebar collapse
+     * button). Giving it also shows the header for a lone surface, with that
+     * surface's label as the title.
+     */
+    headerActions?: Snippet;
+    /** Accessible name of the tab list. */
+    ariaLabel?: string;
   }
 
-  const { tabs, activeId, onSelect }: Props = $props();
+  const { tabs, activeId, onSelect, headerActions, ariaLabel = 'Panels' }: Props = $props();
+
+  const generatedId = $props.id();
+  const idBase = `flowdrop-surface-${generatedId}`;
 
   // Fall back to the first tab when `activeId` doesn't match any present tab
   // (e.g. the active surface was just routed to a different host).
@@ -48,27 +61,34 @@
 </script>
 
 <div class="tabbed-surface">
-  {#if tabs.length > 1}
-    <div class="tabbed-surface__bar" role="tablist">
-      {#each tabs as tab (tab.id)}
-        <button
-          class="tabbed-surface__tab {tab.id === resolvedActiveId
-            ? 'tabbed-surface__tab--active'
-            : ''}"
-          role="tab"
-          aria-selected={tab.id === resolvedActiveId}
-          onclick={() => onSelect(tab.id)}
-        >
-          {tab.label}
-        </button>
-      {/each}
-    </div>
+  {#if tabs.length > 1 || headerActions}
+    <PanelHeader class="tabbed-surface__header">
+      {#snippet leading()}
+        {#if tabs.length > 1}
+          <Tabs
+            {idBase}
+            {ariaLabel}
+            tabs={tabs.map((t) => ({ value: t.id, label: t.label }))}
+            value={resolvedActiveId}
+            onchange={onSelect}
+          />
+        {:else}
+          <h2 class="tabbed-surface__title">{tabs[0]?.label}</h2>
+        {/if}
+      {/snippet}
+      {#snippet actions()}
+        {@render headerActions?.()}
+      {/snippet}
+    </PanelHeader>
   {/if}
 
   <div class="tabbed-surface__content">
     {#each tabs as tab (tab.id)}
       <div
         class="tabbed-surface__panel"
+        role={tabs.length > 1 ? 'tabpanel' : undefined}
+        id={tabs.length > 1 ? tabPanelId(idBase, tab.id) : undefined}
+        aria-labelledby={tabs.length > 1 ? tabId(idBase, tab.id) : undefined}
         style:display={tab.id === resolvedActiveId ? (tab.display ?? 'flex') : 'none'}
       >
         {@render tab.content()}
@@ -85,35 +105,15 @@
     overflow: hidden;
   }
 
-  .tabbed-surface__bar {
-    display: flex;
-    gap: 0;
-    background: var(--fd-muted);
-    border-bottom: 1px solid var(--fd-border);
-    flex-shrink: 0;
+  .tabbed-surface :global(.tabbed-surface__header) {
+    padding-inline: var(--fd-space-sm) var(--fd-space-xs);
   }
 
-  .tabbed-surface__tab {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: var(--fd-muted-foreground);
-    transition: all var(--fd-transition-fast);
-  }
-
-  .tabbed-surface__tab:hover {
-    color: var(--fd-foreground);
-    background: var(--fd-background);
-  }
-
-  .tabbed-surface__tab--active {
-    color: var(--fd-foreground);
-    border-bottom-color: var(--fd-primary);
-    background: var(--fd-background);
+  .tabbed-surface__title {
+    margin: 0;
+    padding-inline: var(--fd-space-xs);
+    font-size: var(--fd-text-sm);
+    font-weight: 600;
   }
 
   .tabbed-surface__content {

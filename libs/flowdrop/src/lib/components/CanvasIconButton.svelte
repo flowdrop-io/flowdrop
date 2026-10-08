@@ -36,14 +36,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--fd-float-border);
+    border-radius: var(--fd-radius-surface);
     background-color: var(--fd-background);
     color: var(--fd-muted-foreground);
     cursor: pointer;
-    box-shadow: var(--fd-shadow-md);
+    box-shadow: var(--fd-elevation-float);
     transition:
       color var(--fd-transition-fast),
       background-color var(--fd-transition-fast),
@@ -60,7 +60,7 @@
   .flowdrop-canvas-btn:hover {
     color: var(--fd-foreground);
     background-color: var(--fd-subtle);
-    box-shadow: var(--fd-shadow-lg);
+    box-shadow: var(--fd-elevation-float);
   }
 
   .flowdrop-canvas-btn--active {
