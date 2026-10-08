@@ -1,22 +1,23 @@
 <!--
-  Button — typed wrapper over the shared `.flowdrop-btn` system (base.css).
+  Button — typed wrapper over the Button primitive (`primitives/Button.svelte`).
 
-  All button styling (variants, sizes, the --fd-size-btn-min height token and the
-  centralized focus ring) lives in base.css. This component is the ergonomic,
-  type-safe entry point so callers pick `variant`/`size` instead of hand-writing
-  class strings — the single place new buttons should route through.
+  Keeps the original public prop API (variants primary/secondary/outline/ghost,
+  sizes sm/md/lg) so existing callers are untouched; everything maps onto the
+  primitive:  outline -> secondary (bordered surface),  lg -> md.  Heights are
+  now the control tokens (sm 24px, md 28px), not the old 28/40/48.
 
   Internal for now (not exported from any public entry) so the API isn't frozen
-  before GA. Existing hand-rolled buttons migrate onto it incrementally.
+  before GA. New code should use the primitive directly.
 -->
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import PrimitiveButton from './primitives/Button.svelte';
 
   interface Props {
-    /** Visual style — maps to `.flowdrop-btn--{variant}` in base.css */
+    /** Visual style — `outline` is mapped onto the primitive's `secondary` */
     variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-    /** Size — `md` is the base `.flowdrop-btn`; `sm`/`lg` add a modifier */
+    /** Size — `lg` is mapped onto the primitive's `md` */
     size?: 'sm' | 'md' | 'lg';
     /** Native button type */
     type?: 'button' | 'submit' | 'reset';
@@ -46,17 +47,19 @@
     children
   }: Props = $props();
 
-  // 'md' is the unmodified base class; only 'sm'/'lg' need a size modifier.
-  const sizeClass = $derived(size === 'md' ? '' : `flowdrop-btn--${size}`);
+  const mappedVariant = $derived(variant === 'outline' ? 'secondary' : variant);
+  const mappedSize = $derived(size === 'sm' ? 'sm' : 'md');
 </script>
 
-<button
-  class="flowdrop-btn flowdrop-btn--{variant} {sizeClass} {className}"
+<PrimitiveButton
+  variant={mappedVariant}
+  size={mappedSize}
   {type}
   {title}
+  {ariaLabel}
   {disabled}
-  aria-label={ariaLabel}
+  class={className}
   {onclick}
 >
   {@render children()}
-</button>
+</PrimitiveButton>
