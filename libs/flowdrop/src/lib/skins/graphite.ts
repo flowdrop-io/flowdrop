@@ -6,9 +6,10 @@ import type { FlowDropSkin } from '../types/skin.js';
  * One ink-coloured primary action per view, one blue accent for selection,
  * focus and "running", and three status hues (green completed, amber waiting
  * for you, red failed) that appear only where something has a status. Greys
- * lean slightly cool. Shape sits on a 4px grid: 4px radius for controls and
- * nodes, 8px for sheets, 1px rules, almost no shadow. Type is Inter at the
- * 11 / 12 / 13 / 15 / 20 scale from tokens.css.
+ * lean slightly cool. Shape sits on a 4px grid: 6px radius for controls, 8px for
+ * surfaces (nodes, cards, floating controls, sheets), 12px for message
+ * bubbles, 1px rules, and one float elevation for what sits over the canvas. Type is Inter, 13px body and
+ * 12px meta (see process/plans/graphite-refinement.md in the workspace).
  *
  * This is not the flowdrop.io or Factorial brand kit. Every token a colour
  * role needs is set here in both modes, so nothing falls back to the blue
@@ -32,33 +33,36 @@ export const graphiteSkin: FlowDropSkin = {
     /* ----- Surfaces: white panels on a cool grey canvas ----- */
     background: '#ffffff',
     foreground: '#16191f',
-    muted: '#f3f4f6',
-    'muted-foreground': '#5a6270',
-    subtle: '#eceef1',
+    muted: '#eceef1',
+    'muted-foreground': '#5d6573',
+    subtle: '#f1f3f5',
     card: '#ffffff',
     'card-foreground': '#16191f',
-    header: '#fafbfc',
+    header: '#ffffff',
     'header-foreground': '#16191f',
     'header-gradient': 'none',
     'surface-tint': 'transparent',
     'layout-background': '#f6f7f9',
     'canvas-bg': '#f6f7f9',
-    'grid-pattern-color': '#c9ced6',
+    'grid-pattern-color': '#d3d8df',
     backdrop: 'rgba(246, 247, 249, 0.85)',
 
     /* ----- Rules: 1px, cool grey ----- */
-    border: '#dfe2e7',
-    'border-muted': '#ebedf0',
-    'border-strong': '#b8bec8',
+    border: '#e4e7eb',
+    'border-muted': '#eceef1',
+    'border-strong': '#cfd4db',
     ring: '#2457d6',
 
-    /* ----- Nodes: flat, 4px corners, 1px outline; selection is the accent ----- */
-    'node-radius': '4px',
-    'node-border': '#b8bec8',
-    'node-border-hover': '#8c94a1',
+    /* ----- Nodes: 8px cards, 1px outline, a hairline of lift; selection is the accent ----- */
+    'node-radius': '8px',
+    'node-bg': '#ffffff',
+    'node-header-bg': '#ffffff',
+    'node-header-divider-color': '#eceef1',
+    'node-border': '#cfd4db',
+    'node-border-hover': '#aab1bc',
     'node-border-width': '1px',
-    'node-shadow': 'none',
-    'node-shadow-hover': 'none',
+    'node-shadow': '0 1px 2px rgb(16 24 40 / 0.05)',
+    'node-shadow-hover': '0 1px 2px rgb(16 24 40 / 0.05), 0 4px 12px rgb(16 24 40 / 0.08)',
     'handle-border': '#ffffff',
     'edge-trigger': '#16191f',
     'edge-trigger-hover': '#16191f',
@@ -71,15 +75,25 @@ export const graphiteSkin: FlowDropSkin = {
     'edge-loopback-hover': '#3d4350',
     'edge-loopback-selected': '#2457d6',
 
-    /* ----- Shape: 4px controls and nodes, 8px sheets ----- */
+    /* ----- Shape: 6px controls, 8px surfaces, 12px bubbles ----- */
     'radius-sm': '4px',
-    'radius-md': '4px',
+    'radius-md': '6px',
     'radius-lg': '8px',
-    'radius-xl': '8px',
-    'control-radius': '4px',
-    'shadow-sm': 'none',
-    'shadow-md': '0 2px 6px rgb(22 25 31 / 0.06)',
-    'shadow-lg': '0 8px 20px rgb(22 25 31 / 0.1)',
+    'radius-xl': '12px',
+    'control-radius': '6px',
+    'radius-surface': '8px',
+    'radius-bubble': '12px',
+
+    /* ----- Elevation: one float level over the canvas, none in flow ----- */
+    'shadow-sm': '0 1px 2px rgb(16 24 40 / 0.05)',
+    'shadow-md': '0 1px 2px rgb(16 24 40 / 0.05), 0 4px 12px rgb(16 24 40 / 0.06)',
+    'shadow-lg': '0 12px 32px rgb(16 24 40 / 0.12)',
+    'elevation-float': '0 1px 2px rgb(16 24 40 / 0.05), 0 4px 12px rgb(16 24 40 / 0.06)',
+    'float-border': '#e4e7eb',
+
+    /* ----- Type: 13px body, 12px meta ----- */
+    'text-body': '0.8125rem',
+    'text-meta': '0.75rem',
 
     /* ----- Primary action: ink. One per view. ----- */
     primary: '#16191f',
@@ -115,10 +129,11 @@ export const graphiteSkin: FlowDropSkin = {
     'error-foreground': '#ffffff',
     'error-muted': '#fce8eb',
 
-    'scrollbar-thumb': '#cdd1d8',
-    'scrollbar-thumb-hover': '#b0b6c0',
-    'scrollbar-track': '#f3f4f6',
-    'scrollbar-radius': '4px',
+    'scrollbar-thumb': '#d5d9e0',
+    'scrollbar-thumb-hover': '#b4bbc5',
+    'scrollbar-track': 'transparent',
+    'scrollbar-radius': '9999px',
+    'scrollbar-size': '8px',
 
     'sidebar-category-color': '#5a6270',
     'sidebar-flat-item-color': '#16191f'
@@ -127,30 +142,33 @@ export const graphiteSkin: FlowDropSkin = {
   darkTokens: {
     /* Dark: the light tokens above also apply in dark mode, so every colour
        the light block sets is set again here. */
-    background: '#14161a',
+    background: '#16181d',
     foreground: '#eceef2',
-    muted: '#1b1e23',
-    'muted-foreground': '#a0a8b5',
-    subtle: '#23272d',
+    muted: '#262a31',
+    'muted-foreground': '#9aa2af',
+    subtle: '#1f2228',
     card: '#1b1e23',
     'card-foreground': '#eceef2',
-    header: '#171a1f',
+    header: '#16181d',
     'header-foreground': '#eceef2',
     'header-gradient': 'none',
     'surface-tint': 'transparent',
-    'layout-background': '#101215',
-    'canvas-bg': '#101215',
-    'grid-pattern-color': '#2c3037',
+    'layout-background': '#0f1114',
+    'canvas-bg': '#0f1114',
+    'grid-pattern-color': '#262a31',
     backdrop: 'rgba(16, 18, 21, 0.85)',
 
-    border: '#2c3037',
-    'border-muted': '#23272d',
-    'border-strong': '#434955',
+    border: '#262a31',
+    'border-muted': '#1f2228',
+    'border-strong': '#353a43',
     ring: '#7aa2ff',
 
-    'node-border': '#434955',
-    'node-border-hover': '#5d6573',
-    'handle-border': '#14161a',
+    'node-bg': '#1b1e23',
+    'node-header-bg': '#1b1e23',
+    'node-header-divider-color': '#262a31',
+    'node-border': '#353a43',
+    'node-border-hover': '#4a505b',
+    'handle-border': '#1b1e23',
     'edge-trigger': '#eceef2',
     'edge-trigger-hover': '#ffffff',
     'edge-trigger-selected': '#7aa2ff',
@@ -162,9 +180,13 @@ export const graphiteSkin: FlowDropSkin = {
     'edge-loopback-hover': '#a0a8b5',
     'edge-loopback-selected': '#7aa2ff',
 
-    'shadow-sm': 'none',
-    'shadow-md': '0 2px 6px rgb(0 0 0 / 0.3)',
-    'shadow-lg': '0 8px 20px rgb(0 0 0 / 0.4)',
+    'node-shadow': '0 1px 2px rgb(0 0 0 / 0.3)',
+    'node-shadow-hover': '0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px rgb(0 0 0 / 0.35)',
+    'shadow-sm': '0 1px 2px rgb(0 0 0 / 0.3)',
+    'shadow-md': '0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px rgb(0 0 0 / 0.35)',
+    'shadow-lg': '0 12px 32px rgb(0 0 0 / 0.5)',
+    'elevation-float': '0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px rgb(0 0 0 / 0.35)',
+    'float-border': '#2c3037',
 
     primary: '#eceef2',
     'primary-hover': '#ffffff',
@@ -197,9 +219,9 @@ export const graphiteSkin: FlowDropSkin = {
     'error-foreground': '#1a0b0e',
     'error-muted': '#331a1f',
 
-    'scrollbar-thumb': '#2c3037',
-    'scrollbar-thumb-hover': '#434955',
-    'scrollbar-track': '#14161a',
+    'scrollbar-thumb': '#343943',
+    'scrollbar-thumb-hover': '#4a505b',
+    'scrollbar-track': 'transparent',
 
     'sidebar-category-color': '#a0a8b5',
     'sidebar-flat-item-color': '#eceef2'

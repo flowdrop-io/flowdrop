@@ -319,6 +319,18 @@
   --fd-control-lg: 2rem; /* @public  32px */
   --fd-panel-header: 2.5rem; /* @public  40px */
 
+  /* ----- ROLE TOKENS (shape, elevation, text) -----
+     What a piece of UI is, not which step of a scale it uses, so a theme can
+     move one role without moving the scale. Defaults keep the look each
+     component had before the roles existed. */
+  --fd-radius-surface: var(--fd-radius-lg); /* @internal  cards, nodes, floating controls, sheets */
+  --fd-radius-bubble: var(--fd-radius-xl); /* @internal  message bubbles and the composer */
+  --fd-elevation-float: var(--fd-shadow-md); /* @internal  anything floating over the canvas */
+  --fd-float-border: var(--fd-border); /* @internal  rule around floating controls */
+  --fd-text-body: var(--fd-text-base); /* @internal  running text in panels and messages */
+  --fd-text-meta: var(--fd-text-xs); /* @internal  timestamps, origins, help text */
+  --fd-scrollbar-size: 10px; /* @internal  scrollbar width in the editor */
+
   /* ----- COMPONENT SIZES ----- */
   --fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
   --fd-size-btn-min: 2.5rem; /* @internal  40px — may change with component redesigns */

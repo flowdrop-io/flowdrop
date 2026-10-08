@@ -51,7 +51,18 @@ describe('graphite theme', () => {
   });
 
   it('every light colour token has a dark counterpart', () => {
-    const shared = new Set(['radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'control-radius']);
+    const shared = new Set([
+      'radius-sm',
+      'radius-md',
+      'radius-lg',
+      'radius-xl',
+      'control-radius',
+      'radius-surface',
+      'radius-bubble',
+      'text-body',
+      'text-meta',
+      'scrollbar-size'
+    ]);
     const structural = (k: string) =>
       shared.has(k) ||
       /^(node-radius|node-border-width|node-shadow|node-shadow-hover|scrollbar-radius)$/.test(k);

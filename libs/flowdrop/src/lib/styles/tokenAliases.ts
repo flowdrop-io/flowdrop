@@ -14,6 +14,8 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'caption-node-bg': 'var(--fd-foreground)',
   'caption-node-fg': 'var(--fd-background)',
   'control-radius': 'var(--fd-radius-lg)',
+  'elevation-float': 'var(--fd-shadow-md)',
+  'float-border': 'var(--fd-border)',
   'handle-offset': 'calc(-1 * var(--fd-handle-size) / 2)',
   'interrupt-avatar-size': 'var(--fd-size-avatar)',
   'interrupt-badge-completed-bg': 'var(--fd-primary-muted)',
@@ -69,6 +71,8 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'note-border-hover': 'var(--fd-node-border-hover)',
   'panel-bg': 'var(--fd-background)',
   'playground-icon-btn-size': 'var(--fd-size-icon-btn)',
+  'radius-bubble': 'var(--fd-radius-xl)',
+  'radius-surface': 'var(--fd-radius-lg)',
   'review-font-mono': 'var(--fd-interrupt-font-mono)',
   'review-font-size-error': 'var(--fd-interrupt-font-error)',
   'review-font-size-html-toggle': 'var(--fd-text-2xs)',
@@ -90,7 +94,9 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'status-skipped': 'var(--fd-muted-foreground)',
   'status-skipped-soft': 'var(--fd-muted)',
   'status-waiting': 'var(--fd-warning)',
-  'status-waiting-soft': 'var(--fd-warning-muted)'
+  'status-waiting-soft': 'var(--fd-warning-muted)',
+  'text-body': 'var(--fd-text-base)',
+  'text-meta': 'var(--fd-text-xs)'
 };
 
 /** Dark overrides ([data-theme='dark']): aliases, plus literal dark values of light aliases. */

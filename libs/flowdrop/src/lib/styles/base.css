@@ -17,6 +17,33 @@
   box-sizing: border-box;
 }
 
+/* One scrollbar for every scrolling area in the library, from the scrollbar
+   tokens. Components with their own ::-webkit-scrollbar rules still win. */
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fd-scrollbar-thumb) transparent;
+}
+
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) ::-webkit-scrollbar {
+  width: var(--fd-scrollbar-size);
+  height: var(--fd-scrollbar-size);
+}
+
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) ::-webkit-scrollbar-thumb {
+  background-color: var(--fd-scrollbar-thumb);
+  border: 2px solid transparent;
+  border-radius: var(--fd-radius-full);
+  background-clip: padding-box;
+}
+
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--fd-scrollbar-thumb-hover);
+}
+
 /* Drop the UA default margin on paragraphs so block text sits on the grid;
    contexts that want spacing (e.g. .markdown-display p) opt back in. */
 :where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal, .svelte-flow) p {
