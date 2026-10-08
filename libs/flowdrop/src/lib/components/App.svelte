@@ -295,7 +295,6 @@
   });
 
   // Tell the host when the mode moves (never for the value it started with).
-  // svelte-ignore state_referenced_locally
   let reportedEditorMode = fd.editorMode.current;
   $effect(() => {
     const current = fd.editorMode.current;

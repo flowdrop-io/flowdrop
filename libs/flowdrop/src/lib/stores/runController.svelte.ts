@@ -1275,7 +1275,7 @@ export class RunController {
       if (tracked?.origin !== 'session') return;
       const next = sessionRunStatus(status, tracked.stopped);
       this.#endedAt = TERMINAL_RUN_STATUSES.includes(next) ? Date.now() : null;
-      if (next === 'done') void this.#noteRunFailure(tracked.sessionId);
+      if (next === 'done' && tracked.sessionId) void this.#noteRunFailure(tracked.sessionId);
     });
   }
 
