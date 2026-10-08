@@ -12,7 +12,7 @@
  * on every page load.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 
 const SETTINGS_STORAGE_KEY = 'flowdrop-settings';
 
@@ -23,6 +23,13 @@ async function freshStore(): Promise<SettingsModule> {
   vi.resetModules();
   return import('$lib/stores/settingsStore.svelte.js');
 }
+
+// The first import transforms the store's whole module graph. Under a full
+// parallel run that took over the 10 s test timeout (M3 gate); pay it once
+// here so each test's re-import only re-evaluates.
+beforeAll(async () => {
+  await import('$lib/stores/settingsStore.svelte.js');
+}, 60_000);
 
 type PersistedSettings = {
   theme?: { preference?: string };

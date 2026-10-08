@@ -163,7 +163,8 @@ async function makeAnEdit(page: Page): Promise<void> {
 }
 
 const dock = (page: Page) => page.getByTestId('docked-playground');
-const sendButton = (page: Page) => dock(page).locator('.chat-input').getByRole('button', { name: /send/i });
+const sendButton = (page: Page) =>
+  dock(page).locator('.chat-input').getByRole('button', { name: /send/i });
 
 test.describe('Test mode: sessions and freshness', () => {
   test.beforeEach(({}, testInfo) => {
@@ -223,7 +224,10 @@ test.describe('Test mode: sessions and freshness', () => {
     await expect(sendButton(page)).toHaveAttribute('aria-label', 'Send message');
 
     await makeAnEdit(page);
-    await expect(sendButton(page)).toHaveAttribute('aria-label', 'Save the workflow, then send the message');
+    await expect(sendButton(page)).toHaveAttribute(
+      'aria-label',
+      'Save the workflow, then send the message'
+    );
 
     await dock(page).getByPlaceholder('Type your message...').fill('hello');
     await sendButton(page).click();
@@ -251,6 +255,9 @@ test.describe('Test mode: sessions and freshness', () => {
     await expect(dock(page).locator('.playground__error')).toContainText('not saved');
     await expect(input).toHaveValue('hello');
     expect(backend.log).toEqual([]);
-    await expect(sendButton(page)).toHaveAttribute('aria-label', 'Save the workflow, then send the message');
+    await expect(sendButton(page)).toHaveAttribute(
+      'aria-label',
+      'Save the workflow, then send the message'
+    );
   });
 });
