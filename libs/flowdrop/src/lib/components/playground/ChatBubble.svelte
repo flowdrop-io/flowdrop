@@ -11,7 +11,13 @@
   import MessageTagStrip from './MessageTagStrip.svelte';
   import OriginBadge from './OriginBadge.svelte';
   import MessageMarkdown from './MessageMarkdown.svelte';
-  import { formatDuration, formatTimestamp, getRoleIcon, getRoleLabel } from './messageDisplay.js';
+  import {
+    formatDuration,
+    formatTimestamp,
+    getEmptyTurnLabel,
+    getRoleIcon,
+    getRoleLabel
+  } from './messageDisplay.js';
   import { m } from '$lib/messages/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { resolveMessageNodeLink } from '../../utils/messageNodeLink.js';
@@ -42,6 +48,8 @@
   const hierarchy = $derived(message.hierarchy ?? []);
   const tags = $derived(message.tags ?? []);
   const roleLabel = $derived(getRoleLabel(message, m().playground.roles));
+  // A Run without a typed message: say what it was rather than show an empty bubble.
+  const emptyTurnLabel = $derived(getEmptyTurnLabel(message, m().playground.emptyTurn));
   const hasFooter = $derived(
     message.metadata?.duration !== undefined || !!message.nodeId || tags.length > 0
   );
@@ -80,7 +88,11 @@
       </div>
     {/if}
 
-    <MessageMarkdown content={message.content} {enableMarkdown} />
+    {#if emptyTurnLabel}
+      <p class="message-bubble__empty-turn" data-testid="message-empty-turn">{emptyTurnLabel}</p>
+    {:else}
+      <MessageMarkdown content={message.content} {enableMarkdown} />
+    {/if}
 
     {#if hasFooter}
       <div class="message-bubble__footer">
@@ -184,6 +196,12 @@
     background-color: var(--fd-primary);
     color: var(--fd-primary-foreground);
     border-bottom-right-radius: var(--fd-radius-sm);
+  }
+
+  .message-bubble__empty-turn {
+    margin: 0;
+    font-style: italic;
+    opacity: 0.85;
   }
 
   .message-bubble--assistant .message-bubble__content {

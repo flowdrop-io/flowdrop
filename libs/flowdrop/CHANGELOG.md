@@ -263,6 +263,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   panel. Chat send and session errors keep the banner. New
   `fd.playground.launchError` / `setLaunchError`; it clears when a run starts
   or the inputs change.
+- A turn started by Run without a typed message (a form or run-only workflow)
+  no longer shows as an empty user bubble: it reads "Started a run", or names
+  the inputs it carried ("Ran with values, mode"). New messages
+  `playground.emptyTurn.run` / `playground.emptyTurn.withInputs`.
 
 - The Assistant composer no longer clips its placeholder at the default panel
   width (the field is two lines tall), and "+ Attach a run" sits in the

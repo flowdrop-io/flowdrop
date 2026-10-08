@@ -12,6 +12,7 @@ import {
   formatTimestamp,
   getLogLevelIcon,
   getRoleIcon,
+  getEmptyTurnLabel,
   getOriginBadge,
   getRoleLabel,
   groupAdjacent,
@@ -159,5 +160,33 @@ describe('groupAdjacent', () => {
       { kind: 'single', item: 'a' },
       { kind: 'group', key: 'l1', items: ['l1', 'l2'] }
     ]);
+  });
+});
+
+describe('getEmptyTurnLabel', () => {
+  const LABELS = {
+    run: 'Started a run',
+    withInputs: ({ names }: { names: string }) => `Ran with ${names}`
+  };
+
+  it('is null for a turn with text, and for other roles', () => {
+    expect(getEmptyTurnLabel({ role: 'user', content: 'hi' }, LABELS)).toBeNull();
+    expect(getEmptyTurnLabel({ role: 'assistant', content: '' }, LABELS)).toBeNull();
+  });
+
+  it('says a run was started for an empty turn with no inputs', () => {
+    expect(getEmptyTurnLabel({ role: 'user', content: '' }, LABELS)).toBe('Started a run');
+    expect(
+      getEmptyTurnLabel({ role: 'user', content: '  ', metadata: { inputs: [] } }, LABELS)
+    ).toBe('Started a run');
+  });
+
+  it('names the inputs an empty turn carried', () => {
+    expect(
+      getEmptyTurnLabel(
+        { role: 'user', content: '', metadata: { inputs: { values: [2, 3], mode: 'sum' } } },
+        LABELS
+      )
+    ).toBe('Ran with values, mode');
   });
 });

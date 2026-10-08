@@ -555,6 +555,12 @@ export const defaultMessages = {
     logGroup: {
       summary: ({ count }: { count: number }) => `${count} log lines`
     },
+    // A turn the person started without typing (Run on a form or run-only
+    // workflow): what its otherwise empty bubble says instead.
+    emptyTurn: {
+      run: 'Started a run',
+      withInputs: ({ names }: { names: string }) => `Ran with ${names}`
+    },
     messageTooltips: {
       nodeId: ({ id }: { id: string }) => `Node ID: ${id}`,
       executionDuration: 'Execution duration',

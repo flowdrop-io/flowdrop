@@ -14,6 +14,7 @@ import type { Messages } from '../../messages/types.js';
 
 export type RoleLabels = Messages['playground']['roles'];
 export type OriginLabels = Messages['playground']['origins'];
+export type EmptyTurnLabels = Messages['playground']['emptyTurn'];
 
 export function formatTimestamp(timestamp: string): string {
   return new Date(timestamp).toLocaleTimeString('en-US', {
@@ -78,6 +79,24 @@ export function getRoleLabel(
     default:
       return roles.message;
   }
+}
+
+/**
+ * What a user turn with no text stands for, or null when it has text. A Run
+ * on a form or run-only workflow posts a turn with no message: it names the
+ * inputs it carried (`metadata.inputs`), or says a run was started.
+ */
+export function getEmptyTurnLabel(
+  message: Pick<PlaygroundMessage, 'role' | 'content' | 'metadata'>,
+  labels: EmptyTurnLabels
+): string | null {
+  if (message.role !== 'user' || message.content.trim() !== '') return null;
+  const inputs = message.metadata?.inputs;
+  const names =
+    inputs !== null && typeof inputs === 'object' && !Array.isArray(inputs)
+      ? Object.keys(inputs)
+      : [];
+  return names.length > 0 ? labels.withInputs({ names: names.join(', ') }) : labels.run;
 }
 
 /**
