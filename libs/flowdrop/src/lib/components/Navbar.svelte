@@ -117,6 +117,9 @@
   $effect(() => {
     if (!saveShortcut) return;
     function onKeydown(event: KeyboardEvent): void {
+      // A host that binds the shortcut itself (fddo's editor.js does, on document) has
+      // already handled it and called preventDefault; saving again would save twice.
+      if (event.defaultPrevented) return;
       if (!(event.metaKey || event.ctrlKey) || event.altKey || event.key.toLowerCase() !== 's') {
         return;
       }
