@@ -31,6 +31,7 @@ import { EditorModeStore } from './editorModeStore.svelte.js';
 import { AttachedRunStore } from './attachedRunStore.svelte.js';
 import { NodeHighlightStore } from './nodeHighlightStore.svelte.js';
 import { EditedNodesStore } from './editedNodesStore.svelte.js';
+import { DoctorStore } from './doctorStore.svelte.js';
 import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
@@ -132,6 +133,11 @@ export interface FlowDropInstance {
    * mode). `App` feeds it the shown run and the effective mode.
    */
   readonly editedNodes: EditedNodesStore;
+  /**
+   * The problems the backend's Doctor finds in the draft, and the remedies it
+   * offers (the Problems indicator and the node badges read it).
+   */
+  readonly doctor: DoctorStore;
   /**
    * The node types this editor currently knows: what `App` fetched (or was
    * given), merged with the format-provided nodes. Written by the editor as
@@ -271,6 +277,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   const playground = new PlaygroundStore();
   const instancePlaygroundService = isDefault ? playgroundService : new PlaygroundService();
   const api = new ApiContext();
+  const doctor = new DoctorStore(workflow, api);
   const runs = new RunController({
     playground,
     service: instancePlaygroundService,
@@ -282,6 +289,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     () => historyBindings.cleanup(),
     () => historyBindings.setOnRestoreCallback(null),
     () => historyBindings.setBeforeNavigateCallback(null),
+    () => doctor.dispose(),
     () => workflow.setOnDirtyStateChange(null),
     () => workflow.setOnWorkflowChange(null),
     () => playground.dispose(),
@@ -324,6 +332,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     attachedRun: new AttachedRunStore(),
     highlight: new NodeHighlightStore(),
     editedNodes: new EditedNodesStore(() => workflow.current),
+    doctor,
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
     approvalGate: null,

@@ -47,6 +47,20 @@ export interface EndpointConfig {
        * `/run` command is not offered.
        */
       run?: string;
+      /**
+       * Diagnose the editor's draft (`POST`, body = the workflow as the editor
+       * would save it, `{id}` = the saved workflow's id). Answers
+       * `{ success, data: { problems } }`. The Problems indicator in the
+       * navbar, the node badges and the remedies exist only while this and
+       * `remedy` are set; a backend without a Doctor omits them.
+       */
+      diagnose?: string;
+      /**
+       * Build the fix for one problem (`POST`, body `{ draft, code, target,
+       * remedy, params? }`). Answers `{ success, data: { operations } }`, which
+       * the editor applies as one undoable edit. Needs `diagnose`.
+       */
+      remedy?: string;
     };
 
     // Execution endpoints
@@ -315,7 +329,9 @@ export const defaultEndpointConfig: EndpointConfig = {
       export: '/workflows/{id}/export',
       import: '/workflows/import',
       // Singular `workflow` here is the reference backend's spelling, not a typo.
-      run: '/workflow/{workflowId}/run'
+      run: '/workflow/{workflowId}/run',
+      diagnose: '/workflow/{id}/diagnose',
+      remedy: '/workflow/{id}/remedy'
     },
     executions: {
       execute: '/workflows/{id}/execute',

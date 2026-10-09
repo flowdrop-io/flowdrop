@@ -16,6 +16,7 @@ import type { Workflow } from '$lib/types/index.js';
 import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
 import { stripExecutionInfo } from '$lib/utils/nodeStatus.js';
 import { playgroundForSave } from '$lib/utils/playgroundChat.js';
+import { buildSaveBody } from '$lib/utils/workflowDraft.js';
 import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 import { DEFAULT_FEATURES } from '$lib/types/events.js';
@@ -183,33 +184,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     const isExistingWorkflow = !!currentWorkflow.id;
     const workflowId = currentWorkflow.id || uuidv4();
 
-    const finalWorkflow: Workflow = {
-      id: workflowId,
-      name: currentWorkflow.name || 'Untitled Workflow',
-      description: currentWorkflow.description || '',
-      nodes: stripExecutionInfo(currentWorkflow.nodes || []),
-      edges: currentWorkflow.edges || [],
-      metadata: {
-        ...currentWorkflow.metadata,
-        schemaVersion: currentWorkflow.metadata?.schemaVersion || '1.0.0',
-        format: currentWorkflow.metadata?.format || DEFAULT_WORKFLOW_FORMAT,
-        createdAt: currentWorkflow.metadata?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      // Explicit key list, so every contract field must be named here:
-      // omitting `interface` silently strips the declared contract on save
-      // (absent means "declares no interface" to the server).
-      ...(currentWorkflow.interface !== undefined && { interface: currentWorkflow.interface }),
-      // Same rule for the Playground settings (the chat binding, saved with
-      // the workflow). Only `chat` goes back; a workflow from a server that
-      // sends no `playground` key sends none either.
-      ...(currentWorkflow.playground !== undefined && {
-        playground: playgroundForSave(currentWorkflow.playground)
-      }),
-      // The revision the editor loaded, so a server that checks it can refuse
-      // a stale write (409 CONFLICT) instead of letting the last write win.
-      ...(currentWorkflow.revision !== undefined && { revision: currentWorkflow.revision })
-    };
+    const finalWorkflow: Workflow = buildSaveBody(currentWorkflow, workflowId);
 
     // Step 4 — Persist via this instance's API client.
     // id-presence (computed above) decides update vs create — never UUID-regex.
