@@ -381,8 +381,9 @@
     background-color: var(--fd-muted);
   }
 
-  .fd-combobox__option--chosen {
-    background-color: var(--fd-primary-muted);
+  /* Chosen is the check (and a touch of weight) only; the background is the highlight's. */
+  .fd-combobox__option--chosen .fd-combobox__label {
+    font-weight: 500;
   }
 
   .fd-combobox__option[aria-disabled='true'] {
@@ -417,8 +418,7 @@
   }
 
   /* Muted text on the highlight tone is too faint in some palettes. */
-  .fd-combobox__option--active .fd-combobox__desc,
-  .fd-combobox__option--chosen .fd-combobox__desc {
+  .fd-combobox__option--active .fd-combobox__desc {
     color: var(--fd-foreground);
   }
 
