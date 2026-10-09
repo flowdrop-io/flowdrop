@@ -36,7 +36,9 @@ function openModal(page: Page): Locator {
 
 /** Open the editor App's settings modal */
 async function openSettings(page: Page): Promise<void> {
+  // The gear is a menu now: Appearance, then "All settings…".
   await editorRoot(page).locator('.flowdrop-navbar__settings-btn').click();
+  await page.getByTestId('navbar-all-settings').click();
   await expect(openModal(page)).toBeVisible({ timeout: 5000 });
 }
 
@@ -54,9 +56,9 @@ async function persistedPreference(page: Page): Promise<string | undefined> {
   }, STORAGE_KEY);
 }
 
-/** The data-theme attribute applied to <html> */
+/** The data-theme attribute applied to the editor's scope element (not <html>) */
 function appliedTheme(page: Page) {
-  return page.locator('html').getAttribute('data-theme');
+  return editorRoot(page).locator('.flowdrop-root').getAttribute('data-theme');
 }
 
 /** Open the settings modal and change the theme preference */

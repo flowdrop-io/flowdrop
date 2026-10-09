@@ -12,7 +12,9 @@ const editorRoot = (page: Page): Locator => page.getByTestId('editor-test');
 const modal = (page: Page): Locator => editorRoot(page).locator('.flowdrop-settings-modal[open]');
 
 async function chooseUiTheme(page: Page, value: string): Promise<void> {
+  // The gear is a menu now: Appearance, then "All settings…".
   await editorRoot(page).locator('.flowdrop-navbar__settings-btn').click();
+  await page.getByTestId('navbar-all-settings').click();
   await expect(modal(page)).toBeVisible({ timeout: 5000 });
   await modal(page).getByRole('tab', { name: 'UI', exact: true }).click();
   // The theme picker is a radiogroup of swatches, one per registered theme.
@@ -87,7 +89,10 @@ test.describe('Graphite theme', () => {
   test('dark mode uses the dark graphite palette', async ({ page }) => {
     await gotoEditor(page, 'simple');
     await chooseUiTheme(page, 'graphite');
-    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    // The colour scheme is data-theme on the editor scope, not on <html>.
+    await page.evaluate(() =>
+      document.querySelector('.flowdrop-root')?.setAttribute('data-theme', 'dark')
+    );
     await expect.poll(() => token(page, 'primary')).toBe('#eceef2');
     expect(await token(page, 'background')).toBe('#16181d');
   });
