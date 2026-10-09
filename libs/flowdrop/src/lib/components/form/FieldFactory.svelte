@@ -54,6 +54,7 @@
   import FormArray from './FormArray.svelte';
   import FormPorts from './FormPorts.svelte';
   import FormAutocomplete from './FormAutocomplete.svelte';
+  import { humanizeKey } from './humanizeKey.js';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
   import type { FormFieldFactoryProps } from './types.js';
@@ -109,9 +110,9 @@
   const animationDelay = $derived(animationIndex * 30);
 
   /**
-   * Field label - prefer title, fall back to description, then key
+   * Field label - prefer title, fall back to description, then the humanised key
    */
-  const fieldLabel = $derived(String(schema.title ?? schema.description ?? fieldKey));
+  const fieldLabel = $derived(String(schema.title ?? schema.description ?? humanizeKey(fieldKey)));
 
   /**
    * The heavy editor this schema asks for, if any
