@@ -234,9 +234,6 @@
         aria-labelledby={ariaLabel ? undefined : ariaLabelledby}
         bind:this={listEl}
       >
-        {#if ordered.length === 0}
-          <p class="fd-combobox__empty">{msgs.noMatches}</p>
-        {/if}
         {#each groups as group, g (g)}
           {#snippet rows()}
             {#each group.items as item (item.option.value)}
@@ -284,6 +281,9 @@
           {/if}
         {/each}
       </div>
+      {#if ordered.length === 0}
+        <p class="fd-combobox__empty">{msgs.noMatches}</p>
+      {/if}
       <div class="fd-combobox__hints" aria-hidden="true">
         <span><kbd>↑↓</kbd> {msgs.hintMove}</span>
         <span><kbd>Enter</kbd> {msgs.hintChoose}</span>
@@ -414,6 +414,12 @@
     font-size: var(--fd-text-2xs);
     line-height: 1.45;
     color: var(--fd-muted-foreground);
+  }
+
+  /* Muted text on the highlight tone is too faint in some palettes. */
+  .fd-combobox__option--active .fd-combobox__desc,
+  .fd-combobox__option--chosen .fd-combobox__desc {
+    color: var(--fd-foreground);
   }
 
   .fd-combobox__option mark {

@@ -636,6 +636,12 @@
     appearance: base-select;
   }
 
+  /* The select's inner button fills the field; centre its content like the other inputs. */
+  .flowdrop-input--select {
+    display: flex;
+    align-items: center;
+  }
+
   .flowdrop-input--select::picker-icon {
     display: none;
   }
