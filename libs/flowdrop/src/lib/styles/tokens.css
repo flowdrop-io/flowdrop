@@ -465,6 +465,15 @@
      (--fd-msg-user-bg/fg) and the form-first field look (--fd-inputs-frame-*,
      --fd-field-*). */
 
+  /* ----- ASSISTANT ACTIVITY ROWS (tool calls, notices, retries, "Thinking…") ----- */
+  --fd-activity-running: var(--fd-status-running); /* @internal  the breathing dot of a running row */
+  --fd-activity-text: var(--fd-text-meta); /* @internal  row text size */
+  --fd-activity-slot: 0.875rem; /* @internal  width of the status slot (check, dot, mark) */
+  --fd-activity-dot-size: 0.4375rem; /* @internal  the running dot */
+  --fd-activity-row-gap: 2px; /* @internal  space between rows */
+  --fd-activity-pulse-duration: 1.2s; /* @internal  one breath of the dot */
+  --fd-activity-shimmer-duration: 1.8s; /* @internal  one pass of light over a running label */
+
   /* ----- COMPONENT SIZES ----- */
   --fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
   --fd-size-btn-min: 2.5rem; /* @internal  40px — may change with component redesigns */

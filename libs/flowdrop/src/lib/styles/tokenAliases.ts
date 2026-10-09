@@ -10,6 +10,8 @@
 
 /** Light/base aliases (:root). */
 export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
+  'activity-running': 'var(--fd-status-running)',
+  'activity-text': 'var(--fd-text-meta)',
   'button-danger-bg': 'var(--fd-error)',
   'button-danger-border': 'var(--fd-error)',
   'button-danger-fg': 'var(--fd-error-foreground)',

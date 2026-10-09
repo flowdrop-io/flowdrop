@@ -34,6 +34,9 @@
   import { getMessages, m } from '$lib/messages/index.js';
   import { isRunStale } from '../../utils/sessionRuns.js';
   import { formatClock, formatTimestamp } from '../playground/messageDisplay.js';
+  import { describeArgs, toolVerb, type ActivityRow as ToolLine } from '../../chat/activity.js';
+  import ActivityList from './ActivityList.svelte';
+  import ActivityRow from './ActivityRow.svelte';
 
   // =========================================================================
   // Internal Display Message Type
@@ -66,12 +69,6 @@
     notice?: boolean;
     /** Tools mode: a deterministic warning under the reply, e.g. tool calls failed this turn */
     warning?: string;
-  }
-
-  /** One tool call as the transcript shows it: what ran and how it ended. */
-  interface ToolLine {
-    status: 'running' | 'ok' | 'rejected' | 'failed' | 'note';
-    text: string;
   }
 
   interface Props {
@@ -303,18 +300,6 @@
     return runtime;
   }
 
-  /** Primitive argument values of a call, for a status line: `describe_type http_request`. */
-  function argsDetail(args: Record<string, unknown>): string {
-    const parts: string[] = [];
-    for (const value of Object.values(args)) {
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        parts.push(String(value));
-      }
-    }
-    const text = parts.join(' ');
-    return text.length > 60 ? `${text.slice(0, 57)}…` : text;
-  }
-
   /**
    * What a call changed, for the transcript, in the dialog's own words: the
    * batch summary for several commands, the one-line description for one,
@@ -332,57 +317,81 @@
     return msg.toolLines?.[msg.toolLines.length - 1];
   }
 
+  /** When the running call of each line started, and which lines waited on the person (no honest duration). */
+  const lineStart = new WeakMap<ToolLine, number>();
+  const lineAsked = new WeakSet<ToolLine>();
+
+  /** Close a running line: how long it took, unless it waited on the person. */
+  function finishLine(line: ToolLine): void {
+    const started = lineStart.get(line);
+    if (started !== undefined && !lineAsked.has(line)) {
+      line.ms = Math.round(performance.now() - started);
+    }
+  }
+
   /**
    * Render a driver event onto the in-progress assistant message. Synchronous
    * on purpose: events arrive in order and land in order.
    */
   function renderEvent(msg: DisplayMessage, event: TurnEvent): void {
     const tt = t.tools;
+    const verb = (tool: string, phase: 'running' | 'done') =>
+      toolVerb(tool, phase, tt.verbs, (name, p) => tt.verbFallback({ tool: name, phase: p }));
     switch (event.type) {
       case 'note':
-        msg.toolLines?.push({ status: 'note', text: event.content });
+        msg.toolLines?.push({ status: 'note', verb: event.content, detail: '' });
         break;
       case 'reading':
+      case 'awaiting-approval': {
         msg.toolLines?.push({
           status: 'running',
-          text: tt.reading({ tool: event.call.name, detail: argsDetail(event.call.args) })
+          verb:
+            event.type === 'awaiting-approval'
+              ? tt.awaitingApproval
+              : verb(event.call.name, 'running'),
+          detail:
+            event.type === 'awaiting-approval'
+              ? verb(event.call.name, 'running')
+              : describeArgs(event.call.name, event.call.args)
         });
+        // The pushed object is proxied by the state array; track the proxy.
+        const line = lastLine(msg);
+        if (line) {
+          lineStart.set(line, performance.now());
+          if (event.type === 'awaiting-approval') lineAsked.add(line);
+        }
         break;
-      case 'awaiting-approval':
-        msg.toolLines?.push({
-          status: 'running',
-          text: tt.awaitingApproval({ tool: event.call.name })
-        });
-        break;
+      }
       case 'applied': {
         const line = lastLine(msg);
         if (line) {
+          finishLine(line);
           line.status = 'ok';
-          line.text = event.preview?.mutating
-            ? tt.applied({
-                tool: event.call.name,
-                detail: appliedDetail(event.preview, event.outcome)
-              })
-            : tt.read({ tool: event.call.name, detail: argsDetail(event.call.args) });
+          line.verb = verb(event.call.name, 'done');
+          line.detail =
+            event.call.name === 'batch' && event.preview?.mutating
+              ? appliedDetail(event.preview, event.outcome)
+              : describeArgs(event.call.name, event.call.args);
         }
         break;
       }
       case 'rejected': {
         const line = lastLine(msg);
         if (line) {
+          finishLine(line);
           line.status = 'rejected';
-          line.text = tt.rejected({ tool: event.call.name });
+          line.verb = tt.rejected;
+          line.detail = verb(event.call.name, 'running');
         }
         break;
       }
       case 'failed': {
         const line = lastLine(msg);
         if (line) {
+          finishLine(line);
           line.status = 'failed';
-          line.text = tt.failed({
-            tool: event.call.name,
-            error: event.outcome.error ?? event.outcome.code ?? 'error'
-          });
+          line.verb = tt.failed({ action: verb(event.call.name, 'running') });
+          line.detail = event.outcome.error ?? event.outcome.code ?? 'error';
         }
         break;
       }
@@ -827,12 +836,12 @@
       <!-- Append-only chat log without stable IDs — index is the identity -->
       {#each displayMessages as message, msgIndex (msgIndex)}
         {#if message.retryAttempt !== undefined}
-          <div
-            class="ai-chat-panel__retry-notice"
-            class:ai-chat-panel__retry-notice--active={displayMessages[msgIndex + 1]?.inProgress}
-          >
-            <Icon icon="mdi:autorenew" />
-            <span>{t.autoRetry({ attempt: message.retryAttempt, max: MAX_AUTO_RETRIES })}</span>
+          <div class="ai-chat-panel__retry-notice">
+            <ActivityRow
+              status="retry"
+              active={displayMessages[msgIndex + 1]?.inProgress === true}
+              label={t.autoRetry({ attempt: message.retryAttempt, max: MAX_AUTO_RETRIES })}
+            />
           </div>
         {:else}
           <div
@@ -840,50 +849,33 @@
             class:ai-chat-panel__bubble--notice={message.notice}
           >
             {#if message.toolLines && message.toolLines.length > 0}
-              <ul
-                class="ai-chat-panel__tool-lines"
-                aria-label={t.tools.rounds({ count: message.toolLines.length })}
-              >
-                {#each message.toolLines as line (line)}
-                  <li class="ai-chat-panel__tool-line ai-chat-panel__tool-line--{line.status}">
-                    {#if line.status === 'running'}
-                      <Icon icon="mdi:loading" class="ai-chat-panel__tool-line-spin" />
-                    {:else if line.status === 'ok'}
-                      <Icon icon="mdi:check" />
-                    {:else if line.status === 'rejected'}
-                      <Icon icon="mdi:cancel" />
-                    {:else if line.status === 'note'}
-                      <Icon icon="mdi:comment-text-outline" />
-                    {:else}
-                      <Icon icon="mdi:alert-circle-outline" />
-                    {/if}
-                    <span>{line.text}</span>
-                  </li>
-                {/each}
-              </ul>
+              <div class="ai-chat-panel__activity">
+                <ActivityList rows={message.toolLines} live={message.inProgress === true} />
+              </div>
             {/if}
             {#if message.role === 'user'}
               <div class="ai-chat-panel__bubble-content">{message.content}</div>
             {:else if message.inProgress && !message.content}
-              <div class="ai-chat-panel__thinking">
-                <span class="ai-chat-panel__dot"></span>
-                <span class="ai-chat-panel__dot"></span>
-                <span class="ai-chat-panel__dot"></span>
-              </div>
+              {#if message.toolLines?.[message.toolLines.length - 1]?.status !== 'running'}
+                <div class="ai-chat-panel__activity">
+                  <ActivityRow status="running" label={t.tools.thinking} />
+                </div>
+              {/if}
             {:else if message.notice}
-              <div class="ai-chat-panel__bubble-content ai-chat-panel__notice-text">
-                {message.content}
+              <div class="ai-chat-panel__activity">
+                <ActivityRow status="note" label={message.content} />
               </div>
             {:else}
-              <div class="ai-chat-panel__bubble-content" use:chipTitles={message.content}>
+              <div
+                class="ai-chat-panel__bubble-content"
+                title={message.at ? formatTimestamp(message.at) : undefined}
+                use:chipTitles={message.content}
+              >
                 <MarkdownDisplay content={message.content} />
               </div>
             {/if}
-            {#if message.at && !message.inProgress && !message.notice && !message.commandPreview}
+            {#if message.role === 'user' && message.at}
               <div class="ai-chat-panel__meta">
-                {#if message.role === 'assistant'}<span class="ai-chat-panel__meta-origin"
-                    >{m().playground.roles.assistant}</span
-                  >{/if}
                 <time datetime={message.at}>{formatClock(message.at)}</time>
               </div>
             {/if}
@@ -1203,21 +1195,14 @@
     font-size: var(--fd-text-meta);
   }
 
-  /* Auto-retry notice */
-  .ai-chat-panel__retry-notice {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fd-space-xs);
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
-    opacity: 0.7;
+  /* Activity: tool rows, notices, retries and "Thinking…" share one row (ActivityRow). */
+  .ai-chat-panel__activity {
     padding: var(--fd-space-3xs) 0;
-    animation: fadeIn 0.15s ease-out;
   }
 
-  .ai-chat-panel__retry-notice--active :global(svg) {
-    animation: spin 1s linear infinite;
+  .ai-chat-panel__retry-notice {
+    padding: var(--fd-space-3xs) 0;
+    animation: fadeIn 0.15s ease-out;
   }
 
   /* Message bubbles */
@@ -1260,17 +1245,13 @@
     border-bottom-left-radius: var(--fd-msg-reply-tail-radius, var(--fd-radius-xs));
   }
 
-  /* One meta line under a reply (who, when); under your own message it shows on hover. */
+  /* The time under your own message, shown on hover; a reply carries its time as a tooltip. */
   .ai-chat-panel__meta {
     display: var(--fd-msg-meta-display, none);
     gap: var(--fd-space-3xs);
     margin-top: var(--fd-space-3xs);
     font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
-  }
-
-  .ai-chat-panel__meta-origin::after {
-    content: ' ·';
   }
 
   .ai-chat-panel__bubble--user .ai-chat-panel__meta {
@@ -1353,54 +1334,6 @@
     font-style: italic;
   }
 
-  /* Tools mode: one status line per tool call */
-  .ai-chat-panel__tool-lines {
-    list-style: none;
-    margin: 0 0 var(--fd-space-3xs);
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .ai-chat-panel__tool-line {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--fd-space-3xs);
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
-    line-height: 1.4;
-  }
-
-  .ai-chat-panel__tool-line :global(svg) {
-    flex-shrink: 0;
-    font-size: 0.9rem;
-    margin-top: 0.1em;
-  }
-
-  .ai-chat-panel__tool-line--ok :global(svg) {
-    color: var(--fd-success, var(--fd-primary));
-  }
-
-  .ai-chat-panel__tool-line--rejected,
-  .ai-chat-panel__tool-line--failed {
-    color: var(--fd-destructive, var(--fd-foreground));
-  }
-
-  .ai-chat-panel__tool-line :global(.ai-chat-panel__tool-line-spin) {
-    animation: spin 1s linear infinite;
-  }
-
-  .ai-chat-panel__tool-line--note {
-    color: var(--fd-foreground);
-    font-style: italic;
-    white-space: pre-wrap;
-  }
-
-  .ai-chat-panel__tool-line--note :global(svg) {
-    color: var(--fd-muted-foreground);
-  }
-
   /* Deterministic warning under the reply (e.g. tool calls failed this turn) */
   .ai-chat-panel__turn-warning {
     display: flex;
@@ -1415,18 +1348,10 @@
     flex-shrink: 0;
   }
 
-  /* Notices (legacy fallback, aborted turn) */
+  /* Notices (legacy fallback, aborted turn) are activity rows, centred in the log. */
   .ai-chat-panel__bubble--notice {
     max-width: 100%;
-    align-self: center;
-  }
-
-  .ai-chat-panel__bubble--notice .ai-chat-panel__notice-text {
-    background: none;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-xs);
-    text-align: center;
-    opacity: 0.8;
+    align-self: stretch;
   }
 
   /* Read-only command results */
@@ -1465,52 +1390,6 @@
     to {
       opacity: 1;
       transform: translateY(0);
-    }
-  }
-
-  /* Thinking indicator */
-  .ai-chat-panel__thinking {
-    display: flex;
-    gap: 4px;
-    padding: var(--fd-msg-reply-pad, var(--fd-space-xs) var(--fd-space-sm));
-    background: var(--fd-msg-typing-bg, var(--fd-muted));
-    border-radius: var(--fd-radius-md);
-    border-bottom-left-radius: var(--fd-radius-xs);
-  }
-
-  .ai-chat-panel__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--fd-muted-foreground);
-    animation: bounce 1.4s ease-in-out infinite;
-  }
-
-  .ai-chat-panel__dot:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-
-  .ai-chat-panel__dot:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes bounce {
-    0%,
-    60%,
-    100% {
-      transform: translateY(0);
-    }
-    30% {
-      transform: translateY(-4px);
     }
   }
 </style>

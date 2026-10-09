@@ -118,8 +118,12 @@
   "src/lib/components/chat/AIChatPanel.svelte": {
     "button": 2,
     "colour": 2,
-    "font-size": 3,
-    "radius": 5
+    "font-size": 2,
+    "radius": 4
+  },
+  "src/lib/components/chat/ActivityRow.svelte": {
+    "font-size": 1,
+    "radius": 1
   },
   "src/lib/components/form/FieldFactory.svelte": {
     "font-size": 2

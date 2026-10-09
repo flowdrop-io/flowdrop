@@ -445,19 +445,64 @@ export const defaultMessages = {
       `Auto-retrying (attempt ${attempt}/${max})…`,
     // Tool-calling turns (tools mode).
     tools: {
-      /** Status line while a read tool runs: `Reading: describe_type http_request`. */
-      reading: ({ tool, detail }: { tool: string; detail: string }) =>
-        detail ? `Reading: ${tool} ${detail}` : `Reading: ${tool}`,
-      awaitingApproval: ({ tool }: { tool: string }) => `Waiting for your approval: ${tool}`,
+      /** A tool's label while it runs and once it is done, by tool id. */
+      verbs: {
+        list_nodes: { running: 'Reading workflow', done: 'Read workflow' },
+        list_edges: { running: 'Reading connections', done: 'Read connections' },
+        list_types: { running: 'Listing node types', done: 'Listed node types' },
+        describe_type: { running: 'Reading node type', done: 'Read node type' },
+        search_types: { running: 'Searching node types', done: 'Searched node types' },
+        get_config: { running: 'Reading config', done: 'Read config' },
+        info: { running: 'Reading workflow info', done: 'Read workflow info' },
+        view: { running: 'Viewing', done: 'Viewed' },
+        add_node: { running: 'Adding node', done: 'Added node' },
+        delete_node: { running: 'Deleting node', done: 'Deleted node' },
+        rename_node: { running: 'Renaming node', done: 'Renamed node' },
+        move_node: { running: 'Moving node', done: 'Moved node' },
+        swap_node: { running: 'Swapping node', done: 'Swapped node' },
+        set_config: { running: 'Setting config', done: 'Set config' },
+        connect: { running: 'Connecting', done: 'Connected' },
+        disconnect_ports: { running: 'Disconnecting', done: 'Disconnected' },
+        disconnect_node: { running: 'Disconnecting', done: 'Disconnected' },
+        undo: { running: 'Undoing', done: 'Undid' },
+        redo: { running: 'Redoing', done: 'Redid' },
+        auto_layout: { running: 'Arranging layout', done: 'Arranged layout' },
+        beautify_layout: { running: 'Tidying layout', done: 'Tidied layout' },
+        batch: { running: 'Applying changes', done: 'Applied changes' },
+        save: { running: 'Saving', done: 'Saved' },
+        run: { running: 'Starting run', done: 'Started run' },
+        run_status: { running: 'Checking run', done: 'Checked run' }
+      } as Record<string, { running: string; done: string }>,
+      /** A tool with no label of its own. */
+      verbFallback: ({ tool, phase }: { tool: string; phase: 'running' | 'done' }) =>
+        phase === 'running' ? `Running ${tool}` : `Ran ${tool}`,
+      /** The row while the reply is still coming. */
+      thinking: 'Thinking…',
+      /** The row of a call that waits on the person; the call's own label follows it. */
+      awaitingApproval: 'Waiting for your approval',
       /** Title of the approval dialog when the assistant, not a browser agent, asks. */
       confirmTitle: ({ name }: { name: string }) => `The assistant wants to change “${name}”`,
-      /** A read that completed: `Read: describe_type http_request`. */
-      read: ({ tool, detail }: { tool: string; detail: string }) =>
-        detail ? `Read: ${tool} ${detail}` : `Read: ${tool}`,
-      applied: ({ tool, detail }: { tool: string; detail: string }) =>
-        detail ? `Applied: ${detail}` : `Done: ${tool}`,
-      rejected: ({ tool }: { tool: string }) => `You rejected: ${tool}`,
-      failed: ({ tool, error }: { tool: string; error: string }) => `${tool} failed: ${error}`,
+      /** A call the person turned down; its action follows. */
+      rejected: 'Rejected',
+      /** A call that failed: `Adding node failed`, the error follows. */
+      failed: ({ action }: { action: string }) => `${action} failed`,
+      /** The fold of a finished turn: `Used 4 tools · 1.6 s`, `Used 4 tools · 1 failed · 1.6 s`. */
+      used: ({
+        count,
+        problems,
+        duration
+      }: {
+        count: number;
+        problems: number;
+        duration: string;
+      }) =>
+        [
+          `Used ${count} ${count === 1 ? 'tool' : 'tools'}`,
+          problems > 0 ? `${problems} failed` : '',
+          duration
+        ]
+          .filter(Boolean)
+          .join(' · '),
       rounds: ({ count }: { count: number }) =>
         `${count} ${count === 1 ? 'tool round' : 'tool rounds'}`,
       legacyFallback:
