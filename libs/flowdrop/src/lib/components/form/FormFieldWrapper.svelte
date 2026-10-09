@@ -24,11 +24,28 @@
     description?: string;
     /** Animation delay in milliseconds */
     animationDelay?: number;
+    /**
+     * Section-style field (the ports list): the label is read by screen readers
+     * only (the inspector tab already names it) and the description sits above
+     * the content and may wrap.
+     */
+    plain?: boolean;
+    /** Switch field: the control sits on the label's row, the help underneath. */
+    inline?: boolean;
     /** Slot content for the field input */
     children: Snippet;
   }
 
-  let { id, label, required = false, description, animationDelay = 0, children }: Props = $props();
+  let {
+    id,
+    label,
+    required = false,
+    description,
+    animationDelay = 0,
+    plain = false,
+    inline = false,
+    children
+  }: Props = $props();
 
   /**
    * Computed description ID for ARIA association
@@ -36,9 +53,14 @@
   const descriptionId = $derived(description ? `${id}-description` : undefined);
 </script>
 
-<div class="form-field" style="animation-delay: {animationDelay}ms">
+<div
+  class="form-field"
+  class:form-field--plain={plain}
+  class:form-field--inline={inline}
+  style="animation-delay: {animationDelay}ms"
+>
   <!-- Field Label -->
-  <label class="form-field__label" for={id}>
+  <label class="form-field__label" class:form-field__label--sr={plain} for={id}>
     <span class="form-field__label-text">
       {label}
     </span>
@@ -47,13 +69,19 @@
     {/if}
   </label>
 
+  {#if plain && description}
+    <p id={descriptionId} class="form-field__description form-field__description--wrap">
+      {description}
+    </p>
+  {/if}
+
   <!-- Field Input Container -->
   <div class="form-field__input-wrapper">
     {@render children()}
   </div>
 
   <!-- Field Description -->
-  {#if description}
+  {#if description && !plain}
     <p id={descriptionId} class="form-field__description" title={description}>
       {description}
     </p>
@@ -95,6 +123,31 @@
     letter-spacing: -0.01em;
   }
 
+  .form-field__label--sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .form-field--inline {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--fd-space-md);
+    row-gap: var(--fd-space-3xs);
+    align-items: center;
+  }
+
+  .form-field--inline .form-field__description {
+    grid-column: 1 / -1;
+  }
+
+  .form-field--plain {
+    gap: var(--fd-space-md);
+  }
+
   .form-field__label-text {
     line-height: 1.4;
   }
@@ -125,5 +178,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .form-field__description--wrap {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
   }
 </style>

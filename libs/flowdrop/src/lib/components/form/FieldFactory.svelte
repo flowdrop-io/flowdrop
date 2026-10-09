@@ -235,7 +235,9 @@
     id={fieldKey}
     label={fieldLabel}
     {required}
-    description={schema.title ? schema.description : undefined}
+    description={schema.title || fieldType === 'ports' ? schema.description : undefined}
+    plain={fieldType === 'ports'}
+    inline={fieldType === 'toggle'}
     {animationDelay}
   >
     {#if fieldType === 'registered' && RegisteredComponent}

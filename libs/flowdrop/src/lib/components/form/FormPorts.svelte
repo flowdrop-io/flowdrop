@@ -1,8 +1,10 @@
 <!--
   Unified port widget — order + exposure
 
-  Renders one row per port of the node being configured, each carrying a
-  reorder control (up/down) and an expose/hide toggle. Binds to the injected
+  Renders one flat 28px row per port of the node being configured: drag handle
+  (on hover/focus) · lane dot · name · lane name (mono, muted) · reorder buttons
+  (on hover/focus) · eye button that shows or hides the port. Rows reorder by
+  drag, by Alt+Up / Alt+Down on the focused row, or by the buttons. Binds to the injected
   `ports` reserved config property (a PortsConfig: a per-direction ordered list
   of {id, exposed?} entries).
 
@@ -29,10 +31,10 @@
   import { byDefaultOrder, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
-  import PortShapeSymbol from '../ports/PortShapeSymbol.svelte';
-  import PortLaneChip from '../ports/PortLaneChip.svelte';
-  import FormToggle from './FormToggle.svelte';
+  import { getPortColorToken } from '$lib/utils/colors.js';
+  import IconButton from '../primitives/IconButton.svelte';
   import Icon from '@iconify/svelte';
+  import { tick } from 'svelte';
 
   interface Props {
     id: string;
@@ -121,23 +123,78 @@
     );
   }
 
-  function move(direction: Direction, index: number, delta: -1 | 1): void {
+  /** Move the port at `from` to position `to` (the rows in between shift). */
+  function moveTo(direction: Direction, from: number, to: number): void {
     const ordered = orderedPorts(direction);
-    const target = index + delta;
-    if (target < 0 || target >= ordered.length) return;
-    [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
-    commit(direction, ordered, (port) => isPortExposed(port, portsConfig[direction]));
+    if (from === to || to < 0 || to >= ordered.length || from < 0 || from >= ordered.length) return;
+    const [port] = ordered.splice(from, 1);
+    ordered.splice(to, 0, port);
+    commit(direction, ordered, (p) => isPortExposed(p, portsConfig[direction]));
+  }
+
+  function move(direction: Direction, index: number, delta: -1 | 1): void {
+    moveTo(direction, index, index + delta);
+  }
+
+  let root: HTMLDivElement | undefined = $state();
+
+  /** A keyed row can lose focus when its node is moved; put it back. */
+  async function refocusRow(direction: Direction, portId: string): Promise<void> {
+    await tick();
+    root
+      ?.querySelector<HTMLElement>(`[data-port-row="${direction}:${CSS.escape(portId)}"]`)
+      ?.focus();
+  }
+
+  function onRowKeydown(event: KeyboardEvent, direction: Direction, index: number, id: string) {
+    if (disabled || !event.altKey) return;
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    move(direction, index, event.key === 'ArrowUp' ? -1 : 1);
+    void refocusRow(direction, id);
+  }
+
+  // Drag to reorder (HTML5 drag and drop, within one direction).
+  let dragging: { direction: Direction; index: number } | null = $state(null);
+  let dropTarget: { direction: Direction; index: number } | null = $state(null);
+
+  function onDragStart(event: DragEvent, direction: Direction, index: number): void {
+    if (disabled) return;
+    dragging = { direction, index };
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(index));
+    }
+  }
+
+  function onDragOver(event: DragEvent, direction: Direction, index: number): void {
+    if (!dragging || dragging.direction !== direction) return;
+    event.preventDefault();
+    dropTarget = { direction, index };
+  }
+
+  function onDrop(event: DragEvent, direction: Direction, index: number): void {
+    if (!dragging || dragging.direction !== direction) return;
+    event.preventDefault();
+    moveTo(direction, dragging.index, index);
+    dragging = null;
+    dropTarget = null;
+  }
+
+  function onDragEnd(): void {
+    dragging = null;
+    dropTarget = null;
   }
 </script>
 
-<div class="fd-ports" {id} aria-describedby={ariaDescribedBy}>
+<div class="fd-ports" {id} aria-describedby={ariaDescribedBy} bind:this={root}>
   {#each [{ key: 'inputs', label: 'Inputs' }, { key: 'outputs', label: 'Outputs' }] as group (group.key)}
     {@const direction = group.key as Direction}
     {@const ordered = orderedPorts(direction)}
     {#if ordered.length > 0}
       <div class="fd-ports__group">
-        <span class="fd-ports__group-label">{group.label}</span>
-        <ul class="fd-ports__list">
+        <span class="fd-ports__group-label" id={`${id}-${direction}-label`}>{group.label}</span>
+        <ul class="fd-ports__list" aria-labelledby={`${id}-${direction}-label`}>
           {#each ordered as port, i (port.id)}
             {@const exposed = isPortExposed(port, portsConfig[direction])}
             {@const boundEntry = node
@@ -145,8 +202,46 @@
                   buildHandleId(node.id, direction === 'inputs' ? 'input' : 'output', port.id)
                 )
               : undefined}
-            <li class="fd-ports__item" class:fd-ports__item--hidden={!exposed}>
-              <div class="fd-ports__reorder">
+            {@const laneName = checker.getDataTypeConfig(port.dataType)?.name ?? port.dataType}
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+            <li
+              class="fd-ports__item"
+              class:fd-ports__item--hidden={!exposed}
+              class:fd-ports__item--dragging={dragging?.direction === direction &&
+                dragging.index === i}
+              class:fd-ports__item--drop={dropTarget?.direction === direction &&
+                dropTarget.index === i &&
+                dragging?.index !== i}
+              data-port-row={`${direction}:${port.id}`}
+              tabindex="0"
+              draggable={!disabled}
+              aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+              ondragstart={(e) => onDragStart(e, direction, i)}
+              ondragover={(e) => onDragOver(e, direction, i)}
+              ondrop={(e) => onDrop(e, direction, i)}
+              ondragend={onDragEnd}
+              onkeydown={(e) => onRowKeydown(e, direction, i, port.id)}
+            >
+              <span class="fd-ports__handle" aria-hidden="true">
+                <Icon icon="heroicons:ellipsis-vertical" />
+              </span>
+              <span
+                class="fd-ports__dot"
+                aria-hidden="true"
+                style="--fd-ports-dot: {getPortColorToken(checker, port)}"
+              ></span>
+              <span class="fd-ports__name" title={port.name}>{port.name}</span>
+              {#if boundEntry}
+                <span
+                  class="fd-ports__bound"
+                  title={interfaceBoundTooltip(boundEntry)}
+                  aria-label={interfaceBoundTooltip(boundEntry)}
+                >
+                  <Icon icon="heroicons:link" />
+                </span>
+              {/if}
+              <span class="fd-ports__type" title={port.dataType}>{laneName}</span>
+              <span class="fd-ports__reorder">
                 <button
                   type="button"
                   disabled={disabled || i === 0}
@@ -165,27 +260,18 @@
                 >
                   <Icon icon="heroicons:chevron-down" />
                 </button>
-              </div>
-              <PortShapeSymbol {checker} {port} />
-              <span class="fd-ports__name" title={port.name}>{port.name}</span>
-              <PortLaneChip {checker} {port} />
-              {#if boundEntry}
-                <span
-                  class="fd-ports__bound"
-                  title={interfaceBoundTooltip(boundEntry)}
-                  aria-label={interfaceBoundTooltip(boundEntry)}
-                >
-                  <Icon icon="heroicons:link" />
-                </span>
-              {/if}
-              <FormToggle
+              </span>
+              <IconButton
+                size="sm"
+                class="fd-ports__eye"
                 id={`${id}-${direction}-${port.id}`}
-                value={exposed}
-                onLabel="Exposed"
-                offLabel="Hidden"
+                ariaLabel={exposed ? `Hide port ${port.name}` : `Show port ${port.name}`}
+                title={exposed ? 'Shown on the canvas' : 'Hidden from the canvas'}
                 {disabled}
-                onChange={(exposed) => setExposed(direction, port.id, exposed)}
-              />
+                onclick={() => setExposed(direction, port.id, !exposed)}
+              >
+                <Icon icon={exposed ? 'heroicons:eye' : 'heroicons:eye-slash'} />
+              </IconButton>
             </li>
           {/each}
         </ul>
@@ -198,18 +284,18 @@
   .fd-ports {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-3, 0.75rem);
+    gap: var(--fd-space-xl);
   }
 
   .fd-ports__group {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-1, 0.25rem);
+    gap: var(--fd-space-3xs);
   }
 
   .fd-ports__group-label {
     font-size: var(--fd-text-xs);
-    font-weight: 500;
+    font-weight: 400;
     color: var(--fd-muted-foreground);
   }
 
@@ -219,42 +305,117 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-1, 0.25rem);
   }
 
+  /* Flat row: no border, tone on hover/focus only. */
   .fd-ports__item {
     display: flex;
     align-items: center;
-    gap: var(--fd-space-2, 0.5rem);
-    padding: var(--fd-space-1, 0.25rem) var(--fd-space-2, 0.5rem);
-    border-radius: var(--fd-radius-md, 6px);
-    border: 1px solid var(--fd-border-muted);
+    gap: var(--fd-space-xs);
+    min-height: var(--fd-control-md);
+    padding: 0 var(--fd-space-3xs);
+    margin: 0 calc(-1 * var(--fd-space-3xs));
+    border-radius: var(--fd-radius-md);
+    font-size: var(--fd-text-sm);
+    color: var(--fd-foreground);
   }
 
-  /* The switch alone carries the state now that its label is screen-reader
-     only, so dim the row to keep "hidden" legible at a glance. The chips are
-     child components, so their halves of the rule have to be :global. */
+  .fd-ports__item:hover,
+  .fd-ports__item:focus-within {
+    background-color: var(--fd-subtle);
+  }
+
+  .fd-ports__item--dragging {
+    opacity: 0.5;
+  }
+
+  .fd-ports__item--drop {
+    outline: 2px solid var(--fd-primary);
+    outline-offset: -2px;
+  }
+
+  /* A hidden port is muted, and the eye is crossed out. */
   .fd-ports__item--hidden .fd-ports__name,
-  .fd-ports__item--hidden :global(.flowdrop-port-symbol),
-  .fd-ports__item--hidden :global(.flowdrop-badge) {
-    opacity: 0.55;
+  .fd-ports__item--hidden .fd-ports__type,
+  .fd-ports__item--hidden .fd-ports__dot {
+    opacity: 0.5;
   }
 
+  .fd-ports__handle {
+    display: inline-flex;
+    flex: none;
+    width: 0.75rem;
+    margin-left: calc(-1 * var(--fd-space-3xs));
+    color: var(--fd-muted-foreground);
+    cursor: grab;
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .fd-ports__item:hover .fd-ports__handle,
+  .fd-ports__item:focus-within .fd-ports__handle {
+    opacity: 1;
+  }
+
+  .fd-ports__dot {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--fd-radius-full);
+    background-color: var(--fd-ports-dot);
+  }
+
+  /* min-width:0 so a long port name ellipsizes instead of widening the row. */
+  .fd-ports__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .fd-ports__type {
+    flex: none;
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+  }
+
+  /* Reorder buttons: only on hover / focus, but they keep their space so the
+     row does not jump. */
   .fd-ports__reorder {
     display: flex;
     flex-direction: column;
+    flex: none;
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .fd-ports__item:hover .fd-ports__reorder,
+  .fd-ports__item:focus-within .fd-ports__reorder {
+    opacity: 1;
   }
 
   .fd-ports__reorder button {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 1rem;
+    height: 0.75rem;
     padding: 0;
     border: none;
     background: none;
-    color: var(--fd-text-muted);
+    color: var(--fd-muted-foreground);
     cursor: pointer;
     line-height: 1;
+  }
+
+  .fd-ports__reorder button:hover:not(:disabled) {
+    color: var(--fd-foreground);
   }
 
   .fd-ports__reorder button:disabled {
@@ -262,25 +423,9 @@
     cursor: default;
   }
 
-  /* min-width:0 so a long port name ellipsizes instead of widening the row. */
-  .fd-ports__name {
-    flex: 1;
-    min-width: 0;
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* Keep a long lane name from pushing the toggle off the row — "String Array"
-     is already 12ch, and a site may name a lane anything. The chip is a child
-     component, so the rule has to be :global. */
-  .fd-ports__item :global(.flowdrop-badge) {
-    max-width: 12ch;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .fd-ports__item :global(.fd-ports__eye) {
+    flex: none;
+    color: var(--fd-muted-foreground);
   }
 
   /* Interface-bound marker: same --fd-ring token as the canvas handle ring
