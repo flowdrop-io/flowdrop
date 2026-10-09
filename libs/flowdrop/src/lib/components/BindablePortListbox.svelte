@@ -302,8 +302,6 @@
     padding: var(--fd-space-2xs) var(--fd-space-xs);
     font-size: var(--fd-text-2xs);
     font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
     color: var(--fd-muted-foreground);
   }
 
