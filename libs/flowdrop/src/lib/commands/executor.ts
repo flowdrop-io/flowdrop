@@ -1478,6 +1478,18 @@ function executeMoveNode(
   };
 }
 
+/**
+ * Node width to assume when a node has not been measured. The layout default
+ * (220) is narrower than a real node (280, `--fd-node-default-width`), which
+ * would eat the gap interface tags were given room in; so when there are
+ * tags, assume the real width. Without tags the layout is unchanged.
+ */
+function tagWidthFallback(reserve: Map<string, unknown> | undefined): {
+  defaultNodeWidth?: number;
+} {
+  return reserve && reserve.size > 0 ? { defaultNodeWidth: 280 } : {};
+}
+
 function executeAutoLayout(
   command: Extract<Command, { type: 'auto_layout' }>,
   context: CommandContext
@@ -1544,12 +1556,13 @@ function executeAutoLayout(
     }
   }
 
+  const tagReserve = isVertical ? undefined : interfaceTagReserve(workflow);
   const positions = computeAutoLayout(
     flow,
-    {},
+    tagWidthFallback(tagReserve),
     nodeDimensions.size > 0 ? nodeDimensions : undefined,
     // Interface tags sit beside the ports: keep the columns far enough apart for them.
-    isVertical ? undefined : interfaceTagReserve(workflow)
+    tagReserve
   );
 
   // Apply positions — swap x/y for vertical layout
@@ -1600,11 +1613,12 @@ function executeBeautifyLayout(
     }
   }
 
+  const tagReserve = interfaceTagReserve(workflow);
   const positions = computeBeautifyLayout(
     currentPositions,
-    {},
+    tagWidthFallback(tagReserve),
     nodeDimensions.size > 0 ? nodeDimensions : undefined,
-    interfaceTagReserve(workflow)
+    tagReserve
   );
 
   // Apply positions
