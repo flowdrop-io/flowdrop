@@ -75,6 +75,7 @@
     initializeTheme
   } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
+  import { themeScope } from '../utils/themeScope.svelte.js';
   import {
     resolveInspectorSurface,
     closeTarget,
@@ -471,7 +472,8 @@
   // Skin tokens are scoped to this instance (data-fd-scope on .flowdrop-root,
   // copied onto portalled overlays), so two editors with different skins do
   // not overwrite each other and the host page gets no --fd-* variables.
-  // See themes/scopedSkinCss.ts. data-theme stays page-global on <html>.
+  // See themes/scopedSkinCss.ts. The colour scheme is `data-theme` on this scope element (use:themeScope),
+  // not on <html>.
   // One cleaned value for the attribute, the skin rule and fd.skinScope.
   const rawScopeId = $props.id();
   const scopeId = toScopeId(rawScopeId);
@@ -1932,7 +1934,7 @@
 {/snippet}
 
 <!-- MainLayout wrapper for workflow editor -->
-<div class="flowdrop-root" data-fd-scope={scopeId}>
+<div class="flowdrop-root" data-fd-scope={scopeId} use:themeScope>
   <MainLayout
     {height}
     {width}

@@ -59,7 +59,7 @@ import type {
   PlaygroundMessagesApiResponse,
   PlaygroundSessionStatus
 } from '../types/playground.js';
-import type { PartialSettings, SettingsCategory } from '../types/settings.js';
+import type { ColorSchemeOption, PartialSettings, SettingsCategory } from '../types/settings.js';
 import { initializeSettings } from '../stores/settingsStore.svelte.js';
 import type { NavbarAction, NavbarBranding } from '../types/navbar.js';
 import type { PipelineViewDef } from '../types/index.js';
@@ -159,6 +159,16 @@ export interface PlaygroundMountOptions {
   settings?: PartialSettings;
 
   /**
+   * Lets the embedding page supply a fourth colour-scheme choice, "follow the
+   * host". Generic: FlowDrop shows `host.label` verbatim and resolves
+   * `host.value` (`'auto'` = the operating system). With it, `'host'` is the
+   * default preference; a saved preference the user never chose moves to it, an
+   * explicit Light or Dark is kept. `host.subscribe` re-resolves on live changes.
+   * Without it: Auto / Light / Dark only. See {@link ColorSchemeOption}.
+   */
+  colorScheme?: ColorSchemeOption;
+
+  /**
    * Identifier for this playground's FlowDrop instance.
    *
    * When omitted, the first playground on the page uses the page-default
@@ -254,9 +264,10 @@ async function resolveEndpointConfig(
 async function prepareMount(options: {
   endpointConfig?: EndpointConfig;
   settings?: PartialSettings;
+  colorScheme?: ColorSchemeOption;
 }): Promise<EndpointConfig | undefined> {
   const finalEndpointConfig = await resolveEndpointConfig(options.endpointConfig);
-  await initializeSettings({ defaults: options.settings });
+  await initializeSettings({ defaults: options.settings, colorScheme: options.colorScheme });
   return finalEndpointConfig;
 }
 
@@ -437,7 +448,8 @@ export async function mountPlayground(
 
   const finalEndpointConfig = await prepareMount({
     endpointConfig,
-    settings: initialSettings
+    settings: initialSettings,
+    colorScheme: options.colorScheme
   });
 
   const { fd, isDefault } = acquirePlaygroundInstance(instanceId);
@@ -575,7 +587,8 @@ export async function mountPlaygroundStudio(
 
   const finalEndpointConfig = await prepareMount({
     endpointConfig,
-    settings: initialSettings
+    settings: initialSettings,
+    colorScheme: options.colorScheme
   });
 
   const { fd, isDefault } = acquirePlaygroundInstance(instanceId);
@@ -712,7 +725,8 @@ export async function mountPlaygroundApp(
 
   const finalEndpointConfig = await prepareMount({
     endpointConfig,
-    settings: initialSettings
+    settings: initialSettings,
+    colorScheme: options.colorScheme
   });
 
   const { fd, isDefault } = acquirePlaygroundInstance(instanceId);

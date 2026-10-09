@@ -176,32 +176,194 @@ describe('settingsStore persistence', () => {
     });
   });
 
-  describe('theme application (data-theme attribute)', () => {
-    it('initializeTheme applies the persisted preference to the document', async () => {
+  describe('theme wiring', () => {
+    it('initializeTheme does not put data-theme on <html> (the scope element carries it)', async () => {
+      document.documentElement.removeAttribute('data-theme');
       const first = await freshStore();
       first.setTheme('dark');
 
       const second = await freshStore();
       second.initializeTheme();
 
-      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+      expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+      expect(second.getResolvedTheme()).toBe('dark');
+      expect(second.isThemeInitialized()).toBe(true);
       second.cleanupThemeSubscription();
+      expect(second.isThemeInitialized()).toBe(false);
     });
 
-    it('initializeTheme is idempotent — repeated calls do not stack effect roots', async () => {
+    it('initializeTheme is idempotent — repeated calls do not stack listeners', async () => {
       const store = await freshStore();
-      store.setTheme('light');
-
+      const add = vi.spyOn(window.matchMedia('(prefers-color-scheme: dark)'), 'addEventListener');
       store.initializeTheme();
       store.initializeTheme(); // second mount on the same page
+      store.cleanupThemeSubscription();
+      store.initializeTheme(); // wires again after cleanup
+      expect(store.isThemeInitialized()).toBe(true);
+      store.cleanupThemeSubscription();
+      add.mockRestore();
+    });
+  });
 
-      // One cleanup tears the whole system down; a second init after
-      // cleanup must be able to wire it again.
-      store.cleanupThemeSubscription();
+  describe('host colour scheme (colorScheme mount option)', () => {
+    type Host = {
+      value: 'light' | 'dark' | 'auto';
+      label: string;
+      subscribe?: (cb: (v: 'light' | 'dark' | 'auto') => void) => () => void;
+    };
+    const host = (over: Partial<Host> = {}) => ({
+      host: { value: 'dark' as const, label: 'Match host', ...over }
+    });
+
+    it('without the option nothing changes: default light, no host choice', async () => {
+      const store = await freshStore();
+      await store.initializeSettings({});
+      expect(store.getTheme()).toBe('light');
+      expect(store.getHostColorScheme()).toBeNull();
+    });
+
+    it("'host' becomes the default and follows the host value", async () => {
+      const store = await freshStore();
+      await store.initializeSettings({ colorScheme: host({ value: 'dark' }) });
+      expect(store.getTheme()).toBe('host');
+      expect(store.getResolvedTheme()).toBe('dark');
+      expect(store.getHostColorScheme()).toMatchObject({ label: 'Match host', resolved: 'dark' });
+    });
+
+    it('a host value of auto follows the operating system', async () => {
+      window.matchMedia = ((q: string) => ({
+        matches: true,
+        media: q,
+        addEventListener: () => {},
+        removeEventListener: () => {}
+      })) as unknown as typeof window.matchMedia;
+      const store = await freshStore();
+      await store.initializeSettings({ colorScheme: host({ value: 'auto' }) });
+      expect(store.getResolvedTheme()).toBe('dark');
+      expect(store.getHostColorScheme()?.value).toBe('auto');
+    });
+
+    it('subscribe re-resolves on live host changes and unsubscribes on replacement', async () => {
+      const store = await freshStore();
+      let push: (v: 'light' | 'dark' | 'auto') => void = () => {};
+      const unsubscribe = vi.fn();
+      await store.initializeSettings({
+        colorScheme: host({
+          value: 'light',
+          subscribe: (cb) => {
+            push = cb;
+            return unsubscribe;
+          }
+        })
+      });
+      expect(store.getResolvedTheme()).toBe('light');
+      push('dark');
+      expect(store.getResolvedTheme()).toBe('dark');
+      store.setHostColorScheme(null);
+      expect(unsubscribe).toHaveBeenCalled();
+      expect(store.getHostColorScheme()).toBeNull();
+    });
+
+    it("a stored 'host' without the option falls back to auto", async () => {
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ theme: { preference: 'host', explicit: true } })
+      );
+      const store = await freshStore();
+      expect(store.getTheme()).toBe('auto');
+      expect(store.getResolvedTheme()).toBe('light'); // system is light in this suite
+    });
+
+    it('resolveColorScheme covers every preference', async () => {
+      const { resolveColorScheme: r } = await freshStore();
+      expect(r('light', 'dark', 'dark')).toBe('light');
+      expect(r('dark', null, 'light')).toBe('dark');
+      expect(r('auto', 'light', 'dark')).toBe('dark');
+      expect(r('host', 'light', 'dark')).toBe('light');
+      expect(r('host', 'auto', 'dark')).toBe('dark');
+      expect(r('host', null, 'dark')).toBe('dark');
+    });
+
+    describe('migration of a saved preference', () => {
+      it("a saved 'auto' the user never chose moves to 'host'", async () => {
+        localStorage.setItem(
+          SETTINGS_STORAGE_KEY,
+          JSON.stringify({ theme: { preference: 'auto' } })
+        );
+        const store = await freshStore();
+        await store.initializeSettings({ colorScheme: host() });
+        expect(store.getTheme()).toBe('host');
+      });
+
+      it("an explicit 'auto' is kept", async () => {
+        localStorage.setItem(
+          SETTINGS_STORAGE_KEY,
+          JSON.stringify({ theme: { preference: 'auto', explicit: true } })
+        );
+        const store = await freshStore();
+        await store.initializeSettings({ colorScheme: host() });
+        expect(store.getTheme()).toBe('auto');
+      });
+
+      it('explicit Light and Dark are kept, marked or not', async () => {
+        for (const preference of ['light', 'dark']) {
+          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ theme: { preference } }));
+          const store = await freshStore();
+          await store.initializeSettings({ colorScheme: host() });
+          expect(store.getTheme()).toBe(preference);
+        }
+      });
+
+      it('the user picking a scheme sets the marker, and it survives a reload', async () => {
+        const first = await freshStore();
+        await first.initializeSettings({ colorScheme: host() });
+        first.setTheme('auto');
+        expect(readPersisted()?.theme).toMatchObject({ preference: 'auto', explicit: true });
+
+        const second = await freshStore();
+        await second.initializeSettings({ colorScheme: host() });
+        expect(second.getTheme()).toBe('auto');
+      });
+
+      it('changing the preference through updateSettings marks it too', async () => {
+        const store = await freshStore();
+        store.updateSettings({ theme: { preference: 'dark' } });
+        expect(readPersisted()?.theme).toMatchObject({ explicit: true });
+      });
+
+      it('without the option a saved auto is untouched', async () => {
+        localStorage.setItem(
+          SETTINGS_STORAGE_KEY,
+          JSON.stringify({ theme: { preference: 'auto' } })
+        );
+        const store = await freshStore();
+        await store.initializeSettings({});
+        expect(store.getTheme()).toBe('auto');
+      });
+
+      it('migrateSavedTheme leaves snapshots without a theme alone', async () => {
+        const { migrateSavedTheme } = await freshStore();
+        const raw = { editor: { showGrid: false } } as never;
+        expect(migrateSavedTheme(raw, true)).toBe(raw);
+      });
+    });
+
+    it("reset returns to 'host' when the option is given", async () => {
+      const store = await freshStore();
+      await store.initializeSettings({ colorScheme: host() });
       store.setTheme('dark');
-      store.initializeTheme();
-      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-      store.cleanupThemeSubscription();
+      store.resetSettings();
+      expect(store.getTheme()).toBe('host');
+    });
+
+    it('cycleTheme visits the host choice instead of auto', async () => {
+      const store = await freshStore();
+      await store.initializeSettings({ colorScheme: host() });
+      store.setTheme('light');
+      store.cycleTheme();
+      expect(store.getTheme()).toBe('dark');
+      store.cycleTheme();
+      expect(store.getTheme()).toBe('host');
     });
   });
 });

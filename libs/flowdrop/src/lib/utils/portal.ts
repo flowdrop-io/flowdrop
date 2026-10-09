@@ -12,16 +12,23 @@
  * The node leaves `.flowdrop-root`, so it takes the editor's skin scope with
  * it: `data-fd-scope` is copied from the nearest scoped ancestor (read before
  * the move) and the node gets the `flowdrop-portal` class, which the base
- * stylesheet treats as a FlowDrop root.
+ * stylesheet treats as a FlowDrop root. It also gets `data-theme` (the editor's
+ * resolved colour scheme, via the `themeScope` action), since that no longer
+ * sits on <html>.
  *
  * Usage: `<div use:portal>…</div>` or `<div use:portal={targetElement}>…</div>`.
  * No-op during SSR (no `document`).
  */
+import { themeScope } from './themeScope.svelte.js';
+
 /** Attribute that scopes one editor's skin (on `.flowdrop-root`, copied onto overlays). */
 export const SCOPE_ATTR = 'data-fd-scope';
 export const PORTAL_CLASS = 'flowdrop-portal';
 
 export function portal(node: HTMLElement, target: HTMLElement | undefined = undefined) {
+  // The colour scheme is `data-theme` on the editor scope, not on <html>, so
+  // an overlay on <body> gets its own (kept in step with the store).
+  const theme = themeScope(node);
   let host: HTMLElement | null = null;
   // Remembered across updates: after the first move the node no longer has the
   // editor as an ancestor to look the scope up on.
@@ -43,6 +50,7 @@ export function portal(node: HTMLElement, target: HTMLElement | undefined = unde
       mount(nextTarget);
     },
     destroy() {
+      theme.destroy();
       if (node.parentNode) {
         node.parentNode.removeChild(node);
       }

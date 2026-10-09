@@ -15,6 +15,7 @@
 <script lang="ts">
   import { warnStandalonePlaygroundDeprecated } from '../../utils/deprecation.js';
   import Navbar from '../Navbar.svelte';
+  import { themeScope } from '../../utils/themeScope.svelte.js';
   import PlaygroundStudio from './PlaygroundStudio.svelte';
   import type { Workflow } from '$lib/types/index.js';
   import type { FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
@@ -79,7 +80,7 @@
   const displayTitle = $derived(navbarTitle ?? workflow?.name ?? 'Playground');
 </script>
 
-<div class="flowdrop-scope fd-playground-app">
+<div class="flowdrop-scope fd-playground-app" use:themeScope>
   {#if showNavbar}
     <Navbar
       title={displayTitle}

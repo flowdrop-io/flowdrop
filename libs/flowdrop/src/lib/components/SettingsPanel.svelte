@@ -47,9 +47,12 @@
     resetSettings,
     syncSettingsToApi,
     getSyncStatus,
-    getResolvedTheme
+    getResolvedTheme,
+    getTheme,
+    getHostColorScheme
   } from '$lib/stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
+  import { appearanceChoices } from '../utils/appearance.js';
 
   /**
    * Props interface for SettingsPanel component
@@ -336,6 +339,10 @@
   function getCategoryValues(category: SettingsCategory): Record<string, unknown> {
     const settings = getSettings();
     const categorySettings = settings[category];
+    // The preference in effect: a stored 'host' without a host scheme reads as 'auto'.
+    if (category === 'theme') {
+      return { ...categorySettings, preference: getTheme() };
+    }
     // Convert to Record<string, unknown> for SchemaForm compatibility
     return Object.fromEntries(Object.entries(categorySettings));
   }
@@ -391,9 +398,13 @@
   function rowsFor(category: SettingsCategory): SettingRowModel[] {
     const props = (schemas[category].properties ?? {}) as Record<string, Record<string, unknown>>;
     return Object.entries(props).map(([key, def]) => {
-      const options = ((def.oneOf as { const: string; title: string }[] | undefined) ?? []).map(
+      let options = ((def.oneOf as { const: string; title: string }[] | undefined) ?? []).map(
         (o) => ({ value: o.const, label: o.title })
       );
+      if (category === 'theme' && key === 'preference') {
+        const a = m().navigation.appearance;
+        options = appearanceChoices(getHostColorScheme(), a);
+      }
       let kind: SettingRowModel['kind'] = 'number';
       if (def.type === 'boolean') kind = 'switch';
       else if (options.length > 0) {

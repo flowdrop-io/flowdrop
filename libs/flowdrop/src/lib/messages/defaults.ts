@@ -229,6 +229,20 @@ export const defaultMessages = {
     connected: 'Connected',
     settingsTitle: 'Settings',
     settingsAriaLabel: 'Open settings',
+    // The gear menu: an Appearance switch, then the full settings dialog.
+    appearance: {
+      label: 'Appearance',
+      light: 'Light',
+      dark: 'Dark',
+      // Follow the operating system (no host colour scheme given).
+      system: 'System',
+      // Hint under the switch when the host's scheme is offered: its name comes
+      // from the host (`colorScheme.host.label`), `scheme` is Light or Dark.
+      hostHint: ({ label, scheme }: { label: string; scheme: string }) =>
+        `${label} · currently ${scheme}`,
+      systemHint: ({ scheme }: { scheme: string }) => `Following your system · currently ${scheme}`,
+      allSettings: 'All settings…'
+    },
     // Default primary action labels rendered when no `navbarActions` prop is supplied.
     save: 'Save',
     export: 'Export',

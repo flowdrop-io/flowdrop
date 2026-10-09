@@ -124,7 +124,7 @@ describe('graphite theme', () => {
     const css = buildScopedSkinCss('g1', graphiteSkin);
     expect(css).toContain('--fd-font-sans: ');
     expect(css).toContain('font-family: var(--fd-font-sans)');
-    expect(css).toContain(`[data-theme='dark'] [data-fd-scope="g1"] {`);
+    expect(css).toContain(`[data-fd-scope="g1"][data-theme='dark'] {`);
   });
 });
 

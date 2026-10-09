@@ -36,7 +36,12 @@ import {
   type DraftStorageOption
 } from './services/draftStorage.js';
 import { mergeFeatures } from './types/events.js';
-import type { PartialSettings, SettingsCategory, SurfacePlacement } from './types/settings.js';
+import type {
+  ColorSchemeOption,
+  PartialSettings,
+  SettingsCategory,
+  SurfacePlacement
+} from './types/settings.js';
 import {
   initializeSettings,
   getBehaviorSettings,
@@ -158,6 +163,16 @@ export interface FlowDropMountOptions {
   // NEW: Default settings overrides
   /** Initial settings overrides (theme, behavior, editor, ui, api) */
   settings?: PartialSettings;
+
+  /**
+   * Lets the embedding page supply a fourth colour-scheme choice, "follow the
+   * host". Generic: FlowDrop shows `host.label` verbatim and resolves
+   * `host.value` (`'auto'` = the operating system). With it, `'host'` is the
+   * default preference; a saved preference the user never chose moves to it, an
+   * explicit Light or Dark is kept. `host.subscribe` re-resolves on live changes.
+   * Without it: Auto / Light / Dark only. See {@link ColorSchemeOption}.
+   */
+  colorScheme?: ColorSchemeOption;
 
   // NEW: Draft storage key
   /** Custom storage key for workflow drafts */
@@ -520,6 +535,7 @@ export async function mountFlowDropApp(
     eventHandlers,
     features: userFeatures,
     settings: initialSettings,
+    colorScheme,
     draftStorageKey: customDraftKey,
     draftStorage,
     formatAdapters,
@@ -558,7 +574,8 @@ export async function mountFlowDropApp(
 
   // Apply initial settings overrides and initialize theme
   await initializeSettings({
-    defaults: initialSettings
+    defaults: initialSettings,
+    colorScheme
   });
 
   // Resolve and apply endpoint config, port config and categories to this

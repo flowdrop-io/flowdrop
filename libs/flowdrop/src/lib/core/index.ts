@@ -572,7 +572,12 @@ export { slateSkin, defaultSkin } from '../skins/index.js';
 // Color Theme System (light/dark preference)
 // ============================================================================
 
-export type { ThemePreference, ResolvedTheme } from '../stores/settingsStore.svelte.js';
+export type {
+  ThemePreference,
+  ResolvedTheme,
+  ColorSchemeOption,
+  HostColorSchemeValue
+} from '../stores/settingsStore.svelte.js';
 export {
   getTheme as theme,
   getResolvedTheme as resolvedTheme,

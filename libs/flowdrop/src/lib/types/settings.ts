@@ -16,8 +16,47 @@
  * - 'light': Force light theme
  * - 'dark': Force dark theme
  * - 'auto': Follow system preference
+ * - 'host': Follow the colour scheme the embedding page reports through the
+ *   `colorScheme.host` mount option. Only exists when that option is given;
+ *   without it a stored `'host'` behaves as `'auto'`.
  */
-export type ThemePreference = 'light' | 'dark' | 'auto';
+export type ThemePreference = 'light' | 'dark' | 'auto' | 'host';
+
+/**
+ * What an embedding page reports as its own colour scheme. `'auto'` means
+ * "follow the operating system" and is resolved by FlowDrop itself.
+ */
+export type HostColorSchemeValue = 'light' | 'dark' | 'auto';
+
+/**
+ * Mount option: lets the embedding page supply a fourth colour-scheme choice
+ * ("follow the host"). FlowDrop knows nothing about the host: it shows `label`
+ * verbatim and resolves `value`.
+ *
+ * ```ts
+ * colorScheme: {
+ *   host: {
+ *     value: 'dark',            // what the host resolves to right now
+ *     label: 'Match host',      // shown verbatim in the Appearance menu / settings
+ *     subscribe: (cb) => { ...; return () => {...}; } // optional, live changes
+ *   }
+ * }
+ * ```
+ *
+ * When given, `'host'` becomes the default preference (a saved preference that
+ * the user never changed is migrated to it; an explicit Light or Dark is kept).
+ * Without it nothing changes: Auto / Light / Dark only.
+ */
+export interface ColorSchemeOption {
+  host: {
+    /** The host's colour scheme right now. */
+    value: HostColorSchemeValue;
+    /** Name of the choice, shown verbatim (translate it in the host). */
+    label: string;
+    /** Optional live updates; returns the unsubscribe function. */
+    subscribe?: (callback: (value: HostColorSchemeValue) => void) => () => void;
+  };
+}
 
 /**
  * Resolved theme (actual applied theme, never 'auto')
@@ -30,6 +69,12 @@ export type ResolvedTheme = 'light' | 'dark';
 export interface ThemeSettings {
   /** User's theme preference */
   preference: ThemePreference;
+  /**
+   * Set once the user has picked a colour scheme (navbar menu or settings).
+   * Lets FlowDrop tell a saved `'auto'` that was only ever the default (migrated
+   * to `'host'` when a host scheme is given) from one the user chose.
+   */
+  explicit?: boolean;
 }
 
 // =========================================================================

@@ -38,6 +38,8 @@
                            above the composer
     - ?playground=chat   -> a chat bound to a `message` input and one reply port, no
                            other inputs: Test mode runs as a plain conversation
+    - ?hostScheme=light|dark|auto[&hostLabel=..] -> simulate a host passing
+      the colorScheme.host mount option (window.__setHostScheme(v) pushes live changes)
     - ?settingsDefaults=light|dark|auto -> seed host settings defaults
       before mounting, mirroring mountFlowDropApp({ settings }) — used by
       the settings persistence tests
@@ -52,7 +54,11 @@
   import App from '$lib/components/App.svelte';
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
   import type { Workflow, NodeMetadata } from '$lib/types/index.js';
-  import type { SettingsCategory, ThemePreference } from '$lib/types/settings.js';
+  import type {
+    ColorSchemeOption,
+    SettingsCategory,
+    ThemePreference
+  } from '$lib/types/settings.js';
   import type { ContextMenuOptions } from '$lib/editor/contextMenu.js';
   import { defaultEndpointConfig, sessionsEndpoints } from '$lib/config/endpoints.js';
   import { createChainedTriggerWorkflow } from '../../../mocks/data/workflows.js';
@@ -104,10 +110,36 @@
   // --- Host settings defaults (settings persistence e2e) ---
   // Seeded during component init, before <App> mounts — the same ordering
   // mountFlowDropApp uses (initializeSettings before mount()).
+  // ?hostScheme=light|dark|auto[&hostLabel=...] simulates an embedding page that
+  // passes the `colorScheme.host` mount option; window.__setHostScheme(v)
+  // pushes a live change through its `subscribe`.
   if (browser) {
-    const pref = new URLSearchParams(window.location.search).get('settingsDefaults');
-    if (pref === 'light' || pref === 'dark' || pref === 'auto') {
-      void initializeSettings({ defaults: { theme: { preference: pref as ThemePreference } } });
+    const query = new URLSearchParams(window.location.search);
+    const pref = query.get('settingsDefaults');
+    const hostScheme = query.get('hostScheme');
+    let colorScheme: ColorSchemeOption | undefined;
+    if (hostScheme === 'light' || hostScheme === 'dark' || hostScheme === 'auto') {
+      const listeners = new Set<(v: 'light' | 'dark' | 'auto') => void>();
+      (window as unknown as Record<string, unknown>).__setHostScheme = (
+        v: 'light' | 'dark' | 'auto'
+      ) => listeners.forEach((cb) => cb(v));
+      colorScheme = {
+        host: {
+          value: hostScheme,
+          label: query.get('hostLabel') ?? 'Match host',
+          subscribe: (cb) => {
+            listeners.add(cb);
+            return () => listeners.delete(cb);
+          }
+        }
+      };
+    }
+    const hasPref = pref === 'light' || pref === 'dark' || pref === 'auto';
+    if (hasPref || colorScheme) {
+      void initializeSettings({
+        ...(hasPref && { defaults: { theme: { preference: pref as ThemePreference } } }),
+        ...(colorScheme && { colorScheme })
+      });
     }
   }
 

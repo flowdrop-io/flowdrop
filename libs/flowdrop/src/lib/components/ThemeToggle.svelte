@@ -10,7 +10,12 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import Button from './Button.svelte';
-  import { getTheme, getResolvedTheme, cycleTheme } from '../stores/settingsStore.svelte.js';
+  import {
+    getTheme,
+    getResolvedTheme,
+    getHostColorScheme,
+    cycleTheme
+  } from '../stores/settingsStore.svelte.js';
   import type { ThemePreference } from '../types/settings.js';
 
   /**
@@ -46,6 +51,8 @@
         return 'mdi:moon-waning-crescent';
       case 'auto':
         return 'mdi:desktop-mac';
+      case 'host':
+        return 'mdi:link-variant';
     }
   }
 
@@ -65,6 +72,8 @@
         return 'Dark';
       case 'auto':
         return 'Auto';
+      case 'host':
+        return getHostColorScheme()?.label ?? 'Auto';
     }
   }
 
@@ -77,10 +86,11 @@
    * Get tooltip text based on theme preference
    */
   function getTooltipText(currentTheme: ThemePreference, resolved: 'light' | 'dark'): string {
-    if (currentTheme === 'auto') {
-      return `Theme: Auto (${resolved}). Click to switch to Light`;
+    if (currentTheme === 'auto' || currentTheme === 'host') {
+      return `Theme: ${getThemeLabel(currentTheme)} (${resolved}). Click to switch to Light`;
     }
-    const next = currentTheme === 'light' ? 'Dark' : 'Auto';
+    const next =
+      currentTheme === 'light' ? 'Dark' : getThemeLabel(getHostColorScheme() ? 'host' : 'auto');
     return `Theme: ${currentTheme === 'light' ? 'Light' : 'Dark'}. Click to switch to ${next}`;
   }
 </script>

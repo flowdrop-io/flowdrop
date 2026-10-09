@@ -1898,6 +1898,8 @@ export type {
   ApiSettings,
   ThemePreference,
   ResolvedTheme,
+  ColorSchemeOption,
+  HostColorSchemeValue,
   SettingsCategory,
   PartialSettings,
   SyncStatus,

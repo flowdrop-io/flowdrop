@@ -200,9 +200,12 @@ export function scopeSelector(scopeId: string): string {
  * CSS for one editor instance's skin, confined to its scope element.
  *
  *   tokens     → [data-fd-scope="id"]                        (light / base)
- *   darkTokens → [data-theme='dark'] [data-fd-scope="id"]    (dark)
+ *   darkTokens → [data-fd-scope="id"][data-theme='dark']     (dark)
  *
- * data-theme stays page-global (on <html>, or any ancestor of the scope).
+ * data-theme is normally on the scope element itself (use:themeScope), where
+ * tokens.css's own `[data-theme='dark']` block applies to the same element. Both
+ * skin rules therefore carry one extra attribute selector, so a skin's tokens
+ * outrank that block instead of tying with it.
  * `display` (the theme config's layout switches) is merged into the light tokens.
  * Returns '' when the skin and display set nothing.
  */
@@ -227,7 +230,7 @@ export function buildScopedSkinCss(
   if (lightKeys.length > 0) {
     // A named font also has to take effect: the editor otherwise inherits the host's.
     css += rule(
-      scope,
+      `${scope}${scope}`,
       { ...lightAliases, ...tokens },
       skin?.font ? ['font-family: var(--fd-font-sans)'] : []
     );
@@ -243,7 +246,7 @@ export function buildScopedSkinCss(
     if (name in DARK_ALIASES && !(name in darkAliases)) darkAliases[name] = DARK_ALIASES[name];
   }
   if (darkKeys.length > 0 || Object.keys(darkAliases).length > 0) {
-    css += rule(`[data-theme='dark'] ${scope}`, { ...darkAliases, ...darkTokens });
+    css += rule(`${scope}[data-theme='dark']`, { ...darkAliases, ...darkTokens });
   }
 
   return css;

@@ -51,3 +51,15 @@ describe('portal', () => {
     wrap.remove();
   });
 });
+
+describe('portal colour scheme', () => {
+  it('gives the overlay its own data-theme, since <html> no longer carries it', () => {
+    const node = document.createElement('div');
+    document.body.appendChild(node);
+    const action = portal(node);
+    // The resolved scheme is a store value (light in the test environment).
+    expect(node.getAttribute('data-theme')).toMatch(/^(light|dark)$/);
+    action.destroy();
+    expect(node.hasAttribute('data-theme')).toBe(false);
+  });
+});

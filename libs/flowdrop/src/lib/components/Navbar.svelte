@@ -16,6 +16,13 @@
   import type { SettingsCategory } from '$lib/types/settings.js';
   import type { NavbarAction, NavbarBranding } from '$lib/types/navbar.js';
   import { m } from '$lib/messages/index.js';
+  import {
+    getTheme,
+    getResolvedTheme,
+    getHostColorScheme,
+    setTheme
+  } from '$lib/stores/settingsStore.svelte.js';
+  import { appearanceChoices } from '$lib/utils/appearance.js';
 
   interface BreadcrumbItem {
     label: string;
@@ -76,6 +83,36 @@
 
   // Settings modal state
   let isSettingsOpen = $state(false);
+  let gearMenuOpen = $state(false);
+
+  // Appearance: the colour-scheme choices (the host's, Light, Dark; or Light,
+  // Dark, System) and a hint saying what the preference resolves to right now.
+  const appearance = $derived(m().navigation.appearance);
+  const hostScheme = $derived(getHostColorScheme());
+  const appearanceOptions = $derived(appearanceChoices(hostScheme, appearance));
+  const currentTheme = $derived(getTheme());
+  const schemeName = (resolved: 'light' | 'dark') =>
+    resolved === 'dark' ? appearance.dark : appearance.light;
+  const appearanceHint = $derived(
+    hostScheme
+      ? appearance.hostHint({ label: hostScheme.label, scheme: schemeName(hostScheme.resolved) })
+      : currentTheme === 'auto'
+        ? appearance.systemHint({ scheme: schemeName(getResolvedTheme()) })
+        : ''
+  );
+
+  // Left / Right move between the three choices (Up / Down already do, as the
+  // Menu walks its items in order).
+  function onAppearanceKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    const group = event.currentTarget as HTMLElement;
+    const items = Array.from(group.querySelectorAll<HTMLElement>('[role="menuitemradio"]'));
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    if (at < 0) return;
+    event.preventDefault();
+    const step = event.key === 'ArrowRight' ? 1 : -1;
+    items[(at + step + items.length) % items.length]?.focus();
+  }
 
   // Hoist the navigation branch — six reads in the template.
   const nav = $derived(m().navigation);
@@ -113,6 +150,7 @@
   // The shortcut's hint, in the platform's words.
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
   const saveHint = $derived(saveShortcut ? (isMac ? '⌘S' : 'Ctrl+S') : undefined);
+  const settingsHint = isMac ? '⌘,' : 'Ctrl+,';
 
   $effect(() => {
     if (!saveShortcut) return;
@@ -127,6 +165,20 @@
       if (!save?.onclick) return;
       event.preventDefault();
       save.onclick(event);
+    }
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  });
+
+  // Cmd/Ctrl+, opens the full settings dialog, as in most desktop apps.
+  $effect(() => {
+    if (!showSettings) return;
+    function onKeydown(event: KeyboardEvent): void {
+      if (event.defaultPrevented) return;
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+      if (event.key !== ',') return;
+      event.preventDefault();
+      isSettingsOpen = true;
     }
     window.addEventListener('keydown', onKeydown);
     return () => window.removeEventListener('keydown', onKeydown);
@@ -360,14 +412,64 @@
   <div class="flowdrop-navbar__end">
     {@render end?.()}
     {#if showSettings}
-      <button
-        class="flowdrop-navbar__settings-btn"
-        onclick={() => (isSettingsOpen = true)}
-        title={nav.settingsTitle}
-        aria-label={nav.settingsAriaLabel}
+      <Menu
+        bind:open={gearMenuOpen}
+        label={nav.settingsTitle}
+        testId="navbar-settings-menu"
+        triggerClass="flowdrop-navbar__settings-btn"
+        align="end"
+        minWidth={240}
       >
-        <Icon icon="mdi:cog" />
-      </button>
+        {#snippet trigger()}
+          <Icon icon="mdi:cog" aria-hidden="true" />
+        {/snippet}
+        {#snippet children({ close })}
+          <div class="flowdrop-navbar__dropdown-group-header" role="presentation">
+            {appearance.label}
+          </div>
+          <!-- Three choices drawn as a segmented switch, each a menu radio so the
+               menu's keyboard walk reaches them. -->
+          <div
+            class="flowdrop-navbar__appearance"
+            role="presentation"
+            data-testid="navbar-appearance"
+            onkeydown={onAppearanceKeydown}
+          >
+            {#each appearanceOptions as option (option.value)}
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={currentTheme === option.value}
+                class="flowdrop-navbar__appearance-item"
+                class:flowdrop-navbar__appearance-item--selected={currentTheme === option.value}
+                data-value={option.value}
+                onclick={() => setTheme(option.value)}
+              >
+                {option.label}
+              </button>
+            {/each}
+          </div>
+          {#if appearanceHint}
+            <p class="flowdrop-navbar__appearance-hint" data-testid="navbar-appearance-hint">
+              {appearanceHint}
+            </p>
+          {/if}
+          <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
+          <button
+            type="button"
+            role="menuitem"
+            class="flowdrop-navbar__dropdown-item flowdrop-navbar__dropdown-item--button"
+            data-testid="navbar-all-settings"
+            onclick={() => {
+              close();
+              isSettingsOpen = true;
+            }}
+          >
+            <span class="flowdrop-navbar__dropdown-label">{appearance.allSettings}</span>
+            <kbd class="flowdrop-navbar__dropdown-hint">{settingsHint}</kbd>
+          </button>
+        {/snippet}
+      </Menu>
     {/if}
   </div>
 </div>
@@ -773,6 +875,65 @@
     font-size: var(--fd-text-xs);
   }
 
+  /* The same row as a link, on a <button>. */
+  .flowdrop-navbar__dropdown-item--button {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* Appearance: a segmented switch (as the Segmented primitive draws it). */
+  .flowdrop-navbar__appearance {
+    display: flex;
+    gap: var(--fd-space-3xs);
+    margin: var(--fd-space-3xs) var(--fd-space-sm) 0;
+    padding: var(--fd-space-3xs);
+    background-color: var(--fd-muted);
+    border: 1px solid var(--fd-border-muted);
+    border-radius: var(--fd-control-radius);
+  }
+
+  .flowdrop-navbar__appearance-item {
+    flex: 1 1 0;
+    min-width: 0;
+    height: calc(var(--fd-control-sm) - var(--fd-space-2xs) - 2px);
+    padding: 0 var(--fd-space-xs);
+    border: 0;
+    border-radius: var(--fd-radius-md);
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    font-family: inherit;
+    font-size: var(--fd-text-xs);
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition:
+      background-color var(--fd-transition-fast),
+      color var(--fd-transition-fast);
+  }
+
+  .flowdrop-navbar__appearance-item:hover:not(.flowdrop-navbar__appearance-item--selected),
+  .flowdrop-navbar__appearance-item:focus-visible {
+    color: var(--fd-foreground);
+  }
+
+  .flowdrop-navbar__appearance-item--selected {
+    background-color: var(--fd-background);
+    color: var(--fd-foreground);
+    box-shadow: var(--fd-shadow-sm);
+  }
+
+  .flowdrop-navbar__appearance-hint {
+    margin: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-3xs);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
+    line-height: 1.4;
+  }
+
   .flowdrop-navbar__dropdown-divider {
     height: 1px;
     margin: var(--fd-space-xs) 0;
@@ -877,7 +1038,7 @@
     margin-left: var(--fd-space-md);
   }
 
-  .flowdrop-navbar__settings-btn {
+  :global(.flowdrop-navbar__settings-btn) {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -892,13 +1053,14 @@
     transition: all var(--fd-transition-fast);
   }
 
-  .flowdrop-navbar__settings-btn:hover {
+  :global(.flowdrop-navbar__settings-btn:hover),
+  :global(.flowdrop-navbar__settings-btn[aria-expanded='true']) {
     background-color: var(--fd-muted);
     color: var(--fd-foreground);
     border-color: var(--fd-navbar-icon-border-hover);
   }
 
-  .flowdrop-navbar__settings-btn:active {
+  :global(.flowdrop-navbar__settings-btn:active) {
     transform: scale(0.95);
   }
 
