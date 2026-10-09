@@ -42,7 +42,9 @@ function readPersisted(): PersistedSettings | null {
   return raw ? (JSON.parse(raw) as PersistedSettings) : null;
 }
 
-describe('settingsStore persistence', () => {
+// Each test re-evaluates the store graph after vi.resetModules(); on the Linux
+// gate box under a full parallel run that alone has passed 10 s (2026-10-09).
+describe('settingsStore persistence', { timeout: 30_000 }, () => {
   beforeEach(() => {
     localStorage.clear();
     // The module reads matchMedia at import time (system theme detection).

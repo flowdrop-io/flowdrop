@@ -467,7 +467,9 @@
      --fd-field-*). */
 
   /* ----- ASSISTANT ACTIVITY ROWS (tool calls, notices, retries, "Thinking…") ----- */
-  --fd-activity-running: var(--fd-status-running); /* @internal  the breathing dot of a running row */
+  --fd-activity-running: var(
+    --fd-status-running
+  ); /* @internal  the breathing dot of a running row */
   --fd-activity-text: var(--fd-text-meta); /* @internal  row text size */
   --fd-activity-slot: 0.875rem; /* @internal  width of the status slot (check, dot, mark) */
   --fd-activity-dot-size: 0.4375rem; /* @internal  the running dot */
@@ -848,7 +850,9 @@
 
 /* BEGIN GENERATED dark aliases (pnpm run generate:token-aliases) */
 /* The aliases the dark palette changes underneath, declared again on the themed
-   element (see scripts/parse-token-aliases.mjs renderDarkAliasBlock). */
+   element (see scripts/parse-token-aliases.mjs renderDarkAliasBlock). Generated
+   text, so Prettier leaves it as written. */
+/* prettier-ignore */
 [data-theme='dark'] {
   --fd-activity-running: var(--fd-status-running);
   --fd-button-danger-bg: var(--fd-error);

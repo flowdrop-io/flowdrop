@@ -7,7 +7,8 @@
  */
 
 /** Markers around the generated dark-alias block at the end of tokens.css. */
-export const DARK_ALIAS_BEGIN = '/* BEGIN GENERATED dark aliases (pnpm run generate:token-aliases) */';
+export const DARK_ALIAS_BEGIN =
+  '/* BEGIN GENERATED dark aliases (pnpm run generate:token-aliases) */';
 export const DARK_ALIAS_END = '/* END GENERATED dark aliases */';
 
 /** Remove the generated block, so it never feeds back into the maps it is built from. */
@@ -161,7 +162,9 @@ export function renderDarkAliasBlock(sources) {
     .map(([name, expr]) => `  --fd-${name}: ${expr};`);
   return `${DARK_ALIAS_BEGIN}
 /* The aliases the dark palette changes underneath, declared again on the themed
-   element (see scripts/parse-token-aliases.mjs renderDarkAliasBlock). */
+   element (see scripts/parse-token-aliases.mjs renderDarkAliasBlock). Generated
+   text, so Prettier leaves it as written. */
+/* prettier-ignore */
 [data-theme='dark'] {
 ${lines.join('\n')}
 }
