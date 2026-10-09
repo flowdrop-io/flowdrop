@@ -35,6 +35,8 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'float-border': 'var(--fd-border)',
   'handle-offset': 'calc(-1 * var(--fd-handle-size) / 2)',
   'id-chip-bg': 'var(--fd-subtle)',
+  'iface-tag-bg': 'var(--fd-node-bg)',
+  'iface-tag-border': 'color-mix(in srgb, var(--fd-foreground) 45%, transparent)',
   'inspector-details-bg': 'var(--fd-card)',
   'inspector-details-rule': 'var(--fd-border-muted)',
   'inspector-link-color': 'var(--fd-primary)',

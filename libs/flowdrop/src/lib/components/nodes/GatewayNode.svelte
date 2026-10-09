@@ -176,7 +176,7 @@
               type="target"
               position={Position.Left}
               id={`${props.id}-input-${port.id}`}
-              class="flowdrop-workflow-node__handle {boundEntry ? 'flowdrop-handle--bound' : ''}"
+              class="flowdrop-workflow-node__handle"
               title={interfaceBoundTooltip(boundEntry)}
               style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
                 checker,

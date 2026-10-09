@@ -154,7 +154,6 @@
   <Handle
     type="target"
     position={Position.Left}
-    class={boundEntry ? 'flowdrop-handle--bound' : undefined}
     title={interfaceBoundTooltip(boundEntry)}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
@@ -229,7 +228,6 @@
   <Handle
     type="source"
     position={Position.Right}
-    class={boundEntry ? 'flowdrop-handle--bound' : undefined}
     title={interfaceBoundTooltip(boundEntry)}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,

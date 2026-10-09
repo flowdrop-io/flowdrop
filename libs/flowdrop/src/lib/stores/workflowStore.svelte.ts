@@ -19,7 +19,12 @@ import { WORKFLOW_SCHEMA_VERSION } from '$lib/schemas/index.js';
 import type { PortMapping } from '../utils/nodeSwap.js';
 import type { WorkflowInterfaceEntry } from '$lib/types/index.js';
 import { interfaceBoundHandles, rewriteInterfaceBindings } from '../utils/workflowInterface.js';
-import { rewritePlaygroundReplies } from '../utils/playgroundChat.js';
+import {
+  followInterfaceInputEdit,
+  rewritePlaygroundReplies,
+  withoutInterfaceTurns,
+  type InterfaceInputEdit
+} from '../utils/playgroundChat.js';
 
 type WorkflowMetadata = Workflow['metadata'];
 
@@ -164,6 +169,7 @@ export interface WorkflowStoreActions {
     /** The workflow's Playground settings. Omit to leave them untouched. */
     playground?: Workflow['playground'];
   }) => void;
+  editInterface: (next: Workflow['interface'], edit?: InterfaceInputEdit) => void;
   swapNode: (updates: {
     nodes: WorkflowNode[];
     edges: WorkflowEdge[];
@@ -264,6 +270,7 @@ export class WorkflowStore {
       clear: this.clear.bind(this),
       updateMetadata: this.updateMetadata.bind(this),
       batchUpdate: this.batchUpdate.bind(this),
+      editInterface: this.editInterface.bind(this),
       swapNode: this.swapNode.bind(this),
       pushHistory: this.pushHistory.bind(this)
     });
@@ -857,6 +864,27 @@ export class WorkflowStore {
     this.#pushToHistory('Batch update');
     this.#bumpVersion();
     this.#notifyWorkflowChange('metadata');
+  }
+
+  /**
+   * Replace the workflow's public contract after an edit: the one path every
+   * interface edit takes (the Interface tab, the canvas tags, the Ports tab),
+   * so each is one undo step and marks the workflow dirty.
+   *
+   * `edit` says an input id was renamed or removed. The chat binding in the
+   * Playground settings names inputs by id, so it follows in the same update
+   * and never names an input the interface no longer has. Settings that bind
+   * nothing any more must not fall back to `turn` marks left on the
+   * interface, which go in the same update.
+   */
+  editInterface(next: Workflow['interface'], edit?: InterfaceInputEdit): void {
+    const playground = this.#workflow?.playground;
+    const followed = edit ? followInterfaceInputEdit(playground, edit) : playground;
+    const cleared = followed !== playground && followed?.chat === null;
+    this.batchUpdate({
+      interface: cleared ? withoutInterfaceTurns(next) : next,
+      ...(followed !== playground && { playground: followed })
+    });
   }
 
   /**

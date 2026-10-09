@@ -24,11 +24,7 @@
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
   import WorkflowPlaygroundSettings from '$lib/components/WorkflowPlaygroundSettings.svelte';
-  import {
-    followInterfaceInputEdit,
-    withPlaygroundChat,
-    withoutInterfaceTurns
-  } from '$lib/utils/playgroundChat.js';
+  import { withPlaygroundChat, withoutInterfaceTurns } from '$lib/utils/playgroundChat.js';
   import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
   import ConsoleStrip from '$lib/components/console/ConsoleStrip.svelte';
@@ -1744,20 +1740,7 @@
       workflow={fd.workflow.current}
       dataTypes={fd.portCompatibility.getEnabledDataTypes()}
       checker={fd.portCompatibility}
-      onChange={(next, edit) => {
-        // A renamed or removed input is followed in the chat binding, in the
-        // same update (one undo step), so the binding never names an input
-        // the interface no longer has.
-        const playground = fd.workflow.current?.playground;
-        const followed = edit ? followInterfaceInputEdit(playground, edit) : playground;
-        // Settings that no longer bind anything must not fall back to `turn`
-        // marks left on the interface: they go in the same update.
-        const cleared = followed !== playground && followed?.chat === null;
-        fd.workflow.batchUpdate({
-          interface: cleared ? withoutInterfaceTurns(next) : next,
-          ...(followed !== playground && { playground: followed })
-        });
-      }}
+      onChange={(next, edit) => fd.workflow.editInterface(next, edit)}
       onOpenPlaygroundSettings={fd.workflow.current.playground !== undefined
         ? () => (workflowSettingsTab = 'playground')
         : undefined}

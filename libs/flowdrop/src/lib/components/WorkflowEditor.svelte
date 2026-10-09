@@ -66,6 +66,19 @@
     type ProximityEdgeCandidate
   } from '../helpers/proximityConnect.js';
   import PortCoordinateTracker from './PortCoordinateTracker.svelte';
+  import InterfaceTagLayer, { type InterfaceTagEdit } from './InterfaceTagLayer.svelte';
+  import {
+    buildPortInterfaceEntries,
+    type InterfaceMenuActions,
+    type PortTarget
+  } from '../editor/interfaceMenu.js';
+  import {
+    entryAtPort,
+    exposePortAsEntry,
+    removeInterfaceEntry,
+    renameInterfaceEntry
+  } from '../utils/interfaceTags.js';
+  import { extractDirection, extractPortId } from '../utils/handleIds.js';
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import { suppressPortDragSelection } from '../utils/canvasSelection.js';
@@ -1009,9 +1022,109 @@
     node: WorkflowNodeType;
   }): void {
     if (!canvasEditable) return;
+    // A port has its own menu (publish it in the workflow interface).
+    const handle =
+      event.target instanceof Element ? event.target.closest('.svelte-flow__handle') : null;
+    if (handle && showPortMenu(handle as HTMLElement, event.clientX, event.clientY)) {
+      event.preventDefault();
+      return;
+    }
     event.preventDefault();
     openNodeMenu(node.id, event.clientX, event.clientY);
   }
+
+  // ---------------------------------------------------------------------------
+  // Workflow interface: the tags beside published ports
+  // ---------------------------------------------------------------------------
+
+  /** The name being typed beside a port (a new entry, or a rename). */
+  let tagEdit = $state.raw<InterfaceTagEdit | null>(null);
+
+  /** Write an interface edit through the store: one undo step, marks the workflow dirty. */
+  function applyInterfaceEdit(
+    result: ReturnType<typeof exposePortAsEntry> | ReturnType<typeof renameInterfaceEntry>
+  ): void {
+    if (!result) return;
+    fd.workflow.editInterface(result.interface, result.edit);
+  }
+
+  const interfaceMenuActions: InterfaceMenuActions = {
+    expose(target: PortTarget) {
+      // The port id is the starting name; the person edits it in the ghost tag.
+      tagEdit = { mode: 'expose', ...target, value: target.portId };
+    },
+    rename(target: PortTarget) {
+      const workflow = fd.workflow.current;
+      const entry =
+        workflow && entryAtPort(workflow, target.nodeId, target.direction, target.portId);
+      if (entry) tagEdit = { mode: 'rename', ...target, entryId: entry.id, value: entry.id };
+    },
+    remove(target: PortTarget) {
+      const workflow = fd.workflow.current;
+      const entry =
+        workflow && entryAtPort(workflow, target.nodeId, target.direction, target.portId);
+      if (workflow && entry)
+        applyInterfaceEdit(removeInterfaceEntry(workflow, target.direction, entry.id));
+    }
+  };
+
+  function commitTagEdit(): void {
+    const edit = tagEdit;
+    const workflow = fd.workflow.current;
+    tagEdit = null;
+    if (!edit || !workflow) return;
+    applyInterfaceEdit(
+      edit.mode === 'expose'
+        ? exposePortAsEntry(workflow, edit, edit.value)
+        : renameInterfaceEntry(workflow, edit.direction, edit.entryId ?? '', edit.value)
+    );
+  }
+
+  /** Open the menu of a port (a handle element). False when it has nothing to offer. */
+  function showPortMenu(handle: HTMLElement, clientX: number, clientY: number): boolean {
+    const workflow = fd.workflow.current;
+    const handleId = handle.dataset.handleid;
+    const nodeId = handle.dataset.nodeid;
+    const direction = extractDirection(handleId);
+    const portId = extractPortId(handleId);
+    if (!workflow || !nodeId || !direction || !portId || !canvasControllerRef) return false;
+    return openPortMenuAt({ nodeId, direction, portId }, clientX, clientY);
+  }
+
+  function openPortMenuAt(target: PortTarget, clientX: number, clientY: number): boolean {
+    const workflow = fd.workflow.current;
+    const node = flowNodes.find((n) => n.id === target.nodeId);
+    if (!workflow || !node || !canvasControllerRef) return false;
+    const entries = buildPortInterfaceEntries(
+      workflow,
+      target,
+      interfaceMenuActions,
+      getMsgs().contextMenu
+    );
+    if (entries.length === 0) return false;
+    openMenu = {
+      ctx: {
+        target: 'node',
+        nodes: [node],
+        position: canvasControllerRef.canvasScreenToFlow({ x: clientX, y: clientY }),
+        nodeTypes: fd.nodeTypes.current,
+        actions: contextMenuActions
+      },
+      entries,
+      x: clientX,
+      y: clientY
+    };
+    return true;
+  }
+
+  // A name being typed never outlives edit mode, its workflow, or its port (undo).
+  $effect(() => {
+    if (!canvasEditable) tagEdit = null;
+  });
+  $effect(() => {
+    void svelteFlowKey;
+    tagEdit = null;
+  });
 
   function handleSelectionContextMenu({
     event,
@@ -1340,6 +1453,28 @@
               rebuildTrigger={portCoordRebuildTrigger}
               nodes={flowNodes}
             />
+            {#if fd.workflow.current}
+              <InterfaceTagLayer
+                workflow={fd.workflow.current}
+                editable={canvasEditable}
+                edit={tagEdit}
+                onedit={(value) => tagEdit && (tagEdit = { ...tagEdit, value })}
+                onsubmit={commitTagEdit}
+                oncancel={() => (tagEdit = null)}
+                onrename={(tag) =>
+                  interfaceMenuActions.rename({
+                    nodeId: tag.nodeId,
+                    direction: tag.direction,
+                    portId: tag.portId
+                  })}
+                onmenu={(tag, event) =>
+                  openPortMenuAt(
+                    { nodeId: tag.nodeId, direction: tag.direction, portId: tag.portId },
+                    event.clientX,
+                    event.clientY
+                  )}
+              />
+            {/if}
             <CanvasZoomControls
               nodeCount={flowNodes.length}
               edgeCount={flowEdges.length}

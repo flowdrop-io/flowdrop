@@ -589,6 +589,18 @@
     -1 * var(--fd-handle-size) / 2
   ); /* @internal — half handle size for edge positioning */
 
+  /* ----- INTERFACE TAG (the `[id · Type>` drawn beside a published port) ----- */
+  --fd-iface-tag-height: 18px; /* @internal */
+  --fd-iface-tag-gap: 20px; /* @internal  free space between a port and its tag */
+  --fd-iface-tag-bg: var(--fd-node-bg); /* @internal */
+  --fd-iface-tag-border: color-mix(
+    in srgb,
+    var(--fd-foreground) 45%,
+    transparent
+  ); /* @internal  ink outline; amber on a type mismatch, the ring colour while naming */
+  --fd-iface-tag-id-size: 10px; /* @internal  the id, mono */
+  --fd-iface-tag-type-size: 9px; /* @internal  the type, muted */
+
   /* ----- NODE LAYOUT (Dimensions and port alignment; multiples of 10 for grid) ----- */
   --fd-node-grid-step: 10; /* @internal — layout algorithm detail */
   --fd-node-default-width: 280px; /* @public */

@@ -206,7 +206,7 @@
               type="target"
               position={Position.Left}
               id={`${props.id}-input-${port.id}`}
-              class="flowdrop-workflow-node__handle {boundEntry ? 'flowdrop-handle--bound' : ''}"
+              class="flowdrop-workflow-node__handle"
               title={interfaceBoundTooltip(boundEntry)}
               style="top: var(--fd-node-port-handle-top); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
                 checker,
@@ -262,7 +262,7 @@
               type="source"
               position={Position.Right}
               id={`${props.id}-output-${port.id}`}
-              class="flowdrop-workflow-node__handle {boundEntry ? 'flowdrop-handle--bound' : ''}"
+              class="flowdrop-workflow-node__handle"
               title={interfaceBoundTooltip(boundEntry)}
               style="top: var(--fd-node-port-handle-top); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
                 checker,

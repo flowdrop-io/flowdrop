@@ -12,6 +12,11 @@
                            Output-like node (loose controls, then General / Execution /
                            Ports groups, several ports), a node with no ports, and a
                            subworkflow executor with an external workflow link
+    - ?workflow=interface -> a workflow whose interface publishes three ports: an input
+                           `amount` (ok), an input `items` declared `array` on a number
+                           port (type mismatch tag), and an output `message`; the
+                           Calculator's `result` output is left unpublished so the
+                           expose flow can be driven from it
     - ?workflow=caption  -> a text input plus two captions (short, long); also
                            offers the caption node type
     - ?caption=1         -> offer the caption node type (the pane menu then has
@@ -384,6 +389,67 @@
     }
   };
 
+  const interfaceWorkflow: Workflow = {
+    id: 'test-workflow-interface',
+    name: 'Interface Test Workflow',
+    description: 'Published ports, a type mismatch and an unpublished output',
+    nodes: [
+      {
+        id: 'node-input',
+        type: 'universalNode',
+        position: { x: 80, y: 120 },
+        data: { label: 'Text Input', config: {}, metadata: testNodeTypes[0] }
+      },
+      {
+        id: 'node-calc',
+        type: 'universalNode',
+        position: { x: 760, y: 120 },
+        data: { label: 'Calculator', config: { operation: 'add' }, metadata: testNodeTypes[2] }
+      },
+      {
+        id: 'node-output',
+        type: 'universalNode',
+        position: { x: 1200, y: 160 },
+        data: { label: 'Text Output', config: {}, metadata: testNodeTypes[1] }
+      }
+    ],
+    edges: [
+      {
+        id: 'edge-1',
+        source: 'node-calc',
+        target: 'node-output',
+        sourceHandle: 'node-calc-output-result',
+        targetHandle: 'node-output-input-value'
+      }
+    ],
+    interface: {
+      inputs: [
+        {
+          id: 'amount',
+          dataType: 'number',
+          bindings: [{ nodeId: 'node-calc', portId: 'a' }]
+        },
+        {
+          id: 'items',
+          dataType: 'array',
+          bindings: [{ nodeId: 'node-calc', portId: 'b' }]
+        }
+      ],
+      outputs: [
+        {
+          id: 'message',
+          dataType: 'string',
+          bindings: [{ nodeId: 'node-input', portId: 'value' }]
+        }
+      ]
+    },
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+
   const emptyWorkflow: Workflow = {
     id: '',
     name: 'Untitled Workflow',
@@ -743,6 +809,7 @@
     inspector: inspectorWorkflow,
     caption: captionWorkflow,
     simple: simpleWorkflow,
+    interface: interfaceWorkflow,
     empty: emptyWorkflow,
     complex: complexWorkflow,
     disconnected: disconnectedWorkflow,

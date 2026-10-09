@@ -293,6 +293,11 @@ export const defaultMessages = {
     editText: 'Edit text',
     duplicate: 'Duplicate',
     swap: 'Swap node',
+    // A port's menu: publish it in the workflow interface, rename or unpublish it.
+    exposeInput: 'Expose as workflow input…',
+    exposeOutput: 'Expose as workflow output…',
+    renameInterfaceEntry: 'Rename…',
+    removeInterfaceEntry: 'Remove from interface',
     // Key hints shown beside an entry, as key glyphs.
     shortcutEnter: '↵',
     shortcutDelete: '⌫'
@@ -802,6 +807,27 @@ export const defaultMessages = {
   // WorkflowInterfaceEditor — the canonical panel for authoring a workflow's
   // public contract (`Workflow.interface`). See `.claude/plans/workflow-interface.md`.
   workflowInterface: {
+    // The tag drawn beside a published port, on the canvas and in the Ports tab.
+    tagAria: ({
+      id,
+      type,
+      direction
+    }: {
+      id: string;
+      type: string;
+      direction: 'input' | 'output';
+    }) => `Workflow ${direction} ${id}, ${type}`,
+    tagTitle: ({ id, type }: { id: string; type: string }) => `${id} · ${type}`,
+    tagNameLabel: 'Interface name',
+    tagNameHint: 'Enter saves · Esc cancels',
+    tagIdEmpty: 'Give it a name.',
+    tagIdDuplicate: ({ id, direction }: { id: string; direction: 'input' | 'output' }) =>
+      `A workflow ${direction} named "${id}" already exists.`,
+    exposeInputPort: ({ port }: { port: string }) => `Expose ${port} as workflow input…`,
+    exposeOutputPort: ({ port }: { port: string }) => `Expose ${port} as workflow output…`,
+    renameTag: ({ id }: { id: string }) => `Rename interface entry "${id}"`,
+    removeTag: ({ id }: { id: string }) => `Remove "${id}" from the interface`,
+    portActions: ({ port }: { port: string }) => `Interface actions for ${port}`,
     inputsHeading: 'Inputs',
     outputsHeading: 'Outputs',
     addInput: 'Add input',
