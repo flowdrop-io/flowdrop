@@ -1368,8 +1368,8 @@
         node,
         title: node.data.label,
         id: node.id,
-        description:
-          node.data.metadata?.description || mergedMessages.navigation.nodeConfigDescription,
+        // No filler when the node type has no description: the meta line says enough.
+        description: node.data.metadata?.description ?? '',
         details: [
           { label: 'Type', value: node.data.metadata?.type || node.type },
           {
