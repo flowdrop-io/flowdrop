@@ -15,7 +15,7 @@
     "button": 1
   },
   "src/lib/components/ConfigForm.svelte": {
-    "button": 8,
+    "button": 7,
     "radius": 2,
     "shadow": 4
   },
@@ -28,7 +28,6 @@
     "shadow": 1
   },
   "src/lib/components/ConfigPanel.svelte": {
-    "button": 1,
     "colour": 2
   },
   "src/lib/components/EditorStatusBar.svelte": {
@@ -71,9 +70,6 @@
   "src/lib/components/PortMappingRow.svelte": {
     "button": 1,
     "colour": 2
-  },
-  "src/lib/components/ReadOnlyDetails.svelte": {
-    "font-size": 1
   },
   "src/lib/components/RunBar.svelte": {
     "shadow": 1

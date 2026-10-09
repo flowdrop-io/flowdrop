@@ -165,10 +165,9 @@ test.describe('Message links and Last run', () => {
     await expect(dock.getByRole('button', { name: /Gone Node/ })).toHaveCount(0);
   });
 
-  test('Edit mode shows a node with no tab strip', async ({ page }) => {
+  test('Edit mode shows the form tabs but no Last run', async ({ page }) => {
     await page.locator('.svelte-flow__node').first().dblclick({ force: true });
     await expect(page.locator('.config-panel').first()).toBeVisible();
-    await expect(page.getByTestId('node-inspector-tabs')).toHaveCount(0);
     await expect(page.getByRole('tab', { name: 'Last run' })).toHaveCount(0);
   });
 

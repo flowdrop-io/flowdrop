@@ -8,6 +8,10 @@
     - (default)          -> simple workflow with 2 nodes, 1 edge
     - ?mode=readonly|locked -> editor mode (default 'edit')
     - ?editorMode=test   -> start in Test mode (the Edit | Test axis, not `mode`)
+    - ?workflow=inspector -> three nodes with the real fddo inspector shapes: a Chat
+                           Output-like node (loose controls, then General / Execution /
+                           Ports groups, several ports), a node with no ports, and a
+                           subworkflow executor with an external workflow link
     - ?workflow=caption  -> a text input plus two captions (short, long); also
                            offers the caption node type
     - ?caption=1         -> offer the caption node type (the pane menu then has
@@ -560,7 +564,154 @@
     }
   };
 
+  // The shapes fddo sends for Chat Output (loose controls, then General / Execution /
+  // Ports groups; several ports), a node with no ports, and the subworkflow executor
+  // (external workflow link). Used by the inspector tests and screenshots.
+  const chatOutputNodeType: NodeMetadata = {
+    node_type_id: 'chat_output',
+    name: 'Chat Output',
+    description: 'Output chat messages in various formats',
+    category: 'outputs',
+    version: '1.0.0',
+    type: 'default',
+    icon: 'mdi:chat-outline',
+    inputs: [
+      { id: 'message', name: 'Message', type: 'input', dataType: 'string', required: true },
+      { id: 'format', name: 'Format', type: 'input', dataType: 'string' },
+      { id: 'timestamp', name: 'Timestamp', type: 'input', dataType: 'boolean' },
+      { id: 'trigger', name: 'Trigger', type: 'input', dataType: 'trigger' }
+    ],
+    outputs: [
+      { id: 'message', name: 'message', type: 'output', dataType: 'string' },
+      { id: 'format', name: 'format', type: 'output', dataType: 'string' },
+      { id: 'timestamp', name: 'timestamp', type: 'output', dataType: 'boolean' },
+      { id: 'loop_back', name: 'Loop back', type: 'output', dataType: 'trigger' },
+      { id: 'trigger', name: 'Trigger', type: 'output', dataType: 'trigger' }
+    ],
+    configSchema: {
+      type: 'object',
+      properties: {
+        format: {
+          type: 'string',
+          title: 'Format',
+          enum: ['plain', 'markdown'],
+          default: 'markdown'
+        },
+        show_timestamp: {
+          type: 'boolean',
+          title: 'Show timestamp',
+          description: 'Adds the send time under each reply',
+          default: false
+        },
+        instance_title: {
+          type: 'string',
+          title: 'Title',
+          description: 'Overrides the node title.'
+        },
+        max_retries: { type: 'integer', title: 'Max retries', default: 0 }
+      }
+    },
+    uiSchema: {
+      type: 'VerticalLayout',
+      elements: [
+        { type: 'Control', scope: '#/properties/format' },
+        { type: 'Control', scope: '#/properties/show_timestamp' },
+        {
+          type: 'Group',
+          label: 'General',
+          collapsible: true,
+          defaultOpen: true,
+          elements: [{ type: 'Control', scope: '#/properties/instance_title' }]
+        },
+        {
+          type: 'Group',
+          label: 'Execution',
+          collapsible: true,
+          defaultOpen: false,
+          elements: [{ type: 'Control', scope: '#/properties/max_retries' }]
+        }
+      ]
+    },
+    tags: ['output', 'chat']
+  };
+  const noPortsNodeType: NodeMetadata = {
+    node_type_id: 'note_settings',
+    name: 'Settings Only',
+    description: 'A node with settings and no ports',
+    category: 'tools',
+    version: '1.0.0',
+    type: 'default',
+    icon: 'mdi:cog',
+    inputs: [],
+    outputs: [],
+    configSchema: {
+      type: 'object',
+      properties: { label_text: { type: 'string', title: 'Label text' } }
+    },
+    tags: []
+  };
+  const subworkflowNodeType: NodeMetadata = {
+    node_type_id: 'workflow_executor',
+    name: 'Workflow Executor',
+    description: 'Runs another workflow as a step',
+    category: 'tools',
+    version: '1.0.0',
+    type: 'default',
+    icon: 'mdi:sitemap',
+    inputs: [{ id: 'values', name: 'Values', type: 'input', dataType: 'array' }],
+    outputs: [{ id: 'message', name: 'message', type: 'output', dataType: 'string' }],
+    configSchema: {
+      type: 'object',
+      properties: {
+        instance_title: { type: 'string', title: 'Title', description: 'Overrides the node title.' }
+      }
+    },
+    configEdit: {
+      externalEditLink: {
+        url: 'https://example.com/workflows/{workflowId}',
+        label: 'Edit Workflow',
+        description: 'Open the referenced workflow in the editor',
+        parameterMapping: { workflowId: 'workflowId' },
+        openInNewTab: true
+      }
+    },
+    tags: []
+  };
+  const inspectorNodeTypes = [chatOutputNodeType, noPortsNodeType, subworkflowNodeType];
+  const inspectorWorkflow: Workflow = {
+    id: 'test-workflow-inspector',
+    name: 'Inspector Workflow',
+    description: 'Nodes with the fddo inspector shapes',
+    nodes: [
+      {
+        id: 'chat_output.2',
+        type: 'universalNode',
+        position: { x: 0, y: 40 },
+        data: { label: 'Chat Output', config: {}, metadata: chatOutputNodeType }
+      },
+      {
+        id: 'note_settings.1',
+        type: 'universalNode',
+        position: { x: 500, y: 420 },
+        data: { label: 'Settings Only', config: {}, metadata: noPortsNodeType }
+      },
+      {
+        id: 'workflow_executor.1',
+        type: 'universalNode',
+        position: { x: 500, y: 40 },
+        data: { label: 'Run workflow: Calculator', config: {}, metadata: subworkflowNodeType }
+      }
+    ],
+    edges: [],
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+
   const workflows: Record<string, Workflow> = {
+    inspector: inspectorWorkflow,
     caption: captionWorkflow,
     simple: simpleWorkflow,
     empty: emptyWorkflow,
@@ -678,7 +829,11 @@
     height="100%"
     width="100%"
     showNavbar={true}
-    nodes={offerCaption ? [...testNodeTypes, captionNodeType] : testNodeTypes}
+    nodes={[
+      ...testNodeTypes,
+      ...(offerCaption ? [captionNodeType] : []),
+      ...(workflowVariant === 'inspector' ? inspectorNodeTypes : [])
+    ]}
     workflow={selectedWorkflow}
     theme={themeName}
     mode={editorMode}

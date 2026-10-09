@@ -41,16 +41,19 @@ test.describe('Node Configuration', () => {
     await expect(panelTitle).toContainText('Text Input', { timeout: 5000 });
   });
 
-  test('config panel shows node details (type, category)', async ({ page }) => {
+  test('config panel shows the category and id on one meta line (no Type row)', async ({
+    page
+  }) => {
     await gotoEditor(page, 'simple');
 
     await openNodeConfig(page, 0);
 
     const configPanel = page.locator('.config-panel').first();
 
-    // Should show type and category in the details section
-    await expect(configPanel).toContainText('default', { timeout: 5000 });
+    // One muted line: "<category> · <id>"
     await expect(configPanel).toContainText('inputs', { timeout: 5000 });
+    await expect(configPanel.locator('.readonly-details__id')).toBeVisible();
+    await expect(configPanel.getByText('Type', { exact: true })).toHaveCount(0);
   });
 
   test('config panel contains form fields from configSchema', async ({ page }) => {
