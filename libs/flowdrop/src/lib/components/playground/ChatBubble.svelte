@@ -22,6 +22,7 @@
   import { m } from '$lib/messages/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { resolveMessageNodeLink } from '../../utils/messageNodeLink.js';
+  import { nodeCanvasLabel } from '../../utils/workflowInterface.js';
 
   interface Props {
     message: PlaygroundMessage;
@@ -43,7 +44,10 @@
   // The node's name on the canvas reads better than its id ("Chat Output", not "chat_output.2").
   const canvasLabel = $derived(
     message.nodeId
-      ? fd.workflow.current?.nodes?.find((node) => node.id === message.nodeId)?.data?.label
+      ? (() => {
+          const node = fd.workflow.current?.nodes?.find((n) => n.id === message.nodeId);
+          return node ? nodeCanvasLabel(node) : undefined;
+        })()
       : undefined
   );
   const nodeLabel = $derived(message.metadata?.nodeLabel ?? canvasLabel ?? message.nodeId ?? '');

@@ -556,6 +556,18 @@ function isControlFlowPort(port: NodePort, direction: 'input' | 'output'): boole
   return port.dataType === 'tool' && direction === 'output';
 }
 
+/**
+ * The name a node shows on the canvas: the instance title the author gave it
+ * ("Final Chat Output"), else the node type's label, else its id.
+ */
+export function nodeCanvasLabel(node: {
+  id: string;
+  data?: { label?: string; config?: Record<string, unknown> };
+}): string {
+  const title = node.data?.config?.instanceTitle;
+  return (typeof title === 'string' && title) || node.data?.label || node.id;
+}
+
 /** One inner port a `WorkflowInterfaceEntry` could bind to, plus its owning node. */
 export interface BindablePort {
   nodeId: string;
@@ -602,7 +614,7 @@ export function listBindablePorts(
     for (const port of [...staticPorts, ...dynamicPorts]) {
       if (isControlFlowPort(port, direction)) continue;
       if (isPortExposed(port, entries)) {
-        result.push({ nodeId: node.id, nodeLabel: node.data?.label ?? node.id, port });
+        result.push({ nodeId: node.id, nodeLabel: nodeCanvasLabel(node), port });
       }
     }
   }
@@ -1032,7 +1044,7 @@ export function findReplyPort(
 ): { nodeLabel: string; port: NodePort } | null {
   const node = workflow.nodes.find((candidate) => candidate.id === reply.node_id);
   const port = node && nodeOutputPorts(node)?.find((candidate) => candidate.id === reply.port);
-  return node && port ? { nodeLabel: node.data?.label ?? node.id, port } : null;
+  return node && port ? { nodeLabel: nodeCanvasLabel(node), port } : null;
 }
 
 /** JSON Schema `type` for an interface entry's lane, when its schema states none. */

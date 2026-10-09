@@ -892,7 +892,7 @@
   }
 
   .config-form__button--primary {
-    background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
+    background: var(--fd-primary);
     color: var(--fd-primary-foreground);
     box-shadow:
       0 1px 3px color-mix(in srgb, var(--fd-primary) 30%, transparent),
@@ -900,7 +900,7 @@
   }
 
   .config-form__button--primary:hover {
-    background: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
+    background: var(--fd-primary-hover);
     box-shadow:
       0 4px 12px color-mix(in srgb, var(--fd-primary) 35%, transparent),
       inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
@@ -992,7 +992,7 @@
 	   ============================================ */
 
   .config-form__admin-edit {
-    background: linear-gradient(135deg, var(--fd-info-muted) 0%, var(--fd-primary-muted) 100%);
+    background: var(--fd-primary-muted);
     border: 1px solid var(--fd-primary);
     border-radius: var(--fd-radius-lg);
     overflow: hidden;
@@ -1004,7 +1004,7 @@
     align-items: center;
     gap: var(--fd-space-xs);
     padding: var(--fd-space-md) var(--fd-space-xl);
-    background: linear-gradient(135deg, var(--fd-primary-muted) 0%, var(--fd-primary-muted) 100%);
+    background: transparent;
     border-bottom: 1px solid var(--fd-primary);
     font-size: var(--fd-text-sm);
     font-weight: 600;
@@ -1176,15 +1176,15 @@
 	   ============================================ */
 
   .config-form__button--external {
-    background: linear-gradient(135deg, var(--fd-accent) 0%, var(--fd-primary) 100%);
-    color: var(--fd-accent-foreground);
+    background: var(--fd-primary);
+    color: var(--fd-primary-foreground);
     box-shadow:
       0 1px 3px color-mix(in srgb, var(--fd-primary) 30%, transparent),
       inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
   }
 
   .config-form__button--external:hover {
-    background: linear-gradient(135deg, var(--fd-accent-hover) 0%, var(--fd-primary-hover) 100%);
+    background: var(--fd-primary-hover);
     box-shadow:
       0 4px 12px color-mix(in srgb, var(--fd-primary) 35%, transparent),
       inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);

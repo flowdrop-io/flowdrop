@@ -6,6 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  nodeCanvasLabel,
   resolveBinding,
   resolveInterface,
   validateWorkflowInterface,
@@ -1576,5 +1577,20 @@ describe('validateWorkflowInterface: deprecated turn marks', () => {
       playground: { chat: { ...noChat(), message: 'x' } }
     };
     expect(validateWorkflowInterface(wf).map((i) => i.code)).toContain('interface-duplicate-id');
+  });
+});
+
+describe('nodeCanvasLabel', () => {
+  it('prefers the instance title, then the type label, then the id', () => {
+    expect(
+      nodeCanvasLabel({
+        id: 'n1',
+        data: { label: 'Chat Output', config: { instanceTitle: 'Final Chat Output' } }
+      })
+    ).toBe('Final Chat Output');
+    expect(nodeCanvasLabel({ id: 'n1', data: { label: 'Chat Output', config: {} } })).toBe(
+      'Chat Output'
+    );
+    expect(nodeCanvasLabel({ id: 'n1' })).toBe('n1');
   });
 });

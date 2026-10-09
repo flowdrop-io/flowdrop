@@ -17,6 +17,13 @@
   box-sizing: border-box;
 }
 
+/* Type base: untyped elements inside the library (library node items, toggles,
+   port rows) take the body size and ink instead of the host's 16px / black. */
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) {
+  font-size: var(--fd-text-body);
+  color: var(--fd-foreground);
+}
+
 /* One scrollbar for every scrolling area in the library, from the scrollbar
    tokens. Components with their own ::-webkit-scrollbar rules still win. */
 :where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) * {
@@ -572,6 +579,7 @@
 /* Select: room for the chevron overlay; native arrow removed. */
 .flowdrop-input--select {
   padding-right: 2.5rem;
+  line-height: normal; /* a fixed line box clips descenders in a fixed-height select */
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;

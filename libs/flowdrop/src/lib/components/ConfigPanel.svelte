@@ -105,21 +105,24 @@
   rendered once).
 -->
 {#snippet panelContent()}
-  {#if hasDetails && id}
-    <div class="config-panel__details">
-      <ReadOnlyDetails {id} {description} {details} />
-    </div>
-  {/if}
-
-  <div class="config-panel__content">
-    {#if children}
-      <div class="config-panel__section">
-        {#if configTitle}
-          <h3 class="config-panel__section-title">{configTitle}</h3>
-        {/if}
-        {@render children()}
+  <!-- One scroll area for meta + form, so scrolled fields never slide under the meta block. -->
+  <div class="config-panel__scroll">
+    {#if hasDetails && id}
+      <div class="config-panel__details">
+        <ReadOnlyDetails {id} {description} {details} />
       </div>
     {/if}
+
+    <div class="config-panel__content">
+      {#if children}
+        <div class="config-panel__section">
+          {#if configTitle}
+            <h3 class="config-panel__section-title">{configTitle}</h3>
+          {/if}
+          {@render children()}
+        </div>
+      {/if}
+    </div>
   </div>
 {/snippet}
 
@@ -210,6 +213,14 @@
     backdrop-filter: var(--fd-panel-backdrop-filter);
   }
 
+  .config-panel__scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
   .config-panel__details {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--fd-inspector-details-rule);
@@ -222,8 +233,7 @@
   }
 
   .config-panel__content {
-    flex: 1;
-    overflow-y: auto;
+    flex: 1 0 auto;
     padding: 1rem;
   }
 
@@ -332,7 +342,7 @@
   .config-panel-modal__body {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
   }

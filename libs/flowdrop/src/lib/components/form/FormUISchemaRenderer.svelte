@@ -12,7 +12,7 @@
 -->
 
 <script lang="ts">
-  import type { UISchemaElement } from '$lib/types/uischema.js';
+  import type { UISchemaElement, UISchemaGroup } from '$lib/types/uischema.js';
   import type { ConfigSchema, WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
   import type { FieldSchema } from './types.js';
   import { resolveScopeToKey } from '$lib/utils/uischema.js';
@@ -67,6 +67,35 @@
   function isRequired(key: string): boolean {
     return requiredFields.includes(key);
   }
+
+  /**
+   * A layout that mixes loose controls with groups (a node's own fields beside
+   * General / Execution / Ports) gets those controls a section of their own, so
+   * they do not float above the first group without a heading.
+   */
+  const SETTINGS_GROUP: UISchemaGroup = {
+    type: 'Group',
+    label: 'Settings',
+    collapsible: true,
+    defaultOpen: true,
+    elements: []
+  };
+  const layoutSections = $derived.by(() => {
+    if (element.type !== 'VerticalLayout') return [];
+    const children = element.elements;
+    const lead = children.findIndex((child) => child.type !== 'Control');
+    const hasGroup = children.some((child) => child.type === 'Group');
+    if (!hasGroup || lead <= 0) {
+      return children.map((child, idx) => ({ child, idx }));
+    }
+    return [
+      {
+        child: { ...SETTINGS_GROUP, elements: children.slice(0, lead) } as UISchemaElement,
+        idx: 0
+      },
+      ...children.slice(lead).map((child, i) => ({ child, idx: lead + i }))
+    ];
+  });
 </script>
 
 {#if element.type === 'Control'}
@@ -89,7 +118,7 @@
   {/if}
 {:else if element.type === 'VerticalLayout'}
   <div class="form-uischema-layout form-uischema-layout--vertical">
-    {#each element.elements as child, idx (idx)}
+    {#each layoutSections as { child, idx } (idx)}
       <Self
         element={child}
         {schema}
