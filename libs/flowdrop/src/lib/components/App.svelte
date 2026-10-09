@@ -1927,6 +1927,7 @@
         {showStatus}
         {showSettings}
         {branding}
+        saveShortcut
         onWorkflowSettings={toggleWorkflowSettings}
         workflowSettingsOpen={isWorkflowSettingsOpen}
         {settingsCategories}

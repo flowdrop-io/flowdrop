@@ -44,6 +44,7 @@ test.describe('Workflow button and wordmark menu', () => {
 
     await navbar.locator('.flowdrop-navbar__dropdown-trigger').click();
     await expect(page.getByRole('menuitem')).toHaveText([
+      /Save\s*(⌘S|Ctrl\+S)/,
       'Save and run test',
       'Doctor',
       'Pipelines'
@@ -59,5 +60,20 @@ test.describe('Workflow button and wordmark menu', () => {
       'href',
       '#workflows'
     );
+  });
+
+  test('the workflow settings pop out into a dialog and dock back', async ({ page }) => {
+    await open(page);
+    await page.getByTestId('navbar-workflow-button').click();
+    await page.getByRole('button', { name: 'Pop out configuration' }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Workflow Settings' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('tab', { name: 'Interface' }).click();
+    await expect(dialog.locator('.wf-interface')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
   });
 });

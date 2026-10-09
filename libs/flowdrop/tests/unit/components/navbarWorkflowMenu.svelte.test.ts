@@ -70,18 +70,48 @@ describe('Navbar wordmark navigation', () => {
     expect(items).toEqual(['Dashboard', 'Back to workflows']);
   });
 
-  it('keeps navigation actions out of the Save menu', () => {
+  it('lists the main action first in the Save menu and keeps navigation actions out of it', () => {
     render({ primaryActions: actions });
     target.querySelector<HTMLButtonElement>('.flowdrop-navbar__dropdown-trigger')?.click();
     flushSync();
     const items = Array.from(target.querySelectorAll('[role="menuitem"]')).map((el) =>
       el.textContent?.trim()
     );
-    expect(items).toEqual(['Doctor']);
+    expect(items).toEqual(['Save', 'Doctor']);
   });
 
   it('leaves the wordmark plain, and the actions where they were, when there is no navigation', () => {
     render({ primaryActions: actions.filter((a) => !a.navigation) });
     expect(target.querySelector('[data-testid="navbar-wordmark-menu"]')).toBeNull();
+  });
+});
+
+describe('Navbar save shortcut', () => {
+  it('runs the first action on Ctrl/Cmd+S and shows the hint, only when enabled', () => {
+    const onclick = vi.fn();
+    render({
+      saveShortcut: true,
+      primaryActions: [
+        { label: 'Save', href: '#save', onclick },
+        { label: 'Doctor', href: '#d' }
+      ]
+    });
+    const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, cancelable: true });
+    window.dispatchEvent(event);
+    expect(onclick).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(true);
+
+    target.querySelector<HTMLButtonElement>('.flowdrop-navbar__dropdown-trigger')?.click();
+    flushSync();
+    expect(target.querySelector('.flowdrop-navbar__dropdown-hint')?.textContent).toMatch(
+      /^(⌘S|Ctrl\+S)$/
+    );
+  });
+
+  it('does nothing without the opt-in', () => {
+    const onclick = vi.fn();
+    render({ primaryActions: [{ label: 'Save', href: '#save', onclick }] });
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 's', ctrlKey: true }));
+    expect(onclick).not.toHaveBeenCalled();
   });
 });

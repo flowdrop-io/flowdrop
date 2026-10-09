@@ -127,8 +127,8 @@
       ? [
           { label: 'Save', href: '#save', icon: 'heroicons:document-arrow-down' },
           { label: 'Save and run test', href: '#save-run', icon: 'heroicons:play' },
-          { label: 'Doctor', href: '#doctor', icon: 'heroicons:heart' },
-          { label: 'Pipelines', href: '#pipelines', icon: 'heroicons:queue-list' },
+          { label: 'Doctor', href: '#doctor', icon: 'heroicons:heart', group: 'Checks' },
+          { label: 'Pipelines', href: '#pipelines', icon: 'heroicons:queue-list', group: 'Checks' },
           {
             label: 'FlowDrop dashboard',
             href: '#dashboard',

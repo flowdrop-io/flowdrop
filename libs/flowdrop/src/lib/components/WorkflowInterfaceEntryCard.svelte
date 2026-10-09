@@ -947,10 +947,15 @@
     color: var(--fd-foreground);
   }
 
-  /* Status lines: coloured text under the row, no tinted strip. */
+  /* Status lines: one muted 12px line under the row, aligned with the id text,
+     cut off with an ellipsis (the full text is the tooltip). Only a real error
+     takes the error colour; a draft that is merely unfinished stays quiet. */
   .wf-interface__status {
     margin: 0;
-    padding-left: var(--fd-space-xs);
+    padding-left: calc(var(--fd-space-xs) + 1px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: var(--fd-text-xs);
     line-height: 1.5;
     color: var(--fd-muted-foreground);
@@ -964,7 +969,6 @@
   }
 
   .wf-interface__status--warning,
-  .wf-interface__status--unbound,
   .wf-interface__status--type-mismatch {
     color: var(--fd-warning);
   }

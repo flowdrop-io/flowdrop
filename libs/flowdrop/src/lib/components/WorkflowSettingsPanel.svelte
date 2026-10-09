@@ -21,7 +21,9 @@
   import PanelHeader from './primitives/PanelHeader.svelte';
   import Tabs, { tabId, tabPanelId } from './primitives/Tabs.svelte';
   import IconButton from './primitives/IconButton.svelte';
+  import Button from './primitives/Button.svelte';
   import { m } from '$lib/messages/index.js';
+  import { portal } from '$lib/utils/portal.js';
 
   interface Props {
     /** Selected tab. A `playground` pick without a `playground` body falls back to General. */
@@ -65,6 +67,24 @@
     ...(playground ? [{ value: 'playground', label: nav.workflowSettingsPlaygroundTab }] : [])
   ]);
 
+  /** Popped out into a wide centred dialog (the rail then shows a placeholder), as the node inspector can. */
+  let expanded = $state(false);
+
+  function dock(): void {
+    expanded = false;
+  }
+
+  function onModalKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      dock();
+    }
+  }
+
+  function onBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) dock();
+  }
+
   function copyId(): void {
     if (workflowId) void navigator.clipboard?.writeText(workflowId);
   }
@@ -82,53 +102,105 @@
   </div>
 {/snippet}
 
-<div class="wf-settings" data-testid="workflow-settings-panel">
-  <PanelHeader class="wf-settings__header">
-    {#snippet leading()}
-      <Tabs
-        {idBase}
-        ariaLabel={nav.workflowSettingsPanelTitle}
-        {tabs}
-        value={active}
-        onchange={(v) => onTabChange(v as WorkflowSettingsTab)}
-      />
-    {/snippet}
-    {#snippet actions()}
-      {#if onClose}
-        <IconButton ariaLabel={m().layout.closeConfigPanel} onclick={onClose}>
-          <Icon icon="heroicons:x-mark" />
-        </IconButton>
-      {/if}
-    {/snippet}
-  </PanelHeader>
-
-  <div class="wf-settings__scroll">
-    {#snippet generalBody()}
-      <p class="wf-settings__meta" data-testid="workflow-settings-meta">
-        {#if workflowId}
-          <code class="wf-settings__id">{workflowId}</code>
+{#snippet panel(popped: boolean)}
+  <div class="wf-settings" data-testid={popped ? undefined : 'workflow-settings-panel'}>
+    <PanelHeader class="wf-settings__header">
+      {#snippet leading()}
+        <Tabs
+          {idBase}
+          ariaLabel={nav.workflowSettingsPanelTitle}
+          {tabs}
+          value={active}
+          onchange={(v) => onTabChange(v as WorkflowSettingsTab)}
+        />
+      {/snippet}
+      {#snippet actions()}
+        {#if popped}
           <IconButton
-            size="sm"
-            title={nav.copyId}
-            ariaLabel={nav.copyId}
-            onclick={copyId}
-            class="wf-settings__copy"
+            ariaLabel={m().layout.dockConfig}
+            title={m().layout.dockConfigTitle}
+            onclick={dock}
           >
-            <Icon icon="heroicons:clipboard-document" />
+            <Icon icon="heroicons:arrows-pointing-in" />
           </IconButton>
-          <span aria-hidden="true">·</span>
+        {:else}
+          <IconButton
+            ariaLabel={m().layout.popOutConfig}
+            title={m().layout.popOutConfigTitle}
+            onclick={() => (expanded = true)}
+          >
+            <Icon icon="heroicons:arrows-pointing-out" />
+          </IconButton>
+          {#if onClose}
+            <IconButton ariaLabel={m().layout.closeConfigPanel} onclick={onClose}>
+              <Icon icon="heroicons:x-mark" />
+            </IconButton>
+          {/if}
         {/if}
-        <span>{nav.workflowCounts({ nodes: nodeCount, connections: connectionCount })}</span>
-      </p>
-      {@render general()}
-    {/snippet}
-    {@render body('settings', generalBody)}
-    {@render body('interface', interfaceBody)}
-    {#if playground}
-      {@render body('playground', playground)}
-    {/if}
+      {/snippet}
+    </PanelHeader>
+
+    <div class="wf-settings__scroll">
+      {#snippet generalBody()}
+        <p class="wf-settings__meta" data-testid="workflow-settings-meta">
+          {#if workflowId}
+            <code class="wf-settings__id">{workflowId}</code>
+            <IconButton
+              size="sm"
+              title={nav.copyId}
+              ariaLabel={nav.copyId}
+              onclick={copyId}
+              class="wf-settings__copy"
+            >
+              <Icon icon="heroicons:clipboard-document" />
+            </IconButton>
+            <span aria-hidden="true">·</span>
+          {/if}
+          <span>{nav.workflowCounts({ nodes: nodeCount, connections: connectionCount })}</span>
+        </p>
+        {@render general()}
+      {/snippet}
+      {@render body('settings', generalBody)}
+      {@render body('interface', interfaceBody)}
+      {#if playground}
+        {@render body('playground', playground)}
+      {/if}
+    </div>
   </div>
-</div>
+{/snippet}
+
+{#if expanded}
+  <!-- The content lives in the dialog while popped out; the rail keeps a placeholder. -->
+  <div class="wf-settings wf-settings--popped" data-testid="workflow-settings-panel">
+    <PanelHeader title={nav.workflowSettingsPanelTitle} />
+    <div class="wf-settings__placeholder">
+      <p>{m().layout.configPoppedOut}</p>
+      <Button variant="secondary" size="sm" onclick={dock}>{m().layout.dockConfigButton}</Button>
+    </div>
+  </div>
+{:else}
+  {@render panel(false)}
+{/if}
+
+{#if expanded}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="wf-settings-modal__backdrop"
+    use:portal
+    onclick={onBackdropClick}
+    onkeydown={onModalKeydown}
+  >
+    <div
+      class="wf-settings-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={nav.workflowSettingsPanelTitle}
+      tabindex="-1"
+    >
+      {@render panel(true)}
+    </div>
+  </div>
+{/if}
 
 <style>
   .wf-settings {
@@ -173,5 +245,51 @@
 
   .wf-settings__meta :global(.wf-settings__copy) {
     margin-inline: calc(var(--fd-space-3xs) * -1) 0;
+  }
+
+  .wf-settings-modal > :global(.wf-settings) {
+    flex: 1;
+    height: auto;
+  }
+
+  .wf-settings__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fd-space-md);
+    padding: var(--fd-space-4xl) var(--fd-space-xl);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-sm);
+    text-align: center;
+  }
+
+  .wf-settings__placeholder p {
+    margin: 0;
+  }
+
+  /* Pop-out dialog: portalled to body, so it restates the app font. */
+  .wf-settings-modal__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--fd-space-xl);
+    font-family: var(--fd-font-sans);
+    background-color: var(--fd-backdrop);
+  }
+
+  .wf-settings-modal {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 48rem;
+    max-height: 90vh;
+    overflow: hidden;
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-lg);
+    background-color: var(--fd-panel-bg);
+    box-shadow: var(--fd-shadow-lg);
   }
 </style>

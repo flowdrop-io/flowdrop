@@ -51,6 +51,11 @@
     onWorkflowSettings?: () => void;
     /** The workflow-settings panel is open: the Workflow button reads as pressed. */
     workflowSettingsOpen?: boolean;
+    /**
+     * Binds Ctrl/Cmd+S to the first action (Save) and shows the shortcut beside
+     * it in the menu. Off by default: a host page may have its own Save shortcut.
+     */
+    saveShortcut?: boolean;
   }
 
   let {
@@ -65,7 +70,8 @@
     end,
     branding,
     onWorkflowSettings,
-    workflowSettingsOpen = false
+    workflowSettingsOpen = false,
+    saveShortcut = false
   }: Props = $props();
 
   // Settings modal state
@@ -104,16 +110,33 @@
     return Array.from(groups, ([label, items]) => ({ label, items }));
   });
 
+  // The shortcut's hint, in the platform's words.
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+  const saveHint = $derived(saveShortcut ? (isMac ? '⌘S' : 'Ctrl+S') : undefined);
+
+  $effect(() => {
+    if (!saveShortcut) return;
+    function onKeydown(event: KeyboardEvent): void {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.key.toLowerCase() !== 's') {
+        return;
+      }
+      const save = taskActions[0];
+      if (!save?.onclick) return;
+      event.preventDefault();
+      save.onclick(event);
+    }
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  });
+
   // Icons on every item of a menu or on none: a half-iconed list reads as noise.
-  const saveMenuIcons = $derived(
-    dropdownActions.length > 0 && dropdownActions.every((a) => a.icon)
-  );
+  const saveMenuIcons = $derived(dropdownActions.length > 0 && taskActions.every((a) => a.icon));
   const navMenuIcons = $derived(
     navigationActions.length > 0 && navigationActions.every((a) => a.icon)
   );
 </script>
 
-{#snippet menuLink(action: NavbarAction, close: () => void, icons: boolean)}
+{#snippet menuLink(action: NavbarAction, close: () => void, icons: boolean, hint?: string)}
   <a
     href={action.href}
     role="menuitem"
@@ -129,6 +152,9 @@
       <Icon icon={action.icon} class="flowdrop-navbar__dropdown-icon" aria-hidden="true" />
     {/if}
     <span class="flowdrop-navbar__dropdown-label">{action.label}</span>
+    {#if hint}
+      <kbd class="flowdrop-navbar__dropdown-hint">{hint}</kbd>
+    {/if}
     {#if action.external}
       <Icon icon="mdi:open-in-new" class="flowdrop-navbar__dropdown-external" aria-hidden="true" />
     {/if}
@@ -303,13 +329,17 @@
               <Icon icon="heroicons:chevron-down" class="w-4 h-4" />
             {/snippet}
             {#snippet children({ close })}
+              <!-- The main button's own action comes first, so the menu reads Save,
+                   then the rest; rules, not boxes, between the groups. -->
+              {@render menuLink(taskActions[0], close, saveMenuIcons, saveHint)}
+              {#if ungroupedActions.length > 0}
+                <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
+              {/if}
               {#each ungroupedActions as action (action.label)}
                 {@render menuLink(action, close, saveMenuIcons)}
               {/each}
               {#each groupedActions as group, groupIndex (group.label)}
-                {#if groupIndex > 0 || ungroupedActions.length > 0}
-                  <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
-                {/if}
+                <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
                 <div class="flowdrop-navbar__dropdown-group-header" role="presentation">
                   {group.label}
                 </div>
@@ -729,6 +759,15 @@
     width: 0.75rem;
     height: 0.75rem;
     color: var(--fd-muted-foreground);
+  }
+
+  .flowdrop-navbar__dropdown-hint {
+    flex: none;
+    margin-left: auto;
+    padding-left: var(--fd-space-md);
+    color: var(--fd-muted-foreground);
+    font-family: inherit;
+    font-size: var(--fd-text-xs);
   }
 
   .flowdrop-navbar__dropdown-divider {
