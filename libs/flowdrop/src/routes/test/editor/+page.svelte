@@ -47,7 +47,7 @@
   import App from '$lib/components/App.svelte';
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
   import type { Workflow, NodeMetadata } from '$lib/types/index.js';
-  import type { ThemePreference } from '$lib/types/settings.js';
+  import type { SettingsCategory, ThemePreference } from '$lib/types/settings.js';
   import type { ContextMenuOptions } from '$lib/editor/contextMenu.js';
   import { defaultEndpointConfig, sessionsEndpoints } from '$lib/config/endpoints.js';
   import { createChainedTriggerWorkflow } from '../../../mocks/data/workflows.js';
@@ -114,6 +114,11 @@
           endpoints: { ...defaultEndpointConfig.endpoints, sessions: sessionsEndpoints }
         }
       : undefined
+  );
+
+  // --- Settings categories (?settingsCategories=ui shows a one-tab modal, as a host that offers only UI settings) ---
+  let settingsCategories = $derived(
+    $page.url.searchParams.get('settingsCategories')?.split(',') as SettingsCategory[] | undefined
   );
 
   // --- Caption node type is only offered on request (?caption=1 or ?workflow=caption) ---
@@ -866,6 +871,7 @@
     {contextMenu}
     {branding}
     {navbarActions}
+    {settingsCategories}
   />
 </div>
 

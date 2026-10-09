@@ -83,9 +83,6 @@
   "src/lib/components/SettingsModal.svelte": {
     "colour": 2
   },
-  "src/lib/components/SettingsPanel.svelte": {
-    "colour": 2
-  },
   "src/lib/components/StatusIcon.svelte": {
     "colour": 2,
     "font-size": 2,
@@ -121,7 +118,7 @@
   "src/lib/components/chat/AIChatPanel.svelte": {
     "button": 2,
     "colour": 2,
-    "font-size": 4,
+    "font-size": 3,
     "radius": 5
   },
   "src/lib/components/form/FieldFactory.svelte": {

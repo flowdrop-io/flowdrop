@@ -402,6 +402,9 @@ export const defaultMessages = {
     requiresBackend: 'AI Assistant requires backend configuration',
     loadWorkflow: 'Load a workflow to start chatting',
     helpBuild: 'Ask the AI to help build your workflow',
+    // Empty-state shortcuts: the chip label is also the prompt sent.
+    suggestionsLabel: 'Suggestions',
+    suggestions: ['Explain this workflow', 'Add error handling', 'Summarise what this does'],
     placeholder: 'Describe a change…',
     send: 'Send message',
     // The run attached to the Assistant, above the composer.

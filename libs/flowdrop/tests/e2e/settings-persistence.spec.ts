@@ -21,7 +21,7 @@ const STORAGE_KEY = 'flowdrop-settings';
 // The test page renders the editor inside data-testid="editor-test". The
 // surrounding site layout has its OWN navbar + settings modal, bound to the
 // same page-global settings store. That means two of everything on the page,
-// including duplicate control ids (#preference, #showGrid) — so getByLabel
+// including duplicate control ids (the control ids) — so getByLabel
 // resolves the for/id association to the out-of-root control and finds
 // nothing. Scope every interaction to the editor App and target controls by
 // id within its open modal.
@@ -62,9 +62,11 @@ function appliedTheme(page: Page) {
 /** Open the settings modal and change the theme preference */
 async function setThemePreference(page: Page, pref: 'light' | 'dark' | 'auto'): Promise<void> {
   await openSettings(page);
-  const select = openModal(page).locator('select#preference');
-  await expect(select).toBeVisible({ timeout: 5000 });
-  await select.selectOption(pref);
+  // Color scheme is a segmented control (Light | Dark | System).
+  const label = { light: 'Light', dark: 'Dark', auto: 'System' }[pref];
+  const choice = openModal(page).getByRole('radio', { name: label, exact: true });
+  await expect(choice).toBeVisible({ timeout: 5000 });
+  await choice.click();
   await closeSettings(page);
 }
 
@@ -100,7 +102,7 @@ test.describe('Settings Persistence', () => {
 
     // The settings modal reflects the persisted value too
     await openSettings(page);
-    await expect(openModal(page).locator('select#preference')).toHaveValue('dark');
+    await expect(openModal(page).getByRole('radio', { name: 'Dark', exact: true })).toBeChecked();
   });
 
   test('host settings defaults seed the first run', async ({ page }) => {
@@ -133,12 +135,11 @@ test.describe('Settings Persistence', () => {
     // Toggle "Show Grid" off in the Editor tab
     await openSettings(page);
     await openModal(page).getByRole('tab', { name: 'Editor' }).click();
-    // "Show Grid" is a custom toggle: the real checkbox is visually hidden
-    // off-viewport, so drive it through its visible track (the label wraps
-    // both) and assert the underlying input flipped.
-    const grid = openModal(page).locator('#showGrid');
+    // "Show grid" is the Switch primitive: a role=switch checkbox laid over its
+    // track. Drive it through its visible track and assert the input flipped.
+    const grid = openModal(page).locator('input[name="showGrid"]');
     await expect(grid).toBeChecked();
-    await openModal(page).locator('label.form-toggle:has(#showGrid) .form-toggle__track').click();
+    await openModal(page).locator('.flowdrop-ui-switch:has(input[name="showGrid"])').click();
     await expect(grid).not.toBeChecked();
     await closeSettings(page);
 

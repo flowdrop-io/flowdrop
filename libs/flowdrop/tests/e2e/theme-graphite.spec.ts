@@ -15,11 +15,11 @@ async function chooseUiTheme(page: Page, value: string): Promise<void> {
   await editorRoot(page).locator('.flowdrop-navbar__settings-btn').click();
   await expect(modal(page)).toBeVisible({ timeout: 5000 });
   await modal(page).getByRole('tab', { name: 'UI', exact: true }).click();
-  const select = modal(page)
-    .locator('select')
-    .filter({ has: page.locator('option[value="graphite"]') });
-  await expect(select).toBeVisible();
-  await select.selectOption(value);
+  // The theme picker is a radiogroup of swatches, one per registered theme.
+  const name = value.charAt(0).toUpperCase() + value.slice(1);
+  const swatch = modal(page).getByRole('radio', { name, exact: true });
+  await expect(swatch).toBeAttached();
+  await swatch.check({ force: true });
   await modal(page).getByRole('button', { name: 'Close settings' }).click();
   await expect(modal(page)).toHaveCount(0, { timeout: 5000 });
 }

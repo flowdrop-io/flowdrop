@@ -103,6 +103,7 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'navbar-status-bg': 'var(--fd-success-muted)',
   'navbar-status-fg': 'var(--fd-success-hover)',
   'node-bg': 'var(--fd-card)',
+  'node-group-rule': 'var(--fd-border-muted)',
   'node-header-bg': 'var(--fd-header)',
   'node-header-divider-color': 'var(--fd-border-muted)',
   'node-header-min-height':

@@ -450,6 +450,25 @@
     padding-top: var(--fd-node-ports-first-pad);
   }
 
+  /*
+   * A hairline between the input group and the output group. It is drawn on a
+   * pseudo-element and takes no space, so handle positions stay on the 20px grid.
+   */
+  .flowdrop-workflow-node__ports + .flowdrop-workflow-node__ports {
+    position: relative;
+  }
+
+  .flowdrop-workflow-node__ports + .flowdrop-workflow-node__ports::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: var(--fd-node-group-rule-inset);
+    left: var(--fd-node-group-rule-inset);
+    height: 1px;
+    background: var(--fd-node-group-rule);
+    pointer-events: none;
+  }
+
   .flowdrop-workflow-node__ports:last-of-type .flowdrop-workflow-node__ports-list {
     padding-bottom: var(--fd-node-ports-end-pad);
   }

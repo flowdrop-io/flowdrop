@@ -625,6 +625,10 @@
   --fd-node-port-align: flex-start; /* @internal */
   --fd-node-ports-first-pad: 20px; /* @internal  clearance under the header rule */
   --fd-node-ports-end-pad: 0px; /* @internal  clearance under the last port */
+  --fd-node-group-rule: var(
+    --fd-border-muted
+  ); /* @internal  hairline between the input and output port groups ('transparent' = none) */
+  --fd-node-group-rule-inset: 20px; /* @internal  its inset from each node edge */
   --fd-node-port-name-weight: 500; /* @internal */
   --fd-node-port-chip-font: inherit; /* @internal  type tag font */
   --fd-node-port-chip-size: 10px; /* @internal */

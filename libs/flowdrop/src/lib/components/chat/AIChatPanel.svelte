@@ -25,6 +25,7 @@
   import { describeCommand, summarizeCommands } from '../../webmcp/descriptors.js';
   import CommandPreview from './CommandPreview.svelte';
   import Composer from '../primitives/Composer.svelte';
+  import Button from '../primitives/Button.svelte';
   import IconButton from '../primitives/IconButton.svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
   import { onDestroy, tick } from 'svelte';
@@ -803,8 +804,23 @@
     <div class="ai-chat-panel__messages" bind:this={messagesElement} role="log" aria-live="polite">
       {#if displayMessages.length === 0}
         <div class="ai-chat-panel__empty">
-          <Icon icon="mdi:chat-outline" />
-          <span>{t.helpBuild}</span>
+          <p class="ai-chat-panel__empty-title">{t.helpBuild}</p>
+          <div class="ai-chat-panel__suggestions" role="group" aria-label={t.suggestionsLabel}>
+            {#each t.suggestions as suggestion (suggestion)}
+              <Button
+                size="md"
+                variant="secondary"
+                class="ai-chat-panel__suggestion"
+                disabled={isLoading}
+                onclick={() => {
+                  inputValue = suggestion;
+                  void sendMessage();
+                }}
+              >
+                {suggestion}
+              </Button>
+            {/each}
+          </div>
         </div>
       {/if}
       <!-- Append-only chat log without stable IDs — index is the identity -->
@@ -1163,17 +1179,27 @@
   .ai-chat-panel__empty {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fd-space-xs);
-    height: 100%;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-sm);
-    opacity: 0.6;
+    align-items: flex-start;
+    gap: var(--fd-space-sm);
+    padding: var(--fd-space-md) var(--fd-space-xs);
   }
 
-  .ai-chat-panel__empty :global(svg) {
-    font-size: 1.5rem;
+  .ai-chat-panel__empty-title {
+    margin: 0;
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-body);
+  }
+
+  .ai-chat-panel__suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fd-space-xs);
+  }
+
+  /* A suggestion: a quiet pill that sends its own label. */
+  .ai-chat-panel__suggestions :global(.ai-chat-panel__suggestion) {
+    border-radius: var(--fd-radius-full);
+    font-size: var(--fd-text-meta);
   }
 
   /* Auto-retry notice */
