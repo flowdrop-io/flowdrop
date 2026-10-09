@@ -28,6 +28,7 @@
   import Button from '../primitives/Button.svelte';
   import IconButton from '../primitives/IconButton.svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
+  import { chipTitles } from '../../utils/chipTitles.js';
   import { onDestroy, tick } from 'svelte';
   import Icon from '@iconify/svelte';
   import { getMessages, m } from '$lib/messages/index.js';
@@ -874,7 +875,7 @@
                 {message.content}
               </div>
             {:else}
-              <div class="ai-chat-panel__bubble-content">
+              <div class="ai-chat-panel__bubble-content" use:chipTitles={message.content}>
                 <MarkdownDisplay content={message.content} />
               </div>
             {/if}
@@ -1316,6 +1317,17 @@
     background: var(--fd-msg-code-bg, var(--fd-background));
     padding: 0.1em 0.3em;
     border-radius: var(--fd-radius-xs);
+  }
+
+  /* Node references are inline code, drawn as chips: a long id ends in an
+     ellipsis (the full text is the title) instead of widening the panel. */
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(:not(pre) > code) {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
   }
 
   .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(pre) {
