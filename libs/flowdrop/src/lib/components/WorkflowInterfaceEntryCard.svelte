@@ -27,8 +27,7 @@
   import Checkbox from '$lib/components/primitives/Checkbox.svelte';
   import Menu, { type MenuEntry } from '$lib/components/primitives/Menu.svelte';
   import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
-  import PortShapeSymbol from '$lib/components/ports/PortShapeSymbol.svelte';
-  import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
+  import { getPortColorToken } from '$lib/utils/colors.js';
   import { m } from '$lib/messages/index.js';
   import {
     DEFAULT_HISTORY_TURN_LIMIT,
@@ -332,7 +331,11 @@
     >
       <span class="wf-interface__sr">{m().workflowInterface.bindingLabel}:</span>
       {#if boundTarget}
-        <PortShapeSymbol {checker} port={boundTarget.port} />
+        <span
+          class="wf-interface__binding-dot"
+          style="--wf-binding-dot: {getPortColorToken(checker, boundTarget.port)}"
+          aria-hidden="true"
+        ></span>
         <span class="wf-interface__binding-path">
           <span class="wf-interface__binding-node">
             {boundTarget.node.data?.label ?? boundTarget.node.id}
@@ -340,7 +343,9 @@
           <Icon icon="heroicons:chevron-right" />
           <span class="wf-interface__binding-port">{boundTarget.port.name}</span>
         </span>
-        <PortLaneChip {checker} port={boundTarget.port} />
+        <span class="wf-interface__binding-type" title={boundTarget.port.dataType}>
+          {checker.getDataTypeConfig(boundTarget.port.dataType)?.name ?? boundTarget.port.dataType}
+        </span>
       {:else if entry.bindings[0]}
         <span class="wf-interface__binding-path wf-interface__binding-path--dangling">
           {m().workflowInterface.bindingDangling({
@@ -746,8 +751,28 @@
     flex: none;
   }
 
+  /* Same row anatomy as the inspector's Ports tab: lane dot · node › port · mono lane name. */
+  .wf-interface__binding-dot {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--fd-radius-full);
+    background-color: var(--wf-binding-dot);
+  }
+
+  .wf-interface__binding-type {
+    flex: none;
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+  }
+
   .wf-interface__binding-node {
-    min-width: 0;
+    min-width: 3ch;
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--fd-muted-foreground);
