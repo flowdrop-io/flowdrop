@@ -388,15 +388,25 @@
     return out;
   });
 
-  /** The row naming the workflow a node runs, e.g. "Runs Calculator". */
+  /**
+   * The row naming the workflow a node runs ("Runs Calculator ↗"). The name is
+   * the link's `targetName` when the backend sends one; fddo does not (it sends
+   * only the editor URL, "Edit Workflow" and a filler description), so the
+   * node's own "Run workflow: <name>" label is the fallback, and a node with
+   * neither shows the link's label as a plain link.
+   */
   const externalInfo = $derived.by<ExternalLinkInfo | null>(() => {
     const link = configEditOptions?.externalEditLink;
-    if (!showExternalEditLink || !link) return null;
-    const target = /^run workflow:\s*(.+)$/i.exec(node?.data.label ?? '')?.[1];
+    if (!showExternalEditLink || !link || !node) return null;
+    const target =
+      link.targetName ?? /^run workflow:\s*(.+)$/i.exec(node.data.label ?? '')?.[1]?.trim();
     return {
-      label: target ? `Runs ${target}` : (link.label ?? 'Configure externally'),
+      ...(target
+        ? { prefix: 'Runs', name: target }
+        : { name: link.label ?? 'Configure externally' }),
       title: link.description,
-      open: handleExternalEditClick
+      href: getExternalEditUrl(),
+      newTab: link.openInNewTab !== false
     };
   });
 
@@ -658,11 +668,7 @@
 <!-- External workflow link: a row, shown here only when no inspector hosts it -->
 {#if externalInfo && !inspector}
   <div class="flowdrop-scope config-form__external">
-    <ExternalLinkRow
-      label={externalInfo.label}
-      title={externalInfo.title}
-      onopen={externalInfo.open}
-    />
+    <ExternalLinkRow {...externalInfo} />
   </div>
 {/if}
 

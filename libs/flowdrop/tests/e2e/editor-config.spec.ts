@@ -50,8 +50,8 @@ test.describe('Node Configuration', () => {
 
     const configPanel = page.locator('.config-panel').first();
 
-    // One muted line: "<category> · <id>"
-    await expect(configPanel).toContainText('inputs', { timeout: 5000 });
+    // One muted line: "<category label> · <id>"
+    await expect(configPanel).toContainText('Inputs · node-input', { timeout: 5000 });
     await expect(configPanel.locator('.readonly-details__id')).toBeVisible();
     await expect(configPanel.getByText('Type', { exact: true })).toHaveCount(0);
   });

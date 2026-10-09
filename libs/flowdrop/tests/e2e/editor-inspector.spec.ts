@@ -79,7 +79,11 @@ test.describe('Node inspector', () => {
     await gotoEditor(page, 'inspector');
     await open(page, 'workflow_executor.1');
     const link = page.getByTestId('external-config-link');
-    await expect(link).toContainText('Runs Calculator');
+    // The meta line shows the category label, not its key.
+    await expect(page.locator('.readonly-details__meta')).toContainText('Tools');
+    await expect(link).toHaveText('Calculator');
+    await expect(link.locator('xpath=..')).toContainText('Runs');
+    await expect(link).toHaveAttribute('href', /example\.com\/workflows/);
     await expect(page.getByText('External Configuration')).toHaveCount(0);
     await expect(page.getByText('Edit Workflow')).toHaveCount(0);
   });

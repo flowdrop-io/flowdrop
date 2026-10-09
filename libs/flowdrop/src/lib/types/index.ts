@@ -616,6 +616,12 @@ export interface ExternalEditLink {
   description?: string;
 
   /**
+   * Display name of the thing the link opens (e.g. the sub-workflow a node runs).
+   * When set the inspector shows "Runs <targetName> ↗" instead of the label.
+   */
+  targetName?: string;
+
+  /**
    * Callback URL parameter name for FlowDrop to receive updates
    * If set, the external form should redirect back with config updates
    */

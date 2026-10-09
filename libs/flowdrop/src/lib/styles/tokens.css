@@ -376,6 +376,7 @@
   --fd-inspector-details-rule: var(
     --fd-border-muted
   ); /* @internal  rule under the inspector meta */
+  --fd-inspector-link-color: var(--fd-primary); /* @internal  workflow link in the inspector meta */
   --fd-inspector-title-size: var(--fd-text-sm); /* @internal  inspector header title */
   --fd-inspector-meta-size: 0.8125rem; /* @internal  value text in the inspector meta list */
   --fd-code-block-bg: var(--fd-muted); /* @internal  fill of a code/payload block */

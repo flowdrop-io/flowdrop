@@ -1376,7 +1376,10 @@
           node.data.metadata?.description || mergedMessages.navigation.nodeConfigDescription,
         details: [
           { label: 'Type', value: node.data.metadata?.type || node.type },
-          { label: 'Category', value: node.data.metadata?.category || 'general' }
+          {
+            label: 'Category',
+            value: fd.categories.getLabel(node.data.metadata?.category || 'general')
+          }
         ],
         configTitle: undefined as string | undefined
       };

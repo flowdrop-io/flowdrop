@@ -249,7 +249,7 @@
                   title="Move up"
                   aria-label={`Move ${port.name} up`}
                 >
-                  <Icon icon="heroicons:chevron-up" />
+                  <Icon icon="heroicons:chevron-up-20-solid" />
                 </button>
                 <button
                   type="button"
@@ -258,7 +258,7 @@
                   title="Move down"
                   aria-label={`Move ${port.name} down`}
                 >
-                  <Icon icon="heroicons:chevron-down" />
+                  <Icon icon="heroicons:chevron-down-20-solid" />
                 </button>
               </span>
               <IconButton
@@ -405,13 +405,19 @@
     align-items: center;
     justify-content: center;
     width: 1rem;
-    height: 0.75rem;
+    height: 0.875rem;
     padding: 0;
     border: none;
     background: none;
     color: var(--fd-muted-foreground);
     cursor: pointer;
     line-height: 1;
+  }
+
+  .fd-ports__reorder button :global(svg) {
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .fd-ports__reorder button:hover:not(:disabled) {

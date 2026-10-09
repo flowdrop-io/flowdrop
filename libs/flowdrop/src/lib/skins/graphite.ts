@@ -164,6 +164,7 @@ export const graphiteSkin: FlowDropSkin = {
     'sheet-radius': '8px',
     'sheet-border-width': '1px',
     'sheet-border': 'var(--fd-float-border)',
+    'inspector-link-color': 'var(--fd-accent)',
     'inspector-details-bg': 'transparent',
     'inspector-details-rule': 'transparent',
     'inspector-title-size': '0.875rem',

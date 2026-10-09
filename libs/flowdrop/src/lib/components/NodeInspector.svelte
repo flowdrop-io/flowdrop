@@ -94,7 +94,7 @@
 <div class="node-inspector">
   {#if external}
     <div class="node-inspector__external">
-      <ExternalLinkRow label={external.label} title={external.title} onopen={external.open} />
+      <ExternalLinkRow {...external} />
     </div>
   {/if}
   {#if tabs.length > 1}

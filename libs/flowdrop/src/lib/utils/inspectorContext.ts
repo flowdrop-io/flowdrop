@@ -6,11 +6,14 @@ import { getContext, setContext } from 'svelte';
 import type { FormSection } from './inspectorSections.js';
 
 export interface ExternalLinkInfo {
-  /** Visible label, e.g. "Runs Calculator". */
-  label: string;
+  /** Muted lead-in ("Runs"), absent for a plain labelled link. */
+  prefix?: string;
+  /** Link text, e.g. "Calculator". */
+  name: string;
   /** Tooltip */
   title?: string;
-  open: () => void;
+  href: string;
+  newTab: boolean;
 }
 
 export interface InspectorContext {

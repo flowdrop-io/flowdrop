@@ -37,6 +37,7 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'id-chip-bg': 'var(--fd-subtle)',
   'inspector-details-bg': 'var(--fd-card)',
   'inspector-details-rule': 'var(--fd-border-muted)',
+  'inspector-link-color': 'var(--fd-primary)',
   'inspector-title-size': 'var(--fd-text-sm)',
   'interrupt-avatar-size': 'var(--fd-size-avatar)',
   'interrupt-badge-completed-bg': 'var(--fd-primary-muted)',
