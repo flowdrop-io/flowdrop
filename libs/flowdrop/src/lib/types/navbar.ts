@@ -20,6 +20,13 @@ export interface NavbarAction {
    * navbar is in split mode (the inline row of buttons).
    */
   group?: string;
+  /**
+   * The action goes somewhere else in the app (a dashboard, the workflow list)
+   * instead of doing something to this workflow. Navigation actions are listed in
+   * the menu of the wordmark, not in the Save menu. Ignored in split mode, and
+   * when `branding.href` already makes the wordmark a link.
+   */
+  navigation?: boolean;
 }
 
 /**

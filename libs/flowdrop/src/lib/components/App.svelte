@@ -20,7 +20,7 @@
   import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
   import ConfigForm from '$lib/components/ConfigForm.svelte';
   import NodeInspector from '$lib/components/NodeInspector.svelte';
-  import Tabs from '$lib/components/primitives/Tabs.svelte';
+  import WorkflowSettingsPanel from '$lib/components/WorkflowSettingsPanel.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
   import WorkflowPlaygroundSettings from '$lib/components/WorkflowPlaygroundSettings.svelte';
@@ -455,16 +455,6 @@
       onclick: (e: Event) => {
         e.preventDefault();
         fileInputRef?.click();
-      }
-    },
-    {
-      label: mergedMessages.navigation.workflowSettings,
-      href: '#settings',
-      icon: 'heroicons:cog-6-tooth',
-      variant: 'outline' as const,
-      onclick: (e: Event) => {
-        e.preventDefault();
-        toggleWorkflowSettings();
       }
     }
   ]);
@@ -1760,52 +1750,22 @@
 {/snippet}
 
 <!--
-  Two tabs of the workflow-settings surface: the schema-driven settings form,
-  and the interface editor. A tab, not a field in the settings form — see
-  Phase 3's rationale (`ConfigForm` cannot express a bindings list).
+  The workflow-settings surface: General | Interface | Playground as tabs in
+  the panel header. A tab, not a field in the settings form — see Phase 3's
+  rationale (`ConfigForm` cannot express a bindings list).
 -->
-{#snippet workflowSettingsTabs()}
-  <div class="workflow-settings-tabs">
-    <div class="workflow-settings-tabs__bar">
-      <Tabs
-        ariaLabel={mergedMessages.navigation.workflowSettingsPanelSubtitle}
-        tabs={[
-          { value: 'settings', label: mergedMessages.navigation.workflowSettingsPanelSubtitle },
-          { value: 'interface', label: mergedMessages.navigation.workflowSettingsInterfaceTab },
-          ...(fd.workflow.current?.playground !== undefined
-            ? [
-                {
-                  value: 'playground',
-                  label: mergedMessages.navigation.workflowSettingsPlaygroundTab
-                }
-              ]
-            : [])
-        ]}
-        value={activeWorkflowSettingsTab}
-        onchange={(v) => (workflowSettingsTab = v as typeof workflowSettingsTab)}
-      />
-    </div>
-    <div
-      class="workflow-settings-tabs__panel"
-      style:display={activeWorkflowSettingsTab === 'settings' ? 'block' : 'none'}
-    >
-      {@render workflowConfigFormEl()}
-    </div>
-    <div
-      class="workflow-settings-tabs__panel"
-      style:display={activeWorkflowSettingsTab === 'interface' ? 'block' : 'none'}
-    >
-      {@render workflowInterfaceEl()}
-    </div>
-    {#if fd.workflow.current?.playground !== undefined}
-      <div
-        class="workflow-settings-tabs__panel"
-        style:display={activeWorkflowSettingsTab === 'playground' ? 'block' : 'none'}
-      >
-        {@render workflowPlaygroundEl()}
-      </div>
-    {/if}
-  </div>
+{#snippet workflowSettingsTabs(onClose?: () => void)}
+  <WorkflowSettingsPanel
+    tab={activeWorkflowSettingsTab}
+    onTabChange={(t) => (workflowSettingsTab = t)}
+    workflowId={fd.workflow.current?.id}
+    nodeCount={fd.workflow.current?.nodes?.length ?? 0}
+    connectionCount={fd.workflow.current?.edges?.length ?? 0}
+    {onClose}
+    general={workflowConfigFormEl}
+    interfaceBody={workflowInterfaceEl}
+    playground={fd.workflow.current?.playground !== undefined ? workflowPlaygroundEl : undefined}
+  />
 {/snippet}
 
 <!--
@@ -1816,7 +1776,7 @@
 {#snippet configBody(showHeader: boolean)}
   {#if activeConfig}
     <div class="config-surface">
-      {#if showHeader}
+      {#if showHeader && activeConfig.kind === 'node'}
         <div class="config-surface__header">
           <h2 class="config-surface__title">{activeConfig.title}</h2>
           {#if configClosable}
@@ -1830,7 +1790,7 @@
           {/if}
         </div>
       {/if}
-      {#if activeConfig.id}
+      {#if activeConfig.id && activeConfig.kind === 'node'}
         <div class="config-surface__details">
           <ReadOnlyDetails
             id={activeConfig.id}
@@ -1839,7 +1799,10 @@
           />
         </div>
       {/if}
-      <div class="config-surface__content">
+      <div
+        class="config-surface__content"
+        class:config-surface__content--bare={activeConfig.kind === 'workflow'}
+      >
         {#if activeConfig.kind === 'node'}
           <div class="config-surface__section">
             {#if activeConfig.configTitle}
@@ -1848,7 +1811,9 @@
             {@render nodeInspectorEl(activeConfig.node)}
           </div>
         {:else}
-          {@render workflowSettingsTabs()}
+          {@render workflowSettingsTabs(
+            showHeader && configClosable ? closeActiveConfig : undefined
+          )}
         {/if}
       </div>
     </div>
@@ -1902,7 +1867,9 @@
   so the default experience is unchanged.
 -->
 {#snippet configPanelSidebar()}
-  {#if activeConfig}
+  {#if activeConfig?.kind === 'workflow'}
+    {@render workflowSettingsTabs(configClosable ? closeActiveConfig : undefined)}
+  {:else if activeConfig}
     <ConfigPanel
       title={activeConfig.title}
       id={activeConfig.id}
@@ -1914,11 +1881,7 @@
         ? startSwap
         : undefined}
     >
-      {#if activeConfig.kind === 'node'}
-        {@render nodeInspectorEl(activeConfig.node)}
-      {:else}
-        {@render workflowSettingsTabs()}
-      {/if}
+      {@render nodeInspectorEl(activeConfig.node)}
     </ConfigPanel>
   {/if}
 {/snippet}
@@ -1966,6 +1929,8 @@
         {showStatus}
         {showSettings}
         {branding}
+        onWorkflowSettings={toggleWorkflowSettings}
+        workflowSettingsOpen={isWorkflowSettingsOpen}
         {settingsCategories}
         {showSettingsSyncButton}
         {showSettingsResetButton}
@@ -2462,20 +2427,9 @@
     color: var(--fd-muted-foreground);
   }
 
-  /*
-    Inner tab strip for the workflow-settings surface — Settings vs. Interface
-    (Phase 3 of `.claude/plans/workflow-interface.md`). Deliberately not the
-    `TabbedSurface` component: that one governs which *host* a surface lives in
-    (sidebar/modal/below); this is a surface's own internal navigation, sitting
-    inside whichever host already scrolls it.
-  */
-  .workflow-settings-tabs {
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-xs, 0.5rem);
-  }
-
-  .workflow-settings-tabs__bar {
-    margin-bottom: var(--fd-space-xs, 0.5rem);
+  /* The workflow settings panel owns its own scroll and padding. */
+  .config-surface__content--bare {
+    padding: 0;
+    overflow: hidden;
   }
 </style>

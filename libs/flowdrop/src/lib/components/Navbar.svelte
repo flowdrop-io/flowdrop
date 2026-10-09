@@ -11,6 +11,8 @@
   import Icon from '@iconify/svelte';
   import LogoWordmark from './LogoWordmark.svelte';
   import SettingsModal from './SettingsModal.svelte';
+  import Menu from './primitives/Menu.svelte';
+  import Button from './primitives/Button.svelte';
   import type { SettingsCategory } from '$lib/types/settings.js';
   import type { NavbarAction, NavbarBranding } from '$lib/types/navbar.js';
   import { m } from '$lib/messages/index.js';
@@ -42,6 +44,13 @@
     end?: Snippet;
     /** White-label logo and name; replaces the FlowDrop wordmark when it carries a logo */
     branding?: NavbarBranding;
+    /**
+     * Shows the ghost "Workflow" button before the primary actions and runs this
+     * when it is pressed. Without it the button is not rendered.
+     */
+    onWorkflowSettings?: () => void;
+    /** The workflow-settings panel is open: the Workflow button reads as pressed. */
+    workflowSettingsOpen?: boolean;
   }
 
   let {
@@ -54,11 +63,10 @@
     showSettingsSyncButton,
     showSettingsResetButton,
     end,
-    branding
+    branding,
+    onWorkflowSettings,
+    workflowSettingsOpen = false
   }: Props = $props();
-
-  // Dropdown state
-  let isDropdownOpen = $state(false);
 
   // Settings modal state
   let isSettingsOpen = $state(false);
@@ -69,10 +77,18 @@
   // Accessible name of the logo: alt text, else the branded name, else the app name.
   const logoName = $derived(branding?.logoAlt ?? branding?.name ?? nav.appName);
 
+  // Navigation actions (`navigation: true`: dashboard, back to workflows) live
+  // in the wordmark menu, not in the Save menu. When the wordmark is already a
+  // link (`branding.href`) they stay with the other actions, as before.
+  const navigationActions = $derived(
+    branding?.href ? [] : primaryActions.filter((a) => a.navigation)
+  );
+  const taskActions = $derived(primaryActions.filter((a) => !navigationActions.includes(a)));
+
   // Flyout structure: actions after the first split into ungrouped (rendered
   // flat at the top) and groups (rendered as labeled sections). Group order
   // follows first occurrence in the source array.
-  const dropdownActions = $derived(primaryActions.slice(1));
+  const dropdownActions = $derived(taskActions.slice(1));
   const ungroupedActions = $derived(dropdownActions.filter((a) => !a.group));
   const groupedActions = $derived.by(() => {
     const groups = new Map<string, NavbarAction[]>();
@@ -88,22 +104,36 @@
     return Array.from(groups, ([label, items]) => ({ label, items }));
   });
 
-  // Close dropdown when clicking outside
-  function handleClickOutside(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.flowdrop-navbar__dropdown')) {
-      isDropdownOpen = false;
-    }
-  }
-
-  // Add event listener for click outside with proper cleanup
-  $effect(() => {
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  });
+  // Icons on every item of a menu or on none: a half-iconed list reads as noise.
+  const saveMenuIcons = $derived(
+    dropdownActions.length > 0 && dropdownActions.every((a) => a.icon)
+  );
+  const navMenuIcons = $derived(
+    navigationActions.length > 0 && navigationActions.every((a) => a.icon)
+  );
 </script>
+
+{#snippet menuLink(action: NavbarAction, close: () => void, icons: boolean)}
+  <a
+    href={action.href}
+    role="menuitem"
+    class="flowdrop-navbar__dropdown-item"
+    onclick={(e) => {
+      action.onclick?.(e);
+      close();
+    }}
+    target={action.external ? '_blank' : undefined}
+    rel={action.external ? 'noopener noreferrer' : undefined}
+  >
+    {#if icons && action.icon}
+      <Icon icon={action.icon} class="flowdrop-navbar__dropdown-icon" aria-hidden="true" />
+    {/if}
+    <span class="flowdrop-navbar__dropdown-label">{action.label}</span>
+    {#if action.external}
+      <Icon icon="mdi:open-in-new" class="flowdrop-navbar__dropdown-external" aria-hidden="true" />
+    {/if}
+  </a>
+{/snippet}
 
 <div class="flowdrop-navbar">
   <div class="flowdrop-navbar__start">
@@ -127,6 +157,24 @@
         <a class="flowdrop-logo--link" href={branding.href} title={logoName}>
           {@render logoContent()}
         </a>
+      {:else if navigationActions.length > 0}
+        <!-- The wordmark opens the places this editor can go: dashboard, workflow list -->
+        <Menu
+          label={logoName}
+          testId="navbar-wordmark-menu"
+          triggerClass="flowdrop-logo--menu-trigger"
+          minWidth={200}
+        >
+          {#snippet trigger()}
+            {@render logoContent()}
+            <Icon icon="mdi:chevron-down" class="flowdrop-logo--menu-chevron" aria-hidden="true" />
+          {/snippet}
+          {#snippet children({ close })}
+            {#each navigationActions as action (action.label)}
+              {@render menuLink(action, close, navMenuIcons)}
+            {/each}
+          {/snippet}
+        </Menu>
       {:else}
         {@render logoContent()}
       {/if}
@@ -188,10 +236,23 @@
   </div>
 
   <div class="flowdrop-navbar__actions">
-    {#if primaryActions.length > 0}
+    {#if onWorkflowSettings}
+      <Button
+        variant="ghost"
+        class="flowdrop-navbar__workflow-btn"
+        aria-pressed={workflowSettingsOpen}
+        data-testid="navbar-workflow-button"
+        title={nav.workflowButtonTitle}
+        onclick={onWorkflowSettings}
+      >
+        {#snippet leadingIcon()}<Icon icon="heroicons:adjustments-horizontal" />{/snippet}
+        {nav.workflowButton}
+      </Button>
+    {/if}
+    {#if taskActions.length > 0}
       <!-- Split mode: all actions as individual side-by-side buttons -->
       <div class="flowdrop-navbar__split-actions">
-        {#each primaryActions as action (action.label)}
+        {#each taskActions as action (action.label)}
           <a
             href={action.href}
             class="flowdrop-navbar__action flowdrop-navbar__action--{action.variant || 'primary'}"
@@ -209,10 +270,10 @@
         {/each}
       </div>
 
-      <!-- Dropdown mode: first action + chevron dropdown for rest -->
+      <!-- Dropdown mode: first action + chevron menu for the rest -->
       <div class="flowdrop-navbar__dropdown-mode">
-        {#if primaryActions[0]}
-          {@const primaryAction = primaryActions[0]}
+        {#if taskActions[0]}
+          {@const primaryAction = taskActions[0]}
           <a
             href={primaryAction.href}
             class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant ||
@@ -230,69 +291,34 @@
           </a>
         {/if}
 
-        <!-- Dropdown for Additional Actions -->
-        {#if primaryActions.length > 1}
-          <div class="flowdrop-navbar__dropdown">
-            <button
-              class="flowdrop-navbar__dropdown-trigger"
-              onclick={() => (isDropdownOpen = !isDropdownOpen)}
-              aria-expanded={isDropdownOpen}
-              aria-haspopup="true"
-            >
+        {#if taskActions.length > 1}
+          <Menu
+            class="flowdrop-navbar__dropdown"
+            triggerClass="flowdrop-navbar__dropdown-trigger"
+            label={nav.moreActions}
+            align="end"
+            minWidth={200}
+          >
+            {#snippet trigger()}
               <Icon icon="heroicons:chevron-down" class="w-4 h-4" />
-            </button>
-
-            {#if isDropdownOpen}
-              <div class="flowdrop-navbar__dropdown-menu">
-                {#each ungroupedActions as action (action.label)}
-                  <a
-                    href={action.href}
-                    class="flowdrop-navbar__dropdown-item"
-                    onclick={(e) => {
-                      action.onclick?.(e);
-                      isDropdownOpen = false;
-                    }}
-                    target={action.external ? '_blank' : undefined}
-                    rel={action.external ? 'noopener noreferrer' : undefined}
-                  >
-                    {#if action.icon}
-                      <Icon icon={action.icon} class="w-4 h-4" />
-                    {/if}
-                    <span>{action.label}</span>
-                    {#if action.external}
-                      <Icon icon="mdi:open-in-new" class="w-3 h-3" />
-                    {/if}
-                  </a>
+            {/snippet}
+            {#snippet children({ close })}
+              {#each ungroupedActions as action (action.label)}
+                {@render menuLink(action, close, saveMenuIcons)}
+              {/each}
+              {#each groupedActions as group, groupIndex (group.label)}
+                {#if groupIndex > 0 || ungroupedActions.length > 0}
+                  <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
+                {/if}
+                <div class="flowdrop-navbar__dropdown-group-header" role="presentation">
+                  {group.label}
+                </div>
+                {#each group.items as action (action.label)}
+                  {@render menuLink(action, close, saveMenuIcons)}
                 {/each}
-                {#each groupedActions as group, groupIndex (group.label)}
-                  {#if groupIndex > 0 || ungroupedActions.length > 0}
-                    <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
-                  {/if}
-                  <div class="flowdrop-navbar__dropdown-group-header">{group.label}</div>
-                  {#each group.items as action (action.label)}
-                    <a
-                      href={action.href}
-                      class="flowdrop-navbar__dropdown-item"
-                      onclick={(e) => {
-                        action.onclick?.(e);
-                        isDropdownOpen = false;
-                      }}
-                      target={action.external ? '_blank' : undefined}
-                      rel={action.external ? 'noopener noreferrer' : undefined}
-                    >
-                      {#if action.icon}
-                        <Icon icon={action.icon} class="w-4 h-4" />
-                      {/if}
-                      <span>{action.label}</span>
-                      {#if action.external}
-                        <Icon icon="mdi:open-in-new" class="w-3 h-3" />
-                      {/if}
-                    </a>
-                  {/each}
-                {/each}
-              </div>
-            {/if}
-          </div>
+              {/each}
+            {/snippet}
+          </Menu>
         {/if}
       </div>
     {/if}
@@ -367,6 +393,36 @@
     max-width: 100%;
     color: inherit;
     text-decoration: none;
+  }
+
+  /* The wordmark as a menu trigger: hover tint and a chevron that only appears on demand. */
+  :global(.flowdrop-logo--menu-trigger) {
+    gap: var(--fd-space-2xs);
+    margin-left: calc(var(--fd-space-xs) * -1);
+    padding: var(--fd-space-2xs) var(--fd-space-xs);
+    border-radius: var(--fd-control-radius);
+    color: var(--fd-foreground);
+    transition: background-color var(--fd-transition-fast);
+  }
+
+  :global(.flowdrop-logo--menu-trigger:hover),
+  :global(.flowdrop-logo--menu-trigger--open) {
+    background-color: var(--fd-muted);
+  }
+
+  :global(.flowdrop-logo--menu-chevron) {
+    flex: none;
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--fd-muted-foreground);
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  :global(.flowdrop-logo--menu-trigger:hover .flowdrop-logo--menu-chevron),
+  :global(.flowdrop-logo--menu-trigger:focus-visible .flowdrop-logo--menu-chevron),
+  :global(.flowdrop-logo--menu-trigger--open .flowdrop-logo--menu-chevron) {
+    opacity: 1;
   }
 
   /* Consumer logos are clamped so a wide one cannot push the bar into wrapping. */
@@ -592,17 +648,15 @@
     color: var(--fd-navbar-action-fg);
   }
 
-  .flowdrop-navbar__dropdown {
-    position: relative;
-    display: flex;
+  /* The Menu primitive renders these two inside its own scope, hence :global. */
+  :global(.flowdrop-navbar__dropdown) {
     align-items: center;
     height: var(--fd-navbar-action-height);
   }
 
-  .flowdrop-navbar__dropdown-trigger {
-    display: flex;
-    align-items: center;
+  :global(.flowdrop-navbar__dropdown-trigger) {
     justify-content: center;
+    gap: 0;
     width: var(--fd-navbar-chevron-width);
     height: var(--fd-navbar-action-height);
     border: 1px solid var(--fd-navbar-action-border);
@@ -611,13 +665,12 @@
     background-color: var(--fd-navbar-action-bg);
     color: var(--fd-navbar-action-fg);
     position: relative;
-    cursor: pointer;
     transition: all var(--fd-transition-normal);
     box-sizing: border-box;
   }
 
   /* Graphite: the 1px inner divider that makes the split read as one button. */
-  .flowdrop-navbar__dropdown-trigger::before {
+  :global(.flowdrop-navbar__dropdown-trigger)::before {
     content: '';
     position: absolute;
     inset: 0 auto 0 0;
@@ -625,72 +678,86 @@
     background: var(--fd-navbar-action-divider);
   }
 
-  .flowdrop-navbar__dropdown-trigger:hover {
+  :global(.flowdrop-navbar__dropdown-trigger:hover),
+  :global(.flowdrop-navbar__dropdown-trigger[aria-expanded='true']) {
     background-color: var(--fd-navbar-action-hover-bg);
     color: var(--fd-navbar-action-fg);
   }
 
-  .flowdrop-navbar__dropdown-trigger[aria-expanded='true'] {
-    background-color: var(--fd-navbar-action-hover-bg);
-    color: var(--fd-navbar-action-fg);
-  }
-
-  .flowdrop-navbar__dropdown-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    z-index: 50;
-    margin-top: 0.25rem;
-    min-width: 12rem;
-    background-color: var(--fd-card);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    box-shadow: var(--fd-shadow-lg);
-    overflow: hidden;
-  }
-
+  /* The menu items, as the Menu primitive draws its own: one row, no rules between them. */
   .flowdrop-navbar__dropdown-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    text-decoration: none;
+    gap: var(--fd-space-xs);
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--fd-menu-item-height);
+    padding: var(--fd-space-sm);
+    border-radius: var(--fd-menu-item-radius);
     color: var(--fd-foreground);
     font-size: var(--fd-text-sm);
     font-weight: 500;
-    transition: background-color var(--fd-transition-normal);
-    border: none;
-    width: 100%;
     text-align: left;
-    background-color: transparent;
+    text-decoration: none;
+    transition: background-color var(--fd-transition-fast);
   }
 
-  .flowdrop-navbar__dropdown-item:hover {
+  .flowdrop-navbar__dropdown-item:hover,
+  .flowdrop-navbar__dropdown-item:focus-visible {
     background-color: var(--fd-muted);
     color: var(--fd-foreground);
+    outline: none;
   }
 
-  .flowdrop-navbar__dropdown-item:first-child {
-    border-top: none;
+  .flowdrop-navbar__dropdown-item :global(.flowdrop-navbar__dropdown-icon) {
+    flex: none;
+    width: 1em;
+    height: 1em;
+    color: var(--fd-muted-foreground);
   }
 
-  .flowdrop-navbar__dropdown-item:last-child {
-    border-bottom: none;
+  .flowdrop-navbar__dropdown-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .flowdrop-navbar__dropdown-item :global(.flowdrop-navbar__dropdown-external) {
+    flex: none;
+    width: 0.75rem;
+    height: 0.75rem;
+    color: var(--fd-muted-foreground);
   }
 
   .flowdrop-navbar__dropdown-divider {
     height: 1px;
+    margin: var(--fd-space-xs) 0;
     background-color: var(--fd-border);
-    margin: 0.25rem 0;
   }
 
+  /* Sentence case, small and muted: a label, not a heading. */
   .flowdrop-navbar__dropdown-group-header {
-    padding: 0.5rem 1rem 0.25rem;
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    padding: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-3xs);
     color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
+    font-weight: 500;
+  }
+
+  /* The ghost Workflow button; pressed while the panel it opens is open. */
+  :global(.flowdrop-navbar__workflow-btn) {
+    margin-right: var(--fd-space-sm);
+    color: var(--fd-muted-foreground);
+  }
+
+  :global(.flowdrop-navbar__workflow-btn:hover),
+  :global(.flowdrop-navbar__workflow-btn[aria-pressed='true']) {
+    color: var(--fd-foreground);
+  }
+
+  :global(.flowdrop-navbar__workflow-btn[aria-pressed='true']) {
+    background-color: var(--fd-muted);
   }
 
   .flowdrop-navbar__action {

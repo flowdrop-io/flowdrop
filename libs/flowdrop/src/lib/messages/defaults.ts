@@ -234,11 +234,20 @@ export const defaultMessages = {
     export: 'Export',
     import: 'Import',
     workflowSettings: 'Workflow Settings',
+    // The ghost button in the navbar that opens the workflow-settings panel.
+    workflowButton: 'Workflow',
+    workflowButtonTitle: 'Workflow settings',
+    // Accessible name of the chevron that opens the Save menu.
+    moreActions: 'More actions',
     // Right-sidebar workflow settings panel (distinct from the navbar action label above).
     workflowSettingsPanelTitle: 'Workflow Settings',
     workflowSettingsPanelSubtitle: 'Settings',
+    workflowSettingsGeneralTab: 'General',
     workflowSettingsInterfaceTab: 'Interface',
     workflowSettingsPlaygroundTab: 'Playground',
+    // The one muted line under the tabs: "6 nodes · 6 connections".
+    workflowCounts: ({ nodes, connections }: { nodes: number; connections: number }) =>
+      `${nodes} ${nodes === 1 ? 'node' : 'nodes'} · ${connections} ${connections === 1 ? 'connection' : 'connections'}`,
     nodeConfigDescription: 'Node configuration',
     closeSettings: 'Close settings',
     closeConfigModal: 'Close configuration modal',
