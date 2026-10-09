@@ -580,6 +580,9 @@
   .flowdrop-main-layout__sidebar--right {
     width: var(--layout-right-sidebar-width);
     min-width: var(--layout-right-sidebar-width);
+    /* The rule on the canvas side, like the left sidebar's: the resize divider
+       takes no space and the bottom strip's top rule ends against this one. */
+    border-left: 1px solid var(--fd-border);
   }
 
   /* Main Content Wrapper - Contains main content and optional bottom panel */
