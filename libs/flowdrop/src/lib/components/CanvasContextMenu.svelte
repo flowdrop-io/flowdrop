@@ -32,6 +32,9 @@
 
   const { entries, x, y, onselect, onclose }: Props = $props();
 
+  /** The icon column exists only when some entry has an icon. */
+  const hasIcons = $derived(entries.some((e) => !isSeparator(e) && e.icon));
+
   let menuEl: HTMLDivElement | undefined = $state();
 
   /** Element that had focus when the menu opened; focus returns there on keyboard close. */
@@ -161,19 +164,22 @@
       <button
         type="button"
         class="canvas-context-menu__item"
+        class:canvas-context-menu__item--danger={entry.danger}
         role="menuitem"
         tabindex="-1"
         aria-disabled={entry.disabled ? 'true' : undefined}
         onclick={() => run(entry)}
       >
-        <span class="canvas-context-menu__icon" aria-hidden="true">
-          {#if entry.icon}
-            <Icon icon={entry.icon} />
-          {/if}
-        </span>
+        {#if hasIcons}
+          <span class="canvas-context-menu__icon" aria-hidden="true">
+            {#if entry.icon}
+              <Icon icon={entry.icon} />
+            {/if}
+          </span>
+        {/if}
         <span class="canvas-context-menu__label">{entry.label}</span>
         {#if entry.shortcut}
-          <span class="canvas-context-menu__shortcut" aria-hidden="true">{entry.shortcut}</span>
+          <kbd class="canvas-context-menu__shortcut" aria-hidden="true">{entry.shortcut}</kbd>
         {/if}
       </button>
     {/if}
@@ -246,10 +252,24 @@
     text-overflow: ellipsis;
   }
 
+  /* A key glyph (⌫ ↵), not a word and not a chip. */
   .canvas-context-menu__shortcut {
-    margin-left: 1rem;
+    margin-left: var(--fd-space-md);
     color: var(--fd-muted-foreground);
+    font-family: inherit;
     font-size: var(--fd-text-xs);
+    line-height: 1;
+  }
+
+  /* Destructive entry: danger tone on the label and icon, a faint danger fill on hover. */
+  .canvas-context-menu__item--danger,
+  .canvas-context-menu__item--danger .canvas-context-menu__icon {
+    color: var(--fd-destructive);
+  }
+
+  .canvas-context-menu__item--danger:hover,
+  .canvas-context-menu__item--danger:focus-visible {
+    background-color: color-mix(in srgb, var(--fd-destructive) 10%, transparent);
   }
 
   .canvas-context-menu__separator {

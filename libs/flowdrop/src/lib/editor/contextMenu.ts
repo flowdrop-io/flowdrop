@@ -37,6 +37,10 @@ export interface ContextMenuActions {
   openConfig(id: string): void;
   /** Open a node for typing in place. */
   editInPlace(id: string): void;
+  /** Place a copy of a node (same type, label and config, no edges) beside the original. */
+  duplicateNode(id: string): void;
+  /** Start the node-swap flow for a node. Absent when swapping is not offered here. */
+  swapNode?(id: string): void;
 }
 
 /** Everything an entry or the `items` option needs to decide what to show and do. */
@@ -61,6 +65,8 @@ export type ContextMenuEntry =
       /** Display-only hint, e.g. the key that triggers the same action. */
       shortcut?: string;
       disabled?: boolean;
+      /** Destructive action: drawn in the danger tone. */
+      danger?: boolean;
       run(ctx: ContextMenuContext): void | Promise<void>;
     }
   | { id: string; separator: true };
@@ -104,7 +110,7 @@ export function isSeparator(entry: ContextMenuEntry): entry is { id: string; sep
 
 /**
  * The built-in entries for a menu: node -> Configure (or Edit text for a node
- * that edits in place), separator, Delete; selection (2+ nodes) -> Delete n
+ * that edits in place), Duplicate, Swap node (when offered), separator, Delete; selection (2+ nodes) -> Delete n
  * nodes; pane -> Add caption when the node types include a caption, else none.
  *
  * @param messages - the `contextMenu` message branch (`m().contextMenu` in a component)
@@ -121,6 +127,7 @@ export function buildDefaultContextMenuEntries(
     return [
       {
         id: 'add-caption',
+        icon: 'mdi:text-box-plus-outline',
         label: messages.addCaption,
         run: (c) => {
           c.actions.addNode(caption, c.position, { edit: true });
@@ -133,23 +140,44 @@ export function buildDefaultContextMenuEntries(
     const first: ContextMenuEntry = options.editsInPlace?.(ctx.nodes[0])
       ? {
           id: 'edit-text',
+          icon: 'mdi:pencil-outline',
           label: messages.editText,
           shortcut: messages.shortcutEnter,
           run: (c) => c.actions.editInPlace(c.nodes[0].id)
         }
       : {
           id: 'configure',
+          icon: 'mdi:cog-outline',
           label: messages.configure,
           shortcut: messages.shortcutEnter,
           run: (c) => c.actions.openConfig(c.nodes[0].id)
         };
+    const swap = ctx.actions.swapNode;
     return [
       first,
+      {
+        id: 'duplicate',
+        icon: 'mdi:content-copy',
+        label: messages.duplicate,
+        run: (c) => c.actions.duplicateNode(c.nodes[0].id)
+      },
+      ...(swap
+        ? [
+            {
+              id: 'swap',
+              icon: 'mdi:swap-horizontal',
+              label: messages.swap,
+              run: (c: ContextMenuContext) => c.actions.swapNode?.(c.nodes[0].id)
+            } satisfies ContextMenuEntry
+          ]
+        : []),
       { id: 'separator-node', separator: true },
       {
         id: 'delete',
+        icon: 'mdi:trash-can-outline',
         label: messages.delete,
         shortcut: messages.shortcutDelete,
+        danger: true,
         run: (c) => c.actions.deleteNodes(c.nodes.map((n) => n.id))
       }
     ];
@@ -159,8 +187,10 @@ export function buildDefaultContextMenuEntries(
     return [
       {
         id: 'delete',
+        icon: 'mdi:trash-can-outline',
         label: messages.deleteNodes({ n: ctx.nodes.length }),
         shortcut: messages.shortcutDelete,
+        danger: true,
         run: (c) => c.actions.deleteNodes(c.nodes.map((n) => n.id))
       }
     ];

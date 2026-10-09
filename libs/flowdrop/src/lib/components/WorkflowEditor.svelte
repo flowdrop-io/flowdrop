@@ -84,6 +84,8 @@
     /** Auth provider applied to this instance's API requests. */
     authProvider?: AuthProvider;
     openConfigSidebar?: (node: WorkflowNodeType) => void;
+    /** Start the node-swap flow for a node. Omit to leave "Swap node" out of the context menu. */
+    onSwapNode?: (nodeId: string) => void;
     /** A node was clicked (not dragged). Test mode opens its inspector sheet from here. */
     onNodeClick?: (node: WorkflowNodeType) => void;
     /**
@@ -905,6 +907,28 @@
     },
     editInPlace(id) {
       fd.inlineEdit.request(id);
+    },
+    duplicateNode(id) {
+      const source = flowNodes.find((n) => n.id === id);
+      if (!source?.data.metadata) return;
+      const grid = getEditorSettings().gridSize;
+      const offset = grid * 2;
+      // The same path as a sidebar drop, so the id, history entry and sync all apply.
+      placeNode(
+        JSON.stringify({
+          type: 'node',
+          nodeData: {
+            label: source.data.label,
+            config: structuredClone($state.snapshot(source.data.config ?? {})),
+            metadata: source.data.metadata
+          }
+        }),
+        { x: source.position.x + offset, y: source.position.y + offset }
+      );
+    },
+    get swapNode() {
+      const swap = props.onSwapNode;
+      return swap ? (id: string) => swap(id) : undefined;
     }
   };
 

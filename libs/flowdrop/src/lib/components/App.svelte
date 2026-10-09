@@ -914,6 +914,14 @@
     swapInteractiveState = null;
   }
 
+  /** Swap from the canvas context menu: open the node's panel in the picker. */
+  function swapFromCanvas(nodeId: string): void {
+    selectedNodeId = nodeId;
+    isConfigSidebarOpen = true;
+    activeSurface = 'config';
+    startSwap();
+  }
+
   /**
    * Handle selection of a target node type for swap
    */
@@ -2175,6 +2183,9 @@
         endpointConfig={endpointConfig ?? undefined}
         {authProvider}
         openConfigSidebar={testMode ? showNodeSheet : openConfigSidebar}
+        onSwapNode={canvasEditable && !testMode && features.enableNodeSwap
+          ? swapFromCanvas
+          : undefined}
         onNodeClick={testMode ? showNodeSheet : undefined}
         {mode}
         {pipelineId}

@@ -291,9 +291,11 @@ export const defaultMessages = {
     deleteNodes: ({ n }: { n: number }) => `Delete ${n} node${n !== 1 ? 's' : ''}`,
     addCaption: 'Add caption',
     editText: 'Edit text',
-    // Key hints shown beside an entry; plain words so they read on any platform.
-    shortcutEnter: 'Enter',
-    shortcutDelete: 'Delete'
+    duplicate: 'Duplicate',
+    swap: 'Swap node',
+    // Key hints shown beside an entry, as key glyphs.
+    shortcutEnter: '↵',
+    shortcutDelete: '⌫'
   },
 
   // The run bar on the Edit canvas: shown only while a run exists.
