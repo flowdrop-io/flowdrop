@@ -16,6 +16,8 @@
 <script lang="ts">
   import Field from '../primitives/Field.svelte';
   import Checkbox from '../primitives/Checkbox.svelte';
+  import Select from '../primitives/Select.svelte';
+  import type { SelectOption } from '../../utils/selectOptions.js';
   import type { ConfigProperty, ConfigSchema } from '../../types/index.js';
   import { m } from '$lib/messages/index.js';
 
@@ -102,9 +104,20 @@
     return (property.enum ?? []).findIndex((option) => option === value);
   }
 
-  function setEnum(key: string, property: ConfigProperty, event: Event): void {
-    const index = Number((event.currentTarget as HTMLSelectElement).value);
-    set(key, Number.isNaN(index) ? undefined : property.enum?.[index]);
+  /** The enum as select options, valued by index (enum members need not be strings); '-1' is "unset". */
+  function enumOptions(property: ConfigProperty): SelectOption[] {
+    return [
+      { value: '-1', label: '—' },
+      ...(property.enum ?? []).map((option, index) => ({
+        value: String(index),
+        label: String(option)
+      }))
+    ];
+  }
+
+  function setEnum(key: string, property: ConfigProperty, chosen: string): void {
+    const index = Number(chosen);
+    set(key, Number.isNaN(index) || index < 0 ? undefined : property.enum?.[index]);
   }
 </script>
 
@@ -123,20 +136,14 @@
     >
       {#snippet children(ctx)}
         {#if property.enum && !property.multiple}
-          <select
+          <Select
             id={ctx.id}
-            class="input-fields__control"
             aria-describedby={ctx.describedBy}
             {disabled}
-            onchange={(event) => setEnum(key, property, event)}
-          >
-            <option value="" selected={enumIndex(property, values[key]) < 0}></option>
-            {#each property.enum as option, index (index)}
-              <option value={index} selected={enumIndex(property, values[key]) === index}>
-                {String(option)}
-              </option>
-            {/each}
-          </select>
+            options={enumOptions(property)}
+            value={String(enumIndex(property, values[key]))}
+            onValueChange={(index) => setEnum(key, property, index)}
+          />
         {:else if property.type === 'boolean'}
           <Checkbox
             id={ctx.id}

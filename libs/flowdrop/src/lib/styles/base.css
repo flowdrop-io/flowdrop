@@ -24,6 +24,19 @@
   color: var(--fd-foreground);
 }
 
+/* Colour scheme: native form controls, their lists (a <select>'s popup) and the
+   scrollbars follow the resolved theme instead of the OS setting. The theme is
+   data-theme on <html> today (or on any ancestor of the scope, or the scope
+   itself), so all three forms are matched. */
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) {
+  color-scheme: light;
+}
+
+[data-theme='dark'] :where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal),
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal)[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 /* One scrollbar for every scrolling area in the library, from the scrollbar
    tokens. Components with their own ::-webkit-scrollbar rules still win. */
 :where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) * {
@@ -609,6 +622,65 @@
 .flowdrop-select-wrap__icon svg {
   width: 1rem;
   height: 1rem;
+}
+
+/* Customisable select: where the browser supports `appearance: base-select`, the
+   native <select>'s list is styled like the rest of the editor's popups (same
+   surface, radius, shadow, item shape as Menu and the searchable Combobox) and
+   it stays a real <select>: keyboard, type-ahead, mobile pickers, screen readers.
+   Elsewhere the rule is skipped and the platform's list shows, in the editor's
+   colour-scheme. Our own chevron overlay replaces the built-in one. */
+@supports (appearance: base-select) {
+  .flowdrop-input--select,
+  .flowdrop-input--select::picker(select) {
+    appearance: base-select;
+  }
+
+  .flowdrop-input--select::picker-icon {
+    display: none;
+  }
+
+  .flowdrop-input--select::picker(select) {
+    box-sizing: border-box;
+    margin-block: var(--fd-space-3xs);
+    padding: var(--fd-space-2xs);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-menu-radius);
+    background-color: var(--fd-background);
+    color: var(--fd-foreground);
+    box-shadow: var(--fd-menu-shadow);
+    font-family: var(--fd-font-sans);
+    font-size: var(--fd-text-sm);
+    scrollbar-width: thin;
+  }
+
+  .flowdrop-input--select option {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-xs) var(--fd-space-sm);
+    border-radius: var(--fd-menu-item-radius);
+    cursor: pointer;
+  }
+
+  .flowdrop-input--select option:hover,
+  .flowdrop-input--select option:focus-visible {
+    background-color: var(--fd-muted);
+    outline: none;
+  }
+
+  .flowdrop-input--select option:checked {
+    background-color: var(--fd-primary-muted);
+  }
+
+  .flowdrop-input--select option::checkmark {
+    color: var(--fd-primary);
+  }
+
+  .flowdrop-input--select option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 /* Input with a leading/trailing affordance (e.g. a search magnifier). */

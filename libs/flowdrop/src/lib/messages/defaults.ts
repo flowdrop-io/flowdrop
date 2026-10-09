@@ -999,5 +999,16 @@ export const defaultMessages = {
 
   menu: {
     moreActions: 'More actions'
+  },
+
+  // The searchable rendering of the Select primitive (long or grouped lists).
+  select: {
+    searchPlaceholder: 'Search…',
+    noMatches: 'No matches',
+    // "3 of 42" — what the filter leaves, out of everything listed.
+    count: ({ shown, total }: { shown: number; total: number }) => `${shown} of ${total}`,
+    hintMove: 'move',
+    hintChoose: 'choose',
+    hintClose: 'close'
   }
 } as const;
