@@ -6,12 +6,16 @@
   full "6 nodes · 6 connections" is its title and accessible name. A cycle warning,
   also formerly in the status bar, appears next to the count when the graph loops.
 
+  When the WebMCP desktop bridge is installed and offers tools, its button joins the group
+  after the lock (WebMCPBridgeMenu).
+
   Must render inside <SvelteFlow>: xyflow's Controls reads the flow store.
 -->
 <script lang="ts">
   import { Controls, useStore } from '@xyflow/svelte';
   import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
   import { getMessages } from '$lib/messages/index.js';
+  import WebMCPBridgeMenu from './WebMCPBridgeMenu.svelte';
 
   interface Props {
     /** Number of nodes on the canvas. */
@@ -45,6 +49,7 @@
   fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
   onclickcapture={takeFitClick}
 >
+  <WebMCPBridgeMenu />
   {#snippet after()}
     <div class="fd-zoom-status">
       <!-- Shown by themes that set --fd-zoom-percent-display; outside the live region so zooming is not announced -->

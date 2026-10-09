@@ -1102,6 +1102,28 @@ export const defaultMessages = {
 
   // The confirm dialog the WebMCP adapter shows before a browser agent's change runs.
   webmcp: {
+    // The desktop bridge: a button beside the canvas zoom controls and its popover, for a
+    // browser without WebMCP of its own. Offered only when the site turned the bridge on.
+    bridge: {
+      trigger: 'Desktop bridge',
+      // Hover text of the button: the name and where the connection stands.
+      triggerTitle: ({ status }: { status: string }) => `Desktop bridge: ${status}`,
+      title: 'Desktop bridge',
+      explainer: 'Lets an AI app on this computer see and edit this workflow.',
+      status: {
+        disconnected: 'Not connected',
+        connecting: 'Connecting\u2026',
+        connected: 'Connected',
+        error: 'Connection failed'
+      },
+      tokenLabel: 'Connection token',
+      tokenPlaceholder: 'Paste the token from the bridge',
+      connect: 'Connect',
+      disconnect: 'Disconnect',
+      toolsOffered: ({ count }: { count: number }) =>
+        count === 1 ? '1 tool offered' : `${count} tools offered`,
+      toolsLabel: 'Tools offered to the connected app'
+    },
     confirmTitle: ({ name }: { name: string }) => `A browser agent wants to change “${name}”`,
     confirmCount: ({ count }: { count: number }) =>
       `${count === 1 ? '1 change' : `${count} changes`} — applied together, undone together.`,
