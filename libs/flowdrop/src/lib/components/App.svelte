@@ -2435,9 +2435,7 @@
   }
 
   .config-surface__details {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--fd-inspector-details-rule);
-    background-color: var(--fd-inspector-details-bg);
+    padding: 0.75rem 1rem 0;
     flex-shrink: 0;
   }
 

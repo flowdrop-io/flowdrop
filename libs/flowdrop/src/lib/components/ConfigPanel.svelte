@@ -155,23 +155,21 @@
   {/if}
 {/snippet}
 
-<div class="config-panel" class:config-panel--compact={getUiSettings().compactMode}>
-  <PanelHeader {title}>
-    {#snippet actions()}
-      {@render headerActions(false)}
-    {/snippet}
-  </PanelHeader>
-
-  {#if expanded}
-    <!-- Content is popped out into the modal; show a lightweight placeholder. -->
-    <div class="config-panel__popped">
-      <Icon icon="heroicons:window" class="config-panel__popped-icon" />
-      <p class="config-panel__popped-text">{m().layout.configPoppedOut}</p>
-      <button class="config-panel__popped-btn" onclick={dock}>
-        {m().layout.dockConfigButton}
-      </button>
-    </div>
-  {:else}
+<!--
+  While the content is popped out the docked panel is empty and its sidebar
+  collapses (see the :global rules below) instead of showing a placeholder.
+-->
+<div
+  class="config-panel"
+  class:config-panel--compact={getUiSettings().compactMode}
+  class:config-panel--popped={expanded}
+>
+  {#if !expanded}
+    <PanelHeader {title}>
+      {#snippet actions()}
+        {@render headerActions(false)}
+      {/snippet}
+    </PanelHeader>
     {@render panelContent()}
   {/if}
 </div>
@@ -214,6 +212,7 @@
   }
 
   .config-panel__scroll {
+    --fd-inspector-pad-x: var(--fd-space-xl);
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -221,10 +220,9 @@
     flex-direction: column;
   }
 
+  /* The meta lines scroll with the content: no band, no rule, no overlap. */
   .config-panel__details {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--fd-inspector-details-rule);
-    background-color: var(--fd-inspector-details-bg);
+    padding: var(--fd-space-md) var(--fd-inspector-pad-x) 0;
     flex-shrink: 0;
   }
 
@@ -234,7 +232,7 @@
 
   .config-panel__content {
     flex: 1 0 auto;
-    padding: 1rem;
+    padding: var(--fd-space-md) var(--fd-inspector-pad-x) var(--fd-space-xl);
   }
 
   .config-panel__section {
@@ -251,60 +249,22 @@
   }
 
   /* Compact Mode Styles */
-  .config-panel--compact .config-panel__details {
-    padding: 0.5rem 0.75rem;
-  }
-
-  .config-panel--compact .config-panel__content {
-    padding: 0.75rem;
+  .config-panel--compact .config-panel__scroll {
+    --fd-inspector-pad-x: var(--fd-space-md);
   }
 
   .config-panel--compact .config-panel__section {
     gap: 0.5rem;
   }
 
-  /* Popped-out placeholder (shown in the rail while the modal is open) */
-  .config-panel__popped {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 2rem 1rem;
-    text-align: center;
-    color: var(--fd-muted-foreground);
-  }
-
-  .config-panel__popped :global(.config-panel__popped-icon) {
-    width: 2rem;
-    height: 2rem;
-    opacity: 0.6;
-  }
-
-  .config-panel__popped-text {
-    margin: 0;
-    font-size: var(--fd-text-sm);
-  }
-
-  .config-panel__popped-btn {
-    border: 1px solid var(--fd-border);
-    background-color: var(--fd-card);
-    color: var(--fd-foreground);
-    padding: 0.375rem 0.75rem;
-    border-radius: var(--fd-radius-sm);
-    font-size: var(--fd-text-sm);
-    cursor: pointer;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast),
-      border-color var(--fd-transition-fast);
-  }
-
-  .config-panel__popped-btn:hover {
-    color: var(--fd-primary);
-    border-color: var(--fd-primary);
-    background-color: var(--fd-subtle);
+  /* Popped out: the rail it sat in collapses (and its resize handle with it). */
+  :global(.flowdrop-main-layout__sidebar--right:has(.config-panel--popped)),
+  :global(
+    .flowdrop-main-layout__divider--right:has(
+      + .flowdrop-main-layout__sidebar--right .config-panel--popped
+    )
+  ) {
+    display: none;
   }
 
   /* Pop-out modal */
@@ -348,8 +308,13 @@
   }
 
   /* Inside the modal the content area should breathe on a wider canvas. */
+  .config-panel-modal__body .config-panel__scroll {
+    --fd-inspector-pad-x: var(--fd-space-3xl);
+  }
+
   .config-panel-modal__body .config-panel__content {
-    padding: 1.25rem 1.5rem;
+    padding-top: var(--fd-space-xl);
+    padding-bottom: var(--fd-space-3xl);
   }
 
   @media (max-width: 640px) {
