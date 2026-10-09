@@ -44,6 +44,7 @@
   import NodeSwapPicker from '$lib/components/NodeSwapPicker.svelte';
   import SwapMappingEditor from '$lib/components/SwapMappingEditor.svelte';
   import Navbar from '$lib/components/Navbar.svelte';
+  import DoctorMenu from '$lib/components/DoctorMenu.svelte';
   import type { NavbarAction, NavbarBranding } from '$lib/types/navbar.js';
   import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
   import type { InteractiveSwapState, SwapEventContext } from '$lib/utils/nodeSwap.js';
@@ -886,6 +887,31 @@
     return true;
   }
   $effect(() => fd.highlight.setRevealHandler(revealNodeLastRun));
+
+  /**
+   * A problem's node name was clicked: select the node (its inspector opens)
+   * and bring it into view. Unlike a toggle, repeating it keeps it open.
+   */
+  function focusProblemNode(nodeId: string): boolean {
+    const node = fd.workflow.current?.nodes.find((n) => n.id === nodeId);
+    if (!node) return false;
+    selectedNodeId = nodeId;
+    isConfigSidebarOpen = true;
+    activeSurface = 'config';
+    swapMode = 'idle';
+    swapInteractiveState = null;
+    workflowEditorRef?.canvasFocusNode(nodeId);
+    return true;
+  }
+  $effect(() => fd.doctor.setFocusHandler(focusProblemNode));
+
+  // The Doctor diagnoses the draft a moment after each edit, and on load (and
+  // once the workflow has an id). Reading the version and the id is the trigger.
+  $effect(() => {
+    void fd.workflow.editVersion;
+    void fd.workflow.id;
+    untrack(() => fd.doctor.schedule());
+  });
 
   /**
    * Toggle workflow settings sidebar
@@ -1962,6 +1988,9 @@
   >
     <!-- Header: Navbar -->
     {#snippet header()}
+      {#snippet doctorStatus()}
+        <DoctorMenu canApply={canvasEditable} />
+      {/snippet}
       <Navbar
         title={breadcrumbTitle}
         primaryActions={navbarActions.length > 0 ? navbarActions : defaultPrimaryActions}
@@ -1970,6 +1999,7 @@
         {branding}
         saveShortcut
         onWorkflowSettings={toggleWorkflowSettings}
+        status={doctorStatus}
         workflowSettingsOpen={isWorkflowSettingsOpen}
         {settingsCategories}
         {showSettingsSyncButton}

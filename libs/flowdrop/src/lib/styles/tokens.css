@@ -453,6 +453,8 @@
   --fd-node-terminal-label-weight: 500; /* @internal */
   --fd-node-dim-opacity: 1; /* @internal  Test mode: nodes without a status in the shown run */
   --fd-node-status-edge: 0px; /* @internal  extra thickness of a status-coloured node border */
+  --fd-node-problem-ring: 2px; /* @internal  outline of a node the Doctor found a problem on */
+  --fd-node-problem-badge: 18px; /* @internal  size of the Doctor's count badge on a node */
   --fd-node-status-ring: 0px; /* @internal  soft halo of a node that waits for you */
 
   /* ----- CONVERSATION TOKENS (@internal) -----

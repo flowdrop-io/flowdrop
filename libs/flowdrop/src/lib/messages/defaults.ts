@@ -341,6 +341,38 @@ export const defaultMessages = {
     }
   },
 
+  // The Doctor: the Problems indicator in the navbar, its popover and the badges on nodes.
+  doctor: {
+    trigger: ({ count }: { count: number }) => (count === 1 ? '1 problem' : `${count} problems`),
+    triggerTitle: 'Problems found in this workflow',
+    title: 'Problems',
+    listLabel: 'Problems in this workflow',
+    severity: { error: 'Error', warning: 'Warning', info: 'Note' },
+    // A node name in a problem row: it selects the node on the canvas.
+    selectNode: ({ name }: { name: string }) => `Select ${name} on the canvas`,
+    // The node badge's hover text and accessible name.
+    badge: ({ severity, count }: { severity: string; count: number }) =>
+      count === 1 ? `${severity}: 1 problem` : `${severity}: ${count} problems`,
+    port: ({ port }: { port: string }) => `port ${port}`,
+    workflowWide: 'Whole workflow',
+    chooseLabel: 'Choose',
+    choosePlaceholder: 'Choose\u2026',
+    applying: 'Applying\u2026',
+    // Destructive remedies ask first, inline.
+    confirm: 'This removes something. Apply it?',
+    confirmApply: 'Apply',
+    confirmCancel: 'Cancel',
+    applyLabel: ({ remedy, problem }: { remedy: string; problem: string }) =>
+      `${remedy}: ${problem}`,
+    notice: {
+      gone: 'That problem is already gone.',
+      changed: 'The workflow changed in the meantime. It was checked again.',
+      empty: 'That fix would change nothing.',
+      failed: ({ message }: { message: string }) => `The fix could not be applied. ${message}`
+    },
+    dismissNotice: 'Dismiss'
+  },
+
   // The Runs list in Test mode: a popover from the canvas toolbar.
   runsList: {
     trigger: 'Runs',

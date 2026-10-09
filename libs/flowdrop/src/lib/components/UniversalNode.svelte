@@ -17,6 +17,7 @@
   import { resolveComponentName } from '../utils/nodeTypes.js';
   import { m } from '../messages/index.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
+  import { counterScale } from './primitives/StatusPill.svelte';
 
   const fd = getInstance();
 
@@ -99,6 +100,21 @@
   );
 
   /**
+   * The Doctor's findings on this node: the worst severity and how many. A
+   * quiet badge and outline, only while the backend offers a Doctor.
+   */
+  let problemSeverity = $derived(fd.doctor.supported ? fd.doctor.severityOf(id) : null);
+  let problems = $derived(problemSeverity ? fd.doctor.forNode(id) : []);
+  let problemLabel = $derived(
+    problemSeverity
+      ? m().doctor.badge({
+          severity: m().doctor.severity[problemSeverity],
+          count: problems.length
+        })
+      : ''
+  );
+
+  /**
    * Canvas zoom for the pill's counter-scaling. Read only while a status is
    * shown, so a node without one never subscribes to the viewport (panning
    * would otherwise re-evaluate every node). Outside a SvelteFlow (unit
@@ -110,7 +126,9 @@
   } catch {
     flowStore = null;
   }
-  let zoom = $derived(shouldShowStatus && flowStore ? flowStore.viewport.zoom : 1);
+  let zoom = $derived(
+    (shouldShowStatus || problemSeverity) && flowStore ? flowStore.viewport.zoom : 1
+  );
 
   /**
    * Test mode: the node border takes the status colour (nodes draw their
@@ -183,6 +201,7 @@
   class:universal-node--dim={dimmed}
   class:universal-node--terminal={resolvedComponentName === 'terminal'}
   class:universal-node--selected={selected}
+  class:universal-node--problem={problemSeverity !== null}
   style={borderStatus
     ? `--fd-node-border: var(--fd-status-${borderStatus}); --fd-node-border-hover: var(--fd-status-${borderStatus}); --fd-node-terminal-border-color: var(--fd-status-${borderStatus});`
     : undefined}
@@ -193,6 +212,26 @@
     <!-- Svelte 5 dynamic component limitation; reactivity maintained via $derived -->
     {@const NodeComponent = nodeComponent}
     <NodeComponent {id} {data} {selected} />
+  {/if}
+
+  {#if problemSeverity}
+    <span
+      class="universal-node__problem universal-node__problem--{problemSeverity}"
+      role="img"
+      aria-label={problemLabel}
+      title={[problemLabel, ...problems.map((p) => p.message)].join('\n')}
+      data-testid="node-problem"
+      data-severity={problemSeverity}
+    >
+      <span class="universal-node__problem-ring" aria-hidden="true"></span>
+      <span
+        class="universal-node__problem-badge"
+        aria-hidden="true"
+        style="transform: scale({counterScale(zoom)});"
+      >
+        {problems.length}
+      </span>
+    </span>
   {/if}
 
   {#if showEdited && shouldShowStatus}
@@ -237,6 +276,59 @@
   .universal-node--dim:hover,
   .universal-node--dim.universal-node--selected {
     opacity: 1;
+  }
+
+  /* A problem the Doctor found: an outline and a count at the top right. Neither takes a click. */
+  .universal-node__problem {
+    --_c: var(--fd-warning);
+    --_fg: var(--fd-warning-foreground);
+    position: absolute;
+    inset: 0;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .universal-node__problem--error {
+    --_c: var(--fd-error);
+    --_fg: var(--fd-error-foreground);
+  }
+  .universal-node__problem--info {
+    --_c: var(--fd-info);
+    --_fg: var(--fd-info-foreground);
+  }
+  .universal-node__problem-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--fd-node-radius);
+    outline: var(--fd-node-problem-ring) solid var(--_c);
+  }
+  .universal-node--terminal .universal-node__problem-ring {
+    inset: 0 auto auto 50%;
+    width: var(--fd-node-terminal-size);
+    height: var(--fd-node-terminal-size);
+    translate: -50% 0;
+    border-radius: var(--fd-radius-full);
+  }
+  .universal-node__problem--info .universal-node__problem-ring {
+    display: none;
+  }
+  .universal-node__problem-badge {
+    position: absolute;
+    top: calc(var(--fd-node-problem-badge) / -2);
+    right: calc(var(--fd-node-problem-badge) / -2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--fd-node-problem-badge);
+    height: var(--fd-node-problem-badge);
+    box-sizing: border-box;
+    padding: 0 var(--fd-space-3xs);
+    border-radius: var(--fd-radius-full);
+    background-color: var(--_c);
+    color: var(--_fg);
+    font-size: var(--fd-text-xs);
+    font-weight: 600;
+    line-height: 1;
+    transform-origin: center;
   }
 
   .universal-node__edited {

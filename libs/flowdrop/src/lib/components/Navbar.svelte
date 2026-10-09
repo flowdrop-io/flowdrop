@@ -63,6 +63,11 @@
      * it in the menu. Off by default: a host page may have its own Save shortcut.
      */
     saveShortcut?: boolean;
+    /**
+     * Drawn in the action row before the Save button: the Problems indicator.
+     * Renders nothing of its own, so an empty snippet leaves no gap.
+     */
+    status?: Snippet;
   }
 
   let {
@@ -78,7 +83,8 @@
     branding,
     onWorkflowSettings,
     workflowSettingsOpen = false,
-    saveShortcut = false
+    saveShortcut = false,
+    status
   }: Props = $props();
 
   // Settings modal state
@@ -330,6 +336,7 @@
         {nav.workflowButton}
       </Button>
     {/if}
+    {@render status?.()}
     {#if taskActions.length > 0}
       <!-- Split mode: all actions as individual side-by-side buttons -->
       <div class="flowdrop-navbar__split-actions">
