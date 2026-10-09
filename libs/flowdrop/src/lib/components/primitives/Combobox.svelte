@@ -176,7 +176,6 @@
 </script>
 
 <div class="fd-combobox flowdrop-select-wrap" bind:this={rootEl} onfocusout={onFocusout}>
-  <!-- svelte-ignore a11y_role_has_required_aria_props -->
   <input
     {id}
     class={inputClass}
