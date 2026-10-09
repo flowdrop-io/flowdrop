@@ -341,6 +341,43 @@ export const defaultMessages = {
     }
   },
 
+  // The Runs list in Test mode: a popover from the canvas toolbar.
+  runsList: {
+    trigger: 'Runs',
+    triggerTitle: 'Past runs of this workflow',
+    title: 'Runs',
+    listLabel: 'Runs of this workflow',
+    loading: 'Loading runs…',
+    loadError: 'Could not load the runs.',
+    retry: 'Try again',
+    empty: 'No runs yet',
+    emptyHint: 'Runs of this workflow show up here.',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    loadMore: 'Load more',
+    loadingMore: 'Loading…',
+    openAdmin: 'Open in admin',
+    openAdminRun: 'Open this run in admin',
+    // A row is a button: its name says what it opens.
+    openRun: ({ id, status, time }: { id: string; status: string; time: string }) =>
+      `Show run ${id} (${status}${time ? `, ${time}` : ''}) on the canvas`,
+    rerun: 'Re-run',
+    rerunLabel: ({ id }: { id: string }) => `Re-run run ${id}`,
+    cancel: 'Cancel',
+    cancelLabel: ({ id }: { id: string }) => `Cancel run ${id}`,
+    actionFailed: 'The action failed.',
+    status: {
+      pending: 'Queued',
+      running: 'Running',
+      paused: 'Paused',
+      interrupted: 'Waiting',
+      completed: 'Done',
+      failed: 'Failed',
+      cancelled: 'Cancelled'
+    },
+    jobsFailed: ({ n }: { n: number }) => `${n} failed`
+  },
+
   // The inspector tabs of a node in Test mode, and the Last run tab.
   nodeInspector: {
     tabsLabel: 'Node tabs',

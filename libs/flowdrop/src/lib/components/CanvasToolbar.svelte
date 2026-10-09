@@ -1,5 +1,6 @@
 <!--
-  CanvasToolbar — the top-left canvas toolbar: Edit | Test and the run pill.
+  CanvasToolbar — the top-left canvas toolbar: Edit | Test, the Runs list (Test
+  mode) and the run pill.
   (The Console toggle is a strip along the canvas's bottom edge, ConsoleStrip.)
 
   Replaces the navbar's Edit | Test switch, the dot on "Test" and the Edit-mode
@@ -15,6 +16,7 @@
   import Toolbar from './primitives/Toolbar.svelte';
   import Segmented from './primitives/Segmented.svelte';
   import RunBar from './RunBar.svelte';
+  import RunsMenu from './RunsMenu.svelte';
 
   interface Props {
     /** Current editor mode. */
@@ -27,6 +29,10 @@
     onAskAssistant?: (runId: string) => void;
     /** Show the run pill while a run exists. @default true */
     showRun?: boolean;
+    /** Show the Runs list (Test mode's past runs). The host decides when. @default false */
+    showRuns?: boolean;
+    /** Host URL templates for the Runs list's admin links. */
+    adminLinks?: { runs?: string; run?: string };
   }
 
   let {
@@ -34,7 +40,9 @@
     onEditorModeChange,
     onOpenTest,
     onAskAssistant,
-    showRun = true
+    showRun = true,
+    showRuns = false,
+    adminLinks
   }: Props = $props();
 
   const fd = getInstance();
@@ -62,6 +70,9 @@
           value={editorMode}
           onchange={(v) => onEditorModeChange(v as EditorMode)}
         />
+      {/if}
+      {#if showRuns}
+        <RunsMenu {adminLinks} />
       {/if}
       {#if showRun}
         <RunBar mode={editorMode} {onAskAssistant} onOpen={onOpenTest} />

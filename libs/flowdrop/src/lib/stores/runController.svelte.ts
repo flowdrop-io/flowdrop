@@ -29,6 +29,7 @@ import type { WorkflowStore } from './workflowStore.svelte.js';
 import type { ApiContext } from './apiContext.js';
 import type { PlaygroundService } from '../services/playgroundService.js';
 import { nodeExecutionService } from '../services/nodeExecutionService.js';
+import { readRunStatus } from '../services/runsService.js';
 import { pipelineSignalService } from '../services/pipelineSignalService.js';
 import { workflowLaunchService, type LaunchResult } from '../services/workflowLaunchService.js';
 import type { CommandHandlers } from '../playground/commands/dispatch.js';
@@ -1282,6 +1283,28 @@ export class RunController {
     return out;
   }
 
+  /**
+   * Show a run from the Runs list: it becomes the shown run (node badges, run
+   * pill), whatever started it. A run that has not finished is followed until
+   * it does, through the pipelines status endpoint (or the host's
+   * `onRunStatus` when it gave one).
+   */
+  openRun(runId: string, status?: string): void {
+    const hostStatus = hostRunStatus(status);
+    this.#clearHostPoll();
+    this.#tracked = {
+      origin: 'host',
+      runId,
+      sessionId: null,
+      startedAt: Date.now(),
+      stopped: false,
+      hostStatus
+    };
+    const terminal = TERMINAL_RUN_STATUSES.includes(hostStatus);
+    this.#endedAt = terminal ? Date.now() : null;
+    if (!terminal) this.#scheduleHostPoll(runId, this.hostPollInterval);
+  }
+
   /** Stop the timers and subscriptions this controller started. */
   dispose(): void {
     this.#clearHostPoll();
@@ -1351,9 +1374,9 @@ export class RunController {
   }
 
   async #pollHost(runId: string): Promise<void> {
-    const hook = this.#hostStatusHook;
     const tracked = this.#tracked;
-    if (!hook || tracked?.origin !== 'host' || tracked.runId !== runId) return;
+    const hook = this.#hostStatusHook ?? this.#readStatusFromApi;
+    if (tracked?.origin !== 'host' || tracked.runId !== runId) return;
     try {
       const envelope = await hook(runId);
       this.#applyHostStatus(runId, envelope.ok ? envelope.data?.status : undefined);
@@ -1369,6 +1392,16 @@ export class RunController {
       this.#scheduleHostPoll(runId, this.hostPollInterval);
     }
   }
+
+  /** The status read of a run opened from the Runs list when the host gave no `onRunStatus`. */
+  #readStatusFromApi = async (
+    runId: string
+  ): Promise<{ ok: boolean; data?: { status?: string } }> => {
+    const config = this.#api.config;
+    if (!config) return { ok: false };
+    const status = await readRunStatus(config, runId, this.#api.authProvider);
+    return status === undefined ? { ok: false } : { ok: true, data: { status } };
+  };
 
   #clearHostPoll(): void {
     if (this.#hostPoll !== null) clearTimeout(this.#hostPoll);

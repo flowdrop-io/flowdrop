@@ -300,6 +300,26 @@ export interface FlowDropFeatures {
    * @default true
    */
   testMode?: boolean;
+
+  /**
+   * Offer the Runs list in Test mode: a "Runs" control in the canvas toolbar
+   * listing the workflow's past runs (from `endpoints.pipelines.list`), where
+   * opening one shows its node statuses on the canvas. Turn this off for a
+   * backend that has no pipelines list.
+   *
+   * @default true
+   */
+  runsList?: boolean;
+
+  /**
+   * Where the host's admin pages for runs live, as URL templates (`{workflowId}`
+   * and `{pipelineId}` are filled in). `runs` is the Runs list's "Open in admin"
+   * link, `run` the link on each row. A link without a template is not drawn:
+   * FlowDrop hard-codes no host paths.
+   *
+   * @example { runs: '/admin/flowdrop/pipelines?workflow={workflowId}' }
+   */
+  adminLinks?: { runs?: string; run?: string };
 }
 
 /**
@@ -315,7 +335,9 @@ export const DEFAULT_FEATURES: Required<FlowDropFeatures> = {
   builtinEditors: true,
   console: true,
   assistant: true,
-  testMode: true
+  testMode: true,
+  runsList: true,
+  adminLinks: {}
 };
 
 /**

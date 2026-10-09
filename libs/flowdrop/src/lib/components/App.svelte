@@ -2230,6 +2230,8 @@
         onEditorModeChange={testModeAvailable ? (next) => fd.editorMode.set(next) : undefined}
         onOpenTest={testModeAvailable ? () => fd.editorMode.set('test') : undefined}
         onAskAssistant={askAssistant}
+        showRuns={testMode && features.runsList}
+        adminLinks={features.adminLinks}
       />
     </div>
   </MainLayout>

@@ -119,6 +119,10 @@
     refreshTrigger?: number;
     /** Take a failed run on the run pill to the Assistant. */
     onAskAssistant?: (runId: string) => void;
+    /** Offer the Runs list in Test mode (the canvas toolbar's "Runs"). @default false */
+    showRuns?: boolean;
+    /** Host URL templates for the Runs list's admin links (`features.adminLinks`). */
+    adminLinks?: { runs?: string; run?: string };
     /** Per-instance state container (created by mount functions). Defaults to the page-default instance. */
     instance?: FlowDropInstance;
     /**
@@ -1534,6 +1538,8 @@
           onOpenTest={props.onOpenTest}
           onAskAssistant={props.onAskAssistant}
           showRun={props.showRunBar ?? true}
+          showRuns={props.showRuns}
+          adminLinks={props.adminLinks}
         />
       {/if}
 
