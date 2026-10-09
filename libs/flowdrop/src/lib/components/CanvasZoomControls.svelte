@@ -6,13 +6,13 @@
   full "6 nodes · 6 connections" is its title and accessible name. A cycle warning,
   also formerly in the status bar, appears next to the count when the graph loops.
 
-  When the WebMCP desktop bridge is installed and offers tools, its button joins the group
-  after the lock (WebMCPBridgeMenu).
+  When the WebMCP desktop bridge is installed and offers tools, its button stands on its own
+  beside the group (WebMCPBridgeMenu): both sit in one bottom-left panel, laid out in a row.
 
   Must render inside <SvelteFlow>: xyflow's Controls reads the flow store.
 -->
 <script lang="ts">
-  import { Controls, useStore } from '@xyflow/svelte';
+  import { Controls, Panel, useStore } from '@xyflow/svelte';
   import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
   import { getMessages } from '$lib/messages/index.js';
   import WebMCPBridgeMenu from './WebMCPBridgeMenu.svelte';
@@ -44,30 +44,44 @@
   const summary = $derived(msg.summary({ nodes: nodeCount, edges: edgeCount }));
 </script>
 
-<Controls
-  orientation="horizontal"
-  fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
-  onclickcapture={takeFitClick}
->
-  <WebMCPBridgeMenu />
-  {#snippet after()}
-    <div class="fd-zoom-status">
-      <!-- Shown by themes that set --fd-zoom-percent-display; outside the live region so zooming is not announced -->
-      <span class="fd-zoom-status__zoom" aria-hidden="true">{zoomPercent}% ·</span>
-      <!-- aria-live announces count changes and cycle warnings -->
-      <span class="fd-zoom-status__live" aria-live="polite" aria-atomic="true">
-        <span class="fd-zoom-status__count" title={summary} aria-label={summary}>
-          {msg.nodeCount({ n: nodeCount })}
+<Panel position="bottom-left" class="fd-canvas-floats">
+  <Controls
+    orientation="horizontal"
+    fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
+    onclickcapture={takeFitClick}
+  >
+    {#snippet after()}
+      <div class="fd-zoom-status">
+        <!-- Shown by themes that set --fd-zoom-percent-display; outside the live region so zooming is not announced -->
+        <span class="fd-zoom-status__zoom" aria-hidden="true">{zoomPercent}% ·</span>
+        <!-- aria-live announces count changes and cycle warnings -->
+        <span class="fd-zoom-status__live" aria-live="polite" aria-atomic="true">
+          <span class="fd-zoom-status__count" title={summary} aria-label={summary}>
+            {msg.nodeCount({ n: nodeCount })}
+          </span>
+          {#if hasCycles}
+            <span class="fd-zoom-status__cycles" title={msg.cyclesTitle}>{msg.cycles}</span>
+          {/if}
         </span>
-        {#if hasCycles}
-          <span class="fd-zoom-status__cycles" title={msg.cyclesTitle}>{msg.cycles}</span>
-        {/if}
-      </span>
-    </div>
-  {/snippet}
-</Controls>
+      </div>
+    {/snippet}
+  </Controls>
+  <WebMCPBridgeMenu />
+</Panel>
 
 <style>
+  /* The zoom group and the bridge button side by side; the group's own panel
+     is laid out by this one instead of positioning itself. */
+  :global(.svelte-flow__panel.fd-canvas-floats) {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+  }
+  :global(.fd-canvas-floats > .svelte-flow__panel) {
+    position: static;
+    margin: 0;
+  }
+
   .fd-zoom-status {
     display: flex;
     align-items: center;

@@ -1,6 +1,6 @@
 <!--
-  WebMCPBridgeMenu — the desktop bridge's button and popover, drawn inside the
-  canvas zoom controls (it renders as one more button of that group).
+  WebMCPBridgeMenu — the desktop bridge's button and popover, a floating button
+  of its own beside the canvas zoom controls.
 
   A browser without WebMCP of its own reaches the editor's tools through a
   bridge to an AI app on the same computer. The vendored widget's own UI is
@@ -11,21 +11,20 @@
   the tools offered.
 
   Drawn only while a bridge is installed, its widget is recognised and the
-  editor offered tools through it. Must render inside the zoom controls
-  (xyflow's `Controls`): the trigger is a `ControlButton`, so it takes the same
-  tokens as zoom, fit and lock.
+  editor offered tools through it. The trigger is an `IconButton` on a surface
+  that takes the zoom group's tokens, so the two floats read as a pair.
 -->
 
 <script lang="ts">
   import { tick, untrack } from 'svelte';
   import { on } from 'svelte/events';
   import Icon from '@iconify/svelte';
-  import { ControlButton } from '@xyflow/svelte';
   import { getMessages } from '../messages/context.js';
   import { portal } from '../utils/portal.js';
   import { getBridgeController } from '../webmcp/bridgeController.svelte.js';
   import Button from './primitives/Button.svelte';
   import Field from './primitives/Field.svelte';
+  import IconButton from './primitives/IconButton.svelte';
 
   const getMsgs = getMessages();
   const msgs = $derived(getMsgs().webmcp.bridge);
@@ -114,23 +113,28 @@
 </script>
 
 {#if visible && bridge}
-  <ControlButton
-    id={triggerId}
-    class="fd-bridge__trigger"
-    title={msgs.triggerTitle({ status: statusText })}
-    aria-label={msgs.trigger}
-    aria-expanded={open}
-    aria-controls={open ? popoverId : undefined}
-    aria-haspopup="true"
-    data-testid="webmcp-bridge-trigger"
-    data-status={status}
-    onclick={() => (open ? close(false) : void show())}
-    onkeydown={onKeydown}
-  >
-    <Icon icon="mdi:power-plug" />
-    <span class="fd-bridge__badge fd-bridge__dot fd-bridge__dot--{status}" aria-hidden="true"
-    ></span>
-  </ControlButton>
+  <div class="fd-bridge">
+    <IconButton
+      id={triggerId}
+      class="fd-bridge__trigger"
+      ariaLabel={msgs.trigger}
+      title={msgs.triggerTitle({ status: statusText })}
+      aria-expanded={open}
+      aria-controls={open ? popoverId : undefined}
+      aria-haspopup="true"
+      data-testid="webmcp-bridge-trigger"
+      data-status={status}
+      onclick={() => (open ? close(false) : void show())}
+      onkeydown={onKeydown}
+    >
+      <Icon icon="heroicons:computer-desktop" />
+      {#if status !== 'disconnected'}
+        <!-- Quiet when not connected: the dot appears only once something is happening. -->
+        <span class="fd-bridge__badge fd-bridge__dot fd-bridge__dot--{status}" aria-hidden="true"
+        ></span>
+      {/if}
+    </IconButton>
+  </div>
 
   {#if open}
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -212,9 +216,26 @@
 {/if}
 
 <style>
-  /* The trigger is xyflow's own control button; only the dot is added. */
-  :global(.svelte-flow__controls-button.fd-bridge__trigger) {
+  /* Its own float, in the zoom group's chrome. */
+  .fd-bridge {
+    display: flex;
+    box-sizing: border-box;
+    padding: var(--fd-zoom-group-padding);
+    background: var(--fd-zoom-group-bg);
+    border: var(--fd-zoom-group-border);
+    border-radius: var(--fd-zoom-group-radius);
+    box-shadow: var(--fd-zoom-group-shadow);
+  }
+  .fd-bridge :global(.fd-bridge__trigger) {
     position: relative;
+    width: var(--fd-zoom-button-size);
+    height: var(--fd-zoom-button-size);
+  }
+  /* Heroicons draw inside a 24px box with an inset; a little larger than the
+     zoom glyphs so the two read at the same weight. */
+  .fd-bridge :global(.fd-bridge__trigger svg) {
+    width: calc(var(--fd-zoom-icon-size) + var(--fd-space-3xs));
+    height: calc(var(--fd-zoom-icon-size) + var(--fd-space-3xs));
   }
 
   .fd-bridge__dot {
@@ -239,9 +260,9 @@
   /* On the button: a corner dot with a ring in the button's own colour, so it reads on any theme. */
   .fd-bridge__badge {
     position: absolute;
-    top: var(--fd-space-3xs);
-    right: var(--fd-space-3xs);
-    border: 1px solid var(--xy-controls-button-background-color, var(--fd-card));
+    top: calc(var(--fd-space-3xs) / 2);
+    right: calc(var(--fd-space-3xs) / 2);
+    border: 1px solid var(--fd-zoom-group-bg);
   }
 
   .fd-bridge__popover {
