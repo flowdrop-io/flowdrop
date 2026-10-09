@@ -18,6 +18,30 @@ export interface NodeDimensions {
   height: number;
 }
 
+/**
+ * Room a node needs beside it for its workflow-interface tags, in px: `left`
+ * for tags of its inputs, `right` for tags of its outputs (see
+ * `utils/interfaceTags.ts#interfaceTagReserve`). Keyed like the dimensions.
+ */
+export type TagReserve = Map<string, { left: number; right: number }>;
+
+/** Free space kept between a column's output tags and the next column's input tags (px). */
+const TAG_BREATHING_ROOM = 40;
+
+/** Gap between two adjacent columns: the configured gap, or more when their tags need it. */
+function columnGap(
+  horizontalGap: number,
+  left: string[],
+  right: string[] | undefined,
+  reserve: TagReserve | undefined
+): number {
+  if (!reserve || !right) return horizontalGap;
+  const out = Math.max(0, ...left.map((id) => reserve.get(id)?.right ?? 0));
+  const into = Math.max(0, ...right.map((id) => reserve.get(id)?.left ?? 0));
+  if (out === 0 && into === 0) return horizontalGap;
+  return Math.max(horizontalGap, out + into + TAG_BREATHING_ROOM);
+}
+
 /** Layout configuration */
 export interface AutoLayoutConfig {
   /** Minimum horizontal gap between the right edge of one layer and the left edge of the next (px) */
@@ -50,12 +74,14 @@ const DEFAULT_CONFIG: AutoLayoutConfig = {
  * @param flow - The Agent Spec flow to layout
  * @param config - Optional layout configuration
  * @param nodeDimensions - Optional map of node name to measured {width, height}
+ * @param tagReserve - Optional room each node needs beside it for interface tags
  * @returns Map of node name to {x, y} position
  */
 export function computeAutoLayout(
   flow: AgentSpecFlow,
   config: Partial<AutoLayoutConfig> = {},
-  nodeDimensions?: Map<string, NodeDimensions>
+  nodeDimensions?: Map<string, NodeDimensions>,
+  tagReserve?: TagReserve
 ): Map<string, { x: number; y: number }> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const positions = new Map<string, { x: number; y: number }>();
@@ -125,13 +151,21 @@ export function computeAutoLayout(
   const layerXPositions = new Map<number, number>();
   let currentX = cfg.startX;
 
-  for (const layerIndex of sortedLayers) {
+  for (const [i, layerIndex] of sortedLayers.entries()) {
     layerXPositions.set(layerIndex, currentX);
 
-    // Advance X by the widest node in this layer + horizontal gap
+    // Advance X by the widest node in this layer + the gap (wider when interface tags need it)
     const nodesInLayer = layerGroups.get(layerIndex)!;
     const maxWidth = Math.max(...nodesInLayer.map((name) => getDims(name).width));
-    currentX += maxWidth + cfg.horizontalGap;
+    const next = sortedLayers[i + 1];
+    currentX +=
+      maxWidth +
+      columnGap(
+        cfg.horizontalGap,
+        nodesInLayer,
+        next === undefined ? undefined : layerGroups.get(next),
+        tagReserve
+      );
   }
 
   // Compute Y positions within each layer, using actual node heights
@@ -198,12 +232,14 @@ const DEFAULT_BEAUTIFY_CONFIG: BeautifyLayoutConfig = {
  * @param positions - Current node positions (keyed by node id)
  * @param config - Optional spacing configuration
  * @param nodeDimensions - Optional map of node id to measured {width, height}
+ * @param tagReserve - Optional room each node needs beside it for interface tags
  * @returns Map of node id to new {x, y} position
  */
 export function computeBeautifyLayout(
   positions: Map<string, NodePosition>,
   config: Partial<BeautifyLayoutConfig> = {},
-  nodeDimensions?: Map<string, NodeDimensions>
+  nodeDimensions?: Map<string, NodeDimensions>,
+  tagReserve?: TagReserve
 ): Map<string, { x: number; y: number }> {
   const cfg = { ...DEFAULT_BEAUTIFY_CONFIG, ...config };
   const result = new Map<string, { x: number; y: number }>();
@@ -257,7 +293,7 @@ export function computeBeautifyLayout(
   // Assign new positions column by column
   let currentX = entries[0].x; // Start from the leftmost original X
 
-  for (const col of columns) {
+  for (const [colIndex, col] of columns.entries()) {
     // Find the widest node in this column
     const maxWidth = Math.max(...col.map((e) => getDims(e.id).width));
 
@@ -273,7 +309,15 @@ export function computeBeautifyLayout(
       y += heights[i] + cfg.verticalGap;
     }
 
-    currentX += maxWidth + cfg.horizontalGap;
+    const nextColumn = columns[colIndex + 1];
+    currentX +=
+      maxWidth +
+      columnGap(
+        cfg.horizontalGap,
+        col.map((e) => e.id),
+        nextColumn?.map((e) => e.id),
+        tagReserve
+      );
   }
 
   return result;

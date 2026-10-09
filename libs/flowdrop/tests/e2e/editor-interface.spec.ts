@@ -187,4 +187,80 @@ test.describe('Interface editor', () => {
     await expect(cards).toHaveCount(1);
     await expect.poll(isOpen).toEqual([false]);
   });
+
+  test.describe('interface tags on the canvas', () => {
+    const tags = (page: Page) =>
+      page
+        .locator('[data-testid="interface-tag"]')
+        .evaluateAll((els) =>
+          els.map(
+            (el) =>
+              `${(el as HTMLElement).dataset.interfaceDirection}:${(el as HTMLElement).dataset.interfaceId}`
+          )
+        );
+
+    test('a port is exposed, renamed and removed from the canvas, each one undo step', async ({
+      page
+    }) => {
+      await gotoEditor(page, 'interface');
+      await expect
+        .poll(() => tags(page))
+        .toEqual(['input:amount', 'input:items', 'output:message']);
+
+      // Right-click the unpublished Result output → ghost tag prefilled with the port id.
+      await page
+        .locator(
+          '.svelte-flow__node[data-id="node-calc"] .svelte-flow__handle[data-handleid="node-calc-output-result"]'
+        )
+        .click({ button: 'right', force: true });
+      await page.getByRole('menuitem', { name: 'Expose as workflow output…' }).click();
+      const field = page.getByTestId('interface-name-input');
+      await expect(field).toBeFocused();
+      await expect(field).toHaveValue('result');
+
+      // A name already used on this side is refused, inline, and keeps the ghost open.
+      await field.fill('message');
+      await field.press('Enter');
+      await expect(page.getByRole('alert')).toContainText('already exists');
+      await expect(field).toBeVisible();
+
+      await field.fill('total');
+      await field.press('Enter');
+      await expect.poll(() => tags(page)).toContain('output:total');
+
+      // Double-click renames.
+      await page.locator('[data-interface-id="total"]').dblclick();
+      await page.getByTestId('interface-name-input').fill('sum');
+      await page.keyboard.press('Enter');
+      await expect.poll(() => tags(page)).toContain('output:sum');
+
+      // Escape cancels a rename.
+      await page.locator('[data-interface-id="sum"]').dblclick();
+      await page.getByTestId('interface-name-input').fill('nope');
+      await page.keyboard.press('Escape');
+      await expect.poll(() => tags(page)).toContain('output:sum');
+
+      // Right-click the tag → Remove from interface; undo brings it back.
+      await page.locator('[data-interface-id="sum"]').click({ button: 'right' });
+      await page.getByRole('menuitem', { name: 'Remove from interface' }).click();
+      await expect.poll(() => tags(page)).not.toContain('output:sum');
+      await page.keyboard.press('ControlOrMeta+z');
+      await expect.poll(() => tags(page)).toContain('output:sum');
+    });
+
+    test('a type mismatch reads "Array ≠ Number" and exposes the same actions in the Ports tab', async ({
+      page
+    }) => {
+      await gotoEditor(page, 'interface');
+      await expect(page.locator('[data-interface-id="items"]')).toContainText('Array ≠ Number');
+
+      await page.locator('.svelte-flow__node[data-id="node-calc"]').dblclick({ force: true });
+      await page.getByRole('tab', { name: 'Ports' }).click();
+      await page.getByTestId('port-interface-menu-outputs-result').click({ force: true });
+      await page.getByRole('menuitem', { name: 'Expose as workflow output…' }).click();
+      await page.getByTestId('interface-name-input').fill('total');
+      await page.keyboard.press('Enter');
+      await expect.poll(() => tags(page)).toContain('output:total');
+    });
+  });
 });

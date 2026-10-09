@@ -36,6 +36,7 @@ import { buildHandleId, extractPortId } from '../utils/handleIds.js';
 import { applyConnectionStyling } from '../utils/edgeStyling.js';
 import { computeSwapPreview, executeSwap } from '../utils/nodeSwap.js';
 import { computeAutoLayout, computeBeautifyLayout } from '../adapters/agentspec/autoLayout.js';
+import { interfaceTagReserve } from '../utils/interfaceTags.js';
 
 // ============================================================================
 // Internal Helpers
@@ -1546,7 +1547,9 @@ function executeAutoLayout(
   const positions = computeAutoLayout(
     flow,
     {},
-    nodeDimensions.size > 0 ? nodeDimensions : undefined
+    nodeDimensions.size > 0 ? nodeDimensions : undefined,
+    // Interface tags sit beside the ports: keep the columns far enough apart for them.
+    isVertical ? undefined : interfaceTagReserve(workflow)
   );
 
   // Apply positions — swap x/y for vertical layout
@@ -1600,7 +1603,8 @@ function executeBeautifyLayout(
   const positions = computeBeautifyLayout(
     currentPositions,
     {},
-    nodeDimensions.size > 0 ? nodeDimensions : undefined
+    nodeDimensions.size > 0 ? nodeDimensions : undefined,
+    interfaceTagReserve(workflow)
   );
 
   // Apply positions
