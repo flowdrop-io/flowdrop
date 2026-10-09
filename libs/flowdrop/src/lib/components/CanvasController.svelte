@@ -6,11 +6,28 @@
 
 <script lang="ts">
   import { useSvelteFlow } from '@xyflow/svelte';
-  import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
+  import { useNodesInitialized } from '@xyflow/svelte';
+  import { boundsWithTags, fitPadding, type FitBox } from '../utils/canvasFit.js';
   import { getEditorSettings } from '../stores/settingsStore.svelte.js';
+
+  interface Props {
+    /** Room each node's interface tags need beside it (flow px), read at fit time. */
+    tagReserve?: () => ReadonlyMap<string, { left: number; right: number }>;
+    /** How much of the canvas's right side an open sheet covers (px), read at fit time. */
+    fitInset?: () => number;
+    /** Fit once when the nodes are first measured (the `fitViewOnLoad` setting). */
+    fitOnLoad?: boolean;
+  }
+
+  let { tagReserve, fitInset, fitOnLoad = false }: Props = $props();
+
+  const nodesInitialized = useNodesInitialized();
 
   const {
     fitView,
+    fitBounds,
+    getNodes,
+    getInternalNode,
     zoomIn,
     zoomOut,
     setZoom,
@@ -20,9 +37,42 @@
     deleteElements
   } = useSvelteFlow();
 
-  export function canvasFitView(): void {
-    fitView({ padding: CANVAS_FIT_PADDING, duration: 300 });
+  /**
+   * Fit the graph and its interface tags into the part of the canvas an open
+   * sheet leaves free. Own bounds + `fitBounds`, because `fitView` knows only
+   * node boxes and would clip the tags.
+   */
+  export function canvasFitView(duration = 300): void {
+    const boxes: Array<FitBox & { id: string }> = [];
+    for (const node of getNodes()) {
+      if (node.hidden) continue;
+      const internal = getInternalNode(node.id);
+      const width = internal?.measured.width ?? node.width;
+      const height = internal?.measured.height ?? node.height;
+      if (!internal || !width || !height) continue;
+      boxes.push({
+        id: node.id,
+        x: internal.internals.positionAbsolute.x,
+        y: internal.internals.positionAbsolute.y,
+        width,
+        height
+      });
+    }
+    const bounds = boundsWithTags(boxes, tagReserve?.());
+    if (!bounds) return;
+    // xyflow types `fitBounds` padding as a number, but it parses the same
+    // padding object `fitView` takes (px, % and per-side values).
+    const padding = fitPadding(fitInset?.() ?? 0) as unknown as number;
+    void fitBounds(bounds, { padding, duration });
   }
+
+  // The initial fit, once per mount (the editor remounts this on a workflow swap).
+  let didInitialFit = false;
+  $effect(() => {
+    if (!fitOnLoad || didInitialFit || !nodesInitialized.current) return;
+    didInitialFit = true;
+    canvasFitView(0);
+  });
 
   /**
    * Bring one node into view. Keeps the current zoom unless the node would be

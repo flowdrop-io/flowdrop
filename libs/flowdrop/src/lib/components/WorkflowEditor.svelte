@@ -66,6 +66,7 @@
     type ProximityEdgeCandidate
   } from '../helpers/proximityConnect.js';
   import PortCoordinateTracker from './PortCoordinateTracker.svelte';
+  import { interfaceTagReserve } from '../utils/interfaceTags.js';
   import InterfaceTagLayer, { type InterfaceTagEdit } from './InterfaceTagLayer.svelte';
   import {
     buildPortInterfaceEntries,
@@ -165,6 +166,11 @@
     editorMode?: 'edit' | 'test';
     /** Switch the editor mode. The toolbar's Edit | Test switch is shown only when this is set. */
     onEditorModeChange?: (mode: 'edit' | 'test') => void;
+    /**
+     * How much of the canvas's right side an open sheet covers, in px, read when
+     * the view is fitted so the graph lands in the visible part. @default 0
+     */
+    fitInset?: () => number;
   }
 
   let props: Props = $props();
@@ -1439,7 +1445,6 @@
             {snapGrid}
             {initialViewport}
             colorMode={getResolvedTheme() as ColorMode}
-            fitView={getEditorSettings().fitViewOnLoad}
             fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
             nodesDraggable={canvasEditable}
             nodesConnectable={canvasEditable}
@@ -1450,7 +1455,15 @@
                    store with an empty one when a SvelteFlow is destroyed, so after
                    the {#key} remount a helper outside would act on that empty
                    store (context-menu Delete silently did nothing). -->
-            <CanvasController bind:this={canvasControllerRef} />
+            <CanvasController
+              bind:this={canvasControllerRef}
+              fitOnLoad={getEditorSettings().fitViewOnLoad}
+              fitInset={props.fitInset}
+              tagReserve={() =>
+                fd.workflow.current
+                  ? interfaceTagReserve(fd.workflow.current)
+                  : new Map<string, { left: number; right: number }>()}
+            />
             <EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
             <PortCoordinateTracker
               nodeToUpdate={portCoordNodeToUpdate}
@@ -1483,6 +1496,7 @@
               nodeCount={flowNodes.length}
               edgeCount={flowEdges.length}
               {hasCycles}
+              onfit={() => canvasControllerRef?.canvasFitView()}
             />
             <!-- Always render Background for consistent bg color in dark/light mode -->
             <Background

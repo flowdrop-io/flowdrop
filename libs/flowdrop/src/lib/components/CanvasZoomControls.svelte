@@ -20,9 +20,18 @@
     edgeCount: number;
     /** Whether the graph contains a cycle. */
     hasCycles?: boolean;
+    /** Fit the view. Replaces xyflow's own fit, which would clip interface tags and ignore an open sheet. */
+    onfit?: () => void;
   }
 
-  let { nodeCount, edgeCount, hasCycles = false }: Props = $props();
+  let { nodeCount, edgeCount, hasCycles = false, onfit }: Props = $props();
+
+  // Capture phase: take the fit button's click before xyflow's own handler runs.
+  function takeFitClick(event: MouseEvent): void {
+    if (!onfit || !(event.target as Element).closest?.('.svelte-flow__controls-fitview')) return;
+    event.stopPropagation();
+    onfit();
+  }
 
   const getMsgs = getMessages();
   const msg = $derived(getMsgs().canvasStatus);
@@ -31,7 +40,11 @@
   const summary = $derived(msg.summary({ nodes: nodeCount, edges: edgeCount }));
 </script>
 
-<Controls orientation="horizontal" fitViewOptions={{ padding: CANVAS_FIT_PADDING }}>
+<Controls
+  orientation="horizontal"
+  fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
+  onclickcapture={takeFitClick}
+>
   {#snippet after()}
     <div class="fd-zoom-status">
       <!-- Shown by themes that set --fd-zoom-percent-display; outside the live region so zooming is not announced -->
