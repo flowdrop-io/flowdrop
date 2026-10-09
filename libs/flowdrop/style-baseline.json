@@ -122,7 +122,6 @@
     "radius": 4
   },
   "src/lib/components/chat/ActivityRow.svelte": {
-    "font-size": 1,
     "radius": 1
   },
   "src/lib/components/form/FieldFactory.svelte": {

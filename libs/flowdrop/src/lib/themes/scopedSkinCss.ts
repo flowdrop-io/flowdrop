@@ -74,7 +74,6 @@ const DOCUMENT_MESSAGE_TOKENS: FlowDropSkinTokens = {
   'msg-footer-pad-top': '0',
   'msg-link-color': 'var(--fd-muted-foreground)',
   'msg-link-decoration': 'none',
-  'msg-typing-bg': 'transparent',
   'msg-typing-pad': 'var(--fd-space-xs) 0',
   'interrupt-card-pad': 'var(--fd-space-md)',
   'interrupt-card-radius': 'var(--fd-radius-surface)',

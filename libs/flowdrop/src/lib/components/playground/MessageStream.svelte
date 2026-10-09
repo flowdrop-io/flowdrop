@@ -19,6 +19,7 @@
     type PlaygroundMessage
   } from '../../types/playground.js';
   import StepsSummary from './StepsSummary.svelte';
+  import ActivityRow from '../chat/ActivityRow.svelte';
   import { summarizeSteps, type PendingStep } from './stepSummary.js';
   import { placeVersionDividers } from '../../utils/sessionRuns.js';
   import {
@@ -398,12 +399,7 @@
 
     {#if fd.playground.isExecuting}
       <div class="message-stream__typing">
-        <div class="message-stream__typing-indicator">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <span class="message-stream__typing-text">{states.processing}</span>
+        <ActivityRow status="running" label={states.processing} />
       </div>
     {/if}
   {/if}
@@ -504,56 +500,10 @@
     }
   }
 
+  /* "Processing…" is the same breathing dot + shimmering label as the Assistant's activity rows. */
   .message-stream__typing {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
     padding: var(--fd-msg-typing-pad, var(--fd-space-md) var(--fd-space-xl));
     margin-top: var(--fd-space-xs);
-    background-color: var(--fd-msg-typing-bg, var(--fd-muted));
-    border-radius: var(--fd-radius-2xl);
-    width: fit-content;
-  }
-
-  .message-stream__typing-indicator {
-    display: flex;
-    gap: var(--fd-space-3xs);
-  }
-
-  .message-stream__typing-indicator span {
-    width: var(--fd-space-2xs);
-    height: var(--fd-space-2xs);
-    background-color: var(--fd-muted-foreground);
-    border-radius: var(--fd-radius-full);
-    animation: message-stream-bounce 1.4s ease-in-out infinite;
-  }
-
-  .message-stream__typing-indicator span:nth-child(1) {
-    animation-delay: 0s;
-  }
-
-  .message-stream__typing-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-
-  .message-stream__typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-
-  @keyframes message-stream-bounce {
-    0%,
-    60%,
-    100% {
-      transform: translateY(0);
-    }
-    30% {
-      transform: translateY(-0.25rem);
-    }
-  }
-
-  .message-stream__typing-text {
-    font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
   }
 
   @media (max-width: 640px) {

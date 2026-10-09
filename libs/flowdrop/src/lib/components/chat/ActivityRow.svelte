@@ -66,10 +66,9 @@
   .activity-row__slot {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     align-self: start;
     height: 1.5em;
-    font-size: 0.9em;
   }
 
   .activity-row__slot :global(.activity-row__ok) {
@@ -112,6 +111,8 @@
 
   /* Running: a breathing dot where the check will land, and a label with light passing through it. */
   .activity-row__dot {
+    /* Centred on where the check's glyph sits, so the dot and the ✓ swap in place. */
+    margin-inline: calc((1em - var(--fd-activity-dot-size, 0.4375rem)) / 2);
     width: var(--fd-activity-dot-size, 0.4375rem);
     height: var(--fd-activity-dot-size, 0.4375rem);
     border-radius: 50%;

@@ -1208,6 +1208,11 @@
     padding: var(--fd-space-3xs) 0;
   }
 
+  /* One step of room between the activity and the reply under it. */
+  .ai-chat-panel__activity + .ai-chat-panel__bubble-content {
+    margin-top: var(--fd-space-xs);
+  }
+
   .ai-chat-panel__retry-notice {
     padding: var(--fd-space-3xs) 0;
     animation: fadeIn 0.15s ease-out;
