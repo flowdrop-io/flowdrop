@@ -23,7 +23,9 @@
   import Select from '../primitives/Select.svelte';
   import Switch from '../primitives/Switch.svelte';
   import Textarea from '../Textarea.svelte';
-  import IconButton from '../IconButton.svelte';
+  import IconButton from '../primitives/IconButton.svelte';
+  import Button from '../primitives/Button.svelte';
+  import { humanizeKey } from './humanizeKey.js';
   import type { FieldSchema } from './types.js';
   import { m } from '$lib/messages/index.js';
 
@@ -69,6 +71,17 @@
    * Ensure value is always an array
    */
   const items = $derived(Array.isArray(value) ? value : []);
+
+  /** "2 items · Min: 1 · Max: 5" on one muted line */
+  const infoText = $derived(
+    [
+      t.count({ n: items.length }),
+      minItems > 0 ? t.min({ n: minItems }) : '',
+      maxItems !== undefined ? t.max({ n: maxItems }) : ''
+    ]
+      .filter(Boolean)
+      .join(' · ')
+  );
 
   /**
    * Check if we can add more items
@@ -254,6 +267,39 @@
   }
 </script>
 
+{#snippet actions(index: number)}
+  <div class="form-array__actions">
+    <IconButton
+      size="sm"
+      onclick={() => moveItemUp(index)}
+      disabled={index === 0 || disabled}
+      ariaLabel={t.moveItemUp({ n: index + 1 })}
+      title={t.moveUp}
+    >
+      <Icon icon="heroicons:arrow-up" />
+    </IconButton>
+    <IconButton
+      size="sm"
+      onclick={() => moveItemDown(index)}
+      disabled={index === items.length - 1 || disabled}
+      ariaLabel={t.moveItemDown({ n: index + 1 })}
+      title={t.moveDown}
+    >
+      <Icon icon="heroicons:arrow-down" />
+    </IconButton>
+    <IconButton
+      size="sm"
+      class="form-array__delete"
+      onclick={() => removeItem(index)}
+      disabled={!canRemoveItem || disabled}
+      ariaLabel={t.deleteItem({ n: index + 1 })}
+      title={t.delete}
+    >
+      <Icon icon="heroicons:trash" />
+    </IconButton>
+  </div>
+{/snippet}
+
 <div class="form-array" class:form-array--disabled={disabled}>
   <!-- Array Items -->
   {#if items.length > 0}
@@ -263,12 +309,10 @@
           class="form-array__item"
           class:form-array__item--simple={isSimpleType}
           class:form-array__item--complex={!isSimpleType}
-          style="animation-delay: {index * 50}ms"
         >
-          <!-- Item Header -->
-          <div class="form-array__item-header">
-            <!-- Item index/label -->
-            {#if !isSimpleType}
+          {#if !isSimpleType}
+            <!-- Item header: chevron + label, actions on hover/focus -->
+            <div class="form-array__item-header">
               <button
                 type="button"
                 class="form-array__item-toggle"
@@ -282,46 +326,9 @@
                 />
                 <span class="form-array__item-label">{getItemLabel(index, item)}</span>
               </button>
-            {:else}
-              <span class="form-array__item-number">#{index + 1}</span>
-            {/if}
-
-            <!-- Action buttons group -->
-            <div class="form-array__actions">
-              <!-- Move Up button -->
-              <IconButton
-                variant="primary"
-                onclick={() => moveItemUp(index)}
-                disabled={index === 0 || disabled}
-                ariaLabel={t.moveItemUp({ n: index + 1 })}
-                title={t.moveUp}
-              >
-                <Icon icon="heroicons:arrow-up" />
-              </IconButton>
-
-              <!-- Move Down button -->
-              <IconButton
-                variant="primary"
-                onclick={() => moveItemDown(index)}
-                disabled={index === items.length - 1 || disabled}
-                ariaLabel={t.moveItemDown({ n: index + 1 })}
-                title={t.moveDown}
-              >
-                <Icon icon="heroicons:arrow-down" />
-              </IconButton>
-
-              <!-- Delete button -->
-              <IconButton
-                variant="danger"
-                onclick={() => removeItem(index)}
-                disabled={!canRemoveItem || disabled}
-                ariaLabel={t.deleteItem({ n: index + 1 })}
-                title={t.delete}
-              >
-                <Icon icon="heroicons:trash" />
-              </IconButton>
+              {@render actions(index)}
             </div>
-          </div>
+          {/if}
 
           <!-- Item Content -->
           <div
@@ -405,7 +412,7 @@
                     >
                       <label class="form-array__subform-label" for="{id}-{index}-{propKey}">
                         <span class="form-array__subform-label-text">
-                          {propFieldSchema.title ?? propKey}
+                          {propFieldSchema.title ?? humanizeKey(propKey)}
                         </span>
                         {#if isRequired}
                           <span class="form-array__required">*</span>
@@ -499,52 +506,47 @@
               </div>
             {/if}
           </div>
+          {#if isSimpleType}
+            {@render actions(index)}
+          {/if}
         </div>
       {/each}
     </div>
   {:else}
-    <!-- Empty State -->
-    <div class="form-array__empty">
-      <Icon icon="heroicons:squares-plus" class="form-array__empty-icon" />
-      <p class="form-array__empty-text">{t.empty}</p>
-    </div>
+    <!-- Empty State: one quiet line -->
+    <p class="form-array__empty">{t.empty}</p>
   {/if}
 
-  <!-- Add Button -->
-  <button
-    type="button"
-    class="form-array__add-btn"
-    onclick={addItem}
-    disabled={!canAddItem || disabled}
-    aria-label={resolvedAddLabel}
-  >
-    <Icon icon="heroicons:plus" />
-    <span>{resolvedAddLabel}</span>
-  </button>
+  <!-- Add: a quiet text button -->
+  <div class="form-array__footer">
+    <Button
+      variant="ghost"
+      size="sm"
+      class="form-array__add"
+      onclick={addItem}
+      disabled={!canAddItem || disabled}
+      ariaLabel={resolvedAddLabel}
+    >
+      {#snippet leadingIcon()}<Icon icon="heroicons:plus" />{/snippet}
+      {resolvedAddLabel}
+    </Button>
 
-  <!-- Item count and limits -->
-  {#if minItems > 0 || maxItems !== undefined}
-    <div class="form-array__info">
-      <span class="form-array__count">{t.count({ n: items.length })}</span>
-      {#if minItems > 0}
-        <span class="form-array__limit">{t.min({ n: minItems })}</span>
-      {/if}
-      {#if maxItems !== undefined}
-        <span class="form-array__limit">{t.max({ n: maxItems })}</span>
-      {/if}
-    </div>
-  {/if}
+    <!-- Item count and limits, one muted line -->
+    {#if minItems > 0 || maxItems !== undefined}
+      <span class="form-array__info">{infoText}</span>
+    {/if}
+  </div>
 </div>
 
 <style>
-  /* ============================================
-	   FORM ARRAY CONTAINER
-	   ============================================ */
+  /* A quiet list: items are separated by space and a hairline, never boxed.
+     Item actions are ghost icon buttons shown on hover / focus-within (and
+     always on touch). */
 
   .form-array {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--fd-space-xs);
   }
 
   .form-array--disabled {
@@ -552,135 +554,118 @@
     pointer-events: none;
   }
 
-  /* ============================================
-	   ITEMS CONTAINER
-	   ============================================ */
-
   .form-array__items {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
   }
-
-  /* ============================================
-	   INDIVIDUAL ITEM
-	   ============================================ */
 
   .form-array__item {
     display: flex;
     flex-direction: column;
-    background-color: var(--fd-muted);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-control-radius);
-    overflow: hidden;
-    animation: itemFadeIn 0.25s ease-out forwards;
-    opacity: 0;
-    transform: translateY(-8px);
+    padding: var(--fd-space-xs) 0;
+    border-top: 1px solid var(--fd-border);
+    animation: itemFadeIn 0.2s ease-out both;
+  }
+
+  .form-array__item:first-child {
+    border-top: 0;
+    padding-top: 0;
   }
 
   @keyframes itemFadeIn {
-    to {
-      opacity: 1;
-      transform: translateY(0);
+    from {
+      opacity: 0;
     }
   }
 
+  .form-array__item--simple {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--fd-space-xs);
+  }
+
   .form-array__item--simple .form-array__item-content {
-    padding: 0.5rem 0.75rem 0.75rem;
+    flex: 1;
+    min-width: 0;
   }
 
-  .form-array__item--complex .form-array__item-content {
-    padding: 0;
-  }
-
-  /* ============================================
-	   ITEM HEADER
-	   ============================================ */
+  /* ----- header (complex items): chevron + label, no band ----- */
 
   .form-array__item-header {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
-    padding: 0.625rem 0.75rem;
-    background-color: var(--fd-subtle);
-    border-bottom: 1px solid var(--fd-border);
-  }
-
-  .form-array__item--simple .form-array__item-header {
-    padding: 0.5rem 0.625rem;
-  }
-
-  /* ============================================
-	   ITEM NUMBER/LABEL
-	   ============================================ */
-
-  .form-array__item-number {
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    color: var(--fd-muted-foreground);
-    min-width: 1.75rem;
-    padding: 0.125rem 0.375rem;
-    background-color: var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    text-align: center;
+    gap: var(--fd-space-xs);
   }
 
   .form-array__item-toggle {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--fd-space-xs);
     flex: 1;
-    padding: 0.375rem 0.5rem;
-    margin: -0.25rem;
-    border: 1px solid transparent;
+    min-width: 0;
+    padding: var(--fd-space-3xs) 0;
+    border: 0;
     background: transparent;
+    color: inherit;
+    font: inherit;
     cursor: pointer;
     text-align: left;
-    border-radius: var(--fd-radius-md);
-    transition: all var(--fd-transition-fast);
-  }
-
-  .form-array__item-toggle:hover {
-    background-color: var(--fd-border);
-  }
-
-  .form-array__item-toggle:focus-visible {
-    border-color: var(--fd-primary);
+    border-radius: var(--fd-control-radius);
   }
 
   .form-array__item-toggle :global(svg) {
-    width: 1.125rem;
-    height: 1.125rem;
+    flex: none;
+    width: 1rem;
+    height: 1rem;
     color: var(--fd-muted-foreground);
-    transition: transform var(--fd-transition-normal);
   }
 
   .form-array__item-label {
-    font-size: 0.8125rem;
-    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--fd-text-body);
+    font-weight: 500;
     color: var(--fd-foreground);
   }
 
-  /* ============================================
-	   ACTION BUTTONS GROUP
-	   ============================================ */
+  /* ----- actions: hover / focus-within, always on touch ----- */
 
   .form-array__actions {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0;
     margin-left: auto;
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
   }
 
-  /* Action buttons (move/delete) now render through IconButton.svelte —
-     geometry + semantic tints live in base.css (.flowdrop-btn--icon*). */
+  .form-array__item:hover .form-array__actions,
+  .form-array__item:focus-within .form-array__actions {
+    opacity: 1;
+  }
 
-  /* ============================================
-	   ITEM CONTENT
-	   ============================================ */
+  @media (hover: none) {
+    .form-array__actions {
+      opacity: 1;
+    }
+  }
+
+  /* Delete is a plain ghost button until it is hovered or focused. */
+  .form-array__actions :global(.form-array__delete:hover:not(:disabled)),
+  .form-array__actions :global(.form-array__delete:focus-visible) {
+    background-color: var(--fd-error-muted);
+    color: var(--fd-error);
+  }
 
   .form-array__item-content {
     transition: all 0.2s ease-out;
+  }
+
+  .form-array__item--complex .form-array__item-content {
+    /* Indent under the label, past the chevron. */
+    padding: var(--fd-space-xs) 0 var(--fd-space-xs) var(--fd-space-xl);
   }
 
   .form-array__item-content--collapsed {
@@ -689,42 +674,26 @@
     padding: 0 !important;
   }
 
-  /* ============================================
-	   INPUTS (Simple Types)
-	   ============================================ */
-
-  /* ============================================
-	   SUBFORM (Complex Types)
-	   ============================================ */
+  /* ----- sub-form (object items) ----- */
 
   .form-array__subform {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background-color: var(--fd-background);
+    gap: var(--fd-space-md);
   }
 
   .form-array__subform-field {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
-    animation: subfieldFadeIn 0.2s ease-out forwards;
-    opacity: 0;
-  }
-
-  @keyframes subfieldFadeIn {
-    to {
-      opacity: 1;
-    }
+    gap: var(--fd-space-3xs);
   }
 
   .form-array__subform-label {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
+    gap: var(--fd-space-3xs);
+    font-size: var(--fd-text-meta);
+    font-weight: 500;
     color: var(--fd-muted-foreground);
   }
 
@@ -739,112 +708,36 @@
 
   .form-array__subform-description {
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
     line-height: 1.4;
   }
 
-  /* ============================================
-	   EMPTY STATE
-	   ============================================ */
+  /* ----- empty, add, info ----- */
 
   .form-array__empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-    background-color: var(--fd-muted);
-    border: 2px dashed var(--fd-border-strong);
-    border-radius: var(--fd-control-radius);
-  }
-
-  .form-array__empty :global(svg) {
-    width: 2.5rem;
-    height: 2.5rem;
-    color: var(--fd-muted-foreground);
-    margin-bottom: 0.625rem;
-  }
-
-  .form-array__empty-text {
     margin: 0;
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
+    font-size: var(--fd-text-body);
     color: var(--fd-muted-foreground);
   }
 
-  /* ============================================
-	   ADD BUTTON
-	   ============================================ */
-
-  .form-array__add-btn {
-    display: inline-flex;
+  .form-array__footer {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1rem;
-    border: 1px solid var(--fd-success);
-    border-radius: var(--fd-control-radius);
-    background-color: var(--fd-success-muted);
-    color: var(--fd-success-hover);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
+    gap: var(--fd-space-md);
+    /* Optical alignment: the ghost button's padding sits outside the text edge. */
+    margin-left: calc(-1 * var(--fd-space-xs));
   }
-
-  .form-array__add-btn:hover:not(:disabled) {
-    background-color: var(--fd-success-muted);
-    border-color: var(--fd-success-hover);
-    color: var(--fd-success-hover);
-  }
-
-  .form-array__add-btn:active:not(:disabled) {
-    background-color: var(--fd-success);
-  }
-
-  .form-array__add-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .form-array__add-btn :global(svg) {
-    width: 1.125rem;
-    height: 1.125rem;
-  }
-
-  /* ============================================
-	   INFO BAR
-	   ============================================ */
 
   .form-array__info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
   }
 
-  .form-array__count {
-    font-weight: 500;
-  }
-
-  .form-array__limit {
-    padding: 0.125rem 0.375rem;
-    background-color: var(--fd-subtle);
-    border-radius: var(--fd-radius-sm);
-  }
-
-  /* ============================================
-	   UNSUPPORTED TYPE
-	   ============================================ */
-
   .form-array__unsupported {
-    padding: 0.75rem;
+    padding: var(--fd-space-md);
     background-color: var(--fd-warning-muted);
-    border: 1px solid var(--fd-warning);
-    border-radius: var(--fd-radius-md);
+    border-radius: var(--fd-control-radius);
     color: var(--fd-warning-hover);
     font-size: var(--fd-text-xs);
   }

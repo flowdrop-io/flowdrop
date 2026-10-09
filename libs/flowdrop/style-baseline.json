@@ -128,8 +128,7 @@
     "font-size": 2
   },
   "src/lib/components/form/FormArray.svelte": {
-    "button": 2,
-    "font-size": 4
+    "button": 1
   },
   "src/lib/components/form/FormAutocomplete.svelte": {
     "button": 3,
