@@ -117,7 +117,12 @@ export function problemsOf(draft: Draft): Problem[] {
   return problems;
 }
 
-function operationsFor(draft: Draft, problem: Problem, remedy: string, params: any): unknown[] {
+function operationsFor(
+  draft: Draft,
+  problem: Problem,
+  remedy: string,
+  params: { node_type_id?: string } | undefined
+): unknown[] {
   switch (remedy) {
     case 'remove_config_key':
       return [{ op: 'updateNodeConfig', nodeId: problem.node, patch: {}, unset: ['legacy_flag'] }];
