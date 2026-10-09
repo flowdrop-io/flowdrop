@@ -37,6 +37,7 @@
   } from '../utils/runsList.js';
   import { on } from 'svelte/events';
   import Button from './primitives/Button.svelte';
+  import IconButton from './primitives/IconButton.svelte';
   import EmptyState from './primitives/EmptyState.svelte';
 
   interface Props {
@@ -63,6 +64,13 @@
   const currentRunId = $derived(fd.runs.activeRun?.runId ?? null);
 
   let open = $state(false);
+  /** What the trigger says of the run opened from the list. */
+  let shown = $state<{ id: string; createdAt: string | null } | null>(null);
+  const shownRun = $derived(
+    shown && fd.runs.openedRunId === shown.id
+      ? { ...shown, status: fd.runs.activeRun?.status }
+      : null
+  );
   let runs = $state<RunSummary[]>([]);
   let loading = $state(false);
   let loadingMore = $state(false);
@@ -190,6 +198,7 @@
 
   function openRun(run: RunSummary): void {
     fd.runs.openRun(run.id, run.status);
+    shown = { id: run.id, createdAt: run.createdAt };
     close();
   }
 
@@ -203,7 +212,10 @@
       actionError = result.message || msgs.actionFailed;
       return;
     }
-    if (result.pipelineId) fd.runs.openRun(result.pipelineId, result.status ?? 'running');
+    if (result.pipelineId) {
+      fd.runs.openRun(result.pipelineId, result.status ?? 'running');
+      shown = { id: result.pipelineId, createdAt: new Date().toISOString() };
+    }
     close();
   }
 
@@ -219,11 +231,17 @@
     await tick();
   }
 
+  function clearShown(): void {
+    shown = null;
+    fd.runs.dismissRun();
+    rootEl?.querySelector<HTMLElement>('.fd-runs__trigger')?.focus();
+  }
+
   function statusLabel(status: string): string {
     return (msgs.status as Record<string, string>)[status] ?? status;
   }
 
-  function timeOf(run: RunSummary): string {
+  function timeOf(run: { createdAt: string | null }): string {
     return formatRunTime(run.createdAt, new Date(), {
       today: msgs.today,
       yesterday: msgs.yesterday
@@ -242,13 +260,35 @@
       class="fd-runs__trigger {open ? 'fd-runs__trigger--open' : ''}"
       aria-expanded={open}
       aria-controls={open ? listId : undefined}
-      title={msgs.triggerTitle}
+      title={shownRun ? msgs.shownTitle : msgs.triggerTitle}
       data-testid="runs-trigger"
       onclick={() => (open ? close(false) : show())}
     >
-      <span>{msgs.trigger}</span>
+      {#if shownRun}
+        <span class="fd-runs__trigger-text" data-testid="runs-shown">
+          {msgs.shown({
+            status: shownRun.status ? getMsgs().runBar[shownRun.status] : '',
+            time: timeOf({ createdAt: shownRun.createdAt })
+          })}
+        </span>
+      {:else}
+        <span>{msgs.trigger}</span>
+      {/if}
       <Icon icon="mdi:chevron-down" aria-hidden="true" />
     </Button>
+    {#if shownRun}
+      <IconButton
+        variant="ghost"
+        size="sm"
+        class="fd-runs__clear"
+        ariaLabel={msgs.clearShown}
+        title={msgs.clearShown}
+        data-testid="runs-clear"
+        onclick={clearShown}
+      >
+        <Icon icon="mdi:close" aria-hidden="true" />
+      </IconButton>
+    {/if}
 
     {#if open}
       <div
@@ -387,6 +427,15 @@
   .fd-runs {
     position: relative;
     display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-3xs);
+  }
+
+  .fd-runs__trigger-text {
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* A floating control of its own, like the Edit | Test switch beside it. */

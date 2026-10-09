@@ -88,6 +88,28 @@ test.describe('Runs list', () => {
     );
   });
 
+  test('the trigger names the shown run, and clearing it goes back', async ({ page }) => {
+    await stubRuns(page);
+    await gotoEditor(page);
+    await testButton(page).click();
+    await expect(trigger(page)).toHaveText('Runs');
+    await expect(page.getByTestId('runs-clear')).toHaveCount(0);
+
+    await trigger(page).click();
+    await row(page, 103).click();
+    await expect(page.getByTestId('runs-shown')).toContainText('Run · Failed');
+    await expect(node(page, 'node-output').locator('.node-status-overlay')).toHaveAttribute(
+      'data-status',
+      'failed',
+      { timeout: 10000 }
+    );
+
+    await page.getByRole('button', { name: 'Stop showing this run' }).click();
+    await expect(trigger(page)).toHaveText('Runs');
+    await expect(page.getByTestId('runs-clear')).toHaveCount(0);
+    await expect(node(page, 'node-output').locator('.node-status-overlay')).toHaveCount(0);
+  });
+
   test('pages with Load more', async ({ page }) => {
     const many: StubRun[] = Array.from({ length: 25 }, (_, i) => ({
       id: 200 - i,

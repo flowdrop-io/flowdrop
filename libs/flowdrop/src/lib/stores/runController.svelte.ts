@@ -221,6 +221,7 @@ export class RunController {
   #unsubscribeSessionStatus: (() => void) | null = null;
   #hostStatusHook: HostHooks['onRunStatus'] | undefined;
   #hostPoll: ReturnType<typeof setTimeout> | null = null;
+  #openedId = $state<string | null>(null);
 
   /**
    * Milliseconds between status reads of a host run (`onRunStatus`). A public
@@ -1246,6 +1247,7 @@ export class RunController {
    * fades; the statuses go with it so the Edit canvas is back to normal.
    */
   dismissRun(): void {
+    this.#openedId = null;
     this.#clearHostPoll();
     this.#tracked = null;
     this.#endedAt = null;
@@ -1290,6 +1292,7 @@ export class RunController {
    * `onRunStatus` when it gave one).
    */
   openRun(runId: string, status?: string): void {
+    this.#openedId = runId;
     const hostStatus = hostRunStatus(status);
     this.#clearHostPoll();
     this.#tracked = {
@@ -1303,6 +1306,17 @@ export class RunController {
     const terminal = TERMINAL_RUN_STATUSES.includes(hostStatus);
     this.#endedAt = terminal ? Date.now() : null;
     if (!terminal) this.#scheduleHostPoll(runId, this.hostPollInterval);
+  }
+
+  /**
+   * The run opened from the Runs list and still shown, or `null` (nothing
+   * opened, or a live run has taken its place). Reactive.
+   */
+  get openedRunId(): string | null {
+    const tracked = this.#tracked;
+    return this.#openedId !== null && tracked?.origin === 'host' && tracked.runId === this.#openedId
+      ? this.#openedId
+      : null;
   }
 
   /** Stop the timers and subscriptions this controller started. */

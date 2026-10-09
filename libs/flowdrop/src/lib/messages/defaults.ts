@@ -345,6 +345,11 @@ export const defaultMessages = {
   runsList: {
     trigger: 'Runs',
     triggerTitle: 'Past runs of this workflow',
+    // The trigger while a past run is shown: "Run · Failed · Yesterday 15:54".
+    shown: ({ status, time }: { status: string; time: string }) =>
+      `Run · ${status}${time ? ` · ${time}` : ''}`,
+    shownTitle: 'Run shown on the canvas',
+    clearShown: 'Stop showing this run',
     title: 'Runs',
     listLabel: 'Runs of this workflow',
     loading: 'Loading runs…',
