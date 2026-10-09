@@ -648,9 +648,12 @@
   }
 
   /* The id: mono, typed into in place. Looks like text until you reach for it. */
+  /* Sized to the id (capped), so a short id leaves its room to the bound port. */
   .wf-interface__id {
-    flex: 0 1 7.5rem;
-    min-width: 0;
+    flex: 0 1 auto;
+    field-sizing: content;
+    min-width: 4ch;
+    max-width: 7.5rem;
     box-sizing: border-box;
     height: var(--fd-control-md);
     padding: 0 var(--fd-space-xs);
