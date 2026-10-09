@@ -162,25 +162,20 @@
 
 <style>
   /*
-    A draft object, visibly not yet one of the cards below it: a dashed
-    primary edge on a faintly primary-tinted surface, its own small header
-    with a step counter, and its own close. Everything else — inputs,
-    buttons, badges — is the shared control system.
+    A draft where the new row will land: flat, with no border, fill or shadow.
+    A small heading says what is being added; the two choices are plain rows
+    that take a tint on hover, like menu items.
   */
   .wf-composer {
     display: flex;
     flex-direction: column;
     gap: var(--fd-space-sm);
-    padding: var(--fd-space-sm);
-    border: 1px dashed color-mix(in srgb, var(--fd-primary) 55%, var(--fd-border));
-    border-radius: var(--fd-radius-lg);
-    background-color: color-mix(in srgb, var(--fd-primary) 4%, var(--fd-card));
-    box-shadow: var(--fd-shadow-sm);
+    padding: var(--fd-space-xs) 0;
   }
 
   .wf-composer__header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: var(--fd-space-sm);
   }
@@ -188,42 +183,29 @@
   .wf-composer__heading {
     display: flex;
     align-items: center;
-    gap: var(--fd-space-xs);
     min-width: 0;
   }
 
   .wf-composer__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: var(--fd-radius-md);
-    background-color: var(--fd-primary-muted);
-    color: var(--fd-primary);
-    font-size: 0.9375rem;
-    flex-shrink: 0;
+    display: none;
   }
 
   .wf-composer__heading-text {
     display: flex;
-    flex-direction: column;
+    align-items: baseline;
+    gap: var(--fd-space-xs);
     min-width: 0;
   }
 
   .wf-composer__title {
     font-size: var(--fd-text-sm);
     font-weight: 600;
-    line-height: 1.3;
     color: var(--fd-foreground);
   }
 
   .wf-composer__step {
-    font-size: var(--fd-text-2xs);
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--fd-primary);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
   }
 
   .wf-composer :global(.wf-composer__close) {
@@ -232,16 +214,14 @@
 
   .wf-composer__question {
     margin: 0;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--fd-foreground);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
   }
 
   .wf-composer__choices {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-3xs);
   }
 
   .wf-composer__choice {
@@ -250,61 +230,37 @@
     gap: var(--fd-space-sm);
     width: 100%;
     padding: var(--fd-space-xs) var(--fd-space-sm);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background-color: var(--fd-card);
+    border: none;
+    border-radius: var(--fd-control-radius);
+    background-color: transparent;
     color: var(--fd-foreground);
     text-align: left;
     cursor: pointer;
-    transition:
-      border-color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast),
-      box-shadow var(--fd-transition-fast);
+    transition: background-color var(--fd-transition-fast);
   }
 
-  .wf-composer__choice:hover {
-    border-color: var(--fd-primary);
-    background-color: var(--fd-primary-muted);
-  }
-
+  .wf-composer__choice:hover,
   .wf-composer__choice:focus-visible {
-    outline: none;
-    border-color: var(--fd-primary);
-    box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
+    background-color: var(--fd-muted);
   }
 
   .wf-composer__choice-icon {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: var(--fd-radius-full);
-    background-color: var(--fd-muted);
-    color: var(--fd-muted-foreground);
-    font-size: 0.9375rem;
     flex-shrink: 0;
-    transition:
-      background-color var(--fd-transition-fast),
-      color var(--fd-transition-fast);
-  }
-
-  .wf-composer__choice:hover .wf-composer__choice-icon {
-    background-color: var(--fd-card);
-    color: var(--fd-primary);
+    color: var(--fd-muted-foreground);
   }
 
   .wf-composer__choice-text {
     display: flex;
     flex-direction: column;
-    gap: 0.0625rem;
+    gap: 1px;
     flex: 1;
     min-width: 0;
   }
 
   .wf-composer__choice-title {
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-size: var(--fd-text-sm);
+    font-weight: 500;
     line-height: 1.35;
   }
 

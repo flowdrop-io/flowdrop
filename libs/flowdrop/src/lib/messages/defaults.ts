@@ -826,6 +826,11 @@ export const defaultMessages = {
     pullFromPortTitle:
       "Fill name, data type, description, required and default from the bound port's own declaration",
     removeEntry: ({ id }: { id: string }) => `Remove interface entry "${id}"`,
+    // The row's overflow menu: its accessible name and the short item labels.
+    entryActions: ({ id }: { id: string }) => `Actions for "${id}"`,
+    menuMoveUp: 'Move up',
+    menuMoveDown: 'Move down',
+    menuRemove: 'Remove',
     moveUp: ({ id }: { id: string }) => `Move "${id}" up`,
     moveDown: ({ id }: { id: string }) => `Move "${id}" down`,
     metaDisclosure: 'Server metadata (read-only)',

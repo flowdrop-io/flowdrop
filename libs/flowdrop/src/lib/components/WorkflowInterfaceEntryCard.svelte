@@ -25,6 +25,7 @@
   import Input from '$lib/components/Input.svelte';
   import Select from '$lib/components/primitives/Select.svelte';
   import Checkbox from '$lib/components/primitives/Checkbox.svelte';
+  import Menu, { type MenuEntry } from '$lib/components/primitives/Menu.svelte';
   import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
   import PortShapeSymbol from '$lib/components/ports/PortShapeSymbol.svelte';
   import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
@@ -108,8 +109,9 @@
   }: Props = $props();
 
   /**
-   * Whether the secondary fields are disclosed: seeded once from whether the
-   * entry wants attention, then the author's. Deriving it from `status` would
+   * Whether the secondary fields are shown under the row: seeded once from
+   * whether the entry wants attention, then the author's (the row's "More
+   * options" menu item). Deriving it from `status` would
    * shut the fields on every edit and drop the focused input's keystrokes.
    */
   // The seed is meant to be read once.
@@ -177,6 +179,42 @@
     // '' for none, or the stored value itself (a no-op patch).
     onPatch(turnPatch(entry, value));
   }
+
+  /**
+   * The row's overflow menu: reorder, the secondary fields, remove. Reorder and
+   * remove are never on screen at rest; the menu is the one way in, and it is a
+   * real menu (arrow keys, type-ahead, Escape), so the keyboard reaches all of it.
+   */
+  const rowMenu = $derived<MenuEntry[]>([
+    {
+      label: m().workflowInterface.menuMoveUp,
+      icon: 'heroicons:chevron-up',
+      disabled: isFirst,
+      testId: 'wf-entry-move-up',
+      onselect: () => onMove(-1)
+    },
+    {
+      label: m().workflowInterface.menuMoveDown,
+      icon: 'heroicons:chevron-down',
+      disabled: isLast,
+      testId: 'wf-entry-move-down',
+      onselect: () => onMove(1)
+    },
+    { type: 'separator' },
+    {
+      label: m().workflowInterface.moreOptions,
+      checked: fieldsOpen,
+      testId: 'wf-entry-more-options',
+      onselect: () => (fieldsOpen = !fieldsOpen)
+    },
+    { type: 'separator' },
+    {
+      label: m().workflowInterface.menuRemove,
+      icon: 'heroicons:trash',
+      testId: 'wf-entry-remove',
+      onselect: onRemove
+    }
+  ]);
 
   /** Whether the binding picker is unfolded under the "Bound port" control. */
   let pickerOpen = $state(false);
@@ -259,145 +297,116 @@
     status.status !== 'ok' &&
     status.status !== 'unbound'}
 >
-  <div class="wf-interface__entry-side">
-    <div class="wf-interface__reorder">
-      <button
-        type="button"
-        disabled={isFirst}
-        onclick={() => onMove(-1)}
-        aria-label={m().workflowInterface.moveUp({ id: entry.id })}
-      >
-        <Icon icon="heroicons:chevron-up" />
-      </button>
-      <button
-        type="button"
-        disabled={isLast}
-        onclick={() => onMove(1)}
-        aria-label={m().workflowInterface.moveDown({ id: entry.id })}
-      >
-        <Icon icon="heroicons:chevron-down" />
-      </button>
-    </div>
-  </div>
-
-  <div class="wf-interface__fields">
-    <div class="wf-interface__row wf-interface__row--identity">
-      <label class="wf-interface__field wf-interface__field--id">
-        <span class="wf-interface__label">{m().workflowInterface.idLabel}</span>
-        <Input
-          size="sm"
-          type="text"
-          value={entry.id}
-          onchange={(e) => {
-            // An input needs an id: an emptied field goes back to the old one
-            // (else the chat binding would lose the input for good).
-            if (e.currentTarget.value.trim() === '') e.currentTarget.value = entry.id;
-            else onPatch({ id: e.currentTarget.value });
-          }}
-        />
-      </label>
-      <div class="wf-interface__field wf-interface__field--binding">
-        <span class="wf-interface__label" id="wf-binding-label-{direction}-{entry.id}">
-          {m().workflowInterface.bindingLabel}
+  <!-- One compact line: id → bound port, then the overflow menu. The id is a
+       field you type into in place; the binding opens the shared port listbox. -->
+  <div class="wf-interface__line">
+    <input
+      type="text"
+      class="wf-interface__id"
+      aria-label={m().workflowInterface.idLabel}
+      title={m().workflowInterface.idLabel}
+      spellcheck="false"
+      value={entry.id}
+      onchange={(e) => {
+        // An input needs an id: an emptied field goes back to the old one
+        // (else the chat binding would lose the input for good).
+        if (e.currentTarget.value.trim() === '') e.currentTarget.value = entry.id;
+        else onPatch({ id: e.currentTarget.value });
+      }}
+    />
+    <span class="wf-interface__arrow" aria-hidden="true">
+      <Icon icon={isInput ? 'heroicons:arrow-long-right' : 'heroicons:arrow-long-left'} />
+    </span>
+    <!-- The bound port, said back the way the canvas says it: node › port and
+         its type. -->
+    <button
+      type="button"
+      class="wf-interface__binding"
+      class:wf-interface__binding--open={pickerOpen}
+      class:wf-interface__binding--invalid={isInput && alreadyConnected}
+      class:wf-interface__binding--empty={!entry.bindings[0]}
+      aria-haspopup="listbox"
+      aria-expanded={pickerOpen}
+      title={m().workflowInterface.bindingChange}
+      onclick={() => (pickerOpen = !pickerOpen)}
+    >
+      <span class="wf-interface__sr">{m().workflowInterface.bindingLabel}:</span>
+      {#if boundTarget}
+        <PortShapeSymbol {checker} port={boundTarget.port} />
+        <span class="wf-interface__binding-path">
+          <span class="wf-interface__binding-node">
+            {boundTarget.node.data?.label ?? boundTarget.node.id}
+          </span>
+          <Icon icon="heroicons:chevron-right" />
+          <span class="wf-interface__binding-port">{boundTarget.port.name}</span>
         </span>
-        <!-- The bound port, said back the way the canvas says it — shape symbol,
-             node › port, lane chip — and the way in to change it. Looks like a
-             select, opens the shared port listbox instead. -->
-        <button
-          type="button"
-          class="wf-interface__binding"
-          class:wf-interface__binding--open={pickerOpen}
-          class:wf-interface__binding--invalid={isInput && alreadyConnected}
-          class:wf-interface__binding--empty={!entry.bindings[0]}
-          aria-haspopup="listbox"
-          aria-expanded={pickerOpen}
-          aria-labelledby="wf-binding-label-{direction}-{entry.id}"
-          title={m().workflowInterface.bindingChange}
-          onclick={() => (pickerOpen = !pickerOpen)}
-        >
-          {#if boundTarget}
-            <PortShapeSymbol {checker} port={boundTarget.port} />
-            <span class="wf-interface__binding-path">
-              <span class="wf-interface__binding-node">
-                {boundTarget.node.data?.label ?? boundTarget.node.id}
-              </span>
-              <Icon icon="heroicons:chevron-right" />
-              <span class="wf-interface__binding-port">{boundTarget.port.name}</span>
-              <PortLaneChip {checker} port={boundTarget.port} />
-            </span>
-          {:else if entry.bindings[0]}
-            <span class="wf-interface__binding-path wf-interface__binding-path--dangling">
-              {m().workflowInterface.bindingDangling({
-                nodeId: entry.bindings[0].nodeId,
-                portId: entry.bindings[0].portId
-              })}
-            </span>
-          {:else}
-            <span class="wf-interface__binding-placeholder">
-              {m().workflowInterface.bindingUnbound}
-            </span>
-          {/if}
-          <Icon icon="heroicons:chevron-up-down" class="wf-interface__binding-caret" />
-        </button>
-        {#if isInput && alreadyConnected}
-          <span class="wf-interface__inline wf-interface__inline--error">
-            {m().workflowInterface.alreadyConnectedInline({ source: conflictingSource ?? '' })}
-          </span>
+        <PortLaneChip {checker} port={boundTarget.port} />
+      {:else if entry.bindings[0]}
+        <span class="wf-interface__binding-path wf-interface__binding-path--dangling">
+          {m().workflowInterface.bindingDangling({
+            nodeId: entry.bindings[0].nodeId,
+            portId: entry.bindings[0].portId
+          })}
+        </span>
+      {:else}
+        <span class="wf-interface__binding-placeholder">
+          {m().workflowInterface.bindingUnbound}
+        </span>
+      {/if}
+    </button>
+    {#if turnLabel !== undefined}
+      <span
+        class="wf-interface__turn-chip"
+        class:wf-interface__turn-chip--deprecated={!turnSelector}
+      >
+        {turnLabel}
+      </span>
+    {/if}
+    <Menu
+      size="sm"
+      align="end"
+      class="wf-interface__menu"
+      label={m().workflowInterface.entryActions({ id: entry.id })}
+      testId="wf-entry-menu"
+      items={rowMenu}
+    />
+  </div>
+  {#if isInput && alreadyConnected}
+    <span class="wf-interface__inline wf-interface__inline--error">
+      {m().workflowInterface.alreadyConnectedInline({ source: conflictingSource ?? '' })}
+    </span>
+  {/if}
+
+  {#if pickerOpen}
+    <div class="wf-interface__picker" role="group" aria-label={m().workflowInterface.bindingChoose}>
+      <BindablePortListbox
+        {direction}
+        candidates={ownCandidates}
+        {checker}
+        idPrefix="wf-binding-option-{direction}-{entry.id}"
+        {currentKey}
+        confirmOnClick
+        autofocus
+        onConfirm={bindTo}
+        onCancel={() => (pickerOpen = false)}
+      />
+      <div class="wf-interface__picker-actions">
+        {#if entry.bindings[0]}
+          <Button variant="ghost" size="sm" onclick={unbind}>
+            <Icon icon="heroicons:link-slash" />
+            {m().workflowInterface.bindingUnbind}
+          </Button>
         {/if}
+        <span class="wf-interface__picker-spacer"></span>
+        <Button variant="ghost" size="sm" onclick={() => (pickerOpen = false)}>
+          {m().workflowInterface.composerCancel}
+        </Button>
       </div>
     </div>
+  {/if}
 
-    {#if pickerOpen}
-      <div
-        class="wf-interface__picker"
-        role="group"
-        aria-label={m().workflowInterface.bindingChoose}
-      >
-        <BindablePortListbox
-          {direction}
-          candidates={ownCandidates}
-          {checker}
-          idPrefix="wf-binding-option-{direction}-{entry.id}"
-          {currentKey}
-          confirmOnClick
-          autofocus
-          onConfirm={bindTo}
-          onCancel={() => (pickerOpen = false)}
-        />
-        <div class="wf-interface__picker-actions">
-          {#if entry.bindings[0]}
-            <Button variant="ghost" size="sm" onclick={unbind}>
-              <Icon icon="heroicons:link-slash" />
-              {m().workflowInterface.bindingUnbind}
-            </Button>
-          {/if}
-          <span class="wf-interface__picker-spacer"></span>
-          <Button variant="ghost" size="sm" onclick={() => (pickerOpen = false)}>
-            {m().workflowInterface.composerCancel}
-          </Button>
-        </div>
-      </div>
-    {/if}
-
-    <!-- Two-way, and it settles: the setter writes what the DOM already
-         reports, and assigning `open` a value it already holds fires no
-         further `toggle`. Without that the pair would be an unbounded
-         DOM/state cascade rather than a binding — and one Svelte's
-         update-depth guard could not catch, since each turn is a fresh
-         event task. -->
-    <details class="wf-interface__more" bind:open={fieldsOpen}>
-      <summary>
-        <Icon icon="heroicons:chevron-right" />
-        {m().workflowInterface.moreOptions}
-        {#if turnLabel !== undefined}
-          <span
-            class="wf-interface__turn-chip"
-            class:wf-interface__turn-chip--deprecated={!turnSelector}
-          >
-            {turnLabel}
-          </span>
-        {/if}
-      </summary>
+  {#if fieldsOpen}
+    <div class="wf-interface__more">
       <div class="wf-interface__more-body">
         {#if turnSelector}
           <div class="wf-interface__row">
@@ -586,180 +595,123 @@
           </div>
         {/if}
       </div>
-    </details>
+    </div>
+  {/if}
 
-    <!-- Every non-ok resolveInterface status renders in words somewhere in this
+  <!-- Every non-ok resolveInterface status renders in words somewhere in this
          card — the obligation that makes this surface canonical. `ok` says
-         nothing: neutral is the good state, and the card's error border already
+         nothing: neutral is the good state, and the row's error colour already
          marks the bad ones. Type-mismatch and already-connected render inline
          next to their own field; the rest are explained here. -->
-    {#if status && FOOTER_STATUSES.has(status.status)}
-      <p class="wf-interface__status wf-interface__status--{status.status}">
-        {describeInterfaceEntryStatus(status)}
-      </p>
-    {/if}
-    {#each footerIssues as issue (issue.code)}
-      <p class="wf-interface__status wf-interface__status--{issue.severity}">
-        {issue.message}
-      </p>
-    {/each}
+  {#if status && FOOTER_STATUSES.has(status.status)}
+    <p class="wf-interface__status wf-interface__status--{status.status}">
+      {describeInterfaceEntryStatus(status)}
+    </p>
+  {/if}
+  {#each footerIssues as issue (issue.code)}
+    <p class="wf-interface__status wf-interface__status--{issue.severity}">
+      {issue.message}
+    </p>
+  {/each}
 
-    {#if entry.meta && Object.keys(entry.meta).length > 0}
-      <details class="wf-interface__meta">
-        <summary>{m().workflowInterface.metaDisclosure}</summary>
-        <pre>{JSON.stringify(entry.meta, null, 2)}</pre>
-      </details>
-    {/if}
-  </div>
-
-  <IconButton
-    size="sm"
-    class="wf-interface__remove"
-    onclick={onRemove}
-    ariaLabel={m().workflowInterface.removeEntry({ id: entry.id })}
-  >
-    <Icon icon="heroicons:trash" />
-  </IconButton>
+  {#if entry.meta && Object.keys(entry.meta).length > 0}
+    <details class="wf-interface__meta">
+      <summary>{m().workflowInterface.metaDisclosure}</summary>
+      <pre>{JSON.stringify(entry.meta, null, 2)}</pre>
+    </details>
+  {/if}
 </li>
 
 <style>
   /*
-    One interface entry, styled as a card in the same family as the settings
-    form beside it: the shared `.flowdrop-input` controls (via Input/Select),
-    the shared `.flowdrop-btn` buttons (via Button/IconButton), the settings
-    form's label weight and size, and the panel's card surface. Nothing here
-    declares a colour that isn't a design token.
+    One interface entry: a flat row. No card, no border, no shadow: rows are
+    separated by space, and a tint on hover/focus says which one you are on.
+    The secondary fields open underneath it, indented, still without a box.
+    Nothing here declares a colour that isn't a design token.
   */
   .wf-interface__entry {
     display: flex;
-    align-items: flex-start;
-    gap: var(--fd-space-sm);
-    padding: var(--fd-space-sm) var(--fd-space-sm) var(--fd-space-sm) var(--fd-space-xs);
-    background-color: var(--fd-card);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    box-shadow: var(--fd-shadow-sm);
-    transition:
-      border-color var(--fd-transition-fast),
-      box-shadow var(--fd-transition-fast);
+    flex-direction: column;
+    gap: var(--fd-space-2xs);
+    padding: var(--fd-space-3xs) 0;
   }
 
-  .wf-interface__entry:hover {
+  .wf-interface__line {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-2xs);
+    min-width: 0;
+    min-height: var(--fd-control-md);
+    padding-right: var(--fd-space-3xs);
+    border-radius: var(--fd-control-radius);
+    transition: background-color var(--fd-transition-fast);
+  }
+
+  .wf-interface__line:hover,
+  .wf-interface__line:focus-within {
+    background-color: var(--fd-muted);
+  }
+
+  /* The id: mono, typed into in place. Looks like text until you reach for it. */
+  .wf-interface__id {
+    flex: 0 1 7.5rem;
+    min-width: 0;
+    box-sizing: border-box;
+    height: var(--fd-control-md);
+    padding: 0 var(--fd-space-xs);
+    border: 1px solid transparent;
+    border-radius: var(--fd-control-radius);
+    background-color: transparent;
+    color: var(--fd-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+    font-weight: 500;
+    text-overflow: ellipsis;
+  }
+
+  .wf-interface__id:hover {
+    border-color: var(--fd-border);
+  }
+
+  .wf-interface__id:focus {
     border-color: var(--fd-border-strong);
+    background-color: var(--fd-background);
   }
 
-  .wf-interface__entry:focus-within {
-    border-color: var(--fd-primary);
-    box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
-  }
-
-  .wf-interface__entry--error {
-    border-color: color-mix(in srgb, var(--fd-error) 45%, var(--fd-border));
-  }
-
-  /* The card's spine: health dot on top, reorder chevrons below. */
-  .wf-interface__entry-side {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--fd-space-2xs);
-    flex-shrink: 0;
-    padding-top: 0.375rem;
-  }
-
-  .wf-interface__reorder {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .wf-interface__reorder button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.25rem;
-    height: 1rem;
-    padding: 0;
-    border: none;
-    border-radius: var(--fd-radius-sm);
-    background: none;
+  .wf-interface__arrow {
+    display: inline-flex;
+    flex: none;
     color: var(--fd-muted-foreground);
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
   }
 
-  .wf-interface__reorder button:hover:not(:disabled) {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
+  /* Screen readers get the "Bound port:" the row no longer shows. */
+  .wf-interface__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
-  .wf-interface__reorder button:disabled {
-    opacity: 0.3;
-    cursor: default;
+  .wf-interface__line :global(.wf-interface__menu) {
+    flex: none;
+    margin-left: auto;
   }
 
-  .wf-interface__fields {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-sm);
-  }
-
-  .wf-interface__row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--fd-space-sm);
-  }
-
-  .wf-interface__field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-2xs);
-    flex: 1 1 8rem;
-    min-width: 0;
-  }
-
-  .wf-interface__field--id {
-    flex: 1 1 7rem;
-  }
-
-  .wf-interface__field--binding {
-    flex: 2 1 12rem;
-  }
-
-  .wf-interface__field--wide {
-    flex: 1 1 100%;
-  }
-
-  .wf-interface__fields :global(.wf-interface__field--checkbox) {
-    flex: 0 0 auto;
-    align-self: flex-end;
-    min-height: 2rem;
-  }
-
-  /* Same voice as FormFieldWrapper's `.form-field__label`. */
-  .wf-interface__label {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.01em;
-    color: var(--fd-foreground);
-  }
-
-  /* The bound port, said back the way the canvas says it, in a select's clothes. */
+  /* The bound port, said back the way the canvas says it: a flat button. */
   .wf-interface__binding {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--fd-space-xs);
-    width: 100%;
-    min-height: 2rem;
-    padding: var(--fd-space-2xs) var(--fd-space-xs);
-    border: 1px solid var(--fd-border);
+    flex: 1;
+    min-width: 0;
+    height: var(--fd-control-md);
+    padding: 0 var(--fd-space-xs);
+    border: 1px solid transparent;
     border-radius: var(--fd-control-radius);
-    background-color: var(--fd-card);
+    background-color: transparent;
     color: var(--fd-foreground);
     font: inherit;
     font-size: var(--fd-text-xs);
@@ -767,18 +719,18 @@
     cursor: pointer;
     transition:
       border-color var(--fd-transition-fast),
-      box-shadow var(--fd-transition-fast);
+      background-color var(--fd-transition-fast);
   }
 
   .wf-interface__binding:hover {
-    border-color: var(--fd-border-strong);
+    border-color: var(--fd-border);
   }
 
   .wf-interface__binding:focus-visible,
   .wf-interface__binding--open {
     outline: none;
-    border-color: var(--fd-primary);
-    box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
+    border-color: var(--fd-border-strong);
+    background-color: var(--fd-background);
   }
 
   .wf-interface__binding--invalid {
@@ -788,11 +740,11 @@
   .wf-interface__binding-path {
     display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.125rem;
+    gap: var(--fd-space-3xs);
     flex: 1;
     min-width: 0;
-    line-height: 1.4;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
   .wf-interface__binding-path :global(svg) {
@@ -800,11 +752,14 @@
     color: var(--fd-muted-foreground);
   }
 
-  .wf-interface__binding-path :global(.flowdrop-badge--outline) {
+  .wf-interface__binding > :global(.flowdrop-badge--outline) {
     flex: none;
   }
 
   .wf-interface__binding-node {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--fd-muted-foreground);
   }
 
@@ -822,21 +777,12 @@
     color: var(--fd-muted-foreground);
   }
 
-  .wf-interface__binding :global(.wf-interface__binding-caret) {
-    flex-shrink: 0;
-    margin-left: auto;
-    color: var(--fd-muted-foreground);
-  }
-
   /* The unfolded picker: the shared listbox plus its own unbind/cancel row. */
   .wf-interface__picker {
     display: flex;
     flex-direction: column;
     gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs);
-    border: 1px solid color-mix(in srgb, var(--fd-primary) 45%, var(--fd-border));
-    border-radius: var(--fd-radius-md);
-    background-color: color-mix(in srgb, var(--fd-primary) 3%, var(--fd-card));
+    padding: var(--fd-space-xs) 0;
   }
 
   .wf-interface__picker-actions {
@@ -858,12 +804,46 @@
     color: var(--fd-primary);
   }
 
+  .wf-interface__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fd-space-sm);
+  }
+
+  .wf-interface__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-3xs);
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  .wf-interface__field--wide {
+    flex: 1 1 100%;
+  }
+
+  .wf-interface__more :global(.wf-interface__field--checkbox) {
+    flex: 0 0 auto;
+    align-self: flex-end;
+    min-height: var(--fd-control-md);
+  }
+
+  /* Same voice as the settings form's field labels. */
+  .wf-interface__label {
+    font-size: var(--fd-field-label-size);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: var(--fd-foreground);
+  }
+
   /* Field-anchored feedback: one short line under the field it belongs to. */
   .wf-interface__inline {
     display: inline-flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--fd-space-xs);
+    padding-left: var(--fd-space-xs);
     font-size: var(--fd-text-xs);
     line-height: 1.4;
   }
@@ -874,14 +854,13 @@
     color: var(--fd-muted-foreground);
   }
 
-  /* The entry's chat turn, said at rest on the disclosure's summary. */
+  /* The entry's chat turn, said at rest at the end of its row. */
   .wf-interface__turn-chip {
-    margin-left: var(--fd-space-xs);
+    flex: none;
     padding: 0 var(--fd-space-xs);
     border: 1px solid var(--fd-border);
     border-radius: var(--fd-radius-full);
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
+    color: var(--fd-muted-foreground);
     font-size: var(--fd-text-2xs);
     font-weight: 600;
     line-height: 1.5;
@@ -929,52 +908,15 @@
     background-color: color-mix(in srgb, currentColor 12%, transparent);
   }
 
-  /* The secondary fields live behind a disclosure so a card's resting state
-     is just identity + binding. Auto-opened when a field inside needs eyes. */
+  /* The secondary fields, under the row and indented to the id: space, not a box. */
   .wf-interface__more {
-    font-size: var(--fd-text-xs);
-  }
-
-  .wf-interface__more > summary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.125rem;
-    list-style: none;
-    padding: 0.125rem var(--fd-space-xs) 0.125rem 0.125rem;
-    border-radius: var(--fd-radius-sm);
-    color: var(--fd-muted-foreground);
-    font-weight: 500;
-    cursor: pointer;
-    user-select: none;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-  }
-
-  .wf-interface__more > summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .wf-interface__more > summary:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
-  }
-
-  .wf-interface__more > summary :global(svg) {
-    transition: transform var(--fd-transition-fast);
-  }
-
-  .wf-interface__more[open] > summary :global(svg) {
-    transform: rotate(90deg);
+    padding: var(--fd-space-xs) var(--fd-space-xs) var(--fd-space-sm);
   }
 
   .wf-interface__more-body {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-sm);
-    margin-top: var(--fd-space-sm);
-    padding-top: var(--fd-space-sm);
-    border-top: 1px dashed var(--fd-border-muted);
+    gap: var(--fd-space-md);
   }
 
   .wf-interface__examples {
@@ -994,8 +936,6 @@
   }
 
   .wf-interface__example-row :global(.wf-interface__example-remove) {
-    width: 1.75rem;
-    height: 1.75rem;
     flex-shrink: 0;
   }
 
@@ -1005,7 +945,6 @@
 
   .wf-interface__examples :global(.wf-interface__example-add) {
     align-self: flex-start;
-    min-height: 1.75rem;
     padding-inline: var(--fd-space-xs);
     color: var(--fd-muted-foreground);
   }
@@ -1014,34 +953,30 @@
     color: var(--fd-foreground);
   }
 
-  /* Status callouts: a tinted strip with a coloured edge, not bare coloured text. */
+  /* Status lines: coloured text under the row, no tinted strip. */
   .wf-interface__status {
     margin: 0;
-    padding: var(--fd-space-2xs) var(--fd-space-xs);
-    border-left: 3px solid var(--fd-muted-foreground);
-    border-radius: 0 var(--fd-radius-sm) var(--fd-radius-sm) 0;
-    background-color: var(--fd-muted);
+    padding-left: var(--fd-space-xs);
     font-size: var(--fd-text-xs);
     line-height: 1.5;
-    color: var(--fd-foreground);
+    color: var(--fd-muted-foreground);
   }
 
   .wf-interface__status--error,
   .wf-interface__status--dangling,
   .wf-interface__status--hidden,
   .wf-interface__status--over-bound {
-    border-left-color: var(--fd-error);
-    background-color: var(--fd-error-muted);
+    color: var(--fd-error);
   }
 
   .wf-interface__status--warning,
   .wf-interface__status--unbound,
   .wf-interface__status--type-mismatch {
-    border-left-color: var(--fd-warning);
-    background-color: var(--fd-warning-muted);
+    color: var(--fd-warning);
   }
 
   .wf-interface__meta {
+    padding-left: var(--fd-space-xs);
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
   }
@@ -1058,7 +993,6 @@
   .wf-interface__meta pre {
     margin: var(--fd-space-xs) 0 0;
     padding: var(--fd-space-xs);
-    border: 1px solid var(--fd-border-muted);
     border-radius: var(--fd-radius-sm);
     background-color: var(--fd-muted);
     color: var(--fd-foreground);
@@ -1066,17 +1000,5 @@
     font-size: var(--fd-text-2xs);
     line-height: 1.5;
     overflow-x: auto;
-  }
-
-  .wf-interface__entry :global(.wf-interface__remove) {
-    flex-shrink: 0;
-    width: 1.75rem;
-    height: 1.75rem;
-    margin-top: 0.125rem;
-  }
-
-  .wf-interface__entry :global(.wf-interface__remove:hover) {
-    color: var(--fd-error);
-    background-color: var(--fd-error-muted);
   }
 </style>

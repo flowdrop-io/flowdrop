@@ -615,13 +615,11 @@
         name: {
           type: 'string',
           title: 'Workflow Name',
-          description: 'The name of the workflow',
           default: ''
         },
         description: {
           type: 'string',
           title: 'Description',
-          description: 'A description of the workflow',
           format: 'multiline',
           default: ''
         },

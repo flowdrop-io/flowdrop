@@ -31,6 +31,7 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from '$lib/components/primitives/Button.svelte';
   import { m } from '$lib/messages/index.js';
   import WorkflowInterfaceEntryCard from '$lib/components/WorkflowInterfaceEntryCard.svelte';
   import WorkflowInterfaceEntryComposer from '$lib/components/WorkflowInterfaceEntryComposer.svelte';
@@ -362,21 +363,11 @@
   {#each SECTIONS as section (section.key)}
     {@const list = entriesFor(section.key)}
     <section class="wf-interface__section">
-      <div class="wf-interface__section-header">
-        <h4 class="wf-interface__section-title">
-          <Icon
-            icon={section.key === 'inputs'
-              ? 'heroicons:arrow-right-end-on-rectangle'
-              : 'heroicons:arrow-right-start-on-rectangle'}
-          />
-          {section.key === 'inputs'
-            ? m().workflowInterface.inputsHeading
-            : m().workflowInterface.outputsHeading}
-          {#if list.length > 0}
-            <span class="wf-interface__count">{list.length}</span>
-          {/if}
-        </h4>
-      </div>
+      <h4 class="wf-interface__section-title">
+        {section.key === 'inputs'
+          ? m().workflowInterface.inputsHeading
+          : m().workflowInterface.outputsHeading}
+      </h4>
 
       {#if list.length > 0}
         <ul class="wf-interface__list">
@@ -413,10 +404,9 @@
       {/if}
 
       <!-- The insertion point, always shown: a new entry lands here, at the end
-           of the list. The dashed slot is the add action; while the composer is
-           open it takes the slot's place, so the draft sits exactly where the
-           entry it becomes will sit. Doubles as the empty state — an empty side
-           is a side with only its insertion point. -->
+           of the list. While the composer is open it takes the button's place,
+           so the draft sits exactly where the entry it becomes will sit. Doubles
+           as the empty state: an empty side is a side with only its button. -->
       {#if composerFor === section.key}
         <WorkflowInterfaceEntryComposer
           direction={section.key}
@@ -427,12 +417,17 @@
           onCancel={() => (composerFor = null)}
         />
       {:else}
-        <button type="button" class="wf-interface__add" onclick={() => toggleComposer(section.key)}>
-          <Icon icon="heroicons:plus" />
+        <Button
+          variant="ghost"
+          size="sm"
+          class="wf-interface__add"
+          onclick={() => toggleComposer(section.key)}
+        >
+          {#snippet leadingIcon()}<Icon icon="heroicons:plus" />{/snippet}
           {section.key === 'inputs'
             ? m().workflowInterface.addInput
             : m().workflowInterface.addOutput}
-        </button>
+        </Button>
       {/if}
     </section>
   {/each}
@@ -440,102 +435,37 @@
 
 <style>
   /*
-    Two sections — inputs, outputs — in the visual family of the settings
-    form this editor sits beside: the same section-title voice as
-    `.config-surface__section-title`, the shared `.flowdrop-btn` for the add
-    action as a dashed insertion slot at the end of each side.
+    Two sections, inputs and outputs: a plain heading, the rows, and a ghost
+    add button at the end of each list. Separation is space; there are no cards
+    and no dashed slots.
   */
   .wf-interface {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-xl);
+    gap: var(--fd-space-2xl);
   }
 
   .wf-interface__section {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-sm);
-  }
-
-  .wf-interface__section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--fd-space-sm);
-    min-height: 2rem;
+    gap: var(--fd-space-xs);
   }
 
   .wf-interface__section-title {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
     margin: 0;
-    font-size: var(--fd-text-xs);
+    font-size: var(--fd-text-sm);
     font-weight: 600;
+    color: var(--fd-foreground);
+  }
+
+  .wf-interface__section :global(.wf-interface__add) {
+    align-self: flex-start;
+    margin-left: calc(var(--fd-space-xs) * -1);
     color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
-  .wf-interface__section-title :global(svg) {
-    font-size: 0.875rem;
-  }
-
-  .wf-interface__count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.25rem;
-    height: 1.125rem;
-    padding: 0 0.375rem;
-    border-radius: var(--fd-radius-full);
-    background-color: var(--fd-muted);
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-2xs);
-    font-weight: 600;
-    letter-spacing: 0;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* The insertion slot: a dashed, full-width add action where the next entry
-     will appear. Quiet at rest, primary on hover and focus. */
-  .wf-interface__add {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fd-space-xs);
-    width: 100%;
-    min-height: 2.5rem;
-    padding: var(--fd-space-sm);
-    border: 1px dashed var(--fd-border-strong);
-    border-radius: var(--fd-radius-lg);
-    background-color: transparent;
-    color: var(--fd-muted-foreground);
-    font: inherit;
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-      border-color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast),
-      color var(--fd-transition-fast);
-  }
-
-  .wf-interface__add:hover {
-    border-color: var(--fd-primary);
-    background-color: var(--fd-primary-muted);
-    color: var(--fd-primary);
-  }
-
-  .wf-interface__add:focus-visible {
-    outline: none;
-    border-color: var(--fd-primary);
-    color: var(--fd-primary);
-    box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
-  }
-
-  .wf-interface__add :global(svg) {
-    font-size: 0.875rem;
+  .wf-interface__section :global(.wf-interface__add:hover) {
+    color: var(--fd-foreground);
   }
 
   .wf-interface__list {
@@ -544,6 +474,6 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-sm);
+    gap: var(--fd-space-3xs);
   }
 </style>
