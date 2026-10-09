@@ -27,7 +27,8 @@
   import Checkbox from '$lib/components/primitives/Checkbox.svelte';
   import Menu, { type MenuEntry } from '$lib/components/primitives/Menu.svelte';
   import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
-  import { getPortColorToken } from '$lib/utils/colors.js';
+  import { getDataTypeColorToken, getPortColorToken } from '$lib/utils/colors.js';
+  import InterfaceTag from '$lib/components/InterfaceTag.svelte';
   import { m } from '$lib/messages/index.js';
   import {
     DEFAULT_HISTORY_TURN_LIMIT,
@@ -299,23 +300,29 @@
   <!-- One compact line: id → bound port, then the overflow menu. The id is a
        field you type into in place; the binding opens the shared port listbox. -->
   <div class="wf-interface__line">
-    <input
-      type="text"
-      class="wf-interface__id"
-      aria-label={m().workflowInterface.idLabel}
-      title={m().workflowInterface.idLabel}
-      spellcheck="false"
-      value={entry.id}
-      onchange={(e) => {
-        // An input needs an id: an emptied field goes back to the old one
-        // (else the chat binding would lose the input for good).
-        if (e.currentTarget.value.trim() === '') e.currentTarget.value = entry.id;
-        else onPatch({ id: e.currentTarget.value });
-      }}
-    />
-    <span class="wf-interface__arrow" aria-hidden="true">
-      <Icon icon={isInput ? 'heroicons:arrow-long-right' : 'heroicons:arrow-long-left'} />
-    </span>
+    <!-- The entry as its canvas tag: swatch, the id typed in place, and the tip
+         that points the way the canvas flows. -->
+    <InterfaceTag
+      id={entry.id}
+      class="wf-interface__tag"
+      color={getDataTypeColorToken(checker, entry.dataType)}
+      mismatch={status?.status === 'type-mismatch'}
+    >
+      <input
+        type="text"
+        class="wf-interface__id"
+        aria-label={m().workflowInterface.idLabel}
+        title={m().workflowInterface.idLabel}
+        spellcheck="false"
+        value={entry.id}
+        onchange={(e) => {
+          // An input needs an id: an emptied field goes back to the old one
+          // (else the chat binding would lose the input for good).
+          if (e.currentTarget.value.trim() === '') e.currentTarget.value = entry.id;
+          else onPatch({ id: e.currentTarget.value });
+        }}
+      />
+    </InterfaceTag>
     <!-- The bound port, said back the way the canvas says it: node › port and
          its type. -->
     <button
@@ -649,37 +656,27 @@
 
   /* The id: mono, typed into in place. Looks like text until you reach for it. */
   /* Sized to the id (capped), so a short id leaves its room to the bound port. */
+  .wf-interface__line :global(.wf-interface__tag) {
+    --fd-iface-tag-height: var(--fd-control-md);
+    --fd-iface-tag-id-size: var(--fd-text-xs);
+    min-width: 0;
+  }
+
   .wf-interface__id {
     flex: 0 1 auto;
     field-sizing: content;
     min-width: 4ch;
     max-width: 7.5rem;
     box-sizing: border-box;
-    height: var(--fd-control-md);
-    padding: 0 var(--fd-space-xs);
-    border: 1px solid transparent;
-    border-radius: var(--fd-control-radius);
+    height: 100%;
+    padding: 0;
+    border: 0;
     background-color: transparent;
     color: var(--fd-foreground);
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-xs);
     font-weight: 500;
     text-overflow: ellipsis;
-  }
-
-  .wf-interface__id:hover {
-    border-color: var(--fd-border);
-  }
-
-  .wf-interface__id:focus {
-    border-color: var(--fd-border-strong);
-    background-color: var(--fd-background);
-  }
-
-  .wf-interface__arrow {
-    display: inline-flex;
-    flex: none;
-    color: var(--fd-muted-foreground);
   }
 
   /* Screen readers get the "Bound port:" the row no longer shows. */

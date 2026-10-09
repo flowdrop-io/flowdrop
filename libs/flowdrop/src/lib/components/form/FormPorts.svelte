@@ -30,9 +30,26 @@
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { byDefaultOrder, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
-  import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
-  import { getPortColorToken } from '$lib/utils/colors.js';
+  import {
+    entryAtPort,
+    exposableCandidate,
+    exposePortAsEntry,
+    inputHasIncomingEdge,
+    removeInterfaceEntry,
+    renameInterfaceEntry,
+    validateInterfaceId,
+    type InterfaceDirection
+  } from '$lib/utils/interfaceTags.js';
+  import { m } from '$lib/messages/index.js';
+  import {
+    getDataTypeColorToken,
+    getDataTypeDisplayText,
+    getPortColorToken
+  } from '$lib/utils/colors.js';
   import IconButton from '../primitives/IconButton.svelte';
+  import Menu, { type MenuEntry } from '../primitives/Menu.svelte';
+  import InterfaceTag from '../InterfaceTag.svelte';
+  import InterfaceNameInput from '../InterfaceNameInput.svelte';
   import Icon from '@iconify/svelte';
   import { tick } from 'svelte';
 
@@ -55,6 +72,95 @@
 
   /** Handle ids bound to a `workflow.interface` entry — see workflowStore. */
   const boundHandles = $derived(fd.workflow.interfaceBoundHandles);
+
+  // ---- Workflow interface: the same actions as the canvas tag menu ----
+  // A name being typed for one row (a new entry, or a rename).
+  let nameEdit = $state<{
+    direction: Direction;
+    portId: string;
+    mode: 'expose' | 'rename';
+    value: string;
+    entryId?: string;
+  } | null>(null);
+
+  const entryDirection = (direction: Direction): InterfaceDirection =>
+    direction === 'inputs' ? 'input' : 'output';
+
+  function interfaceMenu(direction: Direction, port: NodePort): MenuEntry[] {
+    const workflow = fd.workflow.current;
+    if (!workflow || !node || disabled) return [];
+    const dir = entryDirection(direction);
+    const entry = entryAtPort(workflow, node.id, dir, port.id);
+    if (entry) {
+      return [
+        {
+          label: m().contextMenu.renameInterfaceEntry,
+          icon: 'mdi:pencil-outline',
+          testId: 'port-interface-rename',
+          onselect: () =>
+            (nameEdit = {
+              direction,
+              portId: port.id,
+              mode: 'rename',
+              value: entry.id,
+              entryId: entry.id
+            })
+        },
+        {
+          label: m().contextMenu.removeInterfaceEntry,
+          icon: 'mdi:link-off',
+          testId: 'port-interface-remove',
+          onselect: () => {
+            const result = removeInterfaceEntry(workflow, dir, entry.id);
+            if (result) fd.workflow.editInterface(result.interface, result.edit);
+          }
+        }
+      ];
+    }
+    if (!exposableCandidate(workflow, node.id, dir, port.id)) return [];
+    return [
+      {
+        label: dir === 'input' ? m().contextMenu.exposeInput : m().contextMenu.exposeOutput,
+        icon: 'mdi:tag-arrow-right-outline',
+        testId: 'port-interface-expose',
+        disabled: dir === 'input' && inputHasIncomingEdge(workflow, node.id, port.id),
+        onselect: () => (nameEdit = { direction, portId: port.id, mode: 'expose', value: port.id })
+      }
+    ];
+  }
+
+  const nameError = $derived.by((): string | null => {
+    if (!nameEdit) return null;
+    const dir = entryDirection(nameEdit.direction);
+    const reason = validateInterfaceId(
+      nameEdit.value,
+      dir,
+      fd.workflow.current?.interface,
+      nameEdit.entryId
+    );
+    if (reason === 'empty') return m().workflowInterface.tagIdEmpty;
+    if (reason === 'duplicate') {
+      return m().workflowInterface.tagIdDuplicate({ id: nameEdit.value.trim(), direction: dir });
+    }
+    return null;
+  });
+
+  function submitName(): void {
+    const edit = nameEdit;
+    const workflow = fd.workflow.current;
+    if (!edit || !workflow || !node || nameError) return;
+    const dir = entryDirection(edit.direction);
+    nameEdit = null;
+    const result =
+      edit.mode === 'expose'
+        ? exposePortAsEntry(
+            workflow,
+            { nodeId: node.id, direction: dir, portId: edit.portId },
+            edit.value
+          )
+        : renameInterfaceEntry(workflow, dir, edit.entryId ?? '', edit.value);
+    if (result) fd.workflow.editInterface(result.interface, result.edit);
+  }
 
   // Mirror the canvas: static metadata ports plus user-defined dynamic ports.
   const inputPorts = $derived<NodePort[]>([
@@ -207,6 +313,8 @@
             <li
               class="fd-ports__item"
               class:fd-ports__item--hidden={!exposed}
+              class:fd-ports__item--naming={nameEdit?.direction === direction &&
+                nameEdit.portId === port.id}
               class:fd-ports__item--dragging={dragging?.direction === direction &&
                 dragging.index === i}
               class:fd-ports__item--drop={dropTarget?.direction === direction &&
@@ -231,14 +339,30 @@
                 style="--fd-ports-dot: {getPortColorToken(checker, port)}"
               ></span>
               <span class="fd-ports__name" title={port.name}>{port.name}</span>
-              {#if boundEntry}
-                <span
-                  class="fd-ports__bound"
-                  title={interfaceBoundTooltip(boundEntry)}
-                  aria-label={interfaceBoundTooltip(boundEntry)}
+              {#if nameEdit && nameEdit.direction === direction && nameEdit.portId === port.id}
+                <InterfaceTag
+                  id={nameEdit.value}
+                  color={getDataTypeColorToken(checker, port.dataType)}
+                  ghost
                 >
-                  <Icon icon="heroicons:link" />
-                </span>
+                  <InterfaceNameInput
+                    value={nameEdit.value}
+                    error={nameError}
+                    onchange={(value) => nameEdit && (nameEdit = { ...nameEdit, value })}
+                    onsubmit={submitName}
+                    oncancel={() => (nameEdit = null)}
+                  />
+                </InterfaceTag>
+              {:else if boundEntry}
+                <InterfaceTag
+                  id={boundEntry.id}
+                  typeText={boundEntry.dataType !== port.dataType
+                    ? `${getDataTypeDisplayText(checker, boundEntry.dataType)} ≠ ${laneName}`
+                    : undefined}
+                  color={getDataTypeColorToken(checker, boundEntry.dataType)}
+                  mismatch={boundEntry.dataType !== port.dataType}
+                  data-testid="port-interface-tag"
+                />
               {/if}
               <span class="fd-ports__type" title={port.dataType}>{laneName}</span>
               <span class="fd-ports__reorder">
@@ -261,6 +385,17 @@
                   <Icon icon="heroicons:chevron-down-20-solid" />
                 </button>
               </span>
+              {#if interfaceMenu(direction, port).length > 0}
+                <span class="fd-ports__iface">
+                  <Menu
+                    size="sm"
+                    align="end"
+                    label={m().workflowInterface.portActions({ port: port.name })}
+                    testId={`port-interface-menu-${direction}-${port.id}`}
+                    items={interfaceMenu(direction, port)}
+                  />
+                </span>
+              {/if}
               <IconButton
                 size="sm"
                 class="fd-ports__eye"
@@ -323,6 +458,11 @@
   .fd-ports__item:hover,
   .fd-ports__item:focus-within {
     background-color: var(--fd-subtle);
+  }
+
+  /* Room for the hint or error under the tag being typed. */
+  .fd-ports__item--naming {
+    margin-bottom: var(--fd-space-xl);
   }
 
   .fd-ports__item--dragging {
@@ -434,18 +574,15 @@
     color: var(--fd-muted-foreground);
   }
 
-  /* Interface-bound marker: same --fd-ring token as the canvas handle ring
-     (see styles/base.css .flowdrop-handle--bound), so the two affordances
-     read as one system in both light and dark skins. */
-  .fd-ports__bound {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 1.25em;
-    height: 1.25em;
-    border-radius: 50%;
-    color: var(--fd-ring);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--fd-ring) 55%, transparent);
+  /* The interface actions show on hover / focus, keeping their space. */
+  .fd-ports__iface {
+    flex: none;
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .fd-ports__item:hover .fd-ports__iface,
+  .fd-ports__item:focus-within .fd-ports__iface {
+    opacity: 1;
   }
 </style>
