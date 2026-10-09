@@ -71,7 +71,6 @@
   let busyId = $state<string | null>(null);
   let actionError = $state<string | null>(null);
   let rootEl = $state<HTMLElement | null>(null);
-  let triggerEl = $state<HTMLButtonElement | null>(null);
   let listEl = $state<HTMLElement | null>(null);
   /** Bumped by each read; a slower, older read is dropped. */
   let readToken = 0;
@@ -131,7 +130,7 @@
     if (!open) return;
     open = false;
     readToken++;
-    if (returnFocus) triggerEl?.focus();
+    if (returnFocus) rootEl?.querySelector<HTMLElement>('.fd-runs__trigger')?.focus();
   }
 
   // Outside pointer closes; the list refreshes while a run on it is going.
@@ -238,11 +237,9 @@
 
 {#if support.list && workflowId}
   <div class="fd-runs" bind:this={rootEl} onkeydown={onKeydown} role="presentation">
-    <button
-      bind:this={triggerEl}
-      type="button"
-      class="fd-runs__trigger"
-      class:fd-runs__trigger--open={open}
+    <Button
+      variant="ghost"
+      class="fd-runs__trigger {open ? 'fd-runs__trigger--open' : ''}"
       aria-expanded={open}
       aria-controls={open ? listId : undefined}
       title={msgs.triggerTitle}
@@ -251,7 +248,7 @@
     >
       <span>{msgs.trigger}</span>
       <Icon icon="mdi:chevron-down" aria-hidden="true" />
-    </button>
+    </Button>
 
     {#if open}
       <div
@@ -277,8 +274,8 @@
               {@const time = timeOf(run)}
               {@const adminHref = adminRun(run)}
               <li class="fd-runs__row" class:fd-runs__row--current={run.id === currentRunId}>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   class="fd-runs__open"
                   aria-current={run.id === currentRunId ? 'true' : undefined}
                   aria-label={msgs.openRun({ id: run.id, status: statusLabel(run.status), time })}
@@ -287,23 +284,25 @@
                   data-status={run.status}
                   onclick={() => openRun(run)}
                 >
-                  <span
-                    class="fd-runs__status fd-runs__status--{runPillStatus(run.status)}"
-                    data-testid="run-status"
-                  >
-                    <span class="fd-runs__dot" aria-hidden="true"></span>
-                    {statusLabel(run.status)}
+                  <span class="fd-runs__line">
+                    <span
+                      class="fd-runs__status fd-runs__status--{runPillStatus(run.status)}"
+                      data-testid="run-status"
+                    >
+                      <span class="fd-runs__dot" aria-hidden="true"></span>
+                      {statusLabel(run.status)}
+                    </span>
+                    <span class="fd-runs__time">
+                      {time}
+                      {#if run.jobSummary && run.jobSummary.failed > 0 && run.status !== 'failed'}
+                        <span class="fd-runs__jobs"
+                          >· {msgs.jobsFailed({ n: run.jobSummary.failed })}</span
+                        >
+                      {/if}
+                    </span>
+                    <span class="fd-runs__duration">{duration}</span>
                   </span>
-                  <span class="fd-runs__time">
-                    {time}
-                    {#if run.jobSummary && run.jobSummary.failed > 0 && run.status !== 'failed'}
-                      <span class="fd-runs__jobs"
-                        >· {msgs.jobsFailed({ n: run.jobSummary.failed })}</span
-                      >
-                    {/if}
-                  </span>
-                  <span class="fd-runs__duration">{duration}</span>
-                </button>
+                </Button>
                 <span class="fd-runs__actions">
                   {#if support.cancel && canCancelRun(run.status)}
                     <Button
@@ -391,7 +390,7 @@
   }
 
   /* A floating control of its own, like the Edit | Test switch beside it. */
-  .fd-runs__trigger {
+  .fd-runs :global(.fd-runs__trigger) {
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-3xs);
@@ -408,8 +407,8 @@
     font-weight: 500;
     cursor: pointer;
   }
-  .fd-runs__trigger:hover,
-  .fd-runs__trigger--open {
+  .fd-runs :global(.fd-runs__trigger:hover),
+  .fd-runs :global(.fd-runs__trigger--open) {
     color: var(--fd-foreground);
   }
 
@@ -451,11 +450,11 @@
     background-color: var(--fd-muted);
   }
 
-  .fd-runs__open {
-    display: grid;
-    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--fd-space-sm);
+  .fd-runs__row :global(.fd-runs__open) {
+    height: auto;
+    font-weight: 400;
+    display: flex;
+    justify-content: stretch;
     width: 100%;
     min-height: var(--fd-menu-item-height);
     padding: var(--fd-space-xs) var(--fd-space-sm);
@@ -466,6 +465,19 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+  }
+
+  .fd-runs__row :global(.fd-runs__open .flowdrop-ui-button__label) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fd-runs__line {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fd-space-sm);
+    width: 100%;
   }
 
   .fd-runs__status {

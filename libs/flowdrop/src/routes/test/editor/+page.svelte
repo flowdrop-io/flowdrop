@@ -40,6 +40,9 @@
                            other inputs: Test mode runs as a plain conversation
     - ?hostScheme=light|dark|auto[&hostLabel=..] -> simulate a host passing
       the colorScheme.host mount option (window.__setHostScheme(v) pushes live changes)
+    - ?adminLinks=1      -> the host gives admin URL templates for the Runs list
+                           (`features.adminLinks`): the footer "Open in admin" and
+                           a link on each row
     - ?settingsDefaults=light|dark|auto -> seed host settings defaults
       before mounting, mirroring mountFlowDropApp({ settings }) — used by
       the settings persistence tests
@@ -75,6 +78,18 @@
       | 'drafter'
       | 'graphite'
       | undefined
+  );
+
+  // --- Query param for the Runs list's admin links (?adminLinks=1) ---
+  let features = $derived(
+    $page.url.searchParams.get('adminLinks')
+      ? {
+          adminLinks: {
+            runs: '/admin/flowdrop/pipelines?workflow={workflowId}',
+            run: '/admin/flowdrop/pipelines/{pipelineId}'
+          }
+        }
+      : undefined
   );
 
   // --- Query param for editor mode (?mode=readonly|locked) ---
@@ -967,6 +982,7 @@
     mode={editorMode}
     editorMode={editorTestMode}
     {endpointConfig}
+    {features}
     {contextMenu}
     {branding}
     {navbarActions}
