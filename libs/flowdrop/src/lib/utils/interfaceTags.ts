@@ -66,7 +66,10 @@ export function validateInterfaceId(
 
 /** One tag to draw: an entry bound to a live, exposed port. */
 export interface InterfaceTagModel {
-  /** Stable across edits of the id: direction, node and port. */
+  /**
+   * Stable across edits of the id: direction, node and port. Entries that share
+   * one port (allowed) get a `#n` suffix on the later ones, so keys stay unique.
+   */
   key: string;
   direction: InterfaceDirection;
   entry: WorkflowInterfaceEntry;
@@ -80,13 +83,17 @@ export interface InterfaceTagModel {
 /** Every tag a workflow shows: its `ok` and `type-mismatch` entries. */
 export function interfaceTagModels(workflow: Workflow): InterfaceTagModel[] {
   const tags: InterfaceTagModel[] = [];
+  const seen = new Map<string, number>();
   for (const resolved of resolveInterface(workflow)) {
     if (resolved.status !== 'ok' && resolved.status !== 'type-mismatch') continue;
     const target = resolved.targets[0];
     if (!target) continue;
     const handleId = buildHandleId(target.node.id, target.direction, target.port.id);
+    const base = `${resolved.direction}:${handleId}`;
+    const nth = seen.get(base) ?? 0;
+    seen.set(base, nth + 1);
     tags.push({
-      key: `${resolved.direction}:${handleId}`,
+      key: nth === 0 ? base : `${base}#${nth}`,
       direction: resolved.direction,
       entry: resolved.entry,
       nodeId: target.node.id,

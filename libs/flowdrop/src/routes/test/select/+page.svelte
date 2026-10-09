@@ -13,6 +13,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
+  import { themeScope } from '$lib/utils/themeScope.svelte.js';
   import Select from '$lib/components/primitives/Select.svelte';
   import { resolveTheme } from '$lib/themes/index.js';
   import { buildScopedSkinCss } from '$lib/themes/scopedSkinCss.js';
@@ -87,6 +88,7 @@
 
 <div
   class="flowdrop-root"
+  use:themeScope
   data-fd-scope={SCOPE}
   data-testid="select-fixture"
   style="padding: 2rem; background: var(--fd-background); min-height: 100vh;"

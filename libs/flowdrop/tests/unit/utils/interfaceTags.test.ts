@@ -123,6 +123,20 @@ describe('interfaceTagModels', () => {
     expect(tags[1].handleId).toBe('calc-input-b');
   });
 
+  it('keeps tag keys unique when two entries share one port', () => {
+    const wf = workflow({
+      interface: {
+        inputs: [
+          { id: 'one', dataType: 'number', bindings: [{ nodeId: 'calc', portId: 'a' }] },
+          { id: 'two', dataType: 'number', bindings: [{ nodeId: 'calc', portId: 'a' }] }
+        ]
+      }
+    });
+    const keys = interfaceTagModels(wf).map((t) => t.key);
+    expect(keys).toHaveLength(2);
+    expect(new Set(keys).size).toBe(2);
+  });
+
   it('has none for an unbound or dangling entry', () => {
     const wf = workflow({
       interface: {
