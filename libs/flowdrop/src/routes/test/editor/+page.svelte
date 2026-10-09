@@ -43,6 +43,10 @@
                            other inputs: Test mode runs as a plain conversation
     - ?hostScheme=light|dark|auto[&hostLabel=..] -> simulate a host passing
       the colorScheme.host mount option (window.__setHostScheme(v) pushes live changes)
+    - ?webmcpBridge=fake -> install a fake desktop-bridge widget (no network) and offer three
+                           tools through it, so the bridge button shows in the zoom controls.
+                           Connect with token `hold` (stays connecting; window.__fakeBridge.settle()
+                           finishes it), `fail` (registration error) or anything else (connects)
     - ?adminLinks=1      -> the host gives admin URL templates for the Runs list
                            (`features.adminLinks`): the footer "Open in admin" and
                            a link on each row
@@ -67,6 +71,8 @@
   } from '$lib/types/settings.js';
   import type { ContextMenuOptions } from '$lib/editor/contextMenu.js';
   import { defaultEndpointConfig, sessionsEndpoints } from '$lib/config/endpoints.js';
+  import { installBridgedModelContext } from '$lib/webmcp/bridge.js';
+  import { createFakeBridgeWidget } from '$lib/webmcp/fakeWidget.js';
   import { createChainedTriggerWorkflow } from '../../../mocks/data/workflows.js';
 
   // --- Query param for workflow variant ---
@@ -159,6 +165,26 @@
         ...(colorScheme && { colorScheme })
       });
     }
+  }
+
+  // --- ?webmcpBridge=fake: the desktop bridge, with a fake widget (see fakeWidget.ts) ---
+  if (browser && new URLSearchParams(window.location.search).get('webmcpBridge') === 'fake') {
+    const widget = createFakeBridgeWidget();
+    (window as unknown as Record<string, unknown>).__fakeBridge = widget;
+    const context = installBridgedModelContext(widget);
+    const tool = (name: string, description: string) => ({
+      name,
+      description,
+      inputSchema: {
+        type: 'object' as const,
+        properties: {},
+        additionalProperties: false as const
+      },
+      execute: async () => ({ content: [{ type: 'text' as const, text: '{}' }] })
+    });
+    void context?.registerTool(tool('flowdrop_list_nodes', 'List the nodes of the workflow'));
+    void context?.registerTool(tool('flowdrop_add_node', 'Add a node'));
+    void context?.registerTool(tool('flowdrop_connect', 'Connect two ports'));
   }
 
   // --- The `sessions` endpoint group (?sessions=1) ---
