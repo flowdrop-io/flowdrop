@@ -315,6 +315,8 @@ export const defaultMessages = {
   nodeInspector: {
     tabsLabel: 'Node tabs',
     config: 'Config',
+    ports: 'Ports',
+    execution: 'Execution',
     lastRun: 'Last run',
     notRun: 'This node has not run in the run you are viewing.',
     running: 'Running now…',

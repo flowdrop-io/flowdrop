@@ -48,7 +48,20 @@
   import { logger } from '../utils/logger.js';
   import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
   import { applyFetchedSchema } from '$lib/utils/schemaMerge.js';
-  import { PORTS_CONFIG_KEY, withPortsControl, withPortsField } from '$lib/utils/nodeFormSchema.js';
+  import {
+    PORTS_CONFIG_KEY,
+    hasConfigurablePorts,
+    withPortsControl,
+    withPortsField
+  } from '$lib/utils/nodeFormSchema.js';
+  import {
+    FORM_SECTION_ORDER,
+    nonEmptySections,
+    splitInspectorSections,
+    type SectionElements
+  } from '$lib/utils/inspectorSections.js';
+  import { getInspectorContext, type ExternalLinkInfo } from '$lib/utils/inspectorContext.js';
+  import ExternalLinkRow from './ExternalLinkRow.svelte';
 
   interface Props {
     /** Optional workflow node (if provided, schema and values are derived from it) */
@@ -355,6 +368,42 @@
     await loadDynamicSchema();
   }
 
+  // Inside the node inspector the form is split across its tabs and the external
+  // link becomes a row in the inspector's meta area; standalone it renders whole.
+  const inspector = getInspectorContext();
+
+  /** The form's tabs: Config / Ports / Execution. */
+  const sections = $derived.by<SectionElements>(() => {
+    const out = configUISchema
+      ? splitInspectorSections(configUISchema)
+      : splitInspectorSections({
+          type: 'VerticalLayout',
+          elements: Object.keys(configSchema?.properties ?? {}).map((key) => ({
+            type: 'Control' as const,
+            scope: `#/properties/${key}`
+          }))
+        });
+    // A node with no ports has nothing to put on the Ports tab.
+    if (node && !hasConfigurablePorts(node, configSchema)) out.ports = [];
+    return out;
+  });
+
+  /** The row naming the workflow a node runs, e.g. "Runs Calculator". */
+  const externalInfo = $derived.by<ExternalLinkInfo | null>(() => {
+    const link = configEditOptions?.externalEditLink;
+    if (!showExternalEditLink || !link) return null;
+    const target = /^run workflow:\s*(.+)$/i.exec(node?.data.label ?? '')?.[1];
+    return {
+      label: target ? `Runs ${target}` : (link.label ?? 'Configure externally'),
+      title: link.description,
+      open: handleExternalEditClick
+    };
+  });
+
+  $effect(() => {
+    inspector?.report(nonEmptySections(sections), externalInfo);
+  });
+
   /**
    * Get the resolved external edit URL
    */
@@ -606,29 +655,14 @@
   }
 </script>
 
-<!-- External Edit Link Section (shown when configured and preferred) -->
-{#if showExternalEditLink && configEditOptions?.externalEditLink}
-  <div class="flowdrop-scope config-form__admin-edit">
-    <div class="config-form__admin-edit-header">
-      <Icon icon="heroicons:arrow-top-right-on-square" />
-      <span>External Configuration</span>
-    </div>
-    <div class="config-form__admin-edit-content">
-      <p class="config-form__admin-edit-description">
-        {configEditOptions.externalEditLink.description ??
-          'This node requires external configuration. Click the button below to open the configuration panel.'}
-      </p>
-      <button
-        type="button"
-        class="config-form__button config-form__button--external"
-        onclick={handleExternalEditClick}
-      >
-        <Icon
-          icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
-        />
-        <span>{configEditOptions.externalEditLink.label ?? 'Configure Externally'}</span>
-      </button>
-    </div>
+<!-- External workflow link: a row, shown here only when no inspector hosts it -->
+{#if externalInfo && !inspector}
+  <div class="flowdrop-scope config-form__external">
+    <ExternalLinkRow
+      label={externalInfo.label}
+      title={externalInfo.title}
+      onopen={externalInfo.open}
+    />
   </div>
 {/if}
 
@@ -712,7 +746,34 @@
 
     {#if configSchema.properties}
       <div class="config-form__fields">
-        {#if configUISchema}
+        {#if inspector}
+          {#each FORM_SECTION_ORDER as key (key)}
+            {#if sections[key].length > 0}
+              <div
+                class="config-form__section"
+                data-section={key}
+                role="tabpanel"
+                id={`node-inspector-panel-${key}`}
+                aria-labelledby={`node-inspector-tab-${key}`}
+                style:display={inspector.section === key ? 'flex' : 'none'}
+              >
+                <FormUISchemaRenderer
+                  element={{ type: 'VerticalLayout', elements: sections[key] }}
+                  schema={configSchema}
+                  values={configValues}
+                  requiredFields={configSchema.required ?? []}
+                  onFieldChange={handleFieldChange}
+                  {toFieldSchema}
+                  {node}
+                  nodes={workflowNodes}
+                  edges={workflowEdges}
+                  {workflowId}
+                  {authProvider}
+                />
+              </div>
+            {/if}
+          {/each}
+        {:else if configUISchema}
           <FormUISchemaRenderer
             element={configUISchema}
             schema={configSchema}
@@ -823,6 +884,11 @@
 
   .config-form__fields {
     display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-xl);
+  }
+
+  .config-form__section {
     flex-direction: column;
     gap: var(--fd-space-xl);
   }
@@ -988,47 +1054,12 @@
   }
 
   /* ============================================
-	   ADMIN/EDIT SECTION - External Configuration
+	   EXTERNAL WORKFLOW ROW (standalone form only; the inspector hosts it
+	   in its meta area otherwise)
 	   ============================================ */
 
-  .config-form__admin-edit {
-    background: var(--fd-primary-muted);
-    border: 1px solid var(--fd-primary);
-    border-radius: var(--fd-radius-lg);
-    overflow: hidden;
+  .config-form__external {
     margin-bottom: var(--fd-space-xl);
-  }
-
-  .config-form__admin-edit-header {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background: transparent;
-    border-bottom: 1px solid var(--fd-primary);
-    font-size: var(--fd-text-sm);
-    font-weight: 600;
-    color: var(--fd-primary-hover);
-  }
-
-  .config-form__admin-edit-header :global(svg) {
-    width: 1rem;
-    height: 1rem;
-    color: var(--fd-primary);
-  }
-
-  .config-form__admin-edit-content {
-    padding: var(--fd-space-xl);
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-md);
-  }
-
-  .config-form__admin-edit-description {
-    margin: 0;
-    font-size: var(--fd-text-sm);
-    color: var(--fd-primary-hover);
-    line-height: 1.5;
   }
 
   /* ============================================
@@ -1120,10 +1151,8 @@
 
   .config-form__schema-actions {
     display: flex;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-md);
     margin-bottom: var(--fd-space-xl);
-    padding-bottom: var(--fd-space-md);
-    border-bottom: 1px solid var(--fd-border-muted);
   }
 
   .config-form__schema-refresh,
@@ -1131,44 +1160,33 @@
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-3xs);
-    padding: var(--fd-space-3xs) var(--fd-space-xs);
+    padding: 0;
+    border: 0;
+    background: none;
     font-size: var(--fd-text-xs);
     font-weight: 500;
     font-family: inherit;
-    border-radius: var(--fd-radius-md);
+    color: var(--fd-muted-foreground);
     cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    border: 1px solid transparent;
+    transition: color var(--fd-transition-fast);
   }
 
-  .config-form__schema-refresh {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border);
-    color: var(--fd-muted-foreground);
+  .config-form__schema-external {
+    color: var(--fd-primary);
   }
 
   .config-form__schema-refresh:hover {
-    background-color: var(--fd-subtle);
-    border-color: var(--fd-border-strong);
     color: var(--fd-foreground);
+  }
+
+  .config-form__schema-external:hover {
+    color: var(--fd-primary-hover);
   }
 
   .config-form__schema-refresh :global(svg),
   .config-form__schema-external :global(svg) {
     width: 0.875rem;
     height: 0.875rem;
-  }
-
-  .config-form__schema-external {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-primary);
-    color: var(--fd-primary-hover);
-  }
-
-  .config-form__schema-external:hover {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-primary-hover);
-    color: var(--fd-primary-hover);
   }
 
   /* ============================================
