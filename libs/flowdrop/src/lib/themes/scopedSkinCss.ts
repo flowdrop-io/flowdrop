@@ -148,7 +148,12 @@ export function displayTokens(display: FlowDropDisplayConfig | undefined): FlowD
     const compact = display.nodeDetails === 'compact';
     out['node-desc-display'] = compact ? 'none' : '-webkit-box';
     out['node-desc-block-display'] = compact ? 'none' : 'block';
-    out['node-port-help-display'] = compact ? 'none' : 'block';
+    if (compact) {
+      // Without the description row (row gap + one line) the header is 2 gaps +
+      // the title: 60px, still on the 20px grid the port handles snap to.
+      out['node-header-min-height'] =
+        'calc(var(--fd-node-header-gap) * 2 + var(--fd-node-header-title-height) - var(--fd-node-border-width))';
+    }
   }
   if (display.navbarActions) {
     const split = display.navbarActions === 'split';

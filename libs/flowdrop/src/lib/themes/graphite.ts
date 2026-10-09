@@ -7,7 +7,6 @@ export const graphiteTheme: FlowDropTheme = {
   config: {
     display: {
       sidebarList: 'rows',
-      nodeDetails: 'compact',
       messages: 'document'
     },
     sidebar: {

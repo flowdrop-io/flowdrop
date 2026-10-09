@@ -154,14 +154,16 @@ describe('resolveTheme with an inline skin on a named base', () => {
     expect(resolveTheme({ name: 'graphite', skin: { font: 'serif' } }).skin?.font).toBe('serif');
   });
 
-  it('shows compact nodes: title and ports only', () => {
-    expect(graphiteTheme.config?.display?.nodeDetails).toBe('compact');
-    expect(displayTokens({ nodeDetails: 'compact' })).toMatchObject({
+  it('keeps node descriptions; compact hides them and keeps the header on the grid', () => {
+    expect(graphiteTheme.config?.display?.nodeDetails).toBeUndefined();
+    const compact = displayTokens({ nodeDetails: 'compact' });
+    expect(compact).toMatchObject({
       'node-desc-display': 'none',
-      'node-desc-block-display': 'none',
-      'node-port-help-display': 'none'
+      'node-desc-block-display': 'none'
     });
-    expect(displayTokens({ nodeDetails: 'full' })['node-port-help-display']).toBe('block');
+    expect(compact['node-port-help-display']).toBeUndefined();
+    expect(compact['node-header-min-height']).toContain('* 2');
+    expect(displayTokens({ nodeDetails: 'full' })['node-header-min-height']).toBeUndefined();
     expect(displayTokens({})).toEqual({});
   });
 });

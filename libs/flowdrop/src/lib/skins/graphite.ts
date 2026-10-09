@@ -176,25 +176,14 @@ export const graphiteSkin: FlowDropSkin = {
     'modal-header-height': '3rem',
     'modal-title-size': '0.9375rem',
 
-    /* ----- Node anatomy: no header band, title and ports only, ink on white ----- */
-    'node-header-gap': '9px',
-    'node-header-title-height': '22px',
-    'node-header-min-height': '0px',
-    'node-header-padding-x': '10px',
-    'node-header-row-gap': '0px',
-    'node-title-line': '18px',
+    /* ----- Node anatomy: no header band, ink on white. Geometry stays on the
+       10/20px grid from tokens.css so ports and edges line up. ----- */
     'node-title-size': '0.78125rem',
     'node-title-weight': '600',
     'node-title-clamp': '1',
     'node-icon-size': '22px',
     'node-icon-glyph-size': '14px',
     'node-icon-radius': '6px',
-    'node-port-height': '24px',
-    'node-port-handle-top': '50%',
-    'node-port-pad': '0 10px',
-    'node-port-align': 'center',
-    'node-ports-first-pad': '6px',
-    'node-ports-end-pad': '6px',
     'node-port-name-weight': '400',
     'node-port-chip-font': 'var(--fd-font-mono)',
     'node-port-chip-size': '10.5px',

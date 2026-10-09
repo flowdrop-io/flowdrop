@@ -32,8 +32,9 @@ export interface FlowDropDisplayConfig {
   /** Show the sidebar "Components" header. Defaults to true. */
   sidebarHeader?: boolean;
   /**
-   * Node detail on the canvas: 'full' (default) shows each node's description and its ports' help
-   * text; 'compact' shows the title and ports only (the text moves to a hover tooltip and the inspector).
+   * Node detail on the canvas: 'full' (default) shows each node's description under its title;
+   * 'compact' hides it (it stays in the hover tooltip and the inspector) and shortens the header
+   * by one grid row. The user's "Compact Mode" setting turns it on for any theme.
    */
   nodeDetails?: 'full' | 'compact';
   /** Navbar actions: a primary action plus a dropdown ('dropdown', default) or all actions as separate buttons ('split'). */

@@ -493,7 +493,11 @@
 
   $effect(() => {
     if (typeof document === 'undefined') return;
-    const css = buildScopedSkinCss(scopeId, resolvedTheme.skin, themeConfig?.display);
+    // The user's Compact Mode hides node descriptions in every theme.
+    const display = getUiSettings().compactMode
+      ? { ...themeConfig?.display, nodeDetails: 'compact' as const }
+      : themeConfig?.display;
+    const css = buildScopedSkinCss(scopeId, resolvedTheme.skin, display);
     if (!css) return;
 
     const style = document.createElement('style');
