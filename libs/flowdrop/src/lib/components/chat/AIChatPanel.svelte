@@ -61,6 +61,8 @@
     commandsDismissed?: boolean;
     /** Tools mode: one compact status line per tool call of this turn */
     toolLines?: ToolLine[];
+    /** How long the turn took, wall-clock, for the fold of its activity rows. */
+    elapsedMs?: number;
     /** When the message was made (ISO), for the meta line under it. */
     at?: string;
     /** Set on the assistant placeholder while its reply is still coming */
@@ -406,6 +408,7 @@
     displayMessages.push({ role: 'user', content: text, at: new Date().toISOString() });
     isLoading = true;
 
+    const turnStart = performance.now();
     const progress: DisplayMessage = {
       role: 'assistant',
       content: '',
@@ -466,6 +469,7 @@
     } catch (err) {
       msg.content = `Error: ${err instanceof Error ? err.message : 'Failed to send message'}`;
     } finally {
+      msg.elapsedMs = Math.round(performance.now() - turnStart);
       msg.inProgress = false;
       isLoading = false;
       if (destroyed) releaseRuntime();
@@ -850,7 +854,11 @@
           >
             {#if message.toolLines && message.toolLines.length > 0}
               <div class="ai-chat-panel__activity">
-                <ActivityList rows={message.toolLines} live={message.inProgress === true} />
+                <ActivityList
+                  rows={message.toolLines}
+                  live={message.inProgress === true}
+                  elapsedMs={message.elapsedMs}
+                />
               </div>
             {/if}
             {#if message.role === 'user'}
@@ -1341,7 +1349,7 @@
     gap: var(--fd-space-3xs);
     margin-top: var(--fd-space-3xs);
     font-size: var(--fd-text-xs);
-    color: var(--fd-destructive, var(--fd-foreground));
+    color: var(--fd-error);
   }
 
   .ai-chat-panel__turn-warning :global(svg) {

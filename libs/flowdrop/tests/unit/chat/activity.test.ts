@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   describeArgs,
   formatActivityDuration,
+  rowDuration,
   summarizeActivity,
   toolVerb,
   type ActivityRow
@@ -67,6 +68,17 @@ describe('formatActivityDuration', () => {
   it('gives nothing for a bad value', () => {
     expect(formatActivityDuration(-1)).toBe('');
     expect(formatActivityDuration(Number.NaN)).toBe('');
+  });
+});
+
+describe('rowDuration', () => {
+  it('shows nothing for a step under 0.1 s or without a time', () => {
+    expect(rowDuration(undefined)).toBe('');
+    expect(rowDuration(99)).toBe('');
+  });
+  it('shows the time from 0.1 s', () => {
+    expect(rowDuration(100)).toBe('0.1 s');
+    expect(rowDuration(1600)).toBe('1.6 s');
   });
 });
 

@@ -16,7 +16,7 @@ const rows: ActivityRow[] = [
 let target: HTMLElement;
 let mounted: ReturnType<typeof mount> | null = null;
 
-function render(props: { rows: ActivityRow[]; live: boolean }) {
+function render(props: { rows: ActivityRow[]; live: boolean; elapsedMs?: number }) {
   target = document.createElement('div');
   document.body.appendChild(target);
   mounted = mount(ActivityList, { target, props });
@@ -48,6 +48,18 @@ describe('ActivityList', () => {
     expect(details?.open).toBe(false);
     expect(details?.querySelector('summary')?.textContent?.trim()).toBe('Used 3 tools · 1.2 s');
     expect(target.querySelectorAll('.activity-row__dot')).toHaveLength(0);
+  });
+
+  it('prefers the whole turn time for the fold', () => {
+    const done = rows.map((r) => ({ ...r, status: 'ok' as const, ms: 10 }));
+    render({ rows: done, live: false, elapsedMs: 4200 });
+    expect(target.querySelector('summary')?.textContent?.trim()).toBe('Used 3 tools · 4.2 s');
+  });
+
+  it('drops a time under 0.1 s from the fold', () => {
+    const done = rows.map((r) => ({ ...r, status: 'ok' as const, ms: 10 }));
+    render({ rows: done, live: false });
+    expect(target.querySelector('summary')?.textContent?.trim()).toBe('Used 3 tools');
   });
 
   it('names failures in the fold', () => {

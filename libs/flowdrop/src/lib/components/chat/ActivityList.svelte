@@ -9,6 +9,7 @@
   import ActivityRow from './ActivityRow.svelte';
   import {
     formatActivityDuration,
+    rowDuration,
     summarizeActivity,
     type ActivityRow as Row
   } from '../../chat/activity.js';
@@ -18,9 +19,11 @@
     rows: Row[];
     /** The turn is still running: rows stay open. */
     live: boolean;
+    /** How long the whole turn took, for the fold. Absent: the sum of the rows' own times. */
+    elapsedMs?: number;
   }
 
-  let { rows, live }: Props = $props();
+  let { rows, live, elapsedMs }: Props = $props();
 
   const t = $derived(m().chat.tools);
   const summary = $derived(summarizeActivity(rows));
@@ -29,7 +32,10 @@
     t.used({
       count: summary.tools,
       problems: summary.problems,
-      duration: summary.totalMs > 0 ? formatActivityDuration(summary.totalMs) : ''
+      duration:
+        (elapsedMs ?? summary.totalMs) >= 100
+          ? formatActivityDuration(elapsedMs ?? summary.totalMs)
+          : ''
     })
   );
 </script>
@@ -42,9 +48,7 @@
           status={row.status}
           label={row.verb}
           detail={row.detail}
-          duration={row.ms !== undefined && row.status !== 'running'
-            ? formatActivityDuration(row.ms)
-            : ''}
+          duration={rowDuration(row.ms)}
         />
       </li>
     {/each}
@@ -103,7 +107,7 @@
   }
 
   .activity-fold__summary :global(.activity-fold__bad) {
-    color: var(--fd-destructive, var(--fd-foreground));
+    color: var(--fd-error);
   }
 
   .activity-fold__summary :global(.activity-fold__chevron) {

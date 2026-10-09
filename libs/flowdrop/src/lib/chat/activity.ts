@@ -70,13 +70,18 @@ export function formatActivityDuration(ms: number): string {
   return `${minutes} m ${String(seconds).padStart(2, '0')} s`;
 }
 
+/** The duration a row shows: nothing for a step too quick to be worth a number (under 0.1 s). */
+export function rowDuration(ms: number | undefined): string {
+  return ms === undefined || ms < 100 ? '' : formatActivityDuration(ms);
+}
+
 /** What a finished turn folds into: how many tools ran, how many went wrong, how long they took. */
 export interface ActivitySummary {
   /** Tool calls, notes not counted. */
   tools: number;
   /** Calls that failed or that the person rejected. */
   problems: number;
-  /** The sum of the calls' own durations. */
+  /** The sum of the calls' own durations (the fold prefers the turn's wall-clock time). */
   totalMs: number;
 }
 

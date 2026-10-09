@@ -67,7 +67,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    align-self: center;
+    align-self: start;
+    height: 1.5em;
     font-size: 0.9em;
   }
 
@@ -93,7 +94,7 @@
 
   .activity-row--rejected,
   .activity-row--failed {
-    color: var(--fd-destructive, var(--fd-foreground));
+    color: var(--fd-error);
   }
 
   .activity-row--rejected .activity-row__label,
