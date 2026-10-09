@@ -86,24 +86,25 @@ test.describe('Inspector follows the selection', () => {
     test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
   });
 
-  test('a node wins over open workflow settings, and closing it returns to the tabs', async ({
+  test('opening a node closes workflow settings, and the Workflow button brings the tabs back', async ({
     page
   }) => {
     await gotoEditorWith(page, 'none');
     await openWorkflowSettings(page);
     await expect(page.getByRole('tab', { name: 'Playground' })).toBeVisible();
 
-    // Select a node: its config shows instead of the workflow tabs.
+    // Select a node: its config shows instead of the workflow tabs, which close.
     await page.locator('.svelte-flow__node').first().dblclick({ force: true });
     await expect(page.locator('.config-panel').first()).toContainText('Text Input');
     await expect(page.getByRole('tab', { name: 'Interface' })).toHaveCount(0);
+    await expect(page.getByTestId('navbar-workflow-button')).toHaveAttribute(
+      'aria-pressed',
+      'false'
+    );
 
-    // Deselect: the workflow tabs are back, Playground among them.
-    const pane = page.locator('.svelte-flow__pane');
-    const box = await pane.boundingBox();
-    if (!box) throw new Error('Canvas pane not found');
-    await page.mouse.click(box.x + 50, box.y + box.height - 50);
-    await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
+    // The Workflow button opens the tabs again and closes the node inspector.
+    await openWorkflowSettings(page);
+    await expect(page.locator('.config-panel')).toHaveCount(0);
     await page.getByRole('tab', { name: 'Playground' }).click();
     await expect(page.getByTestId('workflow-playground-settings')).toBeVisible();
   });
