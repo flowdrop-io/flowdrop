@@ -141,6 +141,10 @@ function deepMergeSettings(
   // Merge UI settings
   if (source.ui) {
     result.ui = { ...result.ui, ...source.ui };
+    // Per-tab widths merge key by key, so saving one tab keeps the other
+    if (source.ui.sidebarWidths) {
+      result.ui.sidebarWidths = { ...target.ui.sidebarWidths, ...source.ui.sidebarWidths };
+    }
   }
 
   // Merge behavior settings

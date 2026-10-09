@@ -79,8 +79,17 @@ export type SurfacePlacement = 'sidebar' | 'modal' | 'below';
  * UI layout and display settings
  */
 export interface UISettings {
-  /** Width of the node sidebar in pixels */
+  /**
+   * Width of the node sidebar in pixels.
+   * @deprecated Superseded by `sidebarWidths.nodes`; still read as its fallback.
+   */
   sidebarWidth: number;
+  /**
+   * Width of the left column per tab, in pixels. Saved when a drag or an
+   * arrow-key resize ends. Read it through `resolveSidebarWidths`, which
+   * clamps and fills in a missing tab.
+   */
+  sidebarWidths: { nodes: number; assistant: number };
   /** Whether the sidebar is collapsed */
   sidebarCollapsed: boolean;
   /** Enable compact mode for denser UI */
@@ -89,7 +98,7 @@ export interface UISettings {
   theme: 'default' | 'minimal' | 'drafter' | 'graphite';
   /** Whether the command console panel is open */
   consoleOpen: boolean;
-  /** Height of the command console panel in pixels */
+  /** Height of the command console panel in pixels (opens at 220, saved on resize) */
   consoleHeight: number;
   /**
    * Active tab in the console group. `chat` is kept for stored settings: the
@@ -264,11 +273,12 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
  */
 export const DEFAULT_UI_SETTINGS: UISettings = {
   sidebarWidth: 280,
+  sidebarWidths: { nodes: 280, assistant: 380 },
   sidebarCollapsed: false,
   compactMode: false,
   theme: 'default',
   consoleOpen: false,
-  consoleHeight: 300,
+  consoleHeight: 220,
   bottomPanelTab: 'console',
   configPlacement: 'sidebar',
   consolePlacement: 'below'

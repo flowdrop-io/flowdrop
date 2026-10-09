@@ -170,7 +170,7 @@
   class:flowdrop-sidebar--compact={getUiSettings().compactMode}
   class:flowdrop-sidebar--popover={props.popover}
   class:flowdrop-sidebar--rows={props.listStyle === 'rows'}
-  style:width={props.popover ? '100%' : `${isCollapsed ? 0 : getUiSettings().sidebarWidth}px`}
+  style:width={isCollapsed && !props.popover ? '0' : '100%'}
   aria-label={m().layout.componentsSidebar}
 >
   <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
