@@ -69,6 +69,18 @@ export interface EndpointConfig {
       logs: string;
       execute: string;
       stop: string;
+      /**
+       * Re-run a finished pipeline (`POST`, answers
+       * `{ success, data: { pipeline_id, status } }`). The Runs list in Test
+       * mode offers Re-run only when this is set.
+       */
+      rerun?: string;
+      /**
+       * Cancel a pipeline that has not finished (`POST`, no body). The Runs
+       * list offers Cancel only when this or `signals` is set; this key wins
+       * when both are.
+       */
+      cancel?: string;
     };
 
     /**
@@ -321,7 +333,9 @@ export const defaultEndpointConfig: EndpointConfig = {
       status: '/pipeline/{id}/status',
       logs: '/pipeline/{id}/logs',
       execute: '/pipeline/{id}/execute',
-      stop: '/pipeline/{id}/stop'
+      stop: '/pipeline/{id}/stop',
+      rerun: '/pipeline/{id}/rerun',
+      cancel: '/pipeline/{id}/cancel'
     },
     playground: {
       listSessions: '/workflows/{id}/playground/sessions',
