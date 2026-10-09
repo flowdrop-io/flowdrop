@@ -31,6 +31,11 @@
  * that expect slow approvals should say so in the dialog copy or use a custom
  * `approval` callback.
  *
+ * The widget's own floating UI is hidden once installed: the editor shows a
+ * connect button and popover of its own, driven by the controller in
+ * `./bridgeController.svelte.ts`. If the widget's private surface is not
+ * recognised (a vendored upgrade), the widget's UI stays visible instead.
+ *
  * Nothing here decides *who* may reach the page: the bridge is localhost-only
  * and token-gated by design, and the adapter's confirm dialog and the
  * server's permissions still gate every mutation. Hosts should still make the
@@ -46,6 +51,8 @@ import type {
   ToolInputSchema,
   ToolResult
 } from './types.js';
+import { createBridgeController, setBridgeController } from './bridgeController.svelte.js';
+import type { BridgeWidgetInternals } from './bridgeController.svelte.js';
 
 /** The page-side widget surface the bridge relays to (`@jason.today/webmcp`). */
 export interface WebMCPWidgetLike {
@@ -131,6 +138,8 @@ export function installBridgedModelContext(
       : (navigator as { modelContext?: ModelContextLike });
   if (nav?.modelContext) return nav.modelContext;
   const bridged = createBridgedModelContext(widget);
+  // The editor draws the bridge's UI itself (a button in the zoom controls) from this.
+  setBridgeController(createBridgeController(widget as BridgeWidgetInternals));
   Object.defineProperty(target, 'modelContext', { value: bridged, configurable: true });
   return bridged;
 }
