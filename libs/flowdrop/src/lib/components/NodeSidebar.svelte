@@ -815,16 +815,41 @@
     display: none;
   }
 
-  /* Nodes of an open category sit under its label, 20px tile + 10px gap in. */
+  /*
+   * Nodes of an open category: a bare 16px glyph in the category tint, centred
+   * in the 20px column the category tile uses, so the names line up with the
+   * category label (tile 20px + 10px gap in). No tile, no box.
+   */
   .flowdrop-sidebar--rows
     .flowdrop-details__content
     .flowdrop-node-item
-    :global(.flowdrop-card__body) {
-    padding-left: calc(var(--fd-space-xs) + 1.25rem + 10px);
+    :global(.flowdrop-card__body > .flowdrop-flex) {
+    gap: 10px;
   }
 
-  .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-icon {
-    display: none;
+  .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-icon,
+  .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-item:hover .flowdrop-node-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    background: transparent;
+    color: var(--_icon-color);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-icon :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item {
+    cursor: grab;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item:active {
+    cursor: grabbing;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item h4 {
+    color: var(--fd-foreground);
   }
 
   .flowdrop-sidebar--rows .flowdrop-sidebar__results-head {
