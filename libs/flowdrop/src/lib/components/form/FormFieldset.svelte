@@ -29,14 +29,12 @@
 
   const isCollapsible = $derived(group.collapsible !== false);
   const isDefaultOpen = $derived(group.defaultOpen !== false);
-  const headerIcon = $derived(group.icon ?? 'heroicons:adjustments-horizontal');
 </script>
 
 {#if isCollapsible}
   <details class="flowdrop-details form-fieldset" open={isDefaultOpen}>
     <summary class="flowdrop-details__summary form-fieldset__summary">
       <span class="form-fieldset__label">
-        <Icon icon={headerIcon} class="form-fieldset__icon" />
         <span class="form-fieldset__title">{group.label}</span>
       </span>
       <span class="form-fieldset__meta">
@@ -66,27 +64,40 @@
 
 <style>
   /* ============================================
-	   COLLAPSIBLE FIELDSET — filled header bar
-	   Extends .flowdrop-details from base.css, overriding the summary
-	   into a distinct header bar (subtle fill + bottom divider when open)
-	   over a card body. Scoped to .form-fieldset so other .flowdrop-details
-	   consumers (e.g. NodeSidebar) are unaffected.
+	   COLLAPSIBLE FIELDSET: a flat section.
+	   A 13px semibold heading over its fields; sections after the first are
+	   set off by a 1px rule and space, never a card, band or shadow. Extends
+	   .flowdrop-details from base.css; scoped to .form-fieldset so other
+	   .flowdrop-details consumers (e.g. NodeSidebar) are unaffected.
 	   ============================================ */
+
+  details.form-fieldset {
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  details.form-fieldset[open] {
+    box-shadow: none;
+  }
+
+  details.form-fieldset:not(:first-child) {
+    padding-top: var(--fd-space-xl);
+    border-top: 1px solid var(--fd-border-muted);
+  }
 
   .form-fieldset__summary {
     gap: var(--fd-space-sm);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background: var(--fd-subtle);
+    padding: 0 0 var(--fd-space-md);
+    background: none;
+    border: 0;
     border-radius: 0;
+    cursor: pointer;
   }
 
   .form-fieldset__summary:hover {
-    background-color: var(--fd-muted);
-  }
-
-  /* Divider between header bar and body — only while expanded */
-  details.form-fieldset[open] > .form-fieldset__summary {
-    border-bottom: 1px solid var(--fd-border-muted);
+    background: none;
   }
 
   .form-fieldset__label {
@@ -100,13 +111,6 @@
     display: flex;
     align-items: center;
     gap: var(--fd-space-sm);
-    flex-shrink: 0;
-  }
-
-  .form-fieldset :global(.form-fieldset__icon) {
-    width: 1rem;
-    height: 1rem;
-    color: var(--fd-muted-foreground);
     flex-shrink: 0;
   }
 
@@ -140,7 +144,8 @@
   }
 
   .form-fieldset__content {
-    padding: var(--fd-space-xl);
+    padding: 0;
+    background: none;
   }
 
   .form-fieldset__fields {
@@ -154,17 +159,28 @@
 	   ============================================ */
 
   .form-fieldset--static {
-    border: 1px solid var(--fd-border-muted);
-    border-radius: var(--fd-control-radius);
-    padding: var(--fd-space-xl);
+    border: 0;
+    padding: 0;
     margin: 0;
+    min-width: 0;
+  }
+
+  .form-fieldset--static:not(:first-child) {
+    padding-top: var(--fd-space-xl);
+    border-top: 1px solid var(--fd-border-muted);
   }
 
   .form-fieldset__legend {
-    padding: 0 var(--fd-space-xs);
+    float: left;
+    width: 100%;
+    padding: 0 0 var(--fd-space-md);
     font-size: var(--fd-text-sm);
     font-weight: 600;
     color: var(--fd-foreground);
+  }
+
+  .form-fieldset__legend + * {
+    clear: both;
   }
 
   .form-fieldset__description {

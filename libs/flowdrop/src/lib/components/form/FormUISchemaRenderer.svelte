@@ -76,7 +76,7 @@
   const SETTINGS_GROUP: UISchemaGroup = {
     type: 'Group',
     label: 'Settings',
-    collapsible: true,
+    collapsible: false,
     defaultOpen: true,
     elements: []
   };
