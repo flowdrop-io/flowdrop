@@ -35,6 +35,13 @@
     SIDEBAR_MAX_RATIO,
     clampSidebarWidth
   } from '$lib/utils/sidebarWidths.js';
+  import {
+    resolveWorkflowSheetWidth,
+    clampSheetWidth,
+    sheetMaxWidth,
+    SHEET_MIN_WIDTH,
+    SHEET_KEY_STEP
+  } from '$lib/utils/sheetWidths.js';
   import AIChatPanel from '$lib/components/chat/AIChatPanel.svelte';
   import TabbedSurface from '$lib/components/surfaces/TabbedSurface.svelte';
   import type { Snippet } from 'svelte';
@@ -823,6 +830,7 @@
     }
     selectedNodeId = node.id;
     isConfigSidebarOpen = true;
+    isWorkflowSettingsOpen = false;
     activeSurface = 'config';
     // Reset swap state when switching nodes
     swapMode = 'idle';
@@ -839,6 +847,7 @@
     if (isConfigSidebarOpen && selectedNodeId === node.id) return;
     selectedNodeId = node.id;
     isConfigSidebarOpen = true;
+    isWorkflowSettingsOpen = false;
     activeSurface = 'config';
     swapMode = 'idle';
     swapInteractiveState = null;
@@ -880,6 +889,7 @@
     selectedNodeId = nodeId;
     nodeInspectorTab = 'lastRun';
     isConfigSidebarOpen = true;
+    isWorkflowSettingsOpen = false;
     activeSurface = 'config';
     swapMode = 'idle';
     swapInteractiveState = null;
@@ -897,6 +907,7 @@
     if (!node) return false;
     selectedNodeId = nodeId;
     isConfigSidebarOpen = true;
+    isWorkflowSettingsOpen = false;
     activeSurface = 'config';
     swapMode = 'idle';
     swapInteractiveState = null;
@@ -1301,10 +1312,72 @@
 
   // Test mode shows the inspector as a sheet over the canvas, whatever
   // placement the person chose for Edit mode: no column, so the canvas keeps
-  // the width.
+  // the width. Workflow settings are a sheet in both modes: the person's
+  // placement is for node settings.
   const configPlacement = $derived<SurfacePlacement | 'sheet'>(
-    testMode ? 'sheet' : getUiSettings().configPlacement
+    testMode || (!selectedNodeForConfig && isWorkflowSettingsOpen)
+      ? 'sheet'
+      : getUiSettings().configPlacement
   );
+
+  /** The canvas region's width, for clamping the workflow sheet. */
+  let regionWidth = $state(0);
+  /** The canvas region, to measure how much of it a sheet covers. */
+  let editorMainEl = $state<HTMLElement | null>(null);
+  /** Width while the workflow sheet's left edge is being dragged; `null` otherwise. */
+  let liveSheetWidth = $state<number | null>(null);
+  const workflowSheetWidth = $derived(
+    liveSheetWidth ?? resolveWorkflowSheetWidth(getUiSettings(), regionWidth)
+  );
+  const workflowSheetMax = $derived(sheetMaxWidth(regionWidth));
+  let sheetDrag: { startX: number; startWidth: number } | null = null;
+
+  function saveWorkflowSheetWidth(width: number): void {
+    updateSettings({ ui: { sheetWidths: { workflow: clampSheetWidth(width, regionWidth) } } });
+  }
+  function onSheetResizeDown(event: PointerEvent): void {
+    if (event.button !== 0) return;
+    sheetDrag = { startX: event.clientX, startWidth: workflowSheetWidth };
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+  function onSheetResizeMove(event: PointerEvent): void {
+    if (!sheetDrag) return;
+    // The handle is on the left edge: dragging left makes the sheet wider.
+    liveSheetWidth = clampSheetWidth(
+      sheetDrag.startWidth + (sheetDrag.startX - event.clientX),
+      regionWidth
+    );
+  }
+  function onSheetResizeUp(): void {
+    if (!sheetDrag) return;
+    sheetDrag = null;
+    if (liveSheetWidth !== null) saveWorkflowSheetWidth(liveSheetWidth);
+    liveSheetWidth = null;
+  }
+  function onSheetResizeKey(event: KeyboardEvent): void {
+    const step = event.shiftKey ? SHEET_KEY_STEP * 3 : SHEET_KEY_STEP;
+    let next: number | null = null;
+    // Arrow left moves the left edge left, so the sheet grows.
+    if (event.key === 'ArrowLeft') next = workflowSheetWidth + step;
+    else if (event.key === 'ArrowRight') next = workflowSheetWidth - step;
+    else if (event.key === 'Home') next = SHEET_MIN_WIDTH;
+    else if (event.key === 'End') next = workflowSheetMax;
+    if (next === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    saveWorkflowSheetWidth(next);
+  }
+
+  /** How much of the canvas's right side an open sheet covers, for fit view. */
+  function fitInset(): number {
+    const sheet = editorMainEl?.querySelector('.inspector-sheet');
+    if (!editorMainEl || !sheet) return 0;
+    return Math.max(
+      0,
+      editorMainEl.getBoundingClientRect().right - sheet.getBoundingClientRect().left
+    );
+  }
   // Test mode has no right column, so a Console placed in the sidebar uses the
   // bottom panel there; Edit mode keeps the person's placement.
   const consolePlacement = $derived<SurfacePlacement>(
@@ -2145,6 +2218,8 @@
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="flowdrop-editor-main"
+      bind:this={editorMainEl}
+      bind:clientWidth={regionWidth}
       class:pipeline-view={!!pipelineId}
       style="--fd-canvas-left-offset: {testMode || !disableSidebar
         ? leftSidebarWidth + 'px'
@@ -2158,7 +2233,7 @@
         if (e.key !== 'Escape') return;
         // The topmost transient surface first (the node library), then the selection.
         if (libraryOpen) libraryOpen = false;
-        else if (testMode) {
+        else if (configPlacement === 'sheet') {
           // The inspector sheet is inside this region: Esc in one of its fields is the field's.
           const target = e.target as HTMLElement;
           if (
@@ -2211,13 +2286,42 @@
         </div>
       {/if}
 
-      <!-- Test mode: the open node (or the workflow tabs) as a sheet over the canvas's right edge -->
-      {#if testMode && activeConfig}
+      <!--
+        The open node (Test mode) or the workflow tabs (both modes) as a sheet over the
+        canvas's right edge. The workflow sheet is wider and resizable from its left edge.
+      -->
+      {#if configPlacement === 'sheet' && activeConfig}
         <aside
           class="inspector-sheet"
+          class:inspector-sheet--workflow={activeConfig.kind === 'workflow'}
           data-testid="inspector-sheet"
+          data-kind={activeConfig.kind}
           aria-label={activeConfig.title}
+          style={activeConfig.kind === 'workflow'
+            ? `width: min(${workflowSheetWidth}px, 100%)`
+            : undefined}
         >
+          {#if activeConfig.kind === 'workflow'}
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+            <div
+              class="inspector-sheet__resizer"
+              class:inspector-sheet__resizer--active={liveSheetWidth !== null}
+              data-testid="inspector-sheet-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label={mergedMessages.layout.resizeWorkflowSheet}
+              aria-valuenow={workflowSheetWidth}
+              aria-valuemin={SHEET_MIN_WIDTH}
+              aria-valuemax={workflowSheetMax}
+              tabindex="0"
+              onpointerdown={onSheetResizeDown}
+              onpointermove={onSheetResizeMove}
+              onpointerup={onSheetResizeUp}
+              onpointercancel={onSheetResizeUp}
+              onkeydown={onSheetResizeKey}
+            ></div>
+          {/if}
           {@render configPanelSidebar()}
         </aside>
       {/if}
@@ -2264,6 +2368,7 @@
         onAskAssistant={askAssistant}
         showRuns={testMode && features.runsList}
         adminLinks={features.adminLinks}
+        {fitInset}
       />
     </div>
   </MainLayout>
@@ -2390,6 +2495,31 @@
     border-color: var(--fd-sheet-border);
     border-radius: var(--fd-sheet-radius);
     box-shadow: var(--fd-shadow-lg);
+  }
+
+  /* The workflow sheet's left edge: an 8px hit area inside the sheet, a ring line on hover/focus/drag. */
+  .inspector-sheet__resizer {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 1;
+    width: var(--fd-space-sm);
+    cursor: col-resize;
+    touch-action: none;
+    outline: none;
+  }
+  .inspector-sheet__resizer::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: var(--fd-ring);
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+  .inspector-sheet__resizer:hover::after,
+  .inspector-sheet__resizer:focus-visible::after,
+  .inspector-sheet__resizer--active::after {
+    opacity: 1;
   }
 
   /* Test mode's node library, over the canvas's top-left corner, below the canvas toolbar. */

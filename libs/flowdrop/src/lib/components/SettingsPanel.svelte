@@ -205,8 +205,9 @@
         },
         configPlacement: {
           type: 'string',
-          title: 'Configuration panel',
-          description: 'Where the node/workflow configuration panel opens',
+          title: 'Node settings placement',
+          description:
+            'Where node settings open in Edit mode. Workflow settings always open as a floating sheet.',
           oneOf: [
             { const: 'sidebar', title: 'Right sidebar' },
             { const: 'modal', title: 'Modal window' },

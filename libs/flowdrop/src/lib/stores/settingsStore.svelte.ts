@@ -152,6 +152,9 @@ function deepMergeSettings(
     if (source.ui.sidebarWidths) {
       result.ui.sidebarWidths = { ...target.ui.sidebarWidths, ...source.ui.sidebarWidths };
     }
+    if (source.ui.sheetWidths) {
+      result.ui.sheetWidths = { ...target.ui.sheetWidths, ...source.ui.sheetWidths };
+    }
   }
 
   // Merge behavior settings

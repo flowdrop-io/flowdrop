@@ -469,6 +469,7 @@ export const defaultMessages = {
     // Resize handle labels — keyboard users tab to these.
     resizeLeftSidebar: 'Resize left sidebar',
     resizeRightSidebar: 'Resize right sidebar',
+    resizeWorkflowSheet: 'Resize workflow settings',
     resizeBottomPanel: 'Resize bottom panel',
     expandSidebar: 'Expand sidebar',
     collapseSidebar: 'Collapse sidebar',

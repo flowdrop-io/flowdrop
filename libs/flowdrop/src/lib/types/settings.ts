@@ -135,6 +135,12 @@ export interface UISettings {
    * clamps and fills in a missing tab.
    */
   sidebarWidths: { nodes: number; assistant: number };
+  /**
+   * Width of the floating sheets, in pixels. Only the workflow-settings sheet
+   * is resizable; saved when a drag or an arrow-key resize ends. Read it
+   * through `resolveWorkflowSheetWidth`, which clamps it.
+   */
+  sheetWidths: { workflow: number };
   /** Whether the sidebar is collapsed */
   sidebarCollapsed: boolean;
   /** Enable compact mode for denser UI */
@@ -319,6 +325,7 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
 export const DEFAULT_UI_SETTINGS: UISettings = {
   sidebarWidth: 280,
   sidebarWidths: { nodes: 280, assistant: 380 },
+  sheetWidths: { workflow: 420 },
   sidebarCollapsed: false,
   compactMode: false,
   theme: 'default',
