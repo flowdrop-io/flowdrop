@@ -38,6 +38,10 @@ const RANK: Record<DoctorSeverity, number> = { error: 0, warning: 1, info: 2 };
 export class DoctorStore {
   #problems = $state<DoctorProblem[]>([]);
   #status = $state<DoctorStatus>('idle');
+  /** Read from the endpoint configuration on every `schedule()`; the configuration itself is not reactive. */
+  #supported = $state(false);
+  /** The workflow whose Doctor route answered 404: left alone until another workflow loads. */
+  #unavailableFor: string | null = null;
   #applyingId = $state<string | null>(null);
   #notice = $state<DoctorNotice | null>(null);
   #focus: ((nodeId: string) => boolean) | null = null;
@@ -58,7 +62,7 @@ export class DoctorStore {
 
   /** Whether the backend offers a Doctor (the endpoints are configured). */
   get supported(): boolean {
-    return doctorSupported(this.#api.config);
+    return this.#supported;
   }
 
   get status(): DoctorStatus {
@@ -118,10 +122,11 @@ export class DoctorStore {
     if (this.#timer) clearTimeout(this.#timer);
     this.#timer = null;
     const id = this.#workflow.id;
-    if (!this.supported || !id) {
+    this.#supported = doctorSupported(this.#api.config) && this.#unavailableFor !== id;
+    if (!this.#supported || !id) {
       this.#token++;
       this.#problems = [];
-      this.#status = this.supported ? 'idle' : 'off';
+      this.#status = this.#supported ? 'idle' : 'off';
       this.#requested = null;
       return;
     }
@@ -162,6 +167,8 @@ export class DoctorStore {
     } else if (result.status === 'unavailable') {
       // Quiet: no indicator, no more requests for this version.
       this.#problems = [];
+      this.#supported = false;
+      this.#unavailableFor = id;
       this.#status = 'off';
     } else {
       // Keep what was shown; the next edit tries again.

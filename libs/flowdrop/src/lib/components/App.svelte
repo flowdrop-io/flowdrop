@@ -910,6 +910,8 @@
   $effect(() => {
     void fd.workflow.editVersion;
     void fd.workflow.id;
+    // The endpoints are configured after mount; their arrival is a trigger too.
+    void endpointConfig;
     untrack(() => fd.doctor.schedule());
   });
 

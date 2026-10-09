@@ -17,6 +17,9 @@
                            port (type mismatch tag), and an output `message`; the
                            Calculator's `result` output is left unpublished so the
                            expose flow can be driven from it
+    - ?workflow=doctor   -> three nodes the stubbed Doctor (tests/e2e/helpers/doctor-stub.ts)
+                           finds a problem on each: an unknown config key, a missing
+                           required key and a node whose type is not installed
     - ?workflow=caption  -> a text input plus two captions (short, long); also
                            offers the caption node type
     - ?caption=1         -> offer the caption node type (the pane menu then has
@@ -427,6 +430,61 @@
         target: 'node-output',
         sourceHandle: 'value',
         targetHandle: 'value'
+      }
+    ],
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+
+  const doctorWorkflow: Workflow = {
+    id: 'test-workflow-doctor',
+    name: 'Doctor Test Workflow',
+    description: 'One unknown config key, one missing required key, one missing plugin',
+    nodes: [
+      {
+        id: 'node-input',
+        type: 'universalNode',
+        position: { x: 80, y: 160 },
+        data: {
+          label: 'Text Input',
+          config: { defaultValue: 'hello', legacy_flag: true },
+          metadata: testNodeTypes[0]
+        }
+      },
+      {
+        id: 'node-output',
+        type: 'universalNode',
+        position: { x: 520, y: 160 },
+        data: { label: 'Text Output', config: {}, metadata: testNodeTypes[1] }
+      },
+      {
+        id: 'node-ghost',
+        type: 'universalNode',
+        position: { x: 520, y: 360 },
+        data: {
+          label: 'Ghost',
+          config: { keep: 1 },
+          metadata: { ...testNodeTypes[1], node_type_id: 'ghost', name: 'Ghost' }
+        }
+      }
+    ],
+    edges: [
+      {
+        id: 'edge-1',
+        source: 'node-input',
+        target: 'node-output',
+        sourceHandle: 'node-input-output-value',
+        targetHandle: 'node-output-input-value'
+      },
+      {
+        id: 'edge-2',
+        source: 'node-input',
+        target: 'node-ghost',
+        sourceHandle: 'node-input-output-value',
+        targetHandle: 'node-ghost-input-value'
       }
     ],
     metadata: {
@@ -857,6 +915,7 @@
     caption: captionWorkflow,
     simple: simpleWorkflow,
     interface: interfaceWorkflow,
+    doctor: doctorWorkflow,
     empty: emptyWorkflow,
     complex: complexWorkflow,
     disconnected: disconnectedWorkflow,
