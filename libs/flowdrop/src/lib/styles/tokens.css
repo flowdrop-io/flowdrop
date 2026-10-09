@@ -849,6 +849,7 @@
 /* The aliases the dark palette changes underneath, declared again on the themed
    element (see scripts/parse-token-aliases.mjs renderDarkAliasBlock). */
 [data-theme='dark'] {
+  --fd-activity-running: var(--fd-status-running);
   --fd-button-danger-bg: var(--fd-error);
   --fd-button-danger-border: var(--fd-error);
   --fd-button-danger-fg: var(--fd-error-foreground);
@@ -868,6 +869,8 @@
   --fd-field-shadow: var(--fd-shadow-sm);
   --fd-float-border: var(--fd-border);
   --fd-id-chip-bg: var(--fd-subtle);
+  --fd-iface-tag-bg: var(--fd-node-bg);
+  --fd-iface-tag-border: color-mix(in srgb, var(--fd-foreground) 45%, transparent);
   --fd-inspector-details-bg: var(--fd-card);
   --fd-inspector-details-rule: var(--fd-border-muted);
   --fd-inspector-link-color: var(--fd-primary);
