@@ -6,6 +6,18 @@
  * and the drift test, so the checked-in map cannot silently go stale.
  */
 
+/** Markers around the generated dark-alias block at the end of tokens.css. */
+export const DARK_ALIAS_BEGIN = '/* BEGIN GENERATED dark aliases (pnpm run generate:token-aliases) */';
+export const DARK_ALIAS_END = '/* END GENERATED dark aliases */';
+
+/** Remove the generated block, so it never feeds back into the maps it is built from. */
+export function stripGeneratedRegion(css) {
+  const a = css.indexOf(DARK_ALIAS_BEGIN);
+  const b = css.indexOf(DARK_ALIAS_END);
+  if (a < 0 || b < a) return css;
+  return css.slice(0, a) + css.slice(b + DARK_ALIAS_END.length);
+}
+
 /** Drop /* ... *\/ comments. */
 function stripComments(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -42,7 +54,7 @@ function splitDeclarations(body) {
  * @returns {{ light: Record<string,string>, dark: Record<string,string> }}
  */
 export function parseTokenDeclarations(css) {
-  const src = stripComments(css);
+  const src = stripComments(stripGeneratedRegion(css));
   const light = {};
   const dark = {};
   const re = /(^|\})\s*(:root|\[data-theme=['"]dark['"]\])\s*\{/g;
@@ -110,4 +122,48 @@ export function buildAliasMaps(sources) {
 
 function sortKeys(o) {
   return Object.fromEntries(Object.entries(o).sort(([a], [b]) => (a < b ? -1 : 1)));
+}
+
+/**
+ * The generated block for the end of tokens.css: `[data-theme='dark']` re-declares
+ * every light alias that (transitively) reads a token the dark palette changes.
+ *
+ * Why: a custom property holding var() is resolved where it is declared. The
+ * light aliases are declared on :root, so with data-theme on the editor's scope
+ * element (not on <html>) an alias such as `--fd-panel-bg: var(--fd-background)`
+ * would keep :root's light value inside a dark editor. Declared again on the
+ * themed element, it resolves against that element's dark palette.
+ *
+ * @param {string[]} sources stylesheet sources (tokens.css, base.css)
+ * @returns {string} the block, markers included
+ */
+export function renderDarkAliasBlock(sources) {
+  const maps = buildAliasMaps(sources);
+  const darkAll = new Set();
+  for (const css of sources) {
+    for (const k of Object.keys(parseTokenDeclarations(css).dark)) darkAll.add(k);
+  }
+  const refs = (expr) => [...expr.matchAll(/var\(\s*--fd-([a-z0-9-_]+)/gi)].map((m) => m[1]);
+  const need = new Set();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [name, expr] of Object.entries(maps.light)) {
+      if (need.has(name) || darkAll.has(name)) continue;
+      if (refs(expr).some((r) => darkAll.has(r) || need.has(r))) {
+        need.add(name);
+        changed = true;
+      }
+    }
+  }
+  const lines = Object.entries(maps.light)
+    .filter(([name]) => need.has(name))
+    .map(([name, expr]) => `  --fd-${name}: ${expr};`);
+  return `${DARK_ALIAS_BEGIN}
+/* The aliases the dark palette changes underneath, declared again on the themed
+   element (see scripts/parse-token-aliases.mjs renderDarkAliasBlock). */
+[data-theme='dark'] {
+${lines.join('\n')}
+}
+${DARK_ALIAS_END}`;
 }
