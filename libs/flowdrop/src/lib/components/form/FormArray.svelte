@@ -20,7 +20,8 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import Input from '../Input.svelte';
-  import Select from '../Select.svelte';
+  import Select from '../primitives/Select.svelte';
+  import Switch from '../primitives/Switch.svelte';
   import Textarea from '../Textarea.svelte';
   import IconButton from '../IconButton.svelte';
   import type { FieldSchema } from './types.js';
@@ -362,21 +363,12 @@
                   {disabled}
                 />
               {:else if itemSchema.type === 'boolean'}
-                <label class="form-array__toggle-wrapper">
-                  <input
-                    type="checkbox"
-                    class="form-array__checkbox-input"
-                    checked={Boolean(item)}
-                    onchange={(e) => updateItem(index, e.currentTarget.checked)}
-                    {disabled}
-                  />
-                  <span class="form-array__toggle-track">
-                    <span class="form-array__toggle-thumb"></span>
-                  </span>
-                  <span class="form-array__toggle-label">
-                    {item ? t.yes : t.no}
-                  </span>
-                </label>
+                <Switch
+                  checked={Boolean(item)}
+                  label={item ? t.yes : t.no}
+                  onchange={(checked) => updateItem(index, checked)}
+                  {disabled}
+                />
               {:else if itemSchema.enum}
                 <!-- Enum: render select -->
                 <Select
@@ -469,23 +461,13 @@
                             {disabled}
                           />
                         {:else if propFieldSchema.type === 'boolean'}
-                          <label class="form-array__toggle-wrapper">
-                            <input
-                              id="{id}-{index}-{propKey}"
-                              type="checkbox"
-                              class="form-array__checkbox-input"
-                              checked={Boolean(propValue)}
-                              onchange={(e) =>
-                                updateObjectProperty(index, propKey, e.currentTarget.checked)}
-                              {disabled}
-                            />
-                            <span class="form-array__toggle-track">
-                              <span class="form-array__toggle-thumb"></span>
-                            </span>
-                            <span class="form-array__toggle-label">
-                              {propValue ? t.yes : t.no}
-                            </span>
-                          </label>
+                          <Switch
+                            id="{id}-{index}-{propKey}"
+                            checked={Boolean(propValue)}
+                            label={propValue ? t.yes : t.no}
+                            onchange={(checked) => updateObjectProperty(index, propKey, checked)}
+                            {disabled}
+                          />
                         {:else}
                           <Input
                             id="{id}-{index}-{propKey}"
@@ -710,59 +692,6 @@
   /* ============================================
 	   INPUTS (Simple Types)
 	   ============================================ */
-
-  /* ============================================
-	   TOGGLE (Boolean in Array)
-	   ============================================ */
-
-  .form-array__toggle-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    cursor: pointer;
-  }
-
-  .form-array__checkbox-input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .form-array__toggle-track {
-    position: relative;
-    width: 2.25rem;
-    height: 1.25rem;
-    background-color: var(--fd-border-strong);
-    border-radius: 0.625rem;
-    transition: background-color var(--fd-transition-normal);
-    flex-shrink: 0;
-  }
-
-  .form-array__toggle-thumb {
-    position: absolute;
-    top: 0.125rem;
-    left: 0.125rem;
-    width: 1rem;
-    height: 1rem;
-    background-color: var(--fd-background);
-    border-radius: 50%;
-    box-shadow: var(--fd-shadow-sm);
-    transition: transform var(--fd-transition-normal);
-  }
-
-  .form-array__checkbox-input:checked + .form-array__toggle-track {
-    background-color: var(--fd-primary);
-  }
-
-  .form-array__checkbox-input:checked + .form-array__toggle-track .form-array__toggle-thumb {
-    transform: translateX(1rem);
-  }
-
-  .form-array__toggle-label {
-    font-size: 0.8125rem;
-    color: var(--fd-muted-foreground);
-  }
 
   /* ============================================
 	   SUBFORM (Complex Types)

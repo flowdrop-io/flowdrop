@@ -3,13 +3,11 @@
   Checkbox group for multiple value selection (enum with multiple=true)
   
   Features:
-  - Custom styled checkboxes with check icon
-  - Animated checkbox state transitions
-  - Focus-visible states for keyboard navigation
+  - Checkbox primitive per option: no box around the group
 -->
 
 <script lang="ts">
-  import Icon from '@iconify/svelte';
+  import Checkbox from '../primitives/Checkbox.svelte';
 
   interface Props {
     /** Field identifier (used for ARIA) */
@@ -59,22 +57,13 @@
 >
   {#each options as option (option)}
     {@const isChecked = Array.isArray(value) && value.includes(option)}
-    <label class="form-checkbox-item">
-      <input
-        type="checkbox"
-        class="form-checkbox__input"
-        value={option}
-        checked={isChecked}
-        {disabled}
-        onchange={(e) => handleCheckboxChange(option, e.currentTarget.checked)}
-      />
-      <span class="form-checkbox__custom" aria-hidden="true">
-        <Icon icon="heroicons:check" />
-      </span>
-      <span class="form-checkbox__label">
-        {option}
-      </span>
-    </label>
+    <Checkbox
+      value={option}
+      checked={isChecked}
+      {disabled}
+      label={option}
+      onchange={(checked) => handleCheckboxChange(option, checked)}
+    />
   {/each}
 </div>
 
@@ -82,70 +71,6 @@
   .form-checkbox-group {
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
-    padding: 0.75rem;
-    background-color: var(--fd-muted);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-control-radius);
-  }
-
-  .form-checkbox-item {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    cursor: pointer;
-    padding: 0.375rem;
-    margin: -0.375rem;
-    border-radius: var(--fd-radius-md);
-    transition: background-color var(--fd-transition-fast);
-  }
-
-  .form-checkbox-item:hover {
-    background-color: var(--fd-subtle);
-  }
-
-  .form-checkbox__input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .form-checkbox__custom {
-    width: 1.125rem;
-    height: 1.125rem;
-    border: 1.5px solid var(--fd-border-strong);
-    border-radius: var(--fd-radius-sm);
-    background-color: var(--fd-background);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--fd-transition-fast);
-    flex-shrink: 0;
-  }
-
-  .form-checkbox__custom :global(svg) {
-    width: 0.75rem;
-    height: 0.75rem;
-    color: var(--fd-primary-foreground);
-    opacity: 0;
-    transform: scale(0.5);
-    transition: all var(--fd-transition-fast);
-  }
-
-  .form-checkbox__input:checked + .form-checkbox__custom {
-    background-color: var(--fd-primary);
-    border-color: var(--fd-primary);
-  }
-
-  .form-checkbox__input:checked + .form-checkbox__custom :global(svg) {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  .form-checkbox__label {
-    font-size: var(--fd-text-sm);
-    color: var(--fd-foreground);
-    line-height: 1.4;
+    gap: var(--fd-space-xs);
   }
 </style>

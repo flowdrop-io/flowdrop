@@ -25,7 +25,8 @@
   import Icon from '@iconify/svelte';
   import Button from '$lib/components/Button.svelte';
   import Input from '$lib/components/Input.svelte';
-  import Select from '$lib/components/Select.svelte';
+  import Select from '$lib/components/primitives/Select.svelte';
+  import Checkbox from '$lib/components/primitives/Checkbox.svelte';
   import { m } from '$lib/messages/index.js';
   import type {
     PlaygroundChatBinding,
@@ -368,28 +369,24 @@
     {#each replyOptions as option (`${option.reply.node_id}::${option.reply.port}`)}
       {@const checked = chat.replies.some((reply) => sameReply(reply, option.reply))}
       {@const error = replyError(option.reply)}
-      <label class="wf-playground__check" class:wf-playground__check--missing={option.missing}>
-        <input
-          type="checkbox"
-          {checked}
-          onchange={(e) => toggleReply(option.reply, e.currentTarget.checked)}
-        />
-        <span>{option.label}</span>
-      </label>
+      <Checkbox
+        class="wf-playground__check{option.missing ? ' wf-playground__check--missing' : ''}"
+        {checked}
+        label={option.label}
+        onchange={(on) => toggleReply(option.reply, on)}
+      />
       {#if error}
         <span class="wf-playground__inline wf-playground__inline--error">{error}</span>
       {/if}
     {/each}
   </fieldset>
 
-  <label class="wf-playground__check">
-    <input
-      type="checkbox"
-      checked={chat.sub_workflow_replies}
-      onchange={(e) => update({ sub_workflow_replies: e.currentTarget.checked })}
-    />
-    <span>{m().playgroundSettings.subWorkflowReplies}</span>
-  </label>
+  <Checkbox
+    class="wf-playground__check"
+    checked={chat.sub_workflow_replies}
+    label={m().playgroundSettings.subWorkflowReplies}
+    onchange={(on) => update({ sub_workflow_replies: on })}
+  />
 
   {#if halfSet}
     <p class="wf-playground__inline wf-playground__inline--error" role="alert">
@@ -515,26 +512,7 @@
     margin-bottom: var(--fd-space-xs);
   }
 
-  .wf-playground__check {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    font-size: var(--fd-text-sm);
-    cursor: pointer;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .wf-playground__check input[type='checkbox'] {
-    flex: none;
-    width: 1rem;
-    height: 1rem;
-    margin: 0;
-    accent-color: var(--fd-primary);
-    cursor: pointer;
-  }
-
-  .wf-playground__check--missing span {
+  .wf-playground__replies :global(.wf-playground__check--missing) {
     color: var(--fd-error);
     font-family: var(--fd-font-mono);
   }

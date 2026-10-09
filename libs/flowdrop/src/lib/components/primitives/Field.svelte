@@ -98,7 +98,7 @@
   {/if}
 
   {#if help}
-    <p class="flowdrop-ui-field__help" id={helpId}>{help}</p>
+    <p class="flowdrop-ui-field__help" id={helpId} title={help}>{help}</p>
   {/if}
   {#if error}
     <p class="flowdrop-ui-field__error" id={errorId} role="alert">{error}</p>
@@ -164,8 +164,12 @@
     line-height: 1.4;
   }
 
+  /* Help is one line; the full text is in the title. */
   .flowdrop-ui-field__help {
     color: var(--fd-muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .flowdrop-ui-field__error {

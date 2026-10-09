@@ -23,7 +23,8 @@
   import Button from '$lib/components/Button.svelte';
   import IconButton from '$lib/components/IconButton.svelte';
   import Input from '$lib/components/Input.svelte';
-  import Select from '$lib/components/Select.svelte';
+  import Select from '$lib/components/primitives/Select.svelte';
+  import Checkbox from '$lib/components/primitives/Checkbox.svelte';
   import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
   import PortShapeSymbol from '$lib/components/ports/PortShapeSymbol.svelte';
   import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
@@ -541,14 +542,12 @@
             />
           </label>
           {#if isInput}
-            <label class="wf-interface__field wf-interface__field--checkbox">
-              <input
-                type="checkbox"
-                checked={entry.required ?? false}
-                onchange={(e) => onPatch({ required: e.currentTarget.checked || undefined })}
-              />
-              <span class="wf-interface__label">{m().workflowInterface.requiredLabel}</span>
-            </label>
+            <Checkbox
+              class="wf-interface__field wf-interface__field--checkbox"
+              checked={entry.required ?? false}
+              label={m().workflowInterface.requiredLabel}
+              onchange={(on) => onPatch({ required: on || undefined })}
+            />
           {/if}
         </div>
 
@@ -735,21 +734,10 @@
     flex: 1 1 100%;
   }
 
-  .wf-interface__field--checkbox {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--fd-space-xs);
+  .wf-interface__fields :global(.wf-interface__field--checkbox) {
     flex: 0 0 auto;
     align-self: flex-end;
     min-height: 2rem;
-  }
-
-  .wf-interface__field--checkbox input[type='checkbox'] {
-    width: 1rem;
-    height: 1rem;
-    margin: 0;
-    accent-color: var(--fd-primary);
-    cursor: pointer;
   }
 
   /* Same voice as FormFieldWrapper's `.form-field__label`. */
@@ -759,10 +747,6 @@
     line-height: 1.4;
     letter-spacing: -0.01em;
     color: var(--fd-foreground);
-  }
-
-  .wf-interface__field--checkbox .wf-interface__label {
-    font-weight: 500;
   }
 
   /* The bound port, said back the way the canvas says it, in a select's clothes. */

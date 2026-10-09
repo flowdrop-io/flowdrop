@@ -184,7 +184,6 @@
                 onLabel="Exposed"
                 offLabel="Hidden"
                 {disabled}
-                hideLabel
                 onChange={(exposed) => setExposed(direction, port.id, exposed)}
               />
             </li>

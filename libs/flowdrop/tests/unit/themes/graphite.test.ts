@@ -111,7 +111,7 @@ describe('graphite theme', () => {
         k
       ) ||
       // Form-first inputs: shape and structure, the same in both modes (the colours have dark values).
-      /^(inputs-frame-(border|bg|pad)|field-(control-height|control-radius|textarea-min|help-size|tag-bg|tag-pad|example-border-style|example-bg))$/.test(
+      /^(inputs-frame-(border|bg|pad)|switch-on-bg|field-(control-height|control-radius|textarea-min|help-size|tag-bg|tag-pad|example-border-style|example-bg))$/.test(
         k
       );
     const missing = Object.keys(graphiteSkin.tokens ?? {}).filter(

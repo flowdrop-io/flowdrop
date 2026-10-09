@@ -9,7 +9,8 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import Input from '../Input.svelte';
-  import Select from '../Select.svelte';
+  import Select from '../primitives/Select.svelte';
+  import Checkbox from '../primitives/Checkbox.svelte';
   import Textarea from '../Textarea.svelte';
   import { slide } from 'svelte/transition';
   import type { PlaygroundInputField } from '../../types/playground.js';
@@ -195,18 +196,12 @@
                 />
               {:else if getInputType(field) === 'checkbox'}
                 <!-- Checkbox for boolean -->
-                <label class="input-collector__checkbox-wrapper">
-                  <input
-                    id="input-{field.nodeId}-{field.fieldId}"
-                    type="checkbox"
-                    class="input-collector__checkbox"
-                    checked={Boolean(getValue(field))}
-                    onchange={(e) => updateValue(field, e.currentTarget.checked)}
-                  />
-                  <span class="input-collector__checkbox-label">
-                    {field.schema?.description ?? 'Enable'}
-                  </span>
-                </label>
+                <Checkbox
+                  id="input-{field.nodeId}-{field.fieldId}"
+                  checked={Boolean(getValue(field))}
+                  label={field.schema?.description ?? 'Enable'}
+                  onchange={(on) => updateValue(field, on)}
+                />
               {:else if getInputType(field) === 'number'}
                 <!-- Number input -->
                 <Input
@@ -349,25 +344,6 @@
 
   .input-collector__required {
     color: var(--fd-error);
-  }
-
-  .input-collector__checkbox-wrapper {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    cursor: pointer;
-  }
-
-  .input-collector__checkbox {
-    width: 1rem;
-    height: 1rem;
-    accent-color: var(--fd-primary);
-    cursor: pointer;
-  }
-
-  .input-collector__checkbox-label {
-    font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
   }
 
   .input-collector__description {

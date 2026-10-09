@@ -142,8 +142,7 @@
   },
   "src/lib/components/form/FormArray.svelte": {
     "button": 2,
-    "font-size": 5,
-    "radius": 2
+    "font-size": 4
   },
   "src/lib/components/form/FormAutocomplete.svelte": {
     "button": 3,
@@ -170,9 +169,6 @@
   "src/lib/components/form/FormTemplateEditor.svelte": {
     "button": 2,
     "colour": 4
-  },
-  "src/lib/components/form/FormToggle.svelte": {
-    "radius": 2
   },
   "src/lib/components/interrupt/ReviewPrompt.svelte": {
     "button": 6,

@@ -345,7 +345,17 @@
   ); /* @internal  control shadow while focused (accent ring) */
   --fd-field-focus-outline: var(--fd-ring-width) solid var(--fd-ring); /* @internal  focus-visible outline on text controls */
   --fd-field-label-size: 0.8125rem; /* @internal  label above a form control */
-  --fd-field-help-size: var(--fd-text-2xs); /* @internal  help text under a form control */
+  --fd-field-help-size: var(--fd-text-meta); /* @internal  help text under a form control (12px) */
+  --fd-switch-width: 1.75rem; /* @internal  switch track width (28px) */
+  --fd-switch-height: 1rem; /* @internal  switch track height (16px) */
+  --fd-switch-inset: 0.125rem; /* @internal  gap between switch track and thumb */
+  --fd-switch-off-bg: var(--fd-border-strong); /* @internal  switch track, off */
+  --fd-switch-on-bg: var(--fd-primary); /* @internal  switch track, on */
+  --fd-switch-thumb-bg: var(--fd-background); /* @internal  switch thumb */
+  --fd-checkbox-size: 1rem; /* @internal  checkbox box (16px) */
+  --fd-checkbox-radius: 0.25rem; /* @internal  checkbox corner (4px) */
+  --fd-checkbox-on-bg: var(--fd-primary); /* @internal  checkbox fill when checked */
+  --fd-checkbox-on-fg: var(--fd-primary-foreground); /* @internal  check mark */
   --fd-button-secondary-border: var(--fd-border); /* @internal  secondary button rule */
   --fd-button-ghost-hover: var(--fd-muted); /* @internal  ghost button/icon hover fill */
   --fd-button-danger-bg: var(--fd-error); /* @internal  danger button fill */

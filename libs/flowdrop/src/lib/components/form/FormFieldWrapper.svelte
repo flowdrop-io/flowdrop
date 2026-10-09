@@ -54,7 +54,7 @@
 
   <!-- Field Description -->
   {#if description}
-    <p id={descriptionId} class="form-field__description">
+    <p id={descriptionId} class="form-field__description" title={description}>
       {description}
     </p>
   {/if}
@@ -68,7 +68,7 @@
   .form-field {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--fd-space-3xs);
     animation: fieldFadeIn 0.3s ease-out forwards;
     opacity: 0;
     transform: translateY(4px);
@@ -118,9 +118,12 @@
 
   .form-field__description {
     margin: 0;
-    font-size: var(--fd-text-xs);
+    font-size: var(--fd-field-help-size);
     color: var(--fd-muted-foreground);
-    line-height: 1.5;
-    padding-left: 0.125rem;
+    line-height: 1.4;
+    /* One line; the full text is in the title. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

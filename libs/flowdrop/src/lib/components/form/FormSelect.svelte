@@ -9,7 +9,7 @@
 -->
 
 <script lang="ts">
-  import Select from '../Select.svelte';
+  import Select from '../primitives/Select.svelte';
   import { normalizeOptions, type FieldOption } from './types.js';
 
   interface Props {

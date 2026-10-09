@@ -146,7 +146,7 @@
   .form-fieldset__fields {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-2xl);
+    gap: var(--fd-space-xl);
   }
 
   /* ============================================

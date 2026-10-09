@@ -15,6 +15,7 @@
 
 <script lang="ts">
   import Field from '../primitives/Field.svelte';
+  import Checkbox from '../primitives/Checkbox.svelte';
   import type { ConfigProperty, ConfigSchema } from '../../types/index.js';
   import { m } from '$lib/messages/index.js';
 
@@ -137,15 +138,13 @@
             {/each}
           </select>
         {:else if property.type === 'boolean'}
-          <input
+          <Checkbox
             id={ctx.id}
-            class="input-fields__check"
-            type="checkbox"
             aria-describedby={ctx.describedBy}
             {disabled}
             checked={values[key] === true ||
               (values[key] === undefined && property.default === true)}
-            onchange={(event) => set(key, (event.currentTarget as HTMLInputElement).checked)}
+            onchange={(on) => set(key, on)}
           />
         {:else if property.type === 'number' || property.type === 'integer'}
           <input
@@ -236,10 +235,5 @@
   .input-fields__control:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-  }
-
-  .input-fields__check {
-    align-self: flex-start;
-    margin: 0;
   }
 </style>
