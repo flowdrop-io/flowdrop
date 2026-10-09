@@ -341,7 +341,7 @@
               {#each ungroupedActions as action (action.label)}
                 {@render menuLink(action, close, saveMenuIcons)}
               {/each}
-              {#each groupedActions as group, groupIndex (group.label)}
+              {#each groupedActions as group (group.label)}
                 <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
                 <div class="flowdrop-navbar__dropdown-group-header" role="presentation">
                   {group.label}
