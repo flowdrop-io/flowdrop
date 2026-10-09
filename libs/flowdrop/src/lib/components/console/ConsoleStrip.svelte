@@ -1,6 +1,7 @@
 <!--
   ConsoleStrip — the slim bar along the canvas's bottom edge that opens the
-  Command Console. Closed, it is the whole control ("›_ Console `"); open, it
+  Command Console. Closed, it is the whole control ("›_ Console"; the ` shortcut
+  is in its tooltip); open, it
   becomes the panel's header, so the panel needs no close button of its own.
   One button: `aria-expanded` says which, `aria-controls` names the panel.
 -->
@@ -40,7 +41,6 @@
   >
     <span class="console-strip__prompt" aria-hidden="true">›_</span>
     <span class="console-strip__label">{label ?? layout.consoleStrip}</span>
-    <kbd class="console-strip__key" aria-hidden="true">`</kbd>
   </Button>
 </div>
 
@@ -76,18 +76,5 @@
 
   .console-strip__label {
     font-weight: 500;
-  }
-
-  .console-strip__key {
-    display: inline-grid;
-    place-items: center;
-    min-width: 1.25rem;
-    padding: 0 var(--fd-space-3xs);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    font-family: var(--fd-font-mono);
-    font-size: var(--fd-text-meta);
-    line-height: 1.25rem;
-    color: var(--fd-muted-foreground);
   }
 </style>
