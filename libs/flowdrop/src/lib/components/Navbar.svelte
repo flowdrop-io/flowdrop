@@ -787,6 +787,12 @@
     border-right: none;
   }
 
+  /* No menu to split off (a single action): a whole button, all corners round. */
+  .flowdrop-navbar__primary-action:last-child {
+    border-right: 1px solid var(--fd-navbar-action-border);
+    border-radius: var(--fd-radius-md);
+  }
+
   .flowdrop-navbar__primary-action:hover {
     background-color: var(--fd-navbar-action-hover-bg);
     color: var(--fd-navbar-action-fg);
