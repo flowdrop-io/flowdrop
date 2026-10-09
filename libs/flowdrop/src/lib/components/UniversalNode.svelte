@@ -223,7 +223,6 @@
       data-testid="node-problem"
       data-severity={problemSeverity}
     >
-      <span class="universal-node__problem-ring" aria-hidden="true"></span>
       <span
         class="universal-node__problem-badge"
         aria-hidden="true"
@@ -278,7 +277,7 @@
     opacity: 1;
   }
 
-  /* A problem the Doctor found: an outline and a count at the top right. Neither takes a click. */
+  /* A problem the Doctor found: a count badge at the top right, in the severity colour. It takes no click. */
   .universal-node__problem {
     --_c: var(--fd-warning);
     --_fg: var(--fd-warning-foreground);
@@ -294,22 +293,6 @@
   .universal-node__problem--info {
     --_c: var(--fd-info);
     --_fg: var(--fd-info-foreground);
-  }
-  .universal-node__problem-ring {
-    position: absolute;
-    inset: 0;
-    border-radius: var(--fd-node-radius);
-    outline: var(--fd-node-problem-ring) solid var(--_c);
-  }
-  .universal-node--terminal .universal-node__problem-ring {
-    inset: 0 auto auto 50%;
-    width: var(--fd-node-terminal-size);
-    height: var(--fd-node-terminal-size);
-    translate: -50% 0;
-    border-radius: var(--fd-radius-full);
-  }
-  .universal-node__problem--info .universal-node__problem-ring {
-    display: none;
   }
   .universal-node__problem-badge {
     position: absolute;
