@@ -104,13 +104,8 @@
      * arrivals down to the canvas without owning a separate status channel.
      */
     refreshTrigger?: number;
-    // Console toggle
-    consoleOpen?: boolean;
-    onToggleConsole?: () => void;
     /** Take a failed run on the run pill to the Assistant. */
     onAskAssistant?: (runId: string) => void;
-    /** Label of the console-group toggle; defaults to the Command Console wording. */
-    consoleToggleLabel?: string;
     /** Per-instance state container (created by mount functions). Defaults to the page-default instance. */
     instance?: FlowDropInstance;
     /**
@@ -1404,9 +1399,6 @@
           onOpenTest={props.onOpenTest}
           onAskAssistant={props.onAskAssistant}
           showRun={props.showRunBar ?? true}
-          onToggleConsole={props.onToggleConsole}
-          consoleOpen={props.consoleOpen}
-          consoleLabel={props.consoleToggleLabel}
         />
       {/if}
 

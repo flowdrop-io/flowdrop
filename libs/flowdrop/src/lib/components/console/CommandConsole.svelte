@@ -28,9 +28,7 @@
   import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { updateSettings, getUiSettings } from '../../stores/settingsStore.svelte.js';
-  import Icon from '@iconify/svelte';
-  import PanelHeader from '../primitives/PanelHeader.svelte';
-  import IconButton from '../primitives/IconButton.svelte';
+  import Button from '../primitives/Button.svelte';
   import ConsoleInput from './ConsoleInput.svelte';
   import ConsoleOutput, { type ConsoleEntry } from './ConsoleOutput.svelte';
   import { m } from '$lib/messages/index.js';
@@ -51,9 +49,17 @@
     nodeTypes: NodeMetadata[];
     /** Callback for UI actions (open config, select node) */
     onUIAction?: (action: UIAction) => void;
+    /** Id of the panel element, so the toggle strip can point `aria-controls` at it */
+    id?: string;
   }
 
-  let { nodeTypes, onUIAction }: Props = $props();
+  let { nodeTypes, onUIAction, id }: Props = $props();
+
+  /**
+   * Commands the empty state offers. Read-only on purpose: a click runs them,
+   * and none of them can change the workflow.
+   */
+  const EXAMPLE_COMMANDS = ['list nodes', 'list types', 'help'] as const;
 
   const fd = getInstance();
 
@@ -253,15 +259,24 @@
   }
 </script>
 
-<div class="command-console" role="region" aria-label={m().layout.commandConsole}>
-  <PanelHeader title={m().navigation.bottomPanel.console}>
-    {#snippet actions()}
-      <IconButton ariaLabel={m().layout.closeConsole} onclick={closeConsole}>
-        <Icon icon="heroicons:x-mark" />
-      </IconButton>
-    {/snippet}
-  </PanelHeader>
+<div class="command-console" {id} role="region" aria-label={m().layout.commandConsole}>
   <div class="command-console__content">
+    {#if outputEntries.length === 0}
+      <div class="command-console__examples" data-testid="console-examples">
+        <span class="command-console__examples-label">{m().layout.consoleExamplesLabel}</span>
+        {#each EXAMPLE_COMMANDS as example (example)}
+          <Button
+            variant="ghost"
+            size="sm"
+            class="command-console__example"
+            onclick={() => handleCommandSubmit(example)}
+          >
+            <span aria-hidden="true">›</span>
+            {example}
+          </Button>
+        {/each}
+      </div>
+    {/if}
     <ConsoleOutput entries={outputEntries} />
   </div>
   <ConsoleInput
@@ -279,6 +294,30 @@
     display: flex;
     flex-direction: column;
     background-color: var(--fd-background);
+  }
+
+  .command-console__examples {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--fd-space-3xs);
+    padding: var(--fd-space-xs) var(--fd-space-md) 0;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-sm);
+    color: var(--fd-muted-foreground);
+  }
+
+  .command-console__examples-label {
+    font-family: var(--fd-font-sans);
+    font-size: var(--fd-text-meta);
+  }
+
+  .command-console__examples :global(.command-console__example) {
+    height: auto;
+    padding: 0 var(--fd-space-3xs);
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: normal;
   }
 
   .command-console__content {

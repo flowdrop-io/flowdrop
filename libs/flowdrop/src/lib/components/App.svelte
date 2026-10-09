@@ -31,6 +31,14 @@
   } from '$lib/utils/playgroundChat.js';
   import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
+  import ConsoleStrip from '$lib/components/console/ConsoleStrip.svelte';
+  import {
+    resolveSidebarWidths,
+    SIDEBAR_MIN_WIDTH,
+    SIDEBAR_MAX_WIDTH,
+    SIDEBAR_MAX_RATIO,
+    clampSidebarWidth
+  } from '$lib/utils/sidebarWidths.js';
   import AIChatPanel from '$lib/components/chat/AIChatPanel.svelte';
   import TabbedSurface from '$lib/components/surfaces/TabbedSurface.svelte';
   import type { Snippet } from 'svelte';
@@ -1325,6 +1333,10 @@
         : [])
     ];
   }
+  /** The Console's toggle strip is drawn: a console group is offered and the canvas is editable. */
+  const consoleStripShown = $derived(consoleGroupOffered && canvasEditable);
+  /** Id of the Console panel, for the strip's `aria-controls`. */
+  const consolePanelId = `${scopeId}-console-panel`;
   /** Node-swap sub-flow occupies the right sidebar regardless of placement. */
   const swapActive = $derived(swapMode !== 'idle');
 
@@ -1411,6 +1423,9 @@
   const TEST_DOCK_WIDTH = 360;
   const dockedInColumn = $derived(testMode && !narrow);
 
+  /** Edit mode's left column keeps a width per tab (Nodes | Assistant). */
+  const sidebarWidths = $derived(resolveSidebarWidths(getUiSettings()));
+
   /**
    * Calculate left sidebar width based on collapsed state
    * When collapsed, use 0; otherwise use user-configured width.
@@ -1423,8 +1438,26 @@
         : 0
       : getUiSettings().sidebarCollapsed
         ? 0
-        : getUiSettings().sidebarWidth
+        : sidebarWidths[leftTab]
   );
+
+  /** The left column can be resized: the Test dock, or Edit mode's column while it is open. */
+  const leftResizable = $derived(
+    testMode ? dockedInColumn : !disableSidebar && !getUiSettings().sidebarCollapsed
+  );
+
+  /** A drag or arrow-key resize of the left column ended: remember it for the active tab. */
+  function saveLeftWidth(width: number): void {
+    if (testMode) return;
+    updateSettings({
+      ui: { sidebarWidths: { ...sidebarWidths, [leftTab]: clampSidebarWidth(width) } }
+    });
+  }
+
+  /** A resize of the bottom panel ended: remember its height. */
+  function saveConsoleHeight(height: number): void {
+    updateSettings({ ui: { consoleHeight: Math.round(height) } });
+  }
 
   /** Whether the sidebar is collapsed */
   const isSidebarCollapsed = $derived(getUiSettings().sidebarCollapsed);
@@ -1835,7 +1868,17 @@
 {/snippet}
 
 {#snippet consoleSurfaceBody()}
-  <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
+  <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} id={consolePanelId} />
+{/snippet}
+
+<!-- The Console's toggle: a slim strip on the canvas's bottom edge; the panel's header once open -->
+{#snippet consoleStrip()}
+  <ConsoleStrip
+    open={consoleActive}
+    controls={consolePanelId}
+    label={consoleTabOffered ? undefined : mergedMessages.navigation.bottomPanel.chat}
+    onToggle={toggleConsole}
+  />
 {/snippet}
 
 {#snippet nodesTabContent()}
@@ -1919,11 +1962,16 @@
     headerHeight={48}
     {leftSidebarWidth}
     rightSidebarWidth={400}
-    leftSidebarMinWidth={testMode ? 300 : getUiSettings().sidebarCollapsed ? 0 : 280}
-    leftSidebarMaxWidth={testMode ? 560 : getUiSettings().sidebarCollapsed ? 0 : 450}
+    leftSidebarMinWidth={testMode ? 300 : getUiSettings().sidebarCollapsed ? 0 : SIDEBAR_MIN_WIDTH}
+    leftSidebarMaxWidth={testMode ? 560 : getUiSettings().sidebarCollapsed ? 0 : SIDEBAR_MAX_WIDTH}
+    leftSidebarMaxRatio={testMode ? undefined : SIDEBAR_MAX_RATIO}
+    onLeftSidebarResize={saveLeftWidth}
+    onBottomPanelResize={saveConsoleHeight}
+    bottomStrip={consoleStripShown ? consoleStrip : undefined}
+    bottomStripIsHeader={consoleHere('below')}
     rightSidebarMinWidth={320}
     rightSidebarMaxWidth={550}
-    enableLeftSplitPane={dockedInColumn}
+    enableLeftSplitPane={leftResizable}
     enableRightSplitPane={true}
     class="flowdrop-app-layout"
   >
@@ -2193,14 +2241,9 @@
         builtinEditors={features.builtinEditors}
         {contextMenu}
         gridVariant={themeConfig?.canvas?.grid ?? 'dots'}
-        consoleOpen={consoleActive}
         editorMode={effectiveEditorMode}
         onEditorModeChange={testModeAvailable ? (next) => fd.editorMode.set(next) : undefined}
         onOpenTest={testModeAvailable ? () => fd.editorMode.set('test') : undefined}
-        onToggleConsole={consoleGroupOffered ? toggleConsole : undefined}
-        consoleToggleLabel={consoleTabOffered
-          ? undefined
-          : mergedMessages.navigation.bottomPanel.chat}
         onAskAssistant={askAssistant}
       />
     </div>

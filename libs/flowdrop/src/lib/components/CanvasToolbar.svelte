@@ -1,11 +1,11 @@
 <!--
-  CanvasToolbar — the top-left canvas toolbar: Edit | Test, the run pill and the
-  Console toggle.
+  CanvasToolbar — the top-left canvas toolbar: Edit | Test and the run pill.
+  (The Console toggle is a strip along the canvas's bottom edge, ConsoleStrip.)
 
   Replaces the navbar's Edit | Test switch, the dot on "Test" and the Edit-mode
   run bar's top-edge notch. Each group renders only when its prop is given:
-  the mode switch needs `onEditorModeChange`, the Console toggle needs
-  `onToggleConsole`. With neither and no live run the toolbar is not drawn.
+  the mode switch needs `onEditorModeChange`. Without it and with no live
+  run the toolbar is not drawn.
 -->
 
 <script lang="ts">
@@ -14,9 +14,7 @@
   import { getInstance } from '../stores/getInstance.svelte.js';
   import Toolbar from './primitives/Toolbar.svelte';
   import Segmented from './primitives/Segmented.svelte';
-  import IconButton from './primitives/IconButton.svelte';
   import RunBar from './RunBar.svelte';
-  import CommandLineIcon from './icons/CommandLineIcon.svelte';
 
   interface Props {
     /** Current editor mode. */
@@ -29,12 +27,6 @@
     onAskAssistant?: (runId: string) => void;
     /** Show the run pill while a run exists. @default true */
     showRun?: boolean;
-    /** Toggle the Console group. The Console button is shown only when this is set. */
-    onToggleConsole?: () => void;
-    /** The Console group is open. */
-    consoleOpen?: boolean;
-    /** Label of the Console button. */
-    consoleLabel?: string;
   }
 
   let {
@@ -42,16 +34,12 @@
     onEditorModeChange,
     onOpenTest,
     onAskAssistant,
-    showRun = true,
-    onToggleConsole,
-    consoleOpen = false,
-    consoleLabel
+    showRun = true
   }: Props = $props();
 
   const fd = getInstance();
   const getMsgs = getMessages();
   const nav = $derived(getMsgs().navigation.editorMode);
-  const commandConsole = $derived(getMsgs().layout.commandConsole);
 
   const options = $derived([
     { value: 'edit', label: nav.edit, icon: 'mdi:pencil', title: nav.editTitle },
@@ -59,9 +47,7 @@
   ]);
 
   // Drawn when it has controls; a pill-only host gets the toolbar while a run exists.
-  const drawn = $derived(
-    !!onEditorModeChange || !!onToggleConsole || (showRun && !!fd.runs.activeRun)
-  );
+  const drawn = $derived(!!onEditorModeChange || (showRun && !!fd.runs.activeRun));
 </script>
 
 {#if drawn}
@@ -79,19 +65,6 @@
       {/if}
       {#if showRun}
         <RunBar mode={editorMode} {onAskAssistant} onOpen={onOpenTest} />
-      {/if}
-      {#if onToggleConsole}
-        <span class="flowdrop-canvas-toolbar__float">
-          <IconButton
-            size="md"
-            ariaLabel={consoleLabel ?? commandConsole}
-            title={consoleLabel ?? commandConsole}
-            active={consoleOpen}
-            onclick={onToggleConsole}
-          >
-            <span class="flowdrop-canvas-toolbar__icon"><CommandLineIcon /></span>
-          </IconButton>
-        </span>
       {/if}
     </Toolbar>
   </div>
@@ -115,24 +88,5 @@
           max(var(--fd-canvas-left-offset, 0px), var(--fd-canvas-toolbar-inset, 0px))
       );
     }
-  }
-
-  /* The Console button floats on its own: a 34px square. */
-  .flowdrop-canvas-toolbar__float {
-    display: inline-grid;
-    place-items: center;
-    box-sizing: border-box;
-    width: 34px;
-    height: 34px;
-    background-color: var(--fd-background);
-    border: 1px solid var(--fd-float-border);
-    border-radius: var(--fd-radius-surface);
-    box-shadow: var(--fd-elevation-float);
-  }
-
-  .flowdrop-canvas-toolbar__icon {
-    display: inline-flex;
-    width: 1rem;
-    height: 1rem;
   }
 </style>

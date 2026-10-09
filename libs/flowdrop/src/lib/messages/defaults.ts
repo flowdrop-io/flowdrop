@@ -368,6 +368,10 @@ export const defaultMessages = {
     settingsCategories: 'Settings categories',
     searchComponents: 'Search components',
     commandConsole: 'Command Console (`)',
+    // The slim strip along the canvas's bottom edge that opens the Console.
+    consoleStrip: 'Console',
+    consoleStripHint: 'Press ` to toggle the Console',
+    consoleExamplesLabel: 'Try',
     backToConfiguration: 'Back to configuration',
     // Resize handle labels — keyboard users tab to these.
     resizeLeftSidebar: 'Resize left sidebar',

@@ -398,6 +398,7 @@
   --fd-toolbar-segmented-selected-shadow: var(--fd-shadow-sm); /* @internal */
   --fd-toolbar-segmented-radius: var(--fd-control-radius); /* @internal  radius of the switch */
   --fd-toolbar-segment-radius: var(--fd-radius-md); /* @internal  radius of one segment */
+  --fd-console-strip-height: 2rem; /* @internal  the Console's bottom strip / panel header */
   --fd-zoom-group-bg: var(--fd-card); /* @internal  zoom controls group */
   --fd-zoom-group-border: none; /* @internal  shorthand */
   --fd-zoom-group-radius: var(--fd-radius-md); /* @internal */
