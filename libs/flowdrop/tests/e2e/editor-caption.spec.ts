@@ -165,7 +165,12 @@ test.describe('Caption node', () => {
     await gotoCaptionEditor(page, 'workflow=caption');
 
     await captionNode(page, 'Inputs').click({ button: 'right' });
-    await expect(menu(page).getByRole('menuitem')).toHaveText([/Edit text/, /Delete/]);
+    await expect(menu(page).getByRole('menuitem')).toHaveText([
+      /Edit text/,
+      /Duplicate/,
+      /Swap node/,
+      /Delete/
+    ]);
     await menu(page)
       .getByRole('menuitem', { name: /Edit text/ })
       .click();

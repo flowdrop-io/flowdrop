@@ -264,12 +264,12 @@
   /* Destructive entry: danger tone on the label and icon, a faint danger fill on hover. */
   .canvas-context-menu__item--danger,
   .canvas-context-menu__item--danger .canvas-context-menu__icon {
-    color: var(--fd-destructive);
+    color: var(--fd-error);
   }
 
   .canvas-context-menu__item--danger:hover,
   .canvas-context-menu__item--danger:focus-visible {
-    background-color: color-mix(in srgb, var(--fd-destructive) 10%, transparent);
+    background-color: var(--fd-error-muted);
   }
 
   .canvas-context-menu__separator {

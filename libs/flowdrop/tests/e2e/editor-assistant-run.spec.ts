@@ -182,6 +182,27 @@ test.describe('Assistant in the left slot', () => {
     await expect(leftTab(page, 'Nodes')).toBeVisible();
   });
 
+  test('the empty Assistant offers suggestions; one sends its label as the prompt', async ({
+    page
+  }) => {
+    const backend = await stubBackend(page);
+    await gotoEditor(page);
+    await leftTab(page, 'Assistant').click();
+
+    const group = page.getByRole('group', { name: 'Suggestions' });
+    await expect(group.getByRole('button')).toHaveText([
+      'Explain this workflow',
+      'Add error handling',
+      'Summarise what this does'
+    ]);
+
+    await group.getByRole('button', { name: 'Add error handling' }).click();
+    await expect.poll(() => backend.chatRequests.length, { timeout: 10000 }).toBe(1);
+    expect(backend.chatRequests[0].message).toBe('Add error handling');
+    // The empty state gives way to the conversation.
+    await expect(group).toHaveCount(0);
+  });
+
   test('Test mode opens on the inspector even when the console tab was last on chat', async ({
     page
   }) => {

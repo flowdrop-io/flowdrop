@@ -28,7 +28,12 @@ test.describe('Canvas context menu', () => {
 
     await page.locator('.svelte-flow__node').first().click({ button: 'right' });
     await expect(menu(page)).toBeVisible();
-    await expect(menu(page).getByRole('menuitem')).toHaveText([/Configure/, /Delete/]);
+    await expect(menu(page).getByRole('menuitem')).toHaveText([
+      /Configure/,
+      /Duplicate/,
+      /Swap node/,
+      /Delete/
+    ]);
 
     await menu(page)
       .getByRole('menuitem', { name: /Delete/ })
@@ -38,6 +43,53 @@ test.describe('Canvas context menu', () => {
 
     await page.keyboard.press(`${modifier}+z`);
     await assertStatusBar(page, 2, 1);
+  });
+
+  test('Duplicate places a copy beside the node, with its own id; undo removes it', async ({
+    page
+  }) => {
+    await gotoEditor(page, 'simple');
+    await assertStatusBar(page, 2, 1);
+
+    await page.locator('.svelte-flow__node').first().click({ button: 'right' });
+    await menu(page)
+      .getByRole('menuitem', { name: /Duplicate/ })
+      .click();
+    await expect(menu(page)).toHaveCount(0);
+    await assertNodeCount(page, 3);
+    const ids = await page
+      .locator('.svelte-flow__node')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('data-id')));
+    expect(new Set(ids).size).toBe(3);
+
+    await page.keyboard.press(`${modifier}+z`);
+    await assertNodeCount(page, 2);
+  });
+
+  test('Swap node opens the swap picker for that node', async ({ page }) => {
+    await gotoEditor(page, 'simple');
+
+    await page.locator('.svelte-flow__node').first().click({ button: 'right' });
+    await menu(page)
+      .getByRole('menuitem', { name: /Swap node/ })
+      .click();
+    await expect(menu(page)).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Swap Node' })).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Delete is drawn in the danger tone, with the key glyph beside it', async ({ page }) => {
+    await gotoEditor(page, 'simple');
+
+    await page.locator('.svelte-flow__node').first().click({ button: 'right' });
+    const del = menu(page).getByRole('menuitem', { name: /Delete/ });
+    await expect(del.locator('kbd')).toHaveText('⌫');
+    const [deleteColor, labelColor] = await Promise.all([
+      del.evaluate((el) => getComputedStyle(el).color),
+      menu(page)
+        .getByRole('menuitem', { name: /Configure/ })
+        .evaluate((el) => getComputedStyle(el).color)
+    ]);
+    expect(deleteColor).not.toBe(labelColor);
   });
 
   test('right-clicking an unselected node selects it alone', async ({ page }) => {
@@ -125,13 +177,17 @@ test.describe('Canvas context menu', () => {
 
     await page.locator('.svelte-flow__node').first().click({ button: 'right' });
     const items = menu(page).getByRole('menuitem');
+    const count = await items.count();
     await expect(items.nth(0)).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(items.nth(1)).toBeFocused();
-    await page.keyboard.press('ArrowDown');
-    await expect(items.nth(0)).toBeFocused();
     await page.keyboard.press('ArrowUp');
-    await expect(items.nth(1)).toBeFocused();
+    await expect(items.nth(0)).toBeFocused();
+    // Up from the first item wraps to the last; down from the last wraps to the first.
+    await page.keyboard.press('ArrowUp');
+    await expect(items.nth(count - 1)).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(items.nth(0)).toBeFocused();
   });
 
   test('outside click closes the menu', async ({ page }) => {
@@ -153,7 +209,12 @@ test.describe('Canvas context menu', () => {
     await page.locator('.svelte-flow__node').first().focus();
     await page.keyboard.press('Shift+F10');
     await expect(menu(page)).toBeVisible();
-    await expect(menu(page).getByRole('menuitem')).toHaveText([/Configure/, /Delete/]);
+    await expect(menu(page).getByRole('menuitem')).toHaveText([
+      /Configure/,
+      /Duplicate/,
+      /Swap node/,
+      /Delete/
+    ]);
 
     await page.keyboard.press('Enter');
     await expect(menu(page)).toHaveCount(0);
