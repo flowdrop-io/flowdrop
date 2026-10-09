@@ -436,17 +436,19 @@
             onkeydown={onAppearanceKeydown}
           >
             {#each appearanceOptions as option (option.value)}
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 role="menuitemradio"
                 aria-checked={currentTheme === option.value}
-                class="flowdrop-navbar__appearance-item"
-                class:flowdrop-navbar__appearance-item--selected={currentTheme === option.value}
+                class="flowdrop-navbar__appearance-item {currentTheme === option.value
+                  ? 'flowdrop-navbar__appearance-item--selected'
+                  : ''}"
                 data-value={option.value}
                 onclick={() => setTheme(option.value)}
               >
                 {option.label}
-              </button>
+              </Button>
             {/each}
           </div>
           {#if appearanceHint}
@@ -455,8 +457,8 @@
             </p>
           {/if}
           <div class="flowdrop-navbar__dropdown-divider" role="separator"></div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             role="menuitem"
             class="flowdrop-navbar__dropdown-item flowdrop-navbar__dropdown-item--button"
             data-testid="navbar-all-settings"
@@ -467,7 +469,7 @@
           >
             <span class="flowdrop-navbar__dropdown-label">{appearance.allSettings}</span>
             <kbd class="flowdrop-navbar__dropdown-hint">{settingsHint}</kbd>
-          </button>
+          </Button>
         {/snippet}
       </Menu>
     {/if}
@@ -876,11 +878,26 @@
   }
 
   /* The same row as a link, on a <button>. */
-  .flowdrop-navbar__dropdown-item--button {
-    border: none;
-    background: transparent;
-    font-family: inherit;
-    cursor: pointer;
+  :global(.flowdrop-navbar__dropdown-item--button .flowdrop-ui-button__label) {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+  }
+
+  :global(.flowdrop-navbar__dropdown-item--button) {
+    display: flex;
+    justify-content: flex-start;
+    gap: var(--fd-space-xs);
+    box-sizing: border-box;
+    width: 100%;
+    height: auto;
+    min-height: var(--fd-menu-item-height);
+    padding: var(--fd-space-sm);
+    border-radius: var(--fd-menu-item-radius);
+    font-size: var(--fd-text-sm);
+    font-weight: 500;
+    text-align: left;
   }
 
   /* Appearance: a segmented switch (as the Segmented primitive draws it). */
@@ -894,8 +911,8 @@
     border-radius: var(--fd-control-radius);
   }
 
-  .flowdrop-navbar__appearance-item {
-    flex: 1 1 0;
+  .flowdrop-navbar__appearance :global(.flowdrop-navbar__appearance-item) {
+    flex: 1 1 auto;
     min-width: 0;
     height: calc(var(--fd-control-sm) - var(--fd-space-2xs) - 2px);
     padding: 0 var(--fd-space-xs);
@@ -916,12 +933,15 @@
       color var(--fd-transition-fast);
   }
 
-  .flowdrop-navbar__appearance-item:hover:not(.flowdrop-navbar__appearance-item--selected),
-  .flowdrop-navbar__appearance-item:focus-visible {
+  .flowdrop-navbar__appearance
+    :global(
+      .flowdrop-navbar__appearance-item:hover:not(.flowdrop-navbar__appearance-item--selected)
+    ),
+  .flowdrop-navbar__appearance :global(.flowdrop-navbar__appearance-item:focus-visible) {
     color: var(--fd-foreground);
   }
 
-  .flowdrop-navbar__appearance-item--selected {
+  .flowdrop-navbar__appearance :global(.flowdrop-navbar__appearance-item--selected) {
     background-color: var(--fd-background);
     color: var(--fd-foreground);
     box-shadow: var(--fd-shadow-sm);
