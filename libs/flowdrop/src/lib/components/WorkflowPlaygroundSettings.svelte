@@ -397,7 +397,7 @@
   />
 
   {#if halfSet}
-    <Notice tone="warning" role="status">{m().playgroundSettings.halfSet}</Notice>
+    <Notice tone="warning">{m().playgroundSettings.halfSet}</Notice>
   {/if}
   {#each errors.filter((issue) => issue.key !== undefined) as issue (issue.code + issue.key)}
     <p class="wf-playground__inline wf-playground__inline--error">{issueText(issue)}</p>

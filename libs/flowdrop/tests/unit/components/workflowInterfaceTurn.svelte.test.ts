@@ -355,17 +355,17 @@ describe('deprecated chat turn, once Playground settings are stored', () => {
 describe('input id edits reported for the chat binding', () => {
   function idField(target: HTMLElement, card = 0): HTMLInputElement {
     const cards = target.querySelectorAll('.wf-interface__entry');
-    const label = Array.from(cards[card].querySelectorAll('label')).find((l) =>
-      l.textContent?.trim().startsWith('ID')
-    );
-    const input = label?.querySelector('input');
+    const input = cards[card].querySelector<HTMLInputElement>('input.wf-interface__id');
     if (!input) throw new Error('no ID field');
     return input;
   }
 
+  /** Remove goes through the row's overflow menu: open it, then choose Remove. */
   function removeButton(target: HTMLElement, card = 0): HTMLButtonElement {
     const cards = target.querySelectorAll('.wf-interface__entry');
-    const button = cards[card].querySelector<HTMLButtonElement>('button[aria-label^="Remove"]');
+    cards[card].querySelector<HTMLButtonElement>('[data-testid="wf-entry-menu"]')?.click();
+    flushSync();
+    const button = cards[card].querySelector<HTMLButtonElement>('[data-testid="wf-entry-remove"]');
     if (!button) throw new Error('no Remove button');
     return button;
   }

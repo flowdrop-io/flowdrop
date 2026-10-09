@@ -121,6 +121,30 @@
     $page.url.searchParams.get('caption') === '1' || workflowVariant === 'caption'
   );
 
+  // --- Consumer navbar actions (?navbarActions=1): a Save menu with tasks and `navigation` entries ---
+  let navbarActions = $derived(
+    $page.url.searchParams.get('navbarActions') === '1'
+      ? [
+          { label: 'Save', href: '#save', icon: 'heroicons:document-arrow-down' },
+          { label: 'Save and run test', href: '#save-run', icon: 'heroicons:play' },
+          { label: 'Doctor', href: '#doctor', icon: 'heroicons:heart' },
+          { label: 'Pipelines', href: '#pipelines', icon: 'heroicons:queue-list' },
+          {
+            label: 'FlowDrop dashboard',
+            href: '#dashboard',
+            icon: 'heroicons:squares-2x2',
+            navigation: true
+          },
+          {
+            label: 'Back to workflows',
+            href: '#workflows',
+            icon: 'heroicons:arrow-left',
+            navigation: true
+          }
+        ]
+      : undefined
+  );
+
   // --- White-label logo (?branding=1 name + image; =alt adds logoAlt; =name name only; =wide a logo far wider than the start column) ---
   const brandingSvg = (width: number) =>
     `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -841,6 +865,7 @@
     {endpointConfig}
     {contextMenu}
     {branding}
+    {navbarActions}
   />
 </div>
 

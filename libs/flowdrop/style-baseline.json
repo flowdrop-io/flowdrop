@@ -48,7 +48,7 @@
     "font-size": 1
   },
   "src/lib/components/Navbar.svelte": {
-    "button": 2,
+    "button": 1,
     "font-size": 3,
     "radius": 2
   },
@@ -112,20 +112,11 @@
     "colour": 2,
     "shadow": 2
   },
-  "src/lib/components/WorkflowInterfaceEditor.svelte": {
-    "button": 1,
-    "font-size": 2
-  },
   "src/lib/components/WorkflowInterfaceEntryCard.svelte": {
-    "button": 5,
-    "font-size": 2
+    "button": 3
   },
   "src/lib/components/WorkflowInterfaceEntryComposer.svelte": {
-    "button": 2,
-    "font-size": 4
-  },
-  "src/lib/components/WorkflowPlaygroundSettings.svelte": {
-    "font-size": 1
+    "button": 2
   },
   "src/lib/components/chat/AIChatPanel.svelte": {
     "button": 2,

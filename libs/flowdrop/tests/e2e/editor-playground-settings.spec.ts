@@ -14,13 +14,9 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-/** Open the workflow-settings panel (the navbar may hide the link in its overflow menu). */
+/** Open the workflow-settings panel with the navbar's Workflow button. */
 async function openWorkflowSettings(page: Page): Promise<void> {
-  const trigger = page.locator('.flowdrop-navbar__dropdown-trigger');
-  if (await trigger.isVisible()) {
-    await trigger.click();
-  }
-  await page.locator('a[href="#settings"]:visible').first().click();
+  await page.getByTestId('navbar-workflow-button').click();
   await expect(page.getByRole('tab', { name: 'Interface' })).toBeVisible();
 }
 
@@ -66,7 +62,8 @@ test.describe('Playground settings tab', () => {
 
     // The Interface tab shows the old mark read-only, with a way to the new home.
     await page.getByRole('tab', { name: 'Interface' }).click();
-    await page.locator('.wf-interface__more').first().locator('summary').click();
+    await page.getByTestId('wf-entry-menu').first().click();
+    await page.getByRole('menuitemcheckbox', { name: 'More options' }).click();
     await expect(page.locator('.wf-interface__turn-deprecated')).toBeVisible();
     await page.getByRole('button', { name: 'Open Playground settings' }).click();
 

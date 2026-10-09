@@ -405,198 +405,188 @@
     </div>
   {/if}
 
-  {#if fieldsOpen}
-    <div class="wf-interface__more">
-      <div class="wf-interface__more-body">
-        {#if turnSelector}
-          <div class="wf-interface__row">
-            <label class="wf-interface__field">
-              <span class="wf-interface__label">{m().workflowInterface.turnLabel}</span>
-              <Select
-                size="sm"
-                invalid={turnTakenBy !== undefined}
-                value={entry.turn ?? ''}
-                onchange={(e) => setTurn(e.currentTarget.value)}
-              >
-                <option value="">{m().workflowInterface.turnNone}</option>
-                {#each turnOptions as option (option.value)}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </Select>
-              {#if turnTakenBy !== undefined}
-                <span class="wf-interface__inline wf-interface__inline--warning">
-                  {m().workflowInterface.turnTakenInline({ id: turnTakenBy })}
-                </span>
-              {:else if turnDescription}
-                <span class="wf-interface__hint">{turnDescription}</span>
-              {/if}
-            </label>
-            {#if entry.turn === 'history'}
-              <label class="wf-interface__field">
-                <span class="wf-interface__label">{m().workflowInterface.historyLimitLabel}</span>
-                <Input
-                  size="sm"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={historyLimitOf(entry) ?? ''}
-                  placeholder={m().workflowInterface.historyLimitPlaceholder({
-                    limit: DEFAULT_HISTORY_TURN_LIMIT
-                  })}
-                  onchange={(e) => onPatch(historyLimitPatch(entry, e.currentTarget.value))}
-                />
-              </label>
-            {/if}
-          </div>
-        {:else if turnLabel !== undefined}
-          <div class="wf-interface__turn-deprecated" role="note">
-            <span>
-              {m().workflowInterface.turnDeprecated({
-                turn: turnLabel,
-                limit: entry.turn === 'history' ? historyLimitOf(entry) : undefined
-              })}
-              {#if turnTakenBy !== undefined}
+  <!-- Always rendered, hidden while closed: what the author typed survives a close. -->
+  <div class="wf-interface__more" hidden={!fieldsOpen}>
+    <div class="wf-interface__more-body">
+      {#if turnSelector}
+        <div class="wf-interface__row">
+          <label class="wf-interface__field">
+            <span class="wf-interface__label">{m().workflowInterface.turnLabel}</span>
+            <Select
+              size="sm"
+              invalid={turnTakenBy !== undefined}
+              value={entry.turn ?? ''}
+              onchange={(e) => setTurn(e.currentTarget.value)}
+            >
+              <option value="">{m().workflowInterface.turnNone}</option>
+              {#each turnOptions as option (option.value)}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </Select>
+            {#if turnTakenBy !== undefined}
+              <span class="wf-interface__inline wf-interface__inline--warning">
                 {m().workflowInterface.turnTakenInline({ id: turnTakenBy })}
-              {/if}
-            </span>
-            {#if onOpenPlaygroundSettings}
+              </span>
+            {:else if turnDescription}
+              <span class="wf-interface__hint">{turnDescription}</span>
+            {/if}
+          </label>
+          {#if entry.turn === 'history'}
+            <label class="wf-interface__field">
+              <span class="wf-interface__label">{m().workflowInterface.historyLimitLabel}</span>
+              <Input
+                size="sm"
+                type="number"
+                min="1"
+                step="1"
+                value={historyLimitOf(entry) ?? ''}
+                placeholder={m().workflowInterface.historyLimitPlaceholder({
+                  limit: DEFAULT_HISTORY_TURN_LIMIT
+                })}
+                onchange={(e) => onPatch(historyLimitPatch(entry, e.currentTarget.value))}
+              />
+            </label>
+          {/if}
+        </div>
+      {:else if turnLabel !== undefined}
+        <div class="wf-interface__turn-deprecated" role="note">
+          <span>
+            {m().workflowInterface.turnDeprecated({
+              turn: turnLabel,
+              limit: entry.turn === 'history' ? historyLimitOf(entry) : undefined
+            })}
+            {#if turnTakenBy !== undefined}
+              {m().workflowInterface.turnTakenInline({ id: turnTakenBy })}
+            {/if}
+          </span>
+          {#if onOpenPlaygroundSettings}
+            <button type="button" class="wf-interface__quickfix" onclick={onOpenPlaygroundSettings}>
+              {m().workflowInterface.turnOpenPlayground}
+            </button>
+          {/if}
+        </div>
+      {/if}
+
+      {#if boundTarget}
+        <div class="wf-interface__pull-row">
+          <Button
+            variant="ghost"
+            size="sm"
+            class="wf-interface__pull"
+            title={m().workflowInterface.pullFromPortTitle}
+            onclick={() => onPatch(pullEntryFieldsFromPort(boundTarget.port))}
+          >
+            <Icon icon="heroicons:arrow-down-tray" />
+            {m().workflowInterface.pullFromPort}
+          </Button>
+        </div>
+      {/if}
+      <div class="wf-interface__row">
+        <label class="wf-interface__field">
+          <span class="wf-interface__label">{m().workflowInterface.nameLabel}</span>
+          <Input
+            size="sm"
+            type="text"
+            value={entry.name ?? ''}
+            placeholder={m().workflowInterface.namePlaceholder}
+            onchange={(e) => onPatch({ name: e.currentTarget.value || undefined })}
+          />
+        </label>
+        <label class="wf-interface__field">
+          <span class="wf-interface__label">{m().workflowInterface.dataTypeLabel}</span>
+          <Select
+            size="sm"
+            invalid={status?.status === 'type-mismatch'}
+            value={entry.dataType}
+            onchange={(e) => onPatch({ dataType: e.currentTarget.value })}
+          >
+            {#if !entry.dataType}
+              <option value="" disabled selected>
+                {m().workflowInterface.dataTypePlaceholder}
+              </option>
+            {/if}
+            {#each dataTypeOptions(entry.dataType) as option (option.id)}
+              <option value={option.id}>{option.name}</option>
+            {/each}
+          </Select>
+          {#if status?.status === 'type-mismatch' && boundPortType}
+            <span class="wf-interface__inline wf-interface__inline--warning">
+              {m().workflowInterface.typeMismatchInline({ portType: boundPortType ?? '' })}
               <button
                 type="button"
                 class="wf-interface__quickfix"
-                onclick={onOpenPlaygroundSettings}
+                onclick={() => onPatch({ dataType: boundPortType ?? entry.dataType })}
               >
-                {m().workflowInterface.turnOpenPlayground}
+                {m().workflowInterface.useMatchPortType}
               </button>
-            {/if}
-          </div>
-        {/if}
-
-        {#if boundTarget}
-          <div class="wf-interface__pull-row">
-            <Button
-              variant="ghost"
-              size="sm"
-              class="wf-interface__pull"
-              title={m().workflowInterface.pullFromPortTitle}
-              onclick={() => onPatch(pullEntryFieldsFromPort(boundTarget.port))}
-            >
-              <Icon icon="heroicons:arrow-down-tray" />
-              {m().workflowInterface.pullFromPort}
-            </Button>
-          </div>
-        {/if}
-        <div class="wf-interface__row">
-          <label class="wf-interface__field">
-            <span class="wf-interface__label">{m().workflowInterface.nameLabel}</span>
-            <Input
-              size="sm"
-              type="text"
-              value={entry.name ?? ''}
-              placeholder={m().workflowInterface.namePlaceholder}
-              onchange={(e) => onPatch({ name: e.currentTarget.value || undefined })}
-            />
-          </label>
-          <label class="wf-interface__field">
-            <span class="wf-interface__label">{m().workflowInterface.dataTypeLabel}</span>
-            <Select
-              size="sm"
-              invalid={status?.status === 'type-mismatch'}
-              value={entry.dataType}
-              onchange={(e) => onPatch({ dataType: e.currentTarget.value })}
-            >
-              {#if !entry.dataType}
-                <option value="" disabled selected>
-                  {m().workflowInterface.dataTypePlaceholder}
-                </option>
-              {/if}
-              {#each dataTypeOptions(entry.dataType) as option (option.id)}
-                <option value={option.id}>{option.name}</option>
-              {/each}
-            </Select>
-            {#if status?.status === 'type-mismatch' && boundPortType}
-              <span class="wf-interface__inline wf-interface__inline--warning">
-                {m().workflowInterface.typeMismatchInline({ portType: boundPortType ?? '' })}
-                <button
-                  type="button"
-                  class="wf-interface__quickfix"
-                  onclick={() => onPatch({ dataType: boundPortType ?? entry.dataType })}
-                >
-                  {m().workflowInterface.useMatchPortType}
-                </button>
-              </span>
-            {/if}
-          </label>
-        </div>
-
-        <div class="wf-interface__row">
-          <label class="wf-interface__field wf-interface__field--wide">
-            <span class="wf-interface__label">{m().workflowInterface.descriptionLabel}</span>
-            <Input
-              size="sm"
-              type="text"
-              value={entry.description ?? ''}
-              onchange={(e) => onPatch({ description: e.currentTarget.value || undefined })}
-            />
-          </label>
-        </div>
-
-        <div class="wf-interface__row">
-          <label class="wf-interface__field">
-            <span class="wf-interface__label">{m().workflowInterface.defaultValueLabel}</span>
-            <Input
-              size="sm"
-              type="text"
-              value={formatDefaultValue(entry.defaultValue)}
-              onchange={(e) => onPatch({ defaultValue: parseDefaultValue(e.currentTarget.value) })}
-            />
-          </label>
-          {#if isInput}
-            <Checkbox
-              class="wf-interface__field wf-interface__field--checkbox"
-              checked={entry.required ?? false}
-              label={m().workflowInterface.requiredLabel}
-              onchange={(on) => onPatch({ required: on || undefined })}
-            />
-          {/if}
-        </div>
-
-        {#if isInput}
-          <div class="wf-interface__examples">
-            <span class="wf-interface__label">
-              {m().workflowInterface.examplesLabel}
             </span>
-            {#each entry.examples ?? [] as example, exampleIndex (exampleIndex)}
-              <div class="wf-interface__example-row">
-                <Input
-                  size="sm"
-                  type="text"
-                  value={formatDefaultValue(example)}
-                  onchange={(e) => patchExample(exampleIndex, e.currentTarget.value)}
-                />
-                <IconButton
-                  size="sm"
-                  class="wf-interface__example-remove"
-                  onclick={() => removeExample(exampleIndex)}
-                  ariaLabel={m().workflowInterface.removeExample}
-                >
-                  <Icon icon="heroicons:x-mark" />
-                </IconButton>
-              </div>
-            {/each}
-            <Button
-              variant="ghost"
-              size="sm"
-              class="wf-interface__example-add"
-              onclick={addExample}
-            >
-              <Icon icon="heroicons:plus" />
-              {m().workflowInterface.addExample}
-            </Button>
-          </div>
+          {/if}
+        </label>
+      </div>
+
+      <div class="wf-interface__row">
+        <label class="wf-interface__field wf-interface__field--wide">
+          <span class="wf-interface__label">{m().workflowInterface.descriptionLabel}</span>
+          <Input
+            size="sm"
+            type="text"
+            value={entry.description ?? ''}
+            onchange={(e) => onPatch({ description: e.currentTarget.value || undefined })}
+          />
+        </label>
+      </div>
+
+      <div class="wf-interface__row">
+        <label class="wf-interface__field">
+          <span class="wf-interface__label">{m().workflowInterface.defaultValueLabel}</span>
+          <Input
+            size="sm"
+            type="text"
+            value={formatDefaultValue(entry.defaultValue)}
+            onchange={(e) => onPatch({ defaultValue: parseDefaultValue(e.currentTarget.value) })}
+          />
+        </label>
+        {#if isInput}
+          <Checkbox
+            class="wf-interface__field wf-interface__field--checkbox"
+            checked={entry.required ?? false}
+            label={m().workflowInterface.requiredLabel}
+            onchange={(on) => onPatch({ required: on || undefined })}
+          />
         {/if}
       </div>
+
+      {#if isInput}
+        <div class="wf-interface__examples">
+          <span class="wf-interface__label">
+            {m().workflowInterface.examplesLabel}
+          </span>
+          {#each entry.examples ?? [] as example, exampleIndex (exampleIndex)}
+            <div class="wf-interface__example-row">
+              <Input
+                size="sm"
+                type="text"
+                value={formatDefaultValue(example)}
+                onchange={(e) => patchExample(exampleIndex, e.currentTarget.value)}
+              />
+              <IconButton
+                size="sm"
+                class="wf-interface__example-remove"
+                onclick={() => removeExample(exampleIndex)}
+                ariaLabel={m().workflowInterface.removeExample}
+              >
+                <Icon icon="heroicons:x-mark" />
+              </IconButton>
+            </div>
+          {/each}
+          <Button variant="ghost" size="sm" class="wf-interface__example-add" onclick={addExample}>
+            <Icon icon="heroicons:plus" />
+            {m().workflowInterface.addExample}
+          </Button>
+        </div>
+      {/if}
     </div>
-  {/if}
+  </div>
 
   <!-- Every non-ok resolveInterface status renders in words somewhere in this
          card — the obligation that makes this surface canonical. `ok` says
@@ -909,6 +899,10 @@
   }
 
   /* The secondary fields, under the row and indented to the id: space, not a box. */
+  .wf-interface__more[hidden] {
+    display: none;
+  }
+
   .wf-interface__more {
     padding: var(--fd-space-xs) var(--fd-space-xs) var(--fd-space-sm);
   }

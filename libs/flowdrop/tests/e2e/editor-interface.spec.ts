@@ -34,20 +34,9 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { gotoEditor } from './helpers/editor-helpers';
 
-/**
- * Open the workflow-settings panel and switch to its Interface tab.
- *
- * The navbar renders the settings link twice — once in full mode and once in
- * the overflow dropdown — and CSS hides whichever does not apply at this
- * viewport, so open the dropdown when it is the live one and always click the
- * visible link.
- */
+/** Open the workflow-settings panel (the navbar's Workflow button) and switch to its Interface tab. */
 async function openInterfaceTab(page: Page): Promise<void> {
-  const trigger = page.locator('.flowdrop-navbar__dropdown-trigger');
-  if (await trigger.isVisible()) {
-    await trigger.click();
-  }
-  await page.locator('a[href="#settings"]:visible').first().click();
+  await page.getByTestId('navbar-workflow-button').click();
   await page.getByRole('tab', { name: 'Interface' }).click();
   await expect(page.locator('.wf-interface')).toBeVisible();
 }
@@ -61,11 +50,21 @@ async function addCustomEntry(page: Page, side: 'input' | 'output'): Promise<voi
   await page.getByRole('button', { name: /^No, add a custom entry/ }).click();
 }
 
-/** Add an input entry and open its secondary-fields disclosure. */
+/** Run an item of the nth entry's overflow menu (reorder, More options, Remove). */
+async function entryMenu(page: Page, nth: number, item: string | RegExp): Promise<void> {
+  await page.locator('.wf-interface__entry').nth(nth).getByTestId('wf-entry-menu').click();
+  await page
+    .getByRole(item === 'More options' ? 'menuitemcheckbox' : 'menuitem', { name: item })
+    .click();
+}
+
+/** Add an input entry and open its secondary fields. */
 async function addInputWithFieldsOpen(page: Page, nth = 0): Promise<void> {
   await addCustomEntry(page, 'input');
-  await page.locator('.wf-interface__more').nth(nth).locator('summary').click();
-  await expect(page.locator('.wf-interface__example-add').nth(nth)).toBeVisible();
+  await entryMenu(page, nth, 'More options');
+  await expect(
+    page.locator('.wf-interface__entry').nth(nth).locator('.wf-interface__example-add')
+  ).toBeVisible();
 }
 
 test.describe('Interface editor', () => {
@@ -115,8 +114,7 @@ test.describe('Interface editor', () => {
     await openInterfaceTab(page);
     await addInputWithFieldsOpen(page);
 
-    const more = page.locator('.wf-interface__more').first();
-    await more.locator('summary').click();
+    await entryMenu(page, 0, 'More options');
     await expect(page.locator('.wf-interface__example-add')).toBeHidden();
 
     // An edit elsewhere in the card must not re-open what the author closed.
@@ -134,19 +132,17 @@ test.describe('Interface editor', () => {
     await addCustomEntry(page, 'input');
     await addInputWithFieldsOpen(page, 1);
 
-    const cards = page.locator('.wf-interface__more');
-    await expect(cards).toHaveCount(2);
+    const entries = page.locator('.wf-interface__entry');
+    await expect(entries).toHaveCount(2);
     const isOpen = () =>
-      cards.evaluateAll((els) => els.map((el) => (el as HTMLDetailsElement).open));
+      entries.evaluateAll((els) =>
+        els.map((el) => el.querySelector('.wf-interface__more')?.hasAttribute('hidden') === false)
+      );
     expect(await isOpen()).toEqual([false, true]);
 
     // Move the open entry up. Its disclosure belongs to the entry, not to the
     // slot the entry used to sit in.
-    await page
-      .locator('.wf-interface__entry')
-      .nth(1)
-      .getByLabel(/Move .* up/i)
-      .click();
+    await entryMenu(page, 1, 'Move up');
     await expect.poll(isOpen).toEqual([true, false]);
   });
 
@@ -162,11 +158,7 @@ test.describe('Interface editor', () => {
     await addCustomEntry(page, 'output');
     await expect(page.locator('.wf-interface__entry')).toHaveCount(1);
 
-    await page
-      .locator('.wf-interface__entry')
-      .first()
-      .getByLabel(/^Remove interface entry/)
-      .click();
+    await entryMenu(page, 0, 'Remove');
 
     await expect(page.locator('.wf-interface__entry')).toHaveCount(0);
     // An empty side is just its insertion slot since 2.6.0 — the "No outputs
@@ -182,18 +174,16 @@ test.describe('Interface editor', () => {
     await addInputWithFieldsOpen(page, 0);
     await addCustomEntry(page, 'input');
 
-    const cards = page.locator('.wf-interface__more');
+    const cards = page.locator('.wf-interface__entry');
     const isOpen = () =>
-      cards.evaluateAll((els) => els.map((el) => (el as HTMLDetailsElement).open));
+      cards.evaluateAll((els) =>
+        els.map((el) => el.querySelector('.wf-interface__more')?.hasAttribute('hidden') === false)
+      );
     expect(await isOpen()).toEqual([true, false]);
 
     // Drop the open entry. The survivor keeps its own closed state rather than
     // inheriting the removed row's.
-    await page
-      .locator('.wf-interface__entry')
-      .first()
-      .getByLabel(/^Remove interface entry/)
-      .click();
+    await entryMenu(page, 0, 'Remove');
     await expect(cards).toHaveCount(1);
     await expect.poll(isOpen).toEqual([false]);
   });
