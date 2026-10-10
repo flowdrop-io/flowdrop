@@ -20,6 +20,7 @@ import {
   resolveInterface,
   type BindablePort
 } from '$lib/utils/workflowInterface.js';
+import { EVENT_PORT_ID, reservedInputs } from '$lib/utils/reservedPorts.js';
 
 export type InterfaceDirection = 'input' | 'output';
 
@@ -75,6 +76,11 @@ export interface InterfaceTagModel {
   handleId: string;
   /** Declared and port types, set when they differ. */
   mismatch?: { declared: string; port: string };
+  /**
+   * A derived reserved input (`event:<node-id>`, MAN-26): drawn like an entry,
+   * but not in `workflow.interface`, so it cannot be renamed or removed.
+   */
+  readonly?: true;
 }
 
 /** Every tag a workflow shows: its `ok` and `type-mismatch` entries. */
@@ -102,6 +108,34 @@ export function interfaceTagModels(workflow: Workflow): InterfaceTagModel[] {
     });
   }
   return tags;
+}
+
+/**
+ * One read-only tag per trigger node, beside its `event` input: the reserved
+ * input `event:<node-id>` the interface panel lists (MAN-26). Never stored, so
+ * it follows the trigger nodes and has no tag actions.
+ */
+export function reservedInputTagModels(workflow: Workflow): InterfaceTagModel[] {
+  const nodes = new Map(workflow.nodes.map((node) => [node.id, node]));
+  return reservedInputs(workflow).map((input) => {
+    const port = nodes
+      .get(input.nodeId)
+      ?.data.metadata.inputs.find((candidate) => candidate.id === EVENT_PORT_ID);
+    const handleId = buildHandleId(input.nodeId, 'input', EVENT_PORT_ID);
+    return {
+      key: `input:${handleId}`,
+      direction: 'input' as const,
+      entry: {
+        id: input.name,
+        dataType: port?.dataType ?? 'object',
+        bindings: [{ nodeId: input.nodeId, portId: EVENT_PORT_ID }]
+      },
+      nodeId: input.nodeId,
+      portId: EVENT_PORT_ID,
+      handleId,
+      readonly: true as const
+    };
+  });
 }
 
 /** The label a tag's type part reads: "String", or "Array ≠ String" on a mismatch. */
@@ -141,7 +175,7 @@ export function interfaceTagReserve(
   typeName: (dataType: string) => string = (type) => type
 ): Map<string, { left: number; right: number }> {
   const reserve = new Map<string, { left: number; right: number }>();
-  for (const tag of interfaceTagModels(workflow)) {
+  for (const tag of [...interfaceTagModels(workflow), ...reservedInputTagModels(workflow)]) {
     const width =
       INTERFACE_TAG_GAP +
       estimateInterfaceTagWidth(tag.entry.id, interfaceTagTypeText(tag, typeName));

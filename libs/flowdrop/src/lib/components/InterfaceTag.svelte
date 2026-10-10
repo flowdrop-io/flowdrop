@@ -10,6 +10,8 @@
     outline turns amber and the type reads "Array ≠ String".
   - `ghost`: a name being typed. Dashed outline in the ring colour; pass the
     input as `children`.
+  - `readonly`: a derived entry nobody can rename or remove (a trigger's
+    `event:<node-id>`). Muted fill and id, default cursor.
   - `compact`: far zoom (the editor sets it through the `data-fd-zoom` tier; the prop forces it). The text drops, the shape and swatch stay.
 
   A view only: the data stays in `workflow.interface`. Ids longer than
@@ -29,6 +31,7 @@
     color?: string;
     mismatch?: boolean;
     ghost?: boolean;
+    readonly?: boolean;
     compact?: boolean;
     /** Replaces the id and type text (an input, for a ghost). */
     children?: Snippet;
@@ -43,6 +46,7 @@
     color,
     mismatch = false,
     ghost = false,
+    readonly = false,
     compact = false,
     children,
     title,
@@ -55,6 +59,7 @@
   class="fd-iface-tag {className}"
   class:fd-iface-tag--mismatch={mismatch}
   class:fd-iface-tag--ghost={ghost}
+  class:fd-iface-tag--readonly={readonly}
   class:fd-iface-tag--compact={compact}
   title={title ?? (typeText ? `${id} · ${typeText}` : id)}
   {...rest}
@@ -98,6 +103,12 @@
 
   .fd-iface-tag--ghost {
     --_stroke: var(--fd-ring);
+  }
+
+  .fd-iface-tag--readonly {
+    --_bg: var(--fd-muted);
+    color: var(--fd-muted-foreground);
+    cursor: default;
   }
 
   .fd-iface-tag__body {

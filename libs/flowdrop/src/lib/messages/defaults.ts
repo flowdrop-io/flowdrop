@@ -969,6 +969,11 @@ export const defaultMessages = {
       direction: 'input' | 'output';
     }) => `Workflow ${direction} ${id}, ${type}`,
     tagTitle: ({ id, type }: { id: string; type: string }) => `${id} · ${type}`,
+    // The read-only tag beside a trigger's event input (derived, MAN-26).
+    reservedTagAria: ({ id, type }: { id: string; type: string }) =>
+      `Trigger event input ${id}, ${type}, read-only`,
+    reservedTagTitle: ({ id, type }: { id: string; type: string }) =>
+      `${id} · ${type} — filled when this trigger fires; read-only`,
     tagNameLabel: 'Interface name',
     tagNameHint: 'Enter saves · Esc cancels',
     tagIdEmpty: 'Give it a name.',

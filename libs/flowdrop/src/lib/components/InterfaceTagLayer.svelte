@@ -1,8 +1,10 @@
 <!--
   InterfaceTagLayer
 
-  Draws a tag beside every port a `workflow.interface` entry binds, and the
-  ghost tag a name is typed in (to expose a port, or to rename an entry).
+  Draws a tag beside every port a `workflow.interface` entry binds, a
+  read-only tag beside every trigger's `event` input (the derived
+  `event:<node-id>` input, MAN-26), and the ghost tag a name is typed in (to
+  expose a port, or to rename an entry).
   Render it inside <SvelteFlow>: it puts its tags in the viewport layer in
   front of the nodes, so they pan and zoom with the canvas.
 
@@ -35,6 +37,7 @@
     exposableCandidate,
     interfaceTagModels,
     interfaceTagTypeText,
+    reservedInputTagModels,
     validateInterfaceId,
     type InterfaceIdError,
     type InterfaceTagModel
@@ -66,6 +69,7 @@
   const typeName = (dataType: string): string => getDataTypeDisplayText(checker, dataType);
 
   const tags = $derived(interfaceTagModels(workflow));
+  const reservedTags = $derived(reservedInputTagModels(workflow));
 
   /** The tag whose id is being typed, if any (a rename). */
   const renaming = $derived(
@@ -163,6 +167,25 @@
           }}
         />
       {/if}
+    </InterfaceTagAnchor>
+  {/each}
+
+  {#each reservedTags as tag (tag.key)}
+    {@const typeText = interfaceTagTypeText(tag, typeName)}
+    <InterfaceTagAnchor nodeId={tag.nodeId} handleId={tag.handleId} direction={tag.direction}>
+      <InterfaceTag
+        id={tag.entry.id}
+        {typeText}
+        color={getDataTypeColorToken(checker, tag.entry.dataType)}
+        readonly
+        class="nodrag nopan"
+        role="img"
+        title={m().workflowInterface.reservedTagTitle({ id: tag.entry.id, type: typeText })}
+        aria-label={m().workflowInterface.reservedTagAria({ id: tag.entry.id, type: typeText })}
+        data-testid="interface-tag-reserved"
+        data-interface-id={tag.entry.id}
+        data-interface-direction={tag.direction}
+      />
     </InterfaceTagAnchor>
   {/each}
 

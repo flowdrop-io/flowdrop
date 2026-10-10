@@ -15,6 +15,7 @@ import {
   interfaceTagReserve,
   interfaceTagTypeText,
   removeInterfaceEntry,
+  reservedInputTagModels,
   renameInterfaceEntry,
   truncateInterfaceId,
   validateInterfaceId
@@ -322,5 +323,34 @@ describe('layout room for tags', () => {
     const roomy = computeBeautifyLayout(positions, {}, dims, reserve);
     expect(plain.get('b')!.x - plain.get('a')!.x).toBe(220);
     expect(roomy.get('b')!.x - roomy.get('a')!.x).toBe(100 + 150 + 200 + 40);
+  });
+});
+
+describe('reservedInputTagModels', () => {
+  const trigger = (id: string): WorkflowNode =>
+    node(id, meta([['event', 'object']], [['data', 'object']]));
+
+  it('gives each trigger node one read-only event:<node-id> tag on its event input', () => {
+    const wf = workflow({ nodes: [...workflow().nodes, trigger('t1'), trigger('t2')] });
+    const tags = reservedInputTagModels(wf);
+    expect(tags.map((tag) => tag.entry.id)).toEqual(['event:t1', 'event:t2']);
+    expect(tags[0]).toMatchObject({
+      direction: 'input',
+      nodeId: 't1',
+      portId: 'event',
+      readonly: true,
+      entry: { dataType: 'object' }
+    });
+  });
+
+  it('draws nothing without trigger nodes, and stays out of interfaceTagModels', () => {
+    expect(reservedInputTagModels(workflow())).toEqual([]);
+    const wf = workflow({ nodes: [trigger('t1')] });
+    expect(interfaceTagModels(wf)).toEqual([]);
+  });
+
+  it('reserves room beside the trigger for its tag', () => {
+    const wf = workflow({ nodes: [trigger('t1')] });
+    expect(interfaceTagReserve(wf).get('t1')?.left).toBeGreaterThan(0);
   });
 });
