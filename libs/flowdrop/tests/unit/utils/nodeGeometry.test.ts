@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeNodeGeometry,
+  computeShapeGeometry,
+  shapePortY,
   estimatePillWidth,
   handleCenter,
   isCompletionPort,
@@ -185,5 +187,135 @@ describe('computeNodeGeometry: the straight-wire contract', () => {
     expect(isCompletionPort(trigger)).toBe(true);
     expect(isCompletionPort(port('trigger', 'string'))).toBe(false);
     expect(isCompletionPort(port('true', 'trigger'))).toBe(false);
+  });
+});
+
+describe('every node type meets the invariant', () => {
+  const branches = (names: string[]) => names.map((n) => port(n, 'trigger', n || '?'));
+  const TYPES: Record<string, NodeGeometryInput> = {
+    'switch, 5 branches': {
+      inputs: [port('value'), trigger],
+      outputs: branches(['a', 'b', 'c', 'd', 'default']),
+      execPins: 'input',
+      showDescriptions: false
+    },
+    'if/else': {
+      inputs: [port('data'), trigger],
+      outputs: branches(['True', 'False']),
+      execPins: 'input',
+      showDescriptions: false
+    },
+    'boolean gateway, no inputs besides the trigger': {
+      inputs: [trigger],
+      outputs: branches(['True', 'False']),
+      execPins: 'input',
+      showDescriptions: true
+    },
+    'gateway with two unnamed branches (B1)': {
+      inputs: [trigger],
+      outputs: branches(['', '']),
+      execPins: 'input',
+      showDescriptions: false
+    },
+    'gateway with no branches': {
+      inputs: [trigger],
+      outputs: [],
+      execPins: 'input',
+      showDescriptions: false
+    },
+    'tool (one tool port each side, no pins)': {
+      inputs: [port('tool', 'tool', 'Tool')],
+      outputs: [port('tool', 'tool', 'Tool')],
+      execPins: 'none',
+      showDescriptions: true
+    },
+    'tool repurposed with a trigger port stays a row': {
+      inputs: [trigger],
+      outputs: [trigger],
+      execPins: 'none',
+      showDescriptions: false
+    }
+  };
+
+  for (const [label, input] of Object.entries(TYPES)) {
+    it(`${label}: box and handles on the 20px grid`, () => {
+      const g = computeNodeGeometry(input);
+      expect(g.width % 20).toBe(0);
+      expect(g.height % 20).toBe(0);
+      expect(g.headerHeight).toBe(60);
+      for (const h of g.handles) expect(h.y % 20, `${h.portId} y=${h.y}`).toBe(0);
+      g.rows.forEach((row, i) => expect(row.y).toBe(g.bodyTop + 20 + i * 40));
+    });
+  }
+
+  it('lays a switch out as rows: one branch per row, the trigger a pin', () => {
+    const g = computeNodeGeometry(TYPES['switch, 5 branches']);
+    expect(g.rows.map((r) => r.output?.id)).toEqual(['a', 'b', 'c', 'd', 'default']);
+    expect(g.rows.map((r) => r.y)).toEqual([80, 120, 160, 200, 240]);
+    expect(g.execInput?.y).toBe(20);
+    expect(g.execOutput).toBeNull();
+    expect(g.height).toBe(60 + 5 * 40);
+  });
+
+  it('gives two same-named branches two rows (B1: no duplicate-key crash downstream)', () => {
+    const g = computeNodeGeometry(TYPES['gateway with two unnamed branches (B1)']);
+    expect(g.rows).toHaveLength(2);
+    expect(g.rows.map((r) => r.y)).toEqual([80, 120]);
+    expect(g.rows.every((r) => r.output !== null)).toBe(true);
+  });
+
+  it("keeps a branch named 'trigger' a row when only the input is a pin", () => {
+    const g = computeNodeGeometry({
+      inputs: [trigger],
+      outputs: [port('trigger', 'trigger', 'trigger')],
+      execPins: 'input',
+      showDescriptions: false
+    });
+    expect(g.execInput?.y).toBe(20);
+    expect(g.execOutput).toBeNull();
+    expect(g.rows[0].output?.id).toBe('trigger');
+  });
+
+  it('hands the port back on every handle, so a card can draw it', () => {
+    const g = computeNodeGeometry(TYPES['if/else']);
+    for (const h of g.handles) expect(h.port.id).toBe(h.portId);
+  });
+});
+
+describe('computeShapeGeometry: Simple, Square and Terminal', () => {
+  const ports = (n: number) => Array.from({ length: n }, (_, i) => port(`p${i}`));
+
+  for (const [ins, outs] of [
+    [0, 0],
+    [1, 1],
+    [0, 1],
+    [1, 0],
+    [2, 1],
+    [3, 3],
+    [1, 5]
+  ]) {
+    for (const width of [undefined, 80]) {
+      it(`${ins} in, ${outs} out, width ${width ?? 'default'}: box and handle centres on the grid`, () => {
+        const g = computeShapeGeometry({ inputs: ports(ins), outputs: ports(outs), width });
+        expect(g.width % 20).toBe(0);
+        expect(g.height % 40).toBe(0);
+        expect(g.height).toBeGreaterThanOrEqual(80);
+        expect(g.handles).toHaveLength(ins + outs);
+        for (const h of g.handles) {
+          expect(h.y % 20, `${h.portId} y=${h.y}`).toBe(0);
+          expect(h.y).toBeLessThan(g.height);
+          expect(h.x).toBe(h.direction === 'input' ? 0 : g.width);
+        }
+      });
+    }
+  }
+
+  it('puts a lone port at 40 and several from 20 at a pitch of 40', () => {
+    expect(shapePortY(0, 1)).toBe(40);
+    expect([0, 1, 2].map((i) => shapePortY(i, 3))).toEqual([20, 60, 100]);
+    const g = computeShapeGeometry({ inputs: ports(1), outputs: ports(3) });
+    expect(g.height).toBe(120);
+    expect(handleCenter(g, 'input', 'p0')?.y).toBe(40);
+    expect(handleCenter(g, 'output', 'p2')?.y).toBe(100);
   });
 });

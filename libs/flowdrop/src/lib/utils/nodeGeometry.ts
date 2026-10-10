@@ -21,9 +21,14 @@
  * move different rows by different amounts and bend straight wires.
  *
  * Other node types plug in through the same input: a gateway passes its
- * branches as `outputs`, a node with no inputs passes `inputs: []`, and
- * `execPins: 'none'` keeps the completion trigger as an ordinary row for shapes
- * that have no header (Simple, Square, Terminal).
+ * branches as `outputs` with `execPins: 'input'` (a branch named `trigger` stays
+ * a row), a node with no inputs passes `inputs: []`, and `execPins: 'none'`
+ * keeps the completion trigger as an ordinary row (a tool, whose only port is
+ * its tool port).
+ *
+ * The three compact shapes (Simple, Square, Terminal) have no header, so they
+ * use `computeShapeGeometry`: the same rule (every handle centre a multiple of
+ * 20 from the node top, every box a multiple of 20) on a plain 40px pitch.
  *
  * @module utils/nodeGeometry
  */
@@ -64,18 +69,19 @@ export interface GeometryPort {
   required?: boolean;
 }
 
-export interface NodeGeometryInput {
+export interface NodeGeometryInput<P extends GeometryPort = GeometryPort> {
   /** Exposed input ports, in render order (the completion trigger included). */
-  inputs: readonly GeometryPort[];
+  inputs: readonly P[];
   /** Exposed output ports, in render order (a gateway passes its branches here). */
-  outputs: readonly GeometryPort[];
+  outputs: readonly P[];
   /** The *Show descriptions* setting. */
   showDescriptions: boolean;
   /**
    * `'completion'` (default): the port with id and data type `trigger` becomes a
-   * pin in the header, in and out. `'none'`: it stays an ordinary row.
+   * pin in the header, in and out. `'input'`: only the input one does (a gateway,
+   * whose outputs are branches). `'none'`: it stays an ordinary row.
    */
-  execPins?: 'completion' | 'none';
+  execPins?: 'completion' | 'input' | 'none';
   /** Rows are at least this many (default 1, so an empty node keeps a body). */
   minRows?: number;
   /** A shape with a fixed width opts out of the pill rule. */
@@ -84,8 +90,10 @@ export interface NodeGeometryInput {
 
 export type HandleDirection = 'input' | 'output';
 
-export interface HandleGeometry {
+export interface HandleGeometry<P extends GeometryPort = GeometryPort> {
   portId: string;
+  /** The port the handle belongs to. */
+  port: P;
   direction: HandleDirection;
   /** `pin` in the header, `row` in the body. */
   kind: 'pin' | 'row';
@@ -96,15 +104,15 @@ export interface HandleGeometry {
   row?: number;
 }
 
-export interface RowGeometry {
+export interface RowGeometry<P extends GeometryPort = GeometryPort> {
   index: number;
   /** Row centre. */
   y: number;
-  input: GeometryPort | null;
-  output: GeometryPort | null;
+  input: P | null;
+  output: P | null;
 }
 
-export interface NodeGeometry {
+export interface NodeGeometry<P extends GeometryPort = GeometryPort> {
   width: number;
   height: number;
   headerHeight: number;
@@ -114,12 +122,12 @@ export interface NodeGeometry {
   bodyTop: number;
   rowPitch: number;
   rowCount: number;
-  rows: RowGeometry[];
+  rows: RowGeometry<P>[];
   /** The header pins, when the completion ports exist. */
-  execInput: HandleGeometry | null;
-  execOutput: HandleGeometry | null;
+  execInput: HandleGeometry<P> | null;
+  execOutput: HandleGeometry<P> | null;
   /** Every handle, pins first. */
-  handles: HandleGeometry[];
+  handles: HandleGeometry<P>[];
   /** True when a row's pills would have collided at 280. */
   wide: boolean;
 }
@@ -148,10 +156,12 @@ export function estimatePillWidth(port: GeometryPort, showRequiredMark = false):
  *
  * @param input - Exposed ports, in order, and the descriptions setting
  */
-export function computeNodeGeometry(input: NodeGeometryInput): NodeGeometry {
-  const pins = (input.execPins ?? 'completion') === 'completion';
-  const execIn = pins ? (input.inputs.find(isCompletionPort) ?? null) : null;
-  const execOut = pins ? (input.outputs.find(isCompletionPort) ?? null) : null;
+export function computeNodeGeometry<P extends GeometryPort>(
+  input: NodeGeometryInput<P>
+): NodeGeometry<P> {
+  const mode = input.execPins ?? 'completion';
+  const execIn = mode !== 'none' ? (input.inputs.find(isCompletionPort) ?? null) : null;
+  const execOut = mode === 'completion' ? (input.outputs.find(isCompletionPort) ?? null) : null;
   const inputs = input.inputs.filter((port) => port !== execIn);
   const outputs = input.outputs.filter((port) => port !== execOut);
 
@@ -172,12 +182,13 @@ export function computeNodeGeometry(input: NodeGeometryInput): NodeGeometry {
   }
   const width = input.width ?? (wide ? NODE_WIDTH_WIDE : NODE_WIDTH);
 
-  const rows: RowGeometry[] = [];
-  const handles: HandleGeometry[] = [];
+  const rows: RowGeometry<P>[] = [];
+  const handles: HandleGeometry<P>[] = [];
 
   if (execIn) {
     handles.push({
       portId: execIn.id,
+      port: execIn,
       direction: 'input',
       kind: 'pin',
       x: 0,
@@ -187,6 +198,7 @@ export function computeNodeGeometry(input: NodeGeometryInput): NodeGeometry {
   if (execOut) {
     handles.push({
       portId: execOut.id,
+      port: execOut,
       direction: 'output',
       kind: 'pin',
       x: width,
@@ -200,11 +212,20 @@ export function computeNodeGeometry(input: NodeGeometryInput): NodeGeometry {
     const rowOutput = outputs[i] ?? null;
     rows.push({ index: i, y, input: rowInput, output: rowOutput });
     if (rowInput) {
-      handles.push({ portId: rowInput.id, direction: 'input', kind: 'row', x: 0, y, row: i });
+      handles.push({
+        portId: rowInput.id,
+        port: rowInput,
+        direction: 'input',
+        kind: 'row',
+        x: 0,
+        y,
+        row: i
+      });
     }
     if (rowOutput) {
       handles.push({
         portId: rowOutput.id,
+        port: rowOutput,
         direction: 'output',
         kind: 'row',
         x: width,
@@ -232,10 +253,68 @@ export function computeNodeGeometry(input: NodeGeometryInput): NodeGeometry {
 
 /** Where a port's handle centre is, from the node's top-left, or undefined for an unknown port. */
 export function handleCenter(
-  geometry: NodeGeometry,
+  geometry: Pick<NodeGeometry, 'handles'>,
   direction: HandleDirection,
   portId: string
 ): { x: number; y: number } | undefined {
   const handle = geometry.handles.find((h) => h.direction === direction && h.portId === portId);
   return handle ? { x: handle.x, y: handle.y } : undefined;
+}
+
+/** Compact shapes: the smallest box, and the step every box grows by. */
+export const SHAPE_MIN_SIZE = 80;
+/** Pitch of a compact shape's ports. */
+export const SHAPE_PORT_PITCH = 40;
+
+export interface ShapeGeometryInput<P extends GeometryPort = GeometryPort> {
+  inputs: readonly P[];
+  outputs: readonly P[];
+  /** The box width (a multiple of 20): 280 for Simple, 80 for Square. Terminal ignores it. */
+  width?: number;
+}
+
+export interface ShapeGeometry<P extends GeometryPort = GeometryPort> {
+  width: number;
+  /** Always a multiple of 40, at least 80. */
+  height: number;
+  /** Handle centres, from the node's top-left (x on the box edge). */
+  handles: HandleGeometry<P>[];
+}
+
+/**
+ * The y of a compact shape's port, from the node top: a lone port sits at 40,
+ * several start at 20 and step by 40. Always a multiple of 20.
+ */
+export function shapePortY(index: number, count: number): number {
+  return count === 1 ? SHAPE_MIN_SIZE / 2 : NODE_GRID + index * SHAPE_PORT_PITCH;
+}
+
+/**
+ * Geometry of the compact shapes (Simple, Square, Terminal). They have no
+ * header and keep their silhouette, but meet the same invariant as the card:
+ * every handle centre is a multiple of 20 from the node top and the box is a
+ * multiple of 20 (of 40 in height, so the ports sit symmetrically).
+ */
+export function computeShapeGeometry<P extends GeometryPort>(
+  input: ShapeGeometryInput<P>
+): ShapeGeometry<P> {
+  const width = input.width ?? NODE_WIDTH;
+  const most = Math.max(input.inputs.length, input.outputs.length, 2);
+  const handles: HandleGeometry<P>[] = [];
+  const side = (list: readonly P[], direction: HandleDirection): void => {
+    list.forEach((port, i) =>
+      handles.push({
+        portId: port.id,
+        port,
+        direction,
+        kind: 'row',
+        x: direction === 'input' ? 0 : width,
+        y: shapePortY(i, list.length),
+        row: i
+      })
+    );
+  };
+  side(input.inputs, 'input');
+  side(input.outputs, 'output');
+  return { width, height: most * SHAPE_PORT_PITCH, handles };
 }
