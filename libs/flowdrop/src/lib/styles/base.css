@@ -648,6 +648,10 @@
     font-family: var(--fd-font-sans);
     font-size: var(--fd-text-sm);
     scrollbar-width: thin;
+    /* 1px between items, so a hovered neighbour of the chosen one never fuses with it. */
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
 
   .flowdrop-input--select option {
@@ -660,13 +664,25 @@
   }
 
   .flowdrop-input--select option:hover,
-  .flowdrop-input--select option:focus-visible {
+  .flowdrop-input--select option:focus-visible:not(:checked) {
     background-color: var(--fd-muted);
     outline: none;
   }
 
+  /* Chosen is the check glyph and a touch of weight; the fill belongs to the pointer (hover). */
   .flowdrop-input--select option:checked {
-    background-color: var(--fd-primary-muted);
+    background-color: transparent;
+    font-weight: 500;
+  }
+
+  .flowdrop-input--select option:checked:hover {
+    background-color: var(--fd-muted);
+  }
+
+  /* The browser focuses the chosen option on open: a hairline marks the keyboard position, the fill stays the pointer's. */
+  .flowdrop-input--select option:checked:focus-visible {
+    outline: 1px solid var(--fd-border-strong);
+    outline-offset: -1px;
   }
 
   .flowdrop-input--select option::checkmark {

@@ -15,6 +15,7 @@
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
   import { themeScope } from '$lib/utils/themeScope.svelte.js';
   import Select from '$lib/components/primitives/Select.svelte';
+  import Menu, { type MenuEntry } from '$lib/components/primitives/Menu.svelte';
   import { resolveTheme } from '$lib/themes/index.js';
   import { buildScopedSkinCss } from '$lib/themes/scopedSkinCss.js';
   import type { SelectOption } from '$lib/utils/selectOptions.js';
@@ -81,10 +82,23 @@
     label: `Model ${i + 1}`
   }));
 
+  const operators = ['equals', 'not_equals', 'contains', 'starts_with'];
+  let operator = $state('equals');
+  const menuItems = $derived<MenuEntry[]>(
+    operators.map((o) => ({
+      label: o,
+      radio: true,
+      checked: operator === o,
+      onselect: () => (operator = o)
+    }))
+  );
+
   let format = $state('markdown');
   let port = $state('c');
   let model = $state('m3');
 </script>
+
+{#snippet menuTrigger()}{operator}{/snippet}
 
 <div
   class="flowdrop-root"
@@ -108,6 +122,11 @@
       <label for="s-long">Model (42 options)</label>
       <Select id="s-long" options={many} value={model} onValueChange={(v) => (model = v)} />
       <p data-testid="long-value">{model}</p>
+    </section>
+    <section>
+      <span id="m-label">Operator (Menu, radio items)</span>
+      <div><Menu label="Operator" items={menuItems} trigger={menuTrigger} /></div>
+      <p data-testid="menu-value">{operator}</p>
     </section>
     <section>
       <label for="s-forced">Forced searchable</label>

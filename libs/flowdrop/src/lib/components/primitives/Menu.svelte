@@ -331,6 +331,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    gap: 1px; /* items never touch, so hover next to the checked one stays its own pill */
     padding: var(--fd-space-xs);
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
@@ -384,6 +385,11 @@
     gap: var(--fd-space-xs);
     max-width: 100%;
     font-weight: 500;
+  }
+
+  /* In a list with a choice, only the chosen item is 500: the check and the weight say "chosen", the fill says "pointer". */
+  .flowdrop-ui-menu__item[aria-checked='false'] .flowdrop-ui-menu__item-label {
+    font-weight: 400;
   }
 
   .flowdrop-ui-menu__item-icon {
