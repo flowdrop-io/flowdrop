@@ -53,6 +53,8 @@
     transition: all var(--fd-transition-normal);
     backdrop-filter: var(--fd-backdrop-blur);
     z-index: 15;
+    /* Buttons do not inherit the font by default (Arial otherwise). */
+    font: inherit;
     font-size: var(--fd-text-sm);
   }
 
