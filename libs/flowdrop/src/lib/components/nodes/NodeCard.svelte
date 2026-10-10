@@ -782,6 +782,26 @@
     mask: var(--_pin-solid) center / 100% 100% no-repeat;
   }
 
+  /* An open pin's outline is hollow: back it with the card fill so the card
+     border it sits on does not show through. The halo (hover, ready) takes
+     ::after over, as the rules below come later at equal specificity. */
+  :global(
+    .svelte-flow
+      .svelte-flow__handle.flowdrop-workflow-node__handle--pin.flowdrop-workflow-node__handle--open::after
+  ) {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: -1;
+    translate: -50% -50%;
+    width: var(--fd-node-pin-width);
+    height: var(--fd-node-pin-size);
+    background: var(--fd-node-bg);
+    mask: var(--_pin-solid) center / 100% 100% no-repeat;
+    pointer-events: none;
+  }
+
   /* Outline and glyph tiers draw every wired handle as the same edge stub. */
   :global(
     :is([data-fd-zoom='outline'], [data-fd-zoom='glyph'])
