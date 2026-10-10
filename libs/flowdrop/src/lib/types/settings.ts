@@ -364,7 +364,7 @@ export const DEFAULT_UI_SETTINGS: UISettings = {
   sheetWidths: { workflow: 420 },
   sidebarCollapsed: false,
   compactMode: false,
-  theme: 'default',
+  theme: 'graphite',
   consoleOpen: false,
   consoleHeight: 220,
   bottomPanelTab: 'console',

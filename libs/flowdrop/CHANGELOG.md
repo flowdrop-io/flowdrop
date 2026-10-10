@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`graphite` theme** (`theme: 'graphite'`, light + dark), opt-in: near-black primary action, one blue accent
+- **`graphite` theme** (`theme: 'graphite'`, light + dark), the new default (see Changed): near-black primary action, one blue accent
   for selection, focus and running, separate green / amber / red for run status, 4 px radius, 1 px rules.
   Every text pair passes WCAG AA in both modes. Listed in Settings → UI Theme. Its font is Inter, shipped as
   the opt-in stylesheet `@flowdrop/flowdrop/styles/fonts/inter.css` (variable, Latin, 47 KB, OFL); without
@@ -203,6 +203,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Graphite is the default theme.** `DEFAULT_UI_SETTINGS.theme` is now `'graphite'` (was `'default'`), so an
+  editor with no `theme` prop and no saved choice starts in Graphite. A browser that already saved its settings
+  keeps the theme it had. To keep the old look, pass `theme: 'default'`, or pick Default in Settings → UI Theme.
 - **Token scales collapsed** (values move, names stay; `--fd-*` names are stable until 3.0). Sites that
   override these tokens are unaffected, sites on the defaults get slightly smaller type and a tighter grid:
   - Type scale is now 11 / 12 / 13 / 15 / 20 / 24 px: `--fd-text-sm` 14 → 13 px, `--fd-text-base` 16 → 15 px,
