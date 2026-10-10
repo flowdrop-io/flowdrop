@@ -110,6 +110,53 @@ test('the map view is a solid block with the glyph alone', async ({ page }) => {
   await expect(card.locator('.flowdrop-workflow-node__pill').first()).toBeHidden();
 });
 
+test('graphite map: a neutral card with one solid category tile', async ({ page }) => {
+  await open(page, 0.2);
+  const node = page.locator('.svelte-flow__node[data-id="data_shaper.2"] .flowdrop-workflow-node');
+  const look = await node.evaluate((el) => {
+    const tile = el.querySelector('.flowdrop-workflow-node__tile') as HTMLElement;
+    const probe = document.createElement('span');
+    probe.style.background = 'color-mix(in srgb, var(--fd-node-bg) 100%, transparent)';
+    el.appendChild(probe);
+    const bg = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    const t = getComputedStyle(tile);
+    return {
+      cardBg: getComputedStyle(el).backgroundColor,
+      nodeBg: bg,
+      shadow: getComputedStyle(el).boxShadow,
+      tileBg: t.backgroundColor,
+      tileW: t.width,
+      tileRadius: t.borderTopLeftRadius
+    };
+  });
+  expect(look.cardBg).toBe(look.nodeBg);
+  expect(look.shadow).not.toBe('none');
+  expect(look.tileBg).not.toMatch(/\/ 0\)|, 0\)$/);
+  expect(look.tileW).toBe('80px');
+  expect(look.tileRadius).toBe('20px');
+});
+
+test('default map: the card is the solid category block, the tile has no fill', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 1800, height: 1100 });
+  await page.goto('/test/cards?theme=default&zoom=0.2');
+  await page.waitForSelector('.svelte-flow__node[data-id="data_shaper.2"]');
+  await page.waitForTimeout(400);
+  const node = page.locator('.svelte-flow__node[data-id="data_shaper.2"] .flowdrop-workflow-node');
+  const look = await node.evaluate((el) => ({
+    cardBg: getComputedStyle(el).backgroundColor,
+    shadow: getComputedStyle(el).boxShadow,
+    tileBg: getComputedStyle(el.querySelector('.flowdrop-workflow-node__tile')!).backgroundColor,
+    tileW: getComputedStyle(el.querySelector('.flowdrop-workflow-node__tile')!).width
+  }));
+  expect(look.cardBg).not.toMatch(/^(rgb\(255, 255, 255\)|color\(srgb 1 1 1\))$/);
+  expect(look.shadow).toBe('none');
+  expect(look.tileBg).toMatch(/\/ 0\)|, 0\)$/);
+  expect(look.tileW).toBe('72px');
+});
+
 test('a configured set with only outline below full never reaches glyph or map', async ({
   page
 }) => {

@@ -658,7 +658,7 @@
       var(--_cat) var(--fd-node-zoom-map-mix),
       var(--fd-node-terminal-bg)
     );
-    box-shadow: none;
+    box-shadow: var(--fd-node-zoom-map-shadow);
   }
 
   :global([data-fd-zoom='map']) .flowdrop-terminal-node--error {
@@ -666,9 +666,10 @@
   }
 
   :global([data-fd-zoom='map']) .flowdrop-terminal-node__icon-wrapper {
-    width: 100%;
-    height: 100%;
-    background: transparent;
+    width: min(var(--fd-node-zoom-map-tile-size), calc(var(--_d) * 0.7));
+    height: min(var(--fd-node-zoom-map-tile-size), calc(var(--_d) * 0.7));
+    border-radius: var(--fd-node-zoom-map-tile-radius);
+    background: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-map-tile-mix), transparent);
   }
 
   :global([data-fd-zoom='map'])

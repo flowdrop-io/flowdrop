@@ -434,7 +434,7 @@
   :global([data-fd-zoom='map'])
     .flowdrop-square-node:not(.flowdrop-square-node--selected)
     .flowdrop-square-node__square {
-    box-shadow: none;
+    box-shadow: var(--fd-node-zoom-map-shadow);
   }
 
   :global([data-fd-zoom='map']) .flowdrop-square-node__square {
@@ -450,9 +450,10 @@
   }
 
   :global([data-fd-zoom='map']) .flowdrop-square-node__icon-wrapper {
-    width: 100%;
-    height: 100%;
-    background: transparent;
+    width: var(--fd-node-zoom-map-tile-size);
+    height: var(--fd-node-zoom-map-tile-size);
+    border-radius: var(--fd-node-zoom-map-tile-radius);
+    background: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-map-tile-mix), transparent);
   }
 
   :global([data-fd-zoom='map'])

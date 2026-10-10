@@ -401,7 +401,7 @@
   }
 
   :global([data-fd-zoom='map']) .flowdrop-notes-node:not(.flowdrop-notes-node--selected) {
-    box-shadow: none;
+    box-shadow: var(--fd-node-zoom-map-shadow);
   }
 
   /* Responsive design */

@@ -772,6 +772,10 @@
   --fd-node-zoom-title-max: 170px; /* @internal */
   --fd-node-zoom-map-mix: 86%; /* @internal  map: how much of the category colour fills the card */
   --fd-node-zoom-map-glyph: 72px; /* @internal  map: white glyph on the solid block */
+  --fd-node-zoom-map-shadow: none; /* @internal  map: card shadow (Default draws flat blocks) */
+  --fd-node-zoom-map-tile-mix: 0%; /* @internal  map: how much of the category colour fills the tile */
+  --fd-node-zoom-map-tile-size: 72px; /* @internal  map: the tile that holds the glyph */
+  --fd-node-zoom-map-tile-radius: 0px; /* @internal  map: tile corner radius */
   --fd-node-zoom-edge-width-glyph: 2.5px; /* @internal  glyph: wire thickness */
   --fd-node-zoom-edge-width-map: 5px; /* @internal  map: wire thickness */
   --fd-node-zoom-edge-map: var(--fd-edge-data); /* @internal  map: wire colour */

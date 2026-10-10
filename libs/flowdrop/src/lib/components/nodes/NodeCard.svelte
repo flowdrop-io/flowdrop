@@ -855,7 +855,7 @@
   }
 
   :global([data-fd-zoom='map']) .flowdrop-workflow-node:not(.flowdrop-workflow-node--selected) {
-    box-shadow: none;
+    box-shadow: var(--fd-node-zoom-map-shadow);
   }
 
   :global([data-fd-zoom='map']) .flowdrop-workflow-node--error,
@@ -864,9 +864,11 @@
   }
 
   :global([data-fd-zoom='map']) .flowdrop-workflow-node__tile {
-    width: var(--fd-node-zoom-map-glyph);
-    height: var(--fd-node-zoom-map-glyph);
-    background: transparent;
+    width: var(--fd-node-zoom-map-tile-size);
+    height: var(--fd-node-zoom-map-tile-size);
+    border-radius: var(--fd-node-zoom-map-tile-radius);
+    background: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-map-tile-mix), transparent);
+    box-shadow: none;
   }
 
   :global([data-fd-zoom='map'])

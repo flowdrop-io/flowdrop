@@ -72,6 +72,14 @@ export const graphiteSkin: FlowDropSkin = {
     /* Zoom tiers: an open port bar and the map wires, in the neutral greys */
     'node-zoom-bar-open-bg': '#eceef1',
     'node-zoom-edge-map': '#b5bac2',
+    /* Zoom map tier: a neutral card, the category lives in one solid tile */
+    'node-zoom-map-mix': '0%',
+    'note-zoom-map-mix': '0%',
+    'node-zoom-map-shadow': 'var(--fd-node-shadow)',
+    'node-zoom-map-tile-mix': '100%',
+    'node-zoom-map-tile-size': '80px',
+    'node-zoom-map-tile-radius': '20px',
+    'node-zoom-map-glyph': '44px',
 
     /* ----- Notes: warm paper, a tinted inset edge, no lift ----- */
     'note-bg': '#fffdf6',
@@ -382,6 +390,14 @@ export const graphiteSkin: FlowDropSkin = {
     'node-pin-open': '#7d8594',
     'node-zoom-bar-open-bg': '#2b3038',
     'node-zoom-edge-map': '#4a515c',
+    /* Zoom map tier: a neutral card, the category lives in one solid tile */
+    'node-zoom-map-mix': '0%',
+    'note-zoom-map-mix': '0%',
+    'node-zoom-map-shadow': 'var(--fd-node-shadow)',
+    'node-zoom-map-tile-mix': '100%',
+    'node-zoom-map-tile-size': '80px',
+    'node-zoom-map-tile-radius': '20px',
+    'node-zoom-map-glyph': '44px',
     'handle-border': '#1b1e23',
     'edge-trigger': '#eceef2',
     'edge-trigger-hover': '#ffffff',
