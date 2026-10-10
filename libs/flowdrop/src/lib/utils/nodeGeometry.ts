@@ -9,7 +9,7 @@
  * |-------------------|-------------------------------------------------------------|
  * | Width             | 280, or 320 when a row's input and output pills would collide |
  * | Header            | always 60                                                   |
- * | Exec pins         | y = 20, at x = 0 and x = width                              |
+ * | Exec pins         | y = 40, at x = 0 and x = width                              |
  * | Description band  | 60, reserved on EVERY node while the setting is on          |
  * | Port rows         | first row centre at 80 (140 with the band), pitch 40        |
  * | Border            | drawn inside the box, so it never adds to the height        |

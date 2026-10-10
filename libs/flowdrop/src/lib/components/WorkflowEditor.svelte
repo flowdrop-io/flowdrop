@@ -11,7 +11,8 @@
     Background,
     BackgroundVariant,
     MiniMap,
-    type ColorMode
+    type ColorMode,
+    type OnConnectStart
   } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
   import {
@@ -664,6 +665,27 @@
     // Transition to idle — sync effect is now unblocked
     machine.send('STOP_DRAG');
   }
+
+  /**
+   * A wire is dragged out of a port: record its type so every card can light
+   * the ports that take it. NodeCard puts the port's data type on the handle.
+   */
+  const handleConnectStart: OnConnectStart = (event, { nodeId, handleId, handleType }) => {
+    const handle =
+      event.target instanceof Element ? event.target.closest('.svelte-flow__handle') : null;
+    const dataType = handle instanceof HTMLElement ? handle.dataset.fdPortType : undefined;
+    const portId = extractPortId(handleId ?? undefined);
+    if (!nodeId || !portId || !handleType || !dataType) {
+      fd.connectDrag.set(null);
+      return;
+    }
+    fd.connectDrag.set({
+      nodeId,
+      direction: handleType === 'source' ? 'output' : 'input',
+      portId,
+      dataType
+    });
+  };
 
   /**
    * Handle new connections between nodes.
@@ -1539,6 +1561,8 @@
             {edgeTypes}
             {defaultEdgeOptions}
             onconnect={() => void handleConnect()}
+            onconnectstart={handleConnectStart}
+            onconnectend={() => fd.connectDrag.set(null)}
             isValidConnection={(connection) => !isEventInputConnection(connection, flowNodes)}
             onbeforedelete={handleBeforeDelete}
             ondelete={handleNodesDelete}

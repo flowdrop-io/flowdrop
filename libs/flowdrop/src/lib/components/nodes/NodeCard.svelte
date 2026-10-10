@@ -2,7 +2,7 @@
   Node Card Component
   The card v2 body shared by the node types that follow it (Workflow, Gateway,
   Tool): one fixed geometry from utils/nodeGeometry.ts. The header is always
-  60px, the completion `trigger` ports are pins in it (y = 20), every other port
+  60px, the completion `trigger` ports are pins in it (y = 40), every other port
   is a half-pill on a shared row (first row y = 80, pitch 40), the width is 280
   or 320 and the border is drawn inside the box, so every handle centre is a
   multiple of 20 and any output can meet any input in a straight wire. Every
@@ -31,6 +31,8 @@
   import { portShape, SHAPE_GLYPH } from '../../utils/portShape.js';
   import type { NodeGeometry } from '../../utils/nodeGeometry.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
+  import { connectDragState } from '../../stores/connectDragStore.svelte.js';
+  import { isTriggerEventInput } from '../../utils/reservedPorts.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { m } from '$lib/messages/index.js';
   import { onMount, tick } from 'svelte';
@@ -96,6 +98,16 @@
   // Hoist the graph branch — three reads in the template, two of them inside
   // {#each port} loops where N×M reads add up. One getter walk per render.
   const graph = $derived(m().nodes.graph);
+
+  /** The wire being dragged, if any: ports that take its type light up, the rest dull. */
+  const dragFrom = $derived(fd.connectDrag.from);
+  const dragNode = $derived(dragFrom ? fd.workflow.nodes.find((n) => n.id === id) : undefined);
+
+  function dragClass(direction: 'input' | 'output', port: NodePort): string {
+    const reserved = direction === 'input' && isTriggerEventInput(dragNode, port.id);
+    const state = connectDragState(checker, dragFrom, id, direction, port, reserved);
+    return state ? `fd-drag--${state}` : '';
+  }
 
   /** Handle ids of this node's wired ports. */
   const wiredHandles = $derived(wiredHandleIds(fd.workflow.edges, id));
@@ -275,7 +287,7 @@
     <span class="flowdrop-workflow-node__sr" id="node-description-{id}">{description}</span>
   {/if}
 
-  <!-- Exec pins: the completion trigger, in and out, at y = 20. -->
+  <!-- Exec pins: the completion trigger, in and out, at y = 40. -->
   {#each pins as pin (pin.handleId)}
     <Handle
       type={pin.direction === 'input' ? 'target' : 'source'}
@@ -283,7 +295,11 @@
       id={pin.handleId}
       class="flowdrop-workflow-node__handle flowdrop-workflow-node__handle--pin {pin.wired
         ? 'flowdrop-workflow-node__handle--wired'
-        : 'flowdrop-workflow-node__handle--open fd-handle--open'}"
+        : 'flowdrop-workflow-node__handle--open fd-handle--open'} {dragClass(
+        pin.direction,
+        pin.port
+      )}"
+      data-fd-port-type={pin.port.dataType}
       aria-label={pin.direction === 'input' ? graph.execIn : graph.execOut}
       style="top: {pin.y}px; transform: translateY(-50%);"
       tabindex={-1}
@@ -297,9 +313,10 @@
     {@const port = item.port}
     {@const open = !item.wired && !item.active}
     {@const portColor = `var(--fd-port-skin-color, ${getPortColorToken(checker, port)})`}
+    {@const drag = dragClass(item.direction, port)}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
-      class="flowdrop-workflow-node__pill flowdrop-workflow-node__pill--{item.direction}"
+      class="flowdrop-workflow-node__pill flowdrop-workflow-node__pill--{item.direction} {drag}"
       class:flowdrop-workflow-node__pill--open={open}
       class:flowdrop-workflow-node__pill--active={item.active}
       style="top: {item.y}px; --_c: {portColor};"
@@ -323,7 +340,8 @@
       id={item.handleId}
       class="flowdrop-workflow-node__handle {open
         ? 'flowdrop-workflow-node__handle--open fd-handle--open'
-        : 'flowdrop-workflow-node__handle--wired'}"
+        : 'flowdrop-workflow-node__handle--wired'} {drag}"
+      data-fd-port-type={port.dataType}
       aria-label={item.direction === 'input'
         ? graph.connectInputPort({ name: port.name })
         : graph.connectOutputPort({ name: port.name })}
@@ -700,11 +718,14 @@
   /* Exec pins: a blank interface tag (InterfaceTag's `[ >` shape) pointing the
      way the run flows. Not a circled triangle: that read as a play button.
      Filled ink when wired, outlined grey when open. An open pin shows only
-     on a hovered, focused or selected card, or under a wire being dragged. */
+     on a hovered, focused or selected card, or under a wire being dragged. Its
+     halo (hover, ready to receive) is the same tag, larger: no round shadow. */
   :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin) {
     --_c: var(--fd-node-pin-wired);
     --fd-handle-fill: var(--_c);
-    --_pin-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 11'%3E%3Cpath d='M2.5 0H11l5 5.5-5 5.5H2.5A2.5 2.5 0 0 1 0 8.5v-6A2.5 2.5 0 0 1 2.5 0z'/%3E%3C/svg%3E");
+    --_pin-solid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 11'%3E%3Cpath d='M2.5 0H11l5 5.5-5 5.5H2.5A2.5 2.5 0 0 1 0 8.5v-6A2.5 2.5 0 0 1 2.5 0z'/%3E%3C/svg%3E");
+    --_pin-mask: var(--_pin-solid);
+    box-shadow: none;
     transition: opacity var(--fd-transition-normal);
   }
 
@@ -727,10 +748,16 @@
       .svelte-flow__handle.flowdrop-workflow-node__handle--pin:is(
         .valid,
         .connectingfrom,
-        .connectingto
+        .connectingto,
+        .fd-drag--ready
       )
   ) {
     opacity: 1;
+  }
+
+  /* A pin ready to receive is drawn in ink, open or not. */
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin.fd-drag--ready) {
+    --_c: var(--fd-node-pin-wired);
   }
 
   :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin::before) {
@@ -739,6 +766,20 @@
     border: none;
     border-radius: 0;
     mask: var(--_pin-mask) center / 100% 100% no-repeat;
+  }
+
+  :global(
+    .svelte-flow
+      .svelte-flow__handle.flowdrop-workflow-node__handle.flowdrop-workflow-node__handle--pin:hover::after
+  ),
+  :global(
+    .svelte-flow
+      .svelte-flow__handle.flowdrop-workflow-node__handle.flowdrop-workflow-node__handle--pin.fd-drag--ready::after
+  ) {
+    width: calc(var(--fd-node-pin-width) + var(--fd-node-halo-pad));
+    height: calc(var(--fd-node-pin-size) + var(--fd-node-halo-pad));
+    border-radius: 0;
+    mask: var(--_pin-solid) center / 100% 100% no-repeat;
   }
 
   /* Outline and glyph tiers draw every wired handle as the same edge stub. */
@@ -751,6 +792,81 @@
     height: var(--fd-node-zoom-stub-height);
     border-radius: var(--fd-node-zoom-stub-radius);
     mask: none;
+  }
+
+  /* ----- Wire drag: the ports that take the dragged type are ready to receive -----
+     A halo in the port's own shape and colour, beating softly, and the open
+     pill outlined as on hover. Every other port dulls, but stays a valid drop
+     (the runtime may cast): the one under the wire comes back to full. */
+  .flowdrop-workflow-node__pill.fd-drag--dull:not(:has(+ :global(.svelte-flow__handle.valid))),
+  :global(
+    .svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle.fd-drag--dull:not(.valid)
+  ) {
+    opacity: var(--fd-node-drag-dull-opacity);
+  }
+
+  .flowdrop-workflow-node__pill--open.fd-drag--ready {
+    background: var(--fd-node-bg);
+    color: var(--fd-foreground);
+  }
+
+  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--input.fd-drag--ready {
+    box-shadow: var(--fd-node-pill-open-ring-input);
+  }
+
+  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--output.fd-drag--ready {
+    box-shadow: var(--fd-node-pill-open-ring-output);
+  }
+
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle.fd-drag--ready::after),
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin:hover::after) {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    margin: auto;
+    width: var(--fd-node-halo-size);
+    height: var(--fd-node-halo-size);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--_c) var(--fd-node-halo-mix), transparent);
+    pointer-events: none;
+  }
+
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle.fd-drag--ready::after) {
+    animation: fd-node-heartbeat var(--fd-node-halo-beat) ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(
+      .svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle.fd-drag--ready::after
+    ) {
+      animation: none;
+    }
+  }
+
+  /* lub-dub, then rest */
+  @keyframes -global-fd-node-heartbeat {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    12% {
+      transform: scale(1.18);
+      opacity: 1;
+    }
+    24% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    36% {
+      transform: scale(1.1);
+      opacity: 0.9;
+    }
+    56% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
   }
 
   /* ----- Zoom tiers (editor.zoomTiers): the same box, a different drawing -----

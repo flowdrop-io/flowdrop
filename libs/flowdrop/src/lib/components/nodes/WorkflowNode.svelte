@@ -5,7 +5,7 @@
   Styled with BEM syntax
 
   Card v2 (Graphite G8): one fixed geometry from utils/nodeGeometry.ts. The
-  header is always 60px, the completion `trigger` ports are pins in it (y = 20),
+  header is always 60px, the completion `trigger` ports are pins in it (y = 40),
   every other port is a half-pill on a shared row (first row y = 80, pitch 40),
   the width is 280 or 320 and the border is drawn inside the box, so every
   handle centre is a multiple of 20 and any output can meet any input in a
