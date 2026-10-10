@@ -24,7 +24,8 @@
   import Icon from '@iconify/svelte';
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { orderPortsFor, getPortTop, isPortVisible } from '../../utils/portUtils.js';
+  import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
+  import { computeShapeGeometry } from '../../utils/nodeGeometry.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
@@ -138,18 +139,20 @@
   );
 
   /**
-   * Dynamic node min-height so handles never render outside the node body.
+   * The box and the handles, from the shared geometry: 280 wide, a multiple of
+   * 40 tall, every handle centre a multiple of 20 from the top. The description
+   * is clamped to what fits, so the box never grows with it.
    */
-  const nodeMinHeight = $derived(
-    (() => {
-      const maxPorts = Math.max(visibleInputPorts.length, visibleOutputPorts.length, 1);
-      return maxPorts <= 1 ? 80 : maxPorts * 40;
-    })()
+  const geometry = $derived(
+    computeShapeGeometry({ inputs: visibleInputPorts, outputs: visibleOutputPorts })
   );
+  const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
+  const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 </script>
 
 <!-- Input Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
-{#each visibleInputPorts as port, index (port.id)}
+{#each inputHandles as h (h.portId)}
+  {@const port = h.port}
   {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
   <Handle
     type="target"
@@ -158,10 +161,7 @@
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
       port
-    )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
-      index,
-      visibleInputPorts.length
-    )}px; transform: translateY(-50%); z-index: 30;"
+    )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-input-${port.id}`}
   />
 {/each}
@@ -175,13 +175,17 @@
   class:flowdrop-simple-node--selected={props.selected}
   class:flowdrop-simple-node--processing={props.isProcessing}
   class:flowdrop-simple-node--error={props.isError}
-  style="min-height: {nodeMinHeight}px"
+  style="width: {geometry.width}px; height: {geometry.height}px; --_desc-lines: {geometry.height / 20 - 3};"
   ondblclick={handleDoubleClick}
 >
   <div class="flowdrop-simple-node__header">
     <div class="flowdrop-simple-node__header-content">
       <!-- Node Icon (squircle) — visibility controlled by --fd-node-icon-display -->
-      <div class="flowdrop-simple-node__icon-wrapper" style="--_icon-color: {nodeColor}">
+      <div
+        class="flowdrop-simple-node__icon-wrapper"
+        style="--_icon-color: {nodeColor}"
+        data-fd-glyph
+      >
         <Icon icon={nodeIcon} class="flowdrop-simple-node__icon" />
       </div>
       <!-- Node Icon (circle dot) — visibility controlled by --fd-node-circle-display -->
@@ -191,7 +195,11 @@
       ></span>
 
       <!-- Node Title -->
-      <h3 class="flowdrop-simple-node__title" title={displayDescription || undefined}>
+      <h3
+        class="flowdrop-simple-node__title"
+        title={displayDescription || undefined}
+        data-fd-title
+      >
         {displayTitle}
       </h3>
     </div>
@@ -223,7 +231,8 @@
 </div>
 
 <!-- Output Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
-{#each visibleOutputPorts as port, index (port.id)}
+{#each outputHandles as h (h.portId)}
+  {@const port = h.port}
   {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
   <Handle
     type="source"
@@ -232,20 +241,20 @@
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
       port
-    )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
-      index,
-      visibleOutputPorts.length
-    )}px; transform: translateY(-50%); z-index: 30;"
+    )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-output-${port.id}`}
   />
 {/each}
 
 <style>
+  /* The box is sized inline from the geometry (280 × a multiple of 40) and the
+     border is an inset ring on ::after, so it never adds to the box. */
   .flowdrop-simple-node {
+    --_border: var(--fd-node-border);
     position: relative;
+    box-sizing: border-box;
     background-color: var(--fd-node-bg);
     backdrop-filter: var(--fd-node-backdrop-filter);
-    border: var(--fd-node-border-width) solid var(--fd-node-border);
     border-radius: var(--fd-node-radius);
     display: flex;
     flex-direction: column;
@@ -257,33 +266,28 @@
     color: var(--fd-foreground);
   }
 
-  /* Normal layout (default): min-height allows variable height for longer descriptions */
-  .flowdrop-simple-node--normal {
-    width: var(--fd-node-default-width);
-    min-height: var(--fd-node-simple-height);
+  .flowdrop-simple-node::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--fd-node-border-width) var(--_border);
+    pointer-events: none;
   }
 
   .flowdrop-simple-node:hover {
+    --_border: var(--fd-node-border-hover);
     box-shadow: var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-border-hover);
   }
 
-  .flowdrop-simple-node--selected {
-    box-shadow:
-      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
-      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
-        var(--fd-node-selected-ring),
-      var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
-  }
-
+  .flowdrop-simple-node--selected,
   .flowdrop-simple-node--selected:hover {
+    --_border: var(--fd-node-selected-border);
     box-shadow:
       0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
       0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
         var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
@@ -294,18 +298,23 @@
   }
 
   .flowdrop-simple-node--error {
-    border-color: var(--fd-error) !important;
+    --_border: var(--fd-error);
     background-color: var(--fd-error-muted) !important;
   }
 
   .flowdrop-simple-node__header {
-    /* px (not rem) on the 20px grid: 10px vertical, 20px horizontal. */
+    /* px (not rem) on the 20px grid: 10px vertical, 20px horizontal. The box is
+       fixed, so the title takes one 20px line and the description the rest. */
+    box-sizing: border-box;
     padding: 10px 20px;
     background: var(--fd-node-header-bg);
     flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .flowdrop-simple-node__header-content {
+    min-height: 40px;
     display: flex;
     align-items: center;
     gap: var(--fd-space-md);
@@ -341,14 +350,20 @@
     margin: 0;
     flex: 1;
     min-width: 0;
-    line-height: 1.4;
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .flowdrop-simple-node__description {
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
-    margin: var(--fd-space-3xs) 0 0 0;
-    line-height: 1.3;
+    margin: 0;
+    line-height: 20px;
+    /* whole lines only: what is left under the 40px icon row */
+    max-height: calc(var(--_desc-lines) * 20px);
+    overflow: hidden;
     display: var(--fd-node-desc-block-display);
   }
 

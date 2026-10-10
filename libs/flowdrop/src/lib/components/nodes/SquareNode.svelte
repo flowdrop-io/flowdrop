@@ -25,7 +25,8 @@
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { orderPortsFor, getPortTop, isPortVisible } from '../../utils/portUtils.js';
+  import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
+  import { computeShapeGeometry, SHAPE_MIN_SIZE } from '../../utils/nodeGeometry.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
@@ -134,19 +135,24 @@
   );
 
   /**
-   * Dynamic node size so handles never render outside the node body.
-   * Overrides the fixed CSS height/width when more than 2 ports are visible on either side.
+   * The box and the handles, from the shared geometry: the slot is 80 wide and a
+   * multiple of 40 tall, the visible square (80 × 80) sits centred in it, and
+   * every handle centre is a multiple of 20 from the top.
    */
-  const nodeSize = $derived(
-    (() => {
-      const maxPorts = Math.max(visibleInputPorts.length, visibleOutputPorts.length, 1);
-      return maxPorts <= 1 ? 80 : 20 + maxPorts * 40;
-    })()
+  const geometry = $derived(
+    computeShapeGeometry({
+      inputs: visibleInputPorts,
+      outputs: visibleOutputPorts,
+      width: SHAPE_MIN_SIZE
+    })
   );
+  const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
+  const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 </script>
 
 <!-- Input Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
-{#each visibleInputPorts as port, index (port.id)}
+{#each inputHandles as h (h.portId)}
+  {@const port = h.port}
   {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
   <Handle
     type="target"
@@ -155,10 +161,7 @@
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
       port
-    )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
-      index,
-      visibleInputPorts.length
-    )}px; transform: translateY(-50%); z-index: 30;"
+    )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-input-${port.id}`}
   />
 {/each}
@@ -175,7 +178,7 @@
   class:flowdrop-square-node--selected={props.selected}
   class:flowdrop-square-node--processing={props.isProcessing}
   class:flowdrop-square-node--error={props.isError}
-  style="height: {nodeSize}px"
+  style="width: {geometry.width}px; height: {geometry.height}px"
   onclick={handleClick}
   ondblclick={handleDoubleClick}
 >
@@ -184,7 +187,11 @@
     <!-- Square Layout: Always compact with centered icon in squircle wrapper -->
     <div class="flowdrop-square-node__compact-content">
       <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
-      <div class="flowdrop-square-node__icon-wrapper" style="--_icon-color: {squareColor}">
+      <div
+          class="flowdrop-square-node__icon-wrapper"
+          style="--_icon-color: {squareColor}"
+          data-fd-glyph
+        >
         <Icon icon={squareIcon} class="flowdrop-square-node__icon" />
       </div>
       <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
@@ -214,7 +221,8 @@
 </div>
 
 <!-- Output Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
-{#each visibleOutputPorts as port, index (port.id)}
+{#each outputHandles as h (h.portId)}
+  {@const port = h.port}
   {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
   <Handle
     type="source"
@@ -223,10 +231,7 @@
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
       port
-    )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
-      index,
-      visibleOutputPorts.length
-    )}px; transform: translateY(-50%); z-index: 30;"
+    )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-output-${port.id}`}
   />
 {/each}
@@ -240,7 +245,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: var(--fd-node-square-size);
     cursor: pointer;
     z-index: 10;
     color: var(--fd-foreground);
@@ -253,20 +257,30 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: var(--fd-node-square-size);
-    height: var(--fd-node-square-size);
+    width: 80px;
+    height: 80px;
     background-color: var(--fd-node-bg);
     backdrop-filter: var(--fd-node-backdrop-filter);
-    border: var(--fd-node-border-width) solid var(--fd-node-border);
     border-radius: var(--fd-node-radius);
     box-shadow: var(--fd-node-shadow);
     transition: all var(--fd-transition-fast);
     color: var(--fd-foreground);
+    --_border: var(--fd-node-border);
+  }
+
+  /* The border is drawn inside the box, so it never adds to the 80px. */
+  .flowdrop-square-node__square::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--fd-node-border-width) var(--_border);
+    pointer-events: none;
   }
 
   .flowdrop-square-node:hover .flowdrop-square-node__square {
     box-shadow: var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-border-hover);
+    --_border: var(--fd-node-border-hover);
   }
 
   .flowdrop-square-node--selected .flowdrop-square-node__square {
@@ -275,7 +289,7 @@
       0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
         var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
+    --_border: var(--fd-node-selected-border);
   }
 
   .flowdrop-square-node--selected:hover .flowdrop-square-node__square {
@@ -284,7 +298,7 @@
       0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
         var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
+    --_border: var(--fd-node-selected-border);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
@@ -295,7 +309,7 @@
   }
 
   .flowdrop-square-node--error .flowdrop-square-node__square {
-    border-color: var(--fd-error) !important;
+    --_border: var(--fd-error);
     background-color: var(--fd-error-muted) !important;
   }
 

@@ -21,7 +21,7 @@
   import NodeConfigButton from './NodeConfigButton.svelte';
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
-  import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
+  import { computeShapeGeometry } from '../../utils/nodeGeometry.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
@@ -284,14 +284,22 @@
   );
 
   /**
-   * Determine if we should show inputs based on visible ports
+   * The circle and its handles, from the shared geometry. The circle is as wide
+   * as it is tall (80, or 40 per port beyond two), every handle centre is a
+   * multiple of 20 from the top, and each handle sits on the circle's edge at
+   * that height. Only the y is on the grid; the x follows the arc.
    */
-  let showInputs = $derived(visibleInputPorts.length > 0);
-
-  /**
-   * Determine if we should show outputs based on visible ports
-   */
-  let showOutputs = $derived(visibleOutputPorts.length > 0);
+  const geometry = $derived(
+    computeShapeGeometry({ inputs: visibleInputPorts, outputs: visibleOutputPorts })
+  );
+  const diameter = $derived(geometry.height);
+  function arcX(y: number, direction: 'input' | 'output'): number {
+    const r = diameter / 2;
+    const inset = r - Math.sqrt(Math.max(r * r - (y - r) ** 2, 0));
+    return direction === 'input' ? inset : diameter - inset;
+  }
+  const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
+  const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 
   /**
    * Handle configuration sidebar - using global ConfigSidebar
@@ -327,7 +335,7 @@
   class:flowdrop-terminal-node--start={variant === 'start'}
   class:flowdrop-terminal-node--end={variant === 'end'}
   class:flowdrop-terminal-node--exit={variant === 'exit'}
-  style="--terminal-color: {terminalColor};"
+  style="--terminal-color: {terminalColor}; --_d: {diameter}px;"
   ondblclick={handleDoubleClick}
   aria-label="{variant} node: {displayTitle}"
 >
@@ -337,52 +345,58 @@
   <!-- Circle wrapper for proper handle positioning -->
   <div class="flowdrop-terminal-node__circle-wrapper">
     <!-- Input Handles (for end/exit variants) -->
-    {#if showInputs}
-      {#each visibleInputPorts as port, index (`${port.id}-${visibleInputPorts.length}`)}
-        {@const pos = getCircleHandlePosition(index, visibleInputPorts.length, 'left')}
-        {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
-        <Handle
-          type="target"
-          position={Position.Left}
-          title={interfaceBoundTooltip(boundEntry)}
-          style="--fd-handle-fill: {getPortColorToken(
-            checker,
-            port
-          )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
-          id={`${props.id}-input-${port.id}`}
-        />
-      {/each}
-    {/if}
+    {#each inputHandles as h (h.portId)}
+      {@const port = h.port}
+      {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
+      <Handle
+        type="target"
+        position={Position.Left}
+        title={interfaceBoundTooltip(boundEntry)}
+        style="--fd-handle-fill: {getPortColorToken(
+          checker,
+          port
+        )}; --fd-handle-border-color: var(--fd-handle-border); left: {arcX(
+          h.y,
+          'input'
+        )}px; top: {h.y}px; transform: translate(-50%, -50%); z-index: 30;"
+        id={`${props.id}-input-${port.id}`}
+      />
+    {/each}
 
     <!-- Circular content with icon in squircle wrapper -->
     <div class="flowdrop-terminal-node__content">
-      <div class="flowdrop-terminal-node__icon-wrapper" style="--_icon-color: {terminalColor}">
+      <div
+        class="flowdrop-terminal-node__icon-wrapper"
+        style="--_icon-color: {terminalColor}"
+        data-fd-glyph
+      >
         <Icon icon={terminalIcon} class="flowdrop-terminal-node__icon" />
       </div>
     </div>
 
     <!-- Output Handles (for start variant) -->
-    {#if showOutputs}
-      {#each visibleOutputPorts as port, index (`${port.id}-${visibleOutputPorts.length}`)}
-        {@const pos = getCircleHandlePosition(index, visibleOutputPorts.length, 'right')}
-        {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
-        <Handle
-          type="source"
-          position={Position.Right}
-          id={`${props.id}-output-${port.id}`}
-          title={interfaceBoundTooltip(boundEntry)}
-          style="--fd-handle-fill: {getPortColorToken(
-            checker,
-            port
-          )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
-        />
-      {/each}
-    {/if}
+    {#each outputHandles as h (h.portId)}
+      {@const port = h.port}
+      {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id={`${props.id}-output-${port.id}`}
+        title={interfaceBoundTooltip(boundEntry)}
+        style="--fd-handle-fill: {getPortColorToken(
+          checker,
+          port
+        )}; --fd-handle-border-color: var(--fd-handle-border); left: {arcX(
+          h.y,
+          'output'
+        )}px; top: {h.y}px; transform: translate(-50%, -50%); z-index: 30;"
+      />
+    {/each}
   </div>
 
   <!-- Label and description below the circle -->
   <div class="flowdrop-terminal-node__label-container">
-    <div class="flowdrop-terminal-node__label">
+    <div class="flowdrop-terminal-node__label" data-fd-title>
       {displayTitle}
     </div>
     {#if displayDescription}
@@ -408,13 +422,13 @@
 </div>
 
 <style>
+  /* The box is the circle plus a 40px label strip, so it is a multiple of 20
+     both ways; the label hangs centred below the circle and may be wider than
+     the box. */
   .flowdrop-terminal-node {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* px (not rem) on the 20px grid */
-    gap: 8px;
+    width: var(--_d);
+    height: calc(var(--_d) + 40px);
     cursor: pointer;
     transition: all var(--fd-transition-normal);
     z-index: 10;
@@ -424,14 +438,14 @@
   /* Wrapper for circle and handles - ensures handles are vertically centered to circle */
   .flowdrop-terminal-node__circle-wrapper {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: var(--_d);
+    height: var(--_d);
   }
 
   .flowdrop-terminal-node__content {
-    width: var(--fd-node-terminal-size);
-    height: var(--fd-node-terminal-size);
+    box-sizing: border-box;
+    width: var(--_d);
+    height: var(--_d);
     background-color: var(--fd-node-terminal-bg);
     border: var(--fd-node-terminal-border-width) solid
       var(--fd-node-terminal-border-color, var(--terminal-color, var(--fd-muted-foreground)));
@@ -569,6 +583,11 @@
   }
 
   .flowdrop-terminal-node__label-container {
+    position: absolute;
+    top: calc(var(--_d) + 8px);
+    left: 50%;
+    translate: -50% 0;
+    width: max-content;
     display: flex;
     flex-direction: column;
     align-items: center;
