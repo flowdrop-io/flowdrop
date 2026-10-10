@@ -3,7 +3,7 @@
   A thin accent line along each wire that a dragged node has snapped straight
   (see utils/straightWires.ts). Drawn in flow coordinates inside a
   ViewportPortal, so it pans and zooms with the canvas; the stroke is divided
-  by the zoom to stay about 2 screen px. Must be rendered inside <SvelteFlow>.
+  by the zoom to stay about 10 screen px, a halo around the wire. Must be rendered inside <SvelteFlow>.
 -->
 
 <script lang="ts">
@@ -29,7 +29,7 @@
         style:left="{guide.x1}px"
         style:top="{guide.y}px"
         style:width="{guide.x2 - guide.x1}px"
-        style:height="{2 / zoom}px"
+        style:height="{10 / zoom}px"
       ></div>
     {/each}
   </ViewportPortal>
@@ -40,6 +40,7 @@
     position: absolute;
     transform: translateY(-50%);
     background: var(--fd-ring);
+    opacity: 0.3;
     pointer-events: none;
   }
 </style>

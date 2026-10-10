@@ -32,6 +32,7 @@ test.describe('Canvas context menu', () => {
       /Configure/,
       /Duplicate/,
       /Swap node/,
+      /Straighten wires/,
       /Delete/
     ]);
 
@@ -129,7 +130,10 @@ test.describe('Canvas context menu', () => {
 
     // After a box selection, xyflow overlays the selected nodes with a selection wrapper.
     await page.locator('.svelte-flow__selection-wrapper').click({ button: 'right' });
-    await expect(menu(page).getByRole('menuitem')).toHaveText([/Delete 2 nodes/]);
+    await expect(menu(page).getByRole('menuitem')).toHaveText([
+      /Straighten wires/,
+      /Delete 2 nodes/
+    ]);
 
     await menu(page).getByRole('menuitem', { name: 'Delete 2 nodes' }).click();
     await assertNodeCount(page, 0);
@@ -213,6 +217,7 @@ test.describe('Canvas context menu', () => {
       /Configure/,
       /Duplicate/,
       /Swap node/,
+      /Straighten wires/,
       /Delete/
     ]);
 

@@ -1012,7 +1012,87 @@
     }
   };
 
+  // Straight wires (G8f): an entity trigger feeding Data Shaper through its trigger pin and
+  // its first data row. Every handle centre is a multiple of 20 from the node top, so
+  // Data Shaper at the trigger's y has both wires straight; it starts 80px lower.
+  const entityTriggerNodeType: NodeMetadata = {
+    node_type_id: 'entity_trigger',
+    name: 'Entity Insert',
+    description: 'Fires when an entity is inserted',
+    category: 'inputs',
+    version: '1.0.0',
+    type: 'default',
+    icon: 'mdi:database-plus',
+    inputs: [{ id: 'trigger', name: 'Trigger', type: 'input', dataType: 'trigger' }],
+    outputs: [
+      { id: 'entity', name: 'entity', type: 'output', dataType: 'object' },
+      { id: 'trigger', name: 'Trigger', type: 'output', dataType: 'trigger' }
+    ],
+    configSchema: { type: 'object', properties: {} },
+    tags: []
+  };
+  const dataShaperNodeType: NodeMetadata = {
+    node_type_id: 'data_shaper',
+    name: 'Data Shaper',
+    description: 'Reshapes an entity into the fields you need',
+    category: 'processing',
+    version: '1.0.0',
+    type: 'default',
+    icon: 'mdi:shape-outline',
+    inputs: [
+      { id: 'entity', name: 'Entity', type: 'input', dataType: 'object', required: true },
+      { id: 'trigger', name: 'Trigger', type: 'input', dataType: 'trigger' }
+    ],
+    outputs: [
+      { id: 'shaped', name: 'shaped', type: 'output', dataType: 'object' },
+      { id: 'trigger', name: 'Trigger', type: 'output', dataType: 'trigger' }
+    ],
+    configSchema: { type: 'object', properties: {} },
+    tags: []
+  };
+  const straightWorkflow: Workflow = {
+    id: 'test-workflow-straight',
+    name: 'Straight Wires Workflow',
+    description: 'A source and Data Shaper, wired by trigger and by data',
+    nodes: [
+      {
+        id: 'entity_trigger.1',
+        type: 'universalNode',
+        position: { x: 100, y: 120 },
+        data: { label: 'Entity Insert', config: {}, metadata: entityTriggerNodeType }
+      },
+      {
+        id: 'data_shaper.1',
+        type: 'universalNode',
+        position: { x: 520, y: 200 },
+        data: { label: 'Data Shaper', config: {}, metadata: dataShaperNodeType }
+      }
+    ],
+    edges: [
+      {
+        id: 'e-data',
+        source: 'entity_trigger.1',
+        target: 'data_shaper.1',
+        sourceHandle: 'entity_trigger.1-output-entity',
+        targetHandle: 'data_shaper.1-input-entity'
+      },
+      {
+        id: 'e-trigger',
+        source: 'entity_trigger.1',
+        target: 'data_shaper.1',
+        sourceHandle: 'entity_trigger.1-output-trigger',
+        targetHandle: 'data_shaper.1-input-trigger'
+      }
+    ],
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+
   const workflows: Record<string, Workflow> = {
+    straight: straightWorkflow,
     inspector: inspectorWorkflow,
     caption: captionWorkflow,
     notes: notesWorkflow,
