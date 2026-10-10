@@ -1,27 +1,28 @@
 <!--
   Gateway Node Component
-  Visual representation of gateway/branch nodes with branching flow indicators
-  Shows active branches and execution paths
-  Styled with BEM syntax following WorkflowNode pattern
+  Branching control flow on the card v2 geometry (see NodeCard): the same
+  header, the completion trigger as a header pin, input ports as rows on the
+  left, and the branches as output rows on the right (their triggers stay rows).
+  Shows active branches and execution paths.
 
   Port rendering:
   - Input-port exposure (data.config.ports, falling back to each port's
     exposedByDefault) decides which input ports render, in effective order.
     Branches are authored output paths and always render.
+  - Branches are not NodePorts: each becomes a trigger-lane output row whose
+    port id is the branch name. Rows are keyed by index, so two branches with
+    the same (or an empty) name draw two rows instead of crashing.
 -->
 
 <script lang="ts">
-  import { Position, Handle } from '@xyflow/svelte';
-  import type { WorkflowNode, Branch, PortsConfig } from '../../types/index.js';
-  import Icon from '@iconify/svelte';
-  import NodeConfigButton from './NodeConfigButton.svelte';
+  import type { WorkflowNode, Branch, NodePort, PortsConfig } from '../../types/index.js';
+  import NodeCard from './NodeCard.svelte';
   import { getNodeIcon } from '../../utils/icons.js';
-  import { getDataTypeColorToken, getCategoryColorToken } from '../../utils/colors.js';
-  import PortTypeBadge from '../ports/PortTypeBadge.svelte';
+  import { getCategoryColorToken } from '../../utils/colors.js';
+  import { getEditorSettings } from '../../stores/settingsStore.svelte.js';
+  import { computeNodeGeometry } from '../../utils/nodeGeometry.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
-  import { buildHandleId } from '$lib/utils/handleIds.js';
-  import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -35,42 +36,19 @@
   let props: Props = $props();
 
   const fd = getInstance();
-  const checker = fd.portCompatibility;
 
-  /**
-   * Handle ids bound to a `workflow.interface` entry — see workflowStore.
-   * Only input ports can be bound here: a gateway's outputs are branches
-   * (authored control-flow paths), not `NodePort`s, so they can never be an
-   * interface binding's target.
-   */
-  const boundHandles = $derived(fd.workflow.interfaceBoundHandles);
-
-  // Hoist the graph branch — three reads in the template, two inside
-  // {#each port} / {#each branch} loops. One getter walk per render.
+  // Hoist the graph branch — read in the template and the card.
   const graph = $derived(m().nodes.graph);
 
   /**
    * Instance-specific title override from config.
    * Falls back to the original label if not set.
-   * This allows users to customize the node title per-instance via config.
    */
-  /**
-   * What the shape/lane chips need to draw a branch row.
-   *
-   * A branch is an authored control-flow path, not a `NodePort`: it has no port
-   * id, and it always carries the trigger lane. So this is one frozen literal
-   * for every branch on every gateway, rather than a fabricated port per row —
-   * and with no id, a branch named `error` cannot trip the reserved-error
-   * colour exception the way a real `error` output does.
-   */
-  const BRANCH_LANE = { type: 'output', dataType: 'trigger' } as const;
-
   const displayTitle = $derived((props.data.config?.instanceTitle as string) || props.data.label);
 
   /**
    * Instance-specific description override from config.
    * Falls back to the metadata description if not set.
-   * This allows users to customize the node description per-instance via config.
    */
   const displayDescription = $derived(
     (props.data.config?.instanceDescription as string) || props.data.metadata.description
@@ -93,413 +71,69 @@
   );
 
   // Gateway-specific data - branches are calculated at runtime from config
-  let branches = $derived((props.data.config?.branches as Branch[]) || []);
-  let activeBranches = $derived(
+  const branches = $derived((props.data.config?.branches as Branch[]) || []);
+  const activeBranches = $derived(
     ((fd.playground.nodeStatusFor(props.id) ?? props.data.executionInfo)?.output
       ?.active_branches as string[]) || []
   );
 
   /**
-   * Branches are authored output paths, so they always render.
+   * What a branch row draws: an authored control-flow path, not a `NodePort`. It
+   * has no port id of its own (the branch name is its id) and it always carries
+   * the trigger lane, so a branch named `error` cannot trip the reserved-error
+   * colour exception the way a real `error` output does. An unnamed branch is
+   * labelled by its position.
    */
-  const visibleBranches = $derived(branches);
+  const branchPorts = $derived<NodePort[]>(
+    branches.map((branch, index) => ({
+      id: branch.name,
+      name: branch.label || branch.name || String(index + 1),
+      type: 'output',
+      dataType: 'trigger'
+    }))
+  );
+
+  /** The node's geometry. Only the input trigger is a pin: a branch named `trigger` stays a row. */
+  const geometry = $derived(
+    computeNodeGeometry({
+      inputs: visibleInputPorts,
+      outputs: branchPorts,
+      showDescriptions: getEditorSettings().showNodeDescriptions,
+      execPins: 'input'
+    })
+  );
+
+  const categoryColor = $derived(
+    getCategoryColorToken(fd.categories, props.data.metadata.category)
+  );
+  const kindLine = $derived(
+    props.data.metadata.category
+      ? `${fd.categories.getLabel(props.data.metadata.category)} · ${props.id}`
+      : props.id
+  );
 
   /**
-   * Handle double-click to open config
+   * Handle configuration sidebar - now using global ConfigSidebar
    */
-  function handleNodeDoubleClick(): void {
-    if (props.data.onConfigOpen) {
-      props.data.onConfigOpen({
-        id: props.id,
-        type: 'gateway',
-        data: props.data
-      });
-    }
-  }
-
-  /**
-   * Check if a branch is active
-   */
-  function isBranchActive(branchName: string): boolean {
-    return activeBranches.includes(branchName);
+  function openConfigSidebar(): void {
+    props.data.onConfigOpen?.({ id: props.id, type: 'gateway', data: props.data });
   }
 </script>
 
-<!-- Node Container -->
-<!-- Presentational: focus, keyboard and selection live on xyflow's node
-     wrapper (see UniversalNode). double-click is a mouse convenience. -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div
-  class="flowdrop-workflow-node flowdrop-workflow-node--gateway"
-  class:flowdrop-workflow-node--selected={props.selected}
-  ondblclick={handleNodeDoubleClick}
-  aria-label={graph.gatewayNode({ title: displayTitle })}
-  aria-describedby="node-description-{props.id}"
->
-  <!-- Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
-  <div class="flowdrop-workflow-node__header">
-    <div class="flowdrop-workflow-node__header-title">
-      <!-- Node Icon with Squircle Background -->
-      <div
-        class="flowdrop-workflow-node__icon-wrapper"
-        style="--_icon-color: {getCategoryColorToken(fd.categories, props.data.metadata.category)}"
-      >
-        <Icon
-          icon={getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata.category)}
-          class="flowdrop-workflow-node__icon"
-        />
-      </div>
-
-      <!-- Node Title - uses instanceTitle override if set -->
-      <h3
-        class="flowdrop-text--sm flowdrop-font--medium flowdrop-flex--1"
-        title={displayDescription || undefined}
-      >
-        {displayTitle}
-      </h3>
-    </div>
-    <!-- Node Description - line-height 20px so header grows in steps of 10 -->
-    <p class="flowdrop-workflow-node__header-desc" id="node-description-{props.id}">
-      {displayDescription}
-    </p>
-  </div>
-
-  <!-- Input Ports Container (exposed input ports) -->
-  {#if visibleInputPorts.length > 0}
-    <div class="flowdrop-workflow-node__ports">
-      <div class="flowdrop-workflow-node__ports-list">
-        {#each visibleInputPorts as port (port.id)}
-          {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
-          <div class="flowdrop-workflow-node__port">
-            <!-- Input Handle: one grid row (20px) from the top so it aligns with the label, at node edge -->
-            <Handle
-              type="target"
-              position={Position.Left}
-              id={`${props.id}-input-${port.id}`}
-              class="flowdrop-workflow-node__handle"
-              title={interfaceBoundTooltip(boundEntry)}
-              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: {getDataTypeColorToken(
-                checker,
-                port.dataType
-              )}; --fd-handle-border-color: var(--fd-handle-border);"
-              tabindex={-1}
-            />
-
-            <!-- Port Info: padding lives here so handle position is simple -->
-            <div class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0">
-              <PortTypeBadge {checker} {port} showRequired />
-              {#if port.description}
-                <p class="flowdrop-text--xs flowdrop-text--gray flowdrop-truncate">
-                  {port.description}
-                </p>
-              {/if}
-            </div>
-          </div>
-        {/each}
-      </div>
-    </div>
-  {/if}
-
-  <!-- Branches Section (Output Ports) -->
-  {#if visibleBranches.length > 0}
-    <div class="flowdrop-workflow-node__ports">
-      <div class="flowdrop-workflow-node__ports-list">
-        {#each visibleBranches as branch (branch.name)}
-          {@const isActive = isBranchActive(branch.name)}
-          <div class="flowdrop-workflow-node__port">
-            <!-- Port Info: padding lives here so handle position is simple -->
-            <div
-              class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right"
-            >
-              <PortTypeBadge
-                {checker}
-                port={BRANCH_LANE}
-                align="right"
-                label={branch.label || branch.name}
-                active={isActive}
-              >
-                {#snippet leading()}
-                  {#if isActive}
-                    <span style="color: {getDataTypeColorToken(checker, 'trigger')};">
-                      <Icon icon="mdi:check-circle" />
-                    </span>
-                  {/if}
-                {/snippet}
-              </PortTypeBadge>
-            </div>
-
-            <!-- Output Handle: one grid row (20px) from the top so it aligns with the label, at node edge -->
-            <Handle
-              type="source"
-              position={Position.Right}
-              id={`${props.id}-output-${branch.name}`}
-              class={`flowdrop-workflow-node__handle ${isActive ? 'flowdrop-workflow-node__handle--active' : ''}`}
-              style="top: var(--fd-node-port-row-height); transform: translateY(-50%); --fd-handle-fill: {isActive
-                ? getDataTypeColorToken(checker, 'trigger')
-                : getDataTypeColorToken(
-                    checker,
-                    'trigger'
-                  )}; --fd-handle-border-color: var(--fd-handle-border);"
-              tabindex={-1}
-            />
-          </div>
-        {/each}
-      </div>
-    </div>
-  {:else if branches.length === 0}
-    <!-- No branches configured at all -->
-    <div class="flowdrop-workflow-node__ports">
-      <div class="workflow-node__no-branches">
-        <Icon icon="mdi:alert-circle-outline" />
-        <span>No branches configured</span>
-      </div>
-    </div>
-  {/if}
-  <!-- Note: When there are no branches, we don't show anything -->
-
-  <!-- Config button -->
-  <NodeConfigButton onclick={handleNodeDoubleClick} title="Configure node" />
-</div>
-
-<style>
-  .flowdrop-workflow-node {
-    position: relative;
-    background-color: var(--fd-node-bg);
-    backdrop-filter: var(--fd-node-backdrop-filter);
-    border: var(--fd-node-border-width) solid var(--fd-node-border);
-    border-radius: var(--fd-node-radius);
-    box-shadow: var(--fd-node-shadow);
-    width: var(--fd-node-default-width);
-    z-index: 10;
-    color: var(--fd-foreground);
-    transition: all var(--fd-transition-fast);
-  }
-
-  .flowdrop-workflow-node--gateway {
-    min-width: var(--fd-node-default-width);
-  }
-
-  .flowdrop-workflow-node:hover {
-    box-shadow: var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-border-hover);
-  }
-
-  .flowdrop-workflow-node--selected {
-    box-shadow:
-      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
-      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
-        var(--fd-node-selected-ring),
-      var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
-  }
-
-  .flowdrop-workflow-node--selected:hover {
-    box-shadow:
-      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
-      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
-        var(--fd-node-selected-ring),
-      var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
-  }
-
-  /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
-     wrapper, which is the focusable element). */
-
-  .flowdrop-workflow-node__header {
-    box-sizing: border-box;
-    /* Bottom padding absorbs BOTH the node's own top border and the header
-       divider, so the body below the header lands on the 20px grid measured
-       from the node's outer top edge: node-border + header = 100/120/140. */
-    padding: var(--fd-node-header-gap) var(--fd-node-header-padding-x)
-      calc(
-        var(--fd-node-header-gap) - var(--fd-node-border-width) -
-          var(--fd-node-header-divider-width)
-      );
-    border-bottom: var(--fd-node-header-divider-width) solid var(--fd-node-header-divider-color);
-    background: var(--fd-node-header-bg);
-    border-top-left-radius: var(--fd-node-radius);
-    border-top-right-radius: var(--fd-node-radius);
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-node-header-row-gap);
-    /* node-border (1.5) + header = 100/120/140. Header itself is
-       4*gap + title + desc-line - node-border; each extra desc line adds 20. */
-    min-height: var(--fd-node-header-min-height);
-  }
-
-  .flowdrop-workflow-node__header-title {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-md);
-    min-height: var(--fd-node-header-title-height);
-    flex-shrink: 0;
-  }
-
-  .flowdrop-workflow-node__header-desc {
-    margin: 0;
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
-    line-height: var(--fd-node-header-desc-line);
-    min-height: var(--fd-node-header-desc-line);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    display: var(--fd-node-desc-display);
-  }
-
-  /* Squircle icon wrapper - Apple-style rounded square background */
-  .flowdrop-workflow-node__icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* px (not rem) so the icon stays grid-locked regardless of root font-size */
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
-    flex-shrink: 0;
-    transition: all var(--fd-transition-normal);
-  }
-
-  .flowdrop-workflow-node:hover .flowdrop-workflow-node__icon-wrapper {
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity-hover),
-      transparent
-    );
-    transform: scale(1.05);
-  }
-
-  .flowdrop-workflow-node__icon-wrapper :global(.flowdrop-workflow-node__icon) {
-    width: 20px;
-    height: 20px;
-    color: var(--fd-node-icon);
-  }
-
-  .flowdrop-workflow-node__header-title h3 {
-    margin: 0;
-    /* half the title block so two lines fill it exactly on the 20px grid */
-    line-height: calc(var(--fd-node-header-title-height) / 2);
-    color: var(--fd-foreground);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-width: 0;
-  }
-
-  .flowdrop-workflow-node__ports {
-    padding: 0;
-  }
-
-  .flowdrop-workflow-node__ports-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    /* No vertical padding: sections stack flush and node height stays a
-       multiple of 20. The one exception is the clearance below the header
-       divider, applied to the first section only (below). */
-    padding: 0;
-  }
-
-  /* The first port section sits directly below the header divider; give it a
-     full 20px grid row of clearance so the first port lands on the grid. */
-  .flowdrop-workflow-node__header
-    + .flowdrop-workflow-node__ports
-    .flowdrop-workflow-node__ports-list {
-    padding-top: calc(var(--fd-node-header-gap) * 2);
-  }
-
-  .flowdrop-workflow-node__port {
-    display: flex;
-    align-items: flex-start;
-    gap: 0;
-    /* Fixed three-row (60px) height for every port — node height stays
-       predictable whether or not a port carries a description. */
-    height: calc(var(--fd-node-port-row-height) * 3);
-    padding: 0;
-    position: relative;
-  }
-
-  .flowdrop-workflow-node__port-content {
-    padding: var(--fd-node-header-gap) var(--fd-space-xl) 0;
-  }
-
-  /* Each line in a port occupies one 20px grid row: a label-only port
-     centers its single row, a label + description fills both. The label row
-     is <PortTypeBadge>, which owns that row height itself — scoped CSS does
-     not reach into a child component. */
-
-  .flowdrop-workflow-node__port-content > p {
-    min-height: var(--fd-node-port-row-height);
-    line-height: var(--fd-node-port-row-height);
-  }
-
-  .workflow-node__no-branches {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-md);
-    background: var(--fd-warning-muted);
-    border: 1px solid var(--fd-warning);
-    border-radius: var(--fd-radius-lg);
-    color: var(--fd-warning-foreground);
-    font-size: var(--fd-text-sm);
-  }
-
-  /* Handle overrides: hover scale, active state (base 20px/12px from base.css) */
-  :global(.flowdrop-workflow-node__handle:hover) {
-    transform: translateY(-50%) scale(1.2);
-  }
-
-  :global(.flowdrop-workflow-node__handle--active::before) {
-    transform: scale(1.15);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fd-success) 20%, transparent);
-  }
-
-  /* Utility classes */
-  .flowdrop-flex--1 {
-    flex: 1;
-  }
-
-  .flowdrop-min-w--0 {
-    min-width: 0;
-  }
-
-  .flowdrop-text--xs {
-    font-size: var(--fd-text-xs);
-    line-height: 16px;
-  }
-
-  .flowdrop-text--sm {
-    font-size: var(--fd-text-sm);
-    line-height: 20px;
-  }
-
-  .flowdrop-text--gray {
-    color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-font--medium {
-    font-weight: 500;
-  }
-
-  .flowdrop-truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .flowdrop-text--right {
-    text-align: right;
-  }
-
-  /* Reveal the NodeConfigButton (gear) when the node is hovered. */
-  .flowdrop-workflow-node:hover {
-    --fd-config-btn-opacity: 1;
-  }
-</style>
+<NodeCard
+  id={props.id}
+  selected={props.selected}
+  variant="gateway"
+  {geometry}
+  title={displayTitle}
+  {kindLine}
+  description={displayDescription}
+  icon={getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata.category)}
+  color={categoryColor}
+  ariaLabel={graph.gatewayNode({ title: displayTitle })}
+  activeOutputs={activeBranches}
+  emptyNote={branches.length === 0 && visibleInputPorts.every((p) => p.id === 'trigger')
+    ? 'No branches configured'
+    : undefined}
+  onconfig={openConfigSidebar}
+/>

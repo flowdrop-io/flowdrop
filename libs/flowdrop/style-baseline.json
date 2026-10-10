@@ -177,14 +177,13 @@
     "font-size": 1,
     "radius": 1
   },
-  "src/lib/components/nodes/GatewayNode.svelte": {
-    "radius": 1,
-    "shadow": 3
-  },
   "src/lib/components/nodes/IdeaNode.svelte": {
     "font-size": 2,
     "radius": 2,
     "shadow": 1
+  },
+  "src/lib/components/nodes/NodeCard.svelte": {
+    "shadow": 2
   },
   "src/lib/components/nodes/NodeConfigButton.svelte": {
     "button": 1,
@@ -200,21 +199,12 @@
   },
   "src/lib/components/nodes/SquareNode.svelte": {
     "radius": 3,
-    "shadow": 2
+    "shadow": 3
   },
   "src/lib/components/nodes/TerminalNode.svelte": {
     "font-size": 1,
     "radius": 4,
     "shadow": 8
-  },
-  "src/lib/components/nodes/ToolNode.svelte": {
-    "colour": 2,
-    "font-size": 2,
-    "radius": 3,
-    "shadow": 3
-  },
-  "src/lib/components/nodes/WorkflowNode.svelte": {
-    "shadow": 2
   },
   "src/lib/components/playground/ChatBubble.svelte": {
     "button": 1,
