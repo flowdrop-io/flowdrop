@@ -21,6 +21,15 @@
     types         every port state: wired, open, required, branch triggers, exec pins open
     source        a node with no inputs
     chain-a/b/c   three nodes wired row 1 to row 1: aligned tops give straight wires
+
+  Other node types (Graphite G8d), third and fourth rows:
+    switch.1      gateway with 5 branches (the last one the default), trigger pin in
+    if_else.1     gateway with True / False
+    unnamed.1     gateway with two empty-named branches (B1: must not crash)
+    tool.1        tool node: one tool port each side, badge and version on the kind line
+    simple.1/2    Simple: 1 port each side, and 2 in / 3 out
+    square.1/2    Square: 1 port each side, and 3 in / 1 out
+    start.1, end.1, exit.1   Terminal circles
 -->
 
 <script lang="ts">
@@ -94,6 +103,10 @@
     y: number;
     inputs: NodePort[];
     outputs: NodePort[];
+    /** Node component: `default` (the card), `gateway`, `tool`, `simple`, `square`, `terminal`. */
+    type?: string;
+    config?: Record<string, unknown>;
+    tags?: string[];
   }
 
   const LONG = 'long_port_name_that_goes_on_and_on_and_on_to_fill_the_pill_and_then_some_more';
@@ -243,6 +256,161 @@
       y: 440,
       inputs: [p('message', 'Message', 'string', 'input', { required: true }), trigIn],
       outputs: [p('displayed', 'displayed', 'boolean', 'output'), trigOut]
+    },
+    // --- Other node types ---------------------------------------------------
+    {
+      id: 'switch.1',
+      title: 'Switch',
+      category: 'logic',
+      icon: 'mdi:call-split',
+      description: 'Route to the branch whose case matches the value.',
+      x: 0,
+      y: 880,
+      type: 'gateway',
+      config: {
+        branches: [
+          { name: 'draft', label: 'Draft' },
+          { name: 'review', label: 'In review' },
+          { name: 'published', label: 'Published' },
+          { name: 'archived', label: 'Archived' },
+          { name: 'default', label: 'Default' }
+        ]
+      },
+      inputs: [p('value', 'Value', 'mixed', 'input', { required: true }), trigIn],
+      outputs: []
+    },
+    {
+      id: 'if_else.1',
+      title: 'If/Else',
+      category: 'logic',
+      icon: 'mdi:code-braces',
+      description: 'Simple conditional logic with text input, match text, and operator.',
+      x: 400,
+      y: 880,
+      type: 'gateway',
+      config: { branches: [{ name: 'True' }, { name: 'False' }] },
+      inputs: [p('data', 'Input Data', 'mixed', 'input'), trigIn],
+      outputs: []
+    },
+    {
+      id: 'unnamed.1',
+      title: 'Unnamed Branches',
+      category: 'logic',
+      icon: 'mdi:call-split',
+      description: 'Two branches with an empty name.',
+      x: 800,
+      y: 880,
+      type: 'gateway',
+      config: { branches: [{ name: '' }, { name: '' }] },
+      inputs: [trigIn],
+      outputs: []
+    },
+    {
+      id: 'tool.1',
+      title: 'Search Knowledge Base',
+      category: 'tools',
+      icon: 'mdi:magnify',
+      description: 'Looks passages up in the site knowledge base for an agent.',
+      x: 1200,
+      y: 880,
+      type: 'tool',
+      inputs: [p('tool', 'Tool', 'tool', 'input')],
+      outputs: [p('tool', 'Tool', 'tool', 'output')]
+    },
+    {
+      id: 'simple.1',
+      title: 'Simple Node',
+      category: 'data',
+      icon: 'mdi:square-rounded',
+      description: 'A compact node: title, description and one port each side.',
+      x: 0,
+      y: 1200,
+      type: 'simple',
+      inputs: [p('in', 'in', 'string', 'input')],
+      outputs: [p('out', 'out', 'string', 'output')]
+    },
+    {
+      id: 'simple.2',
+      title: 'Simple Node With a Long Title That Has to Be Clipped',
+      category: 'data',
+      icon: 'mdi:square-rounded',
+      description: 'Two inputs and three outputs, so the box grows to 120.',
+      x: 400,
+      y: 1200,
+      type: 'simple',
+      inputs: [p('a', 'a', 'string', 'input'), p('b', 'b', 'number', 'input')],
+      outputs: [
+        p('x', 'x', 'string', 'output'),
+        p('y', 'y', 'json', 'output'),
+        p('z', 'z', 'array', 'output')
+      ]
+    },
+    {
+      id: 'square.1',
+      title: 'Square Node',
+      category: 'models',
+      icon: 'mdi:creation',
+      description: '',
+      x: 800,
+      y: 1200,
+      type: 'square',
+      inputs: [p('in', 'in', 'string', 'input')],
+      outputs: [p('out', 'out', 'string', 'output')]
+    },
+    {
+      id: 'square.2',
+      title: 'Square Node, Three Ports',
+      category: 'models',
+      icon: 'mdi:creation',
+      description: '',
+      x: 1000,
+      y: 1200,
+      type: 'square',
+      inputs: [
+        p('a', 'a', 'string', 'input'),
+        p('b', 'b', 'string', 'input'),
+        p('c', 'c', 'json', 'input')
+      ],
+      outputs: [p('out', 'out', 'string', 'output')]
+    },
+    {
+      id: 'start.1',
+      title: 'Start',
+      category: 'triggers',
+      icon: 'mdi:play-circle',
+      description: 'Where the run begins.',
+      x: 1200,
+      y: 1200,
+      type: 'terminal',
+      tags: ['start'],
+      inputs: [],
+      outputs: [trigOut]
+    },
+    {
+      id: 'end.1',
+      title: 'End',
+      category: 'outputs',
+      icon: 'mdi:stop-circle',
+      description: '',
+      x: 1400,
+      y: 1200,
+      type: 'terminal',
+      tags: ['end'],
+      inputs: [trigIn],
+      outputs: []
+    },
+    {
+      id: 'exit.1',
+      title: 'Exit',
+      category: 'outputs',
+      icon: 'mdi:close-circle',
+      description: '',
+      x: 1600,
+      y: 1200,
+      type: 'terminal',
+      tags: ['exit'],
+      inputs: [trigIn],
+      outputs: []
     }
   ];
 
@@ -253,14 +421,15 @@
       position: { x: c.x, y: c.y },
       data: {
         label: c.title,
-        config: {},
+        config: c.config ?? {},
         metadata: {
           node_type_id: c.id.replace(/\.\d+$/, ''),
           name: c.title,
           description: c.description,
           category: c.category,
           version: '1.0.0',
-          type: 'default',
+          type: c.type ?? 'default',
+          tags: c.tags,
           icon: c.icon,
           inputs: c.inputs,
           outputs: c.outputs
@@ -294,6 +463,8 @@
       edge('e7', 'node_insert.1', 'trigger', 'chain_a.1', 'trigger'),
       edge('e8', 'chain_a.1', 'prompt', 'chain_b.1', 'message'),
       edge('e9', 'chain_a.1', 'trigger', 'chain_b.1', 'trigger'),
+      edge('e13', 'switch.1', 'published', 'simple.1', 'in'),
+      edge('e14', 'start.1', 'trigger', 'end.1', 'trigger'),
       edge('e10', 'types.1', 'result', 'node_insert.1', 'trigger'),
       edge('e11', 'types.1', 'true', 'node_insert.1', 'trigger')
     ].filter((e) => e.id !== 'e10' && e.id !== 'e11') as never,
