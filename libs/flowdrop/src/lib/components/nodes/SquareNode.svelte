@@ -31,7 +31,7 @@
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import NodeProblemMark from './NodeProblemMark.svelte';
-  import { glyphMetrics } from '../../utils/zoomTier.js';
+  import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface Props {
@@ -149,8 +149,8 @@
     })
   );
   const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
-  /** The square is a fixed 80px: its glyph is sized to it, not to the slot. */
-  const glyph = $derived(glyphMetrics(80, 80));
+  /** Handle ids with an edge on them: the zoom tiers hide the open ones. */
+  const wired = $derived(wiredHandleIds(fd.workflow.edges, props.id));
   const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 </script>
 
@@ -167,6 +167,7 @@
       port
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-input-${port.id}`}
+    class={wired.has(`${props.id}-input-${port.id}`) ? undefined : 'fd-handle--open'}
   />
 {/each}
 
@@ -187,7 +188,7 @@
   ondblclick={handleDoubleClick}
 >
   <!-- The visible, themed square — fixed 80×80, vertically centered in the slot -->
-  <div class="flowdrop-square-node__square" style="--_cat: {squareColor}; --_gs: {glyph.size}px;">
+  <div class="flowdrop-square-node__square" style="--_cat: {squareColor};">
     <!-- Square Layout: Always compact with centered icon in squircle wrapper -->
     <div class="flowdrop-square-node__compact-content">
       <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
@@ -239,6 +240,7 @@
       port
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-output-${port.id}`}
+    class={wired.has(`${props.id}-output-${port.id}`) ? undefined : 'fd-handle--open'}
   />
 {/each}
 
@@ -393,18 +395,23 @@
     height: 12px;
   }
 
-  /* ----- Zoom tiers (G8e): see NodeCard. The square tints and its glyph loses the tile. ----- */
-  :global([data-fd-zoom='glyph']) .flowdrop-square-node__square,
-  :global([data-fd-zoom='map']) .flowdrop-square-node__square {
-    background-color: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-wash), var(--fd-node-bg));
+  /* ----- Zoom tiers (editor.zoomTiers): see NodeCard. The 80px square has no
+     title or ports to draw, so outline keeps the full square; glyph shows the
+     solid tile on the card; map fills the square with its category and a white
+     glyph. Fixed flow px. ----- */
+  :global([data-fd-zoom='outline']) .flowdrop-square-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='glyph']) .flowdrop-square-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-square-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-square-node__icon-wrapper,
   :global([data-fd-zoom='map']) .flowdrop-square-node__icon-wrapper {
     display: flex;
-    width: var(--_gs);
-    height: var(--_gs);
-    background: transparent;
+    width: var(--fd-node-zoom-tile-size);
+    height: var(--fd-node-zoom-tile-size);
+    border-radius: var(--fd-node-zoom-tile-radius);
+    background: var(--_cat);
     transform: none;
   }
 
@@ -414,9 +421,9 @@
   :global([data-fd-zoom='map'])
     .flowdrop-square-node__icon-wrapper
     :global(.flowdrop-square-node__icon) {
-    width: 100%;
-    height: 100%;
-    color: var(--_cat);
+    width: var(--fd-node-zoom-tile-glyph);
+    height: var(--fd-node-zoom-tile-glyph);
+    color: var(--fd-node-tile-fg);
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-square-node__color-dot,
@@ -424,9 +431,35 @@
     display: none;
   }
 
-  :global([data-fd-zoom='glyph']) .flowdrop-square-node :global(.flowdrop-node-config-btn),
-  :global([data-fd-zoom='map']) .flowdrop-square-node :global(.flowdrop-node-config-btn) {
-    visibility: hidden;
+  :global([data-fd-zoom='map'])
+    .flowdrop-square-node:not(.flowdrop-square-node--selected)
+    .flowdrop-square-node__square {
+    box-shadow: none;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-square-node__square {
+    background-color: color-mix(
+      in srgb,
+      var(--_cat) var(--fd-node-zoom-map-mix),
+      var(--fd-node-bg)
+    );
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-square-node--error .flowdrop-square-node__square {
+    --_cat: var(--fd-error);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-square-node__icon-wrapper {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+  }
+
+  :global([data-fd-zoom='map'])
+    .flowdrop-square-node__icon-wrapper
+    :global(.flowdrop-square-node__icon) {
+    width: var(--fd-node-zoom-map-glyph);
+    height: var(--fd-node-zoom-map-glyph);
   }
 
   /* Reveal the NodeConfigButton (gear) when the node is hovered. */

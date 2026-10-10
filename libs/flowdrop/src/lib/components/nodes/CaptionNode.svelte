@@ -305,6 +305,13 @@
     user-select: text;
   }
 
+  /* Zoom tiers (editor.zoomTiers): the caption's box is sized to its 13px text,
+     so outline and glyph draw it unchanged (a label that stays a label); in the
+     map tier the text gives way and the caption is a quiet block. */
+  :global([data-fd-zoom='map']) .flowdrop-caption-node__text {
+    visibility: hidden;
+  }
+
   .flowdrop-caption-node__text--empty::before {
     content: attr(data-placeholder);
     opacity: 0.55;

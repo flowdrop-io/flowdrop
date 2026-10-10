@@ -30,7 +30,7 @@
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import NodeProblemMark from './NodeProblemMark.svelte';
-  import { glyphMetrics } from '../../utils/zoomTier.js';
+  import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface Props {
@@ -149,7 +149,8 @@
     computeShapeGeometry({ inputs: visibleInputPorts, outputs: visibleOutputPorts })
   );
   const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
-  const glyph = $derived(glyphMetrics(geometry.width, geometry.height));
+  /** Handle ids with an edge on them: the zoom tiers hide the open ones. */
+  const wired = $derived(wiredHandleIds(fd.workflow.edges, props.id));
   const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 </script>
 
@@ -166,6 +167,7 @@
       port
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-input-${port.id}`}
+    class={wired.has(`${props.id}-input-${port.id}`) ? undefined : 'fd-handle--open'}
   />
 {/each}
 
@@ -178,8 +180,7 @@
   class:flowdrop-simple-node--selected={props.selected}
   class:flowdrop-simple-node--processing={props.isProcessing}
   class:flowdrop-simple-node--error={props.isError}
-  class:flowdrop-simple-node--glyph-row={glyph.row}
-  style="--_cat: {nodeColor}; --_gs: {glyph.size}px; width: {geometry.width}px; height: {geometry.height}px; --_desc-lines: {geometry.height /
+  style="--_cat: {nodeColor}; width: {geometry.width}px; height: {geometry.height}px; --_desc-lines: {geometry.height /
     20 -
     3};"
   ondblclick={handleDoubleClick}
@@ -246,6 +247,7 @@
       port
     )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-output-${port.id}`}
+    class={wired.has(`${props.id}-output-${port.id}`) ? undefined : 'fd-handle--open'}
   />
 {/each}
 
@@ -403,11 +405,25 @@
     height: 12px;
   }
 
-  /* ----- Zoom tiers (G8e): see NodeCard. Same box; the glyph centred, the title
-     counter-scaled, the card tinted; description and config button hidden. ----- */
-  :global([data-fd-zoom='glyph']) .flowdrop-simple-node,
-  :global([data-fd-zoom='map']) .flowdrop-simple-node {
-    background-color: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-wash), var(--fd-node-bg));
+  /* ----- Zoom tiers (editor.zoomTiers): see NodeCard. Same box, fixed flow px.
+     outline: a one-line title; glyph: a solid tile and a two-line title;
+     map: a solid category block with a white glyph. ----- */
+  :global([data-fd-zoom='outline']) .flowdrop-simple-node__header-content {
+    gap: var(--fd-node-zoom-outline-gap);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-simple-node__title {
+    font-size: var(--fd-node-zoom-outline-title-size);
+    line-height: var(--fd-node-zoom-outline-title-line);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-simple-node__description,
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__description,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__description,
+  :global([data-fd-zoom='outline']) .flowdrop-simple-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-simple-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-simple-node__header-content,
@@ -415,25 +431,18 @@
     position: absolute;
     inset: 0;
     min-height: 0;
-    flex-direction: column;
     justify-content: center;
-    gap: calc(var(--fd-space-sm) / var(--fd-zoom, 1));
-    padding: var(--fd-space-sm);
-  }
-
-  :global([data-fd-zoom='glyph'])
-    .flowdrop-simple-node--glyph-row
-    .flowdrop-simple-node__header-content {
-    flex-direction: row;
-    gap: calc(var(--fd-space-md) / var(--fd-zoom, 1));
+    gap: var(--fd-node-zoom-tile-gap);
+    padding: 0 var(--fd-node-zoom-tile-pad);
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-simple-node__icon-wrapper,
   :global([data-fd-zoom='map']) .flowdrop-simple-node__icon-wrapper {
     display: flex;
-    width: var(--_gs);
-    height: var(--_gs);
-    background: transparent;
+    width: var(--fd-node-zoom-tile-size);
+    height: var(--fd-node-zoom-tile-size);
+    border-radius: var(--fd-node-zoom-tile-radius);
+    background: var(--_cat);
     transform: none;
   }
 
@@ -443,9 +452,9 @@
   :global([data-fd-zoom='map'])
     .flowdrop-simple-node__icon-wrapper
     :global(.flowdrop-simple-node__icon) {
-    width: 100%;
-    height: 100%;
-    color: var(--_cat);
+    width: var(--fd-node-zoom-tile-glyph);
+    height: var(--fd-node-zoom-tile-glyph);
+    color: var(--fd-node-tile-fg);
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-simple-node__color-dot,
@@ -456,27 +465,49 @@
 
   :global([data-fd-zoom='glyph']) .flowdrop-simple-node__title {
     flex: 0 1 auto;
-    max-width: 92%;
-    font-size: calc(var(--fd-node-zoom-title-size) / var(--fd-zoom, 1));
-    line-height: 1.2;
-    text-align: center;
+    max-width: var(--fd-node-zoom-title-max);
+    font-size: var(--fd-node-zoom-title-size);
+    line-height: var(--fd-node-zoom-title-leading);
+    letter-spacing: var(--fd-node-zoom-title-tracking);
     white-space: normal;
+    overflow-wrap: break-word;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
   }
 
-  :global([data-fd-zoom='glyph']) .flowdrop-simple-node--glyph-row .flowdrop-simple-node__title {
-    max-width: 62%;
-    text-align: left;
+  :global([data-fd-zoom='map']) .flowdrop-simple-node:not(.flowdrop-simple-node--selected) {
+    box-shadow: none;
   }
 
-  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__description,
-  :global([data-fd-zoom='map']) .flowdrop-simple-node__description,
-  :global([data-fd-zoom='glyph']) .flowdrop-simple-node :global(.flowdrop-node-config-btn),
-  :global([data-fd-zoom='map']) .flowdrop-simple-node :global(.flowdrop-node-config-btn) {
-    visibility: hidden;
+  :global([data-fd-zoom='map']) .flowdrop-simple-node {
+    background-color: color-mix(
+      in srgb,
+      var(--_cat) var(--fd-node-zoom-map-mix),
+      var(--fd-node-bg)
+    );
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-simple-node--error {
+    --_cat: var(--fd-error);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__header {
+    background: transparent;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__icon-wrapper {
+    width: var(--fd-node-zoom-map-glyph);
+    height: var(--fd-node-zoom-map-glyph);
+    background: transparent;
+  }
+
+  :global([data-fd-zoom='map'])
+    .flowdrop-simple-node__icon-wrapper
+    :global(.flowdrop-simple-node__icon) {
+    width: var(--fd-node-zoom-map-glyph);
+    height: var(--fd-node-zoom-map-glyph);
   }
 
   /* Reveal the NodeConfigButton (gear) when the node is hovered. */

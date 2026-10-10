@@ -12,6 +12,8 @@
     - ?descriptions=1                            -> turn on the Show descriptions setting
     - ?zoom=0.8                                  -> canvas zoom (default 1)
     - ?select=<node id>                          -> render that node selected
+    - ?zoomTiers=full:0.75,outline:0.45          -> the editor.zoomTiers setting (default: the library set;
+                                                    a tier left out is off, "full:0" means no tiers)
 
   Cards (ids are the data-id of the node wrapper):
     one-line      1-line title, a description, wired and open ports, a required open input
@@ -45,6 +47,7 @@
   import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import { updateSettings } from '$lib/stores/settingsStore.svelte.js';
+  import { DEFAULT_ZOOM_TIERS } from '$lib/utils/zoomTier.js';
   import { themeScope } from '$lib/utils/themeScope.svelte.js';
   import { resolveTheme } from '$lib/themes/index.js';
   import { buildScopedSkinCss, toScopeId } from '$lib/themes/scopedSkinCss.js';
@@ -64,7 +67,15 @@
   $effect(() => {
     const preference = params.get('scheme') === 'dark' ? 'dark' : 'light';
     const showNodeDescriptions = params.get('descriptions') === '1';
-    untrack(() => updateSettings({ theme: { preference }, editor: { showNodeDescriptions } }));
+    const tiers = params.get('zoomTiers');
+    const zoomTiers = tiers
+      ? Object.fromEntries(
+          tiers.split(',').map((pair) => [pair.split(':')[0], Number(pair.split(':')[1])])
+        )
+      : { ...DEFAULT_ZOOM_TIERS };
+    untrack(() =>
+      updateSettings({ theme: { preference }, editor: { showNodeDescriptions, zoomTiers } })
+    );
   });
 
   $effect(() => {

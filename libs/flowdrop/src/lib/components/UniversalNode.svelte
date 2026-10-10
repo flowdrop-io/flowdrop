@@ -13,7 +13,6 @@
   import NodeStatusOverlay from './NodeStatusOverlay.svelte';
   import NodeProblemMark from './nodes/NodeProblemMark.svelte';
   import { provideNodeProblem, type NodeProblem } from '../utils/nodeProblem.js';
-  import { useStore } from '@xyflow/svelte';
   import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
   import { toPillStatus } from '../utils/nodeStatus.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
@@ -135,20 +134,6 @@
   provideNodeProblem(problem);
 
   /**
-   * Canvas zoom for the pill's counter-scaling. Read only while a status is
-   * shown, so a node without one never subscribes to the viewport (panning
-   * would otherwise re-evaluate every node). Outside a SvelteFlow (unit
-   * mounts) there is no viewport: zoom 1.
-   */
-  let flowStore: ReturnType<typeof useStore> | null = null;
-  try {
-    flowStore = useStore();
-  } catch {
-    flowStore = null;
-  }
-  let zoom = $derived(shouldShowStatus && flowStore ? flowStore.viewport.zoom : 1);
-
-  /**
    * Test mode: the node border takes the status colour (nodes draw their
    * border from `--fd-node-border`, which is inherited from here). In Edit
    * mode with a live run the pill shows but the border stays.
@@ -248,7 +233,7 @@
 
   <!-- Status overlay - only show if there's meaningful status information -->
   {#if shouldShowStatus}
-    <NodeStatusOverlay nodeId={id} {executionInfo} {zoom} />
+    <NodeStatusOverlay nodeId={id} {executionInfo} />
   {/if}
 </div>
 

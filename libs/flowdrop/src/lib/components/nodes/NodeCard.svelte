@@ -14,7 +14,7 @@
   each.
 
   The category glyph and the title carry `data-fd-glyph` and `data-fd-title`
-  so the zoomed-out glyph view can target them.
+  so the zoom tiers (outline, glyph, map) can target them.
   Styled with BEM syntax (`flowdrop-workflow-node`).
 -->
 
@@ -26,7 +26,7 @@
   import NodeTip from './NodeTip.svelte';
   import NodeProblemMark from './NodeProblemMark.svelte';
   import { getNodeProblem } from '../../utils/nodeProblem.js';
-  import { glyphMetrics } from '../../utils/zoomTier.js';
+  import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import { getPortColorToken, getDataTypeConfig } from '../../utils/colors.js';
   import type { NodeGeometry } from '../../utils/nodeGeometry.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
@@ -86,9 +86,6 @@
   const problem = getNodeProblem();
   const problemSeverity = $derived(problem?.severity ?? null);
 
-  /** The glyph view's glyph edge, and whether the title sits beside it on a short card. */
-  const glyph = $derived(glyphMetrics(geometry.width, geometry.height));
-
   const fd = getInstance();
   const checker = fd.portCompatibility;
 
@@ -100,14 +97,7 @@
   const graph = $derived(m().nodes.graph);
 
   /** Handle ids of this node's wired ports. */
-  const wiredHandles = $derived.by(() => {
-    const set = new Set<string>();
-    for (const edge of fd.workflow.edges) {
-      if (edge.source === id && edge.sourceHandle) set.add(edge.sourceHandle);
-      if (edge.target === id && edge.targetHandle) set.add(edge.targetHandle);
-    }
-    return set;
-  });
+  const wiredHandles = $derived(wiredHandleIds(fd.workflow.edges, id));
 
   /** The completion trigger pins in the header, with their ports. */
   const pins = $derived(
@@ -153,6 +143,12 @@
   onMount(() => {
     void tick().then(measureTitle);
     void document.fonts?.ready.then(measureTitle);
+    // A zoom tier restyles the title (one line in outline, none in map), so it
+    // is measured again whenever its box changes.
+    if (typeof ResizeObserver === 'undefined' || !titleEl) return;
+    const observer = new ResizeObserver(measureTitle);
+    observer.observe(titleEl);
+    return () => observer.disconnect();
   });
   $effect(() => {
     void title;
@@ -240,7 +236,6 @@
   class:flowdrop-workflow-node--processing={processing}
   class:flowdrop-workflow-node--error={error}
   class:flowdrop-workflow-node--problem-error={problemSeverity === 'error'}
-  class:flowdrop-workflow-node--glyph-row={glyph.row}
   ondblclick={onconfig}
   onmouseup={() => {
     isHandleInteraction = false;
@@ -248,7 +243,7 @@
   data-handle-interaction={isHandleInteraction}
   aria-label={ariaLabel}
   aria-describedby="node-description-{id}"
-  style="--_cat: {color}; --_gs: {glyph.size}px; width: {geometry.width}px; height: {geometry.height}px;"
+  style="--_cat: {color}; width: {geometry.width}px; height: {geometry.height}px;"
 >
   <!-- Header: fixed 60px. Title (2 lines at most) over "kind · id"; hovering it
        opens the node's description. -->
@@ -287,7 +282,7 @@
       id={pin.handleId}
       class="flowdrop-workflow-node__handle flowdrop-workflow-node__handle--pin {pin.wired
         ? 'flowdrop-workflow-node__handle--wired'
-        : 'flowdrop-workflow-node__handle--open'}"
+        : 'flowdrop-workflow-node__handle--open fd-handle--open'}"
       aria-label={pin.direction === 'input' ? graph.execIn : graph.execOut}
       style="top: {pin.y}px; transform: translateY(-50%);"
       tabindex={-1}
@@ -323,7 +318,7 @@
       position={item.direction === 'input' ? Position.Left : Position.Right}
       id={item.handleId}
       class="flowdrop-workflow-node__handle {open
-        ? 'flowdrop-workflow-node__handle--open'
+        ? 'flowdrop-workflow-node__handle--open fd-handle--open'
         : 'flowdrop-workflow-node__handle--wired'}"
       aria-label={item.direction === 'input'
         ? graph.connectInputPort({ name: port.name })
@@ -675,15 +670,64 @@
     background: var(--fd-node-pin-open);
   }
 
-  /* ----- Zoom tiers (G8e): the same box, a different drawing -----
-     At glyph (25-66%) and map (< 25%) the header grows to the whole card and
-     becomes the glyph view: the category glyph centred, the title counter-scaled
-     to a constant screen size, the card tinted with its category. Ports, pills,
-     the description and the config button are hidden with `visibility`, never
-     removed, so every handle stays where it is and no edge moves. */
-  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node,
-  :global([data-fd-zoom='map']) .flowdrop-workflow-node {
-    background-color: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-wash), var(--fd-node-bg));
+  /* ----- Zoom tiers (editor.zoomTiers): the same box, a different drawing -----
+     Fixed flow px from the --fd-node-zoom-* tokens, never divided by the zoom:
+     Svelte Flow scales the canvas and the drawing changes only at a tier
+     boundary. Parts are hidden with `visibility`, never removed or resized, so
+     every handle stays where it is and no edge moves.
+     outline: the header with a one-line title, ports as unlabelled bars.
+     glyph:   a solid category tile and a two-line title, centred.
+     map:     a solid category block with a white glyph. */
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__header {
+    padding-right: var(--fd-node-zoom-outline-pad-end);
+    column-gap: var(--fd-node-zoom-outline-gap);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__title {
+    grid-row: 1 / 3;
+    align-self: center;
+    display: block;
+    font-size: var(--fd-node-zoom-outline-title-size);
+    line-height: var(--fd-node-zoom-outline-title-line);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__title,
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__kind,
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__kind,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__kind {
+    display: none;
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__pill {
+    width: var(--fd-node-zoom-bar-wired-width);
+    height: var(--fd-node-zoom-bar-height);
+    padding: 0;
+    background: color-mix(in srgb, var(--_c) var(--fd-node-zoom-bar-wired-mix), var(--fd-node-bg));
+    box-shadow: none;
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__pill > * {
+    visibility: hidden;
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__pill--input {
+    border-radius: 0 var(--fd-node-zoom-bar-radius) var(--fd-node-zoom-bar-radius) 0;
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__pill--output {
+    border-radius: var(--fd-node-zoom-bar-radius) 0 0 var(--fd-node-zoom-bar-radius);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__pill--open {
+    width: var(--fd-node-zoom-bar-open-width);
+    background: var(--fd-node-zoom-bar-open-bg);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node__desc,
+  :global([data-fd-zoom='outline']) .flowdrop-workflow-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__header,
@@ -691,31 +735,23 @@
     inset: 0;
     height: auto;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: calc(var(--fd-space-sm) / var(--fd-zoom, 1));
-    padding: var(--fd-space-sm);
+    gap: var(--fd-node-zoom-tile-gap);
+    padding: 0 var(--fd-node-zoom-tile-pad);
     background: transparent;
     border-radius: inherit;
-  }
-
-  :global([data-fd-zoom='glyph'])
-    .flowdrop-workflow-node--glyph-row
-    .flowdrop-workflow-node__header {
-    flex-direction: row;
-    gap: calc(var(--fd-space-md) / var(--fd-zoom, 1));
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__tile,
   :global([data-fd-zoom='map']) .flowdrop-workflow-node__tile {
     display: flex;
     flex: none;
-    width: var(--_gs);
-    height: var(--_gs);
+    width: var(--fd-node-zoom-tile-size);
+    height: var(--fd-node-zoom-tile-size);
     margin: 0;
     align-self: center;
-    background: transparent;
+    border-radius: var(--fd-node-zoom-tile-radius);
     box-shadow: none;
   }
 
@@ -725,34 +761,19 @@
   :global([data-fd-zoom='map'])
     .flowdrop-workflow-node__tile
     :global(.flowdrop-workflow-node__icon) {
-    width: 100%;
-    height: 100%;
-    color: var(--_cat);
+    width: var(--fd-node-zoom-tile-glyph);
+    height: var(--fd-node-zoom-tile-glyph);
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__title {
     flex: 0 1 auto;
     align-self: center;
+    max-width: var(--fd-node-zoom-title-max);
     overflow-wrap: break-word;
-    max-width: 92%;
-    font-size: calc(var(--fd-node-zoom-title-size) / var(--fd-zoom, 1));
-    line-height: 1.2;
-    text-align: center;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
-
-  :global([data-fd-zoom='glyph'])
-    .flowdrop-workflow-node--glyph-row
-    .flowdrop-workflow-node__title {
-    max-width: 62%;
+    font-size: var(--fd-node-zoom-title-size);
+    line-height: var(--fd-node-zoom-title-leading);
+    letter-spacing: var(--fd-node-zoom-title-tracking);
     text-align: left;
-  }
-
-  :global([data-fd-zoom='map']) .flowdrop-workflow-node__title,
-  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__kind,
-  :global([data-fd-zoom='map']) .flowdrop-workflow-node__kind {
-    display: none;
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__pill,
@@ -764,6 +785,37 @@
   :global([data-fd-zoom='glyph']) .flowdrop-workflow-node :global(.flowdrop-node-config-btn),
   :global([data-fd-zoom='map']) .flowdrop-workflow-node :global(.flowdrop-node-config-btn) {
     visibility: hidden;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node {
+    --_ring: none;
+    background-color: color-mix(
+      in srgb,
+      var(--_cat) var(--fd-node-zoom-map-mix),
+      var(--fd-node-bg)
+    );
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node:not(.flowdrop-workflow-node--selected) {
+    box-shadow: none;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node--error,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node--problem-error {
+    --_cat: var(--fd-error);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__tile {
+    width: var(--fd-node-zoom-map-glyph);
+    height: var(--fd-node-zoom-map-glyph);
+    background: transparent;
+  }
+
+  :global([data-fd-zoom='map'])
+    .flowdrop-workflow-node__tile
+    :global(.flowdrop-workflow-node__icon) {
+    width: var(--fd-node-zoom-map-glyph);
+    height: var(--fd-node-zoom-map-glyph);
   }
 
   /* Reveal the NodeConfigButton (gear) when the node is hovered. */

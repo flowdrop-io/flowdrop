@@ -1,16 +1,14 @@
 <!--
   Zoom Tier Component
   Renderless. Publishes the canvas zoom tier as `data-fd-zoom` (full | outline |
-  glyph | map; the tiers that are on come from `editor.zoomTiers`, and the tier
-  is recomputed when that setting changes) and the zoom as `--fd-zoom` on the editor root, so nodes, status overlays
-  and interface tags restyle themselves in CSS (see utils/zoomTier.ts). The
-  root is `.flowdrop-root`, or the canvas itself when the editor is mounted
-  without one. Must be rendered inside <SvelteFlow>.
+  glyph | map) on the editor root, so nodes, status overlays and interface tags
+  restyle themselves in CSS (see utils/zoomTier.ts). The tiers that are on, and
+  where each starts, come from `editor.zoomTiers`; the tier is recomputed when
+  that setting changes. The root is `.flowdrop-root`, or the canvas itself when
+  the editor is mounted without one. Must be rendered inside <SvelteFlow>.
 
-  `--fd-zoom` follows the zoom in the glyph and map tiers, where the
-  counter-scaled titles read it; in the full tier nothing does, so it is only
-  refreshed on entering the tier (a style change on the root on every wheel
-  tick would restyle the whole editor for nothing).
+  Only the tier is published, never the zoom: every drawing is in fixed flow px
+  and Svelte Flow scales the canvas, so nothing in CSS needs the zoom value.
 -->
 
 <script lang="ts">
@@ -34,7 +32,6 @@
     return () => {
       if (!mounted) return;
       delete mounted.dataset.fdZoom;
-      mounted.style.removeProperty('--fd-zoom');
       root = null;
       tier = undefined;
     };
@@ -52,9 +49,6 @@
     if (next !== tier) {
       tier = next;
       root.dataset.fdZoom = next;
-    }
-    if (next !== 'full' || root.style.getPropertyValue('--fd-zoom') === '') {
-      root.style.setProperty('--fd-zoom', String(Math.round(zoom * 10000) / 10000));
     }
   });
 </script>

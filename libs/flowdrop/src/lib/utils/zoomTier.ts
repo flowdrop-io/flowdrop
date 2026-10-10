@@ -118,20 +118,3 @@ export function zoomTier(
   }
   return tiers[tiers.length - 1][0];
 }
-
-// --- Removed in the tier-drawings step; kept so the nodes still build until then. ---
-
-export interface GlyphMetrics {
-  size: number;
-  row: boolean;
-}
-export const GLYPH_ROW_BELOW = 160;
-export function glyphMetrics(width: number, height: number): GlyphMetrics {
-  if (height < GLYPH_ROW_BELOW) {
-    return { size: Math.round(0.5 * Math.min(height, 100)), row: true };
-  }
-  return {
-    size: Math.round(Math.min(0.34 * Math.min(width, 280), 0.42 * Math.min(width, height))),
-    row: false
-  };
-}

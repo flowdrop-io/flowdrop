@@ -1,5 +1,5 @@
 /**
- * The status overlay: a labelled pill at screen size (icon + label + count when
+ * The status overlay: a labelled pill, sized per zoom tier (icon + label + count when
  * above 1), an outline + count badge in the map zoom tier. Hover carries the count and
  * the last error line only; timing is not drawn (it lives in the inspector's
  * Last run tab).
@@ -75,17 +75,16 @@ describe('NodeStatusOverlay', () => {
     expect(document.querySelector('.flowdrop-ui-status-pill__count')?.textContent).toBe('3');
   });
 
-  it('counter-scales the pill against the zoom, clamped to 2.2', () => {
-    render(info({}), 0.5);
-    expect(document.querySelector<HTMLElement>('.flowdrop-ui-status-pill')?.style.transform).toBe(
-      'scale(2)'
-    );
-    unmount(app!);
-    document.body.innerHTML = '';
-    render(info({}), 0.4);
-    expect(document.querySelector<HTMLElement>('.flowdrop-ui-status-pill')?.style.transform).toBe(
-      'scale(2.2)'
-    );
+  it('does not counter-scale against the zoom: the zoom tier (CSS) sizes the pill', () => {
+    for (const zoom of [0.4, 0.5, 1]) {
+      render(info({}), zoom);
+      const pill = document.querySelector<HTMLElement>('.flowdrop-ui-status-pill');
+      expect(pill?.style.transform).toBe('');
+      const outline = document.querySelector<HTMLElement>('.node-status-overlay__outline');
+      expect(outline?.getAttribute('style')).toBeNull();
+      unmount(app!);
+      document.body.innerHTML = '';
+    }
   });
 
   it('hover text is the count and the last error line, with no timing', () => {

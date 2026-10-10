@@ -1844,6 +1844,20 @@
     stroke-width: 2;
   }
 
+  /* Zoom tiers: wires get thicker as the canvas zooms out, so the topology still
+     reads. Fixed flow px; the canvas scales them. */
+  :global([data-fd-zoom='glyph'] .svelte-flow__edge path.svelte-flow__edge-path) {
+    stroke-width: var(--fd-node-zoom-edge-width-glyph) !important;
+  }
+
+  :global([data-fd-zoom='map'] .svelte-flow__edge path.svelte-flow__edge-path) {
+    stroke-width: var(--fd-node-zoom-edge-width-map) !important;
+  }
+
+  :global([data-fd-zoom='map'] .svelte-flow__edge:not(.selected) path.svelte-flow__edge-path) {
+    stroke: var(--fd-node-zoom-edge-map);
+  }
+
   /* Loopback Edge: Dashed gray line for loop iteration connections */
   :global(.flowdrop--edge--loopback path.svelte-flow__edge-path) {
     stroke: var(--fd-edge-loopback);

@@ -86,14 +86,28 @@
     z-index: 999;
   }
 
-  /* Zoomed out there is no header: the corner of the card, kept legible. */
+  /* Zoom tiers: a fixed multiplier per tier (no zoom maths), so the mark stays
+     legible. Outline keeps the mark in the header; glyph and map have no header,
+     so it sits in the corner of the card. */
+  :global([data-fd-zoom='outline']) .fd-node-problem {
+    scale: var(--fd-node-zoom-mark-scale-outline);
+    transform-origin: right center;
+  }
+
   :global([data-fd-zoom='glyph']) .fd-node-problem,
   :global([data-fd-zoom='map']) .fd-node-problem {
     position: absolute;
     top: var(--_pm-inset, var(--fd-space-xs));
     right: var(--_pm-inset, var(--fd-space-xs));
     z-index: 999;
-    scale: clamp(1, calc(1 / var(--fd-zoom, 1)), 2.2);
     transform-origin: top right;
+  }
+
+  :global([data-fd-zoom='glyph']) .fd-node-problem {
+    scale: var(--fd-node-zoom-mark-scale-glyph);
+  }
+
+  :global([data-fd-zoom='map']) .fd-node-problem {
+    scale: var(--fd-node-zoom-mark-scale-map);
   }
 </style>

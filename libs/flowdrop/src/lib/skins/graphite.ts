@@ -69,6 +69,9 @@ export const graphiteSkin: FlowDropSkin = {
     'node-pill-open-fg': '#6f7682',
     'node-pill-open-border': '#e4e7eb',
     'node-pin-open': '#8a919c',
+    /* Zoom tiers: an open port bar and the map wires, in the neutral greys */
+    'node-zoom-bar-open-bg': '#eceef1',
+    'node-zoom-edge-map': '#b5bac2',
 
     /* ----- Notes: warm paper, a tinted inset edge, no lift ----- */
     'note-bg': '#fffdf6',
@@ -377,6 +380,8 @@ export const graphiteSkin: FlowDropSkin = {
     'node-pill-open-fg': '#9aa2af',
     'node-pill-open-border': '#353a43',
     'node-pin-open': '#7d8594',
+    'node-zoom-bar-open-bg': '#2b3038',
+    'node-zoom-edge-map': '#4a515c',
     'handle-border': '#1b1e23',
     'edge-trigger': '#eceef2',
     'edge-trigger-hover': '#ffffff',

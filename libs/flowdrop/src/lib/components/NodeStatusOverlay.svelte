@@ -1,12 +1,12 @@
 <!--
   Node Status Overlay Component
-  The run status of a node, drawn at screen size: a StatusPill (icon + label,
-  plus a count when the node has more than one run) centred on the node's top
-  edge and counter-scaled by the canvas zoom (clamp(1/zoom, 1, 2.2), growing
-  upward off the node). In the map zoom tier (below 25%, `data-fd-zoom='map'` on
-  the editor root) the pill gives way to a status-coloured outline around the
-  node and a count badge; both are in the DOM and CSS picks one, so crossing the
-  threshold re-renders nothing.
+  The run status of a node: a StatusPill (icon + label, plus a count when the
+  node has more than one run) centred on the node's top edge, growing upward off
+  the node. Each zoom tier draws it at a fixed size in flow px (a multiplier per
+  tier, tokens `--fd-node-zoom-status-scale-*`), never divided by the zoom. In
+  the map tier (`data-fd-zoom='map'` on the editor root) the pill gives way to a
+  status-coloured outline around the node and a count badge; both are in the DOM
+  and CSS picks one, so crossing a boundary re-renders nothing.
 
   Hover shows the count and the last error line, nothing else; durations and
   job history live in the inspector's Last run tab.
@@ -23,7 +23,7 @@
 <script lang="ts">
   import type { NodeExecutionInfo } from '../types/index.js';
   import Icon from '@iconify/svelte';
-  import StatusPill, { counterScale } from './primitives/StatusPill.svelte';
+  import StatusPill from './primitives/StatusPill.svelte';
   import { getStatusLabel, toPillStatus } from '../utils/nodeStatus.js';
   import { getMessages } from '../messages/context.js';
   import { m } from '$lib/messages/index.js';
@@ -39,16 +39,14 @@
   interface Props {
     nodeId?: string;
     executionInfo?: NodeExecutionInfo;
-    /** @deprecated No effect: the pill has one size and scales with the zoom. */
+    /** @deprecated No effect: the pill has one size per zoom tier. */
     size?: 'sm' | 'md' | 'lg';
-    /** Canvas zoom factor (1 = 100%). */
+    /** @deprecated No effect: the zoom tier (CSS) sets the size. */
     zoom?: number;
   }
 
-  // eslint-disable-next-line svelte/no-unused-props -- `size` is a deprecated no-op kept for hosts
+  // eslint-disable-next-line svelte/no-unused-props -- `size` and `zoom` are deprecated no-ops kept for hosts
   let props: Props = $props();
-
-  const zoom = $derived(props.zoom ?? 1);
 
   const executionInfo = $derived(props.executionInfo);
   const pillStatus = $derived(executionInfo ? toPillStatus(executionInfo.status) : null);
@@ -82,13 +80,8 @@
     aria-label={overlay.ariaLabel({ status: getStatusLabel(executionInfo.status) })}
   >
     <span class="node-status-overlay__frame" aria-hidden="true"></span>
-    <span class="node-status-overlay__outline" aria-hidden="true" style="--_stroke: {3 / zoom}px;"
-    ></span>
-    <span
-      class="node-status-overlay__badge"
-      title={tooltip}
-      style="transform: scale({counterScale(zoom)});"
-    >
+    <span class="node-status-overlay__outline" aria-hidden="true"></span>
+    <span class="node-status-overlay__badge" title={tooltip}>
       {#if runCount > 1}
         {runCount}
       {:else}
@@ -96,7 +89,7 @@
       {/if}
     </span>
     <span class="node-status-overlay__pill" title={tooltip}>
-      <StatusPill status={pillStatus} count={runCount} {zoom} screenSize />
+      <StatusPill status={pillStatus} count={runCount} />
     </span>
   </div>
 {/if}
@@ -140,8 +133,18 @@
     left: 50%;
     bottom: calc(100% - var(--fd-status-pill-height) / 2);
     translate: -50% 0;
+    transform-origin: center bottom;
+    scale: var(--_pill-scale, 1);
     pointer-events: auto;
     display: block;
+  }
+
+  :global([data-fd-zoom='outline']) .node-status-overlay__pill {
+    --_pill-scale: var(--fd-node-zoom-status-scale-outline);
+  }
+
+  :global([data-fd-zoom='glyph']) .node-status-overlay__pill {
+    --_pill-scale: var(--fd-node-zoom-status-scale-glyph);
   }
 
   /* The pill sits on the node's border, so its tint needs an opaque backing
@@ -180,10 +183,10 @@
 
   .node-status-overlay__outline {
     position: absolute;
-    /* A 3px stroke on screen whatever the zoom (--_stroke = 3px / zoom). */
-    inset: calc(var(--_stroke) * -1);
-    border: var(--_stroke) solid var(--_status);
-    border-radius: calc(var(--fd-node-radius, 8px) + var(--_stroke));
+    /* A fixed stroke in flow px (the map tier's token). */
+    inset: calc(var(--fd-node-zoom-status-stroke-map) * -1);
+    border: var(--fd-node-zoom-status-stroke-map) solid var(--_status);
+    border-radius: calc(var(--fd-node-radius, 8px) + var(--fd-node-zoom-status-stroke-map));
   }
 
   .node-status-overlay__badge {
@@ -191,7 +194,7 @@
     left: 50%;
     top: 0;
     translate: -50% -50%;
-    transform-origin: center;
+    scale: var(--fd-node-zoom-badge-scale-map);
     pointer-events: auto;
     place-items: center;
     min-width: var(--fd-control-md);

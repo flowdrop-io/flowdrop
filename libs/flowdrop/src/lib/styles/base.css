@@ -296,6 +296,39 @@
   bottom: var(--fd-handle-offset);
 }
 
+/* Zoom tiers (editor.zoomTiers): a wired port is a stub on the card edge in the
+   outline and glyph tiers, an open port is hidden, and the map tier draws no
+   handles at all. Handles are hidden with `visibility`, never removed or moved,
+   so every edge keeps its endpoint. Sizes are flow px (tokens.css). */
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph']) .svelte-flow__handle::before {
+  width: var(--fd-node-zoom-stub-width);
+  height: var(--fd-node-zoom-stub-height);
+  border: none;
+  border-radius: var(--fd-node-zoom-stub-radius);
+}
+
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph']) .svelte-flow__handle-left::before {
+  translate: calc(var(--fd-node-zoom-stub-width) / -2) 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph']) .svelte-flow__handle-right::before {
+  translate: calc(var(--fd-node-zoom-stub-width) / 2) 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph']) .svelte-flow__handle.fd-handle--open,
+[data-fd-zoom='map'] .svelte-flow__handle {
+  visibility: hidden;
+}
+
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph'], [data-fd-zoom='map'])
+  .svelte-flow__handle::after {
+  display: none;
+}
+
 /* Button styles */
 .flowdrop-btn {
   display: inline-flex;

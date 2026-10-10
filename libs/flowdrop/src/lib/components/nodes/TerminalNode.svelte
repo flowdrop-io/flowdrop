@@ -20,7 +20,7 @@
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import NodeProblemMark from './NodeProblemMark.svelte';
-  import { glyphMetrics } from '../../utils/zoomTier.js';
+  import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
   import { computeShapeGeometry } from '../../utils/nodeGeometry.js';
@@ -295,7 +295,8 @@
     computeShapeGeometry({ inputs: visibleInputPorts, outputs: visibleOutputPorts })
   );
   const diameter = $derived(geometry.height);
-  const glyph = $derived(glyphMetrics(diameter, diameter));
+  /** Handle ids with an edge on them: the zoom tiers hide the open ones. */
+  const wired = $derived(wiredHandleIds(fd.workflow.edges, props.id));
   function arcX(y: number, direction: 'input' | 'output'): number {
     const r = diameter / 2;
     const inset = r - Math.sqrt(Math.max(r * r - (y - r) ** 2, 0));
@@ -338,7 +339,7 @@
   class:flowdrop-terminal-node--start={variant === 'start'}
   class:flowdrop-terminal-node--end={variant === 'end'}
   class:flowdrop-terminal-node--exit={variant === 'exit'}
-  style="--terminal-color: {terminalColor}; --_cat: {terminalColor}; --_gs: {glyph.size}px; --_d: {diameter}px;"
+  style="--terminal-color: {terminalColor}; --_cat: {terminalColor}; --_d: {diameter}px;"
   ondblclick={handleDoubleClick}
   aria-label="{variant} node: {displayTitle}"
 >
@@ -363,6 +364,7 @@
           'input'
         )}px; top: {h.y}px; transform: translate(-50%, -50%); z-index: 30;"
         id={`${props.id}-input-${port.id}`}
+        class={wired.has(`${props.id}-input-${port.id}`) ? undefined : 'fd-handle--open'}
       />
     {/each}
 
@@ -387,6 +389,7 @@
         type="source"
         position={Position.Right}
         id={`${props.id}-output-${port.id}`}
+        class={wired.has(`${props.id}-output-${port.id}`) ? undefined : 'fd-handle--open'}
         title={interfaceBoundTooltip(boundEntry)}
         style="--fd-handle-fill: {getPortColorToken(
           checker,
@@ -599,21 +602,31 @@
     z-index: 31;
   }
 
-  /* ----- Zoom tiers (G8e): see NodeCard. The circle tints; the label is counter-scaled. ----- */
-  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__content,
-  :global([data-fd-zoom='map']) .flowdrop-terminal-node__content {
-    background-color: color-mix(
-      in srgb,
-      var(--_cat) var(--fd-node-zoom-wash),
-      var(--fd-node-terminal-bg)
-    );
+  /* ----- Zoom tiers (editor.zoomTiers): see NodeCard. The circle keeps its size;
+     outline sets the label at the outline title size, glyph puts the solid tile
+     in the circle with a larger label, map fills the circle with its category
+     and a white glyph and drops the label. Fixed flow px. ----- */
+  :global([data-fd-zoom='outline']) .flowdrop-terminal-node__label {
+    font-size: var(--fd-node-zoom-outline-title-size);
+    line-height: var(--fd-node-zoom-outline-title-line);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-terminal-node__description,
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__description,
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__description,
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__label-container,
+  :global([data-fd-zoom='outline']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__icon-wrapper,
   :global([data-fd-zoom='map']) .flowdrop-terminal-node__icon-wrapper {
-    width: var(--_gs);
-    height: var(--_gs);
-    background: transparent;
+    width: var(--fd-node-zoom-tile-size);
+    height: var(--fd-node-zoom-tile-size);
+    border-radius: var(--fd-node-zoom-tile-radius);
+    background: var(--_cat);
   }
 
   :global([data-fd-zoom='glyph'])
@@ -622,9 +635,9 @@
   :global([data-fd-zoom='map'])
     .flowdrop-terminal-node__icon-wrapper
     :global(.flowdrop-terminal-node__icon) {
-    width: 100%;
-    height: 100%;
-    color: var(--_cat);
+    width: var(--fd-node-zoom-tile-glyph);
+    height: var(--fd-node-zoom-tile-glyph);
+    color: var(--fd-node-tile-fg);
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__label-container {
@@ -632,17 +645,37 @@
   }
 
   :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__label {
-    font-size: calc(var(--fd-node-zoom-title-size) / var(--fd-zoom, 1));
+    font-size: var(--fd-node-zoom-title-size);
+    line-height: var(--fd-node-zoom-title-leading);
+    letter-spacing: var(--fd-node-zoom-title-tracking);
     white-space: normal;
     max-width: calc(var(--_d) * 2);
   }
 
-  :global([data-fd-zoom='map']) .flowdrop-terminal-node__label-container,
-  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__description,
-  :global([data-fd-zoom='map']) .flowdrop-terminal-node__description,
-  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn),
-  :global([data-fd-zoom='map']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn) {
-    visibility: hidden;
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__content {
+    background-color: color-mix(
+      in srgb,
+      var(--_cat) var(--fd-node-zoom-map-mix),
+      var(--fd-node-terminal-bg)
+    );
+    box-shadow: none;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node--error {
+    --_cat: var(--fd-error);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__icon-wrapper {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+  }
+
+  :global([data-fd-zoom='map'])
+    .flowdrop-terminal-node__icon-wrapper
+    :global(.flowdrop-terminal-node__icon) {
+    width: min(var(--fd-node-zoom-map-glyph), calc(var(--_d) * 0.7));
+    height: min(var(--fd-node-zoom-map-glyph), calc(var(--_d) * 0.7));
   }
 
   .flowdrop-terminal-node__label-container {

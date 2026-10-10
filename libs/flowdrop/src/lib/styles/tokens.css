@@ -205,7 +205,9 @@
   --fd-note-body-size: 12.5px; /* @internal */
   --fd-note-line: 20px; /* @internal  line height; every text line is one grid row */
   --fd-note-meta-size: 11px; /* @internal  footer word */
-  --fd-note-zoom-size: 11px; /* @internal  first heading in the glyph and map zoom tiers, screen px (counter-scaled) */
+  --fd-note-zoom-outline-size: 20px; /* @internal  first heading in the outline tier, flow px */
+  --fd-note-zoom-size: 30px; /* @internal  first heading in the glyph tier, flow px */
+  --fd-note-zoom-map-mix: 60%; /* @internal  map: how much of the note's edge tint fills it */
 
   /* ----- CANVAS GRID (pattern color for the editor background grid; any theme
      can recolor whichever grid variant it picks via config.canvas.grid).
@@ -734,8 +736,46 @@
   --fd-node-pill-required: var(--fd-error-hover); /* @internal  the "*" on a required open input */
   --fd-node-pill-hover-filter: brightness(0.97); /* @internal */
   --fd-node-pin-size: 14px; /* @internal  the exec pin in the header */
-  --fd-node-zoom-title-size: 11px; /* @internal  title in the glyph zoom tier, screen px (counter-scaled) */
-  --fd-node-zoom-wash: 8%; /* @internal  how much of the category colour tints a card in the glyph and map tiers */
+  /* Zoom tiers (editor.zoomTiers): fixed sizes in flow px, never divided by the zoom.
+     Svelte Flow scales them; the drawing changes only at a tier boundary. */
+  --fd-node-zoom-outline-title-size: 20px; /* @internal  outline: one-line title */
+  --fd-node-zoom-outline-title-line: 24px; /* @internal */
+  --fd-node-zoom-outline-gap: 12px; /* @internal  outline: tile to title */
+  --fd-node-zoom-outline-pad-end: 16px; /* @internal  outline: header right padding (no config button) */
+  --fd-node-zoom-bar-height: 12px; /* @internal  outline: an unlabelled port bar */
+  --fd-node-zoom-bar-radius: 6px; /* @internal */
+  --fd-node-zoom-bar-wired-width: 72px; /* @internal */
+  --fd-node-zoom-bar-open-width: 48px; /* @internal */
+  --fd-node-zoom-bar-wired-mix: 24%; /* @internal  type tint of a wired bar */
+  --fd-node-zoom-bar-open-bg: color-mix(
+    in srgb,
+    var(--fd-foreground) 8%,
+    var(--fd-node-bg)
+  ); /* @internal  an open bar, neutral grey */
+  --fd-node-zoom-stub-width: 6px; /* @internal  outline and glyph: a wired port as a stub on the card edge */
+  --fd-node-zoom-stub-height: 18px; /* @internal */
+  --fd-node-zoom-stub-radius: 3px; /* @internal */
+  --fd-node-zoom-tile-size: 56px; /* @internal  glyph: solid category tile */
+  --fd-node-zoom-tile-radius: 14px; /* @internal */
+  --fd-node-zoom-tile-glyph: 34px; /* @internal  glyph: white glyph in the tile */
+  --fd-node-zoom-tile-gap: 14px; /* @internal  glyph: tile to title */
+  --fd-node-zoom-tile-pad: 20px; /* @internal  glyph: card side padding */
+  --fd-node-zoom-title-size: 30px; /* @internal  glyph: title, two lines at most */
+  --fd-node-zoom-title-leading: 1.15; /* @internal */
+  --fd-node-zoom-title-tracking: -0.01em; /* @internal */
+  --fd-node-zoom-title-max: 170px; /* @internal */
+  --fd-node-zoom-map-mix: 86%; /* @internal  map: how much of the category colour fills the card */
+  --fd-node-zoom-map-glyph: 72px; /* @internal  map: white glyph on the solid block */
+  --fd-node-zoom-edge-width-glyph: 2.5px; /* @internal  glyph: wire thickness */
+  --fd-node-zoom-edge-width-map: 5px; /* @internal  map: wire thickness */
+  --fd-node-zoom-edge-map: var(--fd-edge-data); /* @internal  map: wire colour */
+  --fd-node-zoom-mark-scale-outline: 1.5; /* @internal  the Doctor's mark, per tier (a pure multiplier, no zoom maths) */
+  --fd-node-zoom-mark-scale-glyph: 2.5; /* @internal */
+  --fd-node-zoom-mark-scale-map: 4; /* @internal */
+  --fd-node-zoom-status-scale-outline: 1.5; /* @internal  the run-status pill, per tier */
+  --fd-node-zoom-status-scale-glyph: 2.4; /* @internal */
+  --fd-node-zoom-status-stroke-map: 6px; /* @internal  map: status outline thickness */
+  --fd-node-zoom-badge-scale-map: 3.5; /* @internal  map: status badge */
   --fd-node-pin-wired: var(--fd-node-ink); /* @internal  wired exec pin fill */
   --fd-node-pin-open: #8a919c; /* @internal  open exec pin outline and chevron, at least 3:1 on the card */
   --fd-node-icon-size: 36px; /* @internal  squircle edge */
@@ -1046,6 +1086,8 @@
   --fd-node-terminal-label-bg: var(--fd-backdrop);
   --fd-node-terminal-label-shadow: var(--fd-shadow-sm);
   --fd-node-terminal-ring: color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+  --fd-node-zoom-bar-open-bg: color-mix(in srgb, var(--fd-foreground) 8%, var(--fd-node-bg));
+  --fd-node-zoom-edge-map: var(--fd-edge-data);
   --fd-note-bg: var(--fd-muted);
   --fd-note-border: var(--fd-node-border);
   --fd-note-border-hover: var(--fd-node-border-hover);

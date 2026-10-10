@@ -141,8 +141,9 @@
     color: var(--fd-foreground);
   }
 
-  /* Far zoom: the shape and swatch stay, the text goes. The id keeps its room
-     so the tag does not change width when the zoom crosses the threshold. */
+  /* Zoom tiers: outline drops the type, glyph and map keep only the shape and
+     swatch. The id keeps its room so the tag does not change width when the zoom
+     crosses a boundary. */
   .fd-iface-tag--compact .fd-iface-tag__id,
   :global([data-fd-zoom='glyph']) .fd-iface-tag__id,
   :global([data-fd-zoom='map']) .fd-iface-tag__id {
@@ -150,6 +151,7 @@
   }
 
   .fd-iface-tag--compact .fd-iface-tag__type,
+  :global([data-fd-zoom='outline']) .fd-iface-tag__type,
   :global([data-fd-zoom='glyph']) .fd-iface-tag__type,
   :global([data-fd-zoom='map']) .fd-iface-tag__type {
     display: none;

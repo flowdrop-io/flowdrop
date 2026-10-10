@@ -358,15 +358,16 @@
     }
   }
 
-  /* Zoom tiers (set on .flowdrop-root by the editor): the note shows only its
-     first heading, counter-scaled to a constant screen size. The content stays
-     laid out (hidden, not removed) so the box never changes size between tiers. */
+  /* Zoom tiers (editor.zoomTiers, set on .flowdrop-root by the editor): outline
+     and glyph show the first heading alone at a fixed flow size, map a quiet
+     block of the note's tint. The content stays laid out (hidden, not removed)
+     so the box never changes size between tiers. */
   .flowdrop-notes-node__zoom-title {
     display: none;
   }
 
-  :global([data-fd-zoom='glyph']) .flowdrop-notes-node__zoom-title,
-  :global([data-fd-zoom='map']) .flowdrop-notes-node__zoom-title {
+  :global([data-fd-zoom='outline']) .flowdrop-notes-node__zoom-title,
+  :global([data-fd-zoom='glyph']) .flowdrop-notes-node__zoom-title {
     position: absolute;
     inset: var(--fd-note-padding);
     display: -webkit-box;
@@ -374,18 +375,33 @@
     -webkit-line-clamp: 3;
     line-clamp: 3;
     overflow: hidden;
-    font-size: calc(var(--fd-note-zoom-size) / var(--fd-zoom, 1));
+    font-size: var(--fd-note-zoom-outline-size);
     font-weight: var(--fd-note-heading-weight);
     line-height: 1.25;
     color: var(--fd-foreground);
     overflow-wrap: anywhere;
   }
 
+  :global([data-fd-zoom='glyph']) .flowdrop-notes-node__zoom-title {
+    font-size: var(--fd-note-zoom-size);
+    line-height: var(--fd-node-zoom-title-leading);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-notes-node__content,
   :global([data-fd-zoom='glyph']) .flowdrop-notes-node__content,
   :global([data-fd-zoom='map']) .flowdrop-notes-node__content,
+  :global([data-fd-zoom='outline']) .flowdrop-notes-node :global(.flowdrop-node-config-btn),
   :global([data-fd-zoom='glyph']) .flowdrop-notes-node :global(.flowdrop-node-config-btn),
   :global([data-fd-zoom='map']) .flowdrop-notes-node :global(.flowdrop-node-config-btn) {
     visibility: hidden;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-notes-node {
+    background: color-mix(in srgb, var(--_note-edge) var(--fd-note-zoom-map-mix), var(--_note-bg));
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-notes-node:not(.flowdrop-notes-node--selected) {
+    box-shadow: none;
   }
 
   /* Responsive design */

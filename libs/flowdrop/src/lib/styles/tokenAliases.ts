@@ -135,6 +135,8 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'node-terminal-label-shadow': 'var(--fd-shadow-sm)',
   'node-terminal-ring': 'color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent)',
   'node-title-size': 'var(--fd-text-sm)',
+  'node-zoom-bar-open-bg': 'color-mix(in srgb, var(--fd-foreground) 8%, var(--fd-node-bg))',
+  'node-zoom-edge-map': 'var(--fd-edge-data)',
   'note-bg': 'var(--fd-muted)',
   'note-border': 'var(--fd-node-border)',
   'note-border-hover': 'var(--fd-node-border-hover)',
