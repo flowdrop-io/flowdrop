@@ -27,12 +27,11 @@
 </script>
 
 <script lang="ts">
-  import { ViewportPortal, useViewport } from '@xyflow/svelte';
+  import { ViewportPortal } from '@xyflow/svelte';
   import { m } from '$lib/messages/index.js';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getDataTypeColorToken, getDataTypeDisplayText } from '$lib/utils/colors.js';
   import {
-    INTERFACE_TAG_TEXT_MIN_ZOOM,
     exposableCandidate,
     interfaceTagModels,
     interfaceTagTypeText,
@@ -63,9 +62,7 @@
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
-  const viewport = useViewport();
 
-  const compact = $derived(viewport.current.zoom < INTERFACE_TAG_TEXT_MIN_ZOOM);
   const typeName = (dataType: string): string => getDataTypeDisplayText(checker, dataType);
 
   const tags = $derived(interfaceTagModels(workflow));
@@ -147,7 +144,6 @@
           {typeText}
           color={getDataTypeColorToken(checker, tag.entry.dataType)}
           mismatch={!!tag.mismatch}
-          {compact}
           class="nodrag nopan"
           role="img"
           aria-label={m().workflowInterface.tagAria({

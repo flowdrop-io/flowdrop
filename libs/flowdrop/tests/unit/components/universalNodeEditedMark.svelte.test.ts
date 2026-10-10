@@ -104,7 +104,8 @@ describe('node status badge', () => {
     expect(badge?.getAttribute('data-status')).toBe('completed');
     expect(badge?.getAttribute('aria-label')).toContain('Completed');
     // Label yes; a count only above 1; timing never (it lives in Last run).
-    expect(badge?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Completed 2');
+    const pill = badge?.querySelector('.node-status-overlay__pill');
+    expect(pill?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Completed 2');
     fd.destroy();
   });
 });

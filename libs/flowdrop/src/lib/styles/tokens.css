@@ -485,7 +485,7 @@
   --fd-node-terminal-label-weight: 500; /* @internal */
   --fd-node-dim-opacity: 1; /* @internal  Test mode: nodes without a status in the shown run */
   --fd-node-status-edge: 0px; /* @internal  extra thickness of a status-coloured node border */
-  --fd-node-problem-badge: 18px; /* @internal  size of the Doctor's count badge on a node */
+  --fd-node-problem-size: 16px; /* @internal  the Doctor's status glyph on a node */
   --fd-node-status-ring: 0px; /* @internal  soft halo of a node that waits for you */
 
   /* ----- CONVERSATION TOKENS (@internal) -----
@@ -705,6 +705,8 @@
   --fd-node-pill-required: var(--fd-error-hover); /* @internal  the "*" on a required open input */
   --fd-node-pill-hover-filter: brightness(0.97); /* @internal */
   --fd-node-pin-size: 14px; /* @internal  the exec pin in the header */
+  --fd-node-zoom-title-size: 11px; /* @internal  title in the glyph zoom tier, screen px (counter-scaled) */
+  --fd-node-zoom-wash: 8%; /* @internal  how much of the category colour tints a card in the glyph and map tiers */
   --fd-node-pin-wired: var(--fd-node-ink); /* @internal  wired exec pin fill */
   --fd-node-pin-open: #8a919c; /* @internal  open exec pin outline and chevron, at least 3:1 on the card */
   --fd-node-icon-size: 36px; /* @internal  squircle edge */

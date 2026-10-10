@@ -69,6 +69,7 @@
   } from '../helpers/proximityConnect.js';
   import PortCoordinateTracker from './PortCoordinateTracker.svelte';
   import { interfaceTagReserve } from '../utils/interfaceTags.js';
+  import ZoomTier from './ZoomTier.svelte';
   import InterfaceTagLayer, { type InterfaceTagEdit } from './InterfaceTagLayer.svelte';
   import {
     buildPortInterfaceEntries,
@@ -1572,6 +1573,7 @@
                   ? interfaceTagReserve(fd.workflow.current)
                   : new Map<string, { left: number; right: number }>()}
             />
+            <ZoomTier />
             <StraightGuides guides={straightGuides} />
             <EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
             <PortCoordinateTracker

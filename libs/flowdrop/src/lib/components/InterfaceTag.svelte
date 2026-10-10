@@ -10,7 +10,7 @@
     outline turns amber and the type reads "Array ≠ String".
   - `ghost`: a name being typed. Dashed outline in the ring colour; pass the
     input as `children`.
-  - `compact`: far zoom. The text drops, the shape and swatch stay.
+  - `compact`: far zoom (the editor sets it through the `data-fd-zoom` tier; the prop forces it). The text drops, the shape and swatch stay.
 
   A view only: the data stays in `workflow.interface`. Ids longer than
   `INTERFACE_TAG_MAX_ID_CHARS` are shortened; the full id is the tooltip.
@@ -143,11 +143,15 @@
 
   /* Far zoom: the shape and swatch stay, the text goes. The id keeps its room
      so the tag does not change width when the zoom crosses the threshold. */
-  .fd-iface-tag--compact .fd-iface-tag__id {
+  .fd-iface-tag--compact .fd-iface-tag__id,
+  :global([data-fd-zoom='glyph']) .fd-iface-tag__id,
+  :global([data-fd-zoom='map']) .fd-iface-tag__id {
     visibility: hidden;
   }
 
-  .fd-iface-tag--compact .fd-iface-tag__type {
+  .fd-iface-tag--compact .fd-iface-tag__type,
+  :global([data-fd-zoom='glyph']) .fd-iface-tag__type,
+  :global([data-fd-zoom='map']) .fd-iface-tag__type {
     display: none;
   }
 

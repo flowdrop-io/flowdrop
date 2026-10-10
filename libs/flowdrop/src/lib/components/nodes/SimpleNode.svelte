@@ -29,6 +29,8 @@
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { glyphMetrics } from '../../utils/zoomTier.js';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface Props {
@@ -147,6 +149,7 @@
     computeShapeGeometry({ inputs: visibleInputPorts, outputs: visibleOutputPorts })
   );
   const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
+  const glyph = $derived(glyphMetrics(geometry.width, geometry.height));
   const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 </script>
 
@@ -175,7 +178,10 @@
   class:flowdrop-simple-node--selected={props.selected}
   class:flowdrop-simple-node--processing={props.isProcessing}
   class:flowdrop-simple-node--error={props.isError}
-  style="width: {geometry.width}px; height: {geometry.height}px; --_desc-lines: {geometry.height / 20 - 3};"
+  class:flowdrop-simple-node--glyph-row={glyph.row}
+  style="--_cat: {nodeColor}; --_gs: {glyph.size}px; width: {geometry.width}px; height: {geometry.height}px; --_desc-lines: {geometry.height /
+    20 -
+    3};"
   ondblclick={handleDoubleClick}
 >
   <div class="flowdrop-simple-node__header">
@@ -195,13 +201,10 @@
       ></span>
 
       <!-- Node Title -->
-      <h3
-        class="flowdrop-simple-node__title"
-        title={displayDescription || undefined}
-        data-fd-title
-      >
+      <h3 class="flowdrop-simple-node__title" title={displayDescription || undefined} data-fd-title>
         {displayTitle}
       </h3>
+      <NodeProblemMark />
     </div>
 
     <!-- Node Description -->
@@ -398,6 +401,82 @@
   .flowdrop-simple-node__error :global(svg) {
     width: 12px;
     height: 12px;
+  }
+
+  /* ----- Zoom tiers (G8e): see NodeCard. Same box; the glyph centred, the title
+     counter-scaled, the card tinted; description and config button hidden. ----- */
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node {
+    background-color: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-wash), var(--fd-node-bg));
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__header-content,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__header-content {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(var(--fd-space-sm) / var(--fd-zoom, 1));
+    padding: var(--fd-space-sm);
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-simple-node--glyph-row
+    .flowdrop-simple-node__header-content {
+    flex-direction: row;
+    gap: calc(var(--fd-space-md) / var(--fd-zoom, 1));
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__icon-wrapper,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__icon-wrapper {
+    display: flex;
+    width: var(--_gs);
+    height: var(--_gs);
+    background: transparent;
+    transform: none;
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-simple-node__icon-wrapper
+    :global(.flowdrop-simple-node__icon),
+  :global([data-fd-zoom='map'])
+    .flowdrop-simple-node__icon-wrapper
+    :global(.flowdrop-simple-node__icon) {
+    width: 100%;
+    height: 100%;
+    color: var(--_cat);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__color-dot,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__color-dot,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__title {
+    display: none;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__title {
+    flex: 0 1 auto;
+    max-width: 92%;
+    font-size: calc(var(--fd-node-zoom-title-size) / var(--fd-zoom, 1));
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node--glyph-row .flowdrop-simple-node__title {
+    max-width: 62%;
+    text-align: left;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__description,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__description,
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-simple-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   /* Reveal the NodeConfigButton (gear) when the node is hovered. */

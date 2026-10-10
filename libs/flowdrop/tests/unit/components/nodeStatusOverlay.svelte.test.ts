@@ -1,6 +1,6 @@
 /**
  * The status overlay: a labelled pill at screen size (icon + label + count when
- * above 1), an outline + count badge below 35% zoom. Hover carries the count and
+ * above 1), an outline + count badge in the map zoom tier. Hover carries the count and
  * the last error line only; timing is not drawn (it lives in the inspector's
  * Last run tab).
  */
@@ -102,15 +102,10 @@ describe('NodeStatusOverlay', () => {
     expect(hover).toBe('Failed\n3 runs\nConnection timeout');
   });
 
-  it('below 35% zoom: outline and a count badge instead of the pill', () => {
+  it('carries the pill and the outline + count badge; the zoom tier (CSS) picks one', () => {
     render(info({ status: 'failed', executionCount: 4 }), 0.3);
-    expect(document.querySelector('.flowdrop-ui-status-pill')).toBeNull();
+    expect(document.querySelector('.flowdrop-ui-status-pill')).not.toBeNull();
     expect(document.querySelector('.node-status-overlay__outline')).not.toBeNull();
     expect(document.querySelector('.node-status-overlay__badge')?.textContent?.trim()).toBe('4');
-  });
-
-  it('at exactly 35% the pill is still drawn', () => {
-    render(info({}), 0.35);
-    expect(document.querySelector('.flowdrop-ui-status-pill')).not.toBeNull();
   });
 });

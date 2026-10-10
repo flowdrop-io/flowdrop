@@ -19,6 +19,8 @@
   } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { glyphMetrics } from '../../utils/zoomTier.js';
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
   import { computeShapeGeometry } from '../../utils/nodeGeometry.js';
@@ -293,6 +295,7 @@
     computeShapeGeometry({ inputs: visibleInputPorts, outputs: visibleOutputPorts })
   );
   const diameter = $derived(geometry.height);
+  const glyph = $derived(glyphMetrics(diameter, diameter));
   function arcX(y: number, direction: 'input' | 'output'): number {
     const r = diameter / 2;
     const inset = r - Math.sqrt(Math.max(r * r - (y - r) ** 2, 0));
@@ -335,7 +338,7 @@
   class:flowdrop-terminal-node--start={variant === 'start'}
   class:flowdrop-terminal-node--end={variant === 'end'}
   class:flowdrop-terminal-node--exit={variant === 'exit'}
-  style="--terminal-color: {terminalColor}; --_d: {diameter}px;"
+  style="--terminal-color: {terminalColor}; --_cat: {terminalColor}; --_gs: {glyph.size}px; --_d: {diameter}px;"
   ondblclick={handleDoubleClick}
   aria-label="{variant} node: {displayTitle}"
 >
@@ -362,6 +365,8 @@
         id={`${props.id}-input-${port.id}`}
       />
     {/each}
+
+    <NodeProblemMark />
 
     <!-- Circular content with icon in squircle wrapper -->
     <div class="flowdrop-terminal-node__content">
@@ -580,6 +585,64 @@
     width: var(--fd-node-terminal-icon-size);
     height: var(--fd-node-terminal-icon-size);
     color: var(--fd-node-terminal-icon-color, var(--fd-node-icon));
+  }
+
+  /* The Doctor's glyph, at the circle's upper right (the corner of the box is outside the circle). */
+  .flowdrop-terminal-node__circle-wrapper {
+    --_pm-inset: calc(var(--_d) * 0.14);
+  }
+
+  .flowdrop-terminal-node__circle-wrapper > :global(.fd-node-problem) {
+    position: absolute;
+    top: var(--_pm-inset);
+    right: var(--_pm-inset);
+    z-index: 31;
+  }
+
+  /* ----- Zoom tiers (G8e): see NodeCard. The circle tints; the label is counter-scaled. ----- */
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__content,
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__content {
+    background-color: color-mix(
+      in srgb,
+      var(--_cat) var(--fd-node-zoom-wash),
+      var(--fd-node-terminal-bg)
+    );
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__icon-wrapper,
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__icon-wrapper {
+    width: var(--_gs);
+    height: var(--_gs);
+    background: transparent;
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-terminal-node__icon-wrapper
+    :global(.flowdrop-terminal-node__icon),
+  :global([data-fd-zoom='map'])
+    .flowdrop-terminal-node__icon-wrapper
+    :global(.flowdrop-terminal-node__icon) {
+    width: 100%;
+    height: 100%;
+    color: var(--_cat);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__label-container {
+    max-width: calc(var(--_d) * 2);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__label {
+    font-size: calc(var(--fd-node-zoom-title-size) / var(--fd-zoom, 1));
+    white-space: normal;
+    max-width: calc(var(--_d) * 2);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__label-container,
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__description,
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__description,
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   .flowdrop-terminal-node__label-container {

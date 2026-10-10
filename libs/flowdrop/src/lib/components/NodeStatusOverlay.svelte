@@ -3,8 +3,10 @@
   The run status of a node, drawn at screen size: a StatusPill (icon + label,
   plus a count when the node has more than one run) centred on the node's top
   edge and counter-scaled by the canvas zoom (clamp(1/zoom, 1, 2.2), growing
-  upward off the node). Below 35% zoom the pill gives way to a status-coloured
-  outline around the node and a count badge.
+  upward off the node). In the map zoom tier (below 25%, `data-fd-zoom='map'` on
+  the editor root) the pill gives way to a status-coloured outline around the
+  node and a count badge; both are in the DOM and CSS picks one, so crossing the
+  threshold re-renders nothing.
 
   Hover shows the count and the last error line, nothing else; durations and
   job history live in the inspector's Last run tab.
@@ -25,9 +27,6 @@
   import { getStatusLabel, toPillStatus } from '../utils/nodeStatus.js';
   import { getMessages } from '../messages/context.js';
   import { m } from '$lib/messages/index.js';
-
-  /** Below this zoom the pill becomes an outline + count badge. */
-  const COMPACT_BELOW_ZOOM = 0.35;
 
   const ICONS = {
     running: 'heroicons:arrow-path',
@@ -50,7 +49,6 @@
   let props: Props = $props();
 
   const zoom = $derived(props.zoom ?? 1);
-  const compact = $derived(zoom < COMPACT_BELOW_ZOOM);
 
   const executionInfo = $derived(props.executionInfo);
   const pillStatus = $derived(executionInfo ? toPillStatus(executionInfo.status) : null);
@@ -77,35 +75,29 @@
 {#if executionInfo && pillStatus}
   <div
     class="node-status-overlay node-status-overlay--{pillStatus}"
-    class:node-status-overlay--compact={compact}
     data-node-id={props.nodeId}
     data-status={pillStatus}
     data-execution-status={executionInfo.status}
     role="status"
     aria-label={overlay.ariaLabel({ status: getStatusLabel(executionInfo.status) })}
   >
-    {#if !compact}
-      <span class="node-status-overlay__frame" aria-hidden="true"></span>
-    {/if}
-    {#if compact}
-      <span class="node-status-overlay__outline" aria-hidden="true" style="--_stroke: {3 / zoom}px;"
-      ></span>
-      <span
-        class="node-status-overlay__badge"
-        title={tooltip}
-        style="transform: scale({counterScale(zoom)});"
-      >
-        {#if runCount > 1}
-          {runCount}
-        {:else}
-          <Icon icon={ICONS[pillStatus]} />
-        {/if}
-      </span>
-    {:else}
-      <span class="node-status-overlay__pill" title={tooltip}>
-        <StatusPill status={pillStatus} count={runCount} {zoom} screenSize />
-      </span>
-    {/if}
+    <span class="node-status-overlay__frame" aria-hidden="true"></span>
+    <span class="node-status-overlay__outline" aria-hidden="true" style="--_stroke: {3 / zoom}px;"
+    ></span>
+    <span
+      class="node-status-overlay__badge"
+      title={tooltip}
+      style="transform: scale({counterScale(zoom)});"
+    >
+      {#if runCount > 1}
+        {runCount}
+      {:else}
+        <Icon icon={ICONS[pillStatus]} />
+      {/if}
+    </span>
+    <span class="node-status-overlay__pill" title={tooltip}>
+      <StatusPill status={pillStatus} count={runCount} {zoom} screenSize />
+    </span>
   </div>
 {/if}
 
@@ -167,6 +159,25 @@
     pointer-events: none;
   }
 
+  /* Map tier: the outline and count badge stand in for the pill and the frame. */
+  .node-status-overlay__outline,
+  .node-status-overlay__badge {
+    display: none;
+  }
+
+  :global([data-fd-zoom='map']) .node-status-overlay__outline {
+    display: block;
+  }
+
+  :global([data-fd-zoom='map']) .node-status-overlay__badge {
+    display: grid;
+  }
+
+  :global([data-fd-zoom='map']) .node-status-overlay__pill,
+  :global([data-fd-zoom='map']) .node-status-overlay__frame {
+    display: none;
+  }
+
   .node-status-overlay__outline {
     position: absolute;
     /* A 3px stroke on screen whatever the zoom (--_stroke = 3px / zoom). */
@@ -182,7 +193,6 @@
     translate: -50% -50%;
     transform-origin: center;
     pointer-events: auto;
-    display: grid;
     place-items: center;
     min-width: var(--fd-control-md);
     height: var(--fd-control-md);

@@ -39,6 +39,7 @@
   import type { Edge, Node } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
   import '$lib/styles/fonts/inter.css';
+  import ZoomTier from '$lib/components/ZoomTier.svelte';
   import UniversalNode from '$lib/components/UniversalNode.svelte';
   import FlowDropEdge from '$lib/components/FlowDropEdge.svelte';
   import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
@@ -503,6 +504,7 @@
     nodesDraggable
     proOptions={{ hideAttribution: false }}
   >
+    <ZoomTier />
     <Background
       gap={20}
       bgColor="var(--fd-canvas-bg)"

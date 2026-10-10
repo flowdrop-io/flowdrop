@@ -24,6 +24,9 @@
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import NodeTip from './NodeTip.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { getNodeProblem } from '../../utils/nodeProblem.js';
+  import { glyphMetrics } from '../../utils/zoomTier.js';
   import { getPortColorToken, getDataTypeConfig } from '../../utils/colors.js';
   import type { NodeGeometry } from '../../utils/nodeGeometry.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
@@ -78,6 +81,13 @@
   }: Props = $props();
 
   let isHandleInteraction = $state(false);
+
+  // The Doctor's finding: a status glyph in the header; an error also takes the error border.
+  const problem = getNodeProblem();
+  const problemSeverity = $derived(problem?.severity ?? null);
+
+  /** The glyph view's glyph edge, and whether the title sits beside it on a short card. */
+  const glyph = $derived(glyphMetrics(geometry.width, geometry.height));
 
   const fd = getInstance();
   const checker = fd.portCompatibility;
@@ -229,6 +239,8 @@
   class:flowdrop-workflow-node--bands={geometry.descriptionBand > 0}
   class:flowdrop-workflow-node--processing={processing}
   class:flowdrop-workflow-node--error={error}
+  class:flowdrop-workflow-node--problem-error={problemSeverity === 'error'}
+  class:flowdrop-workflow-node--glyph-row={glyph.row}
   ondblclick={onconfig}
   onmouseup={() => {
     isHandleInteraction = false;
@@ -236,7 +248,7 @@
   data-handle-interaction={isHandleInteraction}
   aria-label={ariaLabel}
   aria-describedby="node-description-{id}"
-  style="--_cat: {color}; width: {geometry.width}px; height: {geometry.height}px;"
+  style="--_cat: {color}; --_gs: {glyph.size}px; width: {geometry.width}px; height: {geometry.height}px;"
 >
   <!-- Header: fixed 60px. Title (2 lines at most) over "kind · id"; hovering it
        opens the node's description. -->
@@ -244,6 +256,7 @@
   <div
     class="flowdrop-workflow-node__header"
     class:flowdrop-workflow-node__header--wraps={titleWraps}
+    class:flowdrop-workflow-node__header--problem={problemSeverity !== null}
     onmouseenter={showNodeTip}
     onmouseleave={hideTip}
   >
@@ -252,6 +265,7 @@
     </div>
     <h3 class="flowdrop-workflow-node__title" bind:this={titleEl} data-fd-title>{title}</h3>
     <span class="flowdrop-workflow-node__kind">{kindLine}</span>
+    <NodeProblemMark />
   </div>
 
   <!-- Description band: reserved on every node while the setting is on. -->
@@ -384,6 +398,10 @@
     background-color: var(--fd-error-muted);
   }
 
+  .flowdrop-workflow-node--problem-error {
+    --_border: var(--fd-error);
+  }
+
   .flowdrop-workflow-node--selected,
   .flowdrop-workflow-node--selected:hover {
     --_border: var(--fd-node-selected-border);
@@ -412,6 +430,16 @@
     background: color-mix(in srgb, var(--_cat) var(--fd-node-header-wash), var(--fd-node-bg));
     border-top-left-radius: var(--fd-node-radius);
     border-top-right-radius: var(--fd-node-radius);
+  }
+
+  .flowdrop-workflow-node__header--problem {
+    grid-template-columns: var(--fd-node-tile-size) minmax(0, 1fr) auto;
+  }
+
+  /* The Doctor's glyph, after the title (first row). */
+  .flowdrop-workflow-node__header :global(.fd-node-problem) {
+    grid-column: 3;
+    grid-row: 1;
   }
 
   .flowdrop-workflow-node__tile {
@@ -645,6 +673,97 @@
       .svelte-flow__handle.flowdrop-workflow-node__handle--pin.flowdrop-workflow-node__handle--open::after
   ) {
     background: var(--fd-node-pin-open);
+  }
+
+  /* ----- Zoom tiers (G8e): the same box, a different drawing -----
+     At glyph (25-66%) and map (< 25%) the header grows to the whole card and
+     becomes the glyph view: the category glyph centred, the title counter-scaled
+     to a constant screen size, the card tinted with its category. Ports, pills,
+     the description and the config button are hidden with `visibility`, never
+     removed, so every handle stays where it is and no edge moves. */
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node {
+    background-color: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-wash), var(--fd-node-bg));
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__header,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__header {
+    inset: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--fd-space-sm) / var(--fd-zoom, 1));
+    padding: var(--fd-space-sm);
+    background: transparent;
+    border-radius: inherit;
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-workflow-node--glyph-row
+    .flowdrop-workflow-node__header {
+    flex-direction: row;
+    gap: calc(var(--fd-space-md) / var(--fd-zoom, 1));
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__tile,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__tile {
+    display: flex;
+    flex: none;
+    width: var(--_gs);
+    height: var(--_gs);
+    margin: 0;
+    align-self: center;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-workflow-node__tile
+    :global(.flowdrop-workflow-node__icon),
+  :global([data-fd-zoom='map'])
+    .flowdrop-workflow-node__tile
+    :global(.flowdrop-workflow-node__icon) {
+    width: 100%;
+    height: 100%;
+    color: var(--_cat);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__title {
+    flex: 0 1 auto;
+    align-self: center;
+    overflow-wrap: break-word;
+    max-width: 92%;
+    font-size: calc(var(--fd-node-zoom-title-size) / var(--fd-zoom, 1));
+    line-height: 1.2;
+    text-align: center;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-workflow-node--glyph-row
+    .flowdrop-workflow-node__title {
+    max-width: 62%;
+    text-align: left;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__title,
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__kind,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__kind {
+    display: none;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__pill,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__pill,
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__desc,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__desc,
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node__empty,
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node__empty,
+  :global([data-fd-zoom='glyph']) .flowdrop-workflow-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-workflow-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   /* Reveal the NodeConfigButton (gear) when the node is hovered. */

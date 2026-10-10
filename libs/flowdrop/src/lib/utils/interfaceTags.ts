@@ -26,9 +26,6 @@ export type InterfaceDirection = 'input' | 'output';
 /** Ids longer than this are shortened on the canvas (the full id is the tooltip). */
 export const INTERFACE_TAG_MAX_ID_CHARS = 16;
 
-/** Below this zoom the tag drops its text and keeps its shape and swatch. */
-export const INTERFACE_TAG_TEXT_MIN_ZOOM = 0.6;
-
 /** Free space between a port and its tag, in flow px. */
 export const INTERFACE_TAG_GAP = 20;
 

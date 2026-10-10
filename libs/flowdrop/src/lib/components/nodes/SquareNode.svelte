@@ -30,6 +30,8 @@
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { glyphMetrics } from '../../utils/zoomTier.js';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface Props {
@@ -147,6 +149,8 @@
     })
   );
   const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
+  /** The square is a fixed 80px: its glyph is sized to it, not to the slot. */
+  const glyph = $derived(glyphMetrics(80, 80));
   const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 </script>
 
@@ -183,15 +187,15 @@
   ondblclick={handleDoubleClick}
 >
   <!-- The visible, themed square — fixed 80×80, vertically centered in the slot -->
-  <div class="flowdrop-square-node__square">
+  <div class="flowdrop-square-node__square" style="--_cat: {squareColor}; --_gs: {glyph.size}px;">
     <!-- Square Layout: Always compact with centered icon in squircle wrapper -->
     <div class="flowdrop-square-node__compact-content">
       <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
       <div
-          class="flowdrop-square-node__icon-wrapper"
-          style="--_icon-color: {squareColor}"
-          data-fd-glyph
-        >
+        class="flowdrop-square-node__icon-wrapper"
+        style="--_icon-color: {squareColor}"
+        data-fd-glyph
+      >
         <Icon icon={squareIcon} class="flowdrop-square-node__icon" />
       </div>
       <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
@@ -200,6 +204,8 @@
         style="background: {getCategoryColorToken(fd.categories, props.data.metadata?.category)}"
       ></span>
     </div>
+
+    <NodeProblemMark />
 
     <!-- Processing indicator -->
     {#if props.isProcessing}
@@ -385,6 +391,42 @@
   .flowdrop-square-node__error :global(svg) {
     width: 12px;
     height: 12px;
+  }
+
+  /* ----- Zoom tiers (G8e): see NodeCard. The square tints and its glyph loses the tile. ----- */
+  :global([data-fd-zoom='glyph']) .flowdrop-square-node__square,
+  :global([data-fd-zoom='map']) .flowdrop-square-node__square {
+    background-color: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-wash), var(--fd-node-bg));
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-square-node__icon-wrapper,
+  :global([data-fd-zoom='map']) .flowdrop-square-node__icon-wrapper {
+    display: flex;
+    width: var(--_gs);
+    height: var(--_gs);
+    background: transparent;
+    transform: none;
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-square-node__icon-wrapper
+    :global(.flowdrop-square-node__icon),
+  :global([data-fd-zoom='map'])
+    .flowdrop-square-node__icon-wrapper
+    :global(.flowdrop-square-node__icon) {
+    width: 100%;
+    height: 100%;
+    color: var(--_cat);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-square-node__color-dot,
+  :global([data-fd-zoom='map']) .flowdrop-square-node__color-dot {
+    display: none;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-square-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-square-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   /* Reveal the NodeConfigButton (gear) when the node is hovered. */

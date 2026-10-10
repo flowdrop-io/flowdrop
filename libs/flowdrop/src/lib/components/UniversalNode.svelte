@@ -11,13 +11,14 @@
   import type { WorkflowNode } from '../types/index.js';
   import { resolveBuiltinAlias } from '../registry/builtinNodes.js';
   import NodeStatusOverlay from './NodeStatusOverlay.svelte';
+  import NodeProblemMark from './nodes/NodeProblemMark.svelte';
+  import { provideNodeProblem, type NodeProblem } from '../utils/nodeProblem.js';
   import { useStore } from '@xyflow/svelte';
   import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
   import { toPillStatus } from '../utils/nodeStatus.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
   import { m } from '../messages/index.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
-  import { counterScale } from './primitives/StatusPill.svelte';
 
   const fd = getInstance();
 
@@ -113,6 +114,25 @@
         })
       : ''
   );
+  let problemClaimed = $state(false);
+  const problem: NodeProblem = {
+    get severity() {
+      return problemSeverity;
+    },
+    get label() {
+      return problemLabel;
+    },
+    get tooltip() {
+      return [problemLabel, ...problems.map((p) => p.message)].join('\n');
+    },
+    get claimed() {
+      return problemClaimed;
+    },
+    set claimed(value: boolean) {
+      problemClaimed = value;
+    }
+  };
+  provideNodeProblem(problem);
 
   /**
    * Canvas zoom for the pill's counter-scaling. Read only while a status is
@@ -126,9 +146,7 @@
   } catch {
     flowStore = null;
   }
-  let zoom = $derived(
-    (shouldShowStatus || problemSeverity) && flowStore ? flowStore.viewport.zoom : 1
-  );
+  let zoom = $derived(shouldShowStatus && flowStore ? flowStore.viewport.zoom : 1);
 
   /**
    * Test mode: the node border takes the status colour (nodes draw their
@@ -214,23 +232,10 @@
     <NodeComponent {id} {data} {selected} />
   {/if}
 
-  {#if problemSeverity}
-    <span
-      class="universal-node__problem universal-node__problem--{problemSeverity}"
-      role="img"
-      aria-label={problemLabel}
-      title={[problemLabel, ...problems.map((p) => p.message)].join('\n')}
-      data-testid="node-problem"
-      data-severity={problemSeverity}
-    >
-      <span
-        class="universal-node__problem-badge"
-        aria-hidden="true"
-        style="transform: scale({counterScale(zoom)});"
-      >
-        {problems.length}
-      </span>
-    </span>
+  <!-- The Doctor's finding: drawn in the card header by the node itself; a node type
+       that draws no header gets the mark in its corner. -->
+  {#if problemSeverity && !problem.claimed}
+    <NodeProblemMark {problem} />
   {/if}
 
   {#if showEdited && shouldShowStatus}
@@ -277,43 +282,6 @@
   .universal-node--dim:hover,
   .universal-node--dim.universal-node--selected {
     opacity: 1;
-  }
-
-  /* A problem the Doctor found: a count badge at the top right, in the severity colour. It takes no click. */
-  .universal-node__problem {
-    --_c: var(--fd-warning);
-    --_fg: var(--fd-warning-foreground);
-    position: absolute;
-    inset: 0;
-    z-index: 999;
-    pointer-events: none;
-  }
-  .universal-node__problem--error {
-    --_c: var(--fd-error);
-    --_fg: var(--fd-error-foreground);
-  }
-  .universal-node__problem--info {
-    --_c: var(--fd-info);
-    --_fg: var(--fd-info-foreground);
-  }
-  .universal-node__problem-badge {
-    position: absolute;
-    top: calc(var(--fd-node-problem-badge) / -2);
-    right: calc(var(--fd-node-problem-badge) / -2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: var(--fd-node-problem-badge);
-    height: var(--fd-node-problem-badge);
-    box-sizing: border-box;
-    padding: 0 var(--fd-space-3xs);
-    border-radius: var(--fd-radius-full);
-    background-color: var(--_c);
-    color: var(--_fg);
-    font-size: var(--fd-text-xs);
-    font-weight: 600;
-    line-height: 1;
-    transform-origin: center;
   }
 
   .universal-node__edited {
