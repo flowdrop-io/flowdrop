@@ -7,6 +7,8 @@
  * @module types/settings
  */
 
+import { DEFAULT_ZOOM_TIERS, type ZoomTierConfig } from '../utils/zoomTier.js';
+
 // =========================================================================
 // Theme Settings
 // =========================================================================
@@ -108,6 +110,16 @@ export interface EditorSettings {
    * ports keep their relative positions and wires stay straight.
    */
   showNodeDescriptions: boolean;
+  /**
+   * The zoom tiers of the canvas: for each tier that is on, the zoom at which it
+   * starts (1 = 100%). A tier left out is off. `full` is required and
+   * `{ full: 0 }` means no tiers, the whole card at every zoom. Values must
+   * decrease in the order full, outline, glyph, map; the lowest tier that is on
+   * extends down to any zoom. An invalid value falls back to the library
+   * default with one console warning. The setting is replaced as a whole, never
+   * merged key by key.
+   */
+  zoomTiers: ZoomTierConfig;
 }
 
 // =========================================================================
@@ -339,7 +351,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   fitViewOnLoad: true,
   proximityConnect: false,
   proximityConnectDistance: 150,
-  showNodeDescriptions: false
+  showNodeDescriptions: false,
+  zoomTiers: { ...DEFAULT_ZOOM_TIERS }
 };
 
 /**

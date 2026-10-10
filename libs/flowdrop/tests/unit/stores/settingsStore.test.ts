@@ -397,4 +397,26 @@ describe('settingsStore persistence', { timeout: 30_000 }, () => {
       expect(store.getEditorSettings().gridSize).toBe(20);
     });
   });
+  describe('zoom tiers (Graphite G9)', () => {
+    it('defaults to the four-tier library set', async () => {
+      const store = await freshStore();
+      expect(store.getEditorSettings().zoomTiers).toEqual({
+        full: 0.75,
+        outline: 0.45,
+        glyph: 0.25,
+        map: 0
+      });
+    });
+
+    it('a stored or host value replaces the whole set, never merges key by key', async () => {
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ editor: { zoomTiers: { full: 0.45, outline: 0.25, map: 0 } } })
+      );
+      const store = await freshStore();
+      expect(store.getEditorSettings().zoomTiers).toEqual({ full: 0.45, outline: 0.25, map: 0 });
+      store.updateSettings({ editor: { zoomTiers: { full: 0 } } });
+      expect(store.getEditorSettings().zoomTiers).toEqual({ full: 0 });
+    });
+  });
 });

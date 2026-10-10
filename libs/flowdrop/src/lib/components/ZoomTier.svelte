@@ -1,7 +1,8 @@
 <!--
   Zoom Tier Component
-  Renderless. Publishes the canvas zoom tier as `data-fd-zoom` (full | glyph |
-  map) and the zoom as `--fd-zoom` on the editor root, so nodes, status overlays
+  Renderless. Publishes the canvas zoom tier as `data-fd-zoom` (full | outline |
+  glyph | map; the tiers that are on come from `editor.zoomTiers`, and the tier
+  is recomputed when that setting changes) and the zoom as `--fd-zoom` on the editor root, so nodes, status overlays
   and interface tags restyle themselves in CSS (see utils/zoomTier.ts). The
   root is `.flowdrop-root`, or the canvas itself when the editor is mounted
   without one. Must be rendered inside <SvelteFlow>.
@@ -14,7 +15,8 @@
 
 <script lang="ts">
   import { useViewport } from '@xyflow/svelte';
-  import { zoomTier, type ZoomTier } from '../utils/zoomTier.js';
+  import { zoomTier, normalizeZoomTiers, type ZoomTier } from '../utils/zoomTier.js';
+  import { getEditorSettings } from '../stores/settingsStore.svelte.js';
 
   const viewport = useViewport();
 
@@ -38,11 +40,15 @@
     };
   });
 
+  // The configured tiers, validated once per change of the setting.
+  const config = $derived(normalizeZoomTiers(getEditorSettings().zoomTiers));
+
   $effect(() => {
     const zoom = viewport.current.zoom || 1;
+    const tiers = config;
     void anchor;
     if (!root) return;
-    const next = zoomTier(zoom, tier);
+    const next = zoomTier(zoom, tier, tiers);
     if (next !== tier) {
       tier = next;
       root.dataset.fdZoom = next;
