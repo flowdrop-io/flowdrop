@@ -755,12 +755,19 @@
     gap: 10px;
   }
 
-  /* 20px tile with the category tint */
-  .flowdrop-sidebar--rows .flowdrop-node-icon {
+  /* Category glyph: a bare 16px monochrome glyph in a 20px column. No tile, no tint. */
+  .flowdrop-sidebar--rows .flowdrop-node-icon,
+  .flowdrop-sidebar--rows .flowdrop-details__summary:hover .flowdrop-node-icon {
     width: 1.25rem;
     height: 1.25rem;
-    border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-2xs);
+    border-radius: 0;
+    background: transparent;
+    color: var(--fd-muted-foreground);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-icon :global(svg) {
+    width: 1rem;
+    height: 1rem;
   }
 
   .flowdrop-sidebar--rows .flowdrop-details__summary:hover .flowdrop-node-icon,
@@ -768,13 +775,20 @@
     transform: none;
   }
 
-  /* Count: muted mono, right-aligned, no pill */
+  /* Count: shown on hover or focus only, muted, no pill */
   .flowdrop-sidebar--rows .flowdrop-details__summary .flowdrop-badge {
     padding: 0;
     background: transparent;
     color: var(--fd-muted-foreground);
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-2xs);
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary:hover .flowdrop-badge,
+  .flowdrop-sidebar--rows .flowdrop-details__summary:focus-visible .flowdrop-badge {
+    opacity: 1;
   }
 
   .flowdrop-sidebar--rows .flowdrop-details__content {
@@ -832,7 +846,7 @@
     width: 1.25rem;
     height: 1.25rem;
     background: transparent;
-    color: var(--_icon-color);
+    color: var(--fd-muted-foreground);
   }
 
   .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-icon :global(svg) {
