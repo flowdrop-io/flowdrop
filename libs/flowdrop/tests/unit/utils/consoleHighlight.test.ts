@@ -142,6 +142,15 @@ describe('highlightConsoleEntry', () => {
     expect(set[0]).toEqual({ role: null, text: 'Set ' });
   });
 
+  it('ids that are not type.N still shape config and Set lines', () => {
+    const cfg = hl('success', 'node-input config: defaultValue = "hello", n = 1');
+    expect(cfg[0]).toEqual({ role: 'id', text: 'node-input' });
+    expect(roleOf(cfg, '"hello"')).toBe('string');
+    const set = hl('success', 'Set node-input:label = "a" (warning: x)');
+    expect(roleOf(set, 'node-input')).toBe('id');
+    expect(roleOf(set, 'label')).toBe('key');
+  });
+
   it('unbalanced quotes and stray characters still round-trip', () => {
     for (const text of [
       'a.1 config: x = "abc',

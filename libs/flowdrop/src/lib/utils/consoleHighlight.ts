@@ -147,24 +147,27 @@ function proseLine(out: Out, line: string, section: Section): Section {
     return section;
   }
 
-  // `config: key = value, key = value` (get <id> with no key)
-  const cfg = /^(.*?)( config: )([\s\S]*)$/.exec(line);
-  if (cfg && new RegExp(`^${NODE_ID.source}$`).test(cfg[1])) {
-    withIds(out, cfg[1], null);
+  // `config: key = value, key = value` (get <id> with no key); the id is whatever the node is called
+  const cfg = /^(\S+)( config: )([\s\S]*)$/.exec(line);
+  if (cfg) {
+    push(out, 'id', cfg[1]);
     push(out, 'key', cfg[2]);
     configPairs(out, cfg[3]);
     return section;
   }
 
-  // `Set id:key = value` / `id:key = value`
-  const set = new RegExp(`^(Set )?(${NODE_ID.source}):(\\S+)( = )([\\s\\S]*)$`).exec(line);
+  // `Set id:key = value` (any id) / `id:key = value` (ids of the `type.N` form)
+  const set =
+    /^Set ([^\s:]+):(\S+)( = )([\s\S]*)$/.exec(line) ??
+    new RegExp(`^(${NODE_ID.source}):(\\S+)( = )([\\s\\S]*)$`).exec(line);
   if (set) {
-    push(out, null, set[1] ?? '');
-    push(out, 'id', set[2]);
+    const withSet = line.startsWith('Set ');
+    push(out, null, withSet ? 'Set ' : '');
+    push(out, 'id', set[1]);
     push(out, 'punct', ':');
-    push(out, 'key', set[3]);
-    push(out, 'eq', set[4]);
-    valueTokens(out, set[5]);
+    push(out, 'key', set[2]);
+    push(out, 'eq', set[3]);
+    valueTokens(out, set[4]);
     return section;
   }
 
