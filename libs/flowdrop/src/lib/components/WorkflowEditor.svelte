@@ -351,7 +351,19 @@
 
     // Derive flowNodes/flowEdges from store
     const derived = buildFlowNodesFromStore(storeValue);
-    flowNodes = derived.nodes;
+    // The canvas owns selection. The store only holds the flags of its last
+    // structural sync, so rebuilding from it (any config edit) must not bring a
+    // stale selection back: two nodes would show the ring while the inspector
+    // names one. Nodes the canvas has not seen yet keep the store's flag.
+    const canvasSelection = isNewWorkflow
+      ? null
+      : untrack(() => new Map(flowNodes.map((n) => [n.id, !!n.selected])));
+    flowNodes = canvasSelection
+      ? derived.nodes.map((n) => {
+          const selected = canvasSelection.get(n.id);
+          return selected === undefined || selected === !!n.selected ? n : { ...n, selected };
+        })
+      : derived.nodes;
     flowEdges = derived.edges;
     previousSyncedWorkflowId = storeValue.id;
 
