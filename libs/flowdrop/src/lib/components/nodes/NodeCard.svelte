@@ -697,10 +697,15 @@
     transform: translateY(-50%);
   }
 
-  /* Exec pins: a chevron in a circle. Filled ink when wired, outlined grey when open. */
+  /* Exec pins: a blank interface tag (InterfaceTag's `[ >` shape) pointing the
+     way the run flows. Not a circled triangle: that read as a play button.
+     Filled ink when wired, outlined grey when open. An open pin shows only
+     on a hovered, focused or selected card, or under a wire being dragged. */
   :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin) {
     --_c: var(--fd-node-pin-wired);
-    --fd-handle-visual-size: var(--fd-node-pin-size);
+    --fd-handle-fill: var(--_c);
+    --_pin-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 11'%3E%3Cpath d='M2.5 0H11l5 5.5-5 5.5H2.5A2.5 2.5 0 0 1 0 8.5v-6A2.5 2.5 0 0 1 2.5 0z'/%3E%3C/svg%3E");
+    transition: opacity var(--fd-transition-normal);
   }
 
   :global(
@@ -708,24 +713,44 @@
       .svelte-flow__handle.flowdrop-workflow-node__handle--pin.flowdrop-workflow-node__handle--open
   ) {
     --_c: var(--fd-node-pin-open);
+    --_pin-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 11'%3E%3Cpath d='M2.5.75h8.1L15 5.5l-4.4 4.75H2.5A1.75 1.75 0 0 1 .75 8.5v-6A1.75 1.75 0 0 1 2.5.75z' fill='none' stroke='black' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+    opacity: 0;
   }
 
-  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin::after) {
-    content: '';
-    position: absolute;
-    width: 5px;
-    height: 6px;
-    margin-left: 1px;
-    background: var(--fd-node-bg);
-    clip-path: polygon(0 0, 100% 50%, 0 100%);
-    pointer-events: none;
-  }
-
+  .flowdrop-workflow-node:is(:hover, :focus-within)
+    :global(.svelte-flow__handle.flowdrop-workflow-node__handle--pin),
+  :global(.svelte-flow__node:is(.selected, :focus-visible))
+    .flowdrop-workflow-node
+    :global(.svelte-flow__handle.flowdrop-workflow-node__handle--pin),
   :global(
     .svelte-flow
-      .svelte-flow__handle.flowdrop-workflow-node__handle--pin.flowdrop-workflow-node__handle--open::after
+      .svelte-flow__handle.flowdrop-workflow-node__handle--pin:is(
+        .valid,
+        .connectingfrom,
+        .connectingto
+      )
   ) {
-    background: var(--fd-node-pin-open);
+    opacity: 1;
+  }
+
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin::before) {
+    width: var(--fd-node-pin-width);
+    height: var(--fd-node-pin-size);
+    border: none;
+    border-radius: 0;
+    mask: var(--_pin-mask) center / 100% 100% no-repeat;
+  }
+
+  /* Outline and glyph tiers draw every wired handle as the same edge stub. */
+  :global(
+    :is([data-fd-zoom='outline'], [data-fd-zoom='glyph'])
+      .svelte-flow
+      .svelte-flow__handle.flowdrop-workflow-node__handle--pin::before
+  ) {
+    width: var(--fd-node-zoom-stub-width);
+    height: var(--fd-node-zoom-stub-height);
+    border-radius: var(--fd-node-zoom-stub-radius);
+    mask: none;
   }
 
   /* ----- Zoom tiers (editor.zoomTiers): the same box, a different drawing -----

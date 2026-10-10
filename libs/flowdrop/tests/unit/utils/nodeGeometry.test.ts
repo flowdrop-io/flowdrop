@@ -63,10 +63,10 @@ describe('computeNodeGeometry: the straight-wire contract', () => {
           for (const h of g.handles) expect(h.y % 20).toBe(0);
         });
 
-        it('has a 60px header, with the exec pins at y = 20 on the card edges', () => {
+        it('has a 60px header, with the exec pins at y = 40 on the card edges', () => {
           expect(g.headerHeight).toBe(60);
           for (const h of g.handles.filter((x) => x.kind === 'pin')) {
-            expect(h.y).toBe(20);
+            expect(h.y).toBe(40);
             expect(h.x).toBe(h.direction === 'input' ? 0 : g.width);
           }
         });
@@ -100,7 +100,7 @@ describe('computeNodeGeometry: the straight-wire contract', () => {
         expect(moved.y - h.y).toBe(60);
       }
       // pins do not move
-      for (const h of on.handles.filter((x) => x.kind === 'pin')) expect(h.y).toBe(20);
+      for (const h of on.handles.filter((x) => x.kind === 'pin')) expect(h.y).toBe(40);
     }
   });
 
@@ -252,7 +252,7 @@ describe('every node type meets the invariant', () => {
     const g = computeNodeGeometry(TYPES['switch, 5 branches']);
     expect(g.rows.map((r) => r.output?.id)).toEqual(['a', 'b', 'c', 'd', 'default']);
     expect(g.rows.map((r) => r.y)).toEqual([80, 120, 160, 200, 240]);
-    expect(g.execInput?.y).toBe(20);
+    expect(g.execInput?.y).toBe(40);
     expect(g.execOutput).toBeNull();
     expect(g.height).toBe(60 + 5 * 40);
   });
@@ -271,7 +271,7 @@ describe('every node type meets the invariant', () => {
       execPins: 'input',
       showDescriptions: false
     });
-    expect(g.execInput?.y).toBe(20);
+    expect(g.execInput?.y).toBe(40);
     expect(g.execOutput).toBeNull();
     expect(g.rows[0].output?.id).toBe('trigger');
   });

@@ -39,8 +39,8 @@ export const NODE_GRID = 20;
 export const NODE_HEADER_HEIGHT = 60;
 /** The description band, reserved on every node while descriptions are shown. */
 export const NODE_DESCRIPTION_BAND_HEIGHT = 60;
-/** Exec pins sit on the second grid line of the header. */
-export const NODE_EXEC_PIN_Y = 20;
+/** Exec pins sit on the third grid line of the header, clear of the top corner and the gear. */
+export const NODE_EXEC_PIN_Y = 40;
 /** Comfortable row pitch. */
 export const NODE_ROW_PITCH = 40;
 /** Default width. */

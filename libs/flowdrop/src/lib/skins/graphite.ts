@@ -69,6 +69,14 @@ export const graphiteSkin: FlowDropSkin = {
     'node-pill-open-fg': '#6f7682',
     'node-pill-open-border': '#e4e7eb',
     'node-pin-open': '#8a919c',
+    /* The card gear: a ghost icon button, like the navbar settings */
+    'node-config-btn-bg': 'transparent',
+    'node-config-btn-border': 'transparent',
+    'node-config-btn-radius': 'var(--fd-radius-md)',
+    'node-config-btn-blur': 'none',
+    'node-config-btn-hover-bg': 'var(--fd-subtle)',
+    'node-config-btn-hover-border': 'transparent',
+    'node-config-btn-hover-scale': '1',
     /* Zoom tiers: an open port bar and the map wires, in the neutral greys */
     'node-zoom-bar-open-bg': '#eceef1',
     'node-zoom-edge-map': '#b5bac2',
@@ -388,6 +396,13 @@ export const graphiteSkin: FlowDropSkin = {
     'node-pill-open-fg': '#9aa2af',
     'node-pill-open-border': '#353a43',
     'node-pin-open': '#7d8594',
+    'node-config-btn-bg': 'transparent',
+    'node-config-btn-border': 'transparent',
+    'node-config-btn-radius': 'var(--fd-radius-md)',
+    'node-config-btn-blur': 'none',
+    'node-config-btn-hover-bg': 'var(--fd-subtle)',
+    'node-config-btn-hover-border': 'transparent',
+    'node-config-btn-hover-scale': '1',
     'node-zoom-bar-open-bg': '#2b3038',
     'node-zoom-edge-map': '#4a515c',
     /* Zoom map tier: a neutral card, the category lives in one solid tile */

@@ -51,7 +51,7 @@
 
   const options = $derived([
     { value: 'edit', label: nav.edit, icon: 'mdi:pencil', title: nav.editTitle },
-    { value: 'test', label: nav.test, icon: 'mdi:play', title: nav.testTitle }
+    { value: 'test', label: nav.test, icon: 'mdi:flask-outline', title: nav.testTitle }
   ]);
 
   // Drawn when it has controls; a pill-only host gets the toolbar while a run exists.

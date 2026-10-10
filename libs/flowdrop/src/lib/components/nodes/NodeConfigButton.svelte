@@ -41,9 +41,9 @@
     right: var(--fd-space-xs);
     width: 24px;
     height: 24px;
-    background-color: var(--fd-backdrop);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
+    background-color: var(--fd-node-config-btn-bg);
+    border: 1px solid var(--fd-node-config-btn-border);
+    border-radius: var(--fd-node-config-btn-radius);
     color: var(--fd-muted-foreground);
     cursor: pointer;
     display: flex;
@@ -51,7 +51,7 @@
     justify-content: center;
     opacity: var(--fd-config-btn-opacity, 0);
     transition: all var(--fd-transition-normal);
-    backdrop-filter: var(--fd-backdrop-blur);
+    backdrop-filter: var(--fd-node-config-btn-blur);
     z-index: 15;
     /* Buttons do not inherit the font by default (Arial otherwise). */
     font: inherit;
@@ -64,10 +64,10 @@
   }
 
   .flowdrop-node-config-btn:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
+    background-color: var(--fd-node-config-btn-hover-bg);
+    border-color: var(--fd-node-config-btn-hover-border);
     color: var(--fd-foreground);
-    transform: scale(1.05);
+    transform: scale(var(--fd-node-config-btn-hover-scale));
   }
 
   /* TerminalNode: circular badge centered above the node. */
@@ -83,6 +83,6 @@
 
   /* Keep the centering translate while scaling on hover. */
   .flowdrop-node-config-btn--top-center:hover {
-    transform: translateX(-50%) scale(1.1);
+    transform: translateX(-50%) scale(var(--fd-node-config-btn-hover-scale));
   }
 </style>

@@ -741,7 +741,15 @@
   --fd-node-pill-sym-mix: 82%; /* @internal  type colour in a wired glyph, the rest foreground */
   --fd-node-pill-required: var(--fd-error-hover); /* @internal  the "*" on a required open input */
   --fd-node-pill-hover-filter: brightness(0.97); /* @internal */
-  --fd-node-pin-size: 14px; /* @internal  the exec pin in the header */
+  --fd-node-pin-size: 11px; /* @internal  the exec pin (a blank interface tag) height */
+  --fd-node-pin-width: 16px; /* @internal  the exec pin length, tip included */
+  --fd-node-config-btn-bg: var(--fd-backdrop); /* @internal  the gear on a hovered card */
+  --fd-node-config-btn-border: var(--fd-border); /* @internal */
+  --fd-node-config-btn-radius: var(--fd-radius-sm); /* @internal */
+  --fd-node-config-btn-blur: var(--fd-backdrop-blur); /* @internal */
+  --fd-node-config-btn-hover-bg: var(--fd-muted); /* @internal */
+  --fd-node-config-btn-hover-border: var(--fd-border-strong); /* @internal */
+  --fd-node-config-btn-hover-scale: 1.05; /* @internal */
   /* Zoom tiers (editor.zoomTiers): fixed sizes in flow px, never divided by the zoom.
      Svelte Flow scales them; the drawing changes only at a tier boundary. */
   --fd-node-zoom-outline-title-size: 20px; /* @internal  outline: one-line title */
@@ -1076,6 +1084,10 @@
   --fd-navbar-status-bg: var(--fd-success-muted);
   --fd-navbar-status-fg: var(--fd-success-hover);
   --fd-node-bg: var(--fd-card);
+  --fd-node-config-btn-bg: var(--fd-backdrop);
+  --fd-node-config-btn-border: var(--fd-border);
+  --fd-node-config-btn-hover-bg: var(--fd-muted);
+  --fd-node-config-btn-hover-border: var(--fd-border-strong);
   --fd-node-desc-rule: var(--fd-border-muted);
   --fd-node-group-rule: var(--fd-border-muted);
   --fd-node-header-bg: var(--fd-header);
