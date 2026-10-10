@@ -1,10 +1,13 @@
 <!--
   Unified port widget — order + exposure
 
-  Renders one flat 28px row per port of the node being configured: drag handle
-  (on hover/focus) · lane dot · name · lane name (mono, muted) · reorder buttons
-  (on hover/focus) · eye button that shows or hides the port. Rows reorder by
-  drag, by Alt+Up / Alt+Down on the focused row, or by the buttons. Binds to the injected
+  Renders one flat row per port of the node being configured on a fixed grid:
+  drag grip (on hover/focus) · lane dot · name · lane name (mono, muted) ·
+  interface menu · eye button that shows or hides the port. Every cell is always
+  rendered (an empty one is `visibility: hidden`), so columns never stagger.
+  Rows reorder by drag or by Alt+Up / Alt+Down on the focused row. A gateway's
+  branches (`config.branches`) are listed too, read-only: they are authored in
+  Config and always drawn. Binds to the injected
   `ports` reserved config property (a PortsConfig: a per-direction ordered list
   of {id, exposed?} entries).
 
@@ -20,6 +23,7 @@
 
 <script lang="ts">
   import type {
+    Branch,
     DynamicPort,
     NodePort,
     PortConfigEntry,
@@ -179,6 +183,25 @@
 
   type Direction = 'inputs' | 'outputs';
 
+  /**
+   * A gateway's branches are output ports authored in Config (`config.branches`).
+   * They are listed after the other outputs but are not part of the ordered /
+   * hideable list: the canvas always draws them in authored order.
+   */
+  const branchPorts = $derived<NodePort[]>(
+    Array.isArray(node?.data.config?.branches)
+      ? (node.data.config.branches as Branch[])
+          .filter((b) => typeof b?.name === 'string')
+          .map((b) => ({
+            id: b.name,
+            name: b.label || b.name,
+            type: 'output' as const,
+            dataType: 'branch',
+            required: false
+          }))
+      : []
+  );
+
   function portsFor(direction: Direction): NodePort[] {
     return direction === 'inputs' ? inputPorts : outputPorts;
   }
@@ -298,7 +321,8 @@
   {#each [{ key: 'inputs', label: 'Inputs' }, { key: 'outputs', label: 'Outputs' }] as group (group.key)}
     {@const direction = group.key as Direction}
     {@const ordered = orderedPorts(direction)}
-    {#if ordered.length > 0}
+    {@const branches = direction === 'outputs' ? branchPorts : []}
+    {#if ordered.length > 0 || branches.length > 0}
       <div class="fd-ports__group">
         <span class="fd-ports__group-label" id={`${id}-${direction}-label`}>{group.label}</span>
         <ul class="fd-ports__list" aria-labelledby={`${id}-${direction}-label`}>
@@ -339,64 +363,47 @@
                 aria-hidden="true"
                 style="--fd-ports-dot: {getPortColorToken(checker, port)}"
               ></span>
-              <span class="fd-ports__name" title={port.name}>{port.name}</span>
-              {#if nameEdit && nameEdit.direction === direction && nameEdit.portId === port.id}
-                <InterfaceTag
-                  id={nameEdit.value}
-                  color={getDataTypeColorToken(checker, port.dataType)}
-                  ghost
-                >
-                  <InterfaceNameInput
-                    value={nameEdit.value}
-                    error={nameError}
-                    onchange={(value) => nameEdit && (nameEdit = { ...nameEdit, value })}
-                    onsubmit={submitName}
-                    oncancel={() => (nameEdit = null)}
+              <span class="fd-ports__label">
+                <span class="fd-ports__name" title={port.name}>{port.name}</span>
+                {#if nameEdit && nameEdit.direction === direction && nameEdit.portId === port.id}
+                  <InterfaceTag
+                    id={nameEdit.value}
+                    color={getDataTypeColorToken(checker, port.dataType)}
+                    ghost
+                  >
+                    <InterfaceNameInput
+                      value={nameEdit.value}
+                      error={nameError}
+                      onchange={(value) => nameEdit && (nameEdit = { ...nameEdit, value })}
+                      onsubmit={submitName}
+                      oncancel={() => (nameEdit = null)}
+                    />
+                  </InterfaceTag>
+                {:else if boundEntry}
+                  <InterfaceTag
+                    id={boundEntry.id}
+                    typeText={boundEntry.dataType !== port.dataType
+                      ? `${getDataTypeDisplayText(checker, boundEntry.dataType)} ≠ ${laneName}`
+                      : undefined}
+                    color={getDataTypeColorToken(checker, boundEntry.dataType)}
+                    mismatch={boundEntry.dataType !== port.dataType}
+                    data-testid="port-interface-tag"
                   />
-                </InterfaceTag>
-              {:else if boundEntry}
-                <InterfaceTag
-                  id={boundEntry.id}
-                  typeText={boundEntry.dataType !== port.dataType
-                    ? `${getDataTypeDisplayText(checker, boundEntry.dataType)} ≠ ${laneName}`
-                    : undefined}
-                  color={getDataTypeColorToken(checker, boundEntry.dataType)}
-                  mismatch={boundEntry.dataType !== port.dataType}
-                  data-testid="port-interface-tag"
-                />
-              {/if}
-              <span class="fd-ports__type" title={port.dataType}>{laneName}</span>
-              <span class="fd-ports__reorder">
-                <button
-                  type="button"
-                  disabled={disabled || i === 0}
-                  onclick={() => move(direction, i, -1)}
-                  title="Move up"
-                  aria-label={`Move ${port.name} up`}
-                >
-                  <Icon icon="heroicons:chevron-up-20-solid" />
-                </button>
-                <button
-                  type="button"
-                  disabled={disabled || i === ordered.length - 1}
-                  onclick={() => move(direction, i, 1)}
-                  title="Move down"
-                  aria-label={`Move ${port.name} down`}
-                >
-                  <Icon icon="heroicons:chevron-down-20-solid" />
-                </button>
+                {/if}
               </span>
-              {#if interfaceMenu(direction, port).length > 0}
-                <span class="fd-ports__iface">
+              <span class="fd-ports__type" title={port.dataType}>{laneName}</span>
+              {@const ifaceItems = interfaceMenu(direction, port)}
+              <span class="fd-ports__iface" class:fd-ports__cell--empty={ifaceItems.length === 0}>
+                {#if ifaceItems.length > 0}
                   <Menu
                     size="sm"
                     align="end"
                     label={m().workflowInterface.portActions({ port: port.name })}
                     testId={`port-interface-menu-${direction}-${port.id}`}
-                    items={interfaceMenu(direction, port)}
+                    items={ifaceItems}
                   />
-                </span>
-              {/if}
+                {/if}
+              </span>
               <!-- A trigger's event input is always exposed (SCH-47): no toggle. -->
               {#if !(direction === 'inputs' && isTriggerEventInput(node, port.id))}
                 <IconButton
@@ -410,7 +417,26 @@
                 >
                   <Icon icon={exposed ? 'heroicons:eye' : 'heroicons:eye-slash'} />
                 </IconButton>
+              {:else}
+                <span class="fd-ports__eye-slot" aria-hidden="true"></span>
               {/if}
+            </li>
+          {/each}
+          {#each branches as branch (branch.id)}
+            <li class="fd-ports__item fd-ports__item--fixed" data-port-row={`outputs:${branch.id}`}>
+              <span class="fd-ports__handle fd-ports__cell--empty" aria-hidden="true"></span>
+              <span
+                class="fd-ports__dot"
+                aria-hidden="true"
+                style="--fd-ports-dot: {getPortColorToken(checker, {
+                  ...branch,
+                  dataType: 'trigger'
+                })}"
+              ></span>
+              <span class="fd-ports__name" title={branch.name}>{branch.name}</span>
+              <span class="fd-ports__type">branch</span>
+              <span class="fd-ports__iface fd-ports__cell--empty" aria-hidden="true"></span>
+              <span class="fd-ports__eye-slot" aria-hidden="true"></span>
             </li>
           {/each}
         </ul>
@@ -446,11 +472,15 @@
     flex-direction: column;
   }
 
-  /* Flat row: no border, tone on hover/focus only. */
+  /* Flat row on a fixed grid: grip · dot · name · type · interface menu · eye.
+     Every cell is always present, so columns line up whatever a row offers. */
   .fd-ports__item {
-    display: flex;
+    display: grid;
+    grid-template-columns: var(--fd-space-md) var(--fd-space-xs) minmax(0, 1fr) 4rem var(
+        --fd-control-sm
+      ) var(--fd-control-sm);
     align-items: center;
-    gap: var(--fd-space-xs);
+    column-gap: var(--fd-space-xs);
     min-height: var(--fd-control-md);
     padding: 0 var(--fd-space-3xs);
     margin: 0 calc(-1 * var(--fd-space-3xs));
@@ -462,6 +492,15 @@
   .fd-ports__item:hover,
   .fd-ports__item:focus-within {
     background-color: var(--fd-subtle);
+  }
+
+  /* An empty cell keeps its column. */
+  .fd-ports__cell--empty {
+    visibility: hidden;
+  }
+
+  .fd-ports__eye-slot {
+    width: var(--fd-control-sm);
   }
 
   /* Room for the hint or error under the tag being typed. */
@@ -478,18 +517,27 @@
     outline-offset: -2px;
   }
 
-  /* A hidden port is muted, and the eye is crossed out. */
-  .fd-ports__item--hidden .fd-ports__name,
-  .fd-ports__item--hidden .fd-ports__type,
+  /* A hidden port keeps its layout: name struck through and muted, dot faded,
+     the eye shows the off state in the accent colour. */
+  .fd-ports__item--hidden .fd-ports__name {
+    color: var(--fd-muted-foreground);
+    text-decoration: line-through;
+  }
+
+  .fd-ports__item--hidden .fd-ports__type {
+    opacity: 0.6;
+  }
+
   .fd-ports__item--hidden .fd-ports__dot {
-    opacity: 0.5;
+    opacity: 0.35;
+  }
+
+  .fd-ports__item--hidden :global(.fd-ports__eye) {
+    color: var(--fd-primary);
   }
 
   .fd-ports__handle {
     display: inline-flex;
-    flex: none;
-    width: 0.75rem;
-    margin-left: calc(-1 * var(--fd-space-3xs));
     color: var(--fd-muted-foreground);
     cursor: grab;
     opacity: 0;
@@ -502,16 +550,21 @@
   }
 
   .fd-ports__dot {
-    flex: none;
     width: 0.5rem;
     height: 0.5rem;
     border-radius: var(--fd-radius-full);
     background-color: var(--fd-ports-dot);
   }
 
+  .fd-ports__label {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    min-width: 0;
+  }
+
   /* min-width:0 so a long port name ellipsizes instead of widening the row. */
   .fd-ports__name {
-    flex: 1;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -519,8 +572,6 @@
   }
 
   .fd-ports__type {
-    flex: none;
-    max-width: 12ch;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -529,58 +580,12 @@
     color: var(--fd-muted-foreground);
   }
 
-  /* Reorder buttons: only on hover / focus, but they keep their space so the
-     row does not jump. */
-  .fd-ports__reorder {
-    display: flex;
-    flex-direction: column;
-    flex: none;
-    opacity: 0;
-    transition: opacity var(--fd-transition-fast);
-  }
-
-  .fd-ports__item:hover .fd-ports__reorder,
-  .fd-ports__item:focus-within .fd-ports__reorder {
-    opacity: 1;
-  }
-
-  .fd-ports__reorder button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1rem;
-    height: 0.875rem;
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--fd-muted-foreground);
-    cursor: pointer;
-    line-height: 1;
-  }
-
-  .fd-ports__reorder button :global(svg) {
-    flex: none;
-    width: 1.125rem;
-    height: 1.125rem;
-  }
-
-  .fd-ports__reorder button:hover:not(:disabled) {
-    color: var(--fd-foreground);
-  }
-
-  .fd-ports__reorder button:disabled {
-    opacity: 0.3;
-    cursor: default;
-  }
-
   .fd-ports__item :global(.fd-ports__eye) {
-    flex: none;
     color: var(--fd-muted-foreground);
   }
 
-  /* The interface actions show on hover / focus, keeping their space. */
+  /* The interface actions show on hover / focus, keeping their cell. */
   .fd-ports__iface {
-    flex: none;
     opacity: 0;
     transition: opacity var(--fd-transition-fast);
   }
