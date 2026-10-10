@@ -27,6 +27,8 @@
   import Button from '../primitives/Button.svelte';
   import { humanizeKey } from './humanizeKey.js';
   import type { FieldSchema } from './types.js';
+  import FormArrayRows from './FormArrayRows.svelte';
+  import { refAfterDelete, refAfterRename, type ItemRef } from '$lib/utils/itemRef.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -47,6 +49,13 @@
     addLabel?: string;
     /** Whether the field is disabled */
     disabled?: boolean;
+    /**
+     * Fixed by the node (schema `readOnly`): the items render as a static list,
+     * not as disabled inputs, and nothing can be added.
+     */
+    readOnly?: boolean;
+    /** A scalar field that names one of the items (`x-item-ref`), shown as a row mark. */
+    itemRef?: ItemRef;
     /** Callback when value changes */
     onChange: (value: unknown[]) => void;
   }
@@ -59,6 +68,8 @@
     maxItems,
     addLabel,
     disabled = false,
+    readOnly = false,
+    itemRef,
     onChange
   }: Props = $props();
 
@@ -102,6 +113,30 @@
       itemSchema.type === 'integer' ||
       itemSchema.type === 'boolean'
   );
+
+  const isScalar = (schema: FieldSchema): boolean =>
+    (schema.type === 'string' ||
+      schema.type === 'number' ||
+      schema.type === 'integer' ||
+      schema.type === 'boolean') &&
+    schema.format !== 'multiline';
+
+  /**
+   * Items with one or two scalar fields render as a row list (FormArrayRows).
+   * Anything bigger falls back to a collapsible sub-form per item.
+   */
+  const rowColumns = $derived.by((): Array<[string, FieldSchema]> | undefined => {
+    if (itemSchema.type !== 'object' || !itemSchema.properties) return undefined;
+    const entries = Object.entries(itemSchema.properties) as Array<[string, FieldSchema]>;
+    if (entries.length < 1 || entries.length > 2) return undefined;
+    return entries.every(([, schema]) => isScalar(schema)) ? entries : undefined;
+  });
+
+  /** The ref only applies to a row list, keyed by its first column. */
+  const rowRef = $derived(rowColumns ? itemRef : undefined);
+
+  /** Row marked by a reference whose name was emptied while typing (see refAfterRename). */
+  let pendingMark: number | null = null;
 
   /**
    * Get the default value for a new item based on schema
@@ -176,6 +211,11 @@
   function removeItem(index: number): void {
     if (!canRemoveItem || disabled) return;
     const newValue = items.filter((_, i) => i !== index);
+    if (rowRef && rowColumns) {
+      const next = refAfterDelete(items, rowColumns[0][0], rowRef.value, index);
+      if (next !== rowRef.value) rowRef.onChange(next);
+    }
+    pendingMark = null;
     onChange(newValue);
   }
 
@@ -192,8 +232,30 @@
    */
   function updateObjectProperty(index: number, propertyKey: string, propertyValue: unknown): void {
     const currentItem = items[index] as Record<string, unknown>;
+    if (rowRef && rowColumns && propertyKey === rowColumns[0][0]) {
+      const edit = refAfterRename(
+        items,
+        propertyKey,
+        rowRef.value,
+        index,
+        String(propertyValue ?? ''),
+        pendingMark
+      );
+      pendingMark = edit.pending;
+      if (edit.ref !== rowRef.value) rowRef.onChange(edit.ref);
+    }
     const updatedItem = { ...currentItem, [propertyKey]: propertyValue };
     updateItem(index, updatedItem);
+  }
+
+  /** Move the item at `from` to position `to`. */
+  function moveItem(from: number, to: number): void {
+    if (disabled || from === to || to < 0 || to >= items.length) return;
+    const newValue = [...items];
+    const [moved] = newValue.splice(from, 1);
+    newValue.splice(to, 0, moved);
+    pendingMark = null;
+    onChange(newValue);
   }
 
   /**
@@ -301,8 +363,41 @@
 {/snippet}
 
 <div class="form-array" class:form-array--disabled={disabled}>
-  <!-- Array Items -->
-  {#if items.length > 0}
+  {#if readOnly}
+    <!-- Fixed by the node: a static list, not disabled inputs -->
+    {#if items.length > 0}
+      <ul class="form-array__static">
+        {#each items as item, index (index)}
+          {@const parts =
+            typeof item === 'object' && item !== null
+              ? Object.values(item as Record<string, unknown>).map(String)
+              : [String(item ?? '')]}
+          <li>
+            <span>{parts[0]}</span>
+            {#if parts[1] !== undefined}<code>{parts[1]}</code>{/if}
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="form-array__empty">{t.empty}</p>
+    {/if}
+  {:else if rowColumns}
+    <FormArrayRows
+      {id}
+      {items}
+      columns={rowColumns}
+      {disabled}
+      canRemove={canRemoveItem}
+      onUpdate={updateObjectProperty}
+      onMove={moveItem}
+      onRemove={removeItem}
+      itemRef={rowRef}
+    />
+    {#if items.length === 0}
+      <p class="form-array__empty">{t.empty}</p>
+    {/if}
+  {:else if items.length > 0}
+    <!-- Array Items -->
     <div class="form-array__items">
       {#each items as item, index (index)}
         <div
@@ -517,25 +612,27 @@
     <p class="form-array__empty">{t.empty}</p>
   {/if}
 
-  <!-- Add: a quiet text button -->
-  <div class="form-array__footer">
-    <Button
-      variant="ghost"
-      size="sm"
-      class="form-array__add"
-      onclick={addItem}
-      disabled={!canAddItem || disabled}
-      ariaLabel={resolvedAddLabel}
-    >
-      {#snippet leadingIcon()}<Icon icon="heroicons:plus" />{/snippet}
-      {resolvedAddLabel}
-    </Button>
+  {#if !readOnly}
+    <!-- Add: a quiet text button -->
+    <div class="form-array__footer">
+      <Button
+        variant="ghost"
+        size="sm"
+        class="form-array__add"
+        onclick={addItem}
+        disabled={!canAddItem || disabled}
+        ariaLabel={resolvedAddLabel}
+      >
+        {#snippet leadingIcon()}<Icon icon="heroicons:plus" />{/snippet}
+        {resolvedAddLabel}
+      </Button>
 
-    <!-- Item count and limits, one muted line -->
-    {#if minItems > 0 || maxItems !== undefined}
-      <span class="form-array__info">{infoText}</span>
-    {/if}
-  </div>
+      <!-- Item count and limits, one muted line -->
+      {#if minItems > 0 || maxItems !== undefined}
+        <span class="form-array__info">{infoText}</span>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -664,8 +761,8 @@
   }
 
   .form-array__item--complex .form-array__item-content {
-    /* Indent under the label, past the chevron. */
-    padding: var(--fd-space-xs) 0 var(--fd-space-xs) var(--fd-space-xl);
+    /* One left edge: the sub-form lines up with the item label. */
+    padding: var(--fd-space-xs) 0;
   }
 
   .form-array__item-content--collapsed {
@@ -711,6 +808,33 @@
     font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
     line-height: 1.4;
+  }
+
+  /* ----- read-only items: a static list ----- */
+
+  .form-array__static {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-3xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .form-array__static li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--fd-space-md);
+    min-height: var(--fd-control-md);
+    font-size: var(--fd-text-body);
+    color: var(--fd-foreground);
+  }
+
+  .form-array__static code {
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-meta);
+    color: var(--fd-muted-foreground);
   }
 
   /* ----- empty, add, info ----- */

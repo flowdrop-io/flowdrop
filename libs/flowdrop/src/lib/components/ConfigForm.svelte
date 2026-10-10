@@ -32,6 +32,7 @@
   // Import the light, registry-based field factory and light fields directly
   // (not via the form barrel, which aggregates the heavy CodeMirror editors).
   import FormField from '$lib/components/form/FormFieldLight.svelte';
+  import { buildItemRef, isFieldWired, parseItemRef } from '$lib/utils/itemRef.js';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/types.js';
   import {
@@ -797,20 +798,33 @@
           {#each Object.entries(configSchema.properties) as [key, field], index (key)}
             {@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
             {@const required = isFieldRequired(key)}
+            {@const itemRef =
+              fieldSchema.type === 'array'
+                ? buildItemRef(
+                    configSchema.properties,
+                    key,
+                    configValues,
+                    (f) => isFieldWired(node?.id, workflowEdges, f),
+                    handleFieldChange
+                  )
+                : undefined}
 
-            <FormField
-              fieldKey={key}
-              schema={fieldSchema}
-              value={configValues[key]}
-              {required}
-              animationIndex={index}
-              {node}
-              nodes={workflowNodes}
-              edges={workflowEdges}
-              {workflowId}
-              {authProvider}
-              onChange={(val) => handleFieldChange(key, val)}
-            />
+            {#if !parseItemRef(field)}
+              <FormField
+                fieldKey={key}
+                {itemRef}
+                schema={fieldSchema}
+                value={configValues[key]}
+                {required}
+                animationIndex={index}
+                {node}
+                nodes={workflowNodes}
+                edges={workflowEdges}
+                {workflowId}
+                {authProvider}
+                onChange={(val) => handleFieldChange(key, val)}
+              />
+            {/if}
           {/each}
         {/if}
       </div>

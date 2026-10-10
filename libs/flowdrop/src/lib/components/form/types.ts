@@ -13,6 +13,7 @@ import type {
   WorkflowEdge
 } from '$lib/types/index.js';
 import type { AuthProvider } from '$lib/types/auth.js';
+import type { ItemRef } from '$lib/utils/itemRef.js';
 
 /**
  * Supported field types for form rendering
@@ -369,6 +370,11 @@ export interface FormFieldFactoryProps {
   workflowId?: string;
   /** Auth provider (optional, forwarded to registered editors for API requests) */
   authProvider?: AuthProvider;
+  /**
+   * An `x-item-ref` field that names one of this (array) field's items; the
+   * array shows it as a row mark. Set by the form, not by schema authors.
+   */
+  itemRef?: ItemRef;
   /** Callback when the field value changes */
   onChange: (value: unknown) => void;
 }

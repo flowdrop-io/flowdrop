@@ -89,6 +89,7 @@
     workflowId,
     authProvider,
     editors,
+    itemRef,
     onChange
   }: Props = $props();
 
@@ -370,7 +371,8 @@
         minItems={schema.minItems}
         maxItems={schema.maxItems}
         addLabel={`Add ${schema.items.title ?? 'Item'}`}
-        disabled={isReadOnly}
+        readOnly={isReadOnly}
+        {itemRef}
         onChange={(val) => onChange(val)}
       />
     {:else if fieldType === 'ports'}

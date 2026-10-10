@@ -12,10 +12,11 @@
 -->
 
 <script lang="ts">
-  import type { UISchemaElement, UISchemaGroup } from '$lib/types/uischema.js';
+  import type { UISchemaElement } from '$lib/types/uischema.js';
   import type { ConfigSchema, WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
   import type { FieldSchema } from './types.js';
   import { resolveScopeToKey } from '$lib/utils/uischema.js';
+  import { buildItemRef, isFieldWired, parseItemRef } from '$lib/utils/itemRef.js';
   // Use the registry-based light field factory so the UISchema renderer (and
   // SchemaForm/ConfigForm above it) never statically pull in CodeMirror.
   import FormField from './FormFieldLight.svelte';
@@ -70,16 +71,9 @@
 
   /**
    * A layout that mixes loose controls with groups (a node's own fields beside
-   * General / Execution / Ports) gets those controls a section of their own, so
-   * they do not float above the first group without a heading.
+   * General / Execution / Ports) keeps those controls together in a layout of
+   * their own, with no heading: the Config tab already names them.
    */
-  const SETTINGS_GROUP: UISchemaGroup = {
-    type: 'Group',
-    label: 'Settings',
-    collapsible: false,
-    defaultOpen: true,
-    elements: []
-  };
   const layoutSections = $derived.by(() => {
     if (element.type !== 'VerticalLayout') return [];
     const children = element.elements;
@@ -90,7 +84,7 @@
     }
     return [
       {
-        child: { ...SETTINGS_GROUP, elements: children.slice(0, lead) } as UISchemaElement,
+        child: { type: 'VerticalLayout', elements: children.slice(0, lead) } as UISchemaElement,
         idx: 0
       },
       ...children.slice(lead).map((child, i) => ({ child, idx: lead + i }))
@@ -100,8 +94,19 @@
 
 {#if element.type === 'Control'}
   {@const key = resolveScopeToKey(element.scope)}
-  {#if key && schema.properties[key]}
+  <!-- An `x-item-ref` field has no control of its own: its array shows it as a row mark. -->
+  {#if key && schema.properties[key] && !parseItemRef(schema.properties[key])}
     {@const fieldSchema = toFieldSchema(schema.properties[key] as Record<string, unknown>)}
+    {@const itemRef =
+      fieldSchema.type === 'array'
+        ? buildItemRef(
+            schema.properties,
+            key,
+            values,
+            (field) => isFieldWired(node?.id, edges, field),
+            onFieldChange
+          )
+        : undefined}
     <FormField
       fieldKey={key}
       schema={fieldSchema}
@@ -113,6 +118,7 @@
       {edges}
       {workflowId}
       {authProvider}
+      {itemRef}
       onChange={(val) => onFieldChange(key, val)}
     />
   {/if}

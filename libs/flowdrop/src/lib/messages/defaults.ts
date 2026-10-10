@@ -41,6 +41,14 @@ export const defaultMessages = {
       moveUp: 'Move up',
       moveDown: 'Move down',
       delete: 'Delete item',
+      rowActions: ({ n }: { n: number }) => `Actions for item ${n}`,
+      // An array a sibling field names an item of (`x-item-ref`), e.g. a default branch.
+      makeDefault: 'Make default',
+      defaultBadge: 'default',
+      noDefault: 'No default: the node fails when nothing matches',
+      defaultFromInput: 'Default: set by input',
+      defaultDangling: ({ name }: { name: string }) =>
+        `The default "${name}" matches no item. Make one of the items the default.`,
       // Boolean rendering inside array items.
       yes: 'Yes',
       no: 'No',
