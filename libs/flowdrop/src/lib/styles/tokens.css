@@ -746,7 +746,7 @@
   --fd-node-halo-size: 22px; /* @internal  the halo behind a round handle ready to receive */
   --fd-node-halo-pad: 8px; /* @internal  how much larger than the pin its tag-shaped halo is */
   --fd-node-halo-mix: 28%; /* @internal  port colour in the halo, the rest transparent */
-  --fd-node-halo-beat: 1.6s; /* @internal  one heartbeat of a port ready to receive */
+  --fd-node-halo-breath: 1.8s; /* @internal  one breath in (or out) of a port ready to receive */
   --fd-node-drag-dull-opacity: 0.35; /* @internal  a port that does not take the dragged type */
   --fd-node-config-btn-bg: var(--fd-backdrop); /* @internal  the gear on a hovered card */
   --fd-node-config-btn-border: var(--fd-border); /* @internal */

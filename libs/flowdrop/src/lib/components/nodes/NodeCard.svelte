@@ -795,7 +795,7 @@
   }
 
   /* ----- Wire drag: the ports that take the dragged type are ready to receive -----
-     A halo in the port's own shape and colour, beating softly, and the open
+     A halo in the port's own shape and colour, breathing slowly, and the open
      pill outlined as on hover. Every other port dulls, but stays a valid drop
      (the runtime may cast): the one under the wire comes back to full. */
   .flowdrop-workflow-node__pill.fd-drag--dull:not(:has(+ :global(.svelte-flow__handle.valid))),
@@ -822,9 +822,12 @@
   :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin:hover::after) {
     content: '';
     position: absolute;
-    inset: 0;
+    /* Centred by translate, not inset + auto margins: the halo is larger than
+       the handle box, and an over-sized auto-margin box spills to the right. */
+    top: 50%;
+    left: 50%;
     z-index: -1;
-    margin: auto;
+    translate: -50% -50%;
     width: var(--fd-node-halo-size);
     height: var(--fd-node-halo-size);
     border-radius: 50%;
@@ -833,7 +836,7 @@
   }
 
   :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle.fd-drag--ready::after) {
-    animation: fd-node-heartbeat var(--fd-node-halo-beat) ease-in-out infinite;
+    animation: fd-node-breathe var(--fd-node-halo-breath) ease-in-out infinite alternate;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -844,28 +847,15 @@
     }
   }
 
-  /* lub-dub, then rest */
-  @keyframes -global-fd-node-heartbeat {
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 0.6;
+  /* breathe in, breathe out (alternate) */
+  @keyframes -global-fd-node-breathe {
+    from {
+      transform: scale(0.9);
+      opacity: 0.45;
     }
-    12% {
-      transform: scale(1.18);
+    to {
+      transform: scale(1.15);
       opacity: 1;
-    }
-    24% {
-      transform: scale(1);
-      opacity: 0.7;
-    }
-    36% {
-      transform: scale(1.1);
-      opacity: 0.9;
-    }
-    56% {
-      transform: scale(1);
-      opacity: 0.6;
     }
   }
 
