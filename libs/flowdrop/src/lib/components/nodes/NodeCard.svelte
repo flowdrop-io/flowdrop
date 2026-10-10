@@ -32,7 +32,7 @@
   import type { NodeGeometry } from '../../utils/nodeGeometry.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { connectDragState } from '../../stores/connectDragStore.svelte.js';
-  import { isTriggerEventInput } from '../../utils/reservedPorts.js';
+  import { EVENT_PORT_ID, isTriggerEventInput } from '../../utils/reservedPorts.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { m } from '$lib/messages/index.js';
   import { onMount, tick } from 'svelte';
@@ -112,6 +112,20 @@
   /** Handle ids of this node's wired ports. */
   const wiredHandles = $derived(wiredHandleIds(fd.workflow.edges, id));
 
+  /**
+   * Whether a port is connected for display: wired by an edge, published on
+   * the workflow interface (the caller fills or receives it), or a trigger's
+   * event input (the firing fills it, MAN-26).
+   */
+  function isConnected(handleId: string, direction: 'input' | 'output', port: NodePort): boolean {
+    return (
+      wiredHandles.has(handleId) ||
+      boundHandles.has(handleId) ||
+      // Only trigger node types may declare an `event` input (SCH-47).
+      (direction === 'input' && port.id === EVENT_PORT_ID)
+    );
+  }
+
   /** The completion trigger pins in the header, with their ports. */
   const pins = $derived(
     geometry.handles
@@ -136,7 +150,7 @@
             port,
             y: row.y,
             handleId,
-            wired: wiredHandles.has(handleId),
+            wired: isConnected(handleId, direction, port),
             active: direction === 'output' && activeOutputs.includes(port.id)
           }
         ];
