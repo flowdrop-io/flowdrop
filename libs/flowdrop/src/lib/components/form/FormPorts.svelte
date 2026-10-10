@@ -191,7 +191,11 @@
   const branchPorts = $derived<NodePort[]>(
     Array.isArray(node?.data.config?.branches)
       ? (node.data.config.branches as Branch[])
-          .filter((b) => typeof b?.name === 'string')
+          // Unique names only: the id keys the rows (two unnamed branches share '').
+          .filter(
+            (b, i, all) =>
+              typeof b?.name === 'string' && all.findIndex((o) => o?.name === b.name) === i
+          )
           .map((b) => ({
             id: b.name,
             name: b.label || b.name,
@@ -333,6 +337,7 @@
                   buildHandleId(node.id, direction === 'inputs' ? 'input' : 'output', port.id)
                 )
               : undefined}
+            {@const ifaceItems = interfaceMenu(direction, port)}
             {@const laneName = checker.getDataTypeConfig(port.dataType)?.name ?? port.dataType}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
             <li
@@ -392,7 +397,6 @@
                 {/if}
               </span>
               <span class="fd-ports__type" title={port.dataType}>{laneName}</span>
-              {@const ifaceItems = interfaceMenu(direction, port)}
               <span class="fd-ports__iface" class:fd-ports__cell--empty={ifaceItems.length === 0}>
                 {#if ifaceItems.length > 0}
                   <Menu
@@ -476,14 +480,15 @@
      Every cell is always present, so columns line up whatever a row offers. */
   .fd-ports__item {
     display: grid;
-    grid-template-columns: var(--fd-space-md) var(--fd-space-xs) minmax(0, 1fr) 4rem var(
-        --fd-control-sm
-      ) var(--fd-control-sm);
+    grid-template-columns:
+      var(--fd-space-md) var(--fd-space-xs) minmax(0, 1fr) 4rem var(--fd-control-sm)
+      var(--fd-control-sm);
     align-items: center;
     column-gap: var(--fd-space-xs);
     min-height: var(--fd-control-md);
-    padding: 0 var(--fd-space-3xs);
-    margin: 0 calc(-1 * var(--fd-space-3xs));
+    /* The grip column hangs in the panel gutter: dots line up with the labels. */
+    margin: 0 calc(-1 * var(--fd-space-3xs)) 0 calc(-1 * var(--fd-space-2xl));
+    padding-left: var(--fd-space-3xs);
     border-radius: var(--fd-radius-md);
     font-size: var(--fd-text-sm);
     color: var(--fd-foreground);
