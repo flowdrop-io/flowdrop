@@ -3,7 +3,14 @@
   Renders individual nodes in the workflow editor with full functionality
   Uses SvelteFlow's Handle for connection ports
   Styled with BEM syntax
-  
+
+  Card v2 (Graphite G8): one fixed geometry from utils/nodeGeometry.ts. The
+  header is always 60px, the completion `trigger` ports are pins in it (y = 20),
+  every other port is a half-pill on a shared row (first row y = 80, pitch 40),
+  the width is 280 or 320 and the border is drawn inside the box, so every
+  handle centre is a multiple of 20 and any output can meet any input in a
+  straight wire. Every handle is placed from the geometry, never from layout.
+
   Port rendering:
   - Exposure (data.config.ports, falling back to each port's exposedByDefault)
     decides which ports render — a not-exposed port is hidden.
@@ -13,13 +20,20 @@
 
 <script lang="ts">
   import { Position, Handle } from '@xyflow/svelte';
-  import type { WorkflowNode, DynamicPort, PortsConfig } from '../../types/index.js';
+  import type { WorkflowNode, DynamicPort, NodePort, PortsConfig } from '../../types/index.js';
   import { dynamicPortToNodePort } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import { getNodeIcon } from '../../utils/icons.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
-  import { getCategoryColorToken, getPortColorToken } from '../../utils/colors.js';
-  import PortTypeBadge from '../ports/PortTypeBadge.svelte';
+  import {
+    getCategoryColorToken,
+    getPortColorToken,
+    getDataTypeConfig
+  } from '../../utils/colors.js';
+  import { getEditorSettings } from '../../stores/settingsStore.svelte.js';
+  import { computeNodeGeometry } from '../../utils/nodeGeometry.js';
+  import { onMount, tick } from 'svelte';
+  import NodeTip from './NodeTip.svelte';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
@@ -120,6 +134,135 @@
     allOutputPorts.filter((port) => isPortVisible(port, 'output', portsConfig))
   );
 
+  /** The node's geometry: where the header, the band, every row and every handle is. */
+  const geometry = $derived(
+    computeNodeGeometry({
+      inputs: visibleInputPorts,
+      outputs: visibleOutputPorts,
+      showDescriptions: getEditorSettings().showNodeDescriptions
+    })
+  );
+
+  /** Handle ids of this node's wired ports. */
+  const wiredHandles = $derived.by(() => {
+    const set = new Set<string>();
+    for (const edge of fd.workflow.edges) {
+      if (edge.source === props.id && edge.sourceHandle) set.add(edge.sourceHandle);
+      if (edge.target === props.id && edge.targetHandle) set.add(edge.targetHandle);
+    }
+    return set;
+  });
+
+  /** The completion trigger pins in the header, with their ports. */
+  const pins = $derived(
+    geometry.handles
+      .filter((h) => h.kind === 'pin')
+      .map((h) => {
+        const list = h.direction === 'input' ? visibleInputPorts : visibleOutputPorts;
+        const handleId = buildHandleId(props.id, h.direction, h.portId);
+        return {
+          ...h,
+          port: list.find((p) => p.id === h.portId) as NodePort,
+          handleId,
+          wired: wiredHandles.has(handleId)
+        };
+      })
+  );
+
+  const categoryColor = $derived(
+    getCategoryColorToken(fd.categories, props.data.metadata.category)
+  );
+  const kindLine = $derived(
+    `${fd.categories.getLabel(props.data.metadata.category)} · ${props.id}`
+  );
+
+  // Two-line titles hide the "kind · id" line (it is in the popover). Measured,
+  // because CSS cannot tell a wrapped title from a short one.
+  let titleEl: HTMLElement | undefined = $state();
+  let titleWraps = $state(false);
+
+  function measureTitle(): void {
+    if (titleEl) titleWraps = titleEl.scrollHeight > 30;
+  }
+
+  onMount(() => {
+    void tick().then(measureTitle);
+    void document.fonts?.ready.then(measureTitle);
+  });
+  $effect(() => {
+    void displayTitle;
+    void geometry.width;
+    void tick().then(measureTitle);
+  });
+
+  // ---- Tooltips: the title popover and the port tooltips ----
+  interface Tip {
+    anchor: DOMRect;
+    align: 'start' | 'end';
+    variant: 'tip' | 'pop';
+    title: string;
+    code?: string;
+    body?: string;
+    note?: string;
+  }
+  let tip = $state<Tip | null>(null);
+  let tipTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function hideTip(): void {
+    clearTimeout(tipTimer);
+    tip = null;
+  }
+
+  function showPortTip(
+    event: Event,
+    port: NodePort,
+    direction: 'input' | 'output',
+    open: boolean,
+    pin: boolean
+  ): void {
+    clearTimeout(tipTimer);
+    const anchor = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const bound = boundHandles.get(buildHandleId(props.id, direction, port.id));
+    const typeName = getDataTypeConfig(checker, port.dataType)?.name ?? port.dataType;
+    const body =
+      port.description ||
+      (pin ? (direction === 'input' ? graph.execIn : graph.execOut) : undefined);
+    const notes = [
+      open && port.required && direction === 'input' ? graph.portRequired : null,
+      bound ? graph.publishedAs({ name: bound.name ?? bound.id }) : null
+    ].filter(Boolean);
+    tipTimer = setTimeout(
+      () => {
+        tip = {
+          anchor,
+          align: direction === 'output' ? 'end' : 'start',
+          variant: 'tip',
+          title: port.name,
+          code: typeName,
+          body,
+          note: notes.join(' · ') || undefined
+        };
+      },
+      tip ? 0 : 250
+    );
+  }
+
+  function showNodeTip(event: Event): void {
+    clearTimeout(tipTimer);
+    const anchor = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    tipTimer = setTimeout(() => {
+      tip = {
+        anchor,
+        align: 'start',
+        variant: 'pop',
+        title: displayTitle,
+        code: kindLine,
+        body: displayDescription || undefined,
+        note: graph.configureHint
+      };
+    }, 400);
+  }
+
   /**
    * Handle double-click to open config
    */
@@ -150,6 +293,7 @@
 <div
   class="flowdrop-workflow-node"
   class:flowdrop-workflow-node--selected={props.selected}
+  class:flowdrop-workflow-node--bands={geometry.descriptionBand > 0}
   ondblclick={handleDoubleClick}
   onmouseup={() => {
     isHandleInteraction = false;
@@ -157,401 +301,380 @@
   data-handle-interaction={isHandleInteraction}
   aria-label={graph.workflowNode({ name: props.data.metadata.name })}
   aria-describedby="node-description-{props.id}"
+  style="--_cat: {categoryColor}; width: {geometry.width}px; height: {geometry.height}px;"
 >
-  <!-- Default Node Header: expands in multiples of 10 (title row 40px + gap 10px + description 20px per line) -->
-  <div class="flowdrop-workflow-node__header">
-    <div class="flowdrop-workflow-node__header-title">
-      <!-- Squircle icon — visibility controlled by --fd-node-icon-display -->
-      <div
-        class="flowdrop-workflow-node__icon-wrapper"
-        style="--_icon-color: {getCategoryColorToken(fd.categories, props.data.metadata.category)}"
-      >
-        <Icon
-          icon={getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata.category)}
-          class="flowdrop-workflow-node__icon"
-        />
-      </div>
-      <!-- Circle dot — visibility controlled by --fd-node-circle-display -->
-      <span
-        class="flowdrop-workflow-node__color-dot"
-        style="background: {getCategoryColorToken(fd.categories, props.data.metadata.category)}"
-      ></span>
-
-      <!-- Node Title - Icon and Title on same line -->
-      <h3
-        class="flowdrop-text--sm flowdrop-font--medium flowdrop-flex--1"
-        title={displayDescription || undefined}
-      >
-        {displayTitle}
-      </h3>
-
-      <!-- Status Indicators -->
-      <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center"></div>
+  <!-- Header: fixed 60px. Title (2 lines at most) over "kind · id"; hovering it
+       opens the node's description. -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="flowdrop-workflow-node__header"
+    class:flowdrop-workflow-node__header--wraps={titleWraps}
+    onmouseenter={showNodeTip}
+    onmouseleave={hideTip}
+  >
+    <div class="flowdrop-workflow-node__tile">
+      <Icon
+        icon={getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata.category)}
+        class="flowdrop-workflow-node__icon"
+      />
     </div>
-    <!-- Node Description - line-height 20px so header grows in steps of 10 -->
-    <p class="flowdrop-workflow-node__header-desc" id="node-description-{props.id}">
-      {displayDescription}
-    </p>
+    <h3 class="flowdrop-workflow-node__title" bind:this={titleEl}>{displayTitle}</h3>
+    <span class="flowdrop-workflow-node__kind">{kindLine}</span>
   </div>
 
-  <!-- Input Ports Container -->
-  {#if visibleInputPorts.length > 0}
-    <div class="flowdrop-workflow-node__ports">
-      <div class="flowdrop-workflow-node__ports-list">
-        {#each visibleInputPorts as port (port.id)}
-          {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
-          <div class="flowdrop-workflow-node__port">
-            <!-- Input Handle: one grid row (20px) from the top so it aligns with the label, at node edge -->
-            <Handle
-              type="target"
-              position={Position.Left}
-              id={`${props.id}-input-${port.id}`}
-              class="flowdrop-workflow-node__handle"
-              title={interfaceBoundTooltip(boundEntry)}
-              style="top: var(--fd-node-port-handle-top); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
-                checker,
-                port
-              )}); --fd-handle-border-color: var(--fd-handle-border);"
-              tabindex={-1}
-            />
-
-            <!-- Port Info: padding lives here so handle position is simple -->
-            <div
-              class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0"
-              title={port.description || undefined}
-            >
-              <PortTypeBadge {checker} {port} showRequired />
-              {#if port.description}
-                <p
-                  class="flowdrop-workflow-node__port-help flowdrop-text--xs flowdrop-text--gray flowdrop-truncate"
-                >
-                  {port.description}
-                </p>
-              {/if}
-            </div>
-          </div>
-        {/each}
-      </div>
-    </div>
+  <!-- Description band: reserved on every node while the setting is on. -->
+  {#if geometry.descriptionBand > 0}
+    <p class="flowdrop-workflow-node__desc" id="node-description-{props.id}">
+      {displayDescription}
+    </p>
+  {:else}
+    <span class="flowdrop-workflow-node__sr" id="node-description-{props.id}"
+      >{displayDescription}</span
+    >
   {/if}
 
-  <!-- Output Ports Container -->
-  {#if visibleOutputPorts.length > 0}
-    <div class="flowdrop-workflow-node__ports">
-      <div class="flowdrop-workflow-node__ports-list">
-        {#each visibleOutputPorts as port (port.id)}
-          {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
-          <div class="flowdrop-workflow-node__port">
-            <!-- Port Info: padding lives here so handle position is simple -->
-            <div
-              class="flowdrop-workflow-node__port-content flowdrop-flex--1 flowdrop-min-w--0 flowdrop-text--right"
-              title={port.description || undefined}
-            >
-              <PortTypeBadge {checker} {port} align="right" />
-              {#if port.description}
-                <p
-                  class="flowdrop-workflow-node__port-help flowdrop-text--xs flowdrop-text--gray flowdrop-truncate"
-                >
-                  {port.description}
-                </p>
-              {/if}
-            </div>
+  <!-- Exec pins: the completion trigger, in and out, at y = 20. -->
+  {#each pins as pin (pin.handleId)}
+    <Handle
+      type={pin.direction === 'input' ? 'target' : 'source'}
+      position={pin.direction === 'input' ? Position.Left : Position.Right}
+      id={pin.handleId}
+      class="flowdrop-workflow-node__handle flowdrop-workflow-node__handle--pin {pin.wired
+        ? 'flowdrop-workflow-node__handle--wired'
+        : 'flowdrop-workflow-node__handle--open'}"
+      aria-label={pin.direction === 'input' ? graph.execIn : graph.execOut}
+      style="top: {pin.y}px; transform: translateY(-50%);"
+      tabindex={-1}
+      onmouseenter={(e: Event) => showPortTip(e, pin.port, pin.direction, false, true)}
+      onmouseleave={hideTip}
+    />
+  {/each}
 
-            <!-- Output Handle: one grid row (20px) from the top so it aligns with the label, at node edge -->
-            <Handle
-              type="source"
-              position={Position.Right}
-              id={`${props.id}-output-${port.id}`}
-              class="flowdrop-workflow-node__handle"
-              title={interfaceBoundTooltip(boundEntry)}
-              style="top: var(--fd-node-port-handle-top); transform: translateY(-50%); --fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
-                checker,
-                port
-              )}); --fd-handle-border-color: var(--fd-handle-border);"
-              tabindex={-1}
-            />
-          </div>
-        {/each}
+  <!-- Port rows: inputs left, outputs right, on shared rows. -->
+  {#each geometry.handles.filter((h) => h.kind === 'row') as h (h.direction + h.portId)}
+    {@const port = (h.direction === 'input' ? visibleInputPorts : visibleOutputPorts).find(
+      (p) => p.id === h.portId
+    )}
+    {#if port}
+      {@const handleId = buildHandleId(props.id, h.direction, port.id)}
+      {@const wired = wiredHandles.has(handleId)}
+      {@const color = `var(--fd-port-skin-color, ${getPortColorToken(checker, port)})`}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="flowdrop-workflow-node__pill flowdrop-workflow-node__pill--{h.direction}"
+        class:flowdrop-workflow-node__pill--open={!wired}
+        style="top: {h.y}px; --_c: {color};"
+        onmouseenter={(e: Event) => showPortTip(e, port, h.direction, !wired, false)}
+        onmouseleave={hideTip}
+      >
+        <span class="flowdrop-workflow-node__pill-name">{port.name}</span>
+        {#if h.direction === 'input' && port.required && !wired}
+          <span class="flowdrop-workflow-node__pill-required" aria-hidden="true">*</span>
+        {/if}
       </div>
-    </div>
-  {/if}
+      <Handle
+        type={h.direction === 'input' ? 'target' : 'source'}
+        position={h.direction === 'input' ? Position.Left : Position.Right}
+        id={handleId}
+        class="flowdrop-workflow-node__handle {wired
+          ? 'flowdrop-workflow-node__handle--wired'
+          : 'flowdrop-workflow-node__handle--open'}"
+        aria-label={h.direction === 'input'
+          ? graph.connectInputPort({ name: port.name })
+          : graph.connectOutputPort({ name: port.name })}
+        style="top: {h.y}px; transform: translateY(-50%); --_c: {color};"
+        tabindex={-1}
+        onmouseenter={(e: Event) => showPortTip(e, port, h.direction, !wired, false)}
+        onmouseleave={hideTip}
+      />
+    {/if}
+  {/each}
 
   <!-- Config button -->
   <NodeConfigButton onclick={openConfigSidebar} title="Configure node" />
 </div>
 
+{#if tip}
+  <NodeTip
+    anchor={tip.anchor}
+    align={tip.align}
+    variant={tip.variant}
+    title={tip.title}
+    code={tip.code}
+    body={tip.body}
+    note={tip.note}
+  />
+{/if}
+
 <style>
+  /* The card. Its size is set inline from the geometry; the border is an inset
+     ring on ::after (above the header wash), so it never adds to the box. */
   .flowdrop-workflow-node {
+    --_border: var(--fd-node-border);
     position: relative;
+    box-sizing: border-box;
     background-color: var(--fd-node-bg);
     backdrop-filter: var(--fd-node-backdrop-filter);
-    border: var(--fd-node-border-width) solid var(--fd-node-border);
     border-radius: var(--fd-node-radius);
     box-shadow: var(--fd-node-shadow);
-    width: var(--fd-node-default-width);
     z-index: 10;
     color: var(--fd-foreground);
-    transition: all var(--fd-transition-fast);
+    transition:
+      box-shadow var(--fd-transition-fast),
+      background-color var(--fd-transition-fast);
+  }
+
+  .flowdrop-workflow-node::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--fd-node-border-width) var(--_border);
+    pointer-events: none;
+    z-index: 1;
   }
 
   .flowdrop-workflow-node:hover {
+    --_border: var(--fd-node-border-hover);
     box-shadow: var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-border-hover);
   }
 
-  .flowdrop-workflow-node--selected {
-    box-shadow:
-      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
-      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
-        var(--fd-node-selected-ring),
-      var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
-  }
-
+  .flowdrop-workflow-node--selected,
   .flowdrop-workflow-node--selected:hover {
+    --_border: var(--fd-node-selected-border);
     box-shadow:
       0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
       0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
         var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
      wrapper, which is the focusable element). */
 
+  /* Header: 60px, a category wash, a solid icon tile, the title over "kind · id". */
   .flowdrop-workflow-node__header {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 60px;
     box-sizing: border-box;
-    /* Bottom padding absorbs BOTH the node's own top border and the header
-       divider, so the body below the header lands on the 20px grid measured
-       from the node's outer top edge: node-border + header = 100/120/140. */
-    padding: var(--fd-node-header-gap) var(--fd-node-header-padding-x)
-      calc(
-        var(--fd-node-header-gap) - var(--fd-node-border-width) -
-          var(--fd-node-header-divider-width)
-      );
-    border-bottom: var(--fd-node-header-divider-width) solid var(--fd-node-header-divider-color);
-    background: var(--fd-node-header-bg);
+    display: grid;
+    grid-template-columns: var(--fd-node-tile-size) minmax(0, 1fr);
+    grid-template-rows: 20px 20px;
+    column-gap: var(--fd-space-md);
+    align-items: center;
+    padding: 10px var(--fd-node-header-pad-x);
+    background: color-mix(
+      in srgb,
+      var(--_cat) var(--fd-node-header-wash),
+      var(--fd-node-header-bg)
+    );
     border-top-left-radius: var(--fd-node-radius);
     border-top-right-radius: var(--fd-node-radius);
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-node-header-row-gap);
-    /* node-border (1.5) + header = 100/120/140. Header itself is
-       4*gap + title + desc-line - node-border; each extra desc line adds 20.
-       Compact nodes (Graphite) shrink to title height. */
-    min-height: var(--fd-node-header-min-height);
   }
 
-  .flowdrop-workflow-node__header-title {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-md);
-    min-height: var(--fd-node-header-title-height);
-    flex-shrink: 0;
-  }
-
-  .flowdrop-workflow-node__header-desc {
-    margin: 0;
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
-    line-height: var(--fd-node-header-desc-line);
-    min-height: var(--fd-node-header-desc-line);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-    display: var(--fd-node-desc-display);
-  }
-
-  /* Squircle icon wrapper - Apple-style rounded square background */
-  .flowdrop-workflow-node__icon-wrapper {
+  .flowdrop-workflow-node__tile {
+    grid-row: 1 / 3;
+    align-self: start;
+    margin-top: calc((40px - var(--fd-node-tile-size)) / 2);
     display: var(--fd-node-icon-display, flex);
     align-items: center;
     justify-content: center;
-    /* px (not rem) so the icon stays grid-locked regardless of root font-size */
-    width: var(--fd-node-icon-size);
-    height: var(--fd-node-icon-size);
-    border-radius: var(--fd-node-icon-radius);
-    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
-    flex-shrink: 0;
-    transition: all var(--fd-transition-normal);
+    width: var(--fd-node-tile-size);
+    height: var(--fd-node-tile-size);
+    border-radius: var(--fd-node-tile-radius);
+    background: var(--_cat);
+    box-shadow: var(--fd-node-tile-shadow);
   }
 
-  .flowdrop-workflow-node:hover .flowdrop-workflow-node__icon-wrapper {
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity-hover),
-      transparent
-    );
-    transform: scale(1.05);
+  .flowdrop-workflow-node__tile :global(.flowdrop-workflow-node__icon) {
+    width: var(--fd-node-tile-glyph);
+    height: var(--fd-node-tile-glyph);
+    color: var(--fd-node-tile-fg);
   }
 
-  .flowdrop-workflow-node__icon-wrapper :global(.flowdrop-workflow-node__icon) {
-    width: var(--fd-node-icon-glyph-size);
-    height: var(--fd-node-icon-glyph-size);
-    color: var(--fd-node-icon);
-  }
-
-  /* Circle dot icon — shown in minimal skin via --fd-node-circle-display */
-  .flowdrop-workflow-node__color-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    display: var(--fd-node-circle-display, none);
-  }
-
-  .flowdrop-workflow-node__header-title h3 {
+  .flowdrop-workflow-node__title {
+    grid-column: 2;
     margin: 0;
-    /* half the title block so two lines fill it exactly on the 20px grid */
-    line-height: var(--fd-node-title-line);
+    min-width: 0;
     font-size: var(--fd-node-title-size);
     font-weight: var(--fd-node-title-weight);
-    display: -webkit-box;
-    -webkit-line-clamp: var(--fd-node-title-clamp);
-    line-clamp: var(--fd-node-title-clamp);
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    min-width: 0;
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-
-  .flowdrop-workflow-node__ports {
-    padding: 0;
-  }
-
-  .flowdrop-workflow-node__ports-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    /* No vertical padding: sections stack flush and node height stays a
-       multiple of 20. The one exception is the clearance below the header
-       divider, applied to the first section only (below). */
-    padding: 0;
-  }
-
-  /* The first port section sits directly below the header divider; give it a
-     full 20px grid row of clearance so the first port lands on the grid. */
-  .flowdrop-workflow-node__header
-    + .flowdrop-workflow-node__ports
-    .flowdrop-workflow-node__ports-list {
-    padding-top: var(--fd-node-ports-first-pad);
-  }
-
-  /*
-   * A hairline between the input group and the output group. It is drawn on a
-   * pseudo-element and takes no space, so handle positions stay on the 20px grid.
-   */
-  .flowdrop-workflow-node__ports + .flowdrop-workflow-node__ports {
-    position: relative;
-  }
-
-  .flowdrop-workflow-node__ports + .flowdrop-workflow-node__ports::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: var(--fd-node-group-rule-inset);
-    left: var(--fd-node-group-rule-inset);
-    height: 1px;
-    background: var(--fd-node-group-rule);
-    pointer-events: none;
-  }
-
-  .flowdrop-workflow-node__ports:last-of-type .flowdrop-workflow-node__ports-list {
-    padding-bottom: var(--fd-node-ports-end-pad);
-  }
-
-  .flowdrop-workflow-node__port {
-    display: flex;
-    align-items: var(--fd-node-port-align);
-    gap: 0;
-    /* Fixed three-row (60px) height for every port — node height stays
-       predictable whether or not a port carries a description. Compact nodes
-       use one row and centre the handle on it. */
-    height: var(--fd-node-port-height);
-    padding: 0;
-    position: relative;
-  }
-
-  .flowdrop-workflow-node__port-content {
-    padding: var(--fd-node-port-pad);
-  }
-
-  /* Each line in a port occupies one 20px grid row: a label-only port
-     centers its single row, a label + description fills both. The label row
-     is <PortTypeBadge>, which owns that row height itself — scoped CSS does
-     not reach into a child component. */
-
-  .flowdrop-workflow-node__port-content > p {
-    min-height: var(--fd-node-port-row-height);
-    line-height: var(--fd-node-port-row-height);
-    display: var(--fd-node-port-help-display);
-  }
-
-  /* Handle overrides: hover scale (base 20px/12px from base.css) */
-  :global(.flowdrop-workflow-node__handle:hover) {
-    transform: translateY(-50%) scale(1.2);
-  }
-
-  /* Utility classes */
-  .flowdrop-flex {
-    display: flex;
-  }
-
-  .flowdrop-flex--1 {
-    flex: 1;
-  }
-
-  .flowdrop-gap--2 {
-    gap: var(--fd-space-xs);
-  }
-
-  .flowdrop-items--center {
-    align-items: center;
-  }
-
-  .flowdrop-min-w--0 {
-    min-width: 0;
-  }
-
-  .flowdrop-text--xs {
-    font-size: var(--fd-text-xs);
-    line-height: 16px;
-  }
-
-  .flowdrop-text--sm {
-    font-size: var(--fd-text-sm);
     line-height: 20px;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
   }
 
-  .flowdrop-text--gray {
+  /* One line: the title takes the first row and the kind line the second. A
+     wrapped title takes both rows and the kind line gives way. */
+  .flowdrop-workflow-node__header--wraps .flowdrop-workflow-node__title {
+    grid-row: 1 / 3;
+    align-self: start;
+  }
+
+  .flowdrop-workflow-node__kind {
+    grid-column: 2;
+    min-width: 0;
+    font-size: var(--fd-node-kind-size);
+    line-height: 20px;
+    color: var(--fd-node-kind-fg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .flowdrop-workflow-node__header--wraps .flowdrop-workflow-node__kind {
+    display: none;
+  }
+
+  /* Description band: 60px (10 air, 2 lines at 12/20, 10 air, hairline). */
+  .flowdrop-workflow-node__desc {
+    position: absolute;
+    inset: 60px 0 auto 0;
+    height: 60px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 10px var(--fd-node-header-pad-x);
+    font-size: var(--fd-text-xs);
+    line-height: 20px;
     color: var(--fd-muted-foreground);
+    border-bottom: 1px solid var(--fd-node-desc-rule);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
-  .flowdrop-font--medium {
-    font-weight: 500;
+  .flowdrop-workflow-node__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 
-  .flowdrop-truncate {
+  /* Port pills: half-pills growing out of the card edge, on the row centre. */
+  .flowdrop-workflow-node__pill {
+    position: absolute;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    max-width: var(--fd-node-pill-max-width);
+    height: var(--fd-node-pill-height);
+    box-sizing: border-box;
+    font-size: var(--fd-node-pill-size);
+    font-weight: var(--fd-node-pill-weight);
+    color: var(--fd-foreground);
+    background: color-mix(in srgb, var(--_c) var(--fd-node-pill-wired-mix), var(--fd-node-bg));
+    cursor: default;
+    transition: filter var(--fd-transition-fast);
+  }
+
+  .flowdrop-workflow-node__pill:hover {
+    filter: var(--fd-node-pill-hover-filter);
+  }
+
+  .flowdrop-workflow-node__pill--input {
+    left: 0;
+    padding: 0 var(--fd-node-pill-pad-inner) 0 var(--fd-node-pill-pad-edge);
+    border-radius: 0 var(--fd-node-pill-radius) var(--fd-node-pill-radius) 0;
+  }
+
+  .flowdrop-workflow-node__pill--output {
+    right: 0;
+    flex-direction: row-reverse;
+    padding: 0 var(--fd-node-pill-pad-edge) 0 var(--fd-node-pill-pad-inner);
+    border-radius: var(--fd-node-pill-radius) 0 0 var(--fd-node-pill-radius);
+  }
+
+  /* Open: outlined, grey. The outline stops at the card edge. */
+  .flowdrop-workflow-node__pill--open {
+    background: var(--fd-node-bg);
+    color: var(--fd-node-pill-open-fg);
+  }
+
+  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--input {
+    box-shadow:
+      inset 0 1px 0 var(--fd-node-pill-open-border),
+      inset 0 -1px 0 var(--fd-node-pill-open-border),
+      inset -1px 0 0 var(--fd-node-pill-open-border);
+  }
+
+  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--output {
+    box-shadow:
+      inset 0 1px 0 var(--fd-node-pill-open-border),
+      inset 0 -1px 0 var(--fd-node-pill-open-border),
+      inset 1px 0 0 var(--fd-node-pill-open-border);
+  }
+
+  .flowdrop-workflow-node__pill-name {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: var(--fd-node-pill-height);
   }
 
-  .flowdrop-text--right {
-    text-align: right;
+  .flowdrop-workflow-node__pill-required {
+    flex: none;
+    margin-left: 1px;
+    color: var(--fd-node-pill-required);
+  }
+
+  /* Handles: placed from the geometry (inline top), centred on the card edge.
+     Wired = filled with the type colour; open = outlined in it. */
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle) {
+    --fd-handle-fill: var(--_c);
+    --fd-handle-border-color: var(--fd-handle-border);
+  }
+
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--open) {
+    --fd-handle-fill: var(--fd-node-bg);
+    --fd-handle-border-color: var(--_c);
+  }
+
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle:hover::before) {
+    background-color: var(--fd-handle-fill) !important;
+    transform: scale(1.2);
+  }
+
+  :global(.flowdrop-workflow-node__handle:hover) {
+    transform: translateY(-50%);
+  }
+
+  /* Exec pins: a chevron in a circle. Filled ink when wired, outlined grey when open. */
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin) {
+    --_c: var(--fd-node-pin-wired);
+    --fd-handle-visual-size: var(--fd-node-pin-size);
+  }
+
+  :global(
+    .svelte-flow
+      .svelte-flow__handle.flowdrop-workflow-node__handle--pin.flowdrop-workflow-node__handle--open
+  ) {
+    --_c: var(--fd-node-pin-open);
+  }
+
+  :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle--pin::after) {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 6px;
+    margin-left: 1px;
+    background: var(--fd-node-bg);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+    pointer-events: none;
+  }
+
+  :global(
+    .svelte-flow
+      .svelte-flow__handle.flowdrop-workflow-node__handle--pin.flowdrop-workflow-node__handle--open::after
+  ) {
+    background: var(--fd-node-pin-open);
   }
 
   /* Reveal the NodeConfigButton (gear) when the node is hovered. */

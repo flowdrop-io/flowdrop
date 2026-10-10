@@ -908,7 +908,13 @@ export const defaultMessages = {
       ideaNode: ({ title }: { title: string }) => `Idea node: ${title}`,
       connectInputPort: ({ name }: { name: string }) => `Connect to ${name} input port`,
       connectOutputPort: ({ name }: { name: string }) => `Connect from ${name} output port`,
-      connectBranch: ({ name }: { name: string }) => `Connect from ${name} branch`
+      connectBranch: ({ name }: { name: string }) => `Connect from ${name} branch`,
+      // Node card tooltips: the title popover and the port tooltips.
+      portRequired: 'Required',
+      execIn: 'Runs when the previous node completes',
+      execOut: 'Fires when this node completes',
+      configureHint: 'Double-click to configure',
+      publishedAs: ({ name }: { name: string }) => `Published as: ${name}`
     }
   },
 

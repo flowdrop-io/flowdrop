@@ -188,7 +188,7 @@
       icon: 'mdi:source-branch',
       description: 'Wired, open and required ports; branch triggers stay rows.',
       x: 0,
-      y: 520,
+      y: 440,
       inputs: [
         p('wired', 'Wired', 'string', 'input', { description: 'A wired input is filled.' }),
         p('open', 'Open', 'number', 'input', { description: 'An open input is outlined.' }),
@@ -213,7 +213,7 @@
       icon: 'mdi:lightning-bolt',
       description: 'Fires when a content entity is inserted. Event data carries the entity.',
       x: 400,
-      y: 520,
+      y: 440,
       inputs: [],
       outputs: [
         p('data', 'Event Data', 'json', 'output', {
@@ -229,7 +229,7 @@
       icon: 'mdi:text-box-edit',
       description: 'Create prompts using templates with variable substitution.',
       x: 800,
-      y: 520,
+      y: 440,
       inputs: [p('vars', 'Variables', 'mixed', 'input'), trigIn],
       outputs: [p('prompt', 'prompt', 'string', 'output'), trigOut]
     },
@@ -240,7 +240,7 @@
       icon: 'mdi:message-text',
       description: 'Display messages to the user.',
       x: 1200,
-      y: 520,
+      y: 440,
       inputs: [p('message', 'Message', 'string', 'input', { required: true }), trigIn],
       outputs: [p('displayed', 'displayed', 'boolean', 'output'), trigOut]
     }
@@ -325,7 +325,7 @@
     bind:edges
     {nodeTypes}
     {edgeTypes}
-    defaultViewport={{ x: 80, y: 60, zoom }}
+    initialViewport={{ x: 80, y: 60, zoom }}
     minZoom={0.1}
     maxZoom={2}
     snapGrid={[20, 20]}

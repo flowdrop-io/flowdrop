@@ -250,7 +250,9 @@
 <style>
   .universal-node {
     position: relative;
-    display: inline-block;
+    /* Block, not inline-block: an inline box leaves a descender gap under the
+       card, which made the node 3px taller than its 20px-grid geometry. */
+    display: block;
   }
 
   /* Test mode: the border takes the status colour; a theme may thicken it

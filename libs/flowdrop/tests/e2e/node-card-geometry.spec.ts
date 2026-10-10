@@ -91,8 +91,11 @@ for (const descriptions of [false, true]) {
       const byId = Object.fromEntries(m.handles.map((h) => [h.id, h]));
       expect(byId['types.1-output-trigger'].y).toBe(20);
       expect(byId['types.1-input-trigger'].y).toBe(20);
-      expect(byId['types.1-output-true'].y).toBe(descriptions ? 140 : 80);
-      expect(byId['types.1-output-false'].y).toBe(descriptions ? 180 : 120);
+      // branch triggers sink below data ports (reserved-port ordering) but stay rows
+      const first = descriptions ? 140 : 80;
+      expect(byId['types.1-output-result'].y).toBe(first);
+      expect(byId['types.1-output-true'].y).toBe(first + 40);
+      expect(byId['types.1-output-false'].y).toBe(first + 80);
     });
 
     test('inputs and outputs share rows', async ({ page }) => {

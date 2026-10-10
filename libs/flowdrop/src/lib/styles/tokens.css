@@ -663,6 +663,35 @@
   --fd-node-title-size: var(--fd-text-sm); /* @internal */
   --fd-node-title-weight: 500; /* @internal */
   --fd-node-title-clamp: 2; /* @internal  title lines before an ellipsis */
+
+  /* ----- NODE CARD v2 (G8): category wash header, icon tile, half-pill ports -----
+     Geometry (60px header, 20/40px grid, 280/320 width) is fixed in utils/nodeGeometry.ts and is
+     not a token: only the look is. Defaults are the Default theme's look; Graphite sets its own. */
+  --fd-node-header-wash: 8%; /* @internal  how much of the category colour the header surface takes */
+  --fd-node-header-pad-x: 16px; /* @internal  header and description-band side padding */
+  --fd-node-tile-size: 32px; /* @internal  solid icon tile edge */
+  --fd-node-tile-radius: 8px; /* @internal */
+  --fd-node-tile-glyph: 16px; /* @internal  glyph inside the tile */
+  --fd-node-tile-fg: #ffffff; /* @internal  glyph colour on the solid tile */
+  --fd-node-tile-shadow: 0 1px 2px rgb(16 24 40 / 0.12); /* @internal */
+  --fd-node-kind-size: 11px; /* @internal  the "kind · id" line */
+  --fd-node-kind-fg: var(--fd-muted-foreground); /* @internal */
+  --fd-node-desc-rule: var(--fd-border-muted); /* @internal  hairline under the description band */
+  --fd-node-pill-height: 24px; /* @internal  port pill */
+  --fd-node-pill-max-width: 128px; /* @internal  longer names end in an ellipsis (mirrors NODE_PILL_MAX_WIDTH) */
+  --fd-node-pill-size: var(--fd-text-xs); /* @internal */
+  --fd-node-pill-weight: 500; /* @internal */
+  --fd-node-pill-radius: 12px; /* @internal  the free end of the half-pill */
+  --fd-node-pill-pad-edge: 14px; /* @internal  padding on the card-edge side (clears the handle) */
+  --fd-node-pill-pad-inner: 12px; /* @internal  padding on the free side */
+  --fd-node-pill-wired-mix: 13%; /* @internal  type colour in a wired pill's tint */
+  --fd-node-pill-open-fg: #6f7682; /* @internal  open port text, at least 4.5:1 on the card */
+  --fd-node-pill-open-border: var(--fd-border); /* @internal  open port outline */
+  --fd-node-pill-required: var(--fd-error); /* @internal  the "*" on a required open input */
+  --fd-node-pill-hover-filter: brightness(0.97); /* @internal */
+  --fd-node-pin-size: 14px; /* @internal  the exec pin in the header */
+  --fd-node-pin-wired: var(--fd-node-ink); /* @internal  wired exec pin fill */
+  --fd-node-pin-open: #8a919c; /* @internal  open exec pin outline and chevron, at least 3:1 on the card */
   --fd-node-icon-size: 36px; /* @internal  squircle edge */
   --fd-node-icon-glyph-size: 20px; /* @internal */
   --fd-node-icon-radius: 8px; /* @internal */
@@ -772,6 +801,12 @@
   /* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
   --fd-node-border: #4a4a52;
   --fd-node-border-hover: #5a5a62;
+
+  /* ----- NODE CARD v2 (dark) ----- */
+  --fd-node-header-wash: 16%;
+  --fd-node-tile-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --fd-node-pill-open-fg: #9aa2af;
+  --fd-node-pin-open: #7d8594;
 
   /* ----- CANVAS GRID (matches xyflow's dark dot-grid color) ----- */
   --fd-grid-pattern-color: #777;
@@ -943,9 +978,14 @@
   --fd-navbar-status-bg: var(--fd-success-muted);
   --fd-navbar-status-fg: var(--fd-success-hover);
   --fd-node-bg: var(--fd-card);
+  --fd-node-desc-rule: var(--fd-border-muted);
   --fd-node-group-rule: var(--fd-border-muted);
   --fd-node-header-bg: var(--fd-header);
   --fd-node-header-divider-color: var(--fd-border-muted);
+  --fd-node-kind-fg: var(--fd-muted-foreground);
+  --fd-node-pill-open-border: var(--fd-border);
+  --fd-node-pill-required: var(--fd-error);
+  --fd-node-pin-wired: var(--fd-node-ink);
   --fd-node-port-chip-border: var(--fd-border);
   --fd-node-selected-border: var(--fd-primary);
   --fd-node-selected-ring: var(--fd-primary-muted);
