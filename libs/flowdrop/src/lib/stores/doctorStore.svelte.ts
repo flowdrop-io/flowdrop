@@ -44,6 +44,7 @@ export class DoctorStore {
   #unavailableFor: string | null = null;
   #applyingId = $state<string | null>(null);
   #notice = $state<DoctorNotice | null>(null);
+  #openRequest = $state(0);
   #focus: ((nodeId: string) => boolean) | null = null;
   #timer: ReturnType<typeof setTimeout> | null = null;
   /** Bumped by every request; an answer for an older one is dropped. */
@@ -81,6 +82,27 @@ export class DoctorStore {
 
   get notice(): DoctorNotice | null {
     return this.#notice;
+  }
+
+  /** Counts the requests to show the problems popover (see {@link requestOpen}); the menu watches it. */
+  get openRequest(): number {
+    return this.#openRequest;
+  }
+
+  /**
+   * Ask the navbar's problems popover to open (a toast's "Show problems").
+   * Returns whether there is anything to show, so a caller can offer the
+   * action only when it will do something.
+   */
+  requestOpen(): boolean {
+    if (!this.#supported || this.#problems.length === 0) return false;
+    this.#openRequest += 1;
+    return true;
+  }
+
+  /** Whether {@link requestOpen} would show something. */
+  get canOpen(): boolean {
+    return this.#supported && this.#problems.length > 0;
   }
 
   dismissNotice(): void {

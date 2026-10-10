@@ -296,9 +296,9 @@ function errorParts(error: string | Error): { message: string; details: readonly
 }
 
 /** An error toast whose title names the failed action and whose body says why. */
-function failure(title: string, error: string | Error): string {
+function failure(title: string, error: string | Error, action?: ToastAction): string {
   const { message, details } = errorParts(error);
-  return showError({ title, body: message, details });
+  return showError({ title, body: message, details, action });
 }
 
 /**
@@ -316,8 +316,8 @@ export const apiToasts = {
   /**
    * Show API error message
    */
-  error: (operation: string, error: string | Error) => {
-    return failure(`${operation} failed`, error);
+  error: (operation: string, error: string | Error, action?: ToastAction) => {
+    return failure(`${operation} failed`, error, action);
   },
 
   /**

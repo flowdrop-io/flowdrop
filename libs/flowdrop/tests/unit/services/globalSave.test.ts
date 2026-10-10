@@ -61,6 +61,7 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
       markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args),
       acknowledgeServer: (...args: unknown[]) => mockStoreAcknowledgeServer(...args)
     },
+    doctor: { canOpen: false, requestOpen: () => false },
     runs: {
       noteWorkflowSaved: (...args: unknown[]) => mockNoteWorkflowSaved(...args)
     },

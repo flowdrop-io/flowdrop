@@ -258,7 +258,15 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     if (features.showToasts && !suppressToast) {
       // The error object, not its message: an ApiError carries the server's
       // reasons as `details`, and the toast renders them as a list.
-      apiToasts.error('Save workflow', errorObj);
+      // "Show problems" opens the navbar's problems popover, when there are
+      // problems to show: a failed save is often a draft the Doctor already flags.
+      apiToasts.error(
+        'Save workflow',
+        errorObj,
+        fd.doctor.canOpen
+          ? { label: 'Show problems', onClick: () => void fd.doctor.requestOpen() }
+          : undefined
+      );
     }
 
     throw error;
