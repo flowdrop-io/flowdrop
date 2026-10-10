@@ -53,6 +53,14 @@
   } from '$lib/stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
   import { appearanceChoices } from '../utils/appearance.js';
+  import {
+    zoomRows,
+    zoomConfigFromRows,
+    zoomBelowOptions,
+    zoomBelowForEnable,
+    type ZoomRow,
+    type ZoomRowTier
+  } from '../utils/zoomTierRows.js';
 
   /**
    * Props interface for SettingsPanel component
@@ -476,6 +484,46 @@
   }
 
   const idFor = (category: SettingsCategory, key: string): string => `${uid}-${category}-${key}`;
+
+  // ---------------------------------------------------------------------------
+  // Zoom levels (Editor): one row per tier below full, from editor.zoomTiers.
+  // ---------------------------------------------------------------------------
+
+  const ZOOM_LABELS: Record<ZoomRowTier, { title: string; help: string }> = {
+    outline: {
+      title: 'Outline',
+      help: 'Zoomed out, a node keeps its title and shows ports as bars.'
+    },
+    glyph: { title: 'Glyph', help: 'Zoomed further out, a node is its icon and title.' },
+    map: { title: 'Map', help: 'At the far end, a node is a coloured block with its icon.' }
+  };
+
+  /** What a row had when it was switched off, so switching it back on restores it. */
+  let rememberedBelow = $state<Partial<Record<ZoomRowTier, number>>>({});
+
+  const zoomLevels = $derived(zoomRows(getSettings().editor.zoomTiers, rememberedBelow));
+
+  function setZoomRows(next: ZoomRow[]): void {
+    setValue('editor', 'zoomTiers', zoomConfigFromRows(next));
+  }
+
+  function toggleZoomRow(tier: ZoomRowTier, on: boolean): void {
+    const row = zoomLevels.find((r) => r.tier === tier);
+    if (!row) return;
+    if (on) {
+      const below = zoomBelowForEnable(zoomLevels, tier);
+      if (below === null) return;
+      setZoomRows(zoomLevels.map((r) => (r.tier === tier ? { ...r, on: true, below } : r)));
+    } else {
+      rememberedBelow = { ...rememberedBelow, [tier]: row.below };
+      setZoomRows(zoomLevels.map((r) => (r.tier === tier ? { ...r, on: false } : r)));
+    }
+  }
+
+  function setZoomBelow(tier: ZoomRowTier, below: number): void {
+    if (!Number.isFinite(below)) return;
+    setZoomRows(zoomLevels.map((r) => (r.tier === tier ? { ...r, below } : r)));
+  }
 </script>
 
 <div class="flowdrop-scope flowdrop-settings-panel {className}">
@@ -576,6 +624,49 @@
               </div>
             </div>
           {/each}
+
+          {#if category === 'editor'}
+            <div class="flowdrop-settings-group" role="group" aria-labelledby="{uid}-zoom-title">
+              <div>
+                <h3 class="flowdrop-settings-group__title" id="{uid}-zoom-title">Zoom levels</h3>
+                <p class="flowdrop-settings-group__help">
+                  Draw simpler nodes as you zoom out. The full node shows above the first level that
+                  is on.
+                </p>
+              </div>
+              {#each zoomLevels as row (row.tier)}
+                {@const id = `${uid}-zoom-${row.tier}`}
+                {@const label = ZOOM_LABELS[row.tier]}
+                <div class="flowdrop-settings-row" title={label.help}>
+                  <div class="flowdrop-settings-row__text">
+                    <label class="flowdrop-settings-row__label" for={id}>{label.title}</label>
+                    <p class="flowdrop-settings-row__help" id="{id}-help">{label.help}</p>
+                  </div>
+                  <div class="flowdrop-settings-row__control flowdrop-settings-row__control--zoom">
+                    <Select
+                      class="flowdrop-settings-row__select"
+                      aria-label="{label.title} starts below"
+                      disabled={!row.on}
+                      value={String(row.below)}
+                      onchange={(e) => setZoomBelow(row.tier, Number(e.currentTarget.value))}
+                    >
+                      {#each zoomBelowOptions(zoomLevels, row.tier) as n (n)}
+                        <option value={String(n)}>Starts below {n}%</option>
+                      {/each}
+                    </Select>
+                    <Switch
+                      {id}
+                      aria-describedby="{id}-help"
+                      name="zoom-{row.tier}"
+                      checked={row.on}
+                      disabled={!row.on && zoomBelowForEnable(zoomLevels, row.tier) === null}
+                      onchange={(on) => toggleZoomRow(row.tier, on)}
+                    />
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
         {/if}
       </div>
     {/each}
@@ -723,6 +814,33 @@
 
   .flowdrop-settings-row__control :global(.flowdrop-settings-row__select) {
     width: 11rem;
+  }
+
+  /* Zoom levels: a group of rows under the Editor settings, a switch and a select each */
+  .flowdrop-settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-lg);
+    margin-top: var(--fd-space-md);
+  }
+
+  .flowdrop-settings-group__title {
+    margin: 0;
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-body);
+    font-weight: 600;
+    line-height: var(--fd-leading-tight);
+  }
+
+  .flowdrop-settings-group__help {
+    margin: var(--fd-space-3xs) 0 0;
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-meta);
+    line-height: var(--fd-leading-tight);
+  }
+
+  .flowdrop-settings-row__control--zoom {
+    gap: var(--fd-space-md);
   }
 
   .flowdrop-settings-row__control :global(.flowdrop-settings-row__number) {
