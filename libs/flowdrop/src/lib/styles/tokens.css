@@ -186,6 +186,27 @@
   --fd-note-border: var(--fd-node-border); /* @public  notes-node outline */
   --fd-note-border-hover: var(--fd-node-border-hover); /* @public  notes-node outline (hover) */
 
+  /* ----- NOTES (annotations: paper surface, tinted inset edge, capped markdown scale) ----- */
+  --fd-note-radius: 4px; /* @internal  notes are not nodes: a tighter corner */
+  --fd-note-padding: 20px; /* @internal  keep a multiple of the 20px grid */
+  --fd-note-bg: var(--fd-muted); /* @internal  plain "note" paper */
+  --fd-note-edge: var(--fd-node-border); /* @internal  plain "note" inset edge */
+  --fd-note-info-bg: var(--fd-info-muted); /* @internal  info paper */
+  --fd-note-warning-bg: var(--fd-warning-muted); /* @internal */
+  --fd-note-success-bg: var(--fd-success-muted); /* @internal */
+  --fd-note-error-bg: var(--fd-error-muted); /* @internal */
+  --fd-note-edge-mix: 22%; /* @internal  share of the type accent in the inset edge of tinted notes */
+  --fd-note-shadow: none; /* @internal  resting lift; the edge is an inset shadow */
+  --fd-note-fg: var(--fd-foreground); /* @internal  note text */
+  --fd-note-meta: var(--fd-muted-foreground); /* @internal  footer word */
+  --fd-note-h1-size: 15px; /* @internal  markdown h1, capped for the canvas */
+  --fd-note-h2-size: 13px; /* @internal  markdown h2 and smaller headings */
+  --fd-note-heading-weight: 600; /* @internal */
+  --fd-note-body-size: 12.5px; /* @internal */
+  --fd-note-line: 20px; /* @internal  line height; every text line is one grid row */
+  --fd-note-meta-size: 11px; /* @internal  footer word */
+  --fd-note-zoom-size: 11px; /* @internal  first heading in the glyph and map zoom tiers, screen px (counter-scaled) */
+
   /* ----- CANVAS GRID (pattern color for the editor background grid; any theme
      can recolor whichever grid variant it picks via config.canvas.grid).
      Default matches xyflow's dot-grid color so the default theme is unchanged. */
@@ -930,8 +951,16 @@
   --fd-node-terminal-label-bg: var(--fd-backdrop);
   --fd-node-terminal-label-shadow: var(--fd-shadow-sm);
   --fd-node-terminal-ring: color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+  --fd-note-bg: var(--fd-muted);
   --fd-note-border: var(--fd-node-border);
   --fd-note-border-hover: var(--fd-node-border-hover);
+  --fd-note-edge: var(--fd-node-border);
+  --fd-note-error-bg: var(--fd-error-muted);
+  --fd-note-fg: var(--fd-foreground);
+  --fd-note-info-bg: var(--fd-info-muted);
+  --fd-note-meta: var(--fd-muted-foreground);
+  --fd-note-success-bg: var(--fd-success-muted);
+  --fd-note-warning-bg: var(--fd-warning-muted);
   --fd-panel-bg: var(--fd-background);
   --fd-sheet-border: var(--fd-border);
   --fd-sidebar-category-color: var(--fd-muted-foreground);

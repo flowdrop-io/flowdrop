@@ -1605,11 +1605,11 @@
 	   for a consistent look and to avoid confusion with selected state.
 	   ========================================================================= */
 
-  --fd-notes-node-width: 500px;
-  --fd-notes-node-min-width: 250px;
+  --fd-notes-node-width: 300px;
+  --fd-notes-node-min-width: 200px;
   --fd-notes-node-max-width: 500px;
-  --fd-notes-node-min-height: 200px;
-  --fd-notes-node-backdrop-filter: blur(8px);
+  --fd-notes-node-min-height: 60px;
+  --fd-notes-node-backdrop-filter: none;
 
   /* =========================================================================
 	   Caption Node Component Tokens
