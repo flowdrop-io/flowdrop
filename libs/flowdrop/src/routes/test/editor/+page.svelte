@@ -12,6 +12,11 @@
                            Output-like node (loose controls, then General / Execution /
                            Ports groups, several ports), a node with no ports, and a
                            subworkflow executor with an external workflow link
+    - ?workflow=config   -> the config-form shapes: a Switch-like gateway whose
+                           `default_branch` carries `x-item-ref` (a row mark in the branch
+                           list), a second one with `default_branch` wired to an input, one
+                           whose default names no branch, a node with a two-field array
+                           (headers) and an If/Else-like gateway with read-only branches
     - ?workflow=interface -> a workflow whose interface publishes three ports: an input
                            `amount` (ok), an input `items` declared `array` on a number
                            port (type mismatch tag), and an output `message`; the
@@ -1091,9 +1096,250 @@
     }
   };
 
+  // Config-form shapes (?workflow=config): an array that a scalar field points at
+  // (`x-item-ref`), a two-field array, and read-only items.
+  const switchSchema = {
+    type: 'object',
+    properties: {
+      branches: {
+        type: 'array',
+        title: 'Branches',
+        description: 'Matched in order. Each branch adds an output on the node.',
+        items: {
+          type: 'object',
+          title: 'branch',
+          properties: {
+            name: { type: 'string', title: 'Name' },
+            value: { type: 'string', title: 'Value' }
+          }
+        }
+      },
+      default_branch: {
+        type: 'string',
+        title: 'Default branch',
+        description: 'Branch to use when no value matches',
+        'x-item-ref': { array: 'branches', key: 'name' }
+      }
+    }
+  } as const;
+  const switchNodeType: NodeMetadata = {
+    node_type_id: 'switch_gateway',
+    name: 'Switch Gateway',
+    description: 'Routes on the value of an input',
+    category: 'logic',
+    version: '1.0.0',
+    type: 'gateway',
+    icon: 'mdi:call-split',
+    inputs: [
+      { id: 'value', name: 'Value', type: 'input', dataType: 'mixed', required: true },
+      { id: 'default_branch', name: 'Default branch', type: 'input', dataType: 'string' },
+      { id: 'trigger', name: 'Trigger', type: 'input', dataType: 'trigger' }
+    ],
+    outputs: [{ id: 'trigger', name: 'Trigger', type: 'output', dataType: 'trigger' }],
+    configSchema: switchSchema as unknown as NodeMetadata['configSchema'],
+    tags: []
+  };
+  const headersNodeType: NodeMetadata = {
+    node_type_id: 'http_request',
+    name: 'HTTP Request',
+    description: 'Calls a URL',
+    category: 'tools',
+    version: '1.0.0',
+    type: 'default',
+    icon: 'mdi:web',
+    inputs: [{ id: 'url', name: 'URL', type: 'input', dataType: 'string', required: true }],
+    outputs: [{ id: 'body', name: 'Body', type: 'output', dataType: 'string' }],
+    configSchema: {
+      type: 'object',
+      properties: {
+        method: { type: 'string', title: 'Method', enum: ['GET', 'POST'], default: 'GET' },
+        timeout: { type: 'integer', title: 'Timeout (s)', default: 30 },
+        headers: {
+          type: 'array',
+          title: 'Headers',
+          items: {
+            type: 'object',
+            title: 'Header',
+            properties: {
+              name: { type: 'string', title: 'Name' },
+              value: { type: 'string', title: 'Value' }
+            }
+          }
+        }
+      }
+    },
+    tags: []
+  };
+  const ifElseNodeType: NodeMetadata = {
+    node_type_id: 'if_else',
+    name: 'If/Else',
+    description: 'Routes on a comparison',
+    category: 'logic',
+    version: '1.0.0',
+    type: 'gateway',
+    icon: 'mdi:source-branch',
+    inputs: [{ id: 'text', name: 'Text', type: 'input', dataType: 'string', required: true }],
+    outputs: [],
+    configSchema: {
+      type: 'object',
+      properties: {
+        match_text: {
+          type: 'string',
+          title: 'Match text',
+          description: 'The text to match against'
+        },
+        operator: {
+          type: 'string',
+          title: 'Operator',
+          enum: ['equals', 'contains', 'starts_with'],
+          default: 'equals'
+        },
+        instance_title: {
+          type: 'string',
+          title: 'Title',
+          description: 'Overrides the node title.'
+        },
+        case_sensitive: {
+          type: 'boolean',
+          title: 'Case sensitive',
+          description: 'Whether string comparisons are case sensitive',
+          default: false
+        },
+        branches: {
+          type: 'array',
+          title: 'Branches',
+          readOnly: true,
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', title: 'Name' },
+              value: { type: 'string', title: 'Value' }
+            }
+          }
+        }
+      }
+    },
+    uiSchema: {
+      type: 'VerticalLayout',
+      elements: [
+        { type: 'Control', scope: '#/properties/match_text' },
+        { type: 'Control', scope: '#/properties/operator' },
+        { type: 'Control', scope: '#/properties/case_sensitive' },
+        { type: 'Control', scope: '#/properties/branches' },
+        {
+          type: 'Group',
+          label: 'General',
+          collapsible: true,
+          defaultOpen: false,
+          elements: [{ type: 'Control', scope: '#/properties/instance_title' }]
+        }
+      ]
+    },
+    tags: []
+  };
+  const configNodeTypes = [chatOutputNodeType, switchNodeType, headersNodeType, ifElseNodeType];
+  const switchBranches = [
+    { name: 'Default', value: 'default' },
+    { name: 'Article', value: 'article' },
+    { name: 'Page', value: 'page' }
+  ];
+  const configMeta = {
+    schemaVersion: '1.0.0',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z'
+  };
+  const configWorkflow: Workflow = {
+    id: 'test-workflow-config',
+    name: 'Config Forms Workflow',
+    description: 'Nodes with item refs, a two-field array and read-only items',
+    nodes: [
+      {
+        id: 'switch_gateway.1',
+        type: 'universalNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: 'Switch Gateway',
+          config: { branches: switchBranches, default_branch: 'default' },
+          metadata: switchNodeType
+        }
+      },
+      {
+        id: 'switch_gateway.2',
+        type: 'universalNode',
+        position: { x: 500, y: 0 },
+        data: {
+          label: 'Switch (wired default)',
+          config: { branches: switchBranches, default_branch: 'article' },
+          metadata: switchNodeType
+        }
+      },
+      {
+        id: 'switch_gateway.3',
+        type: 'universalNode',
+        position: { x: 1000, y: 0 },
+        data: {
+          label: 'Switch (dangling default)',
+          config: { branches: switchBranches, default_branch: 'gone' },
+          metadata: switchNodeType
+        }
+      },
+      {
+        id: 'http_request.1',
+        type: 'universalNode',
+        position: { x: 0, y: 500 },
+        data: {
+          label: 'HTTP Request',
+          config: {
+            method: 'POST',
+            timeout: 30,
+            headers: [
+              { name: 'Accept', value: 'application/json' },
+              { name: 'X-Trace', value: 'on' }
+            ]
+          },
+          metadata: headersNodeType
+        }
+      },
+      {
+        id: 'if_else.1',
+        type: 'universalNode',
+        position: { x: 500, y: 500 },
+        data: {
+          label: 'If/Else',
+          config: {
+            match_text: 'article',
+            operator: 'equals',
+            branches: [
+              { name: 'True', value: 'true' },
+              { name: 'False', value: 'false' }
+            ]
+          },
+          metadata: ifElseNodeType
+        }
+      },
+      {
+        id: 'chat_output.1',
+        type: 'universalNode',
+        position: { x: 1000, y: 500 },
+        data: { label: 'Chat Output', config: {}, metadata: chatOutputNodeType }
+      }
+    ],
+    edges: [
+      {
+        id: 'edge-default-branch',
+        source: 'chat_output.1',
+        target: 'switch_gateway.2',
+        sourceHandle: 'chat_output.1-output-message',
+        targetHandle: 'switch_gateway.2-input-default_branch'
+      }
+    ],
+    metadata: configMeta
+  };
+
   const workflows: Record<string, Workflow> = {
     straight: straightWorkflow,
     inspector: inspectorWorkflow,
+    config: configWorkflow,
     caption: captionWorkflow,
     notes: notesWorkflow,
     simple: simpleWorkflow,
@@ -1217,7 +1463,8 @@
     nodes={[
       ...testNodeTypes,
       ...(offerCaption ? [captionNodeType] : []),
-      ...(workflowVariant === 'inspector' ? inspectorNodeTypes : [])
+      ...(workflowVariant === 'inspector' ? inspectorNodeTypes : []),
+      ...(workflowVariant === 'config' ? configNodeTypes : [])
     ]}
     workflow={selectedWorkflow}
     theme={themeName}
