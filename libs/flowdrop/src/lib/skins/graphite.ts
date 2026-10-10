@@ -111,7 +111,7 @@ export const graphiteSkin: FlowDropSkin = {
     primary: '#16191f',
     'primary-hover': '#2b303a',
     'primary-foreground': '#ffffff',
-    'primary-muted': '#eceef1',
+    'primary-muted': '#dfe4ee',
 
     secondary: '#f1f3f5',
     'secondary-hover': '#e5e8ec',
@@ -392,7 +392,7 @@ export const graphiteSkin: FlowDropSkin = {
     primary: '#eceef2',
     'primary-hover': '#ffffff',
     'primary-foreground': '#14161a',
-    'primary-muted': '#23272d',
+    'primary-muted': '#2a3140',
 
     secondary: '#23272d',
     'secondary-hover': '#2c3037',
