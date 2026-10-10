@@ -6,8 +6,8 @@
   full "6 nodes · 6 connections" is its title and accessible name. A cycle warning,
   also formerly in the status bar, appears next to the count when the graph loops.
 
-  When the WebMCP desktop bridge is installed and offers tools, its button stands on its own
-  beside the group (WebMCPBridgeMenu): both sit in one bottom-left panel, laid out in a row.
+  When the WebMCP desktop bridge is installed and offers tools, its button is the group's last
+  segment, behind a divider (WebMCPBridgeMenu): one island for the corner.
 
   Must render inside <SvelteFlow>: xyflow's Controls reads the flow store.
 -->
@@ -64,20 +64,14 @@
           {/if}
         </span>
       </div>
+      <WebMCPBridgeMenu />
     {/snippet}
   </Controls>
-  <WebMCPBridgeMenu />
 </Panel>
 
 <style>
-  /* The zoom group and the bridge button side by side; the group's own panel
-     is laid out by this one instead of positioning itself. */
-  :global(.svelte-flow__panel.fd-canvas-floats) {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-  }
-  :global(.fd-canvas-floats > .svelte-flow__panel) {
+  /* The outer panel carries the inset; the group's own panel sits flush inside it. */
+  :global(.svelte-flow .svelte-flow__panel.fd-canvas-floats > .svelte-flow__panel) {
     position: static;
     margin: 0;
   }

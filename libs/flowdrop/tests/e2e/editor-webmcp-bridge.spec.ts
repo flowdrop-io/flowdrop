@@ -33,16 +33,21 @@ test.describe('WebMCP desktop bridge', () => {
     await expect(trigger(page)).toHaveCount(0);
   });
 
-  test("stands beside the zoom controls and hides the widget's own UI", async ({ page }) => {
+  test("joins the zoom controls as their last segment and hides the widget's own UI", async ({
+    page
+  }) => {
     await open(page);
     await expect(trigger(page)).toBeVisible();
-    // Its own float, not one more button of the zoom group.
+    // One island: the button is a segment of the zoom group, after its readout.
     await expect(
       page.locator('.svelte-flow__controls').getByTestId('webmcp-bridge-trigger')
-    ).toHaveCount(0);
+    ).toHaveCount(1);
     const zoom = await page.locator('.svelte-flow__controls').boundingBox();
     const button = await trigger(page).boundingBox();
-    expect(button!.x).toBeGreaterThan(zoom!.x + zoom!.width);
+    expect(button!.x).toBeGreaterThan(zoom!.x);
+    expect(button!.x + button!.width).toBeLessThanOrEqual(zoom!.x + zoom!.width);
+    const count = await page.locator('.fd-zoom-status').boundingBox();
+    expect(button!.x).toBeGreaterThanOrEqual(count!.x + count!.width);
     await expect(trigger(page)).toHaveAttribute('data-status', 'disconnected');
     await expect(page.locator('[data-webmcp-widget]')).toBeHidden();
   });

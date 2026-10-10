@@ -1,6 +1,6 @@
 <!--
-  WebMCPBridgeMenu — the desktop bridge's button and popover, a floating button
-  of its own beside the canvas zoom controls.
+  WebMCPBridgeMenu — the desktop bridge's button and popover, the last segment
+  of the canvas zoom controls.
 
   A browser without WebMCP of its own reaches the editor's tools through a
   bridge to an AI app on the same computer. The vendored widget's own UI is
@@ -11,8 +11,9 @@
   the tools offered.
 
   Drawn only while a bridge is installed, its widget is recognised and the
-  editor offered tools through it. The trigger is an `IconButton` on a surface
-  that takes the zoom group's tokens, so the two floats read as a pair.
+  editor offered tools through it. The trigger is an `IconButton` sized by the
+  zoom group's tokens, drawn as the group's last segment behind a divider (the
+  group, CanvasZoomControls, supplies the surface).
 -->
 
 <script lang="ts">
@@ -127,7 +128,7 @@
       onclick={() => (open ? close(false) : void show())}
       onkeydown={onKeydown}
     >
-      <Icon icon="heroicons:computer-desktop" />
+      <Icon icon="mdi:monitor" />
       {#if status !== 'disconnected'}
         <!-- Quiet when not connected: the dot appears only once something is happening. -->
         <span class="fd-bridge__badge fd-bridge__dot fd-bridge__dot--{status}" aria-hidden="true"
@@ -216,26 +217,23 @@
 {/if}
 
 <style>
-  /* Its own float, in the zoom group's chrome. */
+  /* The last segment of the zoom group: a divider, then the button. */
   .fd-bridge {
     display: flex;
-    box-sizing: border-box;
-    padding: var(--fd-zoom-group-padding);
-    background: var(--fd-zoom-group-bg);
-    border: var(--fd-zoom-group-border);
-    border-radius: var(--fd-zoom-group-radius);
-    box-shadow: var(--fd-zoom-group-shadow);
+    align-items: center;
+    align-self: stretch;
+    margin-left: var(--fd-space-3xs);
+    padding-left: var(--fd-space-3xs);
+    border-left: 1px solid var(--fd-zoom-group-divider, var(--fd-border-muted));
   }
   .fd-bridge :global(.fd-bridge__trigger) {
     position: relative;
     width: var(--fd-zoom-button-size);
     height: var(--fd-zoom-button-size);
   }
-  /* Heroicons draw inside a 24px box with an inset; a little larger than the
-     zoom glyphs so the two read at the same weight. */
   .fd-bridge :global(.fd-bridge__trigger svg) {
-    width: calc(var(--fd-zoom-icon-size) + var(--fd-space-3xs));
-    height: calc(var(--fd-zoom-icon-size) + var(--fd-space-3xs));
+    width: var(--fd-zoom-icon-size);
+    height: var(--fd-zoom-icon-size);
   }
 
   .fd-bridge__dot {
