@@ -711,20 +711,20 @@
     box-sizing: border-box;
     margin: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-sm);
     padding: calc(var(--fd-space-3xs) - 1px) var(--fd-space-sm);
-    border: 1px solid var(--fd-border);
+    border: 1px solid var(--fd-console-line);
     border-radius: var(--fd-radius-lg);
-    background-color: var(--fd-background);
+    background-color: transparent;
     flex-shrink: 0;
   }
 
   .console-input:focus-within {
-    border-color: var(--fd-ring);
+    border-color: var(--fd-console-focus);
   }
 
   .console-input__prompt {
-    font-family: monospace;
+    font-family: var(--fd-font-mono);
     font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
+    color: var(--fd-console-prompt);
     margin-right: var(--fd-space-xs);
     user-select: none;
   }
@@ -741,9 +741,10 @@
     background: none;
     border: none;
     outline: none;
-    font-family: monospace;
+    font-family: var(--fd-font-mono);
     font-size: var(--fd-text-sm);
-    color: var(--fd-foreground);
+    color: var(--fd-console-verb);
+    caret-color: var(--fd-console-caret);
     padding: 0;
     line-height: 1.5;
     min-width: 0;
@@ -752,8 +753,8 @@
   }
 
   .console-input__field::placeholder {
-    color: var(--fd-muted-foreground);
-    opacity: 0.6;
+    color: var(--fd-console-muted);
+    opacity: 0.8;
   }
 
   .console-input--multiline {
@@ -772,28 +773,29 @@
   }
 
   .console-input__multiline-label {
-    font-family: monospace;
+    font-family: var(--fd-font-mono);
     font-size: var(--fd-text-sm);
-    color: var(--fd-foreground);
+    color: var(--fd-console-arg);
     font-weight: 500;
   }
 
   .console-input__multiline-hint {
-    font-family: monospace;
+    font-family: var(--fd-font-mono);
     font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
+    color: var(--fd-console-muted);
     opacity: 0.7;
   }
 
   .console-input__textarea {
     width: 100%;
     background: none;
-    border: 1px solid var(--fd-border-muted);
+    border: 1px solid var(--fd-console-line);
     border-radius: var(--fd-radius-sm);
     outline: none;
-    font-family: monospace;
+    font-family: var(--fd-font-mono);
     font-size: var(--fd-text-sm);
-    color: var(--fd-foreground);
+    color: var(--fd-console-verb);
+    caret-color: var(--fd-console-caret);
     padding: 0.375rem 0.5rem;
     line-height: 1.5;
     resize: vertical;
@@ -801,6 +803,11 @@
   }
 
   .console-input__textarea:focus {
-    border-color: var(--fd-border);
+    border-color: var(--fd-console-focus);
+  }
+
+  .console-input ::selection {
+    background: var(--fd-console-selection);
+    color: inherit;
   }
 </style>

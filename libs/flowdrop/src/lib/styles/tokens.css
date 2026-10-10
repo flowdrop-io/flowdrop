@@ -432,6 +432,34 @@
   --fd-toolbar-segmented-radius: var(--fd-control-radius); /* @internal  radius of the switch */
   --fd-toolbar-segment-radius: var(--fd-radius-md); /* @internal  radius of one segment */
   --fd-console-strip-height: 2rem; /* @internal  the Console's bottom strip / panel header */
+  /* Command Console terminal surface: dark ink in every app theme and colour scheme, so the
+     console reads apart from the chat and the Playground. Output stays quiet: one accent for
+     ids, green strings, amber numbers, everything else greys. */
+  --fd-console-bg: #17191e; /* @internal  panel body */
+  --fd-console-fg: #d9dce1; /* @internal  plain output text */
+  --fd-console-prompt: #5d6470; /* @internal  the > prompt */
+  --fd-console-verb: #ffffff; /* @internal  command verb (bold) */
+  --fd-console-arg: #c4c9d1; /* @internal  command arguments */
+  --fd-console-id: #8fb0ff; /* @internal  node and type ids */
+  --fd-console-header: #8a919c; /* @internal  table header and section headings */
+  --fd-console-rule: #3a3f48; /* @internal  the dashes under a table header */
+  --fd-console-key: #8a919c; /* @internal  config keys, field names */
+  --fd-console-eq: #5d6470; /* @internal  the = between key and value */
+  --fd-console-string: #8fd6a8; /* @internal  string values */
+  --fd-console-number: #f0b46a; /* @internal  number values */
+  --fd-console-punct: #5d6470; /* @internal  brackets, commas, colons, arrows */
+  --fd-console-error: #ff8a8a; /* @internal  error lines */
+  --fd-console-muted: #8a919c; /* @internal  last table column, hints, placeholder */
+  --fd-console-line: #2e323a; /* @internal  input frame and popover border */
+  --fd-console-focus: #8fb0ff; /* @internal  input frame while focused */
+  --fd-console-raised: #20232a; /* @internal  autocomplete popover */
+  --fd-console-hover: #292d36; /* @internal  hovered row (popover, example buttons) */
+  --fd-console-selected: #2b3550; /* @internal  highlighted suggestion */
+  --fd-console-selection: #34416b; /* @internal  text selection */
+  --fd-console-caret: #ffffff; /* @internal  text caret */
+  --fd-console-scroll-thumb: #3a3f48; /* @internal  scrollbar thumb */
+  --fd-console-scroll-thumb-hover: #4b515c; /* @internal */
+  --fd-console-entry-gap: 8px; /* @internal  space before each input entry after the first */
   --fd-zoom-group-bg: var(--fd-card); /* @internal  zoom controls group */
   --fd-zoom-group-border: none; /* @internal  shorthand */
   --fd-zoom-group-radius: var(--fd-radius-md); /* @internal */

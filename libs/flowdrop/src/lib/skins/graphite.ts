@@ -336,6 +336,13 @@ export const graphiteSkin: FlowDropSkin = {
   },
 
   darkTokens: {
+    /* The Console's ink would vanish into the dark canvas (#16181d): sink it one step lower and
+       lift the hairlines to match. Light mode keeps the default ink. */
+    'console-bg': '#0e1014',
+    'console-line': '#262a31',
+    'console-raised': '#181b21',
+    'console-hover': '#222630',
+    'console-rule': '#333842',
     /* Dark: the light tokens above also apply in dark mode, so every colour
        the light block sets is set again here. */
     background: '#16181d',

@@ -293,7 +293,11 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: var(--fd-background);
+    /* Terminal surface: ink in every app theme and colour scheme. The strip above stays chrome. */
+    background-color: var(--fd-console-bg);
+    color: var(--fd-console-fg);
+    color-scheme: dark;
+    font-family: var(--fd-font-mono);
   }
 
   .command-console__examples {
@@ -304,7 +308,7 @@
     padding: var(--fd-space-xs) var(--fd-space-md) 0;
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
+    color: var(--fd-console-muted);
   }
 
   .command-console__examples-label {
@@ -318,6 +322,12 @@
     font-family: inherit;
     font-size: inherit;
     font-weight: normal;
+    color: var(--fd-console-arg);
+  }
+
+  .command-console__examples :global(.command-console__example:hover) {
+    background-color: var(--fd-console-hover);
+    color: var(--fd-console-verb);
   }
 
   .command-console__content {

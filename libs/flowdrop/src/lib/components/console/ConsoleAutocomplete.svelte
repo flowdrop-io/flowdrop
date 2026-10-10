@@ -78,14 +78,14 @@
     right: 0;
     max-height: calc(8 * 2rem);
     overflow-y: auto;
-    background-color: var(--fd-card);
-    border: 1px solid var(--fd-border);
+    background-color: var(--fd-console-raised);
+    border: 1px solid var(--fd-console-line);
     border-bottom: none;
     border-radius: var(--fd-radius-sm) var(--fd-radius-sm) 0 0;
     z-index: 10;
 
     scrollbar-width: thin;
-    scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
+    scrollbar-color: var(--fd-console-scroll-thumb) transparent;
   }
 
   .console-autocomplete::-webkit-scrollbar {
@@ -93,11 +93,11 @@
   }
 
   .console-autocomplete::-webkit-scrollbar-track {
-    background: var(--fd-scrollbar-track);
+    background: transparent;
   }
 
   .console-autocomplete::-webkit-scrollbar-thumb {
-    background: var(--fd-scrollbar-thumb);
+    background: var(--fd-console-scroll-thumb);
     border-radius: var(--fd-scrollbar-radius);
   }
 
@@ -108,21 +108,22 @@
     padding: 0.25rem 1rem;
     height: 2rem;
     cursor: pointer;
-    font-family: monospace;
+    font-family: var(--fd-font-mono);
     font-size: var(--fd-text-sm);
-    color: var(--fd-foreground);
+    color: var(--fd-console-arg);
   }
 
   .console-autocomplete__item:hover {
-    background-color: var(--fd-accent);
+    background-color: var(--fd-console-hover);
   }
 
   .console-autocomplete__item--selected {
-    background-color: var(--fd-primary-muted);
+    background-color: var(--fd-console-selected);
+    color: var(--fd-console-verb);
   }
 
   .console-autocomplete__item--selected:hover {
-    background-color: var(--fd-primary-muted);
+    background-color: var(--fd-console-selected);
   }
 
   .console-autocomplete__label {
@@ -132,7 +133,7 @@
   }
 
   .console-autocomplete__detail {
-    color: var(--fd-muted-foreground);
+    color: var(--fd-console-muted);
     font-size: var(--fd-text-xs);
     margin-left: 1rem;
     white-space: nowrap;
