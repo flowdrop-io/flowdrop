@@ -8,6 +8,11 @@
  * 2. Assign layers based on longest path from StartNode
  * 3. Position nodes with configurable spacing
  * 4. Fan out branches vertically from BranchingNode
+ * 5. Align tops along chains: a node's top sits at its first predecessor's top
+ *    (pushed down only to clear its column neighbours), and every y is on the
+ *    grid. Node cards keep their handle centres a multiple of 20 from the top,
+ *    so row-1-to-row-1 wiring, trigger wire and data wire alike, comes out
+ *    straight.
  */
 
 import type { AgentSpecFlow } from '../../types/agentspec.js';
@@ -56,6 +61,8 @@ export interface AutoLayoutConfig {
   defaultNodeWidth: number;
   /** Fallback node height when measured dimensions are unavailable */
   defaultNodeHeight: number;
+  /** Every y lands on a multiple of this (px); the node cards' handle offsets are multiples of 20 */
+  grid: number;
 }
 
 const DEFAULT_CONFIG: AutoLayoutConfig = {
@@ -64,7 +71,8 @@ const DEFAULT_CONFIG: AutoLayoutConfig = {
   startX: 100,
   startY: 100,
   defaultNodeWidth: 220,
-  defaultNodeHeight: 150
+  defaultNodeHeight: 150,
+  grid: 20
 };
 
 /**
@@ -168,22 +176,62 @@ export function computeAutoLayout(
       );
   }
 
+  // Predecessors in edge order (control flow first), for aligning tops.
+  const predecessors = new Map<string, string[]>();
+  const addPredecessor = (from: string, to: string): void => {
+    const list = predecessors.get(to) ?? [];
+    if (!list.includes(from)) list.push(from);
+    predecessors.set(to, list);
+  };
+  for (const edge of flow.control_flow_connections) addPredecessor(edge.from_node, edge.to_node);
+  for (const edge of flow.data_flow_connections ?? []) {
+    addPredecessor(edge.source_node, edge.destination_node);
+  }
+
+  const grid = cfg.grid > 0 ? cfg.grid : 1;
+  const roundToGrid = (v: number): number => Math.round(v / grid) * grid;
+  const ceilToGrid = (v: number): number => Math.ceil(v / grid) * grid;
+
   // Compute Y positions within each layer, using actual node heights
   for (const layerIndex of sortedLayers) {
     const nodesInLayer = layerGroups.get(layerIndex)!;
     const x = layerXPositions.get(layerIndex)!;
+    const heights = new Map(nodesInLayer.map((name) => [name, getDims(name).height]));
 
-    // Calculate total height of this column (sum of node heights + gaps)
-    const heights = nodesInLayer.map((name) => getDims(name).height);
-    const totalHeight =
-      heights.reduce((sum, h) => sum + h, 0) + (nodesInLayer.length - 1) * cfg.verticalGap;
+    // The top a node wants: its first earlier-layer predecessor's top.
+    const wanted = new Map<string, number>();
+    for (const name of nodesInLayer) {
+      const from = (predecessors.get(name) ?? []).find((p) => {
+        const layer = layers.get(p);
+        return layer !== undefined && layer < layerIndex && positions.has(p);
+      });
+      if (from !== undefined) wanted.set(name, positions.get(from)!.y);
+    }
 
-    // Center the column vertically around startY
-    let y = cfg.startY - totalHeight / 2;
+    if (wanted.size === 0) {
+      // Nothing to align to (the first layer, or loose nodes): a column centred on startY.
+      const total =
+        nodesInLayer.reduce((sum, name) => sum + heights.get(name)!, 0) +
+        (nodesInLayer.length - 1) * cfg.verticalGap;
+      let y = roundToGrid(cfg.startY - total / 2);
+      for (const name of nodesInLayer) {
+        positions.set(name, { x, y });
+        y = ceilToGrid(y + heights.get(name)! + cfg.verticalGap);
+      }
+      continue;
+    }
 
-    for (let i = 0; i < nodesInLayer.length; i++) {
-      positions.set(nodesInLayer[i], { x, y });
-      y += heights[i] + cfg.verticalGap;
+    // Aligned nodes keep their wanted top in order, pushed down only to clear the node above;
+    // nodes with nothing to align to go below them.
+    const aligned = nodesInLayer
+      .filter((name) => wanted.has(name))
+      .sort((a, b) => wanted.get(a)! - wanted.get(b)!);
+    const loose = nodesInLayer.filter((name) => !wanted.has(name));
+    let cursor = -Infinity;
+    for (const name of [...aligned, ...loose]) {
+      const y = Math.max(wanted.get(name) ?? cursor, cursor);
+      positions.set(name, { x, y });
+      cursor = ceilToGrid(y + heights.get(name)! + cfg.verticalGap);
     }
   }
 
