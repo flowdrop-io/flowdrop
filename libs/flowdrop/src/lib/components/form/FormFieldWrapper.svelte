@@ -32,6 +32,8 @@
     plain?: boolean;
     /** Switch field: the control sits on the label's row, the help underneath. */
     inline?: boolean;
+    /** Short muted note on the label row, right-aligned (an array's "Matched in order"). */
+    aside?: string;
     /** Slot content for the field input */
     children: Snippet;
   }
@@ -44,6 +46,7 @@
     animationDelay = 0,
     plain = false,
     inline = false,
+    aside,
     children
   }: Props = $props();
 
@@ -60,14 +63,17 @@
   style="animation-delay: {animationDelay}ms"
 >
   <!-- Field Label -->
-  <label class="form-field__label" class:form-field__label--sr={plain} for={id}>
-    <span class="form-field__label-text">
-      {label}
-    </span>
-    {#if required}
-      <span class="form-field__required" aria-label={m().form.field.required}>*</span>
-    {/if}
-  </label>
+  <div class="form-field__label-row">
+    <label class="form-field__label" class:form-field__label--sr={plain} for={id}>
+      <span class="form-field__label-text">
+        {label}
+      </span>
+      {#if required}
+        <span class="form-field__required" aria-label={m().form.field.required}>*</span>
+      {/if}
+    </label>
+    {#if aside}<span class="form-field__aside">{aside}</span>{/if}
+  </div>
 
   {#if plain && description}
     <p id={descriptionId} class="form-field__description form-field__description--wrap">
@@ -121,6 +127,18 @@
     font-weight: var(--fd-field-label-weight);
     color: var(--fd-foreground);
     letter-spacing: -0.01em;
+  }
+
+  .form-field__label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--fd-space-md);
+  }
+
+  .form-field__aside {
+    font-size: var(--fd-field-help-size);
+    color: var(--fd-muted-foreground);
   }
 
   .form-field__label--sr {

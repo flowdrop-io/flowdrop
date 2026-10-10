@@ -121,125 +121,134 @@
 
 <div class="form-array-rows" bind:this={root} style:--form-array-cols={columns.length}>
   {#if items.length > 0}
-    <div class="form-array-rows__head" aria-hidden="true">
-      {#each columns as [key, schema] (key)}
-        <span>{label(key, schema)}</span>
+    <div class="form-array-rows__list">
+      <div class="form-array-rows__head" aria-hidden="true">
+        <span></span>
+        {#each columns as [key, schema] (key)}
+          <span>{label(key, schema)}</span>
+        {/each}
+        <span></span>
+      </div>
+
+      {#each items as item, index (index)}
+        {@const row = (item ?? {}) as Record<string, unknown>}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="form-array-rows__row"
+          class:form-array-rows__row--drop={dropTarget === index && dragging !== index}
+          class:form-array-rows__row--dragging={dragging === index}
+          data-array-row={index}
+          ondragover={(e) => {
+            if (dragging === null) return;
+            e.preventDefault();
+            dropTarget = index;
+          }}
+          ondrop={(e) => {
+            if (dragging === null) return;
+            e.preventDefault();
+            onMove(dragging, index);
+            dragging = dropTarget = null;
+          }}
+        >
+          <span
+            class="form-array-rows__grip"
+            role="presentation"
+            draggable={!disabled}
+            ondragstart={(e) => {
+              dragging = index;
+              e.dataTransfer?.setData('text/plain', String(index));
+              const rowEl = (e.currentTarget as HTMLElement).parentElement;
+              if (rowEl && e.dataTransfer) e.dataTransfer.setDragImage(rowEl, 0, 0);
+            }}
+            ondragend={() => (dragging = dropTarget = null)}
+          >
+            <Icon icon="heroicons:ellipsis-vertical" />
+          </span>
+
+          {#each columns as [key, schema], col (key)}
+            {@const cellId = `${id}-${index}-${key}`}
+            {@const value = row[key]}
+            <span class="form-array-rows__cell">
+              {#if schema.enum}
+                <Select
+                  id={cellId}
+                  aria-label={label(key, schema)}
+                  data-col={col}
+                  value={String(value ?? '')}
+                  onchange={(e) => onUpdate(index, key, e.currentTarget.value)}
+                  {disabled}
+                >
+                  {#each schema.enum as option (option)}
+                    <option value={String(option)}>{String(option)}</option>
+                  {/each}
+                </Select>
+              {:else if schema.type === 'boolean'}
+                <Switch
+                  id={cellId}
+                  label={label(key, schema)}
+                  checked={Boolean(value)}
+                  onchange={(checked) => onUpdate(index, key, checked)}
+                  {disabled}
+                />
+              {:else if schema.type === 'number' || schema.type === 'integer'}
+                <Input
+                  id={cellId}
+                  data-col={col}
+                  type="number"
+                  class="flowdrop-input--numeric form-array-rows__input form-array-rows__mono"
+                  aria-label={label(key, schema)}
+                  value={value as number}
+                  placeholder={schema.placeholder ?? label(key, schema)}
+                  min={schema.minimum}
+                  max={schema.maximum}
+                  oninput={(e) => {
+                    const v = e.currentTarget.value;
+                    onUpdate(index, key, v === '' ? '' : Number(v));
+                  }}
+                  onkeydown={(e) => onKeydown(e, index)}
+                  {disabled}
+                />
+              {:else}
+                <Input
+                  id={cellId}
+                  data-col={col}
+                  type="text"
+                  aria-label={label(key, schema)}
+                  value={String(value ?? '')}
+                  placeholder={schema.placeholder ?? label(key, schema)}
+                  class={[
+                    'form-array-rows__input',
+                    itemRef && col === 0 ? 'form-array-rows__marked-input' : '',
+                    col > 0 ? 'form-array-rows__mono' : ''
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  oninput={(e) => onUpdate(index, key, e.currentTarget.value)}
+                  onkeydown={(e) => onKeydown(e, index)}
+                  {disabled}
+                />
+              {/if}
+              {#if itemRef && col === 0 && markedIndex === index && !itemRef.wired}
+                <span class="form-array-rows__badge" data-testid="array-row-default-badge">
+                  {t.defaultBadge}
+                </span>
+              {/if}
+            </span>
+          {/each}
+
+          <span class="form-array-rows__more">
+            <Menu
+              size="sm"
+              align="end"
+              label={t.rowActions({ n: index + 1 })}
+              testId={`array-row-menu-${index}`}
+              items={menuFor(index)}
+            />
+          </span>
+        </div>
       {/each}
-      <span></span>
     </div>
   {/if}
-
-  {#each items as item, index (index)}
-    {@const row = (item ?? {}) as Record<string, unknown>}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div
-      class="form-array-rows__row"
-      class:form-array-rows__row--drop={dropTarget === index && dragging !== index}
-      class:form-array-rows__row--dragging={dragging === index}
-      data-array-row={index}
-      ondragover={(e) => {
-        if (dragging === null) return;
-        e.preventDefault();
-        dropTarget = index;
-      }}
-      ondrop={(e) => {
-        if (dragging === null) return;
-        e.preventDefault();
-        onMove(dragging, index);
-        dragging = dropTarget = null;
-      }}
-    >
-      <span
-        class="form-array-rows__grip"
-        role="presentation"
-        draggable={!disabled}
-        ondragstart={(e) => {
-          dragging = index;
-          e.dataTransfer?.setData('text/plain', String(index));
-          const rowEl = (e.currentTarget as HTMLElement).parentElement;
-          if (rowEl && e.dataTransfer) e.dataTransfer.setDragImage(rowEl, 0, 0);
-        }}
-        ondragend={() => (dragging = dropTarget = null)}
-      >
-        <Icon icon="heroicons:ellipsis-vertical" />
-      </span>
-
-      {#each columns as [key, schema], col (key)}
-        {@const cellId = `${id}-${index}-${key}`}
-        {@const value = row[key]}
-        <span class="form-array-rows__cell">
-          {#if schema.enum}
-            <Select
-              id={cellId}
-              aria-label={label(key, schema)}
-              data-col={col}
-              value={String(value ?? '')}
-              onchange={(e) => onUpdate(index, key, e.currentTarget.value)}
-              {disabled}
-            >
-              {#each schema.enum as option (option)}
-                <option value={String(option)}>{String(option)}</option>
-              {/each}
-            </Select>
-          {:else if schema.type === 'boolean'}
-            <Switch
-              id={cellId}
-              label={label(key, schema)}
-              checked={Boolean(value)}
-              onchange={(checked) => onUpdate(index, key, checked)}
-              {disabled}
-            />
-          {:else if schema.type === 'number' || schema.type === 'integer'}
-            <Input
-              id={cellId}
-              data-col={col}
-              type="number"
-              class="flowdrop-input--numeric"
-              aria-label={label(key, schema)}
-              value={value as number}
-              placeholder={schema.placeholder ?? label(key, schema)}
-              min={schema.minimum}
-              max={schema.maximum}
-              oninput={(e) => {
-                const v = e.currentTarget.value;
-                onUpdate(index, key, v === '' ? '' : Number(v));
-              }}
-              onkeydown={(e) => onKeydown(e, index)}
-              {disabled}
-            />
-          {:else}
-            <Input
-              id={cellId}
-              data-col={col}
-              type="text"
-              aria-label={label(key, schema)}
-              value={String(value ?? '')}
-              placeholder={schema.placeholder ?? label(key, schema)}
-              class={itemRef && col === 0 ? 'form-array-rows__marked-input' : ''}
-              oninput={(e) => onUpdate(index, key, e.currentTarget.value)}
-              onkeydown={(e) => onKeydown(e, index)}
-              {disabled}
-            />
-          {/if}
-          {#if itemRef && col === 0 && markedIndex === index && !itemRef.wired}
-            <span class="form-array-rows__badge" data-testid="array-row-default-badge">
-              {t.defaultBadge}
-            </span>
-          {/if}
-        </span>
-      {/each}
-
-      <span class="form-array-rows__more">
-        <Menu
-          size="sm"
-          align="end"
-          label={t.rowActions({ n: index + 1 })}
-          testId={`array-row-menu-${index}`}
-          items={menuFor(index)}
-        />
-      </span>
-    </div>
-  {/each}
 
   {#if status === 'empty' && items.length > 0}
     <p class="form-array-rows__note" data-testid="array-default-note">{t.noDefault}</p>
@@ -258,32 +267,52 @@
 </div>
 
 <style>
+  /* One list surface: a hairline container, a header row and rows divided by
+     hairlines. Cells read as text; the input chrome shows on hover and focus. */
   .form-array-rows {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-3xs);
+    gap: var(--fd-space-xs);
+  }
+
+  .form-array-rows__list {
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-control-radius);
+    overflow: hidden;
   }
 
   .form-array-rows__head,
   .form-array-rows__row {
     display: grid;
-    grid-template-columns: repeat(var(--form-array-cols), minmax(0, 1fr)) var(--fd-control-md);
+    grid-template-columns:
+      var(--fd-space-xl) repeat(var(--form-array-cols), minmax(0, 1fr))
+      var(--fd-control-md);
     align-items: center;
     column-gap: var(--fd-space-xs);
+    padding: 0 var(--fd-space-xs);
   }
 
   .form-array-rows__head {
-    margin: 0 calc(-1 * var(--fd-space-3xs));
-    padding: 0 var(--fd-space-3xs) var(--fd-space-3xs);
+    height: var(--fd-control-md);
+    border-bottom: 1px solid var(--fd-border);
+    background-color: var(--fd-subtle);
     font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
   }
 
+  /* Cell text lines up with the row's input text (input padding + border). */
+  .form-array-rows__head span:not(:first-child) {
+    padding-left: calc(var(--fd-space-xs) + 1px);
+  }
+
   .form-array-rows__row {
     position: relative;
-    margin: 0 calc(-1 * var(--fd-space-3xs));
-    padding: 0 var(--fd-space-3xs);
-    border-radius: var(--fd-radius-md);
+    height: calc(var(--fd-control-lg) + var(--fd-space-xs));
+    border-bottom: 1px solid var(--fd-border-muted);
+  }
+
+  .form-array-rows__row:last-child {
+    border-bottom: 0;
   }
 
   .form-array-rows__row--dragging {
@@ -295,10 +324,7 @@
     outline-offset: -2px;
   }
 
-  /* The grip hangs in the panel gutter, so the inputs keep the one left edge. */
   .form-array-rows__grip {
-    position: absolute;
-    left: calc(-1 * var(--fd-space-md));
     display: inline-flex;
     color: var(--fd-muted-foreground);
     cursor: grab;
@@ -329,25 +355,53 @@
     min-width: 0;
   }
 
+  /* Inline edit: no chrome until hover or focus. */
+  .form-array-rows :global(.form-array-rows__input),
+  .form-array-rows :global(select) {
+    height: var(--fd-control-md);
+    padding: 0 var(--fd-space-xs);
+    border-color: transparent;
+    background-color: transparent;
+    box-shadow: none;
+    font-size: var(--fd-text-sm);
+  }
+
+  .form-array-rows :global(.form-array-rows__input:hover:not(:disabled)),
+  .form-array-rows :global(select:hover:not(:disabled)) {
+    border-color: var(--fd-border);
+  }
+
+  .form-array-rows :global(.form-array-rows__input:focus) {
+    background-color: var(--fd-background);
+  }
+
+  .form-array-rows :global(.form-array-rows__mono) {
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-meta);
+    color: var(--fd-muted-foreground);
+  }
+
   /* Room for the badge inside the marked row's first input. */
-  .form-array-rows__cell :global(.form-array-rows__marked-input) {
-    padding-right: 4.5rem;
+  .form-array-rows :global(.form-array-rows__marked-input) {
+    padding-right: 4rem;
   }
 
   .form-array-rows__badge {
     position: absolute;
     right: var(--fd-space-xs);
     padding: 0 var(--fd-space-xs);
-    border-radius: var(--fd-radius-full);
-    background-color: var(--fd-primary-muted);
-    color: var(--fd-primary);
-    font-size: var(--fd-text-meta);
+    border-radius: var(--fd-radius-sm);
+    background-color: var(--fd-accent-muted);
+    color: var(--fd-accent);
+    font-size: var(--fd-text-2xs);
+    font-weight: 500;
     line-height: 1.5;
     pointer-events: none;
   }
 
+  /* Visible quietly, stronger on hover and focus. */
   .form-array-rows__more {
-    opacity: 0;
+    opacity: 0.55;
     transition: opacity var(--fd-transition-fast);
   }
 
@@ -356,17 +410,11 @@
     opacity: 1;
   }
 
-  @media (hover: none) {
-    .form-array-rows__more {
-      opacity: 1;
-    }
-  }
-
   .form-array-rows__note {
     display: flex;
     align-items: center;
     gap: var(--fd-space-xs);
-    margin: var(--fd-space-3xs) 0 0;
+    margin: 0;
     font-size: var(--fd-text-meta);
     color: var(--fd-muted-foreground);
   }

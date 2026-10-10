@@ -1208,6 +1208,7 @@
         branches: {
           type: 'array',
           title: 'Branches',
+          description: 'Set by this node',
           readOnly: true,
           items: {
             type: 'object',

@@ -230,14 +230,34 @@
         return 'This field type requires additional registration.';
     }
   }
+
+  /**
+   * An array's description reads as two parts: the first sentence is a short note
+   * on the label row ("Matched in order"), the rest is help under the Add button.
+   */
+  const isArrayField = $derived(fieldType === 'array' && !!schema.items);
+  const arrayText = $derived.by((): { note?: string; help?: string } => {
+    const text = isArrayField && typeof schema.description === 'string' ? schema.description : '';
+    if (!text) return {};
+    const cut = text.search(/[.!?](\s|$)/);
+    if (cut < 0) return { note: text };
+    const note = text.slice(0, cut).trim();
+    const help = text.slice(cut + 1).trim();
+    return { note, help: help || undefined };
+  });
 </script>
 
 {#if fieldType !== 'hidden'}
   <FormFieldWrapper
+    aside={arrayText.note}
     id={fieldKey}
     label={fieldLabel}
     {required}
-    description={schema.title || fieldType === 'ports' ? schema.description : undefined}
+    description={isArrayField
+      ? undefined
+      : schema.title || fieldType === 'ports'
+        ? schema.description
+        : undefined}
     plain={fieldType === 'ports'}
     inline={fieldType === 'toggle'}
     {animationDelay}
@@ -373,6 +393,7 @@
         addLabel={`Add ${schema.items.title ?? 'Item'}`}
         readOnly={isReadOnly}
         {itemRef}
+        help={arrayText.help}
         onChange={(val) => onChange(val)}
       />
     {:else if fieldType === 'ports'}

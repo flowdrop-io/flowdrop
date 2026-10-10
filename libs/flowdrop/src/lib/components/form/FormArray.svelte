@@ -54,6 +54,8 @@
      * not as disabled inputs, and nothing can be added.
      */
     readOnly?: boolean;
+    /** Help under the Add button. */
+    help?: string;
     /** A scalar field that names one of the items (`x-item-ref`), shown as a row mark. */
     itemRef?: ItemRef;
     /** Callback when value changes */
@@ -70,6 +72,7 @@
     disabled = false,
     readOnly = false,
     itemRef,
+    help,
     onChange
   }: Props = $props();
 
@@ -633,6 +636,9 @@
       {/if}
     </div>
   {/if}
+  {#if help}
+    <p class="form-array__help">{help}</p>
+  {/if}
 </div>
 
 <style>
@@ -815,20 +821,35 @@
   .form-array__static {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-3xs);
     margin: 0;
     padding: 0;
     list-style: none;
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-control-radius);
+    overflow: hidden;
   }
 
   .form-array__static li {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: var(--fd-space-md);
-    min-height: var(--fd-control-md);
-    font-size: var(--fd-text-body);
+    min-height: var(--fd-control-lg);
+    padding: 0 var(--fd-space-md);
+    border-bottom: 1px solid var(--fd-border-muted);
+    font-size: var(--fd-text-sm);
     color: var(--fd-foreground);
+  }
+
+  .form-array__static li:last-child {
+    border-bottom: 0;
+  }
+
+  .form-array__help {
+    margin: 0;
+    font-size: var(--fd-field-help-size);
+    line-height: 1.45;
+    color: var(--fd-muted-foreground);
   }
 
   .form-array__static code {
