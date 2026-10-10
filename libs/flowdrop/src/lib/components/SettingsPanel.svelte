@@ -135,9 +135,12 @@
         gridSize: {
           type: 'number',
           title: 'Grid size',
-          description: 'Grid cell size in pixels',
-          minimum: 5,
-          maximum: 50,
+          description:
+            'Grid cell size in pixels. Both sizes keep wires able to line up straight between nodes.',
+          oneOf: [
+            { const: '10', title: '10 px' },
+            { const: '20', title: '20 px' }
+          ],
           default: 20
         },
         showMinimap: {
@@ -399,6 +402,8 @@
     help: string;
     kind: 'switch' | 'swatches' | 'segmented' | 'select' | 'number';
     options: { value: string; label: string }[];
+    /** The stored value is a number although the choices are strings. */
+    numeric?: boolean;
     min?: number;
     max?: number;
   }
@@ -429,6 +434,7 @@
         help: String(def.description ?? ''),
         kind,
         options,
+        numeric: def.type === 'number',
         min: def.minimum as number | undefined,
         max: def.maximum as number | undefined
       };
@@ -540,7 +546,7 @@
                     ariaLabel={row.title}
                     options={row.options}
                     value={String(values[row.key] ?? '')}
-                    onchange={(v) => setValue(category, row.key, v)}
+                    onchange={(v) => setValue(category, row.key, row.numeric ? Number(v) : v)}
                   />
                 {:else if row.kind === 'select'}
                   <Select

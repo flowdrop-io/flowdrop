@@ -368,4 +368,33 @@ describe('settingsStore persistence', { timeout: 30_000 }, () => {
       expect(store.getTheme()).toBe('host');
     });
   });
+
+  describe('grid size (Graphite G8, D3)', () => {
+    it.each([5, 15, 25, 30, 40, 50])('migrates a stored %i to 20', async (size) => {
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ editor: { gridSize: size, showGrid: false } })
+      );
+      const store = await freshStore();
+      expect(store.getEditorSettings().gridSize).toBe(20);
+      // The rest of the snapshot is untouched.
+      expect(store.getEditorSettings().showGrid).toBe(false);
+    });
+
+    it.each([10, 20])('keeps a stored %i', async (size) => {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ editor: { gridSize: size } }));
+      const store = await freshStore();
+      expect(store.getEditorSettings().gridSize).toBe(size);
+    });
+
+    it('migrates a host default and an update outside 10 or 20', async () => {
+      const store = await freshStore();
+      await store.initializeSettings({ defaults: { editor: { gridSize: 30 } } as never });
+      expect(store.getEditorSettings().gridSize).toBe(20);
+      store.updateSettings({ editor: { gridSize: 10 } });
+      expect(store.getEditorSettings().gridSize).toBe(10);
+      store.updateSettings({ editor: { gridSize: 15 } });
+      expect(store.getEditorSettings().gridSize).toBe(20);
+    });
+  });
 });

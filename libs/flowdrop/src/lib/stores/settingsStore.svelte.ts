@@ -34,7 +34,7 @@ export type {
   ColorSchemeOption,
   HostColorSchemeValue
 } from '$lib/types/settings.js';
-import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '$lib/types/settings.js';
+import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, normalizeGridSize } from '$lib/types/settings.js';
 import { logger } from '../utils/logger.js';
 
 // =========================================================================
@@ -165,6 +165,11 @@ function deepMergeSettings(
   // Merge API settings
   if (source.api) {
     result.api = { ...result.api, ...source.api };
+  }
+
+  // Grid size is 10 or 20 (D3): migrates any other stored value to 20.
+  if (result.editor.gridSize !== normalizeGridSize(result.editor.gridSize)) {
+    result.editor.gridSize = normalizeGridSize(result.editor.gridSize);
   }
 
   return result;

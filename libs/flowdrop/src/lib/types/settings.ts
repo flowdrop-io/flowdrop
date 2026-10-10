@@ -313,6 +313,21 @@ export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
 };
 
 /**
+ * The grid sizes the editor offers (px). Both divide 20, the unit every node
+ * card's handle offsets are a multiple of, so wires can always be made straight.
+ * @see Graphite G8, decision D3
+ */
+export const GRID_SIZES = [10, 20] as const;
+
+/**
+ * Any stored grid size that is not one of {@link GRID_SIZES} becomes 20.
+ * Applied wherever settings are merged (saved snapshot, host defaults, API).
+ */
+export function normalizeGridSize(value: unknown): number {
+  return (GRID_SIZES as readonly unknown[]).includes(value) ? (value as number) : 20;
+}
+
+/**
  * Default editor settings
  */
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
