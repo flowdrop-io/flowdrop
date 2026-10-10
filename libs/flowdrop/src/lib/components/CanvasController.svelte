@@ -9,6 +9,8 @@
   import { useNodesInitialized } from '@xyflow/svelte';
   import { boundsWithTags, fitPadding, type FitBox } from '../utils/canvasFit.js';
   import { getEditorSettings } from '../stores/settingsStore.svelte.js';
+  import { extractPortId } from '../utils/handleIds.js';
+  import type { StraightWire } from '../utils/straightWires.js';
 
   interface Props {
     /** Room each node's interface tags need beside it (flow px), read at fit time. */
@@ -106,6 +108,43 @@
   /** Convert a viewport (client) point to flow coordinates. */
   export function canvasScreenToFlow(point: { x: number; y: number }): { x: number; y: number } {
     return screenToFlowPosition(point);
+  }
+
+  /**
+   * Where each edge's two handles are, measured by xyflow from the rendered
+   * handles (so it holds for every node type). `dx`/`dy` are the handle
+   * centres from their node's top-left corner. Edges whose nodes or handles
+   * are not measured yet are left out.
+   */
+  export function canvasWireEnds(
+    edges: ReadonlyArray<{
+      id: string;
+      source: string;
+      target: string;
+      sourceHandle?: string | null;
+      targetHandle?: string | null;
+    }>
+  ): StraightWire[] {
+    const wires: StraightWire[] = [];
+    for (const edge of edges) {
+      if (edge.source === edge.target) continue;
+      const from = getInternalNode(edge.source)?.internals.handleBounds?.source;
+      const to = getInternalNode(edge.target)?.internals.handleBounds?.target;
+      const s = from?.find((h) => (edge.sourceHandle ? h.id === edge.sourceHandle : true));
+      const t = to?.find((h) => (edge.targetHandle ? h.id === edge.targetHandle : true));
+      if (!s || !t) continue;
+      wires.push({
+        id: edge.id,
+        sourceId: edge.source,
+        targetId: edge.target,
+        sourceDx: Math.round(s.x + s.width / 2),
+        sourceDy: Math.round(s.y + s.height / 2),
+        targetDx: Math.round(t.x + t.width / 2),
+        targetDy: Math.round(t.y + t.height / 2),
+        exec: extractPortId(edge.targetHandle ?? undefined) === 'trigger'
+      });
+    }
+    return wires;
   }
 
   /**

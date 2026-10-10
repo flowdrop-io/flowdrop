@@ -307,6 +307,8 @@ export const defaultMessages = {
     editText: 'Edit text',
     duplicate: 'Duplicate',
     swap: 'Swap node',
+    // Moves the node(s) up or down so the wire into the first connected input is straight.
+    straightenWires: 'Straighten wires',
     // A port's menu: publish it in the workflow interface, rename or unpublish it.
     exposeInput: 'Expose as workflow input…',
     exposeOutput: 'Expose as workflow output…',
@@ -314,7 +316,8 @@ export const defaultMessages = {
     removeInterfaceEntry: 'Remove from interface',
     // Key hints shown beside an entry, as key glyphs.
     shortcutEnter: '↵',
-    shortcutDelete: '⌫'
+    shortcutDelete: '⌫',
+    shortcutStraighten: '⇧S'
   },
 
   // The run bar on the Edit canvas: shown only while a run exists.

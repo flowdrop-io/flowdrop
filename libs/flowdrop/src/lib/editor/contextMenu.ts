@@ -41,6 +41,13 @@ export interface ContextMenuActions {
   duplicateNode(id: string): void;
   /** Start the node-swap flow for a node. Absent when swapping is not offered here. */
   swapNode?(id: string): void;
+  /**
+   * Move nodes vertically so each one's primary incoming wire is straight, as
+   * one undo step. Absent when the editor cannot measure its handles.
+   */
+  straightenWires?(ids: string[]): void;
+  /** Whether {@link straightenWires} would move any of these nodes. Absent: assume yes. */
+  canStraightenWires?(ids: string[]): boolean;
 }
 
 /** Everything an entry or the `items` option needs to decide what to show and do. */
@@ -110,8 +117,8 @@ export function isSeparator(entry: ContextMenuEntry): entry is { id: string; sep
 
 /**
  * The built-in entries for a menu: node -> Configure (or Edit text for a node
- * that edits in place), Duplicate, Swap node (when offered), separator, Delete; selection (2+ nodes) -> Delete n
- * nodes; pane -> Add caption when the node types include a caption, else none.
+ * that edits in place), Duplicate, Swap node (when offered), Straighten wires (when offered), separator, Delete;
+ * selection (2+ nodes) -> Straighten wires (when offered), separator, Delete n nodes; pane -> Add caption when the node types include a caption, else none.
  *
  * @param messages - the `contextMenu` message branch (`m().contextMenu` in a component)
  * @param options - facts the context does not carry (see `DefaultEntriesOptions`)
@@ -153,6 +160,7 @@ export function buildDefaultContextMenuEntries(
           run: (c) => c.actions.openConfig(c.nodes[0].id)
         };
     const swap = ctx.actions.swapNode;
+    const straighten = straightenEntry(ctx, messages);
     return [
       first,
       {
@@ -171,6 +179,7 @@ export function buildDefaultContextMenuEntries(
             } satisfies ContextMenuEntry
           ]
         : []),
+      ...straighten,
       { id: 'separator-node', separator: true },
       {
         id: 'delete',
@@ -184,7 +193,10 @@ export function buildDefaultContextMenuEntries(
   }
 
   if (ctx.target === 'selection' && ctx.nodes.length > 1) {
+    const straighten = straightenEntry(ctx, messages);
     return [
+      ...straighten,
+      ...(straighten.length > 0 ? [{ id: 'separator-selection', separator: true } as const] : []),
       {
         id: 'delete',
         icon: 'mdi:trash-can-outline',
@@ -197,6 +209,25 @@ export function buildDefaultContextMenuEntries(
   }
 
   return [];
+}
+
+/** The "Straighten wires" entry, when the editor offers it. */
+function straightenEntry(
+  ctx: ContextMenuContext,
+  messages: ContextMenuMessages
+): ContextMenuEntry[] {
+  if (!ctx.actions.straightenWires) return [];
+  const ids = ctx.nodes.map((n) => n.id);
+  return [
+    {
+      id: 'straighten-wires',
+      icon: 'mdi:vector-line',
+      label: messages.straightenWires,
+      shortcut: messages.shortcutStraighten,
+      disabled: ctx.actions.canStraightenWires ? !ctx.actions.canStraightenWires(ids) : false,
+      run: (c) => c.actions.straightenWires?.(c.nodes.map((n) => n.id))
+    }
+  ];
 }
 
 /** Drop leading, trailing and doubled separators. */

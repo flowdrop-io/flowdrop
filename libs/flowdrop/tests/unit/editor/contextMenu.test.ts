@@ -62,6 +62,41 @@ const captionMeta = meta({ node_type_id: 'caption', name: 'Caption', type: 'capt
 const ids = (entries: ContextMenuEntry[]): string[] => entries.map((e) => e.id);
 
 describe('buildDefaultContextMenuEntries', () => {
+  it('Straighten wires: offered on a node and a selection only when the editor provides it', () => {
+    const ctx = makeCtx('node', [node('a')]);
+    expect(ids(buildDefaultContextMenuEntries(ctx))).not.toContain('straighten-wires');
+
+    ctx.actions.straightenWires = vi.fn();
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual([
+      'configure',
+      'duplicate',
+      'straighten-wires',
+      'separator-node',
+      'delete'
+    ]);
+    expect(entries[2]).toMatchObject({ label: 'Straighten wires', shortcut: '⇧S' });
+    runContextMenuEntry(entries[2], ctx);
+    expect(ctx.actions.straightenWires).toHaveBeenCalledWith(['a']);
+
+    const many = makeCtx('selection', [node('a'), node('b')]);
+    many.actions.straightenWires = vi.fn();
+    const selection = buildDefaultContextMenuEntries(many);
+    expect(ids(selection)).toEqual(['straighten-wires', 'separator-selection', 'delete']);
+    runContextMenuEntry(selection[0], many);
+    expect(many.actions.straightenWires).toHaveBeenCalledWith(['a', 'b']);
+  });
+
+  it('Straighten wires is disabled when nothing would move', () => {
+    const ctx = makeCtx('node', [node('a')]);
+    ctx.actions.straightenWires = vi.fn();
+    ctx.actions.canStraightenWires = () => false;
+    const entry = buildDefaultContextMenuEntries(ctx).find((e) => e.id === 'straighten-wires');
+    expect(entry).toMatchObject({ disabled: true });
+    runContextMenuEntry(entry!, ctx);
+    expect(ctx.actions.straightenWires).not.toHaveBeenCalled();
+  });
+
   it('node: Configure, separator, Delete', () => {
     const entries = buildDefaultContextMenuEntries(makeCtx('node', [node('a')]));
     expect(ids(entries)).toEqual(['configure', 'duplicate', 'separator-node', 'delete']);

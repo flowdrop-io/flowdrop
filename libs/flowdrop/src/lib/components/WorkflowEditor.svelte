@@ -23,6 +23,8 @@
   import CanvasBanner from './CanvasBanner.svelte';
   import CanvasToolbar from './CanvasToolbar.svelte';
   import CanvasController from './CanvasController.svelte';
+  import StraightGuides from './StraightGuides.svelte';
+  import { snapToStraight, straightenWires, type StraightGuide } from '../utils/straightWires.js';
   import CanvasZoomControls from './CanvasZoomControls.svelte';
   import CanvasContextMenu from './CanvasContextMenu.svelte';
   import {
@@ -497,8 +499,54 @@
    */
   function handleNodeDragStart(): void {
     machine.send('START_DRAG');
+    lastMagnet = null;
+    straightGuides = [];
     // Clear any leftover proximity previews
     currentProximityCandidates = [];
+  }
+
+  /** Guide lines along the wires a dragged node has snapped straight. */
+  let straightGuides = $state.raw<StraightGuide[]>([]);
+  /** The last magnetic shift of the running drag, re-applied at drag stop (xyflow rewrites the raw position then). */
+  let lastMagnet: { dy: number; ids: Set<string> } | null = null;
+
+  /** Move nodes vertically (flow units) in the canvas state. */
+  function shiftNodes(ids: ReadonlySet<string>, dy: number): void {
+    flowNodes = flowNodes.map((n) =>
+      ids.has(n.id) ? { ...n, position: { x: n.position.x, y: n.position.y + dy } } : n
+    );
+  }
+
+  /**
+   * Magnetic alignment: when a wire from a dragged node is within 10px of
+   * straight, shift the dragged node(s) so it is exactly straight and show a
+   * guide along it. Alt switches it off. xyflow recomputes the position from
+   * the pointer on every move, so the shift never accumulates.
+   */
+  function applyMagnet(
+    dragged: WorkflowNodeType[],
+    event: MouseEvent | TouchEvent | null | undefined
+  ): void {
+    const none = (): void => {
+      lastMagnet = null;
+      if (straightGuides.length > 0) straightGuides = [];
+    };
+    if (!canvasEditable || !canvasControllerRef || dragged.length === 0) return none();
+    const moving = new Set(dragged.map((n) => n.id));
+    const wires = canvasControllerRef.canvasWireEnds(
+      ProximityConnectHelper.removePreviewEdges(flowEdges)
+    );
+    const positions = new Map(flowNodes.map((n) => [n.id, n.position]));
+    for (const n of dragged) positions.set(n.id, n.position);
+    const settings = getEditorSettings();
+    const { dy, guides } = snapToStraight(wires, positions, moving, {
+      grid: settings.snapToGrid ? settings.gridSize : undefined,
+      disabled: !!event && 'altKey' in event && event.altKey
+    });
+    if (dy === 0 && guides.length === 0) return none();
+    lastMagnet = { dy, ids: moving };
+    if (dy !== 0) shiftNodes(moving, dy);
+    straightGuides = guides;
   }
 
   /**
@@ -507,12 +555,15 @@
    * Uses port-to-port distance via the port coordinate store.
    */
   function handleNodeDrag({
-    targetNode
+    targetNode,
+    nodes: draggedNodes,
+    event
   }: {
     targetNode: WorkflowNodeType | null;
     nodes: WorkflowNodeType[];
     event: MouseEvent | TouchEvent;
   }): void {
+    applyMagnet(draggedNodes, event);
     if (!getEditorSettings().proximityConnect || !targetNode || !canvasEditable) {
       if (currentProximityCandidates.length > 0) {
         flowEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
@@ -563,6 +614,11 @@
    */
   function handleNodeDragStop(): void {
     portCoordNodeToUpdate = null;
+
+    // xyflow wrote the raw pointer position back at drag end: put the snap back.
+    if (lastMagnet && lastMagnet.dy !== 0) shiftNodes(lastMagnet.ids, lastMagnet.dy);
+    lastMagnet = null;
+    straightGuides = [];
 
     // Finalize proximity connect if there are candidates
     if (getEditorSettings().proximityConnect && currentProximityCandidates.length > 0) {
@@ -945,11 +1001,43 @@
         { x: source.position.x + offset, y: source.position.y + offset }
       );
     },
+    straightenWires(ids) {
+      straightenNodeWires(ids);
+    },
+    canStraightenWires(ids) {
+      return straightenMoves(ids).size > 0;
+    },
     get swapNode() {
       const swap = props.onSwapNode;
       return swap ? (id: string) => swap(id) : undefined;
     }
   };
+
+  /** Where "Straighten wires" would move these nodes (new y by id). Empty when the wires are straight already. */
+  function straightenMoves(ids: readonly string[]): Map<string, number> {
+    if (!canvasControllerRef) return new Map();
+    const wires = canvasControllerRef.canvasWireEnds(
+      ProximityConnectHelper.removePreviewEdges(flowEdges)
+    );
+    return straightenWires(ids, wires, new Map(flowNodes.map((n) => [n.id, n.position])));
+  }
+
+  /**
+   * "Straighten wires": each node moves vertically so the wire into its first
+   * connected input is straight (see utils/straightWires). One undo step.
+   */
+  function straightenNodeWires(ids: readonly string[]): void {
+    if (!canvasEditable) return;
+    const moved = straightenMoves(ids);
+    if (moved.size === 0) return;
+    flowNodes = flowNodes.map((n) => {
+      const y = moved.get(n.id);
+      return y === undefined ? n : { ...n, position: { x: n.position.x, y } };
+    });
+    syncFlowToStore();
+    const storeValue = fd.workflow.current;
+    if (storeValue) fd.workflow.pushHistory('Straighten wires', storeValue);
+  }
 
   /**
    * Snap a flow position to the grid cell it falls in (floor, not round), so
@@ -1367,6 +1455,24 @@
       return;
     }
 
+    // Shift+S on the canvas: straighten the wires of the selected nodes.
+    if (
+      event.key.toLowerCase() === 's' &&
+      event.shiftKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      canvasEditable &&
+      target.closest('.flowdrop-canvas')
+    ) {
+      const ids = flowNodes.filter((n) => n.selected).map((n) => n.id);
+      if (ids.length > 0) {
+        event.preventDefault();
+        straightenNodeWires(ids);
+      }
+      return;
+    }
+
     // Check for Ctrl (Windows/Linux) or Cmd (Mac)
     const isModifierPressed = event.ctrlKey || event.metaKey;
 
@@ -1466,6 +1572,7 @@
                   ? interfaceTagReserve(fd.workflow.current)
                   : new Map<string, { left: number; right: number }>()}
             />
+            <StraightGuides guides={straightGuides} />
             <EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
             <PortCoordinateTracker
               nodeToUpdate={portCoordNodeToUpdate}
