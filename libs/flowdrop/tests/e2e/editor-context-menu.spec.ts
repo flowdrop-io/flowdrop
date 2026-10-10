@@ -33,6 +33,8 @@ test.describe('Canvas context menu', () => {
       /Duplicate/,
       /Swap node/,
       /Straighten wires/,
+      /Hide unconnected ports/,
+      /Show hidden ports/,
       /Delete/
     ]);
 
@@ -132,6 +134,8 @@ test.describe('Canvas context menu', () => {
     await page.locator('.svelte-flow__selection-wrapper').click({ button: 'right' });
     await expect(menu(page).getByRole('menuitem')).toHaveText([
       /Straighten wires/,
+      /Hide unconnected ports/,
+      /Show hidden ports/,
       /Delete 2 nodes/
     ]);
 
@@ -218,6 +222,8 @@ test.describe('Canvas context menu', () => {
       /Duplicate/,
       /Swap node/,
       /Straighten wires/,
+      /Hide unconnected ports/,
+      /Show hidden ports/,
       /Delete/
     ]);
 
@@ -358,5 +364,92 @@ test.describe('Canvas context menu', () => {
       .getByRole('menuitem', { name: /Delete/ })
       .click();
     await assertStatusBar(page, 2, 1);
+  });
+
+  // The 'complex' workflow's Calculator has inputs a (wired) and b, and an unwired
+  // output result: hiding the unconnected ports takes result off the canvas
+  // (b is required with no value, so it stays).
+  const calc = '.svelte-flow__node[data-id="node-calc"]';
+  const handle = (id: string) => `${calc} .svelte-flow__handle[data-handleid="${id}"]`;
+
+  test('Hide unconnected ports removes them from the canvas; one undo brings them back', async ({
+    page
+  }) => {
+    await gotoEditor(page, 'complex');
+    await expect(page.locator(handle('node-calc-input-b'))).toHaveCount(1);
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(1);
+
+    await page.locator(calc).click({ button: 'right' });
+    await menu(page).getByRole('menuitem', { name: 'Hide unconnected ports (1)' }).click();
+    await expect(menu(page)).toHaveCount(0);
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(0);
+    // b is required and has no value: hiding it would only hide the gap, so it stays.
+    await expect(page.locator(handle('node-calc-input-b'))).toHaveCount(1);
+    // The wired input stays.
+    await expect(page.locator(`${calc} .svelte-flow__handle`).first()).toBeAttached();
+
+    // Nothing left to hide: the entry stays, disabled, with the plain label.
+    await page.locator(calc).click({ button: 'right' });
+    await expect(
+      menu(page).getByRole('menuitem', { name: 'Hide unconnected ports' })
+    ).toHaveAttribute('aria-disabled', 'true');
+    await page.keyboard.press('Escape');
+
+    await page.keyboard.press(`${modifier}+z`);
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(1);
+  });
+
+  test('Show hidden ports brings every hidden port of the node back', async ({ page }) => {
+    await gotoEditor(page, 'complex');
+
+    await page.locator(calc).click({ button: 'right' });
+    await menu(page)
+      .getByRole('menuitem', { name: /Hide unconnected ports/ })
+      .click();
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(0);
+
+    await page.locator(calc).click({ button: 'right' });
+    await menu(page).getByRole('menuitem', { name: 'Show hidden ports (1)' }).click();
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(1);
+  });
+
+  test('Connect to… on a port adds an edge from the keyboard; one undo removes it', async ({
+    page
+  }) => {
+    await gotoEditor(page, 'complex');
+    await assertStatusBar(page, 4, 3);
+
+    await page.locator(handle('node-calc-output-result')).click({ button: 'right', force: true });
+    const connect = menu(page).getByRole('menuitem', { name: 'Connect to…' });
+    await expect(connect).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(menu(page)).toHaveCount(0);
+
+    const picker = page.getByTestId('connect-port-picker');
+    await expect(picker).toBeVisible();
+    await expect(picker).toContainText('Connect Result to…');
+    await expect(picker.getByRole('listbox')).toBeFocused();
+    // Never refused for its type: the string input is offered for a number output (under "Other types").
+    await expect(picker.getByRole('option')).toHaveCount(1);
+    await expect(picker.getByRole('option')).toContainText('Text Output');
+
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(picker).toHaveCount(0);
+    await assertStatusBar(page, 4, 4);
+
+    await page.keyboard.press(`${modifier}+z`);
+    await assertStatusBar(page, 4, 3);
+  });
+
+  test('Escape closes the Connect to… picker without connecting', async ({ page }) => {
+    await gotoEditor(page, 'complex');
+
+    await page.locator(handle('node-calc-output-result')).click({ button: 'right', force: true });
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('connect-port-picker')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('connect-port-picker')).toHaveCount(0);
+    await assertStatusBar(page, 4, 3);
   });
 });

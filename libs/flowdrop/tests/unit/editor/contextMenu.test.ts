@@ -357,3 +357,85 @@ describe('cleanSeparators', () => {
     expect(cleanSeparators([sep('s1'), sep('s2')])).toEqual([]);
   });
 });
+
+describe('port exposure entries', () => {
+  function withPortActions(ctx: ContextMenuContext, hide?: number, show?: number) {
+    ctx.actions.hideUnconnectedPorts = vi.fn();
+    ctx.actions.showHiddenPorts = vi.fn();
+    if (hide !== undefined) ctx.actions.countUnconnectedPorts = () => hide;
+    if (show !== undefined) ctx.actions.countHiddenPorts = () => show;
+    return ctx;
+  }
+
+  it('absent when the editor offers neither action', () => {
+    const entries = buildDefaultContextMenuEntries(makeCtx('node', [node('a')]));
+    expect(ids(entries)).not.toContain('hide-unconnected-ports');
+    expect(ids(entries)).not.toContain('show-hidden-ports');
+  });
+
+  it('node: both entries sit after Straighten wires and before the separator, with counts', () => {
+    const ctx = withPortActions(makeCtx('node', [node('a')]), 3, 1);
+    ctx.actions.straightenWires = vi.fn();
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual([
+      'configure',
+      'duplicate',
+      'straighten-wires',
+      'hide-unconnected-ports',
+      'show-hidden-ports',
+      'separator-node',
+      'delete'
+    ]);
+    expect(entries[3]).toMatchObject({
+      label: 'Hide unconnected ports (3)',
+      icon: 'mdi:eye-off-outline'
+    });
+    expect(entries[3]).not.toMatchObject({ disabled: true });
+    expect(entries[4]).toMatchObject({ label: 'Show hidden ports (1)', icon: 'mdi:eye-outline' });
+    runContextMenuEntry(entries[3], ctx);
+    runContextMenuEntry(entries[4], ctx);
+    expect(ctx.actions.hideUnconnectedPorts).toHaveBeenCalledWith(['a']);
+    expect(ctx.actions.showHiddenPorts).toHaveBeenCalledWith(['a']);
+  });
+
+  it('with nothing to change the entry is disabled and wears the plain label', () => {
+    const ctx = withPortActions(makeCtx('node', [node('a')]), 0, 0);
+    const entries = buildDefaultContextMenuEntries(ctx);
+    const hide = entries.find((e) => e.id === 'hide-unconnected-ports');
+    const show = entries.find((e) => e.id === 'show-hidden-ports');
+    expect(hide).toMatchObject({ label: 'Hide unconnected ports', disabled: true });
+    expect(show).toMatchObject({ label: 'Show hidden ports', disabled: true });
+    runContextMenuEntry(hide!, ctx);
+    expect(ctx.actions.hideUnconnectedPorts).not.toHaveBeenCalled();
+  });
+
+  it('without count helpers the entries are offered enabled, plain', () => {
+    const ctx = withPortActions(makeCtx('node', [node('a')]));
+    const hide = buildDefaultContextMenuEntries(ctx).find((e) => e.id === 'hide-unconnected-ports');
+    expect(hide).toMatchObject({ label: 'Hide unconnected ports' });
+    expect(hide).not.toMatchObject({ disabled: true });
+  });
+
+  it('an in-place node has no ports, so no entries', () => {
+    const ctx = withPortActions(makeCtx('node', [node('a')]), 2, 2);
+    const entries = buildDefaultContextMenuEntries(ctx, defaultMessages.contextMenu, {
+      editsInPlace: () => true
+    });
+    expect(ids(entries)).not.toContain('hide-unconnected-ports');
+    expect(ids(entries)).not.toContain('show-hidden-ports');
+  });
+
+  it('selection: both entries apply to every selected node', () => {
+    const ctx = withPortActions(makeCtx('selection', [node('a'), node('b')]), 5, 2);
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual([
+      'hide-unconnected-ports',
+      'show-hidden-ports',
+      'separator-selection',
+      'delete'
+    ]);
+    expect(entries[0]).toMatchObject({ label: 'Hide unconnected ports (5)' });
+    runContextMenuEntry(entries[1], ctx);
+    expect(ctx.actions.showHiddenPorts).toHaveBeenCalledWith(['a', 'b']);
+  });
+});

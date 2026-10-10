@@ -72,11 +72,20 @@
   import { interfaceTagReserve } from '../utils/interfaceTags.js';
   import ZoomTier from './ZoomTier.svelte';
   import InterfaceTagLayer, { type InterfaceTagEdit } from './InterfaceTagLayer.svelte';
+  import type { InterfaceMenuActions, PortTarget } from '../editor/interfaceMenu.js';
+  import { buildPortMenuEntries, type PortMenuActions } from '../editor/portMenu.js';
   import {
-    buildPortInterfaceEntries,
-    type InterfaceMenuActions,
-    type PortTarget
-  } from '../editor/interfaceMenu.js';
+    buildConnectEdge,
+    connectPickerGroups,
+    listConnectCandidates,
+    type ConnectCandidate
+  } from '../editor/connectCandidates.js';
+  import ConnectPortPicker from './ConnectPortPicker.svelte';
+  import {
+    applyPortExposure,
+    exposureCandidates,
+    type PortExposureMode
+  } from '../utils/portExposure.js';
   import {
     entryAtPort,
     exposePortAsEntry,
@@ -1042,6 +1051,18 @@
     canStraightenWires(ids) {
       return straightenMoves(ids).size > 0;
     },
+    hideUnconnectedPorts(ids) {
+      changePortExposure(ids, 'hide');
+    },
+    countUnconnectedPorts(ids) {
+      return countExposureChanges(ids, 'hide');
+    },
+    showHiddenPorts(ids) {
+      changePortExposure(ids, 'show');
+    },
+    countHiddenPorts(ids) {
+      return countExposureChanges(ids, 'show');
+    },
     get swapNode() {
       const swap = props.onSwapNode;
       return swap ? (id: string) => swap(id) : undefined;
@@ -1072,6 +1093,46 @@
     syncFlowToStore();
     const storeValue = fd.workflow.current;
     if (storeValue) fd.workflow.pushHistory('Straighten wires', storeValue);
+  }
+
+  /** How many ports a bulk exposure change would touch on these nodes. */
+  function countExposureChanges(ids: readonly string[], mode: PortExposureMode): number {
+    const workflow = fd.workflow.current;
+    if (!workflow) return 0;
+    return workflow.nodes
+      .filter((n) => ids.includes(n.id))
+      .reduce((sum, n) => sum + exposureCandidates(n, workflow, mode).length, 0);
+  }
+
+  /**
+   * "Hide unconnected ports" / "Show hidden ports": a real exposure edit of
+   * each node's `config.ports` (the same one the Ports form's eye makes), as
+   * one undo step. Hidden ports leave the canvas and stop being wireable.
+   */
+  function changePortExposure(ids: readonly string[], mode: PortExposureMode): void {
+    const workflow = fd.workflow.current;
+    if (!canvasEditable || !workflow) return;
+    const changes = new Map<string, ReturnType<typeof applyPortExposure>>();
+    for (const node of workflow.nodes) {
+      if (!ids.includes(node.id)) continue;
+      if (exposureCandidates(node, workflow, mode).length === 0) continue;
+      changes.set(node.id, applyPortExposure(node, workflow, mode));
+    }
+    if (changes.size === 0) return;
+    flowNodes = flowNodes.map((n) => {
+      if (!changes.has(n.id)) return n;
+      const { ports: _previous, ...rest } = n.data.config ?? {};
+      const ports = changes.get(n.id);
+      return { ...n, data: { ...n.data, config: ports ? { ...rest, ports } : rest } };
+    });
+    syncFlowToStore();
+    const storeValue = fd.workflow.current;
+    if (storeValue) {
+      fd.workflow.pushHistory(
+        mode === 'hide' ? 'Hide unconnected ports' : 'Show hidden ports',
+        storeValue
+      );
+    }
   }
 
   /**
@@ -1214,6 +1275,62 @@
     );
   }
 
+  const portMenuActions: PortMenuActions = {
+    ...interfaceMenuActions,
+    connectTo(target: PortTarget) {
+      openConnectPicker(target);
+    }
+  };
+
+  /** The "Connect to…" picker, while open. */
+  interface OpenConnectPicker {
+    target: PortTarget;
+    portName: string;
+    candidates: ReturnType<typeof listConnectCandidates>;
+    /** Viewport (client) position; the picker is in the top layer. */
+    x: number;
+    y: number;
+  }
+
+  let connectPicker = $state.raw<OpenConnectPicker | null>(null);
+  /** Where the port menu was opened, which is where its picker opens. */
+  let portMenuAt: { x: number; y: number } | null = null;
+
+  function openConnectPicker(target: PortTarget): void {
+    const workflow = fd.workflow.current;
+    const at = portMenuAt;
+    if (!workflow || !at) return;
+    const node = flowNodes.find((n) => n.id === target.nodeId);
+    const port = node
+      ? ProximityConnectHelper.getAllPorts(node, target.direction).find(
+          (p) => p.id === target.portId
+        )
+      : undefined;
+    connectPicker = {
+      target,
+      portName: port?.name ?? target.portId,
+      candidates: listConnectCandidates(workflow, fd.portCompatibility, target),
+      x: at.x,
+      y: at.y
+    };
+  }
+
+  /** A port was picked in "Connect to…": the same edge a drag-connect makes. */
+  function connectToCandidate(candidate: ConnectCandidate): void {
+    const picker = connectPicker;
+    connectPicker = null;
+    if (!picker || !canvasEditable || candidate.connected) return;
+    const edge = buildConnectEdge(picker.target, candidate);
+    const sourceNode = flowNodes.find((n) => n.id === edge.source);
+    const targetNode = flowNodes.find((n) => n.id === edge.target);
+    if (!sourceNode || !targetNode) return;
+    EdgeStylingHelper.applyConnectionStyling(edge, sourceNode, targetNode);
+    flowEdges = [...flowEdges, edge];
+    syncFlowToStore();
+    const storeValue = fd.workflow.current;
+    if (storeValue) fd.workflow.pushHistory('Add connection', storeValue);
+  }
+
   /** Open the menu of a port (a handle element). False when it has nothing to offer. */
   function showPortMenu(handle: HTMLElement, clientX: number, clientY: number): boolean {
     const workflow = fd.workflow.current;
@@ -1229,13 +1346,9 @@
     const workflow = fd.workflow.current;
     const node = flowNodes.find((n) => n.id === target.nodeId);
     if (!workflow || !node || !canvasControllerRef) return false;
-    const entries = buildPortInterfaceEntries(
-      workflow,
-      target,
-      interfaceMenuActions,
-      getMsgs().contextMenu
-    );
+    const entries = buildPortMenuEntries(workflow, target, portMenuActions, getMsgs().contextMenu);
     if (entries.length === 0) return false;
+    portMenuAt = { x: clientX, y: clientY };
     openMenu = {
       ctx: {
         target: 'node',
@@ -1313,11 +1426,15 @@
 
   // Menus never outlive edit mode or the workflow they were opened on.
   $effect(() => {
-    if (!canvasEditable) openMenu = null;
+    if (!canvasEditable) {
+      openMenu = null;
+      connectPicker = null;
+    }
   });
   $effect(() => {
     void svelteFlowKey;
     openMenu = null;
+    connectPicker = null;
     pendingNewIds.clear();
     fd.inlineEdit.clear();
   });
@@ -1711,6 +1828,19 @@
           y={openMenu.y}
           onselect={selectContextMenuEntry}
           onclose={closeContextMenu}
+        />
+      {/if}
+
+      {#if connectPicker}
+        <ConnectPortPicker
+          portName={connectPicker.portName}
+          fromInput={connectPicker.target.direction === 'input'}
+          groups={connectPickerGroups(connectPicker.candidates, getMsgs().connectTo)}
+          checker={fd.portCompatibility}
+          x={connectPicker.x}
+          y={connectPicker.y}
+          onselect={connectToCandidate}
+          onclose={() => (connectPicker = null)}
         />
       {/if}
     </div>

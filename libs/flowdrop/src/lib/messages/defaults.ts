@@ -317,6 +317,14 @@ export const defaultMessages = {
     swap: 'Swap node',
     // Moves the node(s) up or down so the wire into the first connected input is straight.
     straightenWires: 'Straighten wires',
+    // Hide / show ports of the node(s). These change which ports are exposed (as the Ports
+    // form's eye does), they do not just fold the card. The counted form is used when n > 0.
+    hideUnconnectedPorts: 'Hide unconnected ports',
+    hideUnconnectedPortsCount: ({ n }: { n: number }) => `Hide unconnected ports (${n})`,
+    showHiddenPorts: 'Show hidden ports',
+    showHiddenPortsCount: ({ n }: { n: number }) => `Show hidden ports (${n})`,
+    // A port's menu: wire it to a port on another node, from a picker.
+    connectTo: 'Connect to…',
     // A port's menu: publish it in the workflow interface, rename or unpublish it.
     exposeInput: 'Expose as workflow input…',
     exposeOutput: 'Expose as workflow output…',
@@ -326,6 +334,24 @@ export const defaultMessages = {
     shortcutEnter: '↵',
     shortcutDelete: '⌫',
     shortcutStraighten: '⇧S'
+  },
+
+  // The "Connect to…" picker opened from a port's menu.
+  connectTo: {
+    title: ({ port }: { port: string }) => `Connect ${port} to…`,
+    searchLabel: 'Search ports',
+    searchPlaceholder: 'Search by node, port or type…',
+    listLabelInput: 'Input ports to connect to',
+    listLabelOutput: 'Output ports to connect from',
+    groupCompatible: 'Compatible',
+    groupOther: 'Other types',
+    // A pair that already has a wire between exactly these two ports.
+    connected: 'Connected',
+    // An input that already receives a wire; connecting adds another.
+    wired: 'Wired',
+    noPorts: 'No other node has a port to connect to.',
+    noMatches: 'No ports match your search.',
+    popoverLabel: 'Connect to a port'
   },
 
   // The run bar on the Edit canvas: shown only while a run exists.

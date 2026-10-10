@@ -552,7 +552,7 @@ export function pullEntryFieldsFromPort(port: NodePort): Partial<WorkflowInterfa
  * a composition the runtime supports through the interface (a workflow is
  * made a tool by a different mechanism), so it stays excluded.
  */
-function isControlFlowPort(port: NodePort, direction: 'input' | 'output'): boolean {
+export function isControlFlowPort(port: NodePort, direction: 'input' | 'output'): boolean {
   if (port.dataType === 'trigger' || port.id === LOOPBACK_PORT_NAME) return true;
   return port.dataType === 'tool' && direction === 'output';
 }

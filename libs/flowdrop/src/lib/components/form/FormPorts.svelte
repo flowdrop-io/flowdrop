@@ -26,13 +26,12 @@
     Branch,
     DynamicPort,
     NodePort,
-    PortConfigEntry,
     PortsConfig,
     WorkflowNode
   } from '../../types/index.js';
   import { dynamicPortToNodePort } from '../../types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { byDefaultOrder, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
+  import { buildPortsConfig, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { isTriggerEventInput } from '$lib/utils/reservedPorts.js';
   import {
@@ -215,40 +214,13 @@
     return orderPortsFor(portsFor(direction), portsConfig[direction]);
   }
 
-  /**
-   * Write a direction's desired ordered list (each port carrying its effective
-   * exposure) back to the bound value, keeping it minimal: an entry's `exposed`
-   * flag is dropped when it equals the port's default, the whole direction is
-   * dropped when it carries neither a reorder nor an exposure override, and the
-   * value collapses to `undefined` when empty — so an untouched node stores
-   * nothing.
-   */
+  /** Write a direction's desired ordered list back to the bound value (see `buildPortsConfig`). */
   function commit(
     direction: Direction,
     ordered: NodePort[],
     exposureOf: (port: NodePort) => boolean
   ): void {
-    const entries: PortConfigEntry[] = ordered.map((port) => {
-      const entry: PortConfigEntry = { id: port.id };
-      const exposed = exposureOf(port);
-      if (exposed !== (port.exposedByDefault ?? true)) entry.exposed = exposed;
-      return entry;
-    });
-
-    const defaultOrder = byDefaultOrder(portsFor(direction)).map((p) => p.id);
-    const orderChanged = entries.some((e, i) => e.id !== defaultOrder[i]);
-    const hasExposureOverride = entries.some((e) => e.exposed !== undefined);
-
-    const next: PortsConfig = { ...portsConfig };
-    if (orderChanged || hasExposureOverride) next[direction] = entries;
-    else delete next[direction];
-
-    // We carry the untouched direction over verbatim from `portsConfig`, but an
-    // earlier edit there may have left an empty array; prune it so an all-default
-    // node collapses to `undefined` below rather than persisting `{inputs: []}`.
-    const other: Direction = direction === 'inputs' ? 'outputs' : 'inputs';
-    if (!next[other] || next[other]?.length === 0) delete next[other];
-    onChange(Object.keys(next).length === 0 ? undefined : next);
+    onChange(buildPortsConfig(portsConfig, direction, ordered, portsFor(direction), exposureOf));
   }
 
   function setExposed(direction: Direction, portId: string, exposed: boolean): void {

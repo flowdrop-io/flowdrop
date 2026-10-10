@@ -108,3 +108,49 @@ export function isPortVisible(
   const entries = direction === 'input' ? ports?.inputs : ports?.outputs;
   return isPortExposed(port, entries);
 }
+
+/** A direction key of a {@link PortsConfig}. */
+export type PortsDirection = 'inputs' | 'outputs';
+
+/**
+ * The minimal `PortsConfig` after one direction's desired ordered list (each
+ * port carrying its effective exposure) is written. An entry's `exposed` flag
+ * is dropped when it equals the port's default, the whole direction is dropped
+ * when it carries neither a reorder nor an exposure override, and the result
+ * collapses to `undefined` when empty, so an untouched node stores nothing.
+ *
+ * @param current - the stored value; the other direction is carried over from it
+ * @param direction - the direction being written
+ * @param ordered - that direction's ports in the order to store
+ * @param allPorts - that direction's ports, for the metadata default order
+ * @param exposureOf - the exposure each port should have
+ */
+export function buildPortsConfig(
+  current: PortsConfig | undefined,
+  direction: PortsDirection,
+  ordered: NodePort[],
+  allPorts: NodePort[],
+  exposureOf: (port: NodePort) => boolean
+): PortsConfig | undefined {
+  const entries: PortConfigEntry[] = ordered.map((port) => {
+    const entry: PortConfigEntry = { id: port.id };
+    const exposed = exposureOf(port);
+    if (exposed !== (port.exposedByDefault ?? true)) entry.exposed = exposed;
+    return entry;
+  });
+
+  const defaultOrder = byDefaultOrder(allPorts).map((p) => p.id);
+  const orderChanged = entries.some((e, i) => e.id !== defaultOrder[i]);
+  const hasExposureOverride = entries.some((e) => e.exposed !== undefined);
+
+  const next: PortsConfig = { ...current };
+  if (orderChanged || hasExposureOverride) next[direction] = entries;
+  else delete next[direction];
+
+  // The untouched direction is carried over verbatim, but an earlier edit may
+  // have left an empty array; prune it so an all-default node collapses to
+  // `undefined` rather than persisting `{inputs: []}`.
+  const other: PortsDirection = direction === 'inputs' ? 'outputs' : 'inputs';
+  if (!next[other] || next[other]?.length === 0) delete next[other];
+  return Object.keys(next).length === 0 ? undefined : next;
+}
