@@ -144,6 +144,10 @@
   }
 
   .node-inspector__bar :global(.flowdrop-ui-tabs) {
-    margin-left: calc(-1 * var(--fd-space-md));
+    align-self: stretch;
+  }
+
+  .node-inspector__bar :global(.flowdrop-ui-tabs__tab) {
+    height: 100%;
   }
 </style>

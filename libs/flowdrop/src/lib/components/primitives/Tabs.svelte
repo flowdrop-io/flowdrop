@@ -1,9 +1,11 @@
 <!--
-  Tabs — compact pill tabs (role="tablist" / "tab") with a roving tabindex.
+  Tabs — underline tabs for switching a VIEW (role="tablist" / "tab") with a
+  roving tabindex. A MODE switch (Edit | Test) is a Segmented control instead:
+  these are the two selected-tab styles of the editor chrome.
 
   Tab stop is the selected tab; Left/Right (Up/Down) move focus AND select
-  (automatic activation), Home/End jump. The selected tab gets a muted
-  background, not an underline.
+  (automatic activation), Home/End jump. The selected tab is
+  drawn in ink with a 2px underline; the others are muted, with no fill.
 
   Panels are the caller's job. Wire them with the exported helpers, using the
   same `idBase` you pass here:
@@ -147,8 +149,8 @@
 <style>
   .flowdrop-ui-tabs {
     display: inline-flex;
-    align-items: center;
-    gap: var(--fd-space-3xs);
+    align-items: stretch;
+    gap: var(--fd-space-xl);
     font-family: var(--fd-font-sans);
   }
 
@@ -158,40 +160,41 @@
     justify-content: center;
     gap: var(--fd-space-2xs);
     box-sizing: border-box;
+    padding: 0;
     border: 0;
-    border-radius: var(--fd-radius-md);
+    border-radius: 0;
     background: transparent;
     color: var(--fd-muted-foreground);
     font-family: inherit;
-    font-weight: 500;
+    font-weight: 400;
     line-height: 1;
     white-space: nowrap;
     cursor: pointer;
+    /* The underline is an inset shadow, so selecting never shifts the layout. */
+    box-shadow: var(--fd-tab-underline-off);
     transition:
-      background-color var(--fd-transition-fast),
+      box-shadow var(--fd-transition-fast),
       color var(--fd-transition-fast);
   }
 
   .flowdrop-ui-tabs--md .flowdrop-ui-tabs__tab {
-    height: var(--fd-control-md);
-    padding: 0 var(--fd-space-md);
-    font-size: var(--fd-text-sm);
+    height: var(--fd-control-lg);
+    font-size: var(--fd-text-body);
   }
 
   .flowdrop-ui-tabs--sm .flowdrop-ui-tabs__tab {
-    height: var(--fd-control-sm);
-    padding: 0 var(--fd-space-sm);
-    font-size: var(--fd-text-xs);
+    height: var(--fd-control-md);
+    font-size: var(--fd-text-sm);
   }
 
   .flowdrop-ui-tabs__tab:hover:not(.flowdrop-ui-tabs__tab--selected) {
-    background-color: var(--fd-subtle);
     color: var(--fd-foreground);
   }
 
   .flowdrop-ui-tabs__tab--selected {
-    background-color: var(--fd-muted);
     color: var(--fd-foreground);
+    font-weight: 500;
+    box-shadow: var(--fd-tab-underline);
   }
 
   .flowdrop-ui-tabs__count {

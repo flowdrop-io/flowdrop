@@ -658,8 +658,8 @@
 
   /* Tabs (only rendered with more than one category) */
   .flowdrop-settings-panel__tabs {
-    padding: var(--fd-space-sm) var(--fd-space-md);
-    border-bottom: 1px solid var(--fd-border);
+    padding: 0 var(--fd-space-xl);
+    border-bottom: 1px solid var(--fd-border-muted);
     overflow-x: auto;
   }
 

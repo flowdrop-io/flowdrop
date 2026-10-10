@@ -1,8 +1,9 @@
 <!--
   WorkflowSettingsPanel
   The workflow-settings surface: General | Interface | Playground as tabs in
-  the 40px panel header (the same Tabs primitive as Nodes | AI Assistant), and
-  one body per tab with the same padding on all three.
+  under a title row (title + pop-out + close, as on the node inspector) using the
+  same underline Tabs primitive as Nodes | AI Assistant, and one body per tab with
+  the same padding on all three.
 
   All bodies stay mounted (toggled via `display`), so a half-edited field or a
   scroll position survives a trip to another tab.
@@ -104,16 +105,13 @@
 
 {#snippet panel(popped: boolean)}
   <div class="wf-settings" data-testid={popped ? undefined : 'workflow-settings-panel'}>
-    <PanelHeader class="wf-settings__header">
-      {#snippet leading()}
-        <Tabs
-          {idBase}
-          ariaLabel={nav.workflowSettingsPanelTitle}
-          {tabs}
-          value={active}
-          onchange={(v) => onTabChange(v as WorkflowSettingsTab)}
-        />
-      {/snippet}
+    <!-- Title row, as on the node inspector: the title, then the view tabs beneath it. -->
+    <PanelHeader
+      class="wf-settings__header"
+      title={nav.workflowButton}
+      titleId="{idBase}-title"
+      borderless
+    >
       {#snippet actions()}
         {#if popped}
           <IconButton
@@ -121,7 +119,7 @@
             title={m().layout.dockConfigTitle}
             onclick={dock}
           >
-            <Icon icon="heroicons:arrows-pointing-in" />
+            <Icon icon="mdi:arrow-collapse" />
           </IconButton>
         {:else}
           <IconButton
@@ -129,16 +127,25 @@
             title={m().layout.popOutConfigTitle}
             onclick={() => (expanded = true)}
           >
-            <Icon icon="heroicons:arrows-pointing-out" />
+            <Icon icon="mdi:arrow-expand" />
           </IconButton>
           {#if onClose}
             <IconButton ariaLabel={m().layout.closeConfigPanel} onclick={onClose}>
-              <Icon icon="heroicons:x-mark" />
+              <Icon icon="mdi:close" />
             </IconButton>
           {/if}
         {/if}
       {/snippet}
     </PanelHeader>
+    <div class="wf-settings__bar">
+      <Tabs
+        {idBase}
+        ariaLabel={nav.workflowSettingsPanelTitle}
+        {tabs}
+        value={active}
+        onchange={(v) => onTabChange(v as WorkflowSettingsTab)}
+      />
+    </div>
 
     <div class="wf-settings__scroll">
       {#snippet generalBody()}
@@ -152,7 +159,7 @@
               onclick={copyId}
               class="wf-settings__copy"
             >
-              <Icon icon="heroicons:clipboard-document" />
+              <Icon icon="mdi:content-copy" />
             </IconButton>
             <span aria-hidden="true">·</span>
           {/if}
@@ -213,7 +220,16 @@
   }
 
   .wf-settings :global(.wf-settings__header) {
-    padding-inline: var(--fd-space-sm) var(--fd-space-xs);
+    padding-inline: var(--fd-space-xl) var(--fd-space-xs);
+  }
+
+  /* The tab row under the title: full width, text on the body's left edge. */
+  .wf-settings__bar {
+    display: flex;
+    flex: none;
+    box-sizing: border-box;
+    padding-inline: var(--fd-space-xl);
+    border-bottom: 1px solid var(--fd-border-muted);
   }
 
   .wf-settings__scroll {

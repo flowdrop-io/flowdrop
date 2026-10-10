@@ -106,7 +106,17 @@
   }
 
   .tabbed-surface :global(.tabbed-surface__header) {
-    padding-inline: var(--fd-space-sm) var(--fd-space-xs);
+    padding-inline: var(--fd-space-xl) var(--fd-space-xs);
+  }
+
+  /* View tabs fill the header, so the underline sits on its rule. */
+  .tabbed-surface :global(.flowdrop-ui-panel-header__lead) {
+    align-self: stretch;
+    align-items: stretch;
+  }
+
+  .tabbed-surface :global(.flowdrop-ui-tabs__tab) {
+    height: 100%;
   }
 
   .tabbed-surface__title {
