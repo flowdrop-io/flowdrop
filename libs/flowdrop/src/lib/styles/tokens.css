@@ -770,6 +770,9 @@
   --fd-node-circle-display: none; /* @public  hide circle dot */
   --fd-sidebar-search-display: flex; /* @public  show sidebar search input */
   --fd-sidebar-header-display: flex; /* @public  show sidebar "Components" header */
+  --fd-sidebar-chevron-size: 0.875rem; /* @internal  rows sidebar: group chevron, 14px */
+  --fd-sidebar-child-indent: 1.5625rem; /* @internal  rows sidebar: children indent from the group edge, 25px */
+  --fd-sidebar-child-text: 0.84375rem; /* @internal  rows sidebar: child label size, 13.5px */
   --fd-sidebar-card-display: block; /* @public  show accordion card node list */
   --fd-sidebar-flat-display: none; /* @public  hide flat dot-name node list */
   --fd-sidebar-category-color: var(--fd-muted-foreground); /* @public  category header text color */

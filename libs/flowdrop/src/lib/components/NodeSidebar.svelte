@@ -345,13 +345,18 @@
               >
                 <summary class="flowdrop-details__summary">
                   <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+                    <span class="flowdrop-sidebar__chevron" aria-hidden="true">
+                      <Icon icon="heroicons:chevron-right" />
+                    </span>
                     <span
                       class="flowdrop-node-icon"
                       style="--_icon-color: {getCategoryColorToken(fd.categories, category)}"
                     >
                       <Icon icon={getCategoryIcon(fd.categories, category)} />
                     </span>
-                    <span>{getCategoryDisplayName(category)}</span>
+                    <span class="flowdrop-sidebar__category-name"
+                      >{getCategoryDisplayName(category)}</span
+                    >
                   </div>
                   <div class="flowdrop-badge flowdrop-badge--secondary">
                     {categoryNodes.length}
@@ -775,24 +780,58 @@
     transform: none;
   }
 
-  /* Count: shown on hover or focus only, muted, no pill */
+  /* Count: always shown, quiet muted text, no chip */
   .flowdrop-sidebar--rows .flowdrop-details__summary .flowdrop-badge {
     padding: 0;
     background: transparent;
     color: var(--fd-muted-foreground);
-    font-family: var(--fd-font-mono);
-    font-size: var(--fd-text-2xs);
-    opacity: 0;
-    transition: opacity var(--fd-transition-fast);
+    font-size: var(--fd-text-meta);
+    font-variant-numeric: tabular-nums;
   }
 
-  .flowdrop-sidebar--rows .flowdrop-details__summary:hover .flowdrop-badge,
-  .flowdrop-sidebar--rows .flowdrop-details__summary:focus-visible .flowdrop-badge {
-    opacity: 1;
+  /* Chevron: decorative, left of the category glyph, turns when the group opens */
+  .flowdrop-sidebar__chevron {
+    display: none;
   }
 
+  .flowdrop-sidebar--rows .flowdrop-sidebar__chevron {
+    display: flex;
+    flex-shrink: 0;
+    width: var(--fd-sidebar-chevron-size);
+    height: var(--fd-sidebar-chevron-size);
+    margin-right: calc(var(--fd-space-3xs) * -1);
+    color: var(--fd-muted-foreground);
+    transition: transform var(--fd-transition-fast);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__chevron :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .flowdrop-sidebar--rows details[open] > .flowdrop-details__summary .flowdrop-sidebar__chevron {
+    transform: rotate(90deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flowdrop-sidebar--rows .flowdrop-sidebar__chevron {
+      transition: none;
+    }
+  }
+
+  /* The open signal is a heavier label, not a tint */
+  .flowdrop-sidebar--rows
+    details[open]
+    > .flowdrop-details__summary
+    .flowdrop-sidebar__category-name {
+    font-weight: 600;
+  }
+
+  /* Children sit indented on a one-pixel guide line */
   .flowdrop-sidebar--rows .flowdrop-details__content {
-    padding: 0;
+    margin: var(--fd-space-3xs) 0 var(--fd-space-sm) var(--fd-sidebar-child-indent);
+    padding: 0 0 0 var(--fd-space-2xs);
+    border-left: 1px solid var(--fd-border);
     background: transparent;
   }
 
@@ -819,7 +858,7 @@
   }
 
   .flowdrop-sidebar--rows .flowdrop-node-item h4 {
-    font-size: var(--fd-text-body);
+    font-size: var(--fd-sidebar-child-text);
     font-weight: 400;
     line-height: var(--fd-leading-tight);
   }
