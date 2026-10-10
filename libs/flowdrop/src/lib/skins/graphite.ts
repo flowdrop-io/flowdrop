@@ -159,6 +159,7 @@ export const graphiteSkin: FlowDropSkin = {
     'field-focus-outline': 'none',
     'field-label-size': '0.75rem',
     'field-help-size': '0.75rem',
+    'field-label-weight': '500',
     'switch-on-bg': 'var(--fd-accent)',
 
     /* ----- Buttons: secondary = white + strong rule, ghost = subtle hover, danger = red text ----- */

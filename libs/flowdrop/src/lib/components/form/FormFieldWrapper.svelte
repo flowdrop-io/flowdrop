@@ -118,7 +118,7 @@
     align-items: center;
     gap: 0.25rem;
     font-size: var(--fd-field-label-size);
-    font-weight: 600;
+    font-weight: var(--fd-field-label-weight);
     color: var(--fd-foreground);
     letter-spacing: -0.01em;
   }

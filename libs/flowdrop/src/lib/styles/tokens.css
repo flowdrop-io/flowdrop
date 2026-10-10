@@ -366,6 +366,7 @@
   ); /* @internal  control shadow while focused (accent ring) */
   --fd-field-focus-outline: var(--fd-ring-width) solid var(--fd-ring); /* @internal  focus-visible outline on text controls */
   --fd-field-label-size: 0.8125rem; /* @internal  label above a form control */
+  --fd-field-label-weight: 600; /* @internal  label above a form control */
   --fd-field-help-size: var(--fd-text-meta); /* @internal  help text under a form control (12px) */
   --fd-switch-width: 1.75rem; /* @internal  switch track width (28px) */
   --fd-switch-height: 1rem; /* @internal  switch track height (16px) */

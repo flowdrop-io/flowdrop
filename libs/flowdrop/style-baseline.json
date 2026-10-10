@@ -142,9 +142,6 @@
     "button": 1,
     "font-size": 4
   },
-  "src/lib/components/form/FormPorts.svelte": {
-    "button": 2
-  },
   "src/lib/components/form/FormRangeField.svelte": {
     "colour": 8,
     "radius": 6,
