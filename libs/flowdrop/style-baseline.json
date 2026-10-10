@@ -302,7 +302,7 @@
     "radius": 5
   },
   "src/lib/styles/toast.css": {
-    "colour": 2
+    "colour": 1
   },
   "src/lib/webmcp/WebMCPConfirm.svelte": {
     "colour": 18

@@ -21,7 +21,14 @@ const toast = { id: 'error:x', type: 'error', visible: true } as unknown as Toas
 let target: HTMLElement;
 let instance: ReturnType<typeof mount> | null = null;
 
-function render(props: { text: string; details?: readonly string[] }) {
+function render(props: {
+  text: string;
+  body?: string;
+  details?: readonly string[];
+  action?: { label: string; onClick: () => void };
+  kind?: 'success' | 'error' | 'warning' | 'info';
+  dismissible?: boolean;
+}) {
   target = document.createElement('div');
   document.body.appendChild(target);
   instance = mount(DismissibleToast, { target, props: { toast, ...props } });
@@ -66,5 +73,27 @@ describe('DismissibleToast', () => {
     expect(button?.getAttribute('aria-label')).toBe('Dismiss');
     button?.click();
     expect(dismiss).toHaveBeenCalledWith('error:x');
+  });
+
+  it('renders the body under the headline and the glyph for its kind', () => {
+    const el = render({ text: "Couldn't save", body: 'The workflow is not valid', kind: 'error' });
+    expect(el.querySelector('.flowdrop-toast-body')?.textContent).toBe('The workflow is not valid');
+    expect(el.querySelector('.flowdrop-toast-row')?.getAttribute('data-kind')).toBe('error');
+    expect(el.querySelector('.flowdrop-toast-glyph svg')).not.toBeNull();
+  });
+
+  it('runs the action, then dismisses the toast', () => {
+    const onClick = vi.fn();
+    const el = render({ text: 'x', action: { label: 'Show problems', onClick } });
+    const button = el.querySelector<HTMLButtonElement>('.flowdrop-toast-actions button');
+    expect(button?.textContent?.trim()).toBe('Show problems');
+    button?.click();
+    expect(onClick).toHaveBeenCalledOnce();
+    expect(dismiss).toHaveBeenCalledWith('error:x');
+  });
+
+  it('has no close button when it is not dismissible (a success)', () => {
+    const el = render({ text: 'Saved', kind: 'success', dismissible: false });
+    expect(el.querySelector('.flowdrop-toast-close')).toBeNull();
   });
 });

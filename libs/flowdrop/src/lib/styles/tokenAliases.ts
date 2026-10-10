@@ -169,6 +169,7 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'switch-thumb-bg': 'var(--fd-background)',
   'text-body': 'var(--fd-text-base)',
   'text-meta': 'var(--fd-text-xs)',
+  'toast-top': 'calc(var(--fd-navbar-height) + 12px)',
   'toolbar-segment-radius': 'var(--fd-radius-md)',
   'toolbar-segmented-bg': 'var(--fd-muted)',
   'toolbar-segmented-border': 'var(--fd-border-muted)',

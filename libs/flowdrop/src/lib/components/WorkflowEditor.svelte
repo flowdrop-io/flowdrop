@@ -1576,7 +1576,7 @@
 <!-- aria-live="polite" ensures screen readers announce toast messages without interrupting -->
 <div class="flowdrop-scope" aria-live="polite" aria-atomic="true">
   <Toaster
-    position="bottom-center"
+    position="top-center"
     containerClassName={FLOWDROP_TOASTER_CLASS}
     toastOptions={flowdropToastOptions}
   />

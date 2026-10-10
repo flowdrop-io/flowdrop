@@ -389,6 +389,10 @@
   --fd-menu-shadow: var(--fd-shadow-lg); /* @internal  context menu and dropdown shadow */
   --fd-menu-item-radius: var(--fd-radius-sm); /* @internal  menu item radius */
   --fd-menu-item-height: auto; /* @internal  menu item min height */
+  --fd-toast-top: calc(
+    var(--fd-navbar-height) + 12px
+  ); /* @internal  toast stack offset from the viewport top: just under the navbar */
+  --fd-toast-width: 380px; /* @internal  width of an error or warning toast */
   --fd-sheet-inset: 0px; /* @internal  gap between the Test-mode inspector sheet and the canvas edge */
   --fd-sheet-radius: 0; /* @internal  inspector sheet corners */
   --fd-sheet-border-width: 0 0 0 1px; /* @internal  inspector sheet rule widths (top right bottom left) */

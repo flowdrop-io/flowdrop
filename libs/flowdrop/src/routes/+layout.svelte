@@ -512,13 +512,16 @@
 
   <!-- Toast Notifications (outside MainLayout for proper z-index stacking) -->
   <!-- aria-live="polite" ensures screen readers announce toast messages without interrupting -->
-  <div aria-live="polite" aria-atomic="true">
-    <Toaster
-      position="bottom-center"
-      containerClassName={FLOWDROP_TOASTER_CLASS}
-      toastOptions={flowdropToastOptions}
-    />
-  </div>
+  <!-- The toast fixture page mounts its own, inside the theme scope under test. -->
+  {#if !$page.url.pathname.startsWith('/test/toasts')}
+    <div aria-live="polite" aria-atomic="true">
+      <Toaster
+        position="top-center"
+        containerClassName={FLOWDROP_TOASTER_CLASS}
+        toastOptions={flowdropToastOptions}
+      />
+    </div>
+  {/if}
 </div>
 
 <style>

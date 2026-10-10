@@ -9,36 +9,94 @@
  * which are injected when the Toaster mounts (after this stylesheet).
  */
 
-/* Toaster container: use design token for offset from viewport edges */
+/*
+ * Toaster container: top-centre, just under the navbar. That edge of the canvas is
+ * empty, while the bottom carries the zoom group, minimap and console.
+ */
 .flowdrop-toaster.flowdrop-toaster {
   --default-offset: var(--fd-space-xl, 16px);
+  top: var(--fd-toast-top, calc(var(--fd-navbar-height, 48px) + 12px)) !important;
 }
 
 /*
- * Toast bar: card surface, border, radius, shadow, typography and spacing from design tokens.
+ * Toast bar: card surface, border, radius, float shadow, typography and spacing from design tokens.
  * Plain descendant selector (no :global - that's Svelte-only and invalid in plain CSS).
  */
 .flowdrop-toaster.flowdrop-toaster .flowdrop-toast-bar {
   background: var(--fd-card) !important;
   color: var(--fd-card-foreground) !important;
-  border: 1px solid var(--fd-border) !important;
+  border: 1px solid var(--fd-float-border, var(--fd-border)) !important;
   border-radius: var(--fd-radius-lg) !important;
-  box-shadow: var(--fd-elevation-float) !important;
-  padding: var(--fd-space-xs) var(--fd-space-md) !important;
-  max-width: 350px;
+  box-shadow: var(--fd-shadow-lg) !important;
+  padding: var(--fd-space-md) !important;
+  width: var(--fd-toast-width, 380px);
+  max-width: min(var(--fd-toast-width, 380px), calc(100vw - 2 * var(--fd-space-xl, 16px)));
   font-size: var(--fd-text-sm);
-  line-height: 1.3;
+  line-height: 1.4;
   transition:
     background var(--fd-transition-fast),
     border-color var(--fd-transition-fast),
     box-shadow var(--fd-transition-fast);
 }
 
+/* A success is one line, as wide as its text. */
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-bar:has([data-kind='success']),
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-bar:has([data-kind='info']) {
+  width: auto;
+  padding: var(--fd-space-sm) var(--fd-space-md) !important;
+}
+
 /*
- * Dismissible toasts (errors, warnings): headline, optional reason list and a
- * close button, rendered by DismissibleToast.svelte inside the library's
- * `.message` flex row.
+ * Toast body (DismissibleToast.svelte), inside the library's `.message` flex row:
+ * glyph, text and close button share a grid so the glyph sits on the first line.
  */
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-bar .message {
+  margin: 0;
+  justify-content: stretch;
+  min-width: 0;
+}
+
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--fd-space-sm);
+  width: 100%;
+}
+
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  border-radius: var(--fd-radius-full);
+  color: var(--fd-info-foreground);
+  background: var(--fd-info);
+}
+
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-glyph svg {
+  width: 14px;
+  height: 14px;
+}
+
+.flowdrop-toaster.flowdrop-toaster [data-kind='success'] .flowdrop-toast-glyph {
+  color: var(--fd-success-foreground);
+  background: var(--fd-success);
+}
+
+.flowdrop-toaster.flowdrop-toaster [data-kind='error'] .flowdrop-toast-glyph {
+  color: var(--fd-error-foreground);
+  background: var(--fd-error);
+}
+
+.flowdrop-toaster.flowdrop-toaster [data-kind='warning'] .flowdrop-toast-glyph {
+  color: var(--fd-warning-foreground);
+  background: var(--fd-warning);
+}
+
 .flowdrop-toaster.flowdrop-toaster .flowdrop-toast-text {
   flex: 1 1 auto;
   min-width: 0;
@@ -48,13 +106,31 @@
 
 .flowdrop-toaster.flowdrop-toaster .flowdrop-toast-headline {
   margin: 0;
+  font-size: var(--fd-text-body, var(--fd-text-sm));
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.flowdrop-toaster.flowdrop-toaster
+  .flowdrop-toast-row[data-kind='success']
+  .flowdrop-toast-headline,
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-row[data-kind='info'] .flowdrop-toast-headline {
+  font-weight: 500;
+}
+
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-body {
+  margin: var(--fd-space-3xs, 2px) 0 0;
+  color: var(--fd-muted-foreground);
+  font-size: var(--fd-text-meta, var(--fd-text-xs));
+  line-height: 18px;
 }
 
 .flowdrop-toaster.flowdrop-toaster .flowdrop-toast-details {
   margin: var(--fd-space-xs, 4px) 0 0;
   padding-inline-start: 1.1em;
-  color: var(--fd-muted-foreground, inherit);
-  font-size: var(--fd-text-xs, 0.85em);
+  color: var(--fd-foreground, inherit);
+  font-size: var(--fd-text-meta, var(--fd-text-xs, 0.85em));
+  line-height: 18px;
 }
 
 .flowdrop-toaster.flowdrop-toaster .flowdrop-toast-details li + li {
@@ -63,12 +139,12 @@
 
 .flowdrop-toaster.flowdrop-toaster .flowdrop-toast-close {
   flex: 0 0 auto;
-  align-self: flex-start;
+  align-self: start;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-inline-start: var(--fd-space-sm, 8px);
-  padding: var(--fd-space-xs, 4px);
+  margin: calc(-1 * var(--fd-space-3xs, 2px)) calc(-1 * var(--fd-space-3xs, 2px)) 0 0;
+  padding: var(--fd-space-3xs, 2px);
   border: 0;
   border-radius: var(--fd-radius-sm, 4px);
   background: transparent;
@@ -87,11 +163,15 @@
   outline-offset: 1px;
 }
 
-/* Warning variant: same persistence as an error, its own colour so it reads as one. */
-.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-bar--warning {
-  border-color: var(--fd-warning, #f59e0b) !important;
+/* Next step offered by the toast ("Show problems"): quiet text in the accent colour, aligned to the toast's own left edge. */
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-actions {
+  display: flex;
+  gap: var(--fd-space-xs, 4px);
+  margin: var(--fd-space-xs, 4px) 0 calc(-1 * var(--fd-space-xs, 4px))
+    calc(-1 * var(--fd-space-sm, 8px));
 }
 
-.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-warning-icon {
-  flex: 0 0 auto;
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-actions button {
+  color: var(--fd-accent, var(--fd-primary));
+  font-weight: 500;
 }

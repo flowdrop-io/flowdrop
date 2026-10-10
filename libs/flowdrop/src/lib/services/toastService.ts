@@ -4,11 +4,25 @@
  * Provides consistent toast notifications across the FlowDrop application
  */
 
-import { toast, type DefaultToastOptions, type Renderable } from 'svelte-5-french-toast';
+import { get } from 'svelte/store';
+import {
+  toast,
+  useToasterStore,
+  type DefaultToastOptions,
+  type Renderable
+} from 'svelte-5-french-toast';
 import { TOAST_DURATION } from '../config/constants.js';
 import { errorDetails } from '../api/enhanced-client.js';
 import DismissibleToast from '../components/toast/DismissibleToast.svelte';
-import WarningIcon from '../components/toast/WarningIcon.svelte';
+import {
+  SUCCESS_TOAST_ID,
+  planToastEviction,
+  type ActiveToast,
+  type ToastAction,
+  type ToastKind
+} from './toastQueue.js';
+
+export type { ToastAction } from './toastQueue.js';
 
 /**
  * TYPE DEBT — remove when svelte-5-french-toast types `Renderable` as
@@ -18,10 +32,14 @@ import WarningIcon from '../components/toast/WarningIcon.svelte';
  */
 const asRenderable = <P extends Record<string, unknown>>(component: unknown) =>
   component as Renderable<P>;
-const dismissibleToast = asRenderable<{ text: string; details?: readonly string[] }>(
-  DismissibleToast
-);
-const warningIcon = asRenderable(WarningIcon);
+const toastBody = asRenderable<{
+  text: string;
+  body?: string;
+  details?: readonly string[];
+  action?: ToastAction;
+  kind: ToastKind;
+  dismissible: boolean;
+}>(DismissibleToast);
 
 /**
  * Default toast options themed with FlowDrop design tokens.
@@ -60,19 +78,38 @@ export const FLOWDROP_TOASTER_CLASS = 'flowdrop-toaster';
 export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
 /**
+ * A message built from parts instead of one joined string: `title` says what
+ * happened, `body` why, `details` lists the reasons behind it and `action`
+ * offers the next step.
+ */
+export interface ToastContent {
+  title: string;
+  body?: string;
+  details?: readonly string[];
+  action?: ToastAction;
+}
+
+/** What the show* helpers take: a plain string (the title) or its parts. */
+export type ToastInput = string | ToastContent;
+
+/**
  * Toast configuration options
  */
 export interface ToastOptions {
   duration?: number;
   /**
    * Reasons behind the message, rendered as a list under it (errors and
-   * warnings only). Pass `ApiError.details` here.
+   * warnings only). Pass `ApiError.details` here. Same as `details` on a
+   * `ToastContent`; the content's own list wins.
    */
   details?: readonly string[];
+  /** Same as `action` on a `ToastContent`; the content's own action wins. */
+  action?: ToastAction;
   /**
    * Stable id: a toast with the same id replaces the one already showing
    * instead of stacking. Errors and warnings default to an id derived from
-   * their text, so repeating a failing action does not wallpaper the screen.
+   * their text, so repeating a failing action does not wallpaper the screen;
+   * successes share one id, so a new success replaces the last.
    */
   id?: string;
   position?:
@@ -84,35 +121,83 @@ export interface ToastOptions {
     | 'bottom-right';
 }
 
+const DEFAULT_POSITION = 'top-center';
+
+function toContent(input: ToastInput, options?: ToastOptions): ToastContent {
+  const content = typeof input === 'string' ? { title: input } : input;
+  return {
+    ...content,
+    details: content.details ?? options?.details,
+    action: content.action ?? options?.action
+  };
+}
+
 /** Default id for a persistent toast: one per distinct text. */
-function dedupeId(kind: string, message: string, details: readonly string[] = []): string {
-  return `${kind}:${[message, ...details].join('\n')}`;
+function dedupeId(kind: string, content: ToastContent): string {
+  return `${kind}:${[content.title, content.body ?? '', ...(content.details ?? [])].join('\n')}`;
+}
+
+/** The toasts on screen now, for the queue rules. */
+function activeToasts(): ActiveToast[] {
+  return get(useToasterStore().toasts)
+    .filter((t) => t.visible)
+    .map((t) => ({
+      id: t.id,
+      kind: (t.props?.kind as ToastKind | undefined) ?? (t.type === 'loading' ? 'loading' : 'info'),
+      createdAt: t.createdAt
+    }));
+}
+
+/** Apply the queue rules (one success at a time, at most three visible), then show. */
+function present(
+  kind: Exclude<ToastKind, 'loading'>,
+  input: ToastInput,
+  options: ToastOptions | undefined,
+  defaults: { duration: number; id?: string; dismissible: boolean }
+): string {
+  const content = toContent(input, options);
+  const id = options?.id ?? defaults.id ?? dedupeId(kind, content);
+  for (const evicted of planToastEviction(activeToasts(), { id, kind })) {
+    toast.dismiss(evicted);
+  }
+  return toast(toastBody, {
+    id,
+    props: {
+      text: content.title,
+      body: content.body,
+      details: content.details ?? [],
+      action: content.action,
+      kind,
+      dismissible: defaults.dismissible
+    },
+    duration: options?.duration ?? defaults.duration,
+    position: options?.position ?? DEFAULT_POSITION
+  });
 }
 
 /**
- * Show a success toast notification
+ * Show a success toast notification. One line; a new success replaces the
+ * previous one instead of stacking.
  */
-export function showSuccess(message: string, options?: ToastOptions): string {
-  return toast.success(message, {
-    id: options?.id,
-    duration: options?.duration ?? TOAST_DURATION.SUCCESS,
-    position: options?.position ?? 'bottom-center'
+export function showSuccess(message: ToastInput, options?: ToastOptions): string {
+  return present('success', message, options, {
+    duration: TOAST_DURATION.SUCCESS,
+    id: SUCCESS_TOAST_ID,
+    dismissible: false
   });
 }
 
 /**
  * Show an error toast notification.
  *
+ * Takes a string, or its parts: `showError({ title, body, details, action })`.
  * Stays until the user closes it (TOAST_DURATION.ERROR is Infinity). Pass a
  * finite `duration` to opt back into auto-dismiss.
  */
-export function showError(message: string, options?: ToastOptions): string {
-  const details = options?.details ?? [];
-  return toast.error(dismissibleToast, {
-    id: options?.id ?? dedupeId('error', message, details),
-    props: { text: message, details },
-    duration: options?.duration ?? TOAST_DURATION.ERROR,
-    position: options?.position ?? 'bottom-center'
+export function showError(message: ToastInput, options?: ToastOptions): string {
+  return present('error', message, options, {
+    duration: TOAST_DURATION.ERROR,
+    dismissible: true
   });
 }
 
@@ -124,28 +209,22 @@ export function showError(message: string, options?: ToastOptions): string {
  * user should act on (an agent's config key that was ignored, an import that
  * dropped nodes), and a message like that must not vanish mid-read. Pass a
  * finite `duration` for a warning that is only informational. Wears its own
- * icon and colour so it is not mistaken for an error.
+ * glyph and colour so it is not mistaken for an error.
  */
-export function showWarning(message: string, options?: ToastOptions): string {
-  const details = options?.details ?? [];
-  return toast(dismissibleToast, {
-    id: options?.id ?? dedupeId('warning', message, details),
-    props: { text: message, details },
-    icon: warningIcon,
-    className: 'flowdrop-toast-bar flowdrop-toast-bar--warning',
-    duration: options?.duration ?? TOAST_DURATION.WARNING,
-    position: options?.position ?? 'bottom-center'
+export function showWarning(message: ToastInput, options?: ToastOptions): string {
+  return present('warning', message, options, {
+    duration: TOAST_DURATION.WARNING,
+    dismissible: true
   });
 }
 
 /**
  * Show an info toast notification
  */
-export function showInfo(message: string, options?: ToastOptions): string {
-  return toast.success(message, {
-    id: options?.id,
-    duration: options?.duration ?? TOAST_DURATION.INFO,
-    position: options?.position ?? 'bottom-center'
+export function showInfo(message: ToastInput, options?: ToastOptions): string {
+  return present('info', message, options, {
+    duration: TOAST_DURATION.INFO,
+    dismissible: false
   });
 }
 
@@ -156,7 +235,7 @@ export function showLoading(message: string, options?: ToastOptions): string {
   return toast.loading(message, {
     id: options?.id,
     duration: options?.duration ?? Infinity,
-    position: options?.position ?? 'bottom-center'
+    position: options?.position ?? DEFAULT_POSITION
   });
 }
 
@@ -206,14 +285,20 @@ export function showConfirmation(message: string, options?: ToastOptions): strin
   return toast(message, {
     id: options?.id,
     duration: options?.duration ?? TOAST_DURATION.CONFIRMATION,
-    position: options?.position ?? 'bottom-center'
+    position: options?.position ?? DEFAULT_POSITION
   });
 }
 
-/** Headline and reasons of a thrown error; see `errorDetails`. */
+/** The reasons of a thrown error, as parts of a toast: `body` is its message; see `errorDetails`. */
 function errorParts(error: string | Error): { message: string; details: readonly string[] } {
   if (typeof error === 'string') return { message: error, details: [] };
   return { message: error.message, details: errorDetails(error) };
+}
+
+/** An error toast whose title names the failed action and whose body says why. */
+function failure(title: string, error: string | Error): string {
+  const { message, details } = errorParts(error);
+  return showError({ title, body: message, details });
 }
 
 /**
@@ -232,8 +317,7 @@ export const apiToasts = {
    * Show API error message
    */
   error: (operation: string, error: string | Error) => {
-    const { message, details } = errorParts(error);
-    return showError(`${operation} failed: ${message}`, { details });
+    return failure(`${operation} failed`, error);
   },
 
   /**
@@ -280,8 +364,7 @@ export const workflowToasts = {
    * Show workflow save error
    */
   saveError: (error: string | Error) => {
-    const { message, details } = errorParts(error);
-    return showError(`Failed to save workflow: ${message}`, { details });
+    return failure("Couldn't save the workflow", error);
   },
 
   /**
@@ -298,8 +381,7 @@ export const workflowToasts = {
    * Show workflow delete error
    */
   deleteError: (error: string | Error) => {
-    const { message, details } = errorParts(error);
-    return showError(`Failed to delete workflow: ${message}`, { details });
+    return failure("Couldn't delete the workflow", error);
   },
 
   /**
@@ -336,8 +418,7 @@ export const workflowToasts = {
    * Show workflow execution error
    */
   executionError: (error: string | Error) => {
-    const { message, details } = errorParts(error);
-    return showError(`Workflow execution failed: ${message}`, { details });
+    return failure('Workflow execution failed', error);
   }
 };
 
@@ -359,8 +440,7 @@ export const pipelineToasts = {
    * Show pipeline creation error
    */
   creationError: (error: string | Error) => {
-    const { message, details } = errorParts(error);
-    return showError(`Failed to create pipeline: ${message}`, { details });
+    return failure("Couldn't create the pipeline", error);
   },
 
   /**
@@ -381,8 +461,7 @@ export const pipelineToasts = {
    * Show pipeline execution error
    */
   executionError: (pipelineId: string, error: string | Error) => {
-    const { message, details } = errorParts(error);
-    return showError(`Pipeline ${pipelineId} execution failed: ${message}`, { details });
+    return failure(`Pipeline ${pipelineId} execution failed`, error);
   },
 
   /**
