@@ -144,7 +144,8 @@ export function buildDefaultContextMenuEntries(
   }
 
   if (ctx.target === 'node' && ctx.nodes.length === 1) {
-    const first: ContextMenuEntry = options.editsInPlace?.(ctx.nodes[0])
+    const inPlace = options.editsInPlace?.(ctx.nodes[0]) ?? false;
+    const first: ContextMenuEntry = inPlace
       ? {
           id: 'edit-text',
           icon: 'mdi:pencil-outline',
@@ -160,7 +161,8 @@ export function buildDefaultContextMenuEntries(
           run: (c) => c.actions.openConfig(c.nodes[0].id)
         };
     const swap = ctx.actions.swapNode;
-    const straighten = straightenEntry(ctx, messages);
+    // A caption is edited in place and has no ports, so there is no wire to straighten.
+    const straighten = inPlace ? [] : straightenEntry(ctx, messages);
     return [
       first,
       {
