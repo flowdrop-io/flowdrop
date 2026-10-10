@@ -73,7 +73,10 @@
   import { defaultEndpointConfig, sessionsEndpoints } from '$lib/config/endpoints.js';
   import { installBridgedModelContext } from '$lib/webmcp/bridge.js';
   import { createFakeBridgeWidget } from '$lib/webmcp/fakeWidget.js';
-  import { createChainedTriggerWorkflow } from '../../../mocks/data/workflows.js';
+  import {
+    createChainedTriggerWorkflow,
+    demoNodeTypesShowcaseWorkflow
+  } from '../../../mocks/data/workflows.js';
 
   // --- Query param for workflow variant ---
   let workflowVariant = $derived($page.url.searchParams.get('workflow') ?? 'simple');
@@ -790,6 +793,79 @@
     }
   };
 
+  // Notes variant (?workflow=notes): one note per type, a long one and a plain-text one,
+  // for the notes look and the zoom-tier checks.
+  const noteMetadata = demoNodeTypesShowcaseWorkflow.nodes.find(
+    (n) => n.data.metadata.type === 'note'
+  )!.data.metadata;
+  const noteNode = (
+    id: string,
+    x: number,
+    y: number,
+    noteType: string,
+    content: string
+  ): Workflow['nodes'][number] => ({
+    id,
+    type: 'universalNode',
+    position: { x, y },
+    data: { label: 'Notes', config: { content, noteType }, metadata: noteMetadata }
+  });
+  const notesWorkflow: Workflow = {
+    id: 'test-workflow-notes',
+    name: 'Notes Workflow',
+    description: 'Notes of every type, a long note and a plain note',
+    nodes: [
+      noteNode(
+        'note-info',
+        80,
+        80,
+        'info',
+        '# Workflow notes\n\n## Why two triggers?\n\nInsert and update fire **separately**; both feed *Data Shaper*.\n\n- Insert: new entity\n- Update: existing entity\n- Delete is ignored'
+      ),
+      noteNode(
+        'note-plain',
+        440,
+        80,
+        'note',
+        '# Workflow notes\n\nWhen content is edited or updated, a message is shown to the user.\n\nThis demo runs the workflow automatically after an entity insert or update.'
+      ),
+      noteNode(
+        'note-warning',
+        800,
+        80,
+        'warning',
+        '## Rate limits\n\nThe API allows 100 requests per minute. Bulk runs are throttled.'
+      ),
+      noteNode(
+        'note-success',
+        80,
+        460,
+        'success',
+        '## Verified\n\nChecked against production data on Monday.'
+      ),
+      noteNode(
+        'note-error',
+        440,
+        460,
+        'error',
+        '## Known problem\n\nThe Loop Back path never ends when the list is empty.'
+      ),
+      noteNode(
+        'note-long',
+        800,
+        340,
+        'info',
+        '# A long note\n\nThis note has a good deal of text so the wrapping, the grid snapping of the height and the zoom tier title can be checked together. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n\n## Details\n\nUt enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. `inline_code_example_with_a_very_long_identifier_name` stays inside.\n\n1. First step\n2. Second step\n3. Third step'
+      )
+    ],
+    edges: [],
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+
   // The shapes fddo sends for Chat Output (loose controls, then General / Execution /
   // Ports groups; several ports), a node with no ports, and the subworkflow executor
   // (external workflow link). Used by the inspector tests and screenshots.
@@ -939,6 +1015,7 @@
   const workflows: Record<string, Workflow> = {
     inspector: inspectorWorkflow,
     caption: captionWorkflow,
+    notes: notesWorkflow,
     simple: simpleWorkflow,
     interface: interfaceWorkflow,
     doctor: doctorWorkflow,
