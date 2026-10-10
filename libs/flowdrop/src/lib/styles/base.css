@@ -648,10 +648,12 @@
     font-family: var(--fd-font-sans);
     font-size: var(--fd-text-sm);
     scrollbar-width: thin;
-    /* 1px between items, so a hovered neighbour of the chosen one never fuses with it. */
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
+  }
+
+  /* 1px between items, so a hovered neighbour of the chosen one never fuses with it. A display
+     on ::picker(select) would override the closed popover's display: none, so it is a margin. */
+  .flowdrop-input--select option + option {
+    margin-block-start: 1px;
   }
 
   .flowdrop-input--select option {
