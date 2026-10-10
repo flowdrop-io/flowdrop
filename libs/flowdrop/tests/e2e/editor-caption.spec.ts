@@ -38,7 +38,11 @@ async function addCaptionFromMenu(page: Page): Promise<void> {
 }
 
 function captionNode(page: Page, text: string): Locator {
-  return page.locator('.svelte-flow__node').filter({ hasText: text });
+  // Caption nodes only: a workflow node's "kind · id" line can say the same word.
+  return page
+    .locator('.svelte-flow__node')
+    .filter({ has: page.locator('.flowdrop-caption-node') })
+    .filter({ hasText: text });
 }
 
 test.describe('Caption node', () => {
