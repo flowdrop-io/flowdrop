@@ -969,11 +969,24 @@ export const defaultMessages = {
       direction: 'input' | 'output';
     }) => `Workflow ${direction} ${id}, ${type}`,
     tagTitle: ({ id, type }: { id: string; type: string }) => `${id} · ${type}`,
+    // The popover on a hovered tag: what the name means and where it goes.
+    tagTipInput: 'Workflow input',
+    tagTipOutput: 'Workflow output',
+    tagTipReserved: 'Trigger event',
+    tagTipInputBody: ({ port, node }: { port: string; node: string }) =>
+      `Whoever runs this workflow (the API, a Run workflow node, an agent or the Playground) passes a value under this name. It fills ${port} on ${node}.`,
+    tagTipOutputBody: ({ port, node }: { port: string; node: string }) =>
+      `Whoever runs this workflow gets ${port} from ${node} back under this name.`,
+    tagTipReservedBody:
+      'Holds what happened when this trigger fires: the event fills this input and the run starts here. Callers cannot see or supply it.',
+    tagTipRequired: 'Required',
+    tagTipMismatch: ({ declared, port }: { declared: string; port: string }) =>
+      `Declared ${declared}, but the port is ${port}`,
+    tagTipEditHint: 'Double-click to rename · right-click for more',
+    tagTipReservedHint: 'Derived from the trigger node · read-only',
     // The read-only tag beside a trigger's event input (derived, MAN-26).
     reservedTagAria: ({ id, type }: { id: string; type: string }) =>
       `Trigger event input ${id}, ${type}, read-only`,
-    reservedTagTitle: ({ id, type }: { id: string; type: string }) =>
-      `${id} · ${type} — filled when this trigger fires; read-only`,
     tagNameLabel: 'Interface name',
     tagNameHint: 'Enter saves · Esc cancels',
     tagIdEmpty: 'Give it a name.',

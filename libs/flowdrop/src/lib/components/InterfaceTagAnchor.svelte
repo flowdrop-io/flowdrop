@@ -92,5 +92,12 @@
     flex: none;
     width: var(--fd-iface-tag-gap);
     border-top: 1.2px dotted var(--_line);
+    transition: border-color 120ms ease;
+  }
+
+  /* Hovering the tag firms up its link to the port. */
+  .fd-iface-anchor:has(.fd-iface-anchor__tag:hover) .fd-iface-anchor__line {
+    border-top-style: solid;
+    border-top-color: var(--fd-ring);
   }
 </style>

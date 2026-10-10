@@ -8,6 +8,9 @@
   Render it inside <SvelteFlow>: it puts its tags in the viewport layer in
   front of the nodes, so they pan and zoom with the canvas.
 
+  Hovering a tag opens a popover (NodeTip) that says what the name means and
+  which port it fills or returns.
+
   View only. Every edit leaves through the callbacks, and the editor routes
   them through the workflow store (undoable, marks the workflow dirty).
 -->
@@ -47,6 +50,7 @@
   import InterfaceTag from './InterfaceTag.svelte';
   import InterfaceTagAnchor from './InterfaceTagAnchor.svelte';
   import InterfaceNameInput from './InterfaceNameInput.svelte';
+  import NodeTip from './nodes/NodeTip.svelte';
 
   interface Props {
     workflow: Workflow;
@@ -112,6 +116,80 @@
     return null;
   });
 
+  interface TagTip {
+    anchor: DOMRect;
+    /** Outputs sit right of their node, so their popover grows leftwards. */
+    align: 'start' | 'end';
+    title: string;
+    code: string;
+    body?: string;
+    note?: string;
+  }
+
+  // Read during init: m() needs the component context, which a hover handler lacks.
+  const iface = $derived(m().workflowInterface);
+
+  let tip = $state<TagTip | null>(null);
+  let tipTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function hideTip(): void {
+    clearTimeout(tipTimer);
+    tip = null;
+  }
+
+  /** The popover's text for a tag: kind, what the name does, and how to edit it. */
+  function tipFor(tag: InterfaceTagModel, typeText: string): Omit<TagTip, 'anchor' | 'align'> {
+    const t = iface;
+    const node = workflow.nodes.find((candidate) => candidate.id === tag.nodeId);
+    const ports =
+      tag.direction === 'input' ? node?.data.metadata.inputs : node?.data.metadata.outputs;
+    const port = ports?.find((candidate) => candidate.id === tag.portId)?.name ?? tag.portId;
+    const nodeName = node?.data.label || node?.data.metadata.name || tag.nodeId;
+    const code = `${tag.entry.id} · ${typeText}`;
+    if (tag.readonly) {
+      return {
+        title: t.tagTipReserved,
+        code,
+        body: t.tagTipReservedBody,
+        note: t.tagTipReservedHint
+      };
+    }
+    const explain =
+      tag.direction === 'input'
+        ? t.tagTipInputBody({ port, node: nodeName })
+        : t.tagTipOutputBody({ port, node: nodeName });
+    const notes = [
+      tag.direction === 'input' && tag.entry.required ? t.tagTipRequired : null,
+      tag.mismatch
+        ? t.tagTipMismatch({
+            declared: typeName(tag.mismatch.declared),
+            port: typeName(tag.mismatch.port)
+          })
+        : null,
+      editable ? t.tagTipEditHint : null
+    ].filter(Boolean);
+    return {
+      title: `${tag.direction === 'input' ? t.tagTipInput : t.tagTipOutput}${
+        tag.entry.name && tag.entry.name !== tag.entry.id ? `: ${tag.entry.name}` : ''
+      }`,
+      code,
+      body: tag.entry.description ? `${tag.entry.description} ${explain}` : explain,
+      note: notes.join(' · ') || undefined
+    };
+  }
+
+  function showTip(event: Event, tag: InterfaceTagModel, typeText: string): void {
+    clearTimeout(tipTimer);
+    const anchor = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const content = tipFor(tag, typeText);
+    tipTimer = setTimeout(
+      () => (tip = { anchor, align: tag.direction === 'output' ? 'end' : 'start', ...content }),
+      tip ? 0 : 250
+    );
+  }
+
+  $effect(() => () => clearTimeout(tipTimer));
+
   function submit(): void {
     if (error) return;
     onsubmit();
@@ -155,11 +233,18 @@
             type: typeText,
             direction: tag.direction
           })}
+          title=""
           data-testid="interface-tag"
           data-interface-id={tag.entry.id}
           data-interface-direction={tag.direction}
-          ondblclick={() => editable && onrename(tag)}
+          onmouseenter={(event: MouseEvent) => showTip(event, tag, typeText)}
+          onmouseleave={hideTip}
+          ondblclick={() => {
+            hideTip();
+            if (editable) onrename(tag);
+          }}
           oncontextmenu={(event: MouseEvent) => {
+            hideTip();
             if (!editable) return;
             event.preventDefault();
             event.stopPropagation();
@@ -180,7 +265,9 @@
         readonly
         class="nodrag nopan"
         role="img"
-        title={m().workflowInterface.reservedTagTitle({ id: tag.entry.id, type: typeText })}
+        title=""
+        onmouseenter={(event: MouseEvent) => showTip(event, tag, typeText)}
+        onmouseleave={hideTip}
         aria-label={m().workflowInterface.reservedTagAria({ id: tag.entry.id, type: typeText })}
         data-testid="interface-tag-reserved"
         data-interface-id={tag.entry.id}
@@ -213,3 +300,15 @@
     </InterfaceTagAnchor>
   {/if}
 </ViewportPortal>
+
+{#if tip}
+  <NodeTip
+    anchor={tip.anchor}
+    align={tip.align}
+    variant="pop"
+    title={tip.title}
+    code={tip.code}
+    body={tip.body}
+    note={tip.note}
+  />
+{/if}

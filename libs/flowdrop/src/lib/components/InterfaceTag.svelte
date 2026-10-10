@@ -14,6 +14,8 @@
     `event:<node-id>`). Muted fill and id, default cursor.
   - `compact`: far zoom (the editor sets it through the `data-fd-zoom` tier; the prop forces it). The text drops, the shape and swatch stay.
 
+  `title=""` drops the native tooltip (the canvas shows a richer popover).
+
   A view only: the data stays in `workflow.interface`. Ids longer than
   `INTERFACE_TAG_MAX_ID_CHARS` are shortened; the full id is the tooltip.
   Styled with BEM syntax, from the `--fd-iface-tag-*` tokens.
@@ -61,7 +63,7 @@
   class:fd-iface-tag--ghost={ghost}
   class:fd-iface-tag--readonly={readonly}
   class:fd-iface-tag--compact={compact}
-  title={title ?? (typeText ? `${id} · ${typeText}` : id)}
+  title={title === undefined ? (typeText ? `${id} · ${typeText}` : id) : title || undefined}
   {...rest}
 >
   <span class="fd-iface-tag__body">
@@ -96,6 +98,28 @@
     line-height: 1;
   }
 
+  .fd-iface-tag__body,
+  .fd-iface-tag__tip {
+    transition:
+      border-color 120ms ease,
+      stroke 120ms ease,
+      background-color 120ms ease;
+  }
+
+  .fd-iface-tag:not(.fd-iface-tag--ghost) {
+    transition: filter 120ms ease;
+  }
+
+  /* Hover: the outline firms up and the tag lifts off the canvas. */
+  .fd-iface-tag:not(.fd-iface-tag--ghost):hover {
+    --_stroke: var(--fd-ring);
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.12));
+  }
+
+  .fd-iface-tag--mismatch:hover {
+    --_stroke: var(--fd-warning);
+  }
+
   .fd-iface-tag--mismatch {
     --_stroke: var(--fd-warning);
     --_bg: var(--fd-warning-muted);
@@ -109,6 +133,10 @@
     --_bg: var(--fd-muted);
     color: var(--fd-muted-foreground);
     cursor: default;
+  }
+
+  .fd-iface-tag--readonly:hover {
+    color: var(--fd-foreground);
   }
 
   .fd-iface-tag__body {

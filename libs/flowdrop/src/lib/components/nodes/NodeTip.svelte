@@ -28,14 +28,19 @@
 
   let { anchor, align = 'start', variant = 'tip', title, code, body, note }: Props = $props();
 
-  const left = $derived(align === 'start' ? anchor.left : anchor.right);
+  // End-aligned tips are placed from the right edge: `left` plus a -100%
+  // translate let the box shrink to the space right of the anchor first.
+  const left = $derived(align === 'start' ? anchor.left : undefined);
+  const right = $derived(
+    align === 'end' ? document.documentElement.clientWidth - anchor.right : undefined
+  );
 </script>
 
 <div
   use:portal
   class="fd-node-tip fd-node-tip--{variant}"
-  class:fd-node-tip--end={align === 'end'}
-  style:left="{left}px"
+  style:left={left === undefined ? undefined : `${left}px`}
+  style:right={right === undefined ? undefined : `${right}px`}
   style:top="{anchor.bottom + 8}px"
   role="tooltip"
 >
@@ -60,10 +65,6 @@
     pointer-events: none;
     background: var(--fd-foreground);
     color: var(--fd-background);
-  }
-
-  .fd-node-tip--end {
-    transform: translateX(-100%);
   }
 
   .fd-node-tip--pop {
