@@ -101,6 +101,13 @@ export interface EditorSettings {
   proximityConnect: boolean;
   /** Distance threshold in pixels for proximity connect */
   proximityConnectDistance: number;
+  /**
+   * Show each node's description as a band under its header. Off by default:
+   * the description lives in the title popover and the inspector, and port help
+   * in the port tooltip. On, the band is 60px and reserved on every node, so
+   * ports keep their relative positions and wires stay straight.
+   */
+  showNodeDescriptions: boolean;
 }
 
 // =========================================================================
@@ -316,7 +323,8 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   defaultZoom: 1,
   fitViewOnLoad: true,
   proximityConnect: false,
-  proximityConnectDistance: 150
+  proximityConnectDistance: 150,
+  showNodeDescriptions: false
 };
 
 /**

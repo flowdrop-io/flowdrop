@@ -173,6 +173,13 @@
           minimum: 50,
           maximum: 500,
           default: 150
+        },
+        showNodeDescriptions: {
+          type: 'boolean',
+          title: 'Show descriptions',
+          description:
+            'Show each node\'s description under its title. Without it, descriptions appear when you hover a title or a port.',
+          default: false
         }
       }
     },
