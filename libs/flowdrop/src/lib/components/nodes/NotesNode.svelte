@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
+  import { onMount } from 'svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
   import { m } from '$lib/messages/index.js';
@@ -38,38 +39,79 @@
   /** Note type derived from config */
   const noteType = $derived((props.data.config?.noteType as string) || 'info');
 
-  /** Note type configuration with styling for each type. Type names track the
-   * messages tree so locale changes flow through. */
+  /** Note type configuration. Type names track the messages tree so locale
+   * changes flow through. The variant is carried by the paper tint and the footer
+   * word, never by an icon tile. */
   const noteTypes = $derived({
     info: {
       name: notes.types.info,
-      typeClass: 'flowdrop-notes-node--info',
-      icon: 'mdi:information'
+      typeClass: 'flowdrop-notes-node--info'
     },
     warning: {
       name: notes.types.warning,
-      typeClass: 'flowdrop-notes-node--warning',
-      icon: 'mdi:alert'
+      typeClass: 'flowdrop-notes-node--warning'
     },
     success: {
       name: notes.types.success,
-      typeClass: 'flowdrop-notes-node--success',
-      icon: 'mdi:check-circle'
+      typeClass: 'flowdrop-notes-node--success'
     },
     error: {
       name: notes.types.error,
-      typeClass: 'flowdrop-notes-node--error',
-      icon: 'mdi:close-circle'
+      typeClass: 'flowdrop-notes-node--error'
     },
     note: {
       name: notes.types.default,
-      typeClass: 'flowdrop-notes-node--note',
-      icon: 'mdi:note-text'
+      typeClass: 'flowdrop-notes-node--note'
     }
   });
 
   /** Current note type configuration based on selected type */
   const currentType = $derived(noteTypes[noteType as keyof typeof noteTypes] || noteTypes.info);
+
+  /**
+   * First heading of the note (inline markup stripped), shown alone in the glyph
+   * and map zoom tiers so a note reads as a landmark on a zoomed-out canvas.
+   * Falls back to the first line of text when the note has no heading.
+   */
+  const firstHeading = $derived.by((): string => {
+    const lines = noteContent.split('\n');
+    const strip = (t: string): string =>
+      t
+        .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/[*_`~]/g, '')
+        .trim();
+    for (const line of lines) {
+      const match = /^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/.exec(line);
+      if (match) return strip(match[1]);
+    }
+    const plain = lines.find((line) => line.trim() !== '');
+    return plain ? strip(plain.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '')) : '';
+  });
+
+  /** The 20px grid the height snaps to (CSS owns the rhythm; this only rounds). */
+  const GRID = 20;
+
+  let root: HTMLDivElement | undefined = $state();
+  let content: HTMLDivElement | undefined = $state();
+  /** Height the note snaps up to: content + padding, rounded up to a grid multiple. */
+  let snappedHeight = $state(0);
+
+  onMount(() => {
+    if (!root || !content || typeof ResizeObserver === 'undefined') return;
+    const measure = (): void => {
+      if (!root || !content) return;
+      const style = getComputedStyle(root);
+      const pad = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      const natural = content.offsetHeight + pad;
+      snappedHeight = Math.ceil(natural / GRID - 0.001) * GRID;
+    };
+    measure();
+    // Observe the inner content (never the outer box), so setting min-height
+    // on the box cannot feed back into the measurement.
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    return () => observer.disconnect();
+  });
 
   /**
    * Opens the configuration sidebar for editing note properties
@@ -97,27 +139,26 @@
      wrapper (see UniversalNode). double-click is a mouse convenience. -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
+  bind:this={root}
   class="flowdrop-notes-node {currentType.typeClass}"
   class:flowdrop-notes-node--selected={props.selected}
   class:flowdrop-notes-node--processing={props.isProcessing}
   class:flowdrop-notes-node--has-error={props.isError}
+  style:min-height={snappedHeight ? `${snappedHeight}px` : undefined}
+  data-note-title={firstHeading}
   ondblclick={handleDoubleClick}
 >
-  <!-- Display Mode -->
-  <div class="flowdrop-notes-node__content">
-    <!-- Header with icon and type -->
-    <div class="flowdrop-notes-node__header">
-      <div class="flowdrop-notes-node__header-left">
-        <div class="flowdrop-notes-node__icon-wrapper">
-          <Icon icon={currentType.icon} class="flowdrop-notes-node__icon" />
-        </div>
-        <span class="flowdrop-notes-node__type">{currentType.name}</span>
-      </div>
-    </div>
+  <!-- Zoom tiers: the first heading alone (shown by [data-fd-zoom='glyph'|'map']) -->
+  <div class="flowdrop-notes-node__zoom-title" aria-hidden="true">{firstHeading}</div>
 
+  <div class="flowdrop-notes-node__content" bind:this={content}>
     <!-- Rendered markdown content -->
     <div class="flowdrop-notes-node__body">
       <MarkdownDisplay content={noteContent} className="flowdrop-notes-node__markdown" />
+    </div>
+
+    <div class="flowdrop-notes-node__footer">
+      <span class="flowdrop-notes-node__type">{currentType.name}</span>
     </div>
 
     <!-- Processing indicator -->
@@ -142,78 +183,67 @@
 </div>
 
 <style>
+  /* Paper, not panel: a tinted surface with an inset edge (no border box), a 4px
+     radius and no icon tile. Width is fixed by the author; height follows the
+     content and snaps up to the 20px grid (min-height set from the script). */
   .flowdrop-notes-node {
+    --_note-bg: var(--fd-note-bg);
+    --_note-edge: var(--fd-note-edge);
+    --_note-inset: inset 0 0 0 1px var(--_note-edge);
+    position: relative;
     box-sizing: border-box;
     min-width: var(--fd-notes-node-min-width);
     max-width: var(--fd-notes-node-max-width);
     width: var(--fd-notes-node-width);
-    /* Grid-aligned floor; grows in 20px steps via the chrome + body below. */
     min-height: var(--fd-notes-node-min-height);
-    border-radius: var(--fd-node-radius);
-    border: var(--fd-node-border-width) solid var(--fd-note-border);
-    background: var(--fd-node-bg);
+    padding: var(--fd-note-padding);
+    border-radius: var(--fd-note-radius);
+    background: var(--_note-bg);
     backdrop-filter: var(--fd-notes-node-backdrop-filter);
-    box-shadow: var(--fd-node-shadow);
-    color: var(--fd-foreground);
-    transition: all var(--fd-transition-fast);
+    box-shadow: var(--_note-inset), var(--fd-note-shadow);
+    color: var(--fd-note-fg);
+    transition: box-shadow var(--fd-transition-fast);
     overflow: hidden;
     z-index: 5;
   }
 
-  /* Note type: Info (blue) - subtle background tint, neutral border.
-     Uses the info accent (not primary) so an info note never reads as a
-     primary/success action — primary stays reserved for interactive intent. */
+  /* Variants: the tint is the type (accent mixed into the paper for the edge). */
   .flowdrop-notes-node--info {
-    background-color: var(--fd-info-muted);
-    --_notes-icon: var(--fd-info);
+    --_note-bg: var(--fd-note-info-bg);
+    --_note-edge: color-mix(in srgb, var(--fd-info) var(--fd-note-edge-mix), var(--_note-bg));
   }
 
-  /* Note type: Warning (yellow/amber) - subtle background tint */
   .flowdrop-notes-node--warning {
-    background-color: var(--fd-warning-muted);
-    --_notes-icon: var(--fd-warning);
+    --_note-bg: var(--fd-note-warning-bg);
+    --_note-edge: color-mix(in srgb, var(--fd-warning) var(--fd-note-edge-mix), var(--_note-bg));
   }
 
-  /* Note type: Success (green) - subtle background tint */
   .flowdrop-notes-node--success {
-    background-color: var(--fd-success-muted);
-    --_notes-icon: var(--fd-success);
+    --_note-bg: var(--fd-note-success-bg);
+    --_note-edge: color-mix(in srgb, var(--fd-success) var(--fd-note-edge-mix), var(--_note-bg));
   }
 
-  /* Note type: Error (red) - subtle background tint */
   .flowdrop-notes-node--error {
-    background-color: var(--fd-error-muted);
-    --_notes-icon: var(--fd-error);
+    --_note-bg: var(--fd-note-error-bg);
+    --_note-edge: color-mix(in srgb, var(--fd-error) var(--fd-note-edge-mix), var(--_note-bg));
   }
 
-  /* Note type: Note (gray/neutral) - subtle background tint */
-  .flowdrop-notes-node--note {
-    background-color: var(--fd-muted);
-    --_notes-icon: var(--fd-muted-foreground);
-  }
+  /* Plain note keeps the --fd-note-bg / --fd-note-edge pair set above. */
 
   .flowdrop-notes-node:hover {
-    box-shadow: var(--fd-node-shadow-hover);
-    border-color: var(--fd-note-border-hover);
+    box-shadow: var(--_note-inset), var(--fd-node-shadow-hover);
+    --fd-config-btn-opacity: 1;
   }
 
-  /* Selected state - matches other node components */
-  .flowdrop-notes-node--selected {
-    box-shadow:
-      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
-      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
-        var(--fd-node-selected-ring),
-      var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
-  }
-
+  /* Selected: the float elevation and the accent ring, as on nodes. */
+  .flowdrop-notes-node--selected,
   .flowdrop-notes-node--selected:hover {
     box-shadow:
+      var(--_note-inset),
       0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
       0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
         var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-selected-border);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
@@ -224,116 +254,77 @@
   }
 
   .flowdrop-notes-node--has-error {
-    border-color: var(--fd-error) !important;
-    background-color: var(--fd-error-muted) !important;
+    --_note-bg: var(--fd-note-error-bg);
+    --_note-edge: var(--fd-error);
   }
 
-  /* Display Mode Styles */
+  /* Content flows at its natural height; the box rounds it up to the grid. */
   .flowdrop-notes-node__content {
-    box-sizing: border-box;
-    /* px on the 20px grid; bottom padding absorbs both node borders so the
-       chrome (padding + 40px header + 20px gap) sums to 100px and the outer
-       node height stays a 20px multiple as the body grows. */
-    padding: 20px 20px calc(20px - var(--fd-node-border-width) * 2);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .flowdrop-notes-node__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    /* one 40px grid block for the icon row + a 20px gap before the body */
-    min-height: 40px;
-    margin-bottom: 20px;
-    flex-shrink: 0;
-  }
-
-  .flowdrop-notes-node__header-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  /* Squircle icon wrapper - Apple-style rounded square background */
-  .flowdrop-notes-node__icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* px (not rem) so the icon stays grid-locked regardless of root font-size */
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--_notes-icon) var(--fd-node-icon-bg-opacity), transparent);
-    flex-shrink: 0;
-    transition: all var(--fd-transition-normal);
-  }
-
-  .flowdrop-notes-node:hover .flowdrop-notes-node__icon-wrapper {
-    background: color-mix(
-      in srgb,
-      var(--_notes-icon) var(--fd-node-icon-bg-opacity-hover),
-      transparent
-    );
-    transform: scale(1.05);
-  }
-
-  .flowdrop-notes-node__icon-wrapper :global(.flowdrop-notes-node__icon) {
-    width: 20px;
-    height: 20px;
-    color: var(--fd-node-icon);
-  }
-
-  .flowdrop-notes-node__type {
-    font-size: var(--fd-text-sm);
-    font-weight: 500;
-    color: var(--fd-foreground);
+    display: flow-root;
   }
 
   .flowdrop-notes-node__body {
-    flex: 1;
-    overflow-y: auto;
-    color: var(--fd-muted-foreground);
-    /* 20px line rows so plain-text notes grow on the grid (rich markdown with
-       headings/lists may not snap exactly) */
-    line-height: 20px;
+    color: var(--fd-note-fg);
+    font-size: var(--fd-note-body-size);
+    line-height: var(--fd-note-line);
+    overflow-wrap: anywhere;
   }
 
-  /* Markdown content inherits foreground color for better readability */
   .flowdrop-notes-node__body :global(.flowdrop-notes-node__markdown) {
+    color: inherit;
+  }
+
+  /* Capped scale: every text line is one 20px row, blocks are separated by 8px. */
+  .flowdrop-notes-node__body
+    :global(:is(h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote, table)) {
+    margin: 8px 0 0;
+    font-size: inherit;
+    line-height: var(--fd-note-line);
+  }
+
+  .flowdrop-notes-node__body
+    :global(:is(h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote, table):first-child) {
+    margin-top: 0;
+  }
+
+  .flowdrop-notes-node__body :global(h1) {
+    font-size: var(--fd-note-h1-size);
+    font-weight: var(--fd-note-heading-weight);
     color: var(--fd-foreground);
   }
 
-  /* Put markdown blocks on a 20px baseline so the note grows in clean 20px steps:
-     each block bottom-margins one grid row (browser em-margins would land off-grid),
-     and every line is a 20px row. */
-  .flowdrop-notes-node__body
-    :global(:is(h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote, table)) {
-    margin: 0 0 20px;
-    line-height: 20px;
+  .flowdrop-notes-node__body :global(:is(h2, h3, h4, h5, h6)) {
+    font-size: var(--fd-note-h2-size);
+    font-weight: var(--fd-note-heading-weight);
+    color: var(--fd-foreground);
   }
 
-  .flowdrop-notes-node__body
-    :global(:is(h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote, table):last-child) {
-    margin-bottom: 0;
-  }
-
-  /* h1/h2 keep their browser-default sizes (~2em/1.5em), which overflow a 20px row
-     and overlap when they wrap; give each of their lines two grid rows instead. */
-  .flowdrop-notes-node__body :global(:is(h1, h2)) {
-    line-height: 40px;
+  .flowdrop-notes-node__body :global(:is(ul, ol)) {
+    padding-left: 20px;
   }
 
   .flowdrop-notes-node__body :global(li) {
     margin: 0;
-    line-height: 20px;
+    line-height: var(--fd-note-line);
+  }
+
+  .flowdrop-notes-node__body :global(pre) {
+    overflow-x: auto;
+  }
+
+  /* Footer word: the variant, quiet. */
+  .flowdrop-notes-node__footer {
+    margin-top: 12px;
+    font-size: var(--fd-note-meta-size);
+    line-height: 16px;
+    color: var(--fd-note-meta);
   }
 
   .flowdrop-notes-node__processing {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-top: 8px;
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
   }
@@ -351,6 +342,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-top: 8px;
     font-size: var(--fd-text-xs);
     color: var(--fd-error);
   }
@@ -366,9 +358,34 @@
     }
   }
 
-  /* Reveal the NodeConfigButton (gear) when the node is hovered. */
-  .flowdrop-notes-node:hover {
-    --fd-config-btn-opacity: 1;
+  /* Zoom tiers (set on .flowdrop-root by the editor): the note shows only its
+     first heading, counter-scaled to a constant screen size. The content stays
+     laid out (hidden, not removed) so the box never changes size between tiers. */
+  .flowdrop-notes-node__zoom-title {
+    display: none;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-notes-node__zoom-title,
+  :global([data-fd-zoom='map']) .flowdrop-notes-node__zoom-title {
+    position: absolute;
+    inset: var(--fd-note-padding);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    font-size: calc(var(--fd-note-zoom-size) / var(--fd-zoom, 1));
+    font-weight: var(--fd-note-heading-weight);
+    line-height: 1.25;
+    color: var(--fd-foreground);
+    overflow-wrap: anywhere;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-notes-node__content,
+  :global([data-fd-zoom='map']) .flowdrop-notes-node__content,
+  :global([data-fd-zoom='glyph']) .flowdrop-notes-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-notes-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
   }
 
   /* Responsive design */
@@ -376,10 +393,6 @@
     .flowdrop-notes-node {
       min-width: 200px;
       max-width: 360px;
-    }
-
-    .flowdrop-notes-node__content {
-      padding: 12px;
     }
   }
 </style>

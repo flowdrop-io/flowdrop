@@ -191,8 +191,8 @@
     "radius": 1
   },
   "src/lib/components/nodes/NotesNode.svelte": {
-    "radius": 2,
-    "shadow": 2
+    "radius": 1,
+    "shadow": 3
   },
   "src/lib/components/nodes/SimpleNode.svelte": {
     "radius": 3,
