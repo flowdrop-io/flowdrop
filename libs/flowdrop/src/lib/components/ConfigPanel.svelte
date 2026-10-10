@@ -130,12 +130,12 @@
 {#snippet headerActions(popped: boolean)}
   {#if popped}
     <IconButton ariaLabel={m().layout.dockConfig} title={m().layout.dockConfigTitle} onclick={dock}>
-      <Icon icon="heroicons:arrows-pointing-in" />
+      <Icon icon="mdi:arrow-collapse" />
     </IconButton>
   {:else}
     {#if onSwap}
       <IconButton ariaLabel={m().layout.swapNode} title={m().layout.swapNodeTitle} onclick={onSwap}>
-        <Icon icon="heroicons:arrows-right-left" />
+        <Icon icon="mdi:swap-horizontal" />
       </IconButton>
     {/if}
     {#if expandable && !expanded}
@@ -144,13 +144,13 @@
         title={m().layout.popOutConfigTitle}
         onclick={() => (expanded = true)}
       >
-        <Icon icon="heroicons:arrows-pointing-out" />
+        <Icon icon="mdi:arrow-expand" />
       </IconButton>
     {/if}
   {/if}
   {#if onClose}
     <IconButton ariaLabel={m().layout.closeConfigPanel} onclick={onClose}>
-      <Icon icon="heroicons:x-mark" />
+      <Icon icon="mdi:close" />
     </IconButton>
   {/if}
 {/snippet}

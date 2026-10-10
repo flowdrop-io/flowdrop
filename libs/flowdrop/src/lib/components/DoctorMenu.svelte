@@ -51,9 +51,9 @@
   const popoverId = `fd-doctor-${Math.random().toString(36).slice(2, 8)}`;
 
   const ICONS: Record<DoctorSeverity, string> = {
-    error: 'heroicons:exclamation-circle',
-    warning: 'heroicons:exclamation-triangle',
-    info: 'heroicons:information-circle'
+    error: 'mdi:alert-circle-outline',
+    warning: 'mdi:alert-outline',
+    info: 'mdi:information-outline'
   };
 
   function close(returnFocus = true): void {
@@ -67,6 +67,15 @@
   // The last problem was fixed: nothing left to show.
   $effect(() => {
     if (!visible && untrack(() => open)) close(false);
+  });
+
+  // A toast's "Show problems" asks for the popover.
+  let seenOpenRequest = fd.doctor.openRequest;
+  $effect(() => {
+    const requested = fd.doctor.openRequest;
+    if (requested === untrack(() => seenOpenRequest)) return;
+    seenOpenRequest = requested;
+    if (untrack(() => visible)) open = true;
   });
 
   // Outside pointer closes.

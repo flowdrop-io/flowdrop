@@ -63,7 +63,7 @@
     <PanelHeader {title} {titleId}>
       {#snippet actions()}
         <IconButton ariaLabel={closeLabel} onclick={onClose}>
-          <Icon icon="heroicons:x-mark" />
+          <Icon icon="mdi:close" />
         </IconButton>
       {/snippet}
     </PanelHeader>

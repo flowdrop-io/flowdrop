@@ -443,7 +443,7 @@
     {
       label: mergedMessages.navigation.save,
       href: '#save',
-      icon: 'heroicons:document-arrow-down',
+      icon: 'mdi:file-download-outline',
       variant: 'primary' as const,
       onclick: (e: Event) => {
         e.preventDefault();
@@ -453,7 +453,7 @@
     {
       label: mergedMessages.navigation.export,
       href: '#export',
-      icon: 'heroicons:arrow-down-tray',
+      icon: 'mdi:download',
       variant: 'outline' as const,
       onclick: (e: Event) => {
         e.preventDefault();
@@ -463,7 +463,7 @@
     {
       label: mergedMessages.navigation.import,
       href: '#import',
-      icon: 'heroicons:arrow-up-tray',
+      icon: 'mdi:upload',
       variant: 'outline' as const,
       onclick: (e: Event) => {
         e.preventDefault();

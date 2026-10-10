@@ -332,7 +332,7 @@
         title={nav.workflowButtonTitle}
         onclick={onWorkflowSettings}
       >
-        {#snippet leadingIcon()}<Icon icon="heroicons:adjustments-horizontal" />{/snippet}
+        {#snippet leadingIcon()}<Icon icon="mdi:tune-variant" />{/snippet}
         {nav.workflowButton}
       </Button>
     {/if}
@@ -388,7 +388,7 @@
             minWidth={200}
           >
             {#snippet trigger()}
-              <Icon icon="heroicons:chevron-down" class="w-4 h-4" />
+              <Icon icon="mdi:chevron-down" class="w-4 h-4" />
             {/snippet}
             {#snippet children({ close })}
               <!-- The main button's own action comes first, so the menu reads Save,

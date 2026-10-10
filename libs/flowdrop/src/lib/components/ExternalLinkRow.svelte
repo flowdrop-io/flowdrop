@@ -33,7 +33,7 @@
     data-testid="external-config-link"
   >
     <span class="external-link-row__name">{name}</span>
-    <Icon icon="heroicons:arrow-up-right-20-solid" aria-hidden="true" />
+    <Icon icon="mdi:arrow-top-right" aria-hidden="true" />
   </a>
 </div>
 
