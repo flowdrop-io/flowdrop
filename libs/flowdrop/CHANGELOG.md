@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Autocomplete URLs in node metadata resolve against the editor's endpoint
+  base, as dynamic-schema and variables URLs already do. `ConfigForm` provides
+  the instance's `endpointConfig.baseUrl` to its autocomplete fields, so a
+  backend can emit base-relative URLs (`/secrets/options`) and they work behind
+  any API base, including a proxy mount such as
+  `/api/flowdrop/remotes/{id}`. A URL that already starts with the base
+  (`/api/flowdrop/secrets/options` under `/api/flowdrop`) and an absolute
+  `http(s)` URL are used as given, so existing backends keep working. The
+  same rule now applies to dynamic-schema and variables URLs, which no longer
+  get the base prefixed twice.
+
 ## [2.11.0] - 2026-10-07
 
 ### Added

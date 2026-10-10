@@ -137,6 +137,9 @@
   // Use getter functions to ensure child components always get the current prop value,
   // even if the prop changes after initial mount
   setContext<() => AuthProvider | undefined>('flowdrop:getAuthProvider', () => authProvider);
+  // Base for `/`-relative autocomplete URLs in node metadata: the instance's
+  // endpoint base, as dynamic schema and variables already use.
+  setContext<() => string>('flowdrop:getBaseUrl', () => fd.api.config?.baseUrl ?? '');
 
   /**
    * State for dynamic schema loading

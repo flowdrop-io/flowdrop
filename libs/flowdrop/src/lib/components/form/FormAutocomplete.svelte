@@ -21,6 +21,7 @@
 -->
 
 <script lang="ts">
+  import { resolveApiUrl } from '$lib/utils/apiUrl.js';
   import { getContext, onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
@@ -187,10 +188,7 @@
    * @returns Full URL with query parameter
    */
   function buildUrl(query: string): string {
-    const baseUrl = getBaseUrl?.() ?? '';
-    const url = autocomplete.url.startsWith('http')
-      ? autocomplete.url
-      : `${baseUrl}${autocomplete.url}`;
+    const url = resolveApiUrl(autocomplete.url, getBaseUrl?.());
 
     const separator = url.includes('?') ? '&' : '?';
     let fullUrl = `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
