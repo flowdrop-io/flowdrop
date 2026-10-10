@@ -177,7 +177,8 @@
     border-radius: var(--fd-toolbar-segment-radius);
   }
   .flowdrop-ui-segmented--float.flowdrop-ui-segmented--md .flowdrop-ui-segmented__item {
-    height: var(--fd-control-md);
+    /* The switch is one canvas control tall: 2px padding and a 1px border each side */
+    height: calc(var(--fd-canvas-control) - 6px);
   }
 
   .flowdrop-ui-segmented__item:hover:not(.flowdrop-ui-segmented__item--selected) {

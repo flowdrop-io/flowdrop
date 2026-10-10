@@ -272,7 +272,7 @@ export const graphiteSkin: FlowDropSkin = {
     'zoom-group-radius': 'var(--fd-radius-surface)',
     'zoom-group-padding': '2px',
     'zoom-group-shadow': 'var(--fd-elevation-float)',
-    'zoom-button-size': '28px',
+    'zoom-button-size': '26px',
     'zoom-button-radius': 'var(--fd-control-radius)',
     'zoom-button-border': 'none',
     'zoom-icon-size': '15px',

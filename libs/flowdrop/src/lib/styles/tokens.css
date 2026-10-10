@@ -414,6 +414,13 @@
   --fd-modal-title-size: var(--fd-text-sm); /* @internal  settings modal title */
 
   /* ----- CANVAS CONTROLS (toolbar, zoom, minimap) ----- */
+  --fd-tab-underline-off: inset 0 -2px 0 transparent; /* @internal  unselected view tab: the underline's room, so selecting never shifts layout */
+  --fd-tab-underline: inset 0 -2px 0 var(--fd-foreground); /* @internal  selected view tab underline */
+  --fd-canvas-inset: 0.75rem; /* @internal  distance of every floating canvas control from the canvas edge (12px) */
+  --fd-canvas-control: var(
+    --fd-control-lg
+  ); /* @internal  height of every floating canvas control (32px) */
+  --fd-minimap-attribution-clearance: 1rem; /* @internal  lift of the minimap above the attribution label, which stays */
   --fd-toolbar-segmented-bg: var(
     --fd-muted
   ); /* @internal  track of the floating Edit | Test switch */
@@ -428,7 +435,7 @@
   --fd-zoom-group-border: none; /* @internal  shorthand */
   --fd-zoom-group-radius: var(--fd-radius-md); /* @internal */
   --fd-zoom-group-padding: 0px; /* @internal */
-  --fd-zoom-button-size: 26px; /* @internal */
+  --fd-zoom-button-size: 32px; /* @internal  Default: borderless group, so the button is the control height */
   --fd-zoom-button-radius: 0px; /* @internal */
   --fd-zoom-icon-size: 12px; /* @internal */
   --fd-zoom-group-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.08); /* @internal */
@@ -1032,6 +1039,7 @@
   --fd-switch-off-bg: var(--fd-border-strong);
   --fd-switch-on-bg: var(--fd-primary);
   --fd-switch-thumb-bg: var(--fd-background);
+  --fd-tab-underline: inset 0 -2px 0 var(--fd-foreground);
   --fd-toolbar-segmented-bg: var(--fd-muted);
   --fd-toolbar-segmented-border: var(--fd-border-muted);
   --fd-toolbar-segmented-selected-bg: var(--fd-background);

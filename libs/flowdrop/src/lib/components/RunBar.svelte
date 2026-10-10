@@ -171,7 +171,7 @@
     align-items: center;
     gap: var(--fd-space-xs);
     box-sizing: border-box;
-    height: 34px;
+    height: var(--fd-canvas-control);
     padding: 0 var(--fd-space-2xs) 0 var(--fd-space-md);
     background-color: var(--fd-background);
     border: 1px solid var(--fd-float-border);

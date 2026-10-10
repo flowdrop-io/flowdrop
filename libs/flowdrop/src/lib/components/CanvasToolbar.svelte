@@ -84,18 +84,18 @@
 <style>
   .flowdrop-canvas-toolbar {
     position: absolute;
-    top: var(--fd-space-sm);
+    top: var(--fd-canvas-inset);
     /* Clear of an overlaying drawer (inset, set by App) */
-    left: calc(var(--fd-space-sm) + var(--fd-canvas-toolbar-inset, 0px));
+    left: calc(var(--fd-canvas-inset) + var(--fd-canvas-toolbar-inset, 0px));
     z-index: 5;
-    max-width: calc(100% - 2 * var(--fd-space-sm));
+    max-width: calc(100% - 2 * var(--fd-canvas-inset));
   }
 
   /* Narrow: the sidebar overlays the canvas, so start to the right of it. */
   @media (max-width: 768px) {
     .flowdrop-canvas-toolbar {
       left: calc(
-        var(--fd-space-sm) +
+        var(--fd-canvas-inset) +
           max(var(--fd-canvas-left-offset, 0px), var(--fd-canvas-toolbar-inset, 0px))
       );
     }

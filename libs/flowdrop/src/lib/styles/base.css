@@ -127,6 +127,8 @@
   --xy-controls-button-border-color: var(--fd-controls-button-border, var(--fd-border));
   --xy-controls-box-shadow: var(--fd-controls-box-shadow, 0 0 2px 1px rgba(0, 0, 0, 0.08));
 
+  --xy-attribution-background-color: transparent;
+
   --xy-minimap-background-color: var(--fd-minimap-bg, var(--fd-muted));
   --xy-minimap-mask-background-color: var(--fd-minimap-mask-bg, var(--fd-backdrop));
   --xy-minimap-mask-stroke-color: var(--fd-minimap-mask-stroke, var(--fd-border));
@@ -134,6 +136,16 @@
   --xy-minimap-node-background-color: var(--fd-minimap-node-bg, var(--fd-muted-foreground));
   --xy-minimap-node-stroke-color: var(--fd-minimap-node-stroke, var(--fd-border-strong));
   --xy-minimap-node-stroke-width: var(--fd-minimap-node-stroke-width, 1);
+}
+
+/* Floating canvas controls: one inset from the canvas edge (xyflow's own is
+   15px). The attribution label keeps its corner, so the minimap lifts above it. */
+.svelte-flow .svelte-flow__panel:not(.svelte-flow__attribution) {
+  margin: var(--fd-canvas-inset);
+}
+
+.svelte-flow .svelte-flow__panel.svelte-flow__minimap {
+  margin-bottom: calc(var(--fd-canvas-inset) + var(--fd-minimap-attribution-clearance));
 }
 
 /* Minimap: render as a clearly bounded floating panel so users don't mistake

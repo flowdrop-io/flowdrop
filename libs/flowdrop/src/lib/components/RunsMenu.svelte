@@ -380,7 +380,7 @@
                       title={msgs.openAdminRun}
                       data-testid="run-admin-link"
                     >
-                      <Icon icon="heroicons:arrow-up-right-20-solid" aria-hidden="true" />
+                      <Icon icon="mdi:arrow-top-right" aria-hidden="true" />
                     </a>
                   {/if}
                 </span>
@@ -415,7 +415,7 @@
             data-testid="runs-admin-link"
           >
             <span>{msgs.openAdmin}</span>
-            <Icon icon="heroicons:arrow-up-right-20-solid" aria-hidden="true" />
+            <Icon icon="mdi:arrow-top-right" aria-hidden="true" />
           </a>
         {/if}
       </div>
@@ -444,7 +444,7 @@
     align-items: center;
     gap: var(--fd-space-3xs);
     box-sizing: border-box;
-    height: calc(var(--fd-control-md) + 4px + 2px);
+    height: var(--fd-canvas-control);
     padding: 0 var(--fd-space-sm) 0 var(--fd-space-md);
     background-color: var(--fd-toolbar-segmented-bg);
     border: 1px solid var(--fd-toolbar-segmented-border);

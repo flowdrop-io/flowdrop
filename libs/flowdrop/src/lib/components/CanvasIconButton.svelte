@@ -36,8 +36,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: var(--fd-canvas-control);
+    height: var(--fd-canvas-control);
     border: 1px solid var(--fd-float-border);
     border-radius: var(--fd-radius-surface);
     background-color: var(--fd-background);

@@ -2226,7 +2226,7 @@
         : '0px'}; --fd-canvas-toolbar-inset: {testMode && narrow && drawerOpen
         ? 'var(--fd-test-drawer-width)'
         : !testMode && !disableSidebar && isSidebarCollapsed
-          ? '46px'
+          ? 'calc(var(--fd-canvas-control) + var(--fd-space-xs))'
           : '0px'}"
       onclick={handleCanvasClick}
       onkeydown={(e) => {
@@ -2452,8 +2452,8 @@
   /* Floating sidebar toggle button — placement only; visuals live in CanvasIconButton */
   :global(.flowdrop-sidebar-fab) {
     /* Below the canvas toolbar, which holds the top-left corner (Test mode, narrow). */
-    top: 56px;
-    left: 12px;
+    top: calc(2 * var(--fd-canvas-inset) + var(--fd-canvas-control));
+    left: var(--fd-canvas-inset);
     z-index: 50;
   }
 
@@ -2471,13 +2471,13 @@
   }
 
   /* Edit mode, sidebar collapsed: the expand control takes the toolbar row's start;
-     the toolbar is inset by 46px (App sets --fd-canvas-toolbar-inset). */
+     the toolbar is inset by control + gap (App sets --fd-canvas-toolbar-inset). */
   :global(.flowdrop-sidebar-fab--edit) {
-    top: var(--fd-space-sm);
+    top: var(--fd-canvas-inset);
   }
 
   :global(.flowdrop-sidebar-fab--beside-drawer) {
-    left: calc(var(--fd-test-drawer-width) + 12px) !important;
+    left: calc(var(--fd-test-drawer-width) + var(--fd-canvas-inset)) !important;
   }
 
   /* Test mode's inspector: a sheet over the canvas's right edge; the canvas does not reflow. */
