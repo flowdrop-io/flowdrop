@@ -733,6 +733,12 @@
   --fd-node-pill-open-ring-output:
     inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border),
     inset 1px 0 0 var(--fd-node-pill-open-border); /* @internal  open output outline */
+  --fd-node-pill-target-mix: 10%; /* @internal  type colour in an open pill's tint while a dragged wire can land on it */
+  --fd-node-pill-sym-size: 10px; /* @internal  port shape glyph */
+  --fd-node-pill-sym-weight: 600; /* @internal */
+  --fd-node-pill-sym-min: 11px; /* @internal  so S and {} take the same room */
+  --fd-node-pill-sym-gap: 6px; /* @internal  glyph to name */
+  --fd-node-pill-sym-mix: 82%; /* @internal  type colour in a wired glyph, the rest foreground */
   --fd-node-pill-required: var(--fd-error-hover); /* @internal  the "*" on a required open input */
   --fd-node-pill-hover-filter: brightness(0.97); /* @internal */
   --fd-node-pin-size: 14px; /* @internal  the exec pin in the header */

@@ -28,6 +28,7 @@
   import { getNodeProblem } from '../../utils/nodeProblem.js';
   import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import { getPortColorToken, getDataTypeConfig } from '../../utils/colors.js';
+  import { portShape, SHAPE_GLYPH } from '../../utils/portShape.js';
   import type { NodeGeometry } from '../../utils/nodeGeometry.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
@@ -308,6 +309,9 @@
       {#if item.active}
         <Icon icon="mdi:check-circle" class="flowdrop-workflow-node__pill-check" />
       {/if}
+      <span class="flowdrop-workflow-node__pill-sym" aria-hidden="true"
+        >{SHAPE_GLYPH[portShape(checker, port)]}</span
+      >
       <span class="flowdrop-workflow-node__pill-name">{port.name}</span>
       {#if item.direction === 'input' && port.required && !item.wired}
         <span class="flowdrop-workflow-node__pill-required" aria-hidden="true">*</span>
@@ -566,18 +570,72 @@
     border-radius: var(--fd-node-pill-radius) 0 0 var(--fd-node-pill-radius);
   }
 
-  /* Open: outlined, grey. The outline stops at the card edge. */
+  /* Open: bare, a grey name beside the ring handle. The outline comes back
+     where it means something: on hover (pill or handle) and on the handle a
+     wire being dragged can land on. It stops at the card edge. */
   .flowdrop-workflow-node__pill--open {
-    background: var(--fd-node-bg);
+    background: transparent;
     color: var(--fd-node-pill-open-fg);
   }
 
-  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--input {
+  .flowdrop-workflow-node__pill--open:is(:hover, :has(+ :global(.svelte-flow__handle:hover))) {
+    background: var(--fd-node-bg);
+    color: var(--fd-foreground);
+    filter: none;
+  }
+
+  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--input:is(
+      :hover,
+      :has(+ :global(.svelte-flow__handle:hover))
+    ) {
     box-shadow: var(--fd-node-pill-open-ring-input);
   }
 
-  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--output {
+  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--output:is(
+      :hover,
+      :has(+ :global(.svelte-flow__handle:hover))
+    ) {
     box-shadow: var(--fd-node-pill-open-ring-output);
+  }
+
+  /* Drop target: the handle under a dragged wire that would accept it. */
+  .flowdrop-workflow-node__pill--open:has(+ :global(.svelte-flow__handle.valid)) {
+    --fd-node-pill-open-border: var(--_c);
+    background: color-mix(in srgb, var(--_c) var(--fd-node-pill-target-mix), var(--fd-node-bg));
+    color: var(--fd-foreground);
+  }
+
+  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--input:has(
+      + :global(.svelte-flow__handle.valid)
+    ) {
+    box-shadow: var(--fd-node-pill-open-ring-input);
+  }
+
+  .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--output:has(
+      + :global(.svelte-flow__handle.valid)
+    ) {
+    box-shadow: var(--fd-node-pill-open-ring-output);
+  }
+
+  /* Shape glyph (S # B [] {} ? T ()): what the port carries, colour-free, next to the handle. */
+  .flowdrop-workflow-node__pill-sym {
+    flex: none;
+    min-width: var(--fd-node-pill-sym-min);
+    margin: 0 var(--fd-node-pill-sym-gap) 0 0;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-node-pill-sym-size);
+    font-weight: var(--fd-node-pill-sym-weight);
+    letter-spacing: -0.02em;
+    text-align: center;
+    color: color-mix(in srgb, var(--_c) var(--fd-node-pill-sym-mix), var(--fd-foreground));
+  }
+
+  .flowdrop-workflow-node__pill--output .flowdrop-workflow-node__pill-sym {
+    margin: 0 0 0 var(--fd-node-pill-sym-gap);
+  }
+
+  .flowdrop-workflow-node__pill--open .flowdrop-workflow-node__pill-sym {
+    color: var(--_c);
   }
 
   .flowdrop-workflow-node__pill-name {
