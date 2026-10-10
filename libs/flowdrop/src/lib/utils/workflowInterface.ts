@@ -13,6 +13,7 @@
  * @module utils/workflowInterface
  */
 
+import { isTriggerEventInput } from './reservedPorts.js';
 import type {
   ConfigProperty,
   ConfigSchema,
@@ -613,6 +614,8 @@ export function listBindablePorts(
 
     for (const port of [...staticPorts, ...dynamicPorts]) {
       if (isControlFlowPort(port, direction)) continue;
+      // A trigger's event input is never part of the contract (MAN-27).
+      if (direction === 'input' && isTriggerEventInput(node, port.id)) continue;
       if (isPortExposed(port, entries)) {
         result.push({ nodeId: node.id, nodeLabel: nodeCanvasLabel(node), port });
       }

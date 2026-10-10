@@ -68,6 +68,31 @@ function makeWorkflow(nodes: WorkflowNode[], workflowInterface?: Workflow['inter
 const checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG);
 
 describe('WorkflowInterfaceEditor', () => {
+  it("lists each trigger's derived event:<node-id> input read-only (MAN-26)", () => {
+    const trigger = makeNode(
+      'on_update',
+      [makePort('event', 'json')],
+      [makePort('data', 'json', { type: 'output' })]
+    );
+    const workflow = makeWorkflow([trigger, makeNode('node-1', [makePort('in-1')], [])]);
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).toContain('data-testid="interface-reserved-inputs"');
+    expect(body).toContain('event:on_update');
+    expect(workflow.interface).toBeUndefined();
+  });
+
+  it('shows no reserved inputs for a workflow without triggers', () => {
+    const workflow = makeWorkflow([makeNode('node-1', [makePort('in-1')], [])]);
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).not.toContain('interface-reserved-inputs');
+  });
+
   it('renders an empty side as just its insertion slot — the add action, no placeholder text', () => {
     const workflow = makeWorkflow([makeNode('node-1', [makePort('in-1')], [])]);
     const body = render(WorkflowInterfaceEditor, {

@@ -244,6 +244,17 @@ export {
   getExecutionOrder
 } from '../utils/connections.js';
 
+export {
+  EVENT_PORT_ID,
+  RESERVED_INPUT_EVENT_PREFIX,
+  isTriggerNode,
+  isTriggerEventInput,
+  isEventInputConnection,
+  reservedInputs,
+  isReservedInputName
+} from '../utils/reservedPorts.js';
+export type { ReservedInput } from '../utils/reservedPorts.js';
+
 // ============================================================================
 // Port Shape Symbols
 // ============================================================================

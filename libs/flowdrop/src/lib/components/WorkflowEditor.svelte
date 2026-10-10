@@ -92,6 +92,7 @@
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
   import { DEV } from 'esm-env';
   import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
+  import { isEventInputConnection } from '../utils/reservedPorts.js';
 
   interface Props {
     endpointConfig?: EndpointConfig;
@@ -1419,6 +1420,7 @@
             {edgeTypes}
             {defaultEdgeOptions}
             onconnect={() => void handleConnect()}
+            isValidConnection={(connection) => !isEventInputConnection(connection, flowNodes)}
             onbeforedelete={handleBeforeDelete}
             ondelete={handleNodesDelete}
             onnodeclick={({ node }) => {

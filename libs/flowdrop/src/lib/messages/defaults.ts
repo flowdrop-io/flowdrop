@@ -963,6 +963,9 @@ export const defaultMessages = {
     removeTag: ({ id }: { id: string }) => `Remove "${id}" from the interface`,
     portActions: ({ port }: { port: string }) => `Interface actions for ${port}`,
     inputsHeading: 'Inputs',
+    reservedInputsHeading: 'Trigger events',
+    reservedInputsHint:
+      'Each trigger fills its own event input when it fires. Derived from the trigger nodes; callers cannot supply them.',
     outputsHeading: 'Outputs',
     addInput: 'Add input',
     addOutput: 'Add output',

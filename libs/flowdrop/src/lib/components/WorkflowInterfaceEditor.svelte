@@ -36,6 +36,7 @@
   import WorkflowInterfaceEntryCard from '$lib/components/WorkflowInterfaceEntryCard.svelte';
   import WorkflowInterfaceEntryComposer from '$lib/components/WorkflowInterfaceEntryComposer.svelte';
   import { buildHandleId } from '$lib/utils/handleIds.js';
+  import { reservedInputs } from '$lib/utils/reservedPorts.js';
   import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
   import { PortCompatibilityChecker } from '$lib/utils/connections.js';
   import type {
@@ -107,6 +108,8 @@
 
   const resolved = $derived(resolveInterface(workflow));
   const issues = $derived(validateWorkflowInterface(workflow));
+  // One read-only `event:<node-id>` per trigger node (MAN-26).
+  const reserved = $derived(reservedInputs(workflow));
 
   function entryDirectionOf(direction: Direction): 'input' | 'output' {
     return direction === 'inputs' ? 'input' : 'output';
@@ -369,6 +372,23 @@
           : m().workflowInterface.outputsHeading}
       </h4>
 
+      {#if section.key === 'inputs' && reserved.length > 0}
+        <!-- Derived, never stored (MAN-26): read-only, and never written into
+             the interface. -->
+        <div class="wf-interface__reserved" data-testid="interface-reserved-inputs">
+          <span class="wf-interface__reserved-title"
+            >{m().workflowInterface.reservedInputsHeading}</span
+          >
+          <ul class="wf-interface__reserved-list">
+            {#each reserved as input (input.name)}
+              <li data-testid="interface-reserved-input"><code>{input.name}</code></li>
+            {/each}
+          </ul>
+          <span class="wf-interface__reserved-hint">{m().workflowInterface.reservedInputsHint}</span
+          >
+        </div>
+      {/if}
+
       {#if list.length > 0}
         <ul class="wf-interface__list">
           {#each list as entry, index (rowIds[section.key][index] ?? `pending-${index}`)}
@@ -466,6 +486,27 @@
 
   .wf-interface__section :global(.wf-interface__add:hover) {
     color: var(--fd-foreground);
+  }
+
+  .wf-interface__reserved {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-3xs);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
+  }
+
+  .wf-interface__reserved-title {
+    font-weight: 600;
+  }
+
+  .wf-interface__reserved-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--fd-space-xs);
   }
 
   .wf-interface__list {

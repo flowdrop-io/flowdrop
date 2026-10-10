@@ -30,6 +30,7 @@
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { byDefaultOrder, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
+  import { isTriggerEventInput } from '$lib/utils/reservedPorts.js';
   import {
     entryAtPort,
     exposableCandidate,
@@ -396,17 +397,20 @@
                   />
                 </span>
               {/if}
-              <IconButton
-                size="sm"
-                class="fd-ports__eye"
-                id={`${id}-${direction}-${port.id}`}
-                ariaLabel={exposed ? `Hide port ${port.name}` : `Show port ${port.name}`}
-                title={exposed ? 'Shown on the canvas' : 'Hidden from the canvas'}
-                {disabled}
-                onclick={() => setExposed(direction, port.id, !exposed)}
-              >
-                <Icon icon={exposed ? 'heroicons:eye' : 'heroicons:eye-slash'} />
-              </IconButton>
+              <!-- A trigger's event input is always exposed (SCH-47): no toggle. -->
+              {#if !(direction === 'inputs' && isTriggerEventInput(node, port.id))}
+                <IconButton
+                  size="sm"
+                  class="fd-ports__eye"
+                  id={`${id}-${direction}-${port.id}`}
+                  ariaLabel={exposed ? `Hide port ${port.name}` : `Show port ${port.name}`}
+                  title={exposed ? 'Shown on the canvas' : 'Hidden from the canvas'}
+                  {disabled}
+                  onclick={() => setExposed(direction, port.id, !exposed)}
+                >
+                  <Icon icon={exposed ? 'heroicons:eye' : 'heroicons:eye-slash'} />
+                </IconButton>
+              {/if}
             </li>
           {/each}
         </ul>
