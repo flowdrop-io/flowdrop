@@ -115,7 +115,12 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
     'calc(var(--fd-node-header-gap) * 4 + var(--fd-node-header-title-height) + var(--fd-node-header-desc-line) - var(--fd-node-border-width))',
   'node-kind-fg': 'var(--fd-muted-foreground)',
   'node-pill-open-border': 'var(--fd-border)',
-  'node-pill-required': 'var(--fd-error)',
+  'node-pill-open-fg': 'var(--fd-muted-foreground)',
+  'node-pill-open-ring-input':
+    'inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border), inset -1px 0 0 var(--fd-node-pill-open-border)',
+  'node-pill-open-ring-output':
+    'inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border), inset 1px 0 0 var(--fd-node-pill-open-border)',
+  'node-pill-required': 'var(--fd-error-hover)',
   'node-pill-size': 'var(--fd-text-xs)',
   'node-pin-wired': 'var(--fd-node-ink)',
   'node-port-chip-border': 'var(--fd-border)',

@@ -214,7 +214,6 @@
     "shadow": 3
   },
   "src/lib/components/nodes/WorkflowNode.svelte": {
-    "radius": 1,
     "shadow": 2
   },
   "src/lib/components/playground/ChatBubble.svelte": {

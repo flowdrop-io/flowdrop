@@ -685,9 +685,17 @@
   --fd-node-pill-pad-edge: 14px; /* @internal  padding on the card-edge side (clears the handle) */
   --fd-node-pill-pad-inner: 12px; /* @internal  padding on the free side */
   --fd-node-pill-wired-mix: 13%; /* @internal  type colour in a wired pill's tint */
-  --fd-node-pill-open-fg: #6f7682; /* @internal  open port text, at least 4.5:1 on the card */
+  --fd-node-pill-open-fg: var(
+    --fd-muted-foreground
+  ); /* @internal  open port text, at least 4.5:1 on the card */
   --fd-node-pill-open-border: var(--fd-border); /* @internal  open port outline */
-  --fd-node-pill-required: var(--fd-error); /* @internal  the "*" on a required open input */
+  --fd-node-pill-open-ring-input:
+    inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border),
+    inset -1px 0 0 var(--fd-node-pill-open-border); /* @internal  open input outline: top, bottom and free end (not the card edge) */
+  --fd-node-pill-open-ring-output:
+    inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border),
+    inset 1px 0 0 var(--fd-node-pill-open-border); /* @internal  open output outline */
+  --fd-node-pill-required: var(--fd-error-hover); /* @internal  the "*" on a required open input */
   --fd-node-pill-hover-filter: brightness(0.97); /* @internal */
   --fd-node-pin-size: 14px; /* @internal  the exec pin in the header */
   --fd-node-pin-wired: var(--fd-node-ink); /* @internal  wired exec pin fill */
@@ -805,7 +813,6 @@
   /* ----- NODE CARD v2 (dark) ----- */
   --fd-node-header-wash: 16%;
   --fd-node-tile-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
-  --fd-node-pill-open-fg: #9aa2af;
   --fd-node-pin-open: #7d8594;
 
   /* ----- CANVAS GRID (matches xyflow's dark dot-grid color) ----- */
@@ -984,7 +991,10 @@
   --fd-node-header-divider-color: var(--fd-border-muted);
   --fd-node-kind-fg: var(--fd-muted-foreground);
   --fd-node-pill-open-border: var(--fd-border);
-  --fd-node-pill-required: var(--fd-error);
+  --fd-node-pill-open-fg: var(--fd-muted-foreground);
+  --fd-node-pill-open-ring-input: inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border), inset -1px 0 0 var(--fd-node-pill-open-border);
+  --fd-node-pill-open-ring-output: inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border), inset 1px 0 0 var(--fd-node-pill-open-border);
+  --fd-node-pill-required: var(--fd-error-hover);
   --fd-node-pin-wired: var(--fd-node-ink);
   --fd-node-port-chip-border: var(--fd-border);
   --fd-node-selected-border: var(--fd-primary);

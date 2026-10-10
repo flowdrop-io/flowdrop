@@ -150,6 +150,13 @@ for (const k of ['running', 'completed', 'waiting', 'failed', 'skipped']) {
   glyph(`status-${k}`, `status-${k}-soft`);
 }
 
+// Node card v2 (G8c): open port text and the "kind · id" line on the card, the open exec pin
+// outline and chevron (a UI glyph), the required mark.
+text('node-pill-open-fg', 'node-bg');
+text('node-kind-fg', 'node-bg');
+text('node-pill-required', 'node-bg');
+glyph('node-pin-open', 'node-bg');
+
 /**
  * Pairs that fail today (D1 changes no colours). Key = theme|mode|fg|bg, value = measured ratio
  * at the time of writing. Fixing one makes the test fail until the entry is deleted.
@@ -182,6 +189,8 @@ const KNOWN_FAILURES: Record<string, string> = {
   'minimal|dark|muted-foreground|background': '4.47',
   'minimal|dark|muted-foreground|card': '4.15',
   'minimal|dark|muted-foreground|muted': '4.15',
+  'minimal|dark|node-kind-fg|node-bg': '4.15',
+  'minimal|dark|node-pill-open-fg|node-bg': '4.15',
   'minimal|dark|primary-foreground|primary': '4.32',
   'minimal|light|accent-foreground|accent': '4.23',
   'minimal|light|error-foreground|error': '3.76',

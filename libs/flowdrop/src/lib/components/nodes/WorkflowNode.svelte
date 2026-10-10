@@ -37,7 +37,6 @@
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
-  import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -173,7 +172,9 @@
     getCategoryColorToken(fd.categories, props.data.metadata.category)
   );
   const kindLine = $derived(
-    `${fd.categories.getLabel(props.data.metadata.category)} · ${props.id}`
+    props.data.metadata.category
+      ? `${fd.categories.getLabel(props.data.metadata.category)} · ${props.id}`
+      : props.id
   );
 
   // Two-line titles hide the "kind · id" line (it is in the popover). Measured,
@@ -324,9 +325,11 @@
 
   <!-- Description band: reserved on every node while the setting is on. -->
   {#if geometry.descriptionBand > 0}
-    <p class="flowdrop-workflow-node__desc" id="node-description-{props.id}">
-      {displayDescription}
-    </p>
+    <div class="flowdrop-workflow-node__desc">
+      <p class="flowdrop-workflow-node__desc-text" id="node-description-{props.id}">
+        {displayDescription}
+      </p>
+    </div>
   {:else}
     <span class="flowdrop-workflow-node__sr" id="node-description-{props.id}"
       >{displayDescription}</span
@@ -411,6 +414,7 @@
      ring on ::after (above the header wash), so it never adds to the box. */
   .flowdrop-workflow-node {
     --_border: var(--fd-node-border);
+    --_ring: inset 0 0 0 var(--fd-node-border-width) var(--_border);
     position: relative;
     box-sizing: border-box;
     background-color: var(--fd-node-bg);
@@ -429,7 +433,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    box-shadow: inset 0 0 0 var(--fd-node-border-width) var(--_border);
+    box-shadow: var(--_ring);
     pointer-events: none;
     z-index: 1;
   }
@@ -464,11 +468,7 @@
     column-gap: var(--fd-space-md);
     align-items: center;
     padding: 10px var(--fd-node-header-pad-x);
-    background: color-mix(
-      in srgb,
-      var(--_cat) var(--fd-node-header-wash),
-      var(--fd-node-header-bg)
-    );
+    background: color-mix(in srgb, var(--_cat) var(--fd-node-header-wash), var(--fd-node-bg));
     border-top-left-radius: var(--fd-node-radius);
     border-top-right-radius: var(--fd-node-radius);
   }
@@ -536,17 +536,28 @@
     inset: 60px 0 auto 0;
     height: 60px;
     box-sizing: border-box;
-    margin: 0;
     padding: 10px var(--fd-node-header-pad-x);
+  }
+
+  .flowdrop-workflow-node__desc-text {
+    margin: 0;
     font-size: var(--fd-text-xs);
     line-height: 20px;
     color: var(--fd-muted-foreground);
-    border-bottom: 1px solid var(--fd-node-desc-rule);
     overflow: hidden;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
+  }
+
+  /* The hairline closing the band, inset like the text. */
+  .flowdrop-workflow-node__desc::after {
+    content: '';
+    position: absolute;
+    inset: auto var(--fd-node-header-pad-x) 0 var(--fd-node-header-pad-x);
+    height: 1px;
+    background: var(--fd-node-desc-rule);
   }
 
   .flowdrop-workflow-node__sr {
@@ -598,17 +609,11 @@
   }
 
   .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--input {
-    box-shadow:
-      inset 0 1px 0 var(--fd-node-pill-open-border),
-      inset 0 -1px 0 var(--fd-node-pill-open-border),
-      inset -1px 0 0 var(--fd-node-pill-open-border);
+    box-shadow: var(--fd-node-pill-open-ring-input);
   }
 
   .flowdrop-workflow-node__pill--open.flowdrop-workflow-node__pill--output {
-    box-shadow:
-      inset 0 1px 0 var(--fd-node-pill-open-border),
-      inset 0 -1px 0 var(--fd-node-pill-open-border),
-      inset 1px 0 0 var(--fd-node-pill-open-border);
+    box-shadow: var(--fd-node-pill-open-ring-output);
   }
 
   .flowdrop-workflow-node__pill-name {

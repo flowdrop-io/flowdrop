@@ -53,16 +53,22 @@ export const graphiteSkin: FlowDropSkin = {
     'border-strong': '#cfd4db',
     ring: '#2457d6',
 
-    /* ----- Nodes: 8px cards, 1px outline, a hairline of lift; selection is the accent ----- */
-    'node-radius': '8px',
+    /* ----- Nodes (card v2, G8): borderless 10px card on a soft shadow, a faint inset ring,
+       a category-wash header; selection is the accent ----- */
+    'node-radius': '10px',
     'node-bg': '#ffffff',
     'node-header-bg': '#ffffff',
     'node-header-divider-color': '#eceef1',
-    'node-border': '#cfd4db',
-    'node-border-hover': '#aab1bc',
+    'node-border': 'rgb(16 24 40 / 0.09)',
+    'node-border-hover': 'rgb(16 24 40 / 0.18)',
     'node-border-width': '1px',
-    'node-shadow': '0 1px 2px rgb(16 24 40 / 0.05)',
-    'node-shadow-hover': '0 1px 2px rgb(16 24 40 / 0.05), 0 4px 12px rgb(16 24 40 / 0.08)',
+    'node-shadow': '0 1px 2px rgb(16 24 40 / 0.05), 0 8px 24px rgb(16 24 40 / 0.06)',
+    'node-shadow-hover': '0 1px 2px rgb(16 24 40 / 0.06), 0 10px 28px rgb(16 24 40 / 0.1)',
+    'node-header-wash': '8%',
+    'node-tile-shadow': '0 1px 2px rgb(16 24 40 / 0.12)',
+    'node-pill-open-fg': '#6f7682',
+    'node-pill-open-border': '#e4e7eb',
+    'node-pin-open': '#8a919c',
 
     /* ----- Notes: warm paper, a tinted inset edge, no lift ----- */
     'note-bg': '#fffdf6',
@@ -192,7 +198,7 @@ export const graphiteSkin: FlowDropSkin = {
 
     /* ----- Node anatomy: no header band, ink on white. Geometry stays on the
        10/20px grid from tokens.css so ports and edges line up. ----- */
-    'node-title-size': '0.78125rem',
+    'node-title-size': '0.8125rem',
     'node-title-weight': '600',
     'node-title-clamp': '1',
     'node-icon-size': '22px',
@@ -355,9 +361,14 @@ export const graphiteSkin: FlowDropSkin = {
     'node-bg': '#1b1e23',
     'node-header-bg': '#1b1e23',
     'node-header-divider-color': '#262a31',
-    'node-border': '#353a43',
+    'node-border': 'rgb(255 255 255 / 0.1)',
     'node-terminal-border-color': '#353a43',
-    'node-border-hover': '#4a505b',
+    'node-border-hover': 'rgb(255 255 255 / 0.2)',
+    'node-header-wash': '16%',
+    'node-tile-shadow': '0 1px 2px rgb(0 0 0 / 0.4)',
+    'node-pill-open-fg': '#9aa2af',
+    'node-pill-open-border': '#353a43',
+    'node-pin-open': '#7d8594',
     'handle-border': '#1b1e23',
     'edge-trigger': '#eceef2',
     'edge-trigger-hover': '#ffffff',

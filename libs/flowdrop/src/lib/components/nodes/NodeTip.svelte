@@ -71,9 +71,7 @@
     padding: var(--fd-space-md);
     background: var(--fd-card);
     color: var(--fd-foreground);
-    box-shadow:
-      0 0 0 1px var(--fd-border),
-      var(--fd-shadow-lg);
+    border: 1px solid var(--fd-border);
   }
 
   .fd-node-tip b {
@@ -83,8 +81,13 @@
   .fd-node-tip code {
     margin-left: var(--fd-space-xs);
     font-family: var(--fd-font-mono);
-    font-size: 0.92em;
+    font-size: var(--fd-text-meta);
     opacity: 0.7;
+  }
+
+  .fd-node-tip--pop code {
+    display: block;
+    margin: 0;
   }
 
   .fd-node-tip__body {
@@ -94,7 +97,7 @@
   .fd-node-tip small {
     display: block;
     margin-top: var(--fd-space-2xs);
-    font-size: 0.92em;
+    font-size: var(--fd-text-meta);
     opacity: 0.7;
   }
 </style>
