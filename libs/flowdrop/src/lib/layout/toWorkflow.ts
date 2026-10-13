@@ -21,6 +21,7 @@ import type {
 import { dynamicPortToNodePort } from '../types/index.js';
 import { byDefaultOrder, isReservedPort, orderPortsFor } from '../utils/portUtils.js';
 import type { LayoutProposal } from './primitives.js';
+import type { SweepResult } from './sweep.js';
 
 export interface NodeLayoutUpdate {
   nodeId: string;
@@ -130,6 +131,28 @@ export function applyProposalToNodes(
     }
     working.set(node.id, next);
     updates.set(node.id, update);
+  }
+  return [...updates.values()];
+}
+
+/**
+ * The updates of a sweep, one per node touched: the accepted steps, then the final translation
+ * over every card (a card that only rode along is moved too). Annotations never move.
+ */
+export function applySweepToNodes(
+  nodes: readonly WorkflowNode[],
+  result: SweepResult
+): NodeLayoutUpdate[] {
+  const updates = new Map(applyProposalToNodes(nodes, result.steps).map((u) => [u.nodeId, u]));
+  if (result.translation) {
+    const { dx, dy } = result.translation;
+    const cards = new Set(result.graph.cards.filter((c) => c.kind === 'card').map((c) => c.id));
+    for (const node of nodes) {
+      if (!cards.has(node.id)) continue;
+      const update = updates.get(node.id) ?? { nodeId: node.id };
+      const from = update.position ?? node.position;
+      updates.set(node.id, { ...update, position: { x: from.x + dx, y: from.y + dy } });
+    }
   }
   return [...updates.values()];
 }

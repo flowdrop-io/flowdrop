@@ -431,10 +431,32 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
     summarize: (c) => `Auto-layout (${c.direction ?? 'horizontal'})`
   },
   beautify_layout: {
-    description: 'Tidy the layout of all nodes. Moves existing nodes.',
-    inputSchema: EMPTY,
-    build: () => ({ type: 'beautify_layout' }),
-    summarize: () => 'Beautify layout'
+    description:
+      'Tidy the layout of all nodes. Moves existing nodes. Plain: normalises spacing only and keeps the arrangement. With sweep: true it is the crossing and straight-wire tidy: every node into its column, overlaps and tight spacing cleared, ports reordered and wires straightened to cut crossings; it prints one line per step and the score before and after, or says nothing improved. Use dryRun with sweep to preview. gapX / gapY (sweep only) set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
+    inputSchema: object({
+      sweep: {
+        type: 'boolean',
+        description:
+          'Run the graph sweep (columns, clear overlaps, port order, straight wires) instead of the spacing-only pass.'
+      },
+      dryRun: {
+        type: 'boolean',
+        description: 'Sweep only: report the steps and the score without changing the workflow.'
+      },
+      gapX: gapArg('side by side'),
+      gapY: gapArg('stacked')
+    }),
+    build: (a) =>
+      a.sweep === true
+        ? {
+            type: 'beautify_layout',
+            sweep: true,
+            ...(a.dryRun === true ? { dryRun: true } : {}),
+            ...gapArgs(a)
+          }
+        : { type: 'beautify_layout' },
+    summarize: (c) =>
+      c.sweep ? `${c.dryRun ? 'Preview sweep of' : 'Sweep'} layout` : 'Beautify layout'
   },
   inspect_node_layout: {
     description:

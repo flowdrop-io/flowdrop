@@ -210,6 +210,33 @@ describe('parser: layout node', () => {
     if (!parsed.ok) expect(parsed.error).toContain("Invalid syntax for 'layout'");
   });
 
+  it('layout beautify --sweep takes --dry-run and the gaps in any order', () => {
+    expect(parse('layout beautify --sweep')).toEqual({ type: 'beautify_layout', sweep: true });
+    expect(parse('layout beautify --sweep --dry-run')).toEqual({
+      type: 'beautify_layout',
+      sweep: true,
+      dryRun: true
+    });
+    expect(parse('layout beautify --gap-y 60 --dry-run --sweep --gap-x 160')).toEqual({
+      type: 'beautify_layout',
+      sweep: true,
+      dryRun: true,
+      gapX: 160,
+      gapY: 60
+    });
+    expect(parse('LAYOUT BEAUTIFY --SWEEP')).toEqual({ type: 'beautify_layout', sweep: true });
+  });
+
+  it.each([
+    'layout beautify --dry-run',
+    'layout beautify --gap-x 40',
+    'layout beautify --sweep --gap-x',
+    'layout beautify --sweep --gap-z 40',
+    'layout beautify --sweep now'
+  ])('rejects "%s" as invalid syntax', (input) => {
+    expect(parseCommand(input).ok).toBe(false);
+  });
+
   it('leaves the general layout commands alone', () => {
     expect(parse('layout auto')).toEqual({ type: 'auto_layout' });
     expect(parse('layout beautify')).toEqual({ type: 'beautify_layout' });
@@ -369,6 +396,89 @@ describe('executor: layout node', () => {
     });
   });
 
+  describe('layout beautify --sweep', () => {
+    it('prints the phases, a line per step and the score, in one batchUpdate', () => {
+      const result = executeCommand(parse('layout beautify --sweep'), context);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const lines = result.message.split('\n');
+      expect(lines[0]).toBe('# phase 1: hard rules (the lower card of each pair yields)');
+      expect(lines).toContain('lookup: moved down 100 (y 200 → 300)');
+      expect(lines).toContain('compose: moved down 140 (y 160 → 300)');
+      expect(lines).toContain('form: outputs reordered message, email (was email, message)');
+      expect(lines[lines.length - 1]).toBe(
+        'sweep: straight 0 → 4 · crossings 3 → 1 · overlaps 2 → 0 · spacing 1 too close → ok'
+      );
+
+      expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+      expect(dispatch.startTransaction).not.toHaveBeenCalled();
+      const { nodes } = vi.mocked(dispatch.batchUpdate).mock.calls[0][0];
+      const by = (id: string) => nodes!.find((n) => n.id === id)!;
+      expect(by('lookup').position).toEqual({ x: 360, y: 300 });
+      expect(by('compose').position).toEqual({ x: 720, y: 300 });
+      expect(by('form').data.config.ports).toEqual({
+        outputs: [{ id: 'message' }, { id: 'email' }]
+      });
+      // Annotations and untouched nodes pass through as they were.
+      expect(by('cap1')).toBe(workflow.nodes.find((n) => n.id === 'cap1'));
+      expect(by('classify')).toBe(workflow.nodes.find((n) => n.id === 'classify'));
+    });
+
+    it('--dry-run prints the steps and dispatches nothing', () => {
+      const result = executeCommand(parse('layout beautify --sweep --dry-run'), context);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.message).toContain('lookup: would move down 100 (y 200 → 300)');
+      expect(result.message).toMatch(/would give: straight 0 → 4/);
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('says so and dispatches nothing when nothing improves', () => {
+      workflow = { ...workflow, nodes: workflow.nodes.filter((n) => n.id === 'send'), edges: [] };
+      context.measureNode = demoGeometry(workflow);
+      const result = executeCommand(parse('layout beautify --sweep'), context);
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.message.split('\n')[0]).toMatch(/^sweep: no change; /);
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('takes the gaps like the node commands do', () => {
+      const a = executeCommand(parse('layout beautify --sweep --dry-run'), context);
+      const b = executeCommand(parse('layout beautify --sweep --dry-run --gap-y 200'), context);
+      expect(a.ok && b.ok).toBe(true);
+      if (a.ok && b.ok) expect(b.message).not.toBe(a.message);
+      const bad = executeCommand(parse('layout beautify --sweep --gap-x 50'), context);
+      expect(bad.ok).toBe(false);
+      if (!bad.ok) expect(bad.error).toContain('multiple of the 20 px grid');
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('prints short ids for namespaced nodes', () => {
+      workflow = {
+        ...workflow,
+        nodes: workflow.nodes.map((n) => ({ ...n, id: n.id === 'lookup' ? 'ns.lookup.1' : n.id })),
+        edges: workflow.edges.map((e) => ({
+          ...e,
+          source: e.source === 'lookup' ? 'ns.lookup.1' : e.source,
+          sourceHandle: e.sourceHandle?.replace('lookup-', 'ns.lookup.1-'),
+          target: e.target === 'lookup' ? 'ns.lookup.1' : e.target,
+          targetHandle: e.targetHandle?.replace('lookup-', 'ns.lookup.1-')
+        }))
+      };
+      context.measureNode = demoGeometry(workflow);
+      const result = executeCommand(parse('layout beautify --sweep --dry-run'), context);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.message).toContain('lookup.1: would move down 100');
+        expect(result.message).not.toContain('ns.lookup.1');
+      }
+    });
+
+    it('plain layout beautify is untouched by the sweep', () => {
+      expect(parse('layout beautify')).toEqual({ type: 'beautify_layout' });
+    });
+  });
+
   describe('beautify', () => {
     it('ports: one batchUpdate carrying the new port order, position untouched', () => {
       const result = executeCommand(parse('layout node beautify compose ports'), context);
@@ -519,6 +629,35 @@ describe('layout node beautify: undo history', () => {
 
   it('a dry run adds no history step', () => {
     executeCommand(parse('layout node beautify compose --dry-run'), context);
+    expect(fd.history.canUndo()).toBe(false);
+  });
+
+  it('a sweep of several nodes and ports is one undo step', () => {
+    const before = snapshot();
+    expect(fd.history.canUndo()).toBe(false);
+
+    const result = executeCommand(parse('layout beautify --sweep'), context);
+    expect(result.ok).toBe(true);
+    const after = snapshot();
+    expect(after).not.toBe(before);
+    const moved = JSON.parse(after).filter(
+      ([id, pos, ports], i: number) =>
+        JSON.stringify([pos, ports]) !== JSON.stringify(JSON.parse(before)[i].slice(1)) && id
+    );
+    expect(moved.length).toBeGreaterThan(3);
+
+    expect(context.dispatch.undo()).toBe(true);
+    expect(snapshot()).toBe(before);
+    expect(fd.history.canUndo()).toBe(false);
+
+    expect(context.dispatch.redo()).toBe(true);
+    expect(snapshot()).toBe(after);
+  });
+
+  it('a sweep dry run adds no history step', () => {
+    const before = snapshot();
+    executeCommand(parse('layout beautify --sweep --dry-run'), context);
+    expect(snapshot()).toBe(before);
     expect(fd.history.canUndo()).toBe(false);
   });
 });

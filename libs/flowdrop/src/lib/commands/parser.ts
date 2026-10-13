@@ -295,6 +295,17 @@ const rules: ParserRule[] = [
     pattern: /^layout\s+beautify$/i,
     parse: () => ({ type: 'beautify_layout' })
   },
+  // layout beautify --sweep [--dry-run] [--gap-x <n>] [--gap-y <n>] — the flags come in any order
+  {
+    pattern:
+      /^layout\s+beautify(?=.*\s--sweep(?:\s|$))((?:\s+(?:--sweep|--dry-run|--gap-[xy]\s+\d+))+)$/i,
+    parse: (m) => ({
+      type: 'beautify_layout',
+      sweep: true,
+      ...(/--dry-run/i.test(m[1]) ? { dryRun: true } : {}),
+      ...gapFlags(m[1])
+    })
+  },
   // canvas fitview | canvas fit
   {
     pattern: /^canvas\s+fit(?:\s*view)?$/i,

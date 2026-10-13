@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { applyProposalToNodes, buildPortsConfig } from '../../../src/lib/layout/toWorkflow.js';
+import {
+  applyProposalToNodes,
+  applySweepToNodes,
+  buildPortsConfig
+} from '../../../src/lib/layout/toWorkflow.js';
 import { propose, beautify } from '../../../src/lib/layout/primitives.js';
 import { fromWorkflow } from '../../../src/lib/layout/fromWorkflow.js';
 import { DEFAULT_LAYOUT_OPTIONS as o } from '../../../src/lib/layout/types.js';
-import { tangled } from './fixtures.js';
+import { sweep } from '../../../src/lib/layout/sweep.js';
+import { rightToLeft, tangled } from './fixtures.js';
 import type { NodePort, WorkflowEdge, WorkflowNode } from '../../../src/lib/types/index.js';
 
 const port = (id: string, type: 'input' | 'output', extra: Partial<NodePort> = {}): NodePort => ({
@@ -191,5 +196,33 @@ describe('applyProposalToNodes', () => {
   it('skips a proposal for a node that is not in the list', () => {
     const p = propose(tangled(), 'compose', 'ports', o);
     expect(applyProposalToNodes(nodes, [p])).toEqual([]);
+  });
+});
+
+describe('applySweepToNodes', () => {
+  it('writes every card to its swept position, including the cards only the translation moved', () => {
+    const graph = rightToLeft();
+    const nodes = graph.cards.map((c) =>
+      node(
+        c.id,
+        c.x,
+        c.y,
+        c.inputs.map((h) => port(h.portId, 'input')),
+        c.outputs.map((h) => port(h.portId, 'output'))
+      )
+    );
+    const result = sweep(graph, o);
+    expect(result.translation).toBeDefined();
+
+    const updates = applySweepToNodes(nodes, result);
+    for (const card of result.graph.cards) {
+      const update = updates.find((u) => u.nodeId === card.id);
+      expect(update?.position).toEqual({ x: card.x, y: card.y });
+    }
+  });
+
+  it('leaves annotations out and writes nothing when the sweep changed nothing', () => {
+    const calm = sweep(sweep(tangled(), o).graph, o);
+    expect(applySweepToNodes([], calm)).toEqual([]);
   });
 });

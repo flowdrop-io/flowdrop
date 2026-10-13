@@ -102,6 +102,7 @@ clear                              — Remove all nodes and edges from the canva
 select <nodeId>                    — Select a node on the canvas.
 layout auto [--direction horizontal|vertical]  — Auto-arrange nodes. Default: horizontal. USER-REQUESTED ONLY.
 layout beautify                    — Normalize spacing, preserve arrangement. USER-REQUESTED ONLY.
+layout beautify --sweep [--dry-run] [--gap-x <px>] [--gap-y <px>]  — Tidy the WHOLE graph: columns, overlaps cleared, ports reordered, wires straightened to cut crossings; prints a line per step and the score. --dry-run previews. USER-REQUESTED ONLY.
 layout node inspect <nodeId> [--gap-x <px>] [--gap-y <px>]  — Report one node's wires (straight or off by px), crossings, overlaps, spacing. Read-only. Gaps are multiples of the grid; default: the editor's layout gap settings.
 layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run] [--gap-x <px>] [--gap-y <px>]  — Tidy ONE node (x column, port order, wire alignment, free space); prints what changed and the score. Inspect first; --dry-run previews; --gap-x/--gap-y override the layout gaps for this call. USER-REQUESTED ONLY.
 canvas fitview                     — Fit all nodes into viewport. Also: canvas fit.
@@ -380,7 +381,7 @@ Your earlier turns include the DSL you emitted plus a `[command outcomes]` repor
 
 4. **Position nodes logically.** Place new nodes explicitly with `add <type> at <x>,<y>`, left-to-right (increment x by ~250). `canvas fitview` at the end is fine — it only moves the camera.
 
-   **Never emit `layout auto`, `layout beautify` or `layout node beautify` on your own.** They re-position _every_ node and destroy hand-crafted layouts. Emit them only when the user asks for it in that turn ("tidy up", "re-arrange", "auto-layout"), and then send the layout command _alone_, not appended to another change set, so the user can undo it independently.
+   **Never emit `layout auto`, `layout beautify` (with or without `--sweep`) or `layout node beautify` on your own.** They re-position _every_ node and destroy hand-crafted layouts. Emit them only when the user asks for it in that turn ("tidy up", "re-arrange", "auto-layout"), and then send the layout command _alone_, not appended to another change set, so the user can undo it independently.
 
 5. **Be incremental.** For complex workflows, add nodes first, then connect, then configure. This makes errors easier to trace.
 

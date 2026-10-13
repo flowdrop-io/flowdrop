@@ -39,6 +39,18 @@ async function y(page: Page, id: string): Promise<number> {
   }, node(id));
 }
 
+/** Every node's position, by id, as rendered. */
+async function positions(page: Page): Promise<Record<string, [number, number]>> {
+  return page.evaluate(() => {
+    const out: Record<string, [number, number]> = {};
+    for (const el of document.querySelectorAll<HTMLElement>('.svelte-flow__node')) {
+      const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(el.style.transform);
+      if (m) out[el.dataset.id!] = [Number(m[1]), Number(m[2])];
+    }
+    return out;
+  });
+}
+
 /** Port labels of a card, top to bottom, as rendered. */
 async function inputOrder(page: Page, id: string): Promise<string[]> {
   return page.evaluate(
@@ -128,5 +140,40 @@ test.describe('Node layout commands', () => {
     await page.locator('.console-input__field').blur();
     await page.keyboard.press(`${MOD}+z`);
     await expect.poll(() => y(page, 'lookup.1')).toBe(200);
+  });
+
+  test('layout beautify --sweep prints the log and the score, and one undo restores every node', async ({
+    page
+  }) => {
+    await open(page);
+    const before = await positions(page);
+    const order = await inputOrder(page, 'compose.1');
+
+    const text = await run(page, 'layout beautify --sweep');
+    const lines = text.split('\n');
+    expect(lines[0]).toMatch(/^# phase \d: /);
+    expect(lines.some((l) => /^compose\.1: (moved|inputs reordered) /.test(l))).toBe(true);
+    // The canvas's own geometry: the crossings and the overlap are gone.
+    expect(lines[lines.length - 1]).toMatch(
+      /^sweep: straight \d+ → \d+ · crossings 3 → 0 · overlaps 1 → 0 · spacing 1 too close → ok$/
+    );
+
+    await expect.poll(() => positions(page)).not.toEqual(before);
+
+    await page.locator('.console-input__field').blur();
+    await page.keyboard.press(`${MOD}+z`);
+    await expect.poll(() => positions(page)).toEqual(before);
+    await expect.poll(() => inputOrder(page, 'compose.1')).toEqual(order);
+  });
+
+  test('layout beautify --sweep --dry-run prints the steps and moves nothing', async ({ page }) => {
+    await open(page);
+    const before = await positions(page);
+    const text = await run(page, 'layout beautify --sweep --dry-run');
+    expect(text).toMatch(/^# phase \d: /);
+    expect(text).toMatch(/\ncompose\.1: would move (up|down) \d+/);
+    expect(text.split('\n').pop()).toMatch(/^would give: /);
+    await page.waitForTimeout(300);
+    expect(await positions(page)).toEqual(before);
   });
 });

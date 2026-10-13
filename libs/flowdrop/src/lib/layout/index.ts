@@ -27,5 +27,7 @@ export type {
   PortOrderChange
 } from './primitives.js';
 export { inspect } from './inspect.js';
-export { applyProposalToNodes, buildPortsConfig } from './toWorkflow.js';
+export { sweep, formatSweep } from './sweep.js';
+export type { SweepPhase, SweepResult } from './sweep.js';
+export { applyProposalToNodes, applySweepToNodes, buildPortsConfig } from './toWorkflow.js';
 export type { NodeLayoutUpdate } from './toWorkflow.js';

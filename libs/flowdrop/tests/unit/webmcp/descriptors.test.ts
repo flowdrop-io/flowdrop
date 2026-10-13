@@ -411,6 +411,16 @@ const PAIRS: Array<{ dsl: string; verb: string; args: Record<string, unknown> }>
   { dsl: 'layout auto --direction vertical', verb: 'auto_layout', args: { direction: 'vertical' } },
   { dsl: 'layout beautify', verb: 'beautify_layout', args: {} },
   {
+    dsl: 'layout beautify --sweep',
+    verb: 'beautify_layout',
+    args: { sweep: true }
+  },
+  {
+    dsl: 'layout beautify --sweep --dry-run --gap-x 160 --gap-y 60',
+    verb: 'beautify_layout',
+    args: { sweep: true, dryRun: true, gapX: 160, gapY: 60 }
+  },
+  {
     dsl: 'layout node inspect compose.1',
     verb: 'inspect_node_layout',
     args: { nodeId: 'compose.1' }

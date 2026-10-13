@@ -32,7 +32,10 @@ import {
   inspect as inspectLayout,
   beautify as beautifyLayout,
   formatBeautify,
+  sweep as sweepLayout,
+  formatSweep,
   applyProposalToNodes,
+  applySweepToNodes,
   DEFAULT_LAYOUT_OPTIONS,
   LAYOUT_GRID
 } from '../layout/index.js';
@@ -1219,6 +1222,12 @@ export const COMMAND_HELP: Array<{
     syntax: 'layout beautify',
     description: 'Normalize spacing while preserving node arrangement'
   },
+  {
+    name: 'layout',
+    syntax: 'layout beautify --sweep [--dry-run] [--gap-x <px>] [--gap-y <px>]',
+    description:
+      'Tidy the whole graph: every node into its column, overlaps and tight spacing cleared, ports reordered and wires straightened to cut crossings, back at the original top-left. Prints one line per step and the score before and after; --dry-run only previews. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call. One undo step'
+  },
   { name: 'undo', syntax: 'undo', description: 'Undo the last action' },
   { name: 'redo', syntax: 'redo', description: 'Redo the last undone action' },
   {
@@ -1614,7 +1623,7 @@ function executeAutoLayout(
 }
 
 function executeBeautifyLayout(
-  _command: Extract<Command, { type: 'beautify_layout' }>,
+  command: Extract<Command, { type: 'beautify_layout' }>,
   context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
@@ -1625,6 +1634,8 @@ function executeBeautifyLayout(
   if (workflow.nodes.length === 0) {
     return { ok: true, message: 'No nodes to beautify' };
   }
+
+  if (command.sweep) return executeSweepLayout(command, workflow, context);
 
   // Collect current positions
   const currentPositions = new Map<string, { x: number; y: number }>();
@@ -1777,6 +1788,33 @@ function executeBeautifyNode(
   const updates = new Map(
     applyProposalToNodes(workflow.nodes, result.steps).map((u) => [u.nodeId, u])
   );
+  const nodes = workflow.nodes.map((n) => {
+    const update = updates.get(n.id);
+    if (!update) return n;
+    return {
+      ...n,
+      ...(update.position ? { position: update.position } : {}),
+      ...(update.config ? { data: { ...n.data, config: update.config } } : {})
+    };
+  });
+  context.dispatch.batchUpdate({ nodes });
+  return { ok: true, message };
+}
+
+/** `layout beautify --sweep`: the graph sweep, one `batchUpdate` (one undo step) for every change. */
+function executeSweepLayout(
+  command: Extract<Command, { type: 'beautify_layout' }>,
+  workflow: Workflow,
+  context: CommandContext
+): CommandResult {
+  const layout = layoutOptionsFor(command, context);
+  if (!layout.ok) return layout.result;
+  const dryRun = command.dryRun === true;
+  const result = sweepLayout(layoutGraphOf(workflow, context), layout.options);
+  const message = shortenLayoutIds(formatSweep(result, dryRun), workflow.nodes);
+  if (dryRun || !result.accepted) return { ok: true, message };
+
+  const updates = new Map(applySweepToNodes(workflow.nodes, result).map((u) => [u.nodeId, u]));
   const nodes = workflow.nodes.map((n) => {
     const update = updates.get(n.id);
     if (!update) return n;

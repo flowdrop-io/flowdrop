@@ -146,6 +146,14 @@ export interface AutoLayoutCommand {
 
 export interface BeautifyLayoutCommand {
   type: 'beautify_layout';
+  /** The graph sweep (column, clear, ports, align) instead of the spacing pass. */
+  sweep?: boolean;
+  /** Sweep only: report the steps and the score without applying them. */
+  dryRun?: boolean;
+  /** Sweep only: gap between cards side by side, px. Default: the editor setting. */
+  gapX?: number;
+  /** Sweep only: gap between stacked cards, px. Default: the editor setting. */
+  gapY?: number;
 }
 
 export interface InspectNodeLayoutCommand {
