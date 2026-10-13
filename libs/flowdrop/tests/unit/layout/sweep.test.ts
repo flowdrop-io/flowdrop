@@ -16,7 +16,7 @@ import {
   LAYOUT_GRID
 } from '$lib/layout/index.js';
 import type { LayoutGraph } from '$lib/layout/index.js';
-import { jurgenDries, rightToLeft, tangled } from './fixtures.js';
+import { demoCard, jurgenDries, rightToLeft, tangled } from './fixtures.js';
 
 const positions = (g: LayoutGraph) => Object.fromEntries(g.cards.map((c) => [c.id, [c.x, c.y]]));
 const topLeft = (g: LayoutGraph) => {
@@ -174,6 +174,41 @@ describe('sweep: Jurgen - Dries (H4, no wire through a port)', () => {
       'confirmation',
       'entity_save'
     ]);
+  });
+});
+
+describe('sweep: keeps the layout unless it gets better (G1)', () => {
+  // Two unconnected cards off the grid: the sweep moves them onto it, which scores no better.
+  const start: LayoutGraph = {
+    cards: [
+      demoCard({ id: 'a', x: 13, y: 217, inputs: [], outputs: ['out'] }),
+      demoCard({ id: 'b', x: 402, y: 733, inputs: ['in'], outputs: [] })
+    ],
+    wires: []
+  };
+  const result = sweep(start, OPTIONS);
+
+  it('applies nothing and returns the input graph', () => {
+    expect(result.accepted).toBe(false);
+    expect(result.steps).toEqual([]);
+    expect(result.phases).toEqual([]);
+    expect(result.graph).toBe(start);
+    expect(result.after).toBe(result.before);
+  });
+
+  it('says what it found and why it kept the layout', () => {
+    expect(result.noBetter).toBeDefined();
+    const lines = formatSweep(result);
+    expect(lines[0]).toBe(
+      'sweep: no change; the best layout found is no better than the current one'
+    );
+    expect(lines[1]).toMatch(/^ {2}current: straight 0\/0 · /);
+    expect(lines[2]).toMatch(/^ {2}found: {3}straight 0\/0 · /);
+  });
+
+  it('an improving sweep is not affected', () => {
+    expect(sweep(tangled(), OPTIONS).noBetter).toBeUndefined();
+    expect(sweep(rightToLeft(), OPTIONS).noBetter).toBeUndefined();
   });
 });
 

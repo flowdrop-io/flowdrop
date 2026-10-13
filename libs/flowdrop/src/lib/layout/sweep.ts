@@ -6,13 +6,23 @@
  * until a pass changes nothing. Each step is one accepted proposal, so the log reads like the
  * `layout node beautify` output. Pure: the input graph is never mutated.
  *
+ * The result is kept only when it beats the starting layout (pixels moved left out): a sweep that
+ * ends level or worse changes nothing, so the user's layout stays.
+ *
  * Annotations are fixed obstacles (D8): never in the node order, never the one that yields, and
  * the final translation leaves them where they are.
  *
  * @module layout/sweep
  */
 
-import { better, formatChange, measure, score, type LayoutMetrics } from './measure.js';
+import {
+  better,
+  formatChange,
+  formatMetrics,
+  measure,
+  score,
+  type LayoutMetrics
+} from './measure.js';
 import { columnRanks, propose, type LayoutProposal } from './primitives.js';
 import type { LayoutCard, LayoutGraph, LayoutOptions } from './types.js';
 
@@ -38,6 +48,11 @@ export interface SweepResult {
   translation?: { dx: number; dy: number };
   /** True when anything moved or was reordered. */
   accepted: boolean;
+  /**
+   * Set when the sweep found a different layout but it scored no better than the start, so
+   * nothing was applied: the score of what it found.
+   */
+  noBetter?: LayoutMetrics;
   before: LayoutMetrics;
   after: LayoutMetrics;
   /** The graph after every step and the translation. */
@@ -170,7 +185,22 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
   }
 
   const steps = phases.flatMap((p) => p.steps);
-  const accepted = steps.length > 0 || translation !== undefined;
+  const changed = steps.length > 0 || translation !== undefined;
+  // Keep the user's layout unless the result is strictly better; pixels moved do not count, a
+  // sweep always moves a lot.
+  const found = changed ? measure(current, options) : before;
+  if (changed && !better(score(found), score(before))) {
+    return {
+      steps: [],
+      phases: [],
+      accepted: false,
+      noBetter: found,
+      before,
+      after: before,
+      graph
+    };
+  }
+  const accepted = changed;
   return {
     steps,
     phases: phases.filter(
@@ -179,7 +209,7 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
     ...(translation ? { translation } : {}),
     accepted,
     before,
-    after: accepted ? measure(current, options) : before,
+    after: found,
     graph: current
   };
 }
@@ -189,6 +219,13 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
  * the score before and after. A dry run says what would happen.
  */
 export function formatSweep(result: SweepResult, dryRun = false): string[] {
+  if (result.noBetter) {
+    return [
+      `sweep: no change; the best layout found is no better than the current one`,
+      `  current: ${formatMetrics(result.before)}`,
+      `  found:   ${formatMetrics(result.noBetter)}`
+    ];
+  }
   if (!result.accepted) {
     return [
       `sweep: no change; the layout is as good as the primitives can make it`,
