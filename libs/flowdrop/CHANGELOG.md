@@ -9,413 +9,224 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`graphite` theme** (`theme: 'graphite'`, light + dark), the new default (see Changed): near-black primary action, one blue accent
-  for selection, focus and running, separate green / amber / red for run status, 4 px radius, 1 px rules.
-  Every text pair passes WCAG AA in both modes. Listed in Settings → UI Theme. Its font is Inter, shipped as
-  the opt-in stylesheet `@flowdrop/flowdrop/styles/fonts/inter.css` (variable, Latin, 47 KB, OFL); without
-  it the editor uses the system font.
+- **Test mode.** An **Edit | Test** switch in a toolbar at the canvas's top-left. Test docks the Playground in
+  the left slot (below 1200 px a drawer over the canvas), targets the editor's current workflow including its
+  unsaved edits, and creates the test session on the first send. The session and a running run survive
+  switching back to Edit. With nothing selected there is no right column; clicking a node opens its inspector
+  as a 360 px sheet over the canvas, on a **Last run** tab (status, duration, timestamps, tokens, input,
+  output, error). `N` opens the node library as a popover, `T` toggles the mode.
+  - The mode is held per instance: `fd.editorMode` (`EditorModeStore`: `current`, `isTest`,
+    `set('edit' | 'test')`, `toggle()`, `onChange(listener)`; type `EditorMode` from `core`). Start in Test with
+    the `editorMode` prop of `App` or the `editorMode` mount option, follow changes with `onEditorModeChange`.
+    Test only takes effect for a saved workflow on an editable canvas (`mode: 'edit'`, no `pipelineId`);
+    `features.testMode: false` removes the switch. `WorkflowEditor` takes `editorMode`, `onEditorModeChange`,
+    `showRunBar` and `onOpenTest`.
+  - The docked Playground's header is a **history chip** (Conversations the Playground created, plus **New
+    conversation**, and the Runs of the open one; picking a run calls `fd.playground.pinExecution`) and a **⋯
+    menu** (**Expand steps by default**, **JSON view**, **Playground settings**, **Refresh**, **Reset stuck
+    session**).
+  - **Save & send**: Send (and Run) read "Save & send" while the workflow has unsaved edits; the editor saves
+    first and nothing is sent when the save fails. `fd.runs.needsSave` and `fd.runs.saveFirst()`.
+  - A **"Saved: new version" divider** marks where the workflow changed between runs. Needs
+    `GET /sessions/{id}/runs` (FlowDrop for Drupal 2.7.0; in the OpenAPI spec, optional endpoint
+    `sessions.runs`, `PlaygroundService.getSessionRuns()`): a server without it answers 404 and the editor shows
+    no dividers and no error. `fd.playground.sessionRuns`, `fd.runs.loadSessionRuns()`; `isRunStale()` and
+    `versionDividersFromRuns()` from `playground`. Sessions carry `thirdPartySettings`; the Playground's own are
+    marked `flowdrop_playground.created` (`PLAYGROUND_SESSION_MARK`, `isPlaygroundSession()`,
+    `playgroundSessionsOf()`), and the history lists only those.
+  - A **Runs list** in the toolbar (`features.runsList`, default on; Test mode only) lists the workflow's past
+    runs from `endpoints.pipelines.list`; opening one shows its node statuses on the canvas. Optional
+    endpoints `pipelines.rerun` and `pipelines.cancel` add Re-run and Cancel; `features.adminLinks`
+    (`{ runs?, run? }` URL templates) adds "Open in admin" links.
+  - **Message-to-node links**: a reply's "via <node>" label selects the node, opens its Last run tab and brings
+    it into view, and hovering lights the node on the canvas (`fd.highlight`). `NodeJobExecution` gains `input`
+    and `output`; `canvasFocusNode(id)` on `WorkflowEditor`.
+  - A **form-first Playground**: a workflow with inputs and no chat opens on an **Inputs** card (one field per
+    input, JSON fields for array and object inputs with example chips, **Run** also on ⌘↵ / Ctrl+↵, **Fill from
+    last run**); chat plus inputs folds the inputs into one row above the composer.
+- **Run state per instance.** `fd.runs` (`RunController`, from `playground`; types from `core`) holds the
+  session and run executors that used to live inside the Playground component, shared by the Playground, Test
+  mode and the Console. `fd.runs.activeRun` (`ActiveRun`), `stopRun()`, `dismissRun()`, `isLive`,
+  `requestNodeStatuses()`, `loadNodeStatuses(pipelineId?, workflow?)`, and `wrapHostHooks(hooks)`, which routes
+  a host's `onRun` / `onRunStatus` through the controller (the hooks answer as before; a host run is followed
+  only when `onRunStatus` is supplied). `fd.runs.stopHostPolling()` ends a host run's status poll; `app.destroy()`
+  and `fd.runs.dispose()` call it. `fd.playground.onSessionStatusChange(listener)` is a synchronous listener
+  (unlike `subscribeToSessionStatus`, which batches). `stripExecutionInfo(nodes)` from `core`.
+- **Run status on the canvas.** Run status of the nodes lives in `fd.playground.nodeStatuses`
+  (`nodeStatusFor(id)`, `setNodeStatuses`, `clearNodeStatuses`), so an edit no longer wipes the badges and two
+  editors on one page never share statuses. Nodes show a labelled pill (Running, Completed, Waiting for you,
+  Failed, Skipped, with ×N for repeats), centred on the node's top edge at screen size; in Test mode the node
+  border takes the status colour and a node whose configuration changed since the shown run gets an `edited`
+  mark. Edges between a completed node and a reached node draw as hot (class `flowdrop-edge--hot`; never
+  written into saved edges). A run pill in the toolbar shows the live run (running, waiting, failed, done,
+  stopped) with **Stop**, **Open** (needs `onOpenTest`) and **Ask the Assistant**, and fades when the run
+  ends; changes are announced politely.
+- **Console `session` commands**: `session send "…"` (triple-quoted for several lines), `session run
+[key=value …]`, `session stop`, `session new`, `session status`. Console only: not part of the editing
+  commands, the Assistant or WebMCP. A batch containing a `session` line is refused before anything runs.
+- **Run context for the Assistant.** A run can be attached to the AI Assistant (a run chip, **+ Attach a
+  run**, **Ask the Assistant** on a failed node or run); the tool-calling chat request then carries
+  `attachedRunId` (`ChatRequest.attachedRunId`; a server without run tools ignores it). `fd.attachedRun`
+  (`attach(id, hint?)`, `detach()`, per instance). Needs fddo 2.7.0 (`site_get_run`, `site_get_node_run`).
+- **Problems indicator.** With the optional endpoints `workflows.diagnose` and `workflows.remedy` set, the
+  navbar lists the draft's problems, nodes carry a badge, and a remedy applies as one undoable edit. A backend
+  without them shows nothing.
+- **Graphite theme** (`theme: 'graphite'`, light and dark), the new default (see Changed): near-black primary
+  action, one blue accent for selection, focus and running, separate green / amber / red for run status, 4 px
+  radius, 1 px rules; every text pair passes WCAG AA. Its font is Inter, shipped as the opt-in stylesheet
+  `@flowdrop/flowdrop/styles/fonts/inter.css` (variable, Latin, 47 KB, OFL); without it the editor uses the
+  system font. Graphite carries a redesigned node card (header, category tile, port rows on a fixed grid, exec
+  pin), calmer notes (20 px height snap), top-centre toasts, a terminal-style Console and flat form rows; the
+  card structure, notes and toasts apply to every theme.
+- **`colorScheme` mount option** (`ColorSchemeOption`, `HostColorSchemeValue`; `mountFlowDropApp` and
+  `mountPlaygroundApp`): `colorScheme: { host: { value: 'light' | 'dark' | 'auto', label, subscribe? } }` adds a
+  fourth choice, `'host'` (`ThemePreference` gains it), shown verbatim as `label` in the navbar's Appearance menu
+  and Settings. With it `'host'` is the default; a stored preference the user never chose moves to it, an
+  explicit Light or Dark is kept. `host.subscribe` re-resolves on live changes and is released by
+  `app.destroy()`. Without the option nothing changes.
 - **`branding`** option on `mountFlowDropApp`, `mountPlaygroundApp` and `App`:
-  `{ logo?: string | Component; name?: string; logoAlt?: string; href?: string }`. `logo` replaces the
-  FlowDrop wordmark (image URL or component, max 24 px high), `name` replaces "FlowDrop" in the page title and
-  the logo's label, `logoAlt` overrides the alt text, `href` links the logo. Type `NavbarBranding`. The default
-  wordmark is now labelled with the `navigation.appName` message, which also drives the page title.
-- `FlowDropThemeConfig.display` (`nodeIcon: 'squircle' | 'dot'`, `sidebarList: 'cards' | 'flat'`,
-  `sidebarSearch`, `sidebarHeader`, `navbarActions: 'dropdown' | 'split'`): typed layout switches in the
-  theme config. The `minimal` theme uses them. A skin can name a `font` (a CSS font-family; the host
-  loads the face); without one the editor still inherits the host font.
-- New `@public` design tokens: run-status roles `--fd-status-{running,completed,waiting,failed,skipped}`
-  and `-soft` (mapped onto the existing info / success / warning / error / muted colours), control heights
-  `--fd-control-sm` / `-md` / `-lg` (24 / 28 / 32 px) and `--fd-panel-header` (40 px).
-- `fd.editorMode.onChange(listener)` and `fd.playground.onSessionStatusChange(listener)`:
-  synchronous listeners, called once per real change at the moment it happens
-  (unlike `subscribeToSessionStatus`, which rides an effect and batches). Each
-  returns its unsubscribe function.
-
-- The docked Playground's header in Test mode is two controls: a **history
-  chip** and a **⋯ menu**. The chip names the open conversation (and the run,
-  once one is picked) and lists the Conversations (the sessions the Playground
-  created, plus **New conversation**) and the Runs of the open one, newest
-  first, with runs of an older workflow version marked. Picking a conversation
-  opens it; picking a run shows it (`fd.playground.pinExecution`, so the canvas
-  follows). The menu holds **Show steps**, **JSON view** (a workflow with an
-  input form: edit the inputs as JSON), **Playground settings** (the
-  inspector's Playground tab), **Refresh** and **Reset stuck session** (only
-  for a backend that can reset). Both are keyboard menus: arrow keys, Home/End,
-  Escape closes and returns focus. These replace the control panel's session
-  chip, Refresh and Logs buttons in the dock, and the settings link on the
-  "no chat yet" notice (the friendly line stays). Hosts can add entries to the
-  ⋯ menu through the new `menuItems` snippet of `DockedPlayground` (buttons with
-  `class="header-menu__item"`, `role="menuitem"`). The standalone Playground
-  keeps its header. New: `PlaygroundSurface` props `historyHeader` and
-  `menuItems`; `historyGroups()` (`utils/playgroundHistory`); messages
-  `playground.header` and `playground.jsonInput`. `controlPanel.openPlaygroundSettings`
-  is no longer shown and `ControlPanel`'s `onNoticeAction` prop is gone.
-
-- Run context for the Assistant. A run can be attached to the AI Assistant, so
-  what you just tested travels with you into Edit mode: a **run chip** above the
-  composer (run number, how it ended, when it started, an "older version" mark
-  when the workflow changed since, and an x to detach), **+ Attach a run**
-  (this test session's runs, newest first, loaded when the list opens; an empty
-  state says when the server has no runs endpoint), and **Ask the Assistant** on
-  a failed node's **Last run** tab and on the run bar of a failed run. That
-  button switches to Edit mode, opens the Assistant beside Nodes and attaches
-  the run. While a run is attached the tool-calling chat request carries
-  `attachedRunId` (a digit string; `ChatRequest.attachedRunId`); a server
-  without run tools ignores it. `fd.attachedRun` (`AttachedRunStore`: `id`,
-  `hint`, `attach(id, hint?)`, `detach()`) is the one home, per instance; it is
-  cleared when another workflow is opened. `RunBar` and `WorkflowEditor` take
-  `onAskAssistant`. New messages `chat.attach`, `runBar.askAssistant`,
-  `runBar.askAssistantLabel`, `nodeInspector.askAssistant`, `layout.nodesTab`. Needs fddo 2.7.0 (`site_get_run`, `site_get_node_run`).
-- Message-to-node links and a Last run tab, in Test mode. A reply's "via
-  <node>" label becomes a link when the node is on the canvas now (messages from
-  a deleted node or a sub-workflow stay plain). Clicking it selects the node,
-  opens the inspector on its new **Last run** tab and brings the node into view;
-  nothing else moves the view. Hovering the link lights the node on the canvas,
-  and hovering or opening a node lights the messages from it
-  (`fd.highlight`: `NodeHighlightStore`). In Test mode a node in the inspector
-  has tabs Config | Last run (Edit mode keeps no tab strip). Last run shows the
-  node's status, duration, timestamps, tokens when its output reports them, and
-  input, output and error (long payloads cut, with Show all), from the shown
-  run; a node that did not run shows an empty state. `NodeJobExecution` gains
-  `input` and `output` (the pipeline payload's `input_data` / `output_data`).
-  `canvasFocusNode(id)` on `WorkflowEditor`. New messages: `nodeInspector`,
-  `playground.messageTooltips.showNodeLastRun`.
-- Run status of the nodes lives in the instance's playground store:
-  `fd.playground.nodeStatuses` (`nodeStatusFor(id)`, `setNodeStatuses`,
-  `clearNodeStatuses`, scoped to a workflow and run). The node status overlay
-  draws from it, so an edit to the graph no longer wipes the badges. Load it
-  with `fd.runs.loadNodeStatuses(pipelineId?, workflow?)`; the editor does so
-  for its `pipelineId` and `refreshTrigger` props. Two editors, or an editor
-  and a Playground, on one page never share statuses.
-- A run bar on the editor canvas while a run exists, at the top centre: its
-  status (running, waiting, failed, done, stopped), Stop while the run is live,
-  and Open while it waits for a person. There is no bar at rest. It fades a few
-  seconds after the run ends, and the node status badges fade with it. Status
-  changes are announced politely to screen readers; Stop and Open are buttons.
-  A run starts the bar when it comes from the Console (`session run`,
-  `session send`), the Assistant, or a WebMCP agent. `WorkflowEditor` takes
-  `showRunBar` (default `true`; Test mode sets it `false`) and `onOpenTest`
-  (the Open button is shown only when it is set). New messages under `runBar`.
-  `App` wires both: Open enters Test mode, and a run that has ended is dropped
-  when crossing between Edit and Test so the bar never returns stale. Node
-  statuses have one loader, the coalesced `fd.runs.requestNodeStatuses()`, which
-  also loads a host run by its own id; `fd.runs.isLive` now counts the shown run
-  (host runs too), not only the session.
-- `fd.runs.activeRun` (`ActiveRun`: `origin`, `runId`, `status`, `startedAt`,
-  `endedAt`; reactive, `null` at rest), `fd.runs.stopRun()` and
-  `fd.runs.dismissRun()`. Per instance.
-- `fd.runs.wrapHostHooks(hooks)` routes a host's `onRun` and `onRunStatus`
-  through the run controller: the run a host hook starts becomes `activeRun`,
-  and `fd.runs` reads its status from `onRunStatus` until it ends. The hooks
-  answer exactly as before. The chat panel's tool loop and the WebMCP adapter
-  use it, so `run` / `run_status` land in the same run state as Console runs.
-  A host run is followed only when the host supplies `onRunStatus`.
-- `stripExecutionInfo(nodes)`, exported from `core`.
-- `fd.runs`, a per-instance run controller (`RunController`, exported from
-  `playground`, types from `core`). It holds the session and run executors that
-  lived inside the Playground component: load, create, select, delete and reset
-  sessions, take a turn, launch a run, send a signal, stop, poll, refresh and
-  catch up. The Playground and the editor Console share it, so there is one
-  code path; it is also the controller the planned Test mode builds on. With no
-  Playground mounted it follows the editor's workflow.
-- The editor Console gains `session` commands: `session send "…"` (a
-  triple-quoted block for several lines), `session run [key=value …]`,
-  `session stop`, `session new` and `session status`. They run in the Console
-  only and are not part of the editing commands, the AI Assistant or WebMCP;
-  `parseCommand` says so for a `session` line. `parseSessionCommand` and
-  `executeSessionCommand` are exported from `commands`. A batch that contains a
-  `session` line is refused before anything runs, `help` lists the group and
-  `help session` shows its usage.
-
-- Test mode: **Save & send**. The docked Playground's Send reads "Save & send"
-  (and Run "Save & run") while the workflow has unsaved edits, Playground
-  settings included. Pressing it saves through the editor's own save, then
-  sends; when the save fails or a host cancels it nothing is sent, the typed
-  text stays and the Playground says why. `PlaygroundSurface` and
-  `DockedPlayground` take `onSave`; `ChatInput` and `ControlPanel` take
-  `beforeSend` and `saveFirst`; `fd.runs.needsSave` and `fd.runs.saveFirst()`.
-  New messages `playground.actions.saveAndSend`, `saveAndRun`, `saving` and
-  `playground.saveFailed`, `saveNotDone`.
-- Test mode: a **"Saved — new version" divider** in the conversation where the
-  workflow changed. It is added when the workflow is saved while a conversation
-  is open (unless the save left the version of the last run unchanged, a node
-  moved to another place, say), and rebuilt on load from the session's runs:
-  above a run whose `workflowVersion` differs from the one before, and at the
-  end when the workflow changed since the last run. A run with an unknown
-  version (`null`) is never compared. New message `playground.versionDivider`.
-- Session runs: `GET /sessions/{id}/runs` (FlowDrop for Drupal 2.7.0) in the
-  OpenAPI spec, `PlaygroundService.getSessionRuns()` and the optional
-  `sessions.runs` endpoint (`sessionsEndpoints.runs`; a `sessions` group without
-  the key still tries the reference path). A server without the endpoint answers
-  404 and the editor shows no dividers and no error; it is asked once per page.
-  The runs of the current session are in `fd.playground.sessionRuns`
-  (`SessionRunsResult`, `SessionRun`), loaded by `fd.runs.loadSessionRuns()`.
-  `isRunStale()` and `versionDividersFromRuns()` are exported from `playground`.
-- Sessions carry `thirdPartySettings` (`PlaygroundSession`, `SessionThirdPartySettings`):
-  the Playground's own sessions are marked `flowdrop_playground.created`
-  (`PLAYGROUND_SESSION_MARK`, `isPlaygroundSession()`, `playgroundSessionsOf()`).
-  A server that exposes the settings sends them on every session; one that does
-  not leaves the key out.
-
-- Test mode: an **Edit | Test** switch in the navbar. Test docks the Playground
-  in the left slot (where the node library sits in Edit mode), compact: no
-  760px minimum and no pipeline panel. The inspector stays open, resting on
-  the workflow tabs (Settings | Interface | Playground) until a node is opened;
-  **N** opens the node library as a popover and **Esc** closes it. Below 1200px
-  the Playground is a drawer over the canvas, opened by the button that holds
-  the sidebar's place. The Playground targets the editor's current workflow,
-  including its unsaved edits, and the instance's current test session (created
-  on the first send); the session and a running run survive switching back to
-  Edit. Node badges follow the shown run as it progresses, and in Edit mode
-  only while a run is going; Edit mode at rest looks as before, with a dot on
-  the Test switch while a run is going or waiting. The "no chat yet" notice
-  links to the Playground settings tab. Edit mode is unchanged.
-- The mode is held per instance: `fd.editorMode` (`EditorModeStore`:
-  `current`, `isTest`, `set('edit' | 'test')`, `toggle()`; the `EditorMode`
-  type is exported from `core`). Start in Test with the `editorMode` prop of
-  `App` or the `editorMode` mount option; a host that hides the navbar, or
-  runs the switch itself, calls `instance.editorMode.set('test')`. Test only
-  takes effect for a saved workflow on an editable canvas (`mode: 'edit'`, no
-  `pipelineId`); `features.testMode: false` removes the switch.
-- `fd.runs.isLive` (a run is going or waiting for someone) and
-  `fd.runs.requestNodeStatuses()` (ask for the shown run's node statuses on
-  every poll tick; asks made while a load runs coalesce into one more load).
-- `ConfigPanel`'s `onClose` is optional: without it the panel has no close
-  control. `NodeSidebar` takes a `popover` prop (always expanded, as wide as
-  its container).
-- Status badges, hot edges and the `edited` mark on the edited canvas, all
-  drawn from `fd.playground.nodeStatuses`. The badge is a small status icon on
-  the node's top-right corner, coloured from the theme tokens (`--fd-success`,
-  `--fd-error`, `--fd-primary`, `--fd-warning`, `--fd-muted-foreground`), with
-  no text and no numbers; the spinning and pulsing for running and waiting
-  nodes stop under `prefers-reduced-motion`. An edge is hot (success colour,
-  thicker, class `flowdrop-edge--hot`) when its source node completed and its
-  target was reached (running, completed, failed, paused or waiting): the rule is
-  `isEdgeHot()` in `utils/runEdges.ts`. Hot state is read at draw time and is
-  never written into the saved edges. In Test mode a node that has a last run
-  gets an `edited` mark when its configuration changed since the shown run
-  started, so the result may be stale. Moving a node and renaming it do not
-  count (nor `instanceTitle`, `instanceDescription`, `instanceBadge` or
-  `extensions.ui`); wiring changes into a node do. The editor keeps a
-  per-node fingerprint per run in `fd.editedNodes` (`track(runId)`, `clear()`,
-  `isEdited(nodeId)`), taken when the shown run is first seen and dropped when
-  the run changes. New messages `status.overlay.edited` and `editedTooltip`.
+  `{ logo?: string | Component; name?: string; logoAlt?: string; href?: string }` (type `NavbarBranding`). `logo`
+  replaces the wordmark (image URL or component, max 24 px high), `name` replaces "FlowDrop" in the page title
+  and the logo's label, `logoAlt` overrides the alt text, `href` links the logo. The default wordmark is
+  labelled with the `navigation.appName` message, which also drives the page title.
+- `FlowDropThemeConfig.display` (`nodeIcon`, `sidebarList`, `sidebarSearch`, `sidebarHeader`, `navbarActions`;
+  type `FlowDropDisplayConfig`): typed layout switches, used by the `minimal` theme. A skin can name a `font`
+  (a CSS font-family; the host loads the face).
+- New `@public` design tokens: run-status roles `--fd-status-{running,completed,waiting,failed,skipped}` and
+  `-soft`, control heights `--fd-control-sm` / `-md` / `-lg` (24 / 28 / 32 px) and `--fd-panel-header` (40 px).
+- **Zoom tiers.** The canvas draws a node at up to four levels of detail by zoom (full, outline, glyph, map),
+  published as `data-fd-zoom` on `.flowdrop-root`. The `editor.zoomTiers` setting (`ZoomTierConfig`,
+  `ZoomTierName` from `settings`) gives the zoom each tier starts at; default
+  `{ full: 0.75, outline: 0.45, glyph: 0.25, map: 0 }`, `{ full: 0 }` turns tiers off, an invalid value falls
+  back to the default with one console warning. Settings > Editor > Zoom levels edits it.
+- **Node layout.** Commands `layout node inspect <nodeId>` and `layout node beautify <nodeId>
+[column|ports|align|clear|all] [--dry-run]`, both with `--gap-x` / `--gap-y`, and the WebMCP tools
+  `inspect_node_layout` and `beautify_node` (`gapX` / `gapY`). Settings `editor.layoutGapX` / `layoutGapY`
+  (defaults 120 / 40 px) set the spacing the layout keeps; `editor.loopbackLanes` (default off) draws `loop_back`
+  edges as return lanes (out of the source, under the loop body, back along a lane) instead of a curve through
+  the cards, and layout keeps those lanes free.
+- **Tidy up.** A broom in the canvas controls and **Tidy up** (⇧⌥T) in the pane menu run the graph layout; **Tidy
+  node** (⇧S) in the node menu tidies one node. One undo step each. The toast says what changed, how many
+  overlaps are left and anything that got worse; a layout that would not improve is left alone. Graphs over
+  120 nodes are refused (`TOO_LARGE`; tidy single nodes instead). See Changed for `layout beautify`.
+- **Ports.** **Hide unconnected ports** / **Show hidden ports** in the node menu (data ports only), **Connect
+  to…** in a port's menu (a searchable picker of compatible ports on other nodes), and ports ready to receive
+  light up while a wire is dragged. Nothing is ever blocked by type: compatible ports are highlighted, the rest
+  dulled. A wire being dragged aligns magnetically with a port on the target.
+- **Interface tags on the canvas**: a published port shows a tag beside it (rename, remove, or expose a port
+  from its menu), and a trigger shows a read-only `event:<node-id>` tag beside its event input, with a hover
+  explanation. A trigger's event input cannot be wired, hidden or published. `EVENT_PORT_ID`,
+  `RESERVED_INPUT_EVENT_PREFIX`, `isTriggerNode`, `isTriggerEventInput`, `isEventInputConnection`,
+  `reservedInputs`, `isReservedInputName` and `ReservedInput` are exported from `editor`.
+- New settings: `editor.showNodeDescriptions` (default off; a 60 px band under every node's header when on),
+  `ui.sidebarWidths` (`{ nodes: 280, assistant: 380 }`, the resizable left column per tab) and
+  `ui.sheetWidths` (`{ workflow: 420 }`, the resizable workflow-settings sheet).
+- WebMCP: `getBridgeController()` and `createBridgeController()` (`WebMCPBridgeController`, `BridgeStatus`,
+  `BridgeTool`, `BridgeSnapshot`) from `webmcp`, a typed controller over the desktop bridge widget; the editor
+  shows a bridge button as the last segment of the zoom controls.
+- A flat row list for small array fields (inline-edit cells, a default mark for `x-item-ref` arrays).
+- Messages: `connectTo.*` (including `optionCurrent`, `optionTaken`), `form.array.movedTo` and the other
+  `form.array` row messages, `layout.zoomLevelsTitle`, `layout.zoomLevelsHelp`, `nodes.configure`,
+  `nodes.configureTool`, `nodes.configureIdea`, `notice.dismiss`, plus new groups for the features above:
+  `tidy`, `runBar`, `runsList`, `doctor`, `nodeInspector`, `playground.header`, `playground.steps`,
+  `playground.inputForm`, `statusPill`, `select`, `webmcp.bridge`, `workflowInterface` (tags) and `chat.tools.verbs`.
 
 ### Changed
 
-- **Graphite is the default theme.** `DEFAULT_UI_SETTINGS.theme` is now `'graphite'` (was `'default'`), so an
-  editor with no `theme` prop and no saved choice starts in Graphite. A browser that already saved its settings
-  keeps the theme it had. To keep the old look, pass `theme: 'default'`, or pick Default in Settings → UI Theme.
-- **Token scales collapsed** (values move, names stay; `--fd-*` names are stable until 3.0). Sites that
-  override these tokens are unaffected, sites on the defaults get slightly smaller type and a tighter grid:
-  - Type scale is now 11 / 12 / 13 / 15 / 20 / 24 px: `--fd-text-sm` 14 → 13 px, `--fd-text-base` 16 → 15 px,
-    `--fd-text-lg` 18 → 20 px (`2xs` 11, `xs` 12, `xsm` 13, `md` 15, `xl` 20, `2xl` 24 are unchanged).
-  - Spacing sits on a 4 px grid: `--fd-space-2xs` 6 → 4 px, `--fd-space-sm` 10 → 8 px,
-    `--fd-space-lg` 14 → 12 px.
-  - `--fd-radius-md` 6 → 4 px (`sm` 4, `lg` 8, `xl` 12, `2xl` 16 are unchanged).
-- **Canvas toolbar.** Edit | Test moved from the navbar to a toolbar at the canvas's top-left, with the
-  run pill and the Console toggle. The mode switch is a radio group now (`role="radiogroup"`, items
-  `role="radio"` + `aria-checked`, was `aria-pressed` buttons); `T` toggles the mode (not while typing,
-  not with modifiers). The run bar is a pill in that toolbar instead of a notch on the canvas's top edge:
-  in Edit mode as before (Open on a waiting run, Stop, fades when the run ends); in Test mode while the
-  run is live, with Stop. The sidebar toggle and Test mode's node-library popover moved down to clear
-  the toolbar. `WorkflowEditor` takes `editorMode` / `onEditorModeChange`.
-  Removed: the navbar switch, the dot on "Test" (`data-testid="test-run-dot"`), the floating Console
-  button, classes `.editor-mode-switch*`, `.flowdrop-console-toggle`, `.flowdrop-run-bar__pill*`,
-  `.flowdrop-run-bar__status` (`.flowdrop-run-bar`, `--{status}`, `--fading`, `__live` remain).
-- **Node run status is a labelled pill** (Running, Completed, Waiting for you, Failed, Skipped, with
-  ×N when a node ran more than once) centred on the node's top edge and kept at screen size when you
-  zoom out (scale `clamp(1/zoom, 1, 2.2)`); below 35% zoom it becomes a status-coloured outline plus a
-  count badge. In Test mode the node border takes the status colour. Hover shows the count and the
-  last error line. Pending nodes no longer show an indicator; cancelled shows as Skipped; paused and
-  interrupted show as Waiting. `getStatusColor` / `getStatusBackgroundColor` / `getStatusTextColor`
-  return `var(--fd-status-*)` instead of hex (valid in CSS only). Classes: `.node-status-overlay--{status}`
-  modifiers are now `--{running,completed,waiting,failed,skipped}`, `data-status` carries that status
-  (the raw one is `data-execution-status`), `.node-status-overlay__icon` is gone; new
-  `--compact`, `__pill`, `__outline`, `.universal-node--status-border`.
-- **Steps fold into one row per turn** in the Playground ("8 steps · 82 ms · 1 waiting ▸"), opening a
-  compact table (node · status · runs · time; loops merge into one row with ×N, nested steps indent).
-  A failed step's error stays visible under the row. Durations read 0.8 ms / 42 ms / 1.2 s, never µs.
-  The turn's run notices ("<workflow> started", a sub-workflow's "completed in …") fold in with it;
-  warnings and errors stay in the conversation.
-  The ⋯ menu's **Show steps** became **Expand steps by default** (`playground.expandSteps`, off).
-  No origin chip for Playground runs; the "Execution" header of the execution console is gone.
-  Removed classes: `.execution-console__header|__icon|__title`, `.message-stream__log-group*`,
-  `.log-row .hierarchy-trail`; new `.steps-summary*`.
-- `HeaderMenu` (the Playground ⋯ and history menus) is built on the new internal Menu: its props and
-  `.header-menu__item|__group|__divider|__button` classes stay; the wrappers `.header-menu`,
-  `.header-menu__menu(--start|--end)` are now `.flowdrop-ui-menu` / `.flowdrop-ui-menu__popup`.
-- `Button` (internal) wraps the new button primitive: `outline` renders as `secondary`, `lg` as `md`
-  (28 px), so `ThemeToggle` and the Playground-settings buttons are smaller.
-- **Form-first Playground.** A workflow with inputs and no chat opens on an **Inputs** card: one field
-  per input (array/object inputs are JSON fields with example chips from the interface's `examples` and
-  default), a blue **Run** (also ⌘↵ / Ctrl+↵ from any field), refusals named under Run, **Fill from last
-  run**, and this session's earlier runs below the card (pick one to refill, nothing runs). Chat + inputs:
-  the inputs fold into one "Inputs · n of m filled" row above the composer. A run-only workflow gets the
-  same blue Run (was green). A form interrupt keeps its schema form, framed by the amber "needs you" card.
-  Removed: the "Ready to run" empty state, the resize splitter between conversation and form
-  (`.playground__vertical-resizer*`), `.form-prompt__form-wrapper`.
-- **One panel header and one composer.** The Playground, the configuration panel (docked and popped
-  out), the configuration and settings dialogs, overlays and the Console share one header (40 px, 13 px
-  text); the Playground and AI Assistant share one composer (icon send/stop, attach as a paperclip in the
-  AI Assistant). "Save & send" is the send button's label plus a hint under the composer. "Nothing will
-  reply here" moved into the empty conversation, with a **Playground settings** button, and goes once a
-  message exists. The Console keeps its command line (history, autocomplete) in the same frame.
-  Removed classes: `.playground-header__spacer`, `.chat-input__textarea|__send-btn|__stop-btn|__run-btn|__no-inputs|__command-feedback-dismiss`,
-  `.control-panel__notice`, `.control-panel--notice`, `.ai-chat-panel__attach-add|__input-area|__input|__send`,
-  `.config-panel__header|__title|__actions|__action-btn|__close`, `.config-panel-modal__header|__title`,
-  `.config-modal__header|__title|__close-btn`, `.flowdrop-settings-modal__header|__title|__title-icon|__close`,
-  `.surface-overlay__header|__title|__close`, `.command-console__header|__title|__close`.
-- The standalone Playground's header (`historyHeader` off) uses the shared panel header; Pipeline, Refresh
-  and Logs are icon buttons with labels in `aria-label` / `title`.
-- The logs sidebar, config form and form-template editor use theme tokens instead of fixed colours: they follow
-  dark mode and custom themes; the logs sidebar title is 15 px (was 18) and its radius 4 px.
-- **Lighter frame.** The navbar is 48 px (`--fd-navbar-height`, was 60) with a smaller wordmark. The status
-  bar under the canvas is gone: the node count sits in the zoom control ("6 nodes", connections in its
-  title), with the cycle warning. The minimap is 120×72 and hides when the canvas is under 800 px wide
-  (`showMinimap` still wins). Removed classes: `.flowdrop-status-bar`, `.flowdrop-status-bar__content`,
-  `.flowdrop-text--error`; new `.fd-zoom-status__count`.
-- Test mode with nothing selected has **no right column**: the canvas takes the
-  space the inspector used to hold (about 1070 px of a 1440 px window, beside the
-  360 px Playground dock). Clicking a node (double-click still works) shows its inspector as a 360 px
-  **sheet over the canvas** from the right edge, without reflowing the canvas;
-  clicking another node switches it, and it opens on **Last run** whether or not the node ran. Esc (not while typing in
-  a field of the sheet), a click on empty canvas, or the close button closes it.
-  The workflow tabs (Settings / Interface / Playground) no longer rest open in
-  Test mode; the docked Playground's "Playground settings" link, or the navbar's
-  workflow settings, opens them in the same sheet. Edit mode is unchanged. In
-  Test mode a Command Console placed in the sidebar opens in the bottom panel
-  instead, so the Console toggle still works and no column appears.
-- The AI Assistant moves out of the console group into a **Nodes | Assistant**
-  tab strip in the left slot, in Edit mode only. Test mode has no Assistant and
-  no strip (its left slot is the Playground); the Assistant keeps its
-  conversation across tab switches and a trip through Test mode.
-  `consolePlacement` now places the Command Console alone, and the console
-  toggle opens the Console only. No stored default changes, and
-  `consolePlacement: 'sidebar'` stays valid. `features.assistant: false` still
-  hides the Assistant. A host that set `disableSidebar` has no left slot, so for
-  it the Assistant stays a tab of the console group (until 3.0).
-  `bottomPanelTab: 'chat'` in stored settings is still accepted and ignored.
-- Test mode opens its right panel on the inspector. After `?mode=test`, a
-  reload in Test mode, or switching to it, the panel no longer lands on the
-  Console tab that was last focused.
-
-- The node status badge no longer opens a hover details panel (status,
-  executions, last run, duration, error, job history). Those facts live in the
-  inspector's Last run tab; the badge is status only and keeps a tooltip and
-  accessible name with the status word. `NodeStatusOverlay`'s `showDetails`
-  prop and `NodeStatusConfig.showDetails` are now no-ops (the latter is marked
-  deprecated); the `status.overlay` messages for the panel's labels are gone,
-  and `status.overlay.tooltip` takes only `{ status }`.
-- Test mode: the docked Playground's history lists only the sessions the
-  Playground created (`playgroundSessionsOnly`), not every session of the
-  workflow. A server that does not send `thirdPartySettings` lists them all.
-  A session survives a save: saving never resets or reloads the conversation.
-  Reset (`/reset`, a stuck session back to idle) and new (the chip's "New
-  session", `/new`, `session new`) stay two separate actions.
-- A session created by the editor's Playground or the Console is named by the
-  server (a client-side `Session N` repeats when the list is partial); the
-  standalone Playground keeps counting. `App`'s save returns whether the
-  workflow was written, `globalSaveWorkflow` tells `fd.runs` after a write.
-- Internal: the Playground's conversation surface is now `PlaygroundSurface`,
-  and `Playground` is a thin wrapper around it. Test mode's docked Playground
-  is built on the surface, not on the standalone wrapper, so it is unaffected
-  when the standalone Playground is deprecated and removed. The surface can
-  keep the instance's session when it unmounts (`retainSession`) and follow
-  a live workflow's interface and Playground settings (`followWorkflow`), and
-  to let the first send create the session (`sessionOptional`: the composer
-  works with no session, and nothing asks for one first).
-- A saved or exported workflow can no longer contain a node's `executionInfo`: the
-  canvas-to-store sync, save and export all strip it.
-- Internal: the Playground delegates its session and run executors to
-  `fd.runs`; what it shows and does is unchanged, except that a
-  `predefinedMessage` starting with `/` is now sent as typed instead of being
-  read as a slash command.
-- The node status overlay is a compact badge (status icon only) instead of a
-  large pill with a label and run count, and its hover details and colours use
-  the theme tokens, so dark mode follows. Durations, counts and errors stay in
-  the hover details until the inspector's Last run tab carries them. The
-  overlay's `position` prop is gone (the badge always sits on the top-right
-  corner), and `UniversalNode` no longer asks the node registry for a status
-  position.
+- **Graphite is the default theme.** `DEFAULT_UI_SETTINGS.theme` is `'graphite'` (was `'default'`). An editor
+  with no `theme` prop and no saved choice starts in Graphite; a browser that saved its settings keeps its
+  theme. To keep the old look, pass `theme: 'default'`.
+- **`<html data-theme>`.** The resolved colour scheme now lives on each editor's scope element, so two editors
+  on one page can differ. `<html data-theme>` is still mirrored for compatibility (see Deprecated).
+- **`getStatusColor` / `getStatusBackgroundColor` / `getStatusTextColor`** return `var(--fd-status-*)` instead
+  of hex. They are valid in CSS only: host code that parses the hex value breaks.
+- **`layout beautify`** (Console, WebMCP `beautify_layout`) now runs the same sweep as Tidy up instead of a
+  spacing-only pass: it puts every card in its column, clears overlaps and tight spacing, reorders ports and
+  straightens wires, keeps cards on the 20 px grid, and says so when nothing improved. `layout auto` aligns
+  tops along chains and places y on the grid. `--gap-x` / `--gap-y` are validated against the 20 px layout grid:
+  `INVALID_ARGUMENT` "a gap must be a non-negative multiple of the 20 px layout grid".
+- **Settings.** A custom settings service's `getPreferences` may return partial settings. Grid size is 10 or
+  20; any other stored value migrates to 20. `ui.consoleHeight` defaults to 220 (was 300).
+- **Token scales collapsed** (values move, names stay). Type is 11 / 12 / 13 / 15 / 20 / 24 px (`--fd-text-sm`
+  14 → 13, `--fd-text-base` 16 → 15, `--fd-text-lg` 18 → 20); spacing sits on a 4 px grid (`--fd-space-2xs` 6 →
+  4, `--fd-space-sm` 10 → 8, `--fd-space-lg` 14 → 12); `--fd-radius-md` 6 → 4 px. Sites that override these
+  tokens are unaffected.
+- **Lighter frame.** The navbar is 48 px (`--fd-navbar-height`, was 60). The status bar under the canvas is
+  gone: the node count sits in the zoom control, with the cycle warning. The minimap is 120×72 and hides when
+  the canvas is under 800 px wide (`showMinimap` still wins). The Console is a strip along the canvas's bottom
+  edge (opens at 220 px, height saved). One panel header and one composer are shared by the Playground, the
+  Assistant, the inspector, settings, overlays and the Console.
+- **The AI Assistant** is a tab beside Nodes in the left slot, in Edit mode only; it keeps its conversation
+  across tab switches and Test mode. `consolePlacement` places the Command Console alone and the console
+  toggle opens only the Console; `consolePlacement: 'sidebar'` stays valid and `features.assistant: false`
+  still hides the Assistant. A host that set `disableSidebar` keeps the Assistant as a tab of the console group
+  (until 3.0). `bottomPanelTab: 'chat'` in stored settings is accepted and ignored.
+- **Playground steps fold into one row per turn** ("8 steps · 82 ms · 1 waiting"), opening a compact table; a
+  failed step's error stays visible; the turn's run notices fold in. **Expand steps by default**
+  (`playground.expandSteps`, off) keeps them open. The status badge's hover details panel is gone: those facts
+  are in the inspector's Last run tab, and `status.overlay.tooltip` takes only `{ status }`.
+- A workflow's settings open as a resizable sheet over the canvas. Toasts appear top-centre under the navbar
+  (at most three, one success at a time); a toast with an action stays until closed and every toast is
+  closable (the label comes from `notice.dismiss`).
+- The Playground's "Nothing will reply here" notice sits in the empty conversation with a **Playground
+  settings** button. A refused Run (missing input, or the server's 400) is shown under the Run button, not in
+  the banner (`fd.playground.launchError`). A turn started by Run without a typed message reads "Started a run"
+  instead of an empty bubble. A form input of array or object type is sent as parsed JSON; invalid JSON stops
+  the run with "Not valid JSON for its type" (`InterfaceInputsResult`'s failure branch gains `invalid`).
+- A saved or exported workflow no longer contains a node's `executionInfo`. The standalone Playground sends a
+  `predefinedMessage` starting with `/` as typed instead of reading it as a slash command.
+  `nodeExecutionService.fetchMultipleNodeExecutionInfo` rejects on a failed read (`getMultipleNodeExecutionInfo`
+  still never rejects).
+- `ConfigPanel`'s `onClose` is optional; `NodeSidebar` takes a `popover` prop.
+- `flowdrop:refresh-status` dispatched on one editor's mount container refreshes only that editor; dispatched
+  on `document` it still reaches all.
+- Internal class names changed with the shared panel header, composer and steps rows (override CSS that targets
+  them): `.flowdrop-status-bar*`, `.flowdrop-text--error`, `.flowdrop-console-toggle`,
+  `.execution-console__header|__icon|__title`, `.message-stream__log-group*`, `.playground__vertical-resizer*`,
+  `.form-prompt__form-wrapper`, `.chat-input__textarea|__send-btn|__stop-btn|__run-btn|__command-feedback-dismiss`,
+  `.ai-chat-panel__input-area|__input|__send`, the `__header|__title|__close` families of `.config-panel`,
+  `.config-panel-modal`, `.config-modal`, `.flowdrop-settings-modal`, `.surface-overlay` and `.command-console`,
+  and `.node-status-overlay__icon`. The `.node-status-overlay--{status}` modifiers are now
+  `--{running,completed,waiting,failed,skipped}`, with the raw status in `data-execution-status`. New:
+  `.steps-summary*`, `.fd-zoom-status__count`, `.node-status-overlay__pill|__outline|--compact`.
 
 ### Deprecated
 
-- The `--fd-*-display` skin tokens (`node-icon-display`, `node-circle-display`, `sidebar-{search,header,card,flat}-display`,
-  `navbar-{split,dropdown}-display`): use `FlowDropThemeConfig.display`, which wins over them. They keep
-  working (the `slate` skin still sets them) and go in 3.0.
-- `NodeStatusOverlay`'s `size` prop (no effect), `ExecutionLogs` (not rendered by any surface), messages
-  `playground.logGroup` and `playground.executionConsole.header`.
-- Messages `playground.executionConsole.readyTitle` / `readyText` (the "Ready to run" state is gone).
-- The standalone Playground, in favour of the editor's **Test mode**:
-  `Playground`, `PlaygroundStudio`, `PlaygroundApp`, `PlaygroundModal` and the
-  `mountPlayground`, `mountPlaygroundStudio`, `mountPlaygroundApp` and
-  `unmountPlayground` entries. They keep working and now warn once per page on
-  the console when mounted (not once per instance). They are removed in 3.0.
-  To migrate, embed the editor (`WorkflowEditor` / `mountFlowDropApp`) and use
-  its Test mode, which has the same conversation plus the canvas. The docked
-  Playground of Test mode is built on `PlaygroundSurface` and does not warn.
-- `data.executionInfo` on a node: read run status from
-  `fd.playground.nodeStatusFor(id)`. Hosts that still write it keep working (the
-  overlay falls back to it when the store has no entry), but it is no longer
-  saved, exported or kept across edits. `NodeOperationsHelper.applyExecutionInfo`
-  is deprecated with it. Both go in 3.0.
+- The `<html data-theme>` mirror: read the scheme from the editor's scope element instead. Removed in 3.0.
+- `FormToggle.hideLabel`, `WorkflowEditor`'s `consoleOpen` / `onToggleConsole` / `consoleToggleLabel` (the
+  console is driven by the instance's UI state, `ui.consoleOpen`), `ControlPanel.notice` and
+  `NodeStatusOverlay`'s `size`, `position` and `showDetails` (and `NodeStatusConfig.showDetails`): accepted, no
+  effect. Removed in 3.0.
+- `ui.sidebarWidth`: use `ui.sidebarWidths.nodes`; still read as its fallback.
+- Messages `chat.tools.reading` / `read` / `applied` (unused), `playground.logGroup`,
+  `playground.executionConsole.header`, `readyTitle` and `readyText`; and the function form of
+  `chat.tools.awaitingApproval` / `rejected` (now strings; both are accepted).
+- `ExecutionLogs` in the `playground` barrel (not rendered by any surface).
+- The `--fd-*-display` skin tokens (`node-icon-display`, `node-circle-display`,
+  `sidebar-{search,header,card,flat}-display`, `navbar-{split,dropdown}-display`): use
+  `FlowDropThemeConfig.display`, which wins over them. They keep working and go in 3.0.
+- The standalone Playground, in favour of the editor's **Test mode**: `Playground`, `PlaygroundStudio`,
+  `PlaygroundApp`, `PlaygroundModal` and the `mountPlayground`, `mountPlaygroundStudio`, `mountPlaygroundApp`
+  and `unmountPlayground` entries. They keep working and warn once per page on the console when mounted. They
+  are removed in 3.0. To migrate, embed the editor (`WorkflowEditor` / `mountFlowDropApp`) and use its Test mode.
+- `data.executionInfo` on a node: read run status from `fd.playground.nodeStatusFor(id)`. Hosts that still
+  write it keep working (the overlay falls back to it), but it is no longer saved, exported or kept across
+  edits. `NodeOperationsHelper.applyExecutionInfo` is deprecated with it. Both go in 3.0.
+
+### Removed
+
+- The status bar under the canvas, the floating Console button, the Playground's "Ready to run" empty state and
+  the resize splitter between its conversation and form, and the status badge's hover details panel.
+- Messages `status.overlay.statusLabel`, `executionsLabel`, `lastRunLabel`, `durationLabel`, `errorLabel` and
+  `historyLabel` (with the details panel). Overrides of them no longer type-check.
 
 ### Fixed
 
 - An inline `theme.skin` on a named theme no longer drops that theme's dark palette (`resolveTheme`).
-- A refused Run in Test mode (a missing required input, or the server's 400) is
-  now shown directly under the Run button as an inline alert, naming the inputs
-  or giving the server's message as is, instead of in the banner above the
-  panel. Chat send and session errors keep the banner. New
-  `fd.playground.launchError` / `setLaunchError`; it clears when a run starts
-  or the inputs change.
-- A turn started by Run without a typed message (a form or run-only workflow)
-  no longer shows as an empty user bubble: it reads "Started a run", or names
-  the inputs it carried ("Ran with values, mode"). New messages
-  `playground.emptyTurn.run` / `playground.emptyTurn.withInputs`.
-- A form input of array or object type (a Playground form field with no item
-  schema renders as a text box) is sent as parsed JSON: `[2, 3, 4]` reaches the
-  server as an array, not a string the server refuses. Text that is not JSON of
-  the entry's shape stops the run with "Not valid JSON for its type: <names>"
-  under Run. `InterfaceInputsResult`'s failure branch gains `invalid` (the
-  entries whose text did not parse) beside `missing`; new message
-  `playground.inputForm.invalidJson`.
-
-- The Assistant composer no longer clips its placeholder at the default panel
-  width (the field is two lines tall), and "+ Attach a run" sits in the
-  composer's own row with matching padding. The Console input's placeholder
-  now truncates with an ellipsis instead of overflowing a narrow panel.
-
-- The run bar's end time and the pending-signal lock no longer depend on an
-  effect seeing every session status change: the run controller hears each
-  change synchronously, so two changes in one flush are both counted and a
-  run ends at the moment it ended, not when the next flush ran. `fd.runs.activeRun`
-  is memoised (the same object until something it reads changes).
-- Refusing a run on an unsaved workflow now uses the configured messages
-  (`playground.saveFirst`) instead of hardcoded English.
-
-- Test mode on a narrow screen: the Playground drawer ran under the 400px
-  inspector at 768px and below, where the layout lays the inspector over the
-  canvas. The drawer now stops where the inspector starts (280px at the least).
-- The docked Playground's composer and header stay inside a narrow dock: the
-  field shrinks so a long "Save & send" label keeps its button in view, a
-  notice no longer pushes the composer out of the control panel, and the
-  session chip shrinks (its name ellipsizes) instead of clipping the actions.
-- Log rows in a narrow message stream (the docked Playground in Test mode)
-  squeezed their text to a few characters per line, because the text had a
-  zero flex basis and never wrapped below the origin badge and hierarchy trail.
-- The right-hand inspector now follows the selection. With the workflow
-  settings open, opening a node for configuration used to show nothing new
-  because the workflow tabs (Settings | Interface | Playground) took
-  precedence over the node. A node now wins, closing it falls back to the
-  workflow tabs, and the close button no longer leaves a hidden node selected
-  behind the workflow tabs. The tab strip wraps on narrow widths.
-  `resolveInspectorSurface` holds the rule.
-- A failed read of a run's node statuses keeps the last good statuses of that
-  run instead of replacing them with an all-idle map, which blanked the badges
-  on a network blip. `nodeExecutionService.fetchMultipleNodeExecutionInfo`
-  rejects on a failed read; `getMultipleNodeExecutionInfo` still never rejects.
+- A form field without a title shows a readable label instead of its raw schema key.
+- Canvas nodes are named on the focusable wrapper (the inner `aria-label` was invalid ARIA), and the node
+  configure gear is visible on selected and focused nodes and on touch, not on hover only. Its label is
+  localisable (`nodes.configure`, `nodes.configureTool`, `nodes.configureIdea`).
 
 ## [2.11.0] - 2026-10-07
 
