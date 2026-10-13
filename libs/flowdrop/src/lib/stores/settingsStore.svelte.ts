@@ -190,6 +190,9 @@ function deepMergeSettings(
     DEFAULT_LAYOUT_GAP_Y
   );
 
+  // Return lanes are opt in: anything but a real `true` is off.
+  result.editor.loopbackLanes = result.editor.loopbackLanes === true;
+
   return result;
 }
 

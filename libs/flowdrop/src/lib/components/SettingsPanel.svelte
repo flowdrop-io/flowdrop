@@ -168,6 +168,13 @@
           minimum: 0,
           default: DEFAULT_LAYOUT_GAP_Y
         },
+        loopbackLanes: {
+          type: 'boolean',
+          title: 'Draw loopbacks as return lanes',
+          description:
+            'Run loopback wires under the loop instead of curving back through its cards. Tidying keeps the lane free.',
+          default: false
+        },
         showMinimap: {
           type: 'boolean',
           title: 'Show minimap',

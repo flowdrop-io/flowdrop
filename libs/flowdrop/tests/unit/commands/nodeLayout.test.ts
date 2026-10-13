@@ -357,6 +357,24 @@ describe('executor: layout node', () => {
       expect(last('layout node inspect compose')).not.toContain('spacing with loop');
     });
 
+    it('scores loopbacks as return lanes only when the setting is on', () => {
+      // A card 20 under the lane of send > loop: free with the bezier, too close to the lane.
+      workflow = {
+        ...workflow,
+        nodes: [...workflow.nodes, node('below', 1100, 440, ['x'], ['y'])]
+      };
+      context.measureNode = demoGeometry(workflow);
+      context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 20 };
+      expect(last('layout node inspect below')).not.toContain('lane with');
+      context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 20, loopbackLanes: false };
+      expect(last('layout node inspect below')).not.toContain('lane with');
+      context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 20, loopbackLanes: true };
+      expect(last('layout node inspect below')).toContain('lane with send → loop');
+      // The sweep scores with lanes too.
+      const sweep = executeCommand(parse('layout beautify --sweep --dry-run'), context);
+      expect(sweep.ok).toBe(true);
+    });
+
     it('a flag overrides the setting for one call', () => {
       context.layoutGaps = { gapX: 160, gapY: 40, gridSize: 20 };
       expect(last('layout node inspect compose --gap-x 60')).not.toContain('spacing with loop');
@@ -596,9 +614,14 @@ describe('layout node beautify: undo history', () => {
     );
     const before = { ...getEditorSettings() };
     try {
-      expect(context.layoutGaps).toEqual({ gapX: 120, gapY: 40, gridSize: before.gridSize });
-      updateSettings({ editor: { layoutGapX: 200, layoutGapY: 0 } as never });
-      expect(context.layoutGaps).toMatchObject({ gapX: 200, gapY: 0 });
+      expect(context.layoutGaps).toEqual({
+        gapX: 120,
+        gapY: 40,
+        gridSize: before.gridSize,
+        loopbackLanes: false
+      });
+      updateSettings({ editor: { layoutGapX: 200, layoutGapY: 0, loopbackLanes: true } as never });
+      expect(context.layoutGaps).toMatchObject({ gapX: 200, gapY: 0, loopbackLanes: true });
     } finally {
       updateSettings({ editor: before });
     }

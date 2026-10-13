@@ -31,3 +31,7 @@ export { sweep, formatSweep } from './sweep.js';
 export type { SweepPhase, SweepResult } from './sweep.js';
 export { applyProposalToNodes, applySweepToNodes, buildPortsConfig } from './toWorkflow.js';
 export type { NodeLayoutUpdate } from './toWorkflow.js';
+export { loopbackLanes } from './geometry.js';
+export type { LoopbackLane } from './geometry.js';
+export { lanePath } from './lanePath.js';
+export type { LanePath } from './lanePath.js';

@@ -11,8 +11,10 @@
  * forward path from the loop's target back to its source). Shorter spans are
  * placed first, so a loopback whose span overlaps one already placed goes
  * {@link LANE_TRACK_PITCH} below it: lanes nest instead of crossing, and spans
- * that do not overlap share a track. Any other card under the span has to keep
- * clear of the lane (`measure` counts it as a spacing break).
+ * that do not overlap share a track. Loops in rows far apart do not count as
+ * overlapping: only lanes whose legs share a y range stack. Any other card under the span has to keep
+ * clear of the lane (`measure` counts it as a spacing break). A lane's vertical
+ * legs sit one pitch further out per level it wraps, on both ends.
  *
  * @module layout/geometry
  */
@@ -30,7 +32,7 @@ import {
 const CURVATURE = 0.25;
 /** Points a bezier is sampled into. */
 const BEZIER_STEPS = 32;
-/** How far a return lane runs out of a handle before it turns. */
+/** How far a return lane on the innermost track runs out of a handle before it turns. */
 const LANE_STUB = 30;
 
 export type XY = readonly [number, number];
@@ -97,10 +99,21 @@ export function bezierPoints({ sx, sy, tx, ty }: WireEnds): XY[] {
   return points;
 }
 
-/** A return lane: out of the source, down to the lane, back along it, up into the target. */
-export function lanePoints({ sx, sy, tx, ty }: WireEnds, laneY: number): XY[] {
-  const ax = sx + LANE_STUB;
-  const bx = tx - LANE_STUB;
+/**
+ * A return lane: out of the source, down to the lane, back along it, up into the target.
+ *
+ * `outDepth` / `inDepth` push the two vertical legs {@link LANE_TRACK_PITCH} further out
+ * per level (the source side runs right of the source, the target side left of the
+ * target), so on both ends an outer lane turns further out than the inner lane it wraps.
+ */
+export function lanePoints(
+  { sx, sy, tx, ty }: WireEnds,
+  laneY: number,
+  outDepth = 0,
+  inDepth = outDepth
+): XY[] {
+  const ax = sx + LANE_STUB + outDepth * LANE_TRACK_PITCH;
+  const bx = tx - LANE_STUB - inDepth * LANE_TRACK_PITCH;
   return [
     [sx, sy],
     [ax, sy],
@@ -155,33 +168,95 @@ function bottomOf(cards: ReadonlyMap<string, LayoutCard>, ids: Iterable<string>)
   return bottom;
 }
 
+/** Where a loopback's lane runs: its y, and how many lanes it wraps (0 = innermost). */
+export interface LaneTrack {
+  y: number;
+  depth: number;
+}
+
 /**
- * The lane y of every loopback (by wire id). Shorter spans first; a lane goes
- * one track below every placed lane whose span overlaps its own.
+ * The track of every loopback (by wire id). Shorter spans first; a lane goes one
+ * track below every placed lane whose span overlaps its own, and one level deeper.
  */
-export function assignLanes(
+export function assignTracks(
   graph: LayoutGraph,
   cards: ReadonlyMap<string, LayoutCard> = cardIndex(graph)
-): Map<string, number> {
-  const loops: Array<{ wire: LayoutWire; lo: number; hi: number }> = [];
+): Map<string, LaneTrack> {
+  const loops: Array<{ wire: LayoutWire; lo: number; hi: number; top: number }> = [];
   for (const wire of graph.wires) {
     if (!wire.loopback) continue;
     const ends = wireEnds(wire, cards);
     if (!ends) continue;
     const [lo, hi] = span(ends);
-    loops.push({ wire, lo, hi });
+    loops.push({ wire, lo, hi, top: Math.min(ends.sy, ends.ty) });
   }
   loops.sort((a, b) => a.hi - a.lo - (b.hi - b.lo) || a.lo - b.lo);
 
-  const placed: Array<{ lo: number; hi: number; y: number }> = [];
-  const lanes = new Map<string, number>();
+  const placed: Array<{ lo: number; hi: number; top: number; y: number; depth: number }> = [];
+  const tracks = new Map<string, LaneTrack>();
   for (const loop of loops) {
     let y = bottomOf(cards, loopBody(graph, loop.wire)) + LANE_CLEARANCE;
+    let depth = 0;
+    const base = y;
     for (const other of placed) {
-      if (other.lo < loop.hi && other.hi > loop.lo) y = Math.max(y, other.y + LANE_TRACK_PITCH);
+      // Lanes only share space when their spans overlap and their legs (from the handles down
+      // to the lane) overlap too: a loop in a row far below the other one does not push it.
+      if (other.lo < loop.hi && other.hi > loop.lo && other.top < base && other.y > loop.top) {
+        y = Math.max(y, other.y + LANE_TRACK_PITCH);
+        depth = Math.max(depth, other.depth + 1);
+      }
     }
-    placed.push({ lo: loop.lo, hi: loop.hi, y });
-    lanes.set(loop.wire.id, y);
+    placed.push({ lo: loop.lo, hi: loop.hi, top: loop.top, y, depth });
+    tracks.set(loop.wire.id, { y, depth });
+  }
+  return tracks;
+}
+
+/** The lane y of every loopback (by wire id). */
+export function assignLanes(
+  graph: LayoutGraph,
+  cards: ReadonlyMap<string, LayoutCard> = cardIndex(graph)
+): Map<string, number> {
+  return new Map([...assignTracks(graph, cards)].map(([id, track]) => [id, track.y]));
+}
+
+/** A loopback drawn as a return lane. */
+export interface LoopbackLane {
+  /** The lane polyline, from the source handle to the target handle. */
+  points: XY[];
+  /** The lane's y. */
+  laneY: number;
+  /** The loop body: the cards the lane runs under. */
+  body: Set<string>;
+}
+
+/**
+ * The return lane of every loopback in the graph, by wire id: the one place a
+ * lane's points are made, so what the edge draws and what `measure` counts are
+ * the same. Loopbacks into one port share the final climb, which sits as far
+ * out as the outermost of them needs.
+ */
+export function loopbackLanes(
+  graph: LayoutGraph,
+  cards: ReadonlyMap<string, LayoutCard> = cardIndex(graph)
+): Map<string, LoopbackLane> {
+  const tracks = assignTracks(graph, cards);
+  const climb = new Map<string, number>();
+  const port = (wire: LayoutWire) => `${wire.target}\0${wire.targetPort}`;
+  for (const wire of graph.wires) {
+    const track = tracks.get(wire.id);
+    if (track) climb.set(port(wire), Math.max(climb.get(port(wire)) ?? 0, track.depth));
+  }
+  const lanes = new Map<string, LoopbackLane>();
+  for (const wire of graph.wires) {
+    const track = tracks.get(wire.id);
+    const ends = track && wireEnds(wire, cards);
+    if (!track || !ends) continue;
+    lanes.set(wire.id, {
+      points: lanePoints(ends, track.y, track.depth, climb.get(port(wire))),
+      laneY: track.y,
+      body: loopBody(graph, wire)
+    });
   }
   return lanes;
 }
@@ -193,16 +268,16 @@ export function wirePaths(
 ): WirePath[] {
   const cards = cardIndex(graph);
   const lanes =
-    options.loopbacks === 'lane' ? assignLanes(graph, cards) : new Map<string, number>();
+    options.loopbacks === 'lane' ? loopbackLanes(graph, cards) : new Map<string, LoopbackLane>();
   const paths: WirePath[] = [];
   for (const wire of graph.wires) {
     const ends = wireEnds(wire, cards);
     if (!ends) continue;
-    const laneY = lanes.get(wire.id);
+    const lane = lanes.get(wire.id);
     paths.push(
-      laneY === undefined
-        ? { wire, ...ends, points: bezierPoints(ends) }
-        : { wire, ...ends, points: lanePoints(ends, laneY), laneY, body: loopBody(graph, wire) }
+      lane
+        ? { wire, ...ends, points: lane.points, laneY: lane.laneY, body: lane.body }
+        : { wire, ...ends, points: bezierPoints(ends) }
     );
   }
   return paths;

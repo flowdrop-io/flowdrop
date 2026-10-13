@@ -47,6 +47,7 @@
   import type { AuthProvider } from '../types/auth.js';
   import ConnectionLine from './ConnectionLine.svelte';
   import FlowDropEdge from './FlowDropEdge.svelte';
+  import LoopbackLanes from './LoopbackLanes.svelte';
   import { getMessages } from '$lib/messages/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
@@ -1729,6 +1730,7 @@
                    store with an empty one when a SvelteFlow is destroyed, so after
                    the {#key} remount a helper outside would act on that empty
                    store (context-menu Delete silently did nothing). -->
+            <LoopbackLanes nodes={flowNodes} edges={flowEdges} />
             <CanvasController
               bind:this={canvasControllerRef}
               fitOnLoad={getEditorSettings().fitViewOnLoad}

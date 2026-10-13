@@ -397,6 +397,25 @@ describe('settingsStore persistence', { timeout: 30_000 }, () => {
       expect(store.getEditorSettings().gridSize).toBe(20);
     });
   });
+  describe('loopback lanes (node layout L5)', () => {
+    it('is off by default', async () => {
+      const store = await freshStore();
+      expect(store.getEditorSettings().loopbackLanes).toBe(false);
+    });
+
+    it('keeps a stored true, and reads anything else as off', async () => {
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ editor: { loopbackLanes: true } })
+      );
+      expect((await freshStore()).getEditorSettings().loopbackLanes).toBe(true);
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ editor: { loopbackLanes: 'yes' } })
+      );
+      expect((await freshStore()).getEditorSettings().loopbackLanes).toBe(false);
+    });
+  });
   describe('layout gaps (node layout L3)', () => {
     it('defaults to 120 and 40', async () => {
       const store = await freshStore();

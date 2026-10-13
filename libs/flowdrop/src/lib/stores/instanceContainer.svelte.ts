@@ -31,6 +31,7 @@ import { EditorModeStore } from './editorModeStore.svelte.js';
 import { AttachedRunStore } from './attachedRunStore.svelte.js';
 import { NodeHighlightStore } from './nodeHighlightStore.svelte.js';
 import { ConnectDragStore } from './connectDragStore.svelte.js';
+import { LoopbackLanesStore } from './loopbackLanesStore.svelte.js';
 import { EditedNodesStore } from './editedNodesStore.svelte.js';
 import { DoctorStore } from './doctorStore.svelte.js';
 import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
@@ -132,6 +133,8 @@ export interface FlowDropInstance {
   readonly highlight: NodeHighlightStore;
   /** The wire being dragged out of a port: cards light the ports that take its type. */
   readonly connectDrag: ConnectDragStore;
+  /** The return lanes loopback edges are drawn along (see the loopback lanes setting). */
+  readonly loopbackLanes: LoopbackLanesStore;
   /**
    * Which nodes changed since the shown run started (the `edited` mark in Test
    * mode). `App` feeds it the shown run and the effective mode.
@@ -343,6 +346,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     attachedRun: new AttachedRunStore(),
     highlight: new NodeHighlightStore(),
     connectDrag: new ConnectDragStore(),
+    loopbackLanes: new LoopbackLanesStore(),
     editedNodes: new EditedNodesStore(() => workflow.current),
     doctor,
     nodeTypes: new NodeTypesStore(),

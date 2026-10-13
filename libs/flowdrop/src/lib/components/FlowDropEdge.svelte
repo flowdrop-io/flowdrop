@@ -8,6 +8,9 @@
   2. Parse the SVG path to extract the cubic bezier control points
   3. Compute exact tangent at endpoint via bezier derivative P'(1) = 3(P3-P2)
   4. Shorten the path along that tangent and draw the arrowhead at the target
+
+  With the loopback lanes setting on, a loopback that has a lane in
+  fd.loopbackLanes is drawn along it instead (rounded corners, same arrowhead).
 -->
 
 <script lang="ts">
@@ -17,6 +20,7 @@
   import { ARROW_LENGTH_PX, ARROW_HALF_WIDTH_PX } from '../config/constants.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
   import { isEdgeHot } from '../utils/runEdges.js';
+  import { lanePath } from '../layout/lanePath.js';
 
   let {
     id,
@@ -81,7 +85,31 @@
     };
   }
 
+  /** Corner radius of a return lane, in flow px. */
+  const LANE_CORNER_RADIUS = 10;
+
+  /**
+   * The return lane of this edge (the loopback lanes setting), or undefined: the edge
+   * is then the bezier below. The lane's ends are the handles xyflow reports.
+   */
+  let lane = $derived.by(() => {
+    const found = fd.loopbackLanes.get(id ?? '');
+    if (!found) return undefined;
+    const points = found.points.map((p) => [...p] as [number, number]);
+    points[0] = [sourceX, sourceY];
+    points[points.length - 1] = [targetX, targetY];
+    return lanePath(points, LANE_CORNER_RADIUS, ARROW_LENGTH_PX);
+  });
+
   let computed = $derived.by(() => {
+    if (lane)
+      return {
+        path: lane.d,
+        labelX: lane.label[0],
+        labelY: lane.label[1],
+        angleDeg: lane.angleDeg
+      };
+
     // 1. Get the full bezier path from xyflow
     const [fullPath, lx, ly] = getBezierPath({
       sourceX,
@@ -127,7 +155,8 @@
   {markerStart}
   {interactionWidth}
   style={drawnStyle}
-  class={hot ? 'flowdrop-edge--hot' : undefined}
+  class={[hot && 'flowdrop-edge--hot', lane && 'flowdrop-edge--lane'].filter(Boolean).join(' ') ||
+    undefined}
 />
 
 <!-- Manual arrowhead: tip at origin pointing right, rotated to the bezier tangent -->

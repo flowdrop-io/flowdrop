@@ -29,6 +29,9 @@
                            (overlapping classify), compose (wires crossing), a loop with
                            loop_back, send and a caption; for `layout node …` commands
                            (tests/e2e/editor-node-layout.spec.ts)
+    - ?workflow=lanes    -> three loop cases for the return lanes setting: nested loops, loops
+                           side by side, two loopbacks into one port
+                           (tests/e2e/editor-loopback-lanes.spec.ts)
     - ?workflow=caption  -> a text input plus two captions (short, long); also
                            offers the caption node type
     - ?caption=1         -> offer the caption node type (the pane menu then has
@@ -1198,6 +1201,55 @@
     }
   };
 
+  // Return lanes (?workflow=lanes): the three cases of the loopback lane design. Nested loops
+  // (inner d>b wrapped by outer e>a), two loops side by side that share a track, and two
+  // loopbacks into one loop_back port that share the climb. Turn on
+  // Settings > Editor > "Draw loopbacks as return lanes" to see them as lanes.
+  const laneType = tangledType('step', 'Step', ['in', 'loop_back'], ['out']);
+  const laneNode = (id: string, x: number, y: number) => tangledNode(id, id, x, y, laneType);
+  const lanesWorkflow: Workflow = {
+    id: 'test-workflow-lanes',
+    name: 'Return Lanes Workflow',
+    description: 'Nested loops, loops side by side and two loopbacks into one port',
+    nodes: [
+      // Nested: a > b > c > d, loopbacks d>a (outer) and c>b (inner).
+      laneNode('a', 0, 0),
+      laneNode('b', 460, 0),
+      laneNode('c', 920, 0),
+      laneNode('d', 1380, 0),
+      // Side by side: e > f > g > h, loopbacks f>e and h>g.
+      laneNode('e', 0, 500),
+      laneNode('f', 460, 500),
+      laneNode('g', 1000, 500),
+      laneNode('h', 1460, 500),
+      // Two loopbacks into one port: i feeds j and k, both loop back into i.
+      laneNode('i', 0, 1000),
+      laneNode('j', 460, 1000),
+      laneNode('k', 460, 1200)
+    ],
+    edges: [
+      tangledEdge('a', 'out', 'b', 'in'),
+      tangledEdge('b', 'out', 'c', 'in'),
+      tangledEdge('c', 'out', 'd', 'in'),
+      tangledEdge('d', 'out', 'a', 'loop_back'),
+      tangledEdge('c', 'out', 'b', 'loop_back'),
+      tangledEdge('e', 'out', 'f', 'in'),
+      tangledEdge('f', 'out', 'g', 'in'),
+      tangledEdge('g', 'out', 'h', 'in'),
+      tangledEdge('f', 'out', 'e', 'loop_back'),
+      tangledEdge('h', 'out', 'g', 'loop_back'),
+      tangledEdge('i', 'out', 'j', 'in'),
+      tangledEdge('i', 'out', 'k', 'in'),
+      tangledEdge('j', 'out', 'i', 'loop_back'),
+      tangledEdge('k', 'out', 'i', 'loop_back')
+    ],
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+
   // Config-form shapes (?workflow=config): an array that a scalar field points at
   // (`x-item-ref`), a two-field array, and read-only items.
   const switchSchema = {
@@ -1442,6 +1494,7 @@
   const workflows: Record<string, Workflow> = {
     straight: straightWorkflow,
     tangled: tangledWorkflow,
+    lanes: lanesWorkflow,
     inspector: inspectorWorkflow,
     config: configWorkflow,
     caption: captionWorkflow,
