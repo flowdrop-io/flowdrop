@@ -53,7 +53,9 @@
     (props.data.metadata?.icon as string) || (props.data.config?.icon as string) || 'mdi:tools'
   );
   let toolColor = $derived(
-    (props.data.metadata?.color as string) || (props.data.config?.color as string) || '#f59e0b'
+    (props.data.metadata?.color as string) ||
+      (props.data.config?.color as string) ||
+      'var(--fd-warning)'
   );
 
   /**

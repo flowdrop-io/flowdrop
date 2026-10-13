@@ -79,7 +79,9 @@
    * Get accent color from config or metadata, with fallback
    */
   const ideaColor = $derived(
-    (props.data.config?.color as string) || (props.data.metadata?.color as string) || '#6366f1'
+    (props.data.config?.color as string) ||
+      (props.data.metadata?.color as string) ||
+      'var(--fd-accent)'
   );
 
   /**

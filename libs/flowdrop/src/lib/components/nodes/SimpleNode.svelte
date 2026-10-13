@@ -71,7 +71,9 @@
     (props.data.metadata?.icon as string) || (props.data.config?.icon as string) || 'mdi:square'
   );
   let nodeColor = $derived(
-    (props.data.metadata?.color as string) || (props.data.config?.color as string) || '#6366f1'
+    (props.data.metadata?.color as string) ||
+      (props.data.config?.color as string) ||
+      'var(--fd-accent)'
   );
 
   /**
