@@ -14,6 +14,8 @@
  * - `align`: y, one candidate per wire (the shift that levels it). Never changes x.
  * - `clear`: y, only for a card in an overlap or spacing break. Never changes x.
  *
+ * `clear` and `column` never move a card above the topmost card of the graph (Q2).
+ *
  * Annotations (notes, captions) are never laid out; they stay obstacles (D7, D8).
  * Positions stay on the 20px grid (H0). An unknown node id throws.
  *
@@ -89,6 +91,14 @@ export interface BeautifyResult {
 /** The farthest a vertical search goes, per primitive. */
 const CLEAR_REACH = 400;
 const COLUMN_REACH = 600;
+
+/**
+ * The highest a `clear` or `column` move may put a card: the top of the topmost card (Q2). A card
+ * never jumps above the graph the user laid out, even when that would score better.
+ */
+function topEdge(graph: LayoutGraph): number {
+  return Math.min(...graph.cards.filter((c) => c.kind === 'card').map((c) => c.y));
+}
 
 function cardOrThrow(graph: LayoutGraph, nodeId: string): LayoutCard {
   const card = graph.cards.find((c) => c.id === nodeId);
@@ -331,7 +341,11 @@ function proposeClear(
     return refuse(graph, card.id, 'clear', before, 'no overlap or spacing break on this card');
   }
   const shifts: Array<[number, number]> = [];
-  for (let k = LAYOUT_GRID; k <= CLEAR_REACH; k += LAYOUT_GRID) shifts.push([0, k], [0, -k]);
+  const top = topEdge(graph);
+  for (let k = LAYOUT_GRID; k <= CLEAR_REACH; k += LAYOUT_GRID) {
+    shifts.push([0, k]);
+    if (card.y - k >= top) shifts.push([0, -k]);
+  }
   return judgeMove(
     graph,
     card,
@@ -397,7 +411,11 @@ function proposeColumn(
   }
   const dx = targetX - card.x;
   const shifts: Array<[number, number]> = [[dx, 0]];
-  for (let k = LAYOUT_GRID; k <= COLUMN_REACH; k += LAYOUT_GRID) shifts.push([dx, k], [dx, -k]);
+  const top = topEdge(graph);
+  for (let k = LAYOUT_GRID; k <= COLUMN_REACH; k += LAYOUT_GRID) {
+    shifts.push([dx, k]);
+    if (card.y - k >= top) shifts.push([dx, -k]);
+  }
   return judgeMove(
     graph,
     card,

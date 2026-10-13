@@ -176,14 +176,25 @@ describe('clear', () => {
     const g = tangled();
     const p = propose(g, 'lookup', 'clear', o);
     expect(p.accepted).toBe(true);
-    expect(p.message).toBe('moved up 260 (y 200 → -60)');
+    // Up 260 would also take crossings 3 → 1, but a card never goes above the topmost card (Q2).
+    expect(p.message).toBe('moved down 100 (y 200 → 300)');
     expect(p.before.overlaps).toBe(1);
     expect(p.after.overlaps).toBe(0);
-    expect(formatChange(p.before, p.after, { onlyChanged: true })).toBe(
-      'crossings 3 → 1 · overlaps 1 → 0'
-    );
+    expect(formatChange(p.before, p.after, { onlyChanged: true })).toBe('overlaps 1 → 0');
     expect(card(p.graph, 'lookup').x).toBe(360);
     othersUntouched(g, p.graph, 'lookup');
+  });
+
+  it('never moves a card above the topmost card of the graph (Q2)', () => {
+    for (const g of [tangled(), rightToLeft()]) {
+      const top = Math.min(...g.cards.filter((c) => c.kind === 'card').map((c) => c.y));
+      for (const c of g.cards.filter((c) => c.kind === 'card')) {
+        for (const primitive of ['clear', 'column'] as const) {
+          const p = propose(g, c.id, primitive, o);
+          if (p.changes.position) expect(p.changes.position.to.y).toBeGreaterThanOrEqual(top);
+        }
+      }
+    }
   });
 
   it('tangled compose: clears the caption, which stays put', () => {
@@ -322,9 +333,9 @@ describe('beautify', () => {
   it('prints a dry run with only what changes', () => {
     const r = beautify(tangled(), 'lookup', 'clear', o);
     expect(formatBeautify(r, true)).toEqual([
-      'lookup: would move up 260 (y 200 → -60); crossings 3 → 1 · overlaps 1 → 0'
+      'lookup: would move down 100 (y 200 → 300); overlaps 1 → 0'
     ]);
-    expect(formatProposal(r.steps[0], true)[0]).toContain('would move up 260');
+    expect(formatProposal(r.steps[0], true)[0]).toContain('would move down 100');
   });
 
   it('prints a refusal as no change with the reason', () => {

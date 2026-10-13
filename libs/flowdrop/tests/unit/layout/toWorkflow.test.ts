@@ -53,6 +53,29 @@ describe('buildPortsConfig', () => {
     });
   });
 
+  it('writes reserved ports last, whatever slot the stored order gave them (Q3)', () => {
+    const n = node(
+      'cmp',
+      0,
+      0,
+      [
+        port('data', 'input'),
+        port('matchText', 'input'),
+        port('trigger', 'input', { dataType: 'trigger' }),
+        port('loop_back', 'input', { dataType: 'trigger' })
+      ],
+      [],
+      {
+        ports: {
+          inputs: [{ id: 'trigger' }, { id: 'data' }, { id: 'loop_back' }, { id: 'matchText' }]
+        }
+      }
+    );
+    expect(buildPortsConfig(n, 'inputs', ['trigger', 'matchText', 'data'])).toEqual({
+      inputs: [{ id: 'matchText' }, { id: 'data' }, { id: 'trigger' }, { id: 'loop_back' }]
+    });
+  });
+
   it('stores nothing when the new order is the default one', () => {
     const n = node('compose', 0, 0, ins, [], {
       ports: { inputs: [{ id: 'label' }, { id: 'contact' }, { id: 'extra' }] }

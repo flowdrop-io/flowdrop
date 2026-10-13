@@ -5,7 +5,8 @@
  * next `data.config` with `ports` rebuilt so the stored order matches the new handle order (D6).
  * Ports that are hidden, and ports the card does not show, keep their entries exactly; only the
  * visible ports trade places, among the slots the visible ports already held. Like the Ports tab,
- * a direction that ends up in default order with no exposure override stores nothing.
+ * a direction that ends up in default order with no exposure override stores nothing. Reserved
+ * ports are always written last.
  *
  * @module layout/toWorkflow
  */
@@ -18,7 +19,7 @@ import type {
   WorkflowNode
 } from '../types/index.js';
 import { dynamicPortToNodePort } from '../types/index.js';
-import { byDefaultOrder, orderPortsFor } from '../utils/portUtils.js';
+import { byDefaultOrder, isReservedPort, orderPortsFor } from '../utils/portUtils.js';
 import type { LayoutProposal } from './primitives.js';
 
 export interface NodeLayoutUpdate {
@@ -67,8 +68,16 @@ export function buildPortsConfig(
     order[slot] = refill[i];
   });
 
+  // Reserved ports (trigger, tool, error, loop_back) are written last, the way the card shows
+  // them, whatever slot an older stored order gave them (Q3).
+  const reserved = new Set(ports.filter(isReservedPort).map((p) => p.id));
+  const tidy = [
+    ...order.filter((id) => !reserved.has(id)),
+    ...order.filter((id) => reserved.has(id))
+  ];
+
   const byId = new Map((entries ?? []).map((e) => [e.id, e]));
-  const next: PortConfigEntry[] = order.map((id) => ({ ...(byId.get(id) ?? { id }) }));
+  const next: PortConfigEntry[] = tidy.map((id) => ({ ...(byId.get(id) ?? { id }) }));
   // Entries for ports the node no longer has stay as they were.
   for (const entry of entries ?? []) if (!known.has(entry.id)) next.push({ ...entry });
 
