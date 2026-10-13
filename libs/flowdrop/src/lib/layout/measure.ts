@@ -199,3 +199,39 @@ export function formatMetrics(metrics: LayoutMetrics): string {
     `spacing ${metrics.spacing ? `${metrics.spacing} too close` : 'ok'}`
   ].join(' · ');
 }
+
+/** `before → after`, or the value once when it did not change. */
+function change(before: string | number, after: string | number): string {
+  return before === after ? `${before}` : `${before} → ${after}`;
+}
+
+export interface FormatChangeOptions {
+  /** Print only the values that changed (dry runs): `overlaps 1 → 0`. */
+  onlyChanged?: boolean;
+}
+
+/**
+ * The score before and after on one line: `straight 0 → 1 · crossings 3 → 2 · overlaps 1 ·
+ * spacing ok`. A value that did not change is printed once; `backward` appears only when
+ * either side is non-zero; `straight` has no `/total`.
+ */
+export function formatChange(
+  before: LayoutMetrics,
+  after: LayoutMetrics,
+  options: FormatChangeOptions = {}
+): string {
+  const spacing = (m: LayoutMetrics) => (m.spacing ? `${m.spacing} too close` : 'ok');
+  const parts: Array<[string, string | number, string | number]> = [
+    ['straight', before.straight, after.straight]
+  ];
+  if (before.backward || after.backward) parts.push(['backward', before.backward, after.backward]);
+  parts.push(
+    ['crossings', before.crossings.length, after.crossings.length],
+    ['overlaps', before.overlaps, after.overlaps],
+    ['spacing', spacing(before), spacing(after)]
+  );
+  return parts
+    .filter(([, b, a]) => !options.onlyChanged || b !== a)
+    .map(([name, b, a]) => `${name} ${change(b, a)}`)
+    .join(' · ');
+}
