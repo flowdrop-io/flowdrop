@@ -99,6 +99,8 @@
   }
 
   let root: HTMLDivElement | undefined = $state();
+  /** Live text for a keyboard reorder, which would otherwise change nothing a screen reader hears. */
+  let announcement = $state('');
 
   async function onKeydown(event: KeyboardEvent, index: number): Promise<void> {
     if (disabled || !event.altKey) return;
@@ -107,6 +109,7 @@
     const to = index + (event.key === 'ArrowUp' ? -1 : 1);
     if (to < 0 || to >= items.length) return;
     onMove(index, to);
+    announcement = t.movedTo({ name: t.itemLabel({ n: to + 1 }), n: to + 1, total: items.length });
     await tick();
     root
       ?.querySelectorAll<HTMLElement>(
@@ -250,6 +253,8 @@
     </div>
   {/if}
 
+  <p class="form-array-rows__sr" role="status" aria-live="polite">{announcement}</p>
+
   {#if status === 'empty' && items.length > 0}
     <p class="form-array-rows__note" data-testid="array-default-note">{t.noDefault}</p>
   {:else if status === 'wired'}
@@ -267,6 +272,16 @@
 </div>
 
 <style>
+  .form-array-rows__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   /* One list surface: a hairline container, a header row and rows divided by
      hairlines. Cells read as text; the input chrome shows on hover and focus. */
   .form-array-rows {

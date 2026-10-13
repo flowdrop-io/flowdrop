@@ -243,6 +243,8 @@
   }
 
   let root: HTMLDivElement | undefined = $state();
+  /** Live text for a keyboard reorder, which would otherwise change nothing a screen reader hears. */
+  let announcement = $state('');
 
   /** A keyed row can lose focus when its node is moved; put it back. */
   async function refocusRow(direction: Direction, portId: string): Promise<void> {
@@ -256,7 +258,17 @@
     if (disabled || !event.altKey) return;
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
     event.preventDefault();
-    move(direction, index, event.key === 'ArrowUp' ? -1 : 1);
+    const delta = event.key === 'ArrowUp' ? -1 : 1;
+    const ordered = orderedPorts(direction);
+    const to = index + delta;
+    if (to >= 0 && to < ordered.length) {
+      announcement = m().form.array.movedTo({
+        name: ordered[index].name,
+        n: to + 1,
+        total: ordered.length
+      });
+    }
+    move(direction, index, delta);
     void refocusRow(direction, id);
   }
 
@@ -294,6 +306,7 @@
 </script>
 
 <div class="fd-ports" {id} aria-describedby={ariaDescribedBy} bind:this={root}>
+  <p class="fd-ports__sr" role="status" aria-live="polite">{announcement}</p>
   {#each [{ key: 'inputs', label: 'Inputs' }, { key: 'outputs', label: 'Outputs' }] as group (group.key)}
     {@const direction = group.key as Direction}
     {@const ordered = orderedPorts(direction)}
@@ -422,6 +435,16 @@
 </div>
 
 <style>
+  .fd-ports__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .fd-ports {
     display: flex;
     flex-direction: column;

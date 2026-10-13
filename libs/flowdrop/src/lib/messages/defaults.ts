@@ -40,6 +40,9 @@ export const defaultMessages = {
       deleteItem: ({ n }: { n: number }) => `Delete item ${n}`,
       moveUp: 'Move up',
       moveDown: 'Move down',
+      // Live announcement after an Alt+Arrow reorder (array rows and interface ports).
+      movedTo: ({ name, n, total }: { name: string; n: number; total: number }) =>
+        `${name} moved to position ${n} of ${total}`,
       delete: 'Delete item',
       rowActions: ({ n }: { n: number }) => `Actions for item ${n}`,
       // An array a sibling field names an item of (`x-item-ref`), e.g. a default branch.
@@ -525,6 +528,9 @@ export const defaultMessages = {
     workflowCanvas: 'Workflow canvas',
     executionLogs: 'Execution logs sidebar',
     settingsCategories: 'Settings categories',
+    zoomLevelsTitle: 'Zoom levels',
+    zoomLevelsHelp:
+      'Draw simpler nodes as you zoom out. The full node shows above the first level that is on.',
     searchComponents: 'Search components',
     commandConsole: 'Command Console (`)',
     // The slim strip along the canvas's bottom edge that opens the Console.
