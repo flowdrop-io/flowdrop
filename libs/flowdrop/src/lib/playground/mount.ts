@@ -60,7 +60,11 @@ import type {
   PlaygroundSessionStatus
 } from '../types/playground.js';
 import type { ColorSchemeOption, PartialSettings, SettingsCategory } from '../types/settings.js';
-import { initializeSettings } from '../stores/settingsStore.svelte.js';
+import {
+  initializeSettings,
+  getHostColorSchemeRegistration,
+  releaseHostColorScheme
+} from '../stores/settingsStore.svelte.js';
 import type { NavbarAction, NavbarBranding } from '../types/navbar.js';
 import type { PipelineViewDef } from '../types/index.js';
 import {
@@ -265,10 +269,15 @@ async function prepareMount(options: {
   endpointConfig?: EndpointConfig;
   settings?: PartialSettings;
   colorScheme?: ColorSchemeOption;
-}): Promise<EndpointConfig | undefined> {
-  const finalEndpointConfig = await resolveEndpointConfig(options.endpointConfig);
+}): Promise<{ endpointConfig: EndpointConfig | undefined; releaseColorScheme: () => void }> {
+  const endpointConfig = await resolveEndpointConfig(options.endpointConfig);
   await initializeSettings({ defaults: options.settings, colorScheme: options.colorScheme });
-  return finalEndpointConfig;
+  // The host colour scheme this mount registered, released again on destroy.
+  const registration = options.colorScheme?.host ? getHostColorSchemeRegistration() : null;
+  const releaseColorScheme = () => {
+    if (registration !== null) releaseHostColorScheme(registration);
+  };
+  return { endpointConfig, releaseColorScheme };
 }
 
 /**
@@ -321,6 +330,7 @@ function buildMountedPlayground(
   config: PlaygroundConfig,
   fd: FlowDropInstance,
   isDefault: boolean,
+  releaseColorScheme: () => void,
   onSessionStatusChange?: (
     status: PlaygroundSessionStatus,
     previousStatus: PlaygroundSessionStatus
@@ -339,6 +349,7 @@ function buildMountedPlayground(
       if (destroyed) return;
       destroyed = true;
       unsubscribeStatus?.();
+      releaseColorScheme();
       // Stops this instance's own polling and clears its session state. On the
       // page-default instance that is the legacy singleton service, so a mount
       // that owns the default keeps the old behavior; any other mount runs on
@@ -446,7 +457,7 @@ export async function mountPlayground(
     throw new Error('onClose callback is required for modal mode');
   }
 
-  const finalEndpointConfig = await prepareMount({
+  const { endpointConfig: finalEndpointConfig, releaseColorScheme } = await prepareMount({
     endpointConfig,
     settings: initialSettings,
     colorScheme: options.colorScheme
@@ -505,6 +516,7 @@ export async function mountPlayground(
     config,
     fd,
     isDefault,
+    releaseColorScheme,
     onSessionStatusChange
   );
 }
@@ -585,7 +597,7 @@ export async function mountPlaygroundStudio(
     );
   }
 
-  const finalEndpointConfig = await prepareMount({
+  const { endpointConfig: finalEndpointConfig, releaseColorScheme } = await prepareMount({
     endpointConfig,
     settings: initialSettings,
     colorScheme: options.colorScheme
@@ -621,6 +633,7 @@ export async function mountPlaygroundStudio(
     config,
     fd,
     isDefault,
+    releaseColorScheme,
     onSessionStatusChange
   );
 }
@@ -723,7 +736,7 @@ export async function mountPlaygroundApp(
     );
   }
 
-  const finalEndpointConfig = await prepareMount({
+  const { endpointConfig: finalEndpointConfig, releaseColorScheme } = await prepareMount({
     endpointConfig,
     settings: initialSettings,
     colorScheme: options.colorScheme
@@ -766,6 +779,7 @@ export async function mountPlaygroundApp(
     config,
     fd,
     isDefault,
+    releaseColorScheme,
     onSessionStatusChange
   );
 }
