@@ -3,9 +3,11 @@
   keyboard navigation. It draws nothing itself: each control inside floats on its
   own (Segmented `float`, a FloatingControl, the run pill).
 
-  role="toolbar" with roving focus: Tab enters the group once, arrow keys
-  (Left/Right for horizontal, Up/Down for vertical), Home and End move between
-  the focusable children. Compose with Segmented, IconButton, Chip, and
+  role="toolbar" with arrow-key navigation: arrow keys (Left/Right for
+  horizontal, Up/Down for vertical), Home and End move between the focusable
+  children. It is not a roving tabindex: every control keeps its own place in
+  the Tab order (the children own their tabindex, and Segmented already roves
+  its radios), so the arrows are a shortcut on top of Tab, not a replacement. Compose with Segmented, IconButton, Chip, and
   ToolbarSeparator. Native focusable elements only (buttons, links, inputs,
   elements with a non-negative tabindex).
 
