@@ -260,22 +260,26 @@
   $effect(() => {
     const interruptMessages = displayMessages.filter(isInterruptMessage);
 
-    for (const message of interruptMessages) {
-      const existing = fd.interrupts.getByMessageId(message.id);
-      if (!existing) {
-        const metadata = extractInterruptMetadata(
-          message.metadata as Record<string, unknown> | undefined
-        );
-        if (metadata) {
-          const interrupt = metadataToInterrupt(metadata, message.id, message.content);
-          fd.interrupts.addInterrupt(interrupt);
+    // Only the messages are a dependency: the store is read and written below,
+    // and an effect that tracks what it writes re-runs itself.
+    untrack(() => {
+      for (const message of interruptMessages) {
+        const existing = fd.interrupts.getByMessageId(message.id);
+        if (!existing) {
+          const metadata = extractInterruptMetadata(
+            message.metadata as Record<string, unknown> | undefined
+          );
+          if (metadata) {
+            const interrupt = metadataToInterrupt(metadata, message.id, message.content);
+            fd.interrupts.addInterrupt(interrupt);
 
-          if (message.status === 'completed') {
-            fd.interrupts.resolveInterrupt(interrupt.id, metadata.response_value);
+            if (message.status === 'completed') {
+              fd.interrupts.resolveInterrupt(interrupt.id, metadata.response_value);
+            }
           }
         }
       }
-    }
+    });
   });
 
   const interruptsByMessageId = $derived(
