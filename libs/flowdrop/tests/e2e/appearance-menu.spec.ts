@@ -48,7 +48,7 @@ test.describe('Appearance menu', () => {
     await expect(switchOf(page).getByRole('menuitemradio')).toHaveCount(3);
   });
 
-  test('picking Dark sets data-theme on the editor, not on <html>, and survives a reload', async ({
+  test('picking Dark sets data-theme on the editor (mirrored on <html>) and survives a reload', async ({
     page
   }) => {
     await open(page);
@@ -56,7 +56,8 @@ test.describe('Appearance menu', () => {
     await choice(page, 'Dark').click();
 
     await expect(root(page)).toHaveAttribute('data-theme', 'dark');
-    expect(await page.locator('html').getAttribute('data-theme')).toBeNull();
+    // The <html> mirror is deprecated and kept for hosts that key on html[data-theme].
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(choice(page, 'Dark')).toHaveAttribute('aria-checked', 'true');
 
     await page.reload();
