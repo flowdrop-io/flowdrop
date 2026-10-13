@@ -48,6 +48,8 @@ export interface FromWorkflowOptions {
   visualType?: (node: WorkflowNode) => string;
   /** The *Show descriptions* setting (the fallback geometry depends on it). */
   showDescriptions?: boolean;
+  /** Room each node's interface tags take beside it (`interfaceTagReserve`). */
+  tagReserve?: ReadonlyMap<string, { left: number; right: number }>;
 }
 
 /** Size assumed for an annotation that has not been measured. */
@@ -108,7 +110,14 @@ function cardFor(node: WorkflowNode, options: FromWorkflowOptions): LayoutCard {
   const visualType = (options.visualType ?? defaultVisualType)(node);
   const kind = kindFor(visualType);
   const measured = options.measured?.(node.id);
-  const base = { id: node.id, kind, x: node.position.x, y: node.position.y };
+  const tags = options.tagReserve?.get(node.id);
+  const base = {
+    id: node.id,
+    kind,
+    x: node.position.x,
+    y: node.position.y,
+    ...(tags && (tags.left > 0 || tags.right > 0) ? { tags: { ...tags } } : {})
+  };
 
   if (kind !== 'card') {
     return {

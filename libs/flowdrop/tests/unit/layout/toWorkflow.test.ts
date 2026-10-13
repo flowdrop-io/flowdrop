@@ -11,7 +11,7 @@ import { DEFAULT_LAYOUT_OPTIONS as BASE_OPTIONS } from '../../../src/lib/layout/
 /** These examples pin the design numbers of the curved loopback; lanes are covered in measure/geometry. */
 const o = { ...BASE_OPTIONS, loopbacks: 'curve' as const };
 import { sweep } from '../../../src/lib/layout/sweep.js';
-import { rightToLeft, tangled } from './fixtures.js';
+import { demoCard, demoWire, rightToLeft, tangled } from './fixtures.js';
 import type { NodePort, WorkflowEdge, WorkflowNode } from '../../../src/lib/types/index.js';
 
 const port = (id: string, type: 'input' | 'output', extra: Partial<NodePort> = {}): NodePort => ({
@@ -222,6 +222,33 @@ describe('applySweepToNodes', () => {
       const update = updates.find((u) => u.nodeId === card.id);
       expect(update?.position).toEqual({ x: card.x, y: card.y });
     }
+  });
+
+  it('writes the room made for interface tags, which no step records', () => {
+    const graph = {
+      cards: [
+        demoCard({ id: 'a', x: 0, y: 100, inputs: [], outputs: ['o'] }),
+        {
+          ...demoCard({ id: 'b', x: 360, y: 100, inputs: ['i'], outputs: [] }),
+          tags: { left: 100, right: 0 }
+        }
+      ],
+      wires: [demoWire('a', 'o', 'b', 'i')]
+    };
+    const nodes = graph.cards.map((c) =>
+      node(
+        c.id,
+        c.x,
+        c.y,
+        c.inputs.map((h) => port(h.portId, 'input')),
+        c.outputs.map((h) => port(h.portId, 'output'))
+      )
+    );
+    const result = sweep(graph, o);
+    expect(result.steps).toEqual([]);
+    expect(applySweepToNodes(nodes, result)).toEqual([
+      { nodeId: 'b', position: { x: 460, y: 100 } }
+    ]);
   });
 
   it('leaves annotations out and writes nothing when the sweep changed nothing', () => {

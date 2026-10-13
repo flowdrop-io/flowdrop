@@ -136,23 +136,26 @@ export function applyProposalToNodes(
 }
 
 /**
- * The updates of a sweep, one per node touched: the accepted steps, then the final translation
- * over every card (a card that only rode along is moved too). Annotations never move.
+ * The updates of a sweep, one per node touched: the port orders of the accepted steps, and every
+ * card at its place in the swept graph (which holds the steps, the room made for interface tags
+ * and the final translation, so a card that only rode along is moved too). Annotations never move.
  */
 export function applySweepToNodes(
   nodes: readonly WorkflowNode[],
   result: SweepResult
 ): NodeLayoutUpdate[] {
   const updates = new Map(applyProposalToNodes(nodes, result.steps).map((u) => [u.nodeId, u]));
-  if (result.translation) {
-    const { dx, dy } = result.translation;
-    const cards = new Set(result.graph.cards.filter((c) => c.kind === 'card').map((c) => c.id));
-    for (const node of nodes) {
-      if (!cards.has(node.id)) continue;
-      const update = updates.get(node.id) ?? { nodeId: node.id };
-      const from = update.position ?? node.position;
-      updates.set(node.id, { ...update, position: { x: from.x + dx, y: from.y + dy } });
-    }
+  const swept = new Map(
+    result.graph.cards.filter((c) => c.kind === 'card').map((c) => [c.id, c] as const)
+  );
+  for (const node of nodes) {
+    const card = swept.get(node.id);
+    if (!card) continue;
+    const { position: _stepped, ...update } = updates.get(node.id) ?? { nodeId: node.id };
+    const moved = card.x !== node.position.x || card.y !== node.position.y;
+    if (moved) updates.set(node.id, { ...update, position: { x: card.x, y: card.y } });
+    else if (update.config) updates.set(node.id, update);
+    else updates.delete(node.id);
   }
   return [...updates.values()];
 }

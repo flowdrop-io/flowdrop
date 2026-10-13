@@ -46,6 +46,7 @@ import {
 } from './geometry.js';
 import {
   LAYOUT_GRID,
+  cardSpanX,
   type LayoutCard,
   type LayoutGraph,
   type LayoutOptions,
@@ -236,10 +237,15 @@ export function isBackward(path: WirePath): boolean {
   return !path.wire.loopback && path.tx < path.sx;
 }
 
-/** The air between two boxes along x and along y; negative when their projections overlap. */
+/**
+ * The air between two boxes along x and along y; negative when their projections overlap.
+ * Along x a card reaches as far as its interface tags.
+ */
 function gaps(a: LayoutCard, b: LayoutCard): { gx: number; gy: number } {
+  const [aLeft, aRight] = cardSpanX(a);
+  const [bLeft, bRight] = cardSpanX(b);
   return {
-    gx: Math.max(b.x - (a.x + a.width), a.x - (b.x + b.width)),
+    gx: Math.max(bLeft - aRight, aLeft - bRight),
     gy: Math.max(b.y - (a.y + a.height), a.y - (b.y + b.height))
   };
 }
@@ -269,7 +275,8 @@ function laneConflicts(
   const conflicts: LayoutConflict[] = [];
   for (const card of cards) {
     if (card.kind !== 'card' || path.body?.has(card.id)) continue;
-    if (card.x >= hi || card.x + card.width <= lo) continue;
+    const [left, right] = cardSpanX(card);
+    if (left >= hi || right <= lo) continue;
     if (
       card.y + card.height > path.laneY - options.gapY + LEVEL_EPSILON &&
       card.y < path.laneY + options.gapY

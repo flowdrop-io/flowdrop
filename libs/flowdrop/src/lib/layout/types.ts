@@ -56,6 +56,16 @@ export interface LayoutCard {
   inputs: LayoutHandle[];
   /** Output handles in display order (top to bottom). */
   outputs: LayoutHandle[];
+  /**
+   * Room the card's interface tags take beside it: `left` of its inputs, `right` of its
+   * outputs. Spacing, overlaps and columns count it as part of the card.
+   */
+  tags?: { left: number; right: number };
+}
+
+/** The x range a card takes on the canvas, its interface tags included. */
+export function cardSpanX(card: LayoutCard): [left: number, right: number] {
+  return [card.x - (card.tags?.left ?? 0), card.x + card.width + (card.tags?.right ?? 0)];
 }
 
 export interface LayoutWire {

@@ -1658,7 +1658,9 @@ function layoutGraphOf(workflow: Workflow, context: CommandContext): LayoutGraph
   return fromWorkflow(workflow.nodes, workflow.edges, {
     measured: context.measureNode,
     visualType: context.visualType,
-    showDescriptions: context.showDescriptions
+    showDescriptions: context.showDescriptions,
+    // Interface tags sit beside their ports: cards keep clear of them like of the card itself.
+    tagReserve: interfaceTagReserve(workflow)
   });
 }
 

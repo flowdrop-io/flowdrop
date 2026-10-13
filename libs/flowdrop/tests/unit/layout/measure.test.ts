@@ -91,6 +91,20 @@ describe('measure: rules', () => {
     expect(measure(two({ x: 260, y: 140 }), curve)).toMatchObject({ spacing: 0, overlaps: 0 });
   });
 
+  it('interface tags count as part of the card: an output tag on the left card eats the gap', () => {
+    const g = two({ x: 240 + 120, y: 0 });
+    g.cards[0] = { ...g.cards[0], tags: { left: 0, right: 100 } };
+    expect(measure(g, curve).spacing).toBe(1);
+    g.cards[1] = { ...g.cards[1], x: 240 + 100 + 120 };
+    expect(measure(g, curve).spacing).toBe(0);
+  });
+
+  it('an input tag reaching into the card beside it is an overlap', () => {
+    const g = two({ x: 240 + 40, y: 0 });
+    g.cards[1] = { ...g.cards[1], tags: { left: 60, right: 0 } };
+    expect(measure(g, curve)).toMatchObject({ overlaps: 1 });
+  });
+
   it('the gaps are options', () => {
     expect(measure(two({ x: 340, y: 0 }), { ...curve, gapX: 100 }).spacing).toBe(0);
     expect(measure(two({ x: 0, y: 140 }), { ...curve, gapY: 20 }).spacing).toBe(0);

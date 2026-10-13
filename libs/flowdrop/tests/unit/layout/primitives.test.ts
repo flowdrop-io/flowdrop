@@ -262,6 +262,26 @@ describe('column', () => {
     expect(p.changes.position?.to.x).toBe(420);
     expect(420 % LAYOUT_GRID).toBe(0);
   });
+
+  it('moves a column further right by the room the interface tags take on both sides', () => {
+    const graph: LayoutGraph = {
+      cards: [
+        {
+          ...demoCard({ id: 'a', x: 0, y: 100, inputs: [], outputs: ['o'] }),
+          tags: { left: 0, right: 90 }
+        },
+        {
+          ...demoCard({ id: 'b', x: 100, y: 100, inputs: ['i'], outputs: [] }),
+          tags: { left: 50, right: 0 }
+        }
+      ],
+      wires: [demoWire('a', 'o', 'b', 'i')]
+    };
+    const p = propose(graph, 'b', 'column', o);
+    // 240 wide + 90 out tag + 50 in tag + 120 gap = 500.
+    expect(p.changes.position?.to.x).toBe(500);
+    expect(measure(p.graph, o).spacing).toBe(0);
+  });
 });
 
 describe('annotations', () => {

@@ -37,6 +37,7 @@ import {
 } from './measure.js';
 import {
   LAYOUT_GRID,
+  cardSpanX,
   type LayoutCard,
   type LayoutGraph,
   type LayoutHandle,
@@ -119,11 +120,12 @@ function stackShifts(
   plainReach: number
 ): number[] {
   const dys = new Set<number>();
+  const [left, right] = cardSpanX({ ...card, x });
   for (const other of graph.cards) {
     if (other.id === card.id) continue;
-    // Side by side with enough air: the vertical gap does not matter.
-    if (other.x >= x + card.width + options.gapX || other.x + other.width <= x - options.gapX)
-      continue;
+    // Side by side with enough air (interface tags included): the vertical gap does not matter.
+    const [otherLeft, otherRight] = cardSpanX(other);
+    if (otherLeft >= right + options.gapX || otherRight <= left - options.gapX) continue;
     const below =
       Math.ceil((other.y + other.height + options.gapY - y) / LAYOUT_GRID) * LAYOUT_GRID;
     const above =
@@ -482,17 +484,41 @@ export function columnRanks(graph: LayoutGraph): Map<string, number> {
   return rank;
 }
 
-/** Where columns start (x of rank 0) and how far apart they are. */
+/**
+ * Where columns start (x of rank 0) and how far apart they are: the widest card plus the gap.
+ * A column whose cards have interface tags moves further right by the room the tags take: the
+ * output tags of the column before it and the input tags of its own cards. `columnX` is the x of
+ * every rank.
+ */
 export function columnGrid(
   graph: LayoutGraph,
   options: LayoutOptions
-): { origin: number; stride: number } {
+): { origin: number; stride: number; columnX: (rank: number) => number } {
   const ranks = columnRanks(graph);
   const cards = graph.cards.filter((c) => c.kind === 'card');
   const first = options.columnOrigin === 'left' ? [] : cards.filter((c) => ranks.get(c.id) === 0);
   const origin = snap(Math.min(...(first.length ? first : cards).map((c) => c.x)));
   const widest = Math.max(...cards.map((c) => c.width));
-  return { origin, stride: ceilToGrid(widest + options.gapX) };
+  const stride = ceilToGrid(widest + options.gapX);
+
+  // Per rank: how far the cards reach right of the column x, and how far their tags reach left.
+  const reachRight = new Map<number, number>();
+  const reachLeft = new Map<number, number>();
+  for (const card of cards) {
+    const rank = ranks.get(card.id) ?? 0;
+    const right = card.width + (card.tags?.right ?? 0);
+    reachRight.set(rank, Math.max(reachRight.get(rank) ?? widest, right));
+    reachLeft.set(rank, Math.max(reachLeft.get(rank) ?? 0, card.tags?.left ?? 0));
+  }
+  const xs = [origin];
+  const columnX = (rank: number): number => {
+    for (let r = xs.length; r <= rank; r++) {
+      const right = reachRight.get(r - 1) ?? widest;
+      xs.push(xs[r - 1] + ceilToGrid(right + (reachLeft.get(r) ?? 0) + options.gapX));
+    }
+    return xs[Math.max(0, rank)];
+  };
+  return { origin, stride, columnX };
 }
 
 function proposeColumn(
@@ -503,8 +529,7 @@ function proposeColumn(
   force: boolean
 ): LayoutProposal {
   const rank = columnRanks(graph).get(card.id) ?? 0;
-  const { origin, stride } = columnGrid(graph, options);
-  const targetX = origin + rank * stride;
+  const targetX = columnGrid(graph, options).columnX(rank);
   if (card.x === targetX) {
     return refuse(graph, card.id, 'column', before, `already in column ${rank}`);
   }

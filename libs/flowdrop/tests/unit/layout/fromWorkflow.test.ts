@@ -121,6 +121,17 @@ describe('fromWorkflow', () => {
     expect(g.cards[0].outputs.find((h) => h.portId === 'item')?.fixed).toBeUndefined();
   });
 
+  it('carries the room interface tags take beside a node, and leaves it off without tags', () => {
+    const g = fromWorkflow([node('a'), node('b')], [], {
+      tagReserve: new Map([
+        ['a', { left: 0, right: 110 }],
+        ['b', { left: 0, right: 0 }]
+      ])
+    });
+    expect(g.cards[0].tags).toEqual({ left: 0, right: 110 });
+    expect(g.cards[1].tags).toBeUndefined();
+  });
+
   it('notes and captions are annotations with no handles', () => {
     const g = fromWorkflow(
       [

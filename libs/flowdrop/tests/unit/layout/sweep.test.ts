@@ -19,7 +19,7 @@ import {
 /** These examples pin the design numbers of the curved loopback; lanes are covered in measure/geometry. */
 const OPTIONS = { ...BASE_OPTIONS, loopbacks: 'curve' as const };
 import type { LayoutGraph } from '$lib/layout/index.js';
-import { demoCard, jurgenDries, rightToLeft, tangled } from './fixtures.js';
+import { demoCard, demoWire, jurgenDries, rightToLeft, tangled } from './fixtures.js';
 
 const positions = (g: LayoutGraph) => Object.fromEntries(g.cards.map((c) => [c.id, [c.x, c.y]]));
 const topLeft = (g: LayoutGraph) => {
@@ -177,6 +177,28 @@ describe('sweep: Jurgen - Dries (H4, no wire through a port)', () => {
       'confirmation',
       'entity_save'
     ]);
+  });
+});
+
+describe('sweep: interface tags', () => {
+  // a → b → c in a row, all level, but b's input tag runs into a and its output tag into c.
+  const tagged = (): LayoutGraph => ({
+    cards: [
+      demoCard({ id: 'a', x: 0, y: 100, inputs: [], outputs: ['o'] }),
+      {
+        ...demoCard({ id: 'b', x: 360, y: 100, inputs: ['i'], outputs: ['o'] }),
+        tags: { left: 100, right: 100 }
+      },
+      demoCard({ id: 'c', x: 720, y: 100, inputs: ['i'], outputs: [] })
+    ],
+    wires: [demoWire('a', 'o', 'b', 'i'), demoWire('b', 'o', 'c', 'i')]
+  });
+
+  it('moves the columns apart instead of moving a card off its row', () => {
+    const r = sweep(tagged(), OPTIONS);
+    expect(positions(r.graph)).toEqual({ a: [0, 100], b: [460, 100], c: [920, 100] });
+    expect(r.after).toMatchObject({ spacing: 0, overlaps: 0, straight: 2 });
+    expect(r.phases[0].notes).toContain('columns moved apart to make room for interface tags');
   });
 });
 

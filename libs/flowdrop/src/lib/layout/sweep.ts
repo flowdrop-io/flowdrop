@@ -26,7 +26,7 @@ import {
   score,
   type LayoutMetrics
 } from './measure.js';
-import { columnRanks, propose, type LayoutProposal } from './primitives.js';
+import { columnGrid, columnRanks, propose, type LayoutProposal } from './primitives.js';
 import { LAYOUT_GRID, type LayoutCard, type LayoutGraph, type LayoutOptions } from './types.js';
 
 /** `ports` + `align` passes at most. */
@@ -136,8 +136,24 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
   );
   // Columns count from the leftmost card here, not the start node: every card is about to move,
   // and phase 3 puts the graph back where it was.
-  for (const card of byColumn)
-    run(phases[0], card.id, 'column', { ...options, columnOrigin: 'left' }, true);
+  const columnOptions: LayoutOptions = { ...options, columnOrigin: 'left' };
+  // Interface tags widen the columns they sit between. Every card first moves right by the room
+  // the tags take left of its column, rows unchanged: a card going to its wider column would
+  // otherwise run into the next column's cards, not moved yet, and dodge off its row.
+  const grid = columnGrid(current, columnOptions);
+  const room = (id: string) => {
+    const rank = ranks.get(id) ?? 0;
+    return grid.columnX(rank) - (grid.origin + rank * grid.stride);
+  };
+  if (cards.some((c) => room(c.id) > 0)) {
+    current = {
+      ...current,
+      cards: current.cards.map((c) => (c.kind === 'card' ? { ...c, x: c.x + room(c.id) } : c))
+    };
+    metrics = measure(current, options);
+    phases[0].notes.push('columns moved apart to make room for interface tags');
+  }
+  for (const card of byColumn) run(phases[0], card.id, 'column', columnOptions, true);
 
   // Phase 1: in each overlapping or too-close pair the lower card yields. A card `clear` refuses
   // is skipped for the conflicts after it (and the other card of its pair gets a go); it is tried
