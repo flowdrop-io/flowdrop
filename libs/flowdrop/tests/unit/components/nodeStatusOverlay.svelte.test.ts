@@ -31,10 +31,10 @@ const info = (over: Partial<NodeExecutionInfo>): NodeExecutionInfo => ({
   ...over
 });
 
-function render(executionInfo: NodeExecutionInfo, zoom?: number) {
+function render(executionInfo: NodeExecutionInfo) {
   app = mount(NodeStatusOverlay, {
     target: document.body,
-    props: { nodeId: 'n1', executionInfo, zoom }
+    props: { nodeId: 'n1', executionInfo }
   });
   return document.querySelector('.node-status-overlay') as HTMLElement | null;
 }
@@ -75,16 +75,20 @@ describe('NodeStatusOverlay', () => {
     expect(document.querySelector('.flowdrop-ui-status-pill__count')?.textContent).toBe('3');
   });
 
-  it('does not counter-scale against the zoom: the zoom tier (CSS) sizes the pill', () => {
-    for (const zoom of [0.4, 0.5, 1]) {
-      render(info({}), zoom);
-      const pill = document.querySelector<HTMLElement>('.flowdrop-ui-status-pill');
-      expect(pill?.style.transform).toBe('');
-      const outline = document.querySelector<HTMLElement>('.node-status-overlay__outline');
-      expect(outline?.getAttribute('style')).toBeNull();
-      unmount(app!);
-      document.body.innerHTML = '';
-    }
+  it('does not counter-scale: the zoom tier (CSS) sizes the pill', () => {
+    render(info({}));
+    const pill = document.querySelector<HTMLElement>('.flowdrop-ui-status-pill');
+    expect(pill?.style.transform).toBe('');
+    const outline = document.querySelector<HTMLElement>('.node-status-overlay__outline');
+    expect(outline?.getAttribute('style')).toBeNull();
+  });
+
+  it('still accepts the 2.11.0 props (position, showDetails) as no-ops', () => {
+    app = mount(NodeStatusOverlay, {
+      target: document.body,
+      props: { executionInfo: info({}), position: 'top-left', showDetails: true, size: 'lg' }
+    });
+    expect(document.querySelector('.node-status-overlay')).not.toBeNull();
   });
 
   it('hover text is the count and the last error line, with no timing', () => {

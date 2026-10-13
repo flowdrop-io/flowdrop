@@ -46,7 +46,7 @@
           : 'var(--fd-node-border)'}; border-radius: 10px; background: var(--fd-card); color: var(--fd-foreground); font: 13px var(--fd-font-sans); display: grid; place-items: center;"
       >
         {c.name}
-        <NodeStatusOverlay nodeId={c.name} executionInfo={info(c)} {zoom} />
+        <NodeStatusOverlay nodeId={c.name} executionInfo={info(c)} />
       </div>
     </div>
   </div>

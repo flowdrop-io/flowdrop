@@ -15,8 +15,6 @@
   (utils/nodeStatus.ts); a node whose status maps to nothing (idle, pending)
   draws nothing.
 
-  `zoom` is a prop, not read from the canvas here, so the component works
-  outside a SvelteFlow (stories, tests); UniversalNode passes the viewport zoom.
   Styled with BEM syntax
 -->
 
@@ -39,13 +37,15 @@
   interface Props {
     nodeId?: string;
     executionInfo?: NodeExecutionInfo;
-    /** @deprecated No effect: the pill has one size per zoom tier. */
+    /** @deprecated No effect: the pill has one size per zoom tier. Removed in 3.0. */
     size?: 'sm' | 'md' | 'lg';
-    /** @deprecated No effect: the zoom tier (CSS) sets the size. */
-    zoom?: number;
+    /** @deprecated No effect: the overlay is always drawn on the node's top edge. Removed in 3.0. */
+    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    /** @deprecated No effect: hover shows the count and last error only. Removed in 3.0. */
+    showDetails?: boolean;
   }
 
-  // eslint-disable-next-line svelte/no-unused-props -- `size` and `zoom` are deprecated no-ops kept for hosts
+  // eslint-disable-next-line svelte/no-unused-props -- `size`, `position` and `showDetails` are deprecated no-ops kept for hosts
   let props: Props = $props();
 
   const executionInfo = $derived(props.executionInfo);
