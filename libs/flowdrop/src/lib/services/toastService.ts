@@ -156,6 +156,9 @@ function present(
   defaults: { duration: number; id?: string; dismissible: boolean }
 ): string {
   const content = toContent(input, options);
+  // An action is the next step the user may take: it must not vanish while they
+  // read (or reach for) it, so it never auto-dismisses and can always be closed.
+  const sticky = content.action !== undefined;
   const id = options?.id ?? defaults.id ?? dedupeId(kind, content);
   for (const evicted of planToastEviction(activeToasts(), { id, kind })) {
     toast.dismiss(evicted);
@@ -168,9 +171,9 @@ function present(
       details: content.details ?? [],
       action: content.action,
       kind,
-      dismissible: defaults.dismissible
+      dismissible: sticky || defaults.dismissible
     },
-    duration: options?.duration ?? defaults.duration,
+    duration: sticky ? Infinity : (options?.duration ?? defaults.duration),
     position: options?.position ?? DEFAULT_POSITION
   });
 }

@@ -19,6 +19,7 @@
    */
   import { toast as toastApi, type Toast } from 'svelte-5-french-toast';
   import Button from '../primitives/Button.svelte';
+  import { m } from '../../messages/context.js';
   import type { ToastAction, ToastKind } from '../../services/toastQueue.js';
 
   interface Props {
@@ -97,7 +98,7 @@
     <button
       type="button"
       class="flowdrop-toast-close"
-      aria-label="Dismiss"
+      aria-label={m().notice.dismiss}
       onclick={() => toastApi.dismiss(toast.id)}
     >
       <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
