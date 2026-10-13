@@ -133,6 +133,31 @@ describe('fromWorkflow', () => {
     expect(g.cards[1].kind).toBe('caption');
   });
 
+  it('without a canvas measurement uses the card contract, not the stale size saved on the node', () => {
+    // Saved workflows carry a `measured` width of 290 from an older card.
+    const stale = {
+      ...node('a', { inputs: [port('text', 'input')], outputs: [port('out', 'output')] }),
+      measured: { width: 290, height: 500 }
+    } as WorkflowNode;
+    const [card] = fromWorkflow([stale], []).cards;
+    expect(card.width).toBe(280);
+    expect(card.height).toBe(100);
+    // The handles come from the same contract: the output sits on the card's right edge.
+    expect(card.outputs[0].dx).toBe(card.width);
+  });
+
+  it('the canvas measurement still wins over the contract', () => {
+    const [card] = fromWorkflow([node('a', { outputs: [port('x', 'output')] })], [], {
+      measured: () => ({
+        width: 300,
+        height: 150,
+        inputs: [],
+        outputs: [{ portId: 'x', dx: 300, dy: 70 }]
+      })
+    }).cards;
+    expect(card).toMatchObject({ width: 300, height: 150 });
+  });
+
   it('prefers the canvas measurement, sorted top to bottom', () => {
     const g = fromWorkflow(
       [node('a', { outputs: [port('x', 'output'), port('y', 'output')] })],

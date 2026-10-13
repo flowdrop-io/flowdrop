@@ -164,8 +164,11 @@ function cardFor(node: WorkflowNode, options: FromWorkflowOptions): LayoutCard {
 
   return {
     ...base,
-    width: measured?.width ?? node.measured?.width ?? geometry.width ?? NODE_WIDTH,
-    height: measured?.height ?? node.measured?.height ?? geometry.height,
+    // The canvas measurement when there is one, else the card contract. Never the size saved on
+    // the node: it was measured under an older card and goes stale (saved workflows carry a
+    // `measured` width of 290), and the handles come from the same contract.
+    width: measured?.width ?? geometry.width ?? NODE_WIDTH,
+    height: measured?.height ?? geometry.height,
     inputs: handles('input', measured?.inputs ?? computed('input')),
     outputs: handles('output', measured?.outputs ?? computed('output'))
   };
