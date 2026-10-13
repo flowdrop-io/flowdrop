@@ -144,6 +144,10 @@ export { default as PipelinePanel } from '../components/playground/PipelinePanel
 export { default as ExecutionList } from '../components/playground/ExecutionList.svelte';
 export { default as SessionManager } from '../components/playground/SessionManager.svelte';
 export { default as InputCollector } from '../components/playground/InputCollector.svelte';
+/**
+ * @deprecated Not rendered by any surface; the Playground's execution console and the run
+ * pages replace it. Removed in 3.0.
+ */
 export { default as ExecutionLogs } from '../components/playground/ExecutionLogs.svelte';
 export { default as MessageBubble } from '../components/playground/MessageBubble.svelte';
 
