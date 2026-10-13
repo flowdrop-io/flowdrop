@@ -54,6 +54,7 @@
   import PortLaneChip from '$lib/components/ports/PortLaneChip.svelte';
   import type { PortCompatibilityChecker } from '$lib/utils/connections.js';
   import { focusOnMount } from '$lib/utils/focus.js';
+  import { m } from '$lib/messages/index.js';
 
   interface Props {
     /** The rows, in display order; empty groups are not drawn. */
@@ -95,7 +96,10 @@
     onCancel
   }: Props = $props();
 
+  const msgs = $derived(m().connectTo);
+
   let query = $state('');
+  let listEl = $state<HTMLElement>();
   let highlightedKey = $state<string | null>(null);
 
   const total = $derived(groups.reduce((sum, group) => sum + group.options.length, 0));
@@ -149,7 +153,19 @@
     if (confirmOnClick) onConfirm(option);
   }
 
+  // Keep the highlighted row in view as the keys walk a long list.
+  $effect(() => {
+    if (!highlighted || !listEl) return;
+    listEl.querySelector<HTMLElement>(`#${CSS.escape(optionId(highlighted))}`)?.scrollIntoView?.({
+      block: 'nearest'
+    });
+  });
+
   function handleKeydown(event: KeyboardEvent): void {
+    // In the search field Home/End keep moving the caret once there is text.
+    if ((event.key === 'Home' || event.key === 'End') && event.target !== event.currentTarget) {
+      if (query !== '') return;
+    }
     if (event.key === 'Escape') {
       event.preventDefault();
       onCancel?.();
@@ -184,6 +200,9 @@
       value={query}
       placeholder={searchPlaceholder}
       aria-label={searchLabel}
+      aria-controls="{idPrefix}-list"
+      aria-activedescendant={highlighted ? optionId(highlighted) : undefined}
+      onkeydown={handleKeydown}
       oninput={(e) => (query = e.currentTarget.value)}
     >
       {#snippet leading()}
@@ -192,13 +211,17 @@
     </Input>
   {/if}
 
+  <!-- With no rows the box is a status message, not a listbox (a listbox may only
+       own options and groups); it stays focusable so Escape still cancels. -->
   <div
+    id="{idPrefix}-list"
     class="wf-portlist__list"
-    role="listbox"
+    role={filtered.length > 0 ? 'listbox' : 'status'}
     tabindex="0"
+    bind:this={listEl}
     {@attach focusOnMount(autofocus)}
-    aria-label={listLabel}
-    aria-activedescendant={highlighted ? optionId(highlighted) : undefined}
+    aria-label={filtered.length > 0 ? listLabel : undefined}
+    aria-activedescendant={filtered.length > 0 && highlighted ? optionId(highlighted) : undefined}
     onkeydown={handleKeydown}
   >
     {#if total === 0}
@@ -230,6 +253,12 @@
               <Icon icon="heroicons:chevron-right" />
               <span class="wf-portlist__option-port">{option.port.name}</span>
               <PortLaneChip {checker} port={option.port} />
+              {#if option.current}
+                <span class="wf-portlist__sr">, {msgs.optionCurrent}</span>
+              {/if}
+              {#if option.dimmed}
+                <span class="wf-portlist__sr">, {msgs.optionTaken}</span>
+              {/if}
             </span>
             {#if option.port.description}
               <span class="wf-portlist__option-desc">{option.port.description}</span>
@@ -250,9 +279,15 @@
         </div>
       {/snippet}
 
-      {#each filteredGroups as group (group.title)}
-        <div class="wf-portlist__group" role="presentation">
-          <span class="wf-portlist__group-title">{group.title}</span>
+      {#each filteredGroups as group, groupIndex (group.title)}
+        <div
+          class="wf-portlist__group"
+          role="group"
+          aria-labelledby="{idPrefix}-group-{groupIndex}"
+        >
+          <span class="wf-portlist__group-title" id="{idPrefix}-group-{groupIndex}"
+            >{group.title}</span
+          >
           {#each group.options as option (option.key)}
             {@render row(option)}
           {/each}
@@ -287,6 +322,15 @@
     outline: none;
     border-color: var(--fd-primary);
     box-shadow: 0 0 0 var(--fd-ring-width) var(--fd-primary-muted);
+  }
+
+  .wf-portlist__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .wf-portlist__empty {

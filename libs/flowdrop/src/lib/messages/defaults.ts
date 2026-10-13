@@ -377,7 +377,10 @@ export const defaultMessages = {
     wired: 'Wired',
     noPorts: 'No other node has a port to connect to.',
     noMatches: 'No ports match your search.',
-    popoverLabel: 'Connect to a port'
+    popoverLabel: 'Connect to a port',
+    // Screen-reader text for rows that are only marked visually.
+    optionCurrent: 'current',
+    optionTaken: 'already taken'
   },
 
   // The run bar on the Edit canvas: shown only while a run exists.
