@@ -266,6 +266,30 @@ describe('settingsStore persistence', { timeout: 30_000 }, () => {
       expect(store.getHostColorScheme()).toBeNull();
     });
 
+    it('a mount releases only its own host registration', async () => {
+      const store = await freshStore();
+      const unsubscribeA = vi.fn();
+      const unsubscribeB = vi.fn();
+      await store.initializeSettings({
+        colorScheme: host({ value: 'light', subscribe: () => unsubscribeA })
+      });
+      const a = store.getHostColorSchemeRegistration();
+      store.releaseHostColorScheme(a);
+      expect(unsubscribeA).toHaveBeenCalled();
+      expect(store.getHostColorScheme()).toBeNull();
+
+      await store.initializeSettings({
+        colorScheme: host({ value: 'light', subscribe: () => unsubscribeB })
+      });
+      const b = store.getHostColorSchemeRegistration();
+      // A stale release (mount A destroyed after B registered) leaves B alone.
+      store.releaseHostColorScheme(a);
+      expect(unsubscribeB).not.toHaveBeenCalled();
+      expect(store.getHostColorScheme()).not.toBeNull();
+      store.releaseHostColorScheme(b);
+      expect(unsubscribeB).toHaveBeenCalled();
+    });
+
     it("a stored 'host' without the option falls back to auto", async () => {
       localStorage.setItem(
         SETTINGS_STORAGE_KEY,

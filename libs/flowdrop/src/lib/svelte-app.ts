@@ -44,6 +44,8 @@ import type {
 } from './types/settings.js';
 import {
   initializeSettings,
+  getHostColorSchemeRegistration,
+  releaseHostColorScheme,
   getBehaviorSettings,
   onSettingsChange
 } from './stores/settingsStore.svelte.js';
@@ -386,6 +388,8 @@ function releaseInstance(fd: FlowDropInstance, isDefault: boolean): void {
   if (isDefault) {
     fd.workflow.setOnDirtyStateChange(null);
     fd.workflow.setOnWorkflowChange(null);
+    // A host run's status poll must not outlive the mount.
+    fd.runs.stopHostPolling();
     defaultInstanceClaimed = false;
   } else {
     fd.destroy();
@@ -577,6 +581,8 @@ export async function mountFlowDropApp(
     defaults: initialSettings,
     colorScheme
   });
+  // The registration this mount made, if any, released again on destroy.
+  const hostColorSchemeRegistration = colorScheme?.host ? getHostColorSchemeRegistration() : null;
 
   // Resolve and apply endpoint config, port config and categories to this
   // instance (see configureInstance).
@@ -739,6 +745,10 @@ export async function mountFlowDropApp(
       if (state.unsubscribeDraftSettings) {
         state.unsubscribeDraftSettings();
         state.unsubscribeDraftSettings = null;
+      }
+
+      if (hostColorSchemeRegistration !== null) {
+        releaseHostColorScheme(hostColorSchemeRegistration);
       }
 
       // Release this mount's instance: clears its callbacks (and, for

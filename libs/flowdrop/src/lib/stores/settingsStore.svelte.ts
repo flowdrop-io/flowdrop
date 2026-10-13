@@ -230,6 +230,9 @@ let systemThemeState = $state<ResolvedTheme>(
  */
 let hostScheme = $state<{ label: string; value: HostColorSchemeValue } | null>(null);
 let hostUnsubscribe: (() => void) | null = null;
+// Which setHostColorScheme() call owns the registration; lets a mount release
+// its own without clearing one a later mount registered.
+let hostRegistration = 0;
 
 // =========================================================================
 // Getter Functions (replacing derived stores)
@@ -356,6 +359,7 @@ export function getHostColorScheme(): {
  * @param option - The mount option, or null/undefined to clear it
  */
 export function setHostColorScheme(option: ColorSchemeOption | null | undefined): void {
+  hostRegistration++;
   hostUnsubscribe?.();
   hostUnsubscribe = null;
   const host = option?.host;
@@ -373,6 +377,22 @@ export function setHostColorScheme(option: ColorSchemeOption | null | undefined)
       logger.warn('colorScheme.host.subscribe failed:', error);
     }
   }
+}
+
+/**
+ * The id of the current host colour scheme registration, for a mount to hand
+ * back to {@link releaseHostColorScheme} when it is destroyed.
+ */
+export function getHostColorSchemeRegistration(): number {
+  return hostRegistration;
+}
+
+/**
+ * Release the host colour scheme (and its `subscribe`) if `registration` is
+ * still the current one. A no-op when a later mount has registered its own.
+ */
+export function releaseHostColorScheme(registration: number): void {
+  if (registration === hostRegistration) setHostColorScheme(null);
 }
 
 /**
