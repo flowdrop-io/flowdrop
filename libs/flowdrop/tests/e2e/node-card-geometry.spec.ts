@@ -3,7 +3,8 @@
  *
  * /test/cards renders the review's stress cards at 100% zoom. Every handle
  * centre must be a multiple of 20 from the node top, the header is 60px, exec
- * pins sit at y = 20, the first row at y = 80 (140 with the description band),
+ * pins sit at y = 40 (G9: one grid step below the
+ * top corner, clear of the gear), the first row at y = 80 (140 with the description band),
  * the pitch is 40, the width is 280 or 320, and the 1px border does not add to
  * the box (the live node used to be 581px tall for a 580px box).
  */
@@ -81,7 +82,7 @@ for (const descriptions of [false, true]) {
           expect(h.y % 20, `${h.id} y=${h.y}`).toBe(0);
           expect(h.x === 0 || h.x === m.width, `${h.id} x=${h.x}`).toBe(true);
           if (h.id.endsWith('-trigger')) {
-            expect(h.y, `${h.id} is a header pin`).toBe(20);
+            expect(h.y, `${h.id} is a header pin`).toBe(40);
           } else {
             expect((h.y - first) % 40, `${h.id} sits on a row`).toBe(0);
             expect(h.y).toBeGreaterThanOrEqual(first);
@@ -94,8 +95,8 @@ for (const descriptions of [false, true]) {
     test('a branch trigger stays a row, the completion trigger is a pin', async ({ page }) => {
       const m = await measure(page, 'types.1');
       const byId = Object.fromEntries(m.handles.map((h) => [h.id, h]));
-      expect(byId['types.1-output-trigger'].y).toBe(20);
-      expect(byId['types.1-input-trigger'].y).toBe(20);
+      expect(byId['types.1-output-trigger'].y).toBe(40);
+      expect(byId['types.1-input-trigger'].y).toBe(40);
       // branch triggers sink below data ports (reserved-port ordering) but stay rows
       const first = descriptions ? 140 : 80;
       expect(byId['types.1-output-result'].y).toBe(first);
@@ -152,7 +153,7 @@ test.describe('Gateway and Tool on the card (G8d)', () => {
     const byId = Object.fromEntries(m.handles.map((h) => [h.id, h]));
     expect(m.width).toBe(280);
     expect(m.height).toBe(60 + 5 * 40);
-    expect(byId['switch.1-input-trigger'].y).toBe(20);
+    expect(byId['switch.1-input-trigger'].y).toBe(40);
     expect(byId['switch.1-input-value'].y).toBe(80);
     ['draft', 'review', 'published', 'archived', 'default'].forEach((b, i) => {
       expect(byId[`switch.1-output-${b}`].y, b).toBe(80 + i * 40);

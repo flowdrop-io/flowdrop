@@ -46,8 +46,12 @@ test.describe('Graphite theme', () => {
 
   test('is listed in settings and applies Inter, ink primary and blue accent', async ({ page }) => {
     await gotoEditor(page, 'simple');
-    expect(await fontFamily(page)).not.toContain('Inter Variable');
+    // Graphite is the default theme (63aab27f): a fresh editor already applies Inter.
+    await expect.poll(() => fontFamily(page)).toContain('Inter Variable');
 
+    // Pick Default, then Graphite again, so the settings picker itself is exercised.
+    await chooseUiTheme(page, 'default');
+    await expect.poll(() => fontFamily(page)).not.toContain('Inter Variable');
     await chooseUiTheme(page, 'graphite');
 
     await expect.poll(() => fontFamily(page)).toContain('Inter Variable');

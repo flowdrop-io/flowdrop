@@ -163,10 +163,11 @@ test.describe('Test mode', () => {
       'aria-selected',
       'true'
     );
-    // An overlay, not a column: 360px wide, flush right, and the canvas did not reflow.
+    // An overlay, not a column: 360px wide, floating 8px off the right edge (Graphite's
+    // --fd-sheet-inset, the default theme), and the canvas did not reflow.
     const box = await sheet.boundingBox();
     expect(Math.round(box!.width)).toBe(360);
-    expect(Math.round(box!.x + box!.width)).toBe(1440);
+    expect(Math.round(box!.x + box!.width)).toBe(1440 - 8);
     expect((await pane.boundingBox())!.width).toBe(before!.width);
     await expect(page.locator('.flowdrop-main-layout__sidebar--right')).toHaveCount(0);
 
