@@ -147,6 +147,13 @@ describe('sweep: Jurgen - Dries (H4, no wire through a port)', () => {
     expect(result.after.crossings).toEqual([]);
   });
 
+  it('keeps the near miss it cannot fix without bending a straight wire', () => {
+    // message → values leaves Preview's edge 12px above `type`; moving Preview or Save would
+    // bend chat → Preview or True → trigger, and straight wires outrank near misses.
+    expect(result.before.nearMisses).toHaveLength(2);
+    expect(result.after.nearMisses.map((p) => `${p.card}.${p.port}`)).toEqual(['messenger.type']);
+  });
+
   it('message → values bends instead of running level through Preview and Confirm', () => {
     const values = result.after.wires.find(
       (w) => w.wire.id === 'chat_input.message>entity_save.values'

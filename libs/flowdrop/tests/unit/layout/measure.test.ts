@@ -144,7 +144,7 @@ describe('score', () => {
   it('pixels moved breaks a tie', () => {
     const m = measure(rightToLeft(), curve);
     expect(better(score(m, 20), score(m, 40))).toBe(true);
-    expect(score(m)).toEqual([0, 0, -0, 8, 12, 0]);
+    expect(score(m)).toEqual([0, 0, -0, 8, 12, 0, 0]);
   });
 });
 
@@ -185,6 +185,22 @@ describe('ports passed (H4)', () => {
     const g = row();
     g.cards[1] = { ...g.cards[1], y: 40 };
     expect(passed(g)).toEqual([]);
+    expect(measure(g, curve).nearMisses).toEqual([]);
+  });
+
+  it('a wire closer than a grid step but outside the hit is a near miss, ranked below crossings', () => {
+    const g = row();
+    g.cards[1] = { ...g.cards[1], y: 12 };
+    const m = measure(g, curve);
+    expect(passed(g)).toEqual([]);
+    expect(m.nearMisses.map((p) => `${p.card}.${p.direction}.${p.port}`).sort()).toEqual([
+      'b.input.in',
+      'b.output.out'
+    ]);
+    expect(score(m)).toEqual([0, 0, -1, 0, 0, 2, 0]);
+    expect(formatMetrics(m)).toBe(
+      'straight 1/1 · backward 0 · crossings 0 · overlaps 0 · spacing ok · near misses 2'
+    );
   });
 
   it('a handle wired to the same port as the other end does not count (it reads true)', () => {

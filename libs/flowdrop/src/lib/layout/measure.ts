@@ -9,7 +9,8 @@
  * 3. straight wires (H1; more)
  * 4. backward wires (S5; fewer)
  * 5. crossings (S1; fewer)
- * 6. pixels moved (S3; fewer, the tie-break)
+ * 6. near misses (H4, graded; fewer)
+ * 7. pixels moved (S3; fewer, the tie-break)
  *
  * So only an overlap, a spacing break or a passed port can bend a straight wire (decision D1,
  * widened by H4).
@@ -19,6 +20,10 @@
  * output looks like it goes through the card). Every such wire and handle counts once, except a
  * handle wired to the same port as the wire's other end (what it suggests is true), and a wire
  * drawn right to left (counted as backward instead).
+ *
+ * Near misses (H4, graded): a wire that stays out of a handle but comes within one grid step of it
+ * still looks attached (a wire leaving a card's edge just above a port). Same exceptions; ranked
+ * last before pixels, so it only breaks ties and never costs a straight wire or a crossing.
  *
  * Spacing (decision D2): cards side by side need `gapX` between them, stacked
  * cards need `gapY`, diagonal neighbours need neither. Annotations count as
@@ -51,7 +56,7 @@ export interface LayoutCrossing {
   at: XY;
 }
 
-/** A wire running through a handle that is not one of its ends (H4). */
+/** A wire running through, or close past, a handle that is not one of its ends (H4). */
 export interface LayoutPortPass {
   /** Wire id. */
   wire: string;
@@ -75,6 +80,8 @@ export interface LayoutMetrics {
   crossings: LayoutCrossing[];
   /** Wires running through a port that is not one of their ends (H4). */
   passes: LayoutPortPass[];
+  /** Wires that miss such a port by less than a grid step (H4, graded). */
+  nearMisses: LayoutPortPass[];
   /** Every resolved wire with its path. */
   wires: WirePath[];
   /** Wires whose card or handle is unknown (left out of every count). */
@@ -82,7 +89,7 @@ export interface LayoutMetrics {
 }
 
 /** Compared rank by rank; lower is better in every rank. */
-export type LayoutScore = readonly [number, number, number, number, number, number];
+export type LayoutScore = readonly [number, number, number, number, number, number, number];
 
 /** A wire is level when its ends are less than this apart vertically. */
 const LEVEL_EPSILON = 0.5;
@@ -91,6 +98,8 @@ const LEVEL_EPSILON = 0.5;
  * next port row (one grid step away) does not count.
  */
 const PORT_HIT = LAYOUT_GRID / 2;
+/** Closer than this (but not a hit) is a near miss: one grid step. */
+const PORT_NEAR = LAYOUT_GRID;
 
 /** Squared distance from a point to a segment. */
 function segmentDistance2(p: XY, a: XY, b: XY): number {
@@ -103,8 +112,11 @@ function segmentDistance2(p: XY, a: XY, b: XY): number {
   return dx * dx + dy * dy;
 }
 
-/** Every wire that runs through a handle other than its own two ends. */
-export function portPasses(graph: LayoutGraph, wires: readonly WirePath[]): LayoutPortPass[] {
+/** Every wire that runs through, or close past, a handle other than its own two ends. */
+export function portClearance(
+  graph: LayoutGraph,
+  wires: readonly WirePath[]
+): { passes: LayoutPortPass[]; nearMisses: LayoutPortPass[] } {
   // A handle wired to the same port as the wire's other end reads true (the same value goes
   // there too), so it does not count; neither do the wire's own two ends.
   const sourceOf = (w: LayoutWire) => `${w.source}\0${w.sourcePort}`;
@@ -121,7 +133,9 @@ export function portPasses(graph: LayoutGraph, wires: readonly WirePath[]): Layo
     add(feedsTarget, sourceOf(w), targetOf(w));
   }
   const passes: LayoutPortPass[] = [];
+  const nearMisses: LayoutPortPass[] = [];
   const hit2 = PORT_HIT * PORT_HIT;
+  const near2 = PORT_NEAR * PORT_NEAR;
   for (const path of wires) {
     // A wire drawn right to left loops back past its own cards; the backward rank already
     // counts it, and the sweep's first phase turns it around.
@@ -129,10 +143,10 @@ export function portPasses(graph: LayoutGraph, wires: readonly WirePath[]): Layo
     const { wire, points } = path;
     const xs = points.map((p) => p[0]);
     const ys = points.map((p) => p[1]);
-    const minX = Math.min(...xs) - PORT_HIT;
-    const maxX = Math.max(...xs) + PORT_HIT;
-    const minY = Math.min(...ys) - PORT_HIT;
-    const maxY = Math.max(...ys) + PORT_HIT;
+    const minX = Math.min(...xs) - PORT_NEAR;
+    const maxX = Math.max(...xs) + PORT_NEAR;
+    const minY = Math.min(...ys) - PORT_NEAR;
+    const maxY = Math.max(...ys) + PORT_NEAR;
     for (const card of graph.cards) {
       if (card.kind !== 'card') continue;
       for (const direction of ['input', 'output'] as const) {
@@ -146,17 +160,18 @@ export function portPasses(graph: LayoutGraph, wires: readonly WirePath[]): Layo
             continue;
           const at: XY = [card.x + handle.dx, card.y + handle.dy];
           if (at[0] < minX || at[0] > maxX || at[1] < minY || at[1] > maxY) continue;
-          for (let i = 0; i < points.length - 1; i++) {
-            if (segmentDistance2(at, points[i], points[i + 1]) < hit2) {
-              passes.push({ wire: wire.id, card: card.id, port: handle.portId, direction });
-              break;
-            }
+          let closest = Infinity;
+          for (let i = 0; i < points.length - 1 && closest >= hit2; i++) {
+            closest = Math.min(closest, segmentDistance2(at, points[i], points[i + 1]));
           }
+          const pass = { wire: wire.id, card: card.id, port: handle.portId, direction };
+          if (closest < hit2) passes.push(pass);
+          else if (closest < near2) nearMisses.push(pass);
         }
       }
     }
   }
-  return passes;
+  return { passes, nearMisses };
 }
 
 /** Whether a resolved, non-loopback wire is straight: level and left to right. */
@@ -252,7 +267,7 @@ export function measure(graph: LayoutGraph, options: LayoutOptions): LayoutMetri
     spacing,
     conflicts,
     crossings,
-    passes: portPasses(graph, wires),
+    ...portClearance(graph, wires),
     wires,
     unresolved
   };
@@ -266,6 +281,7 @@ export function score(metrics: LayoutMetrics, moved = 0): LayoutScore {
     -metrics.straight,
     metrics.backward,
     metrics.crossings.length,
+    metrics.nearMisses.length,
     moved
   ];
 }
@@ -306,7 +322,7 @@ export function passCards(metrics: LayoutMetrics): Set<string> {
 
 /**
  * One line for the console: `straight 3/6 · backward 0 · crossings 0 · overlaps 0 · spacing ok`,
- * with `· ports passed 2` when a wire runs through a port.
+ * with `· ports passed 2` / `· near misses 1` when there are any.
  */
 export function formatMetrics(metrics: LayoutMetrics): string {
   return [
@@ -315,7 +331,8 @@ export function formatMetrics(metrics: LayoutMetrics): string {
     `crossings ${metrics.crossings.length}`,
     `overlaps ${metrics.overlaps}`,
     `spacing ${metrics.spacing ? `${metrics.spacing} too close` : 'ok'}`,
-    ...(metrics.passes.length ? [`ports passed ${metrics.passes.length}`] : [])
+    ...(metrics.passes.length ? [`ports passed ${metrics.passes.length}`] : []),
+    ...(metrics.nearMisses.length ? [`near misses ${metrics.nearMisses.length}`] : [])
   ].join(' · ');
 }
 
@@ -351,6 +368,8 @@ export function formatChange(
   );
   if (before.passes.length || after.passes.length)
     parts.push(['ports passed', before.passes.length, after.passes.length]);
+  if (before.nearMisses.length || after.nearMisses.length)
+    parts.push(['near misses', before.nearMisses.length, after.nearMisses.length]);
   return parts
     .filter(([, b, a]) => !options.onlyChanged || b !== a)
     .map(([name, b, a]) => `${name} ${change(b, a)}`)

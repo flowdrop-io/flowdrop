@@ -11,7 +11,7 @@ export {
   better,
   conflictCards,
   passCards,
-  portPasses,
+  portClearance,
   formatMetrics,
   formatChange
 } from './measure.js';
