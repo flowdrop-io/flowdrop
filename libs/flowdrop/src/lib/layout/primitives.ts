@@ -31,7 +31,9 @@ import {
   passCards,
   measure,
   score,
-  type LayoutMetrics
+  scoreMove,
+  type LayoutMetrics,
+  type LayoutScore
 } from './measure.js';
 import {
   LAYOUT_GRID,
@@ -146,27 +148,30 @@ interface Candidate {
   metrics: LayoutMetrics;
 }
 
-/** The best-scoring move of the node among the shifts, or undefined when there is none. */
+/**
+ * The best-scoring move of the node among the shifts, or undefined when there is none. Each
+ * candidate is scored against `before` by what the move changes; only the winner is measured.
+ */
 function bestMove(
   graph: LayoutGraph,
   card: LayoutCard,
   shifts: Array<[number, number]>,
-  options: LayoutOptions
+  options: LayoutOptions,
+  before: LayoutMetrics
 ): Candidate | undefined {
-  let best: Candidate | undefined;
-  let bestScore;
+  let best: Omit<Candidate, 'metrics'> | undefined;
+  let bestScore: LayoutScore | undefined;
   for (const [dx, dy] of shifts) {
     // The unmoved card is the baseline, not a candidate.
     if (!dx && !dy) continue;
     const next = replaceCard(graph, { ...card, x: card.x + dx, y: card.y + dy });
-    const metrics = measure(next, options);
-    const sc = score(metrics, Math.abs(dx) + Math.abs(dy));
+    const sc = scoreMove(before, next, card.id, options, Math.abs(dx) + Math.abs(dy));
     if (!bestScore || better(sc, bestScore)) {
-      best = { graph: next, dx, dy, metrics };
+      best = { graph: next, dx, dy };
       bestScore = sc;
     }
   }
-  return best;
+  return best && { ...best, metrics: measure(best.graph, options) };
 }
 
 /** Finish a move: accept it when it beats the current layout, else refuse with the best candidate. */
@@ -328,7 +333,7 @@ function proposeAlign(
     card,
     'align',
     before,
-    bestMove(graph, card, shifts, options),
+    bestMove(graph, card, shifts, options, before),
     (best) => shiftMessage(best.dy, card.y),
     none
   );
@@ -360,7 +365,7 @@ function proposeClear(
     card,
     'clear',
     before,
-    bestMove(graph, card, shifts, options),
+    bestMove(graph, card, shifts, options, before),
     (best) => shiftMessage(best.dy, card.y),
     'no free spot within 400 of this card'
   );
@@ -433,7 +438,7 @@ function proposeColumn(
     card,
     'column',
     before,
-    bestMove(graph, card, shifts, options),
+    bestMove(graph, card, shifts, options, before),
     (best) =>
       `moved to column ${rank} (x ${card.x} → ${targetX}${
         best.dy ? `, y ${card.y} → ${card.y + best.dy}` : ''
@@ -452,6 +457,8 @@ export interface ProposeOptions {
    * graph (some cards in columns, some not) is no fair judge of a single move.
    */
   force?: boolean;
+  /** `measure(graph, options)`, when the caller has it already (the sweep, `beautify`). */
+  before?: LayoutMetrics;
 }
 
 /** What a primitive would do to one node, judged against the current layout. */
@@ -460,10 +467,9 @@ export function propose(
   nodeId: string,
   primitive: LayoutPrimitive,
   options: LayoutOptions,
-  { force = false }: ProposeOptions = {}
+  { force = false, before = measure(graph, options) }: ProposeOptions = {}
 ): LayoutProposal {
   const card = cardOrThrow(graph, nodeId);
-  const before = measure(graph, options);
   if (card.kind !== 'card') {
     return refuse(
       graph,
@@ -500,10 +506,14 @@ export function beautify(
   const primitives = strategy === 'all' ? STRATEGY_ORDER : [strategy];
   const steps: LayoutProposal[] = [];
   let current = graph;
+  let metrics = before;
   for (const primitive of primitives) {
-    const step = propose(current, nodeId, primitive, options);
+    const step = propose(current, nodeId, primitive, options, { before: metrics });
     steps.push(step);
-    if (step.accepted) current = step.graph;
+    if (step.accepted) {
+      current = step.graph;
+      metrics = step.after;
+    }
     // An annotation refuses every primitive the same way; say it once.
     if (card.kind !== 'card') break;
   }
@@ -514,7 +524,7 @@ export function beautify(
     steps,
     accepted,
     before,
-    after: accepted ? measure(current, options) : before,
+    after: metrics,
     graph: current
   };
 }

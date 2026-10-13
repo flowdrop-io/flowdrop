@@ -261,16 +261,23 @@ export function loopbackLanes(
   return lanes;
 }
 
-/** Every wire whose ends are known, with its path. */
+/**
+ * Every wire whose ends are known, with its path. With `only`, just the wires it picks (a return
+ * lane still sees the whole graph: its track depends on the other loopbacks).
+ */
 export function wirePaths(
   graph: LayoutGraph,
-  options: Pick<LayoutOptions, 'loopbacks'>
+  options: Pick<LayoutOptions, 'loopbacks'>,
+  only?: (wire: LayoutWire) => boolean
 ): WirePath[] {
   const cards = cardIndex(graph);
+  const picked = only ? graph.wires.filter(only) : graph.wires;
   const lanes =
-    options.loopbacks === 'lane' ? loopbackLanes(graph, cards) : new Map<string, LoopbackLane>();
+    options.loopbacks === 'lane' && picked.some((wire) => wire.loopback)
+      ? loopbackLanes(graph, cards)
+      : new Map<string, LoopbackLane>();
   const paths: WirePath[] = [];
-  for (const wire of graph.wires) {
+  for (const wire of picked) {
     const ends = wireEnds(wire, cards);
     if (!ends) continue;
     const lane = lanes.get(wire.id);
@@ -293,11 +300,46 @@ export function segmentCrossing(p1: XY, p2: XY, p3: XY, p4: XY): XY | null {
   return [p1[0] + ua * (p2[0] - p1[0]), p1[1] + ua * (p2[1] - p1[1])];
 }
 
+export type Box = readonly [minX: number, minY: number, maxX: number, maxY: number];
+
+/** Bounding boxes of the polylines seen so far: a candidate move reuses most wires unchanged. */
+const boxes = new WeakMap<readonly XY[], Box>();
+
+/** A polyline's bounding box. */
+export function boxOf(points: readonly XY[]): Box {
+  let box = boxes.get(points);
+  if (!box) {
+    let [minX, minY, maxX, maxY] = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [x, y] of points) {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+    box = [minX, minY, maxX, maxY];
+    boxes.set(points, box);
+  }
+  return box;
+}
+
 /** The first point where two polylines cross, or null. */
 export function polylineCrossing(a: readonly XY[], b: readonly XY[]): XY | null {
+  // Polylines whose boxes are apart cannot cross; neither can segments whose x or y ranges are.
+  const ba = boxOf(a);
+  const bb = boxOf(b);
+  if (ba[0] > bb[2] || bb[0] > ba[2] || ba[1] > bb[3] || bb[1] > ba[3]) return null;
   for (let i = 0; i < a.length - 1; i++) {
+    const [p1, p2] = [a[i], a[i + 1]];
+    const ax0 = Math.min(p1[0], p2[0]);
+    const ax1 = Math.max(p1[0], p2[0]);
+    const ay0 = Math.min(p1[1], p2[1]);
+    const ay1 = Math.max(p1[1], p2[1]);
+    if (ax0 > bb[2] || ax1 < bb[0] || ay0 > bb[3] || ay1 < bb[1]) continue;
     for (let j = 0; j < b.length - 1; j++) {
-      const hit = segmentCrossing(a[i], a[i + 1], b[j], b[j + 1]);
+      const [p3, p4] = [b[j], b[j + 1]];
+      if (Math.max(p3[0], p4[0]) < ax0 || Math.min(p3[0], p4[0]) > ax1) continue;
+      if (Math.max(p3[1], p4[1]) < ay0 || Math.min(p3[1], p4[1]) > ay1) continue;
+      const hit = segmentCrossing(p1, p2, p3, p4);
       if (hit) return hit;
     }
   }

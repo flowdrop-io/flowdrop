@@ -103,6 +103,8 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
     notes: []
   }));
   let current = graph;
+  // The measure of `current`: every accepted step brings its own, so nothing is measured twice.
+  let metrics = before;
 
   const run = (
     phase: SweepPhase,
@@ -111,9 +113,10 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
     with_: LayoutOptions = options,
     force = false
   ) => {
-    const step = propose(current, id, primitive, with_, { force });
+    const step = propose(current, id, primitive, with_, { force, before: metrics });
     if (step.accepted) {
       current = step.graph;
+      metrics = step.after;
       phase.steps.push(step);
     }
     return step;
@@ -132,7 +135,7 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
   // Phase 1: in each overlapping or too-close pair the lower card yields. Stops when `clear`
   // refuses; the bound keeps a pair that trades places from looping.
   for (let guard = 0; guard < 2 * cards.length; guard++) {
-    const conflict = measure(current, options).conflicts[0];
+    const conflict = metrics.conflicts[0];
     if (!conflict) break;
     // A lane conflict names the card only (`with` is a wire id).
     const ids = conflict.kind === 'lane' ? [conflict.card] : [conflict.card, conflict.with];
@@ -171,14 +174,15 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
     const dy = was.y - now.y;
     if (dx || dy) {
       const moved = translate(current, dx, dy);
-      const stay = score(measure(current, options));
-      const go = score(measure(moved, options));
-      if (better(stay, go)) {
+      const stay = score(metrics);
+      const movedMetrics = measure(moved, options);
+      if (better(stay, score(movedMetrics))) {
         phases[3].notes.push(
           `not moved back to the original top-left (${dx >= 0 ? '+' : ''}${dx}, ${dy >= 0 ? '+' : ''}${dy}): it would score worse against the notes`
         );
       } else {
         current = moved;
+        metrics = movedMetrics;
         translation = { dx, dy };
       }
     }
@@ -188,7 +192,7 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
   const changed = steps.length > 0 || translation !== undefined;
   // Keep the user's layout unless the result is strictly better; pixels moved do not count, a
   // sweep always moves a lot.
-  const found = changed ? measure(current, options) : before;
+  const found = metrics;
   if (changed && !better(score(found), score(before))) {
     return {
       steps: [],

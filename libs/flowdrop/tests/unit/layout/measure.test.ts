@@ -5,9 +5,15 @@ import {
   better,
   formatMetrics,
   conflictCards,
-  passCards
+  passCards,
+  scoreMove
 } from '../../../src/lib/layout/measure.js';
-import { DEFAULT_LAYOUT_OPTIONS, type LayoutGraph } from '../../../src/lib/layout/types.js';
+import {
+  DEFAULT_LAYOUT_OPTIONS,
+  type LayoutCard,
+  type LayoutGraph,
+  type LayoutWire
+} from '../../../src/lib/layout/types.js';
 import { demoCard, demoWire, jurgenDries, rightToLeft, tangled } from './fixtures.js';
 
 const curve = DEFAULT_LAYOUT_OPTIONS;
@@ -231,5 +237,116 @@ describe('ports passed (H4)', () => {
       'chat_input.message>entity_save.values @ confirmation.output.False',
       'chat_input.message>entity_save.values @ messenger.output.message'
     ]);
+  });
+});
+
+describe('scoreMove: the score of a one-card move, counted incrementally', () => {
+  /** A seeded random graph: cards with two inputs (one a loop_back) and two outputs, forward
+   *  wires with fan-out, loopbacks, a note, and a wire to an unknown card. */
+  function randomGraph(seed: number, n: number): LayoutGraph {
+    let state = seed;
+    const rnd = () => (state = (state * 1103515245 + 12345) % 2 ** 31) / 2 ** 31;
+    const grid = (max: number) => Math.round((rnd() * max) / 20) * 20;
+    const cards: LayoutCard[] = [];
+    for (let i = 0; i < n; i++) {
+      cards.push({
+        id: `n${i}`,
+        kind: 'card',
+        x: grid(2000),
+        y: grid(1000),
+        width: 280,
+        height: 120,
+        inputs: [
+          { portId: 'in', dx: 0, dy: 60 },
+          { portId: 'loop_back', dx: 0, dy: 80 }
+        ],
+        outputs: [
+          { portId: 'out', dx: 280, dy: 60 },
+          { portId: 'alt', dx: 280, dy: 80 }
+        ]
+      });
+    }
+    cards.push({
+      id: 'note',
+      kind: 'note',
+      x: 400,
+      y: 400,
+      width: 200,
+      height: 100,
+      inputs: [],
+      outputs: []
+    });
+    const wires: LayoutWire[] = [];
+    const wire = (
+      id: string,
+      source: string,
+      sourcePort: string,
+      target: string,
+      targetPort: string
+    ) =>
+      wires.push({
+        id,
+        source,
+        sourcePort,
+        target,
+        targetPort,
+        loopback: targetPort === 'loop_back'
+      });
+    for (let i = 1; i < n; i++) {
+      wire(`w${i}`, `n${Math.floor(rnd() * i)}`, rnd() < 0.7 ? 'out' : 'alt', `n${i}`, 'in');
+      if (rnd() < 0.25) wire(`b${i}`, `n${i}`, 'out', `n${Math.floor(rnd() * i)}`, 'loop_back');
+    }
+    wire('gone', 'n0', 'out', 'missing', 'in');
+    return { cards, wires };
+  }
+
+  const move = (graph: LayoutGraph, id: string, dx: number, dy: number): LayoutGraph => ({
+    ...graph,
+    cards: graph.cards.map((c) => (c.id === id ? { ...c, x: c.x + dx, y: c.y + dy } : c))
+  });
+
+  for (const [name, options] of [
+    ['curved loopbacks', curve],
+    ['return lanes', lane]
+  ] as const) {
+    it(`equals the full measure for every move tried (${name})`, () => {
+      const shifts = [
+        [0, 20],
+        [0, -40],
+        [120, 0],
+        [-300, 60],
+        [0, 400]
+      ];
+      let compared = 0;
+      for (const seed of [1, 2, 3, 4, 5, 6]) {
+        const graph = randomGraph(seed, 12);
+        const before = measure(graph, options);
+        for (const card of graph.cards) {
+          for (const [dx, dy] of shifts) {
+            const next = move(graph, card.id, dx, dy);
+            const moved = Math.abs(dx) + Math.abs(dy);
+            expect(scoreMove(before, next, card.id, options, moved)).toEqual(
+              score(measure(next, options), moved)
+            );
+            compared++;
+          }
+        }
+      }
+      expect(compared).toBe(6 * 13 * 5);
+    });
+  }
+
+  it('equals the full measure on the design examples', () => {
+    for (const graph of [tangled(), rightToLeft(), jurgenDries()]) {
+      for (const options of [curve, lane]) {
+        const before = measure(graph, options);
+        for (const card of graph.cards) {
+          const next = move(graph, card.id, 0, -20);
+          expect(scoreMove(before, next, card.id, options, 20)).toEqual(
+            score(measure(next, options), 20)
+          );
+        }
+      }
+    }
   });
 });
