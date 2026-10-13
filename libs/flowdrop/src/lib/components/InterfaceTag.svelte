@@ -113,7 +113,7 @@
   /* Hover: the outline firms up and the tag lifts off the canvas. */
   .fd-iface-tag:not(.fd-iface-tag--ghost):hover {
     --_stroke: var(--fd-ring);
-    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.12));
+    filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--fd-foreground) 12%, transparent));
   }
 
   .fd-iface-tag--mismatch:hover {

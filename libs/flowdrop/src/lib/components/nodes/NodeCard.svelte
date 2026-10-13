@@ -864,7 +864,7 @@
     translate: -50% -50%;
     width: var(--fd-node-halo-size);
     height: var(--fd-node-halo-size);
-    border-radius: 50%;
+    border-radius: var(--fd-radius-full);
     background: color-mix(in srgb, var(--_c) var(--fd-node-halo-mix), transparent);
     pointer-events: none;
   }
