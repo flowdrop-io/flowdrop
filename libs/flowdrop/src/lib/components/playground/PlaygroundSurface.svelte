@@ -156,6 +156,12 @@
 
   let loadedInitialSessionId = $state<string | undefined>(undefined);
   let autoRunTriggered = $state(false);
+  // The load of `loadedInitialSessionId`, so the effect and the mount-time
+  // load share one request and auto-run waits for it.
+  let initialSessionLoad: Promise<void> = Promise.resolve();
+  // Cleared when the surface unmounts: async setup must not write after it.
+  let alive = true;
+  let rootEl = $state<HTMLElement | undefined>(undefined);
   /**
    * Transient result of the last slash command. Deliberately component state,
    * not a session message — see runCommand.
@@ -239,12 +245,29 @@
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
-    const handleRefreshStatus = () => void fd.runs.refresh();
+    // A host dispatches `flowdrop:refresh-status` on its mount container (an
+    // ancestor of this surface) or on `document`. With two editors on a page,
+    // only the one the event was aimed at refreshes: document-level events
+    // still reach every surface (backwards compatible).
+    const handleRefreshStatus = (event: Event) => {
+      const target = event.target;
+      if (
+        rootEl &&
+        target instanceof Node &&
+        target !== document &&
+        !target.contains(rootEl) &&
+        !rootEl.contains(target)
+      ) {
+        return;
+      }
+      void fd.runs.refresh();
+    };
     document.addEventListener('flowdrop:refresh-status', handleRefreshStatus);
 
     void initializePlayground();
 
     return () => {
+      alive = false;
       document.removeEventListener('visibilitychange', handleVisibility);
       document.removeEventListener('flowdrop:refresh-status', handleRefreshStatus);
     };
@@ -266,9 +289,11 @@
   async function initializePlayground(): Promise<void> {
     try {
       await Promise.all([fd.runs.loadSessions(), fd.runs.ensureWorkflowInterface()]);
+      if (!alive) return;
 
       if (initialSessionId) {
         await loadInitialSession(initialSessionId);
+        if (!alive) return;
       }
 
       if (config.autoRun && !autoRunTriggered) {
@@ -281,7 +306,13 @@
     }
   }
 
-  async function loadInitialSession(sessionId: string): Promise<void> {
+  function loadInitialSession(sessionId: string): Promise<void> {
+    if (loadedInitialSessionId === sessionId) return initialSessionLoad;
+    initialSessionLoad = doLoadInitialSession(sessionId);
+    return initialSessionLoad;
+  }
+
+  async function doLoadInitialSession(sessionId: string): Promise<void> {
     const sessionList = fd.playground.sessions;
     const sessionExists = sessionList.some((s) => s.id === sessionId);
 
@@ -381,6 +412,7 @@
 </script>
 
 <div
+  bind:this={rootEl}
   class="flowdrop-scope playground"
   class:playground--embedded={mode === 'embedded'}
   class:playground--standalone={mode === 'standalone'}
