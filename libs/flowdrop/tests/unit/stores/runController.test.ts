@@ -115,6 +115,26 @@ describe('RunController', () => {
   });
 
   describe('takeTurn', () => {
+    it('does not record or poll a turn whose session the user left meanwhile', async () => {
+      const { runs, playground, service } = setup();
+      runs.configure({ workflowId: 'wf' });
+      playground.setSessions([session('s1'), session('s2')]);
+      playground.setCurrentSession(session('s1'));
+      const turn = deferred<unknown>();
+      service.sendTurn.mockReturnValue(turn.promise);
+
+      const pending = runs.takeTurn({ content: 'hi' });
+      playground.setCurrentSession(session('s2'));
+      turn.resolve({
+        kind: 'turn',
+        result: { sessionId: 's1', userMessageId: 'u1', pipelineId: 'p1', status: 'running' }
+      });
+      await pending;
+
+      expect(playground.lastTurn).toBeNull();
+      expect(service.startPolling).not.toHaveBeenCalled();
+    });
+
     it('creates a session on the first turn, then sends and polls', async () => {
       const { runs, playground, service } = setup();
       runs.configure({ workflowId: 'wf' });

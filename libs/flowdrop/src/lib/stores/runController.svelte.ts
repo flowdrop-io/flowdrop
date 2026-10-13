@@ -221,6 +221,9 @@ export class RunController {
   #unsubscribeSessionStatus: (() => void) | null = null;
   #hostStatusHook: HostHooks['onRunStatus'] | undefined;
   #hostPoll: ReturnType<typeof setTimeout> | null = null;
+  // Bumped by stopHostPolling()/dispose(): a host status read already in
+  // flight compares it after its await and drops out instead of rescheduling.
+  #hostPollEpoch = 0;
   #openedId = $state<string | null>(null);
 
   /**
@@ -775,6 +778,9 @@ export class RunController {
       this.#api.authProvider
     );
 
+    // Switched to another session while launching: leave it alone.
+    if (this.#playground.currentSession?.id !== sessionId) return result;
+
     if (result.status === 'launched' && sessionId) {
       // Mirror a turn: reflect the run optimistically and tail it.
       this.#playground.updateSessionStatus('running');
@@ -947,6 +953,9 @@ export class RunController {
           body,
           this.#api.authProvider
         );
+        // The user may have switched sessions while the turn was in flight:
+        // its result and its poll belong to the session it was sent on.
+        if (playground.currentSession?.id !== sessionId) return true;
         // The legacy door answers with the user's row; the turn door with a
         // turn result, and the row arrives with the poll started below.
         if (response.kind === 'turn') {
@@ -1321,9 +1330,22 @@ export class RunController {
 
   /** Stop the timers and subscriptions this controller started. */
   dispose(): void {
-    this.#clearHostPoll();
+    this.stopHostPolling();
     this.#unsubscribeSessionStatus?.();
     this.#unsubscribeSessionStatus = null;
+  }
+
+  /**
+   * Stop reading the status of a host run and forget it. Also drops a read
+   * already in flight. The controller stays usable: a later host run polls again.
+   */
+  stopHostPolling(): void {
+    this.#hostPollEpoch++;
+    this.#clearHostPoll();
+    if (this.#tracked?.origin === 'host') {
+      this.#tracked = null;
+      this.#endedAt = null;
+    }
   }
 
   #beginSessionRun(sessionId: string): void {
@@ -1391,12 +1413,15 @@ export class RunController {
     const tracked = this.#tracked;
     const hook = this.#hostStatusHook ?? this.#readStatusFromApi;
     if (tracked?.origin !== 'host' || tracked.runId !== runId) return;
+    const epoch = this.#hostPollEpoch;
     try {
       const envelope = await hook(runId);
+      if (epoch !== this.#hostPollEpoch) return;
       this.#applyHostStatus(runId, envelope.ok ? envelope.data?.status : undefined);
     } catch (err) {
       logger.error('Failed to read host run status:', err);
     }
+    if (epoch !== this.#hostPollEpoch) return;
     const now = this.#tracked;
     if (
       now?.origin === 'host' &&

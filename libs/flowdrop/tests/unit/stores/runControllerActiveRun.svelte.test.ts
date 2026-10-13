@@ -291,6 +291,48 @@ describe('activeRun: host runs', () => {
     runs.dispose();
   });
 
+  it('stops polling a paused host run after dispose, even with a read in flight', async () => {
+    const { runs } = setup();
+    runs.hostPollInterval = 1000;
+    let release!: () => void;
+    const onRunStatus = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ ok: true, data: { runId: 'r1', status: 'paused' } });
+        })
+    );
+    const wrapped = runs.wrapHostHooks({
+      onRun: hooks([]).onRun,
+      onRunStatus
+    } as unknown as HostHooks);
+    await wrapped.onRun!({});
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(onRunStatus).toHaveBeenCalledTimes(1);
+
+    runs.dispose();
+    release();
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(onRunStatus).toHaveBeenCalledTimes(1);
+    expect(runs.activeRun).toBeNull();
+  });
+
+  it('stopHostPolling leaves the controller usable for a later host run', async () => {
+    const { runs } = setup();
+    runs.hostPollInterval = 1000;
+    const given = hooks(['paused', 'paused', 'paused', 'paused']);
+    const wrapped = runs.wrapHostHooks(given);
+    await wrapped.onRun!({});
+    runs.stopHostPolling();
+    expect(runs.activeRun).toBeNull();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(given.onRunStatus).not.toHaveBeenCalled();
+
+    await wrapped.onRun!({});
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(given.onRunStatus).toHaveBeenCalledTimes(1);
+    runs.dispose();
+  });
+
   it('stops polling once dismissed', async () => {
     const { runs } = setup();
     const given = hooks([]);
