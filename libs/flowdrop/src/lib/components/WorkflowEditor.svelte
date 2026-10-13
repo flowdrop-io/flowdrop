@@ -28,7 +28,6 @@
   import { snapToStraight, type StraightGuide } from '../utils/straightWires.js';
   import { createStoreCommandContext } from '../commands/storeIntegration.svelte.js';
   import { executeCommand } from '../commands/executor.js';
-  import { executeBatch } from '../commands/batch.js';
   import type { CommandResult, LayoutResultData } from '../commands/types.js';
   import { describeTidy, tweenPositions, TIDY_ANIMATION_MS } from '../editor/tidy.js';
   import CanvasZoomControls from './CanvasZoomControls.svelte';
@@ -323,6 +322,7 @@
   // Helper: sync current flowNodes/flowEdges back to the global store
   // ---------------------------------------------------------------------------
   function syncFlowToStore(): void {
+    finishTidyAnimation();
     const storeValue = untrack(() => fd.workflow.current);
     if (!storeValue) return;
     const updatedWorkflow = WorkflowOperationsHelper.updateWorkflow(
@@ -529,6 +529,7 @@
    * position updates. SvelteFlow mutates flowNodes directly via bind:nodes.
    */
   function handleNodeDragStart(): void {
+    finishTidyAnimation();
     machine.send('START_DRAG');
     lastMagnet = null;
     straightGuides = [];
@@ -1059,9 +1060,6 @@
     tidyNodes(ids) {
       tidyNodes(ids);
     },
-    canTidyNodes(ids) {
-      return canTidyNodes(ids);
-    },
     hideUnconnectedPorts(ids) {
       changePortExposure(ids, 'hide');
     },
@@ -1104,35 +1102,32 @@
     announceTidy(data, from, getMsgs().tidy.alreadyTidy);
   }
 
-  /** Whether tidying these nodes would change anything (one dry run each). */
-  function canTidyNodes(ids: readonly string[]): boolean {
-    const context = layoutContext();
-    if (!context) return false;
-    return ids.some(
-      (nodeId) =>
-        layoutData(executeCommand({ type: 'beautify_node', nodeId, dryRun: true }, context))
-          ?.changed === true
-    );
-  }
-
-  /** Tidy these nodes one after another (`layout node beautify`), as one undo step. */
+  /**
+   * Tidy these nodes one after another (`layout node beautify`). One node is one command; several
+   * are one transaction, so one undo step, and none at all when nothing moved.
+   */
   function tidyNodes(ids: readonly string[]): void {
     if (!canvasEditable || ids.length === 0) return;
     const msgs = getMsgs().tidy;
     const already = ids.length > 1 ? msgs.nodesAlreadyTidy : msgs.nodeAlreadyTidy;
     const context = layoutContext();
     if (!context) return;
-    // A batch is one undo step, but it records one even when nothing changed: ask first.
-    if (!canTidyNodes(ids)) {
-      announceTidy(undefined, new Map(), already);
-      return;
-    }
     const from = positionsOf(flowNodes);
-    const commands = ids.map((nodeId) => ({ type: 'beautify_node' as const, nodeId }));
-    const results =
-      commands.length === 1
-        ? [executeCommand(commands[0], context)]
-        : executeBatch(commands, context).results;
+    const results: CommandResult[] = [];
+    if (ids.length === 1) {
+      // A beautify that changes nothing writes nothing, so it leaves no undo entry.
+      results.push(executeCommand({ type: 'beautify_node', nodeId: ids[0] }, context));
+    } else {
+      context.dispatch.startTransaction(`Tidy ${ids.length} nodes`);
+      for (const nodeId of ids) {
+        const result = executeCommand({ type: 'beautify_node', nodeId }, context);
+        results.push(result);
+        if (!result.ok) break;
+      }
+      const moved = results.every((r) => r.ok) && results.some((r) => layoutData(r)?.changed);
+      if (moved) context.dispatch.commitTransaction();
+      else context.dispatch.cancelTransaction();
+    }
     const steps = results.map(layoutData).filter((d): d is LayoutResultData => !!d);
     const data: LayoutResultData | undefined = steps.length
       ? {
@@ -1180,9 +1175,15 @@
     const target = fd.workflow.current;
     const to = positionsOf(flowNodes);
     if (tweenPositions(from, to, 0).size === 0) return;
+    const tween = { target, to };
+    tidyTween = tween;
     const start = performance.now();
     const frame = (now: number) => {
-      if (fd.workflow.current !== target) return;
+      if (tidyTween !== tween) return;
+      if (fd.workflow.current !== target) {
+        tidyTween = null;
+        return;
+      }
       const t = (now - start) / TIDY_ANIMATION_MS;
       const at = t >= 1 ? to : tweenPositions(from, to, t);
       flowNodes = flowNodes.map((n) => {
@@ -1190,8 +1191,30 @@
         return position ? { ...n, position } : n;
       });
       if (t < 1) requestAnimationFrame(frame);
+      else tidyTween = null;
     };
     requestAnimationFrame(frame);
+  }
+
+  /** The running tidy slide, if any: the workflow it belongs to and where the cards end up. */
+  let tidyTween: {
+    target: unknown;
+    to: Map<string, { x: number; y: number }>;
+  } | null = null;
+
+  /**
+   * Stop a running tidy slide and put the cards at its end positions, so a sync to the store
+   * never commits a half-moved card.
+   */
+  function finishTidyAnimation(): void {
+    const tween = tidyTween;
+    if (!tween) return;
+    tidyTween = null;
+    if (fd.workflow.current !== tween.target) return;
+    flowNodes = flowNodes.map((n) => {
+      const position = tween.to.get(n.id);
+      return position ? { ...n, position } : n;
+    });
   }
 
   /** How many ports a bulk exposure change would touch on these nodes. */

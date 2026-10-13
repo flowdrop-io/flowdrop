@@ -9,6 +9,7 @@
   import UniversalNode from '$lib/components/UniversalNode.svelte';
   import FlowDropEdge from '$lib/components/FlowDropEdge.svelte';
   import LoopbackLanes from '$lib/components/LoopbackLanes.svelte';
+  import CanvasController from '$lib/components/CanvasController.svelte';
   import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import { getEditorSettings, updateSettings } from '$lib/stores/settingsStore.svelte.js';
@@ -26,7 +27,20 @@
 
   let { cards, wires, loops }: Props = $props();
 
-  provideInstance(getDefaultInstance());
+  const fd = getDefaultInstance();
+  provideInstance(fd);
+
+  // The lanes read the canvas's measurement, which the editor registers; here the story does.
+  let controller: CanvasController | undefined = $state();
+  $effect(() => {
+    const canvas = controller;
+    if (!canvas) return;
+    const measure = (nodeId: string) => canvas.canvasMeasureNode(nodeId);
+    fd.measureNode = measure;
+    return () => {
+      if (fd.measureNode === measure) fd.measureNode = null;
+    };
+  });
 
   const nodeTypes = { universalNode: UniversalNode };
   const edgeTypes = { default: FlowDropEdge };
@@ -104,6 +118,7 @@
     fitViewOptions={{ maxZoom: 0.7, padding: 0.1 }}
     {colorMode}
   >
+    <CanvasController bind:this={controller} />
     <LoopbackLanes {nodes} {edges} />
   </SvelteFlow>
 </div>

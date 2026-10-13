@@ -162,8 +162,13 @@
     const element = flowStore.domNode?.querySelector<HTMLElement>(
       `.svelte-flow__node[data-id="${CSS.escape(nodeId)}"]`
     );
-    const width = element?.offsetWidth || internal?.measured.width;
-    const height = element?.offsetHeight || internal?.measured.height;
+    // The DOM size is a whole number; the `measured` fallback is rounded, or a 280px card measured
+    // at some zoom as 280.00002 reads as too close at gap x.
+    const measuredWidth = internal?.measured.width;
+    const measuredHeight = internal?.measured.height;
+    const width = element?.offsetWidth || (measuredWidth ? Math.round(measuredWidth) : undefined);
+    const height =
+      element?.offsetHeight || (measuredHeight ? Math.round(measuredHeight) : undefined);
     const bounds = internal?.internals.handleBounds;
     if (!width || !height || !bounds) return undefined;
     const centres = (handles: typeof bounds.source) =>
@@ -179,10 +184,9 @@
             ]
           : [];
       });
-    // Rounded, or a 280px card measured at some zoom as 280.00002 reads as too close at gap x.
     return {
-      width: Math.round(width),
-      height: Math.round(height),
+      width,
+      height,
       inputs: centres(bounds.target),
       outputs: centres(bounds.source)
     };

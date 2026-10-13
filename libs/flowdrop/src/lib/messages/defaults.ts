@@ -342,8 +342,6 @@ export const defaultMessages = {
     tidyNodes: ({ n }: { n: number }) => `Tidy ${n} nodes`,
     // The pane menu's "Tidy up" (the whole graph).
     tidyLayout: 'Tidy up',
-    // Unused since "Tidy node" replaced it; kept so existing overrides still type-check.
-    straightenWires: 'Straighten wires',
     // Hide / show ports of the node(s). These change which ports are exposed (as the Ports
     // form's eye does), they do not just fold the card. The counted form is used when n > 0.
     hideUnconnectedPorts: 'Hide unconnected ports',
@@ -360,7 +358,6 @@ export const defaultMessages = {
     // Key hints shown beside an entry, as key glyphs.
     shortcutEnter: '↵',
     shortcutDelete: '⌫',
-    shortcutStraighten: '⇧S',
     shortcutTidyNode: '⇧S',
     shortcutTidyLayout: '⇧⌥T'
   },

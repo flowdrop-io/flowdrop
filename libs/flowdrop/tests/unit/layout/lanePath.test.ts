@@ -41,4 +41,19 @@ describe('lanePath', () => {
     expect(path.label).toEqual([720, 200]);
     expect(path.angleDeg).toBe(0);
   });
+
+  it('puts the label on the middle point when the polyline is not the six-point lane', () => {
+    const path = lanePath(
+      [
+        [0, 0],
+        [100, 0],
+        [100, 50],
+        [200, 50]
+      ],
+      10,
+      8
+    );
+    expect(path.label).toEqual([100, 50]);
+    expect(path.angleDeg).toBe(0);
+  });
 });

@@ -88,27 +88,6 @@ describe('buildDefaultContextMenuEntries', () => {
     expect(many.actions.tidyNodes).toHaveBeenCalledWith(['a', 'b']);
   });
 
-  it('Tidy node is disabled when nothing would change', () => {
-    const ctx = makeCtx('node', [node('a')]);
-    ctx.actions.tidyNodes = vi.fn();
-    ctx.actions.canTidyNodes = () => false;
-    const entry = buildDefaultContextMenuEntries(ctx).find((e) => e.id === 'tidy-node');
-    expect(entry).toMatchObject({ disabled: true });
-    runContextMenuEntry(entry!, ctx);
-    expect(ctx.actions.tidyNodes).not.toHaveBeenCalled();
-  });
-
-  it('the old Straighten wires action no longer adds an entry', () => {
-    const ctx = makeCtx('node', [node('a')]);
-    ctx.actions.straightenWires = vi.fn();
-    expect(ids(buildDefaultContextMenuEntries(ctx))).toEqual([
-      'configure',
-      'duplicate',
-      'separator-node',
-      'delete'
-    ]);
-  });
-
   it('pane: Tidy up when the editor provides it, after Add caption', () => {
     const ctx = makeCtx('pane');
     expect(buildDefaultContextMenuEntries(ctx)).toEqual([]);

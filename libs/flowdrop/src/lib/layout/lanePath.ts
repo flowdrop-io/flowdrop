@@ -56,7 +56,11 @@ export function lanePath(points: readonly XY[], radius: number, arrow: number): 
   }
   d += ` L ${fmt(pts[last][0])},${fmt(pts[last][1])}`;
 
-  // The lane is the segment between the two vertical legs: the third of five.
+  // `lanePoints` (geometry.ts) returns six points: the lane is the segment between its two
+  // vertical legs, the third of five. Any other shape gets the middle point of the polyline.
+  if (pts.length !== 6) {
+    return { d, label: points[Math.floor(points.length / 2)], angleDeg };
+  }
   const lo = pts[2];
   const hi = pts[3];
   return { d, label: [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2], angleDeg };

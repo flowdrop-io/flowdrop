@@ -51,15 +51,6 @@ export interface ContextMenuActions {
    * wires, free space), as one undo step. Absent when the canvas cannot offer it.
    */
   tidyNodes?(ids: string[]): void;
-  /** Whether {@link tidyNodes} would change anything for these nodes. Absent: assume yes. */
-  canTidyNodes?(ids: string[]): boolean;
-  /**
-   * @deprecated The built-in menu offers "Tidy node" ({@link tidyNodes}) instead; kept so
-   * consumer entries that call it still work.
-   */
-  straightenWires?(ids: string[]): void;
-  /** @deprecated See {@link straightenWires}. */
-  canStraightenWires?(ids: string[]): boolean;
   /**
    * Hide the exposed data ports that have no wire, as one undo step. This is
    * an exposure change (the ports leave the canvas and stop being wireable),
@@ -258,7 +249,6 @@ function tidyEntry(ctx: ContextMenuContext, messages: ContextMenuMessages): Cont
       icon: 'mdi:broom',
       label: ids.length > 1 ? messages.tidyNodes({ n: ids.length }) : messages.tidyNode,
       shortcut: messages.shortcutTidyNode,
-      disabled: ctx.actions.canTidyNodes ? !ctx.actions.canTidyNodes(ids) : false,
       run: (c) => c.actions.tidyNodes?.(c.nodes.map((n) => n.id))
     }
   ];

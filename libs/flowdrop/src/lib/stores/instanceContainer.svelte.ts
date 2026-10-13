@@ -299,6 +299,9 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     workflow
   });
 
+  // Reactive, so the loopback lanes recompute once the canvas registers its measurement.
+  let measureNodeFn = $state.raw<((nodeId: string) => MeasuredCard | undefined) | null>(null);
+
   const cleanups: Array<() => void> = [
     () => historyBindings.cleanup(),
     () => historyBindings.setOnRestoreCallback(null),
@@ -353,7 +356,12 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     host: new HostHooksStore(),
     approvalGate: null,
     skinScope: null,
-    measureNode: null,
+    get measureNode() {
+      return measureNodeFn;
+    },
+    set measureNode(fn) {
+      measureNodeFn = fn;
+    },
     onDestroy(fn) {
       cleanups.push(fn);
       return () => {
