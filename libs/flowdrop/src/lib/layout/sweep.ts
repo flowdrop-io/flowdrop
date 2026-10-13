@@ -9,6 +9,8 @@
  * The result is kept only when it beats the starting layout (pixels moved left out): a sweep that
  * ends level or worse changes nothing, so the user's layout stays.
  *
+ * The graph goes back to its original top-left, snapped to the 20px grid.
+ *
  * Annotations are fixed obstacles (D8): never in the node order, never the one that yields, and
  * the final translation leaves them where they are.
  *
@@ -17,6 +19,7 @@
 
 import {
   better,
+  conflictCards,
   formatChange,
   formatMetrics,
   measure,
@@ -24,10 +27,12 @@ import {
   type LayoutMetrics
 } from './measure.js';
 import { columnRanks, propose, type LayoutProposal } from './primitives.js';
-import type { LayoutCard, LayoutGraph, LayoutOptions } from './types.js';
+import { LAYOUT_GRID, type LayoutCard, type LayoutGraph, type LayoutOptions } from './types.js';
 
 /** `ports` + `align` passes at most. */
 const MAX_PASSES = 4;
+/** Rounds of phase 1: a card refused in one round is tried again in the next if anything moved. */
+const MAX_CLEAR_ROUNDS = 3;
 
 export interface SweepPhase {
   /** 0 column, 1 hard rules, 2 ports and align, 3 translate back. */
@@ -44,7 +49,7 @@ export interface SweepResult {
   steps: LayoutProposal[];
   /** Only the phases where something happened. */
   phases: SweepPhase[];
-  /** Phase 3: every card moved by this much, back to the original top-left. */
+  /** Phase 3: every card moved by this much, back to the original top-left (on the grid). */
   translation?: { dx: number; dy: number };
   /** True when anything moved or was reordered. */
   accepted: boolean;
@@ -74,6 +79,8 @@ function topLeft(graph: LayoutGraph): { x: number; y: number } {
     y: Math.min(...cards.map((c) => c.y))
   };
 }
+
+const snapToGrid = (value: number): number => Math.round(value / LAYOUT_GRID) * LAYOUT_GRID;
 
 /** The graph with every card (not annotation) moved by the same amount. */
 function translate(graph: LayoutGraph, dx: number, dy: number): LayoutGraph {
@@ -132,20 +139,50 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
   for (const card of byColumn)
     run(phases[0], card.id, 'column', { ...options, columnOrigin: 'left' }, true);
 
-  // Phase 1: in each overlapping or too-close pair the lower card yields. Stops when `clear`
-  // refuses; the bound keeps a pair that trades places from looping.
-  for (let guard = 0; guard < 2 * cards.length; guard++) {
-    const conflict = metrics.conflicts[0];
-    if (!conflict) break;
-    // A lane conflict names the card only (`with` is a wire id).
-    const ids = conflict.kind === 'lane' ? [conflict.card] : [conflict.card, conflict.with];
-    const lower = yielding(current, ids);
-    if (!lower) break;
-    const step = run(phases[1], lower.id, 'clear');
-    if (!step.accepted) {
-      phases[1].notes.push(`${lower.id}: clear: no change; ${step.reason}`);
-      break;
+  // Phase 1: in each overlapping or too-close pair the lower card yields. A card `clear` refuses
+  // is skipped for the conflicts after it (and the other card of its pair gets a go); it is tried
+  // again once anything else has moved, since that can open a spot. Overlaps come before spacing
+  // breaks. Every accepted step strictly improves the score and the guard bounds the rest, so the
+  // loop ends.
+  const refused = new Map<string, string>();
+  const guard = 4 * cards.length + 8;
+  for (let round = 0; round < MAX_CLEAR_ROUNDS; round++) {
+    let progress = false;
+    for (let attempts = 0; attempts < guard; attempts++) {
+      let moved = false;
+      const conflicts = [...metrics.conflicts].sort(
+        (a, b) => Number(b.kind === 'overlap') - Number(a.kind === 'overlap')
+      );
+      for (const conflict of conflicts) {
+        // A lane conflict names the card only (`with` is a wire id).
+        const ids = conflict.kind === 'lane' ? [conflict.card] : [conflict.card, conflict.with];
+        const lower = yielding(current, ids);
+        const others = ids
+          .filter((id) => id !== lower?.id)
+          .map((id) => current.cards.find((c) => c.id === id))
+          .filter((c): c is LayoutCard => c?.kind === 'card');
+        for (const card of lower ? [lower, ...others] : others) {
+          if (refused.has(card.id)) continue;
+          const step = run(phases[1], card.id, 'clear');
+          if (step.accepted) {
+            moved = true;
+            break;
+          }
+          refused.set(card.id, step.reason ?? 'no change');
+        }
+        if (moved) break;
+      }
+      if (!moved) break;
+      progress = true;
     }
+    // Something moved since the refusals: a refused card may find room now.
+    if (!progress || refused.size === 0 || round === MAX_CLEAR_ROUNDS - 1) break;
+    refused.clear();
+  }
+  // What is left: the cards still in a conflict that nothing could move.
+  const stuck = conflictCards(metrics);
+  for (const [id, reason] of refused) {
+    if (stuck.has(id)) phases[1].notes.push(`${id}: clear: no change; ${reason}`);
   }
 
   // Phase 2: soft rules. Forward by x, then backward; the score keeps phase 1 intact.
@@ -170,8 +207,10 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
   if (cards.length > 0) {
     const was = topLeft(graph);
     const now = topLeft(current);
-    const dx = was.x - now.x;
-    const dy = was.y - now.y;
+    // The original corner snapped to the grid: a graph whose top-left is off it (7, 7) comes back
+    // to the nearest grid point, not to the exact corner, so the cards end up on the grid (H0).
+    const dx = snapToGrid(was.x) - now.x;
+    const dy = snapToGrid(was.y) - now.y;
     if (dx || dy) {
       const moved = translate(current, dx, dy);
       const stay = score(metrics);

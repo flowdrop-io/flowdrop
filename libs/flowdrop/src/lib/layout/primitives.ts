@@ -40,7 +40,8 @@ import {
   type LayoutCard,
   type LayoutGraph,
   type LayoutHandle,
-  type LayoutOptions
+  type LayoutOptions,
+  type LayoutWire
 } from './types.js';
 
 export type LayoutPrimitive = 'column' | 'ports' | 'align' | 'clear';
@@ -92,9 +93,47 @@ export interface BeautifyResult {
   graph: LayoutGraph;
 }
 
-/** The farthest a vertical search goes, per primitive. */
+/** The farthest a vertical search goes in steps of one grid, per primitive. */
 const CLEAR_REACH = 400;
 const COLUMN_REACH = 600;
+/**
+ * The farthest a card goes to sit right above or below another card of its column. A crowded
+ * column (a fan-out of thirty cards is five thousand pixels tall) has no free slot within the
+ * reach above, and only a slot far out resolves the overlap; the card goes straight to the nearest
+ * one past the last card it would meet. Bounded so one card never leaves the page.
+ */
+const STACK_REACH = 6000;
+
+/**
+ * Vertical shifts that put the card right above or below another card it would share a column with
+ * at `x` (gap included), snapped to the grid, past the plain reach and within {@link STACK_REACH}.
+ * Never above `top`. Sorted by distance.
+ */
+function stackShifts(
+  graph: LayoutGraph,
+  card: LayoutCard,
+  x: number,
+  y: number,
+  top: number,
+  options: LayoutOptions,
+  plainReach: number
+): number[] {
+  const dys = new Set<number>();
+  for (const other of graph.cards) {
+    if (other.id === card.id) continue;
+    // Side by side with enough air: the vertical gap does not matter.
+    if (other.x >= x + card.width + options.gapX || other.x + other.width <= x - options.gapX)
+      continue;
+    const below =
+      Math.ceil((other.y + other.height + options.gapY - y) / LAYOUT_GRID) * LAYOUT_GRID;
+    const above =
+      Math.floor((other.y - card.height - options.gapY - y) / LAYOUT_GRID) * LAYOUT_GRID;
+    for (const dy of [below, above]) {
+      if (Math.abs(dy) > plainReach && Math.abs(dy) <= STACK_REACH && y + dy >= top) dys.add(dy);
+    }
+  }
+  return [...dys].sort((a, b) => Math.abs(a) - Math.abs(b));
+}
 
 /**
  * The highest a `clear` or `column` move may put a card: the top of the topmost card (Q2). A card
@@ -165,7 +204,7 @@ function bestMove(
     // The unmoved card is the baseline, not a candidate.
     if (!dx && !dy) continue;
     const next = replaceCard(graph, { ...card, x: card.x + dx, y: card.y + dy });
-    const sc = scoreMove(before, next, card.id, options, Math.abs(dx) + Math.abs(dy));
+    const sc = scoreMove(before, next, card.id, options, Math.abs(dx) + Math.abs(dy), bestScore);
     if (!bestScore || better(sc, bestScore)) {
       best = { graph: next, dx, dy };
       bestScore = sc;
@@ -360,6 +399,9 @@ function proposeClear(
     shifts.push([0, k]);
     if (card.y - k >= top) shifts.push([0, -k]);
   }
+  for (const dy of stackShifts(graph, card, card.x, card.y, top, options, CLEAR_REACH)) {
+    shifts.push([0, dy]);
+  }
   return judgeMove(
     graph,
     card,
@@ -367,7 +409,7 @@ function proposeClear(
     before,
     bestMove(graph, card, shifts, options, before),
     (best) => shiftMessage(best.dy, card.y),
-    'no free spot within 400 of this card'
+    'no free spot for this card'
   );
 }
 
@@ -376,24 +418,66 @@ function proposeClear(
 const snap = (value: number): number => Math.round(value / LAYOUT_GRID) * LAYOUT_GRID;
 const ceilToGrid = (value: number): number => Math.ceil(value / LAYOUT_GRID) * LAYOUT_GRID;
 
-/** Longest path over non-loopback wires between cards; annotations are ignored. */
+/**
+ * Longest path over non-loopback wires between cards; annotations are ignored. A cycle of
+ * non-loopback wires (one that does not run through a loop_back port) has no longest path: the
+ * wire that closes it, the one a depth-first walk from the start nodes meets last, is a back
+ * edge and counts for nothing, so the rest of the cycle lays out left to right and the back
+ * edge runs right to left like any backward wire.
+ */
 export function columnRanks(graph: LayoutGraph): Map<string, number> {
   const ids = graph.cards.filter((c) => c.kind === 'card').map((c) => c.id);
   const rank = new Map(ids.map((id) => [id, 0]));
   const forward = graph.wires.filter(
     (w) => !w.loopback && w.source !== w.target && rank.has(w.source) && rank.has(w.target)
   );
-  // A cycle of non-loopback wires cannot settle; bound the passes so it still ends.
-  for (let pass = 0; pass < ids.length; pass++) {
-    let changed = false;
-    for (const wire of forward) {
-      const next = rank.get(wire.source)! + 1;
-      if (next > rank.get(wire.target)!) {
-        rank.set(wire.target, next);
-        changed = true;
+  const out = new Map<string, LayoutWire[]>(ids.map((id) => [id, []]));
+  const indegree = new Map(ids.map((id) => [id, 0]));
+  for (const wire of forward) {
+    out.get(wire.source)!.push(wire);
+    indegree.set(wire.target, indegree.get(wire.target)! + 1);
+  }
+
+  // Depth first, roots (nothing feeds them) before the rest, so a cycle is cut at its way in.
+  const back = new Set<LayoutWire>();
+  const state = new Map<string, 1 | 2>(); // 1 on the path, 2 done
+  const roots = [...ids.filter((id) => indegree.get(id) === 0), ...ids];
+  for (const root of roots) {
+    if (state.has(root)) continue;
+    state.set(root, 1);
+    const stack: Array<{ id: string; next: number }> = [{ id: root, next: 0 }];
+    while (stack.length > 0) {
+      const top = stack[stack.length - 1];
+      const wires = out.get(top.id)!;
+      if (top.next >= wires.length) {
+        state.set(top.id, 2);
+        stack.pop();
+        continue;
+      }
+      const wire = wires[top.next++];
+      const seen = state.get(wire.target);
+      if (seen === 1) back.add(wire);
+      else if (seen === undefined) {
+        state.set(wire.target, 1);
+        stack.push({ id: wire.target, next: 0 });
       }
     }
-    if (!changed) break;
+  }
+
+  // Longest path over what is left (a DAG): Kahn's order, ranks raised along each wire.
+  const waiting = new Map(ids.map((id) => [id, 0]));
+  for (const wire of forward) {
+    if (!back.has(wire)) waiting.set(wire.target, waiting.get(wire.target)! + 1);
+  }
+  const queue = ids.filter((id) => waiting.get(id) === 0);
+  for (let head = 0; head < queue.length; head++) {
+    const id = queue[head];
+    for (const wire of out.get(id)!) {
+      if (back.has(wire)) continue;
+      rank.set(wire.target, Math.max(rank.get(wire.target)!, rank.get(id)! + 1));
+      waiting.set(wire.target, waiting.get(wire.target)! - 1);
+      if (waiting.get(wire.target) === 0) queue.push(wire.target);
+    }
   }
   return rank;
 }
@@ -432,6 +516,9 @@ function proposeColumn(
   for (let k = LAYOUT_GRID; k <= COLUMN_REACH; k += LAYOUT_GRID) {
     shifts.push([dx, dy0 + k]);
     if (card.y + dy0 - k >= top) shifts.push([dx, dy0 - k]);
+  }
+  for (const dy of stackShifts(graph, card, targetX, card.y + dy0, top, options, COLUMN_REACH)) {
+    shifts.push([dx, dy0 + dy]);
   }
   return judgeMove(
     graph,
