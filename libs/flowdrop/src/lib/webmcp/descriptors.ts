@@ -27,6 +27,7 @@ import {
   type ToolSchemaProperty
 } from './types.js';
 import { validateToolArgs } from './validate.js';
+import { LAYOUT_GRID } from '../layout/types.js';
 
 export { validateToolArgs };
 
@@ -147,6 +148,7 @@ const EMPTY = object({});
 const gapArg = (between: string): ToolSchemaProperty => ({
   type: 'integer',
   minimum: 0,
+  multipleOf: LAYOUT_GRID,
   description: `Gap in px to keep between cards ${between}; a multiple of 20 (the layout grid, whatever the editor's grid size is). Default: the editor's layout gap setting.`
 });
 

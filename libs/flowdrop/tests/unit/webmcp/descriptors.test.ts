@@ -189,6 +189,13 @@ describe('validateToolArgs', () => {
     );
   });
 
+  it('rejects a layout gap off the 20 px grid before anything asks for approval', () => {
+    expect(() => run('beautify_node', { nodeId: 'a.1', gapX: 30 })).toThrow(
+      /gapX: must be a multiple of 20/
+    );
+    expect(() => run('beautify_layout', { gapY: 60 })).not.toThrow();
+  });
+
   it('validates nested position objects', () => {
     expect(() => run('move_node', { nodeId: 'a.1', position: { x: 1 } })).toThrow(
       /position.y is required/
