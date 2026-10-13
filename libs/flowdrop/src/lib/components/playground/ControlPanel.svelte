@@ -66,6 +66,11 @@
      * without a chat turn). Empty or absent renders no form.
      */
     formEntries?: WorkflowInterfaceEntry[];
+    /**
+     * @deprecated One friendly line above the form and composer. Still rendered, but the
+     * Playground reports this through its own notice now. Removed in 3.0.
+     */
+    notice?: string;
     /** Show the form's values as JSON instead of the typed form. */
     formJson?: boolean;
     /** Current form values, keyed by entry id. */
@@ -106,6 +111,7 @@
     predefinedMessage,
     placeholder,
     formEntries = [],
+    notice,
     formJson = false,
     formValues = {},
     onFormChange,
@@ -212,7 +218,12 @@
   }
 </script>
 
-<section class="control-panel" class:control-panel--form={formFirst} {style}>
+<section
+  class="control-panel"
+  class:control-panel--notice={!!notice}
+  class:control-panel--form={formFirst}
+  {style}
+>
   {#if showSessionHeader}
     <PanelHeader class="control-panel__header">
       {#snippet leading()}
@@ -347,6 +358,13 @@
     </PanelHeader>
   {/if}
 
+  {#if notice}
+    <p class="control-panel__notice" role="note">
+      <Icon icon="mdi:information-outline" />
+      <span>{notice}</span>
+    </p>
+  {/if}
+
   {#if formFirst}
     <InterfaceInputForm
       entries={formEntries}
@@ -419,6 +437,29 @@
     min-height: 0;
     background-color: var(--fd-background);
     border-top: 1px solid var(--fd-border);
+  }
+
+  /* A notice is taller than the 140px the split gives the panel by default;
+     without this it pushed the composer out of the panel in a narrow dock. */
+  .control-panel--notice {
+    min-height: min-content;
+  }
+
+  .control-panel__notice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--fd-space-xs);
+    margin: 0;
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    border-bottom: 1px solid var(--fd-border);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-xs);
+    line-height: 1.5;
+  }
+
+  .control-panel__notice :global(svg) {
+    flex: none;
+    margin-top: 0.15em;
   }
 
   /* Form-first: the card sits on top of the conversation and scrolls itself
