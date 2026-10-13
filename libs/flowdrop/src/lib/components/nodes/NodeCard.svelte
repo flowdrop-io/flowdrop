@@ -316,6 +316,8 @@
       tabindex={-1}
       onmouseenter={(e: Event) => showPortTip(e, pin.port, pin.direction, false, true)}
       onmouseleave={hideTip}
+      onfocus={(e: Event) => showPortTip(e, pin.port, pin.direction, false, true)}
+      onblur={hideTip}
     />
   {/each}
 
@@ -360,6 +362,8 @@
       tabindex={-1}
       onmouseenter={(e: Event) => showPortTip(e, port, item.direction, open, false)}
       onmouseleave={hideTip}
+      onfocus={(e: Event) => showPortTip(e, port, item.direction, open, false)}
+      onblur={hideTip}
     />
   {/each}
 
