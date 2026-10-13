@@ -3,6 +3,7 @@
   with the "Draw loopbacks as return lanes" setting on while it is mounted.
 -->
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { SvelteFlow, MarkerType } from '@xyflow/svelte';
   import type { ColorMode } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
@@ -97,8 +98,9 @@
   ]);
 
   // The lanes are opt in: turn the setting on while the story is shown, then put it back.
+  // The read is untracked: an effect that tracks the setting it writes re-runs itself.
   $effect(() => {
-    const before = getEditorSettings().loopbackLanes;
+    const before = untrack(() => getEditorSettings().loopbackLanes);
     updateSettings({ editor: { loopbackLanes: true } as never });
     return () => updateSettings({ editor: { loopbackLanes: before } as never });
   });

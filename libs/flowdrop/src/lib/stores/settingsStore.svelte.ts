@@ -10,6 +10,7 @@
  * @module stores/settingsStore
  */
 
+import { untrack } from 'svelte';
 import type {
   FlowDropSettings,
   ThemeSettings,
@@ -516,6 +517,12 @@ export function seedUiDefaults(partial: Partial<UISettings>): void {
  * @param partial - Partial settings to merge
  */
 export function updateSettings(partial: PartialSettings): void {
+  // A write never subscribes its caller: an effect that calls this must not
+  // track the settings it reads to merge, or every update re-runs the effect.
+  untrack(() => applySettingsUpdate(partial));
+}
+
+function applySettingsUpdate(partial: PartialSettings): void {
   const previousSettings = storeState.settings;
   const newSettings = deepMergeSettings(storeState.settings, partial as Partial<FlowDropSettings>);
 
