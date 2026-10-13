@@ -54,7 +54,7 @@ import { computeAutoPosition } from './positioner.js';
 import { buildHandleId, extractPortId } from '../utils/handleIds.js';
 import { applyConnectionStyling } from '../utils/edgeStyling.js';
 import { computeSwapPreview, executeSwap } from '../utils/nodeSwap.js';
-import { computeAutoLayout, computeBeautifyLayout } from '../adapters/agentspec/autoLayout.js';
+import { computeAutoLayout } from '../adapters/agentspec/autoLayout.js';
 import { interfaceTagReserve } from '../utils/interfaceTags.js';
 
 // ============================================================================
@@ -1223,11 +1223,6 @@ export const COMMAND_HELP: Array<{
     description:
       'Tidy the whole graph: every node into its column, overlaps and tight spacing cleared, ports reordered and wires straightened to cut crossings, back at the original top-left. Prints one line per step and the score before and after; --dry-run only previews. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call. One undo step'
   },
-  {
-    name: 'layout',
-    syntax: 'layout beautify --spacing',
-    description: 'Only normalize spacing, keeping the arrangement as it is'
-  },
   { name: 'undo', syntax: 'undo', description: 'Undo the last action' },
   { name: 'redo', syntax: 'redo', description: 'Redo the last undone action' },
   {
@@ -1635,45 +1630,7 @@ function executeBeautifyLayout(
     return { ok: true, message: 'No nodes to beautify' };
   }
 
-  if (!command.spacing) return executeSweepLayout(command, workflow, context);
-
-  // Collect current positions
-  const currentPositions = new Map<string, { x: number; y: number }>();
-  for (const n of workflow.nodes) {
-    currentPositions.set(n.id, { x: n.position.x, y: n.position.y });
-  }
-
-  // Collect measured node dimensions when available
-  const nodeDimensions = new Map<string, { width: number; height: number }>();
-  for (const n of workflow.nodes) {
-    const w = n.measured?.width ?? (n as { width?: number }).width;
-    const h = n.measured?.height ?? (n as { height?: number }).height;
-    if (w != null && h != null) {
-      nodeDimensions.set(n.id, { width: w, height: h });
-    }
-  }
-
-  const tagReserve = interfaceTagReserve(workflow);
-  const positions = computeBeautifyLayout(
-    currentPositions,
-    tagWidthFallback(tagReserve),
-    nodeDimensions.size > 0 ? nodeDimensions : undefined,
-    tagReserve
-  );
-
-  // Apply positions
-  const updatedNodes = workflow.nodes.map((n) => {
-    const pos = positions.get(n.id);
-    if (!pos) return n;
-    return { ...n, position: pos };
-  });
-
-  context.dispatch.batchUpdate({ nodes: updatedNodes });
-
-  return {
-    ok: true,
-    message: `Beautified layout for ${workflow.nodes.length} nodes`
-  };
+  return executeSweepLayout(command, workflow, context);
 }
 
 // ============================================================================

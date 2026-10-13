@@ -432,30 +432,21 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
   },
   beautify_layout: {
     description:
-      'Tidy the layout of all nodes. Moves existing nodes. Puts every node into its column, clears overlaps and tight spacing, reorders ports and straightens wires to cut crossings; prints one line per step and the score before and after, or says nothing improved. Use dryRun to preview. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). With spacing: true it only normalises spacing and keeps the arrangement. One undo step.',
+      'Tidy the layout of all nodes. Moves existing nodes. Puts every node into its column, clears overlaps and tight spacing, reorders ports and straightens wires to cut crossings; prints one line per step and the score before and after, or says nothing improved. Use dryRun to preview. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
     inputSchema: object({
       dryRun: {
         type: 'boolean',
         description: 'Report the steps and the score without changing the workflow.'
       },
       gapX: gapArg('side by side'),
-      gapY: gapArg('stacked'),
-      spacing: {
-        type: 'boolean',
-        description:
-          'Only normalise spacing and keep the arrangement, instead of the full tidy. Takes no other argument.'
-      }
+      gapY: gapArg('stacked')
     }),
-    build: (a) =>
-      a.spacing === true
-        ? { type: 'beautify_layout', spacing: true }
-        : {
-            type: 'beautify_layout',
-            ...(a.dryRun === true ? { dryRun: true } : {}),
-            ...gapArgs(a)
-          },
-    summarize: (c) =>
-      c.spacing ? 'Normalise layout spacing' : `${c.dryRun ? 'Preview tidy of' : 'Tidy'} layout`
+    build: (a) => ({
+      type: 'beautify_layout',
+      ...(a.dryRun === true ? { dryRun: true } : {}),
+      ...gapArgs(a)
+    }),
+    summarize: (c) => `${c.dryRun ? 'Preview tidy of' : 'Tidy'} layout`
   },
   inspect_node_layout: {
     description:

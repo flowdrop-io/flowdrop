@@ -411,11 +411,6 @@ const PAIRS: Array<{ dsl: string; verb: string; args: Record<string, unknown> }>
   { dsl: 'layout auto --direction vertical', verb: 'auto_layout', args: { direction: 'vertical' } },
   { dsl: 'layout beautify', verb: 'beautify_layout', args: {} },
   {
-    dsl: 'layout beautify --spacing',
-    verb: 'beautify_layout',
-    args: { spacing: true }
-  },
-  {
     dsl: 'layout beautify --dry-run --gap-x 160 --gap-y 60',
     verb: 'beautify_layout',
     args: { dryRun: true, gapX: 160, gapY: 60 }

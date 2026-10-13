@@ -229,16 +229,11 @@ describe('parser: layout node', () => {
     });
   });
 
-  it('--spacing is the old spacing pass and takes nothing else', () => {
-    expect(parse('layout beautify --spacing')).toEqual({ type: 'beautify_layout', spacing: true });
-  });
-
   it.each([
     'layout beautify --gap-x',
     'layout beautify --gap-z 40',
     'layout beautify now',
-    'layout beautify --spacing --dry-run',
-    'layout beautify --sweep --spacing'
+    'layout beautify --spacing'
   ])('rejects "%s" as invalid syntax', (input) => {
     expect(parseCommand(input).ok).toBe(false);
   });

@@ -146,13 +146,11 @@ export interface AutoLayoutCommand {
 
 export interface BeautifyLayoutCommand {
   type: 'beautify_layout';
-  /** The old spacing pass (keeps the arrangement) instead of the graph sweep. */
-  spacing?: boolean;
-  /** Sweep only: report the steps and the score without applying them. */
+  /** Report the steps and the score without applying them. */
   dryRun?: boolean;
-  /** Sweep only: gap between cards side by side, px. Default: the editor setting. */
+  /** Gap between cards side by side, px. Default: the editor setting. */
   gapX?: number;
-  /** Sweep only: gap between stacked cards, px. Default: the editor setting. */
+  /** Gap between stacked cards, px. Default: the editor setting. */
   gapY?: number;
 }
 

@@ -21,7 +21,6 @@ import {
   validateInterfaceId
 } from '$lib/utils/interfaceTags.js';
 import { buildPortInterfaceEntries } from '$lib/editor/interfaceMenu.js';
-import { computeBeautifyLayout } from '$lib/adapters/agentspec/autoLayout.js';
 import type { NodeMetadata, Workflow, WorkflowNode } from '$lib/types/index.js';
 
 function meta(inputs: Array<[string, string]>, outputs: Array<[string, string]>): NodeMetadata {
@@ -304,25 +303,6 @@ describe('layout room for tags', () => {
       estimateInterfaceTagWidth('items', 'array ≠ number')
     );
     expect(reserve.get('calc')?.right).toBe(0);
-  });
-
-  it('beautify opens the gap between columns to fit the tags', () => {
-    const positions = new Map([
-      ['a', { x: 0, y: 0 }],
-      ['b', { x: 400, y: 0 }]
-    ]);
-    const dims = new Map([
-      ['a', { width: 100, height: 50 }],
-      ['b', { width: 100, height: 50 }]
-    ]);
-    const plain = computeBeautifyLayout(positions, {}, dims);
-    const reserve = new Map([
-      ['a', { left: 0, right: 150 }],
-      ['b', { left: 200, right: 0 }]
-    ]);
-    const roomy = computeBeautifyLayout(positions, {}, dims, reserve);
-    expect(plain.get('b')!.x - plain.get('a')!.x).toBe(220);
-    expect(roomy.get('b')!.x - roomy.get('a')!.x).toBe(100 + 150 + 200 + 40);
   });
 });
 
