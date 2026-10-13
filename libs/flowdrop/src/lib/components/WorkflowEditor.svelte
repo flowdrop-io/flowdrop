@@ -1489,6 +1489,18 @@
   // remounted with the canvas and always talks to the live instance's store.
   let canvasControllerRef: CanvasController | undefined = $state();
 
+  // Let node layout commands (console, assistant, WebMCP) read the canvas's
+  // measurement while the canvas is mounted.
+  $effect(() => {
+    const controller = canvasControllerRef;
+    if (!controller) return;
+    const measure = (nodeId: string) => controller.canvasMeasureNode(nodeId);
+    fd.measureNode = measure;
+    return () => {
+      if (fd.measureNode === measure) fd.measureNode = null;
+    };
+  });
+
   /**
    * Update a node's data in the local editor state.
    * Called by App.svelte AFTER it has already updated the global store via

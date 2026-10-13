@@ -17,7 +17,7 @@
  * @module webmcp/descriptors
  */
 
-import type { Command } from '../commands/types.js';
+import type { BeautifyNodeStrategy, Command } from '../commands/types.js';
 import type { Messages } from '../messages/types.js';
 import { isMutatingCommand, VIEW_COMMAND_TYPES } from '../chat/commandClassifier.js';
 import {
@@ -55,7 +55,9 @@ export const EXPOSED_COMMAND_TYPES = [
   'undo',
   'redo',
   'auto_layout',
-  'beautify_layout'
+  'beautify_layout',
+  'inspect_node_layout',
+  'beautify_node'
 ] as const satisfies readonly Command['type'][];
 
 /**
@@ -420,6 +422,40 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
     inputSchema: EMPTY,
     build: () => ({ type: 'beautify_layout' }),
     summarize: () => 'Beautify layout'
+  },
+  inspect_node_layout: {
+    description:
+      'Report how one node sits on the canvas: for each wire, whether it is straight or off by how many pixels, plus crossings, overlaps and spacing. Changes nothing. Run it before beautify_node to see what is wrong.',
+    inputSchema: object({ nodeId: nodeId() }, ['nodeId']),
+    build: (a) => ({ type: 'inspect_node_layout', nodeId: a.nodeId as string }),
+    summarize: (c) => `Inspect layout of ${c.nodeId}`
+  },
+  beautify_node: {
+    description:
+      'Tidy the layout of ONE node; no other node moves (only its attached notes). Strategies: column (x into its column), ports (reorder connected ports to cut crossings), align (y that straightens a wire), clear (y out of overlaps), all (those four in turn, the default). It says what changed and the score, or why nothing improved. Call inspect_node_layout first; use dryRun to preview without applying. One undo step.',
+    inputSchema: object(
+      {
+        nodeId: nodeId(),
+        strategy: {
+          type: 'string',
+          enum: ['column', 'ports', 'align', 'clear', 'all'],
+          description: 'What to fix. Default all.'
+        },
+        dryRun: {
+          type: 'boolean',
+          description: 'Report the proposal and its score without changing the workflow.'
+        }
+      },
+      ['nodeId']
+    ),
+    build: (a) => ({
+      type: 'beautify_node',
+      nodeId: a.nodeId as string,
+      ...(a.strategy ? { strategy: a.strategy as BeautifyNodeStrategy } : {}),
+      ...(a.dryRun === true ? { dryRun: true } : {})
+    }),
+    summarize: (c) =>
+      `${c.dryRun ? 'Preview beautify of' : 'Beautify'} ${c.nodeId}${c.strategy ? ` (${c.strategy})` : ''}`
   }
 };
 

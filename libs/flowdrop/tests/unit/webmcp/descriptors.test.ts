@@ -58,6 +58,8 @@ const ALL_COMMAND_TYPES: Record<Command['type'], true> = {
   move_node: true,
   auto_layout: true,
   beautify_layout: true,
+  inspect_node_layout: true,
+  beautify_node: true,
   canvas_fit_view: true,
   canvas_zoom_in: true,
   canvas_zoom_out: true,
@@ -108,6 +110,7 @@ describe('D8 coverage', () => {
       'describe_type',
       'get_config',
       'info',
+      'inspect_node_layout',
       'list_edges',
       'list_nodes',
       'list_types',
@@ -407,6 +410,17 @@ const PAIRS: Array<{ dsl: string; verb: string; args: Record<string, unknown> }>
   },
   { dsl: 'layout auto --direction vertical', verb: 'auto_layout', args: { direction: 'vertical' } },
   { dsl: 'layout beautify', verb: 'beautify_layout', args: {} },
+  {
+    dsl: 'layout node inspect compose.1',
+    verb: 'inspect_node_layout',
+    args: { nodeId: 'compose.1' }
+  },
+  { dsl: 'layout node beautify compose.1', verb: 'beautify_node', args: { nodeId: 'compose.1' } },
+  {
+    dsl: 'layout node beautify compose.1 ports --dry-run',
+    verb: 'beautify_node',
+    args: { nodeId: 'compose.1', strategy: 'ports', dryRun: true }
+  },
   { dsl: 'select llm_node.1', verb: 'view', args: { action: 'select_node', nodeId: 'llm_node.1' } },
   { dsl: 'config llm_node.1', verb: 'view', args: { action: 'open_config', nodeId: 'llm_node.1' } },
   { dsl: 'canvas fitview', verb: 'view', args: { action: 'fit_view' } },
@@ -453,6 +467,8 @@ describe('describeCommand', () => {
         describe_type: { nodeTypeId: 'a' },
         search_types: { query: 'a' },
         auto_layout: {},
+        inspect_node_layout: { nodeId: 'a.1' },
+        beautify_node: { nodeId: 'a.1', strategy: 'ports', dryRun: true },
         view: { action: 'fit_view' }
       };
       const [cmd] = d.toCommands(validateToolArgs(d.inputSchema, sample[d.verb] ?? {}));

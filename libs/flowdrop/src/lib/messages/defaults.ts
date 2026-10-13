@@ -594,6 +594,8 @@ export const defaultMessages = {
         redo: { running: 'Redoing', done: 'Redid' },
         auto_layout: { running: 'Arranging layout', done: 'Arranged layout' },
         beautify_layout: { running: 'Tidying layout', done: 'Tidied layout' },
+        inspect_node_layout: { running: 'Inspecting layout', done: 'Inspected layout' },
+        beautify_node: { running: 'Tidying node', done: 'Tidied node' },
         batch: { running: 'Applying changes', done: 'Applied changes' },
         save: { running: 'Saving', done: 'Saved' },
         run: { running: 'Starting run', done: 'Started run' },

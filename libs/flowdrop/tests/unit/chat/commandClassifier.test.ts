@@ -12,6 +12,7 @@ describe('isMutatingCommand', () => {
       'search_types',
       'info',
       'get_config',
+      'inspect_node_layout',
       'help'
     ])('%s is read-only', (commandType) => {
       expect(isMutatingCommand(commandType)).toBe(false);
@@ -40,9 +41,12 @@ describe('isMutatingCommand', () => {
 });
 
 describe('isLayoutCommand', () => {
-  it.each(['auto_layout', 'beautify_layout'])('%s re-positions nodes', (commandType) => {
-    expect(isLayoutCommand(commandType)).toBe(true);
-  });
+  it.each(['auto_layout', 'beautify_layout', 'beautify_node'])(
+    '%s re-positions nodes',
+    (commandType) => {
+      expect(isLayoutCommand(commandType)).toBe(true);
+    }
+  );
 
   // Viewport commands only move the camera — they must stay runnable even when
   // AI layout changes are disabled (issue #36).
@@ -54,7 +58,12 @@ describe('isLayoutCommand', () => {
   );
 
   it('matches the parsed command types for the layout DSL commands', () => {
-    for (const input of ['layout beautify', 'layout auto', 'layout auto --direction vertical']) {
+    for (const input of [
+      'layout beautify',
+      'layout auto',
+      'layout auto --direction vertical',
+      'layout node beautify compose.1 ports'
+    ]) {
       const parsed = parseCommand(input);
       expect(parsed.ok).toBe(true);
       if (!parsed.ok) return;

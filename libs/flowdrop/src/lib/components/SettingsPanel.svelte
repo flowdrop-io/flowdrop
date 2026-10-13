@@ -310,7 +310,7 @@
           type: 'boolean',
           title: 'AI Assistant layout changes',
           description:
-            'Let the AI assistant re-arrange node positions (layout auto / layout beautify). ' +
+            'Let the AI assistant re-arrange node positions (layout auto / layout beautify / layout node beautify). ' +
             'Turn off to keep a hand-crafted layout — those commands are then skipped and ' +
             'the rest of the batch still applies.',
           default: true

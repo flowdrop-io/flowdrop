@@ -9,6 +9,7 @@
 
 import type { NodeMetadata, Workflow, WorkflowNode, WorkflowEdge } from '../types/index.js';
 import type { PortMapping } from '../utils/nodeSwap.js';
+import type { MeasuredCard } from '../layout/fromWorkflow.js';
 
 // ============================================================================
 // Command Types (Discriminated Union)
@@ -147,6 +148,23 @@ export interface BeautifyLayoutCommand {
   type: 'beautify_layout';
 }
 
+export interface InspectNodeLayoutCommand {
+  type: 'inspect_node_layout';
+  nodeId: string;
+}
+
+/** What `beautify_node` may run; `all` is column, ports, align, clear in turn. */
+export type BeautifyNodeStrategy = 'column' | 'ports' | 'align' | 'clear' | 'all';
+
+export interface BeautifyNodeCommand {
+  type: 'beautify_node';
+  nodeId: string;
+  /** Default `all`. */
+  strategy?: BeautifyNodeStrategy;
+  /** Report the proposal and its score without applying it. */
+  dryRun?: boolean;
+}
+
 /** Canvas viewport commands */
 
 export interface CanvasFitViewCommand {
@@ -201,6 +219,8 @@ export type Command =
   | MoveNodeCommand
   | AutoLayoutCommand
   | BeautifyLayoutCommand
+  | InspectNodeLayoutCommand
+  | BeautifyNodeCommand
   | CanvasFitViewCommand
   | CanvasZoomInCommand
   | CanvasZoomOutCommand
@@ -507,6 +527,15 @@ export interface CommandContext {
   typeMap: Map<string, NodeMetadata>;
   /** Dispatch interface for mutating workflow state */
   dispatch: CommandDispatch;
+  /**
+   * How the canvas measured a node (size, handle centres). Optional: without it
+   * node layout commands use computed geometry.
+   */
+  measureNode?(nodeId: string): MeasuredCard | undefined;
+  /** The visual type a node renders as (`note`, `caption`, `gateway`, …). */
+  visualType?(node: WorkflowNode): string;
+  /** The *Show descriptions* setting, which changes card heights. */
+  showDescriptions?: boolean;
 }
 
 // ============================================================================

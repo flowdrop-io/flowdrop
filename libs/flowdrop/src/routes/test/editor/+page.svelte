@@ -25,6 +25,10 @@
     - ?workflow=doctor   -> three nodes the stubbed Doctor (tests/e2e/helpers/doctor-stub.ts)
                            finds a problem on each: an unknown config key, a missing
                            required key and a node whose type is not installed
+    - ?workflow=tangled  -> the node layout design's example: form, classify, lookup
+                           (overlapping classify), compose (wires crossing), a loop with
+                           loop_back, send and a caption; for `layout node …` commands
+                           (tests/e2e/editor-node-layout.spec.ts)
     - ?workflow=caption  -> a text input plus two captions (short, long); also
                            offers the caption node type
     - ?caption=1         -> offer the caption node type (the pane menu then has
@@ -1096,6 +1100,104 @@
     }
   };
 
+  // Node layout (?workflow=tangled): the design's "tangled" graph. Cards of different heights
+  // (the port count sets it), a card laid over its neighbour, two wires that cross at compose
+  // and a loop whose loop_back wire runs backwards.
+  const tangledType = (
+    id: string,
+    name: string,
+    inputs: string[],
+    outputs: string[]
+  ): NodeMetadata => ({
+    node_type_id: id,
+    name,
+    description: name,
+    category: 'processing',
+    version: '1.0.0',
+    type: 'default',
+    icon: 'mdi:shape-outline',
+    inputs: inputs.map((p) => ({ id: p, name: p, type: 'input' as const, dataType: 'string' })),
+    outputs: outputs.map((p) => ({ id: p, name: p, type: 'output' as const, dataType: 'string' })),
+    configSchema: { type: 'object', properties: {} },
+    tags: []
+  });
+  const tangledNode = (id: string, name: string, x: number, y: number, meta: NodeMetadata) => ({
+    id,
+    type: 'universalNode',
+    position: { x, y },
+    data: { label: name, config: {}, metadata: meta }
+  });
+  const tangledEdge = (s: string, sp: string, t: string, tp: string) => ({
+    id: `${s}.${sp}>${t}.${tp}`,
+    source: s,
+    target: t,
+    sourceHandle: `${s}-output-${sp}`,
+    targetHandle: `${t}-input-${tp}`
+  });
+  const tangledWorkflow: Workflow = {
+    id: 'test-workflow-tangled',
+    name: 'Tangled Workflow',
+    description: 'A graph with crossings, an overlap and a loop, for the node layout commands',
+    nodes: [
+      tangledNode(
+        'form.1',
+        'Form',
+        100,
+        100,
+        tangledType('form', 'Form', [], ['email', 'message'])
+      ),
+      tangledNode(
+        'classify.1',
+        'Classify',
+        560,
+        100,
+        tangledType('classify', 'Classify', ['text'], ['label', 'confidence'])
+      ),
+      tangledNode(
+        'lookup.1',
+        'Lookup',
+        560,
+        200,
+        tangledType('lookup', 'Lookup', ['email'], ['contact'])
+      ),
+      tangledNode(
+        'compose.1',
+        'Compose',
+        1020,
+        160,
+        tangledType('compose', 'Compose', ['contact', 'label'], ['reply'])
+      ),
+      tangledNode(
+        'loop.1',
+        'Loop',
+        1480,
+        180,
+        tangledType('loop', 'Loop', ['items', 'loop_back'], ['item', 'done'])
+      ),
+      tangledNode('send.1', 'Send', 1940, 300, tangledType('send', 'Send', ['to'], ['sent'])),
+      {
+        id: 'caption.1',
+        type: 'universalNode',
+        position: { x: 1020, y: 100 },
+        data: { label: 'Reply', config: {}, metadata: captionNodeType }
+      }
+    ],
+    edges: [
+      tangledEdge('form.1', 'message', 'classify.1', 'text'),
+      tangledEdge('form.1', 'email', 'lookup.1', 'email'),
+      tangledEdge('lookup.1', 'contact', 'compose.1', 'contact'),
+      tangledEdge('classify.1', 'label', 'compose.1', 'label'),
+      tangledEdge('compose.1', 'reply', 'loop.1', 'items'),
+      tangledEdge('loop.1', 'item', 'send.1', 'to'),
+      tangledEdge('send.1', 'sent', 'loop.1', 'loop_back')
+    ],
+    metadata: {
+      schemaVersion: '1.0.0',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
+    }
+  };
+
   // Config-form shapes (?workflow=config): an array that a scalar field points at
   // (`x-item-ref`), a two-field array, and read-only items.
   const switchSchema = {
@@ -1339,6 +1441,7 @@
 
   const workflows: Record<string, Workflow> = {
     straight: straightWorkflow,
+    tangled: tangledWorkflow,
     inspector: inspectorWorkflow,
     config: configWorkflow,
     caption: captionWorkflow,

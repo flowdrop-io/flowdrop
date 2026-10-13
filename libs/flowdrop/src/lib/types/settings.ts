@@ -232,7 +232,7 @@ export interface BehaviorSettings {
   chatAutoRetry: boolean;
   /**
    * Allow the AI assistant's commands to reposition nodes
-   * (`layout auto`, `layout beautify`).
+   * (`layout auto`, `layout beautify`, `layout node beautify`).
    *
    * Turn off to protect a hand-crafted layout: those commands are then skipped
    * (not failed) when a batch is applied, so the rest of the change set still

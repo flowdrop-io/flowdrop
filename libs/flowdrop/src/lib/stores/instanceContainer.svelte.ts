@@ -37,6 +37,7 @@ import { PlaygroundService, playgroundService } from '../services/playgroundServ
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
+import type { MeasuredCard } from '../layout/fromWorkflow.js';
 import { NodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
 import { FieldComponentRegistry } from '../form/fieldRegistry.js';
 import { WorkflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
@@ -172,6 +173,13 @@ export interface FlowDropInstance {
    * `null` when no editor is mounted.
    */
   skinScope: string | null;
+  /**
+   * How the mounted canvas measured a node (size and handle centres from its
+   * top-left), registered by the editor while its canvas is mounted. Node
+   * layout commands read it so they work from the geometry on screen; without
+   * a canvas they fall back to computed geometry.
+   */
+  measureNode: ((nodeId: string) => MeasuredCard | undefined) | null;
   /**
    * Run `fn` when this instance is destroyed. Returns an unsubscribe; calling
    * it before `destroy()` means `fn` never runs. Adapters that bind to an
@@ -341,6 +349,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     host: new HostHooksStore(),
     approvalGate: null,
     skinScope: null,
+    measureNode: null,
     onDestroy(fn) {
       cleanups.push(fn);
       return () => {

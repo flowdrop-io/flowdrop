@@ -27,8 +27,23 @@ import type {
   HelpResultData,
   SwapNodeResultData
 } from './types.js';
+import {
+  fromWorkflow,
+  inspect as inspectLayout,
+  beautify as beautifyLayout,
+  formatBeautify,
+  applyProposalToNodes,
+  DEFAULT_LAYOUT_OPTIONS
+} from '../layout/index.js';
+import type { LayoutGraph } from '../layout/index.js';
 import type { ConfigProperty, ConfigSchema, Branch, DynamicPort } from '../types/index.js';
-import type { NodeMetadata, NodePort, WorkflowNode, WorkflowEdge } from '../types/index.js';
+import type {
+  NodeMetadata,
+  NodePort,
+  Workflow,
+  WorkflowNode,
+  WorkflowEdge
+} from '../types/index.js';
 import { generateNodeId } from '../utils/nodeIds.js';
 import { extractConfigDefaults } from '../utils/nodeIds.js';
 import { computeAutoPosition } from './positioner.js';
@@ -1187,6 +1202,18 @@ export const COMMAND_HELP: Array<{
   },
   {
     name: 'layout',
+    syntax: 'layout node inspect <nodeId>',
+    description:
+      "Report one node's wires (straight or off by how many px), crossings, overlaps and spacing; changes nothing"
+  },
+  {
+    name: 'layout',
+    syntax: 'layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run]',
+    description:
+      'Tidy one node: column (x), ports (port order), align (straighten wires), clear (free space). Default all. Prints what changed and the score; --dry-run only previews. One undo step'
+  },
+  {
+    name: 'layout',
     syntax: 'layout beautify',
     description: 'Normalize spacing while preserving node arrangement'
   },
@@ -1637,6 +1664,93 @@ function executeBeautifyLayout(
 }
 
 // ============================================================================
+// Node Layout Commands
+// ============================================================================
+
+/** Node ids in layout output the way other commands show them: short, not namespaced. */
+function shortenLayoutIds(lines: string[], nodes: WorkflowNode[]): string {
+  const renames = nodes
+    .filter((n) => toShortId(n.id) !== n.id)
+    .sort((a, b) => b.id.length - a.id.length);
+  if (renames.length === 0) return lines.join('\n');
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(
+    `(?<![\\w.-])(${renames.map((n) => escape(n.id)).join('|')})(?![\\w-])`,
+    'g'
+  );
+  return lines.join('\n').replace(pattern, (id) => toShortId(id));
+}
+
+/** The workflow's layout model, from the canvas measurement when the context has one. */
+function layoutGraphOf(workflow: Workflow, context: CommandContext): LayoutGraph {
+  return fromWorkflow(workflow.nodes, workflow.edges, {
+    measured: context.measureNode,
+    visualType: context.visualType,
+    showDescriptions: context.showDescriptions
+  });
+}
+
+function executeInspectNodeLayout(
+  command: Extract<Command, { type: 'inspect_node_layout' }>,
+  context: CommandContext
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: nodeNotFoundMessage(command.nodeId, workflow.nodes),
+      code: 'NODE_NOT_FOUND'
+    };
+  }
+  const lines = inspectLayout(layoutGraphOf(workflow, context), node.id, DEFAULT_LAYOUT_OPTIONS);
+  return { ok: true, message: shortenLayoutIds(lines, workflow.nodes) };
+}
+
+function executeBeautifyNode(
+  command: Extract<Command, { type: 'beautify_node' }>,
+  context: CommandContext
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: nodeNotFoundMessage(command.nodeId, workflow.nodes),
+      code: 'NODE_NOT_FOUND'
+    };
+  }
+
+  const dryRun = command.dryRun === true;
+  const result = beautifyLayout(
+    layoutGraphOf(workflow, context),
+    node.id,
+    command.strategy ?? 'all',
+    DEFAULT_LAYOUT_OPTIONS
+  );
+  const message = shortenLayoutIds(formatBeautify(result, dryRun), workflow.nodes);
+  if (dryRun || !result.accepted) return { ok: true, message };
+
+  // One batchUpdate is one undo step: position and port order land together.
+  const updates = new Map(
+    applyProposalToNodes(workflow.nodes, result.steps).map((u) => [u.nodeId, u])
+  );
+  const nodes = workflow.nodes.map((n) => {
+    const update = updates.get(n.id);
+    if (!update) return n;
+    return {
+      ...n,
+      ...(update.position ? { position: update.position } : {}),
+      ...(update.config ? { data: { ...n.data, config: update.config } } : {})
+    };
+  });
+  context.dispatch.batchUpdate({ nodes });
+  return { ok: true, message };
+}
+
+// ============================================================================
 // Canvas Viewport Commands
 // ============================================================================
 
@@ -1751,6 +1865,10 @@ export function executeCommand(command: Command, context: CommandContext): Comma
       return executeAutoLayout(command, context);
     case 'beautify_layout':
       return executeBeautifyLayout(command, context);
+    case 'inspect_node_layout':
+      return executeInspectNodeLayout(command, context);
+    case 'beautify_node':
+      return executeBeautifyNode(command, context);
     case 'canvas_fit_view':
       return executeCanvasFitView(context);
     case 'canvas_zoom_in':

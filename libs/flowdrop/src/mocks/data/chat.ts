@@ -242,7 +242,7 @@ const DEFAULT_RESPONSE = `I can help you build and modify workflows. Here are so
 - **Configure nodes**: "Set the temperature to 0.7"
 - **Multiline values**: "Set the prompt" or "Update the template"
 - **Query workflow**: "List all nodes" or "Show connections"
-- **Layout**: "Auto-arrange the nodes"
+- **Layout**: "Auto-arrange the nodes" or "Tidy up the compose node"
 - **Undo/Redo**: "Undo the last change"
 
 What would you like to do?`;

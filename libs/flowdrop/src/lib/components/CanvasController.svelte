@@ -11,6 +11,7 @@
   import { getEditorSettings } from '../stores/settingsStore.svelte.js';
   import { extractPortId } from '../utils/handleIds.js';
   import type { StraightWire } from '../utils/straightWires.js';
+  import type { MeasuredCard } from '../layout/fromWorkflow.js';
 
   interface Props {
     /** Room each node's interface tags need beside it (flow px), read at fit time. */
@@ -145,6 +146,33 @@
       });
     }
     return wires;
+  }
+
+  /**
+   * A node as xyflow measured it: its size and its handle centres from its
+   * top-left corner, split into inputs and outputs. `undefined` until the node
+   * is measured. Node layout works from this, so it holds for every node type.
+   */
+  export function canvasMeasureNode(nodeId: string): MeasuredCard | undefined {
+    const internal = getInternalNode(nodeId);
+    const width = internal?.measured.width;
+    const height = internal?.measured.height;
+    const bounds = internal?.internals.handleBounds;
+    if (!width || !height || !bounds) return undefined;
+    const centres = (handles: typeof bounds.source) =>
+      (handles ?? []).flatMap((h) => {
+        const portId = extractPortId(h.id ?? undefined);
+        return portId
+          ? [
+              {
+                portId,
+                dx: Math.round(h.x + h.width / 2),
+                dy: Math.round(h.y + h.height / 2)
+              }
+            ]
+          : [];
+      });
+    return { width, height, inputs: centres(bounds.target), outputs: centres(bounds.source) };
   }
 
   /**

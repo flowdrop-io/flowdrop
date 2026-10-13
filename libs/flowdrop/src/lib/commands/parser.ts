@@ -7,7 +7,7 @@
  * @module commands/parser
  */
 
-import type { Command, ParseResult } from './types.js';
+import type { BeautifyNodeCommand, BeautifyNodeStrategy, Command, ParseResult } from './types.js';
 
 // ============================================================================
 // Parser Rules
@@ -250,6 +250,22 @@ const rules: ParserRule[] = [
       nodeId: m[1],
       position: parseCoords(m[2], m[3])
     })
+  },
+  // layout node inspect <nodeId>
+  {
+    pattern: /^layout\s+node\s+inspect\s+(\S+)$/i,
+    parse: (m) => ({ type: 'inspect_node_layout', nodeId: m[1] })
+  },
+  // layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run]
+  {
+    pattern:
+      /^layout\s+node\s+beautify\s+(\S+)(?:\s+(column|ports|align|clear|all))?(\s+--dry-run)?$/i,
+    parse: (m) => {
+      const command: BeautifyNodeCommand = { type: 'beautify_node', nodeId: m[1] };
+      if (m[2]) command.strategy = m[2].toLowerCase() as BeautifyNodeStrategy;
+      if (m[3]) command.dryRun = true;
+      return command;
+    }
   },
   // layout auto [--direction horizontal|vertical] (Phase 2)
   {
