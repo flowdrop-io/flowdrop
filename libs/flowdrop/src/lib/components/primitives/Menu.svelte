@@ -371,7 +371,13 @@
   .flowdrop-ui-menu__item:hover:not(:disabled),
   .flowdrop-ui-menu__item:focus-visible {
     background-color: var(--fd-muted);
-    outline: none;
+  }
+
+  /* The ring itself comes from the library's one :focus-visible rule (base.css);
+     the muted wash alone is ~1.1:1 under Graphite. Inset so the popover's
+     overflow does not clip it. */
+  .flowdrop-ui-menu__item:focus-visible {
+    outline-offset: calc(var(--fd-ring-width) * -1);
   }
 
   .flowdrop-ui-menu__item:disabled {
