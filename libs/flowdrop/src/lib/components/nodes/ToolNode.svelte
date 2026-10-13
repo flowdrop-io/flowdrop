@@ -7,6 +7,7 @@
 -->
 
 <script lang="ts">
+  import { m } from '$lib/messages/index.js';
   import type { ConfigValues, NodeMetadata, NodePort } from '../../types/index.js';
   import NodeCard from './NodeCard.svelte';
   import { getEditorSettings } from '../../stores/settingsStore.svelte.js';
@@ -153,6 +154,6 @@
   color={toolColor}
   processing={props.isProcessing}
   error={props.isError}
-  configTitle="Configure tool"
+  configTitle={m().nodes.configureTool}
   onconfig={openConfigSidebar}
 />

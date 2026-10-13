@@ -971,6 +971,10 @@ export const defaultMessages = {
   },
 
   nodes: {
+    // Tooltip and accessible name of the gear on a node card.
+    configure: 'Configure node',
+    configureTool: 'Configure tool',
+    configureIdea: 'Configure idea',
     notes: {
       placeholder: 'Add your notes here...',
       types: {

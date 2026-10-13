@@ -7,6 +7,7 @@
 -->
 
 <script lang="ts">
+  import { m } from '$lib/messages/index.js';
   import { Position, Handle } from '@xyflow/svelte';
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
@@ -194,7 +195,7 @@
   </div>
 
   <!-- Config button -->
-  <NodeConfigButton onclick={openConfigSidebar} title="Configure idea" />
+  <NodeConfigButton onclick={openConfigSidebar} title={m().nodes.configureIdea} />
 
   <!-- Right Port (Source/Output): center at top 40px (multiple of 10), 20px connection area -->
   {#if enableRightPort}

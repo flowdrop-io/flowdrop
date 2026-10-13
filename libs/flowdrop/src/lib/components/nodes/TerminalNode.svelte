@@ -9,6 +9,7 @@
 -->
 
 <script lang="ts">
+  import { m } from '$lib/messages/index.js';
   import { Position, Handle } from '@xyflow/svelte';
   import type {
     ConfigValues,
@@ -343,7 +344,11 @@
   ondblclick={handleDoubleClick}
 >
   <!-- Config button at top -->
-  <NodeConfigButton onclick={openConfigSidebar} title="Configure node" placement="top-center" />
+  <NodeConfigButton
+    onclick={openConfigSidebar}
+    title={m().nodes.configure}
+    placement="top-center"
+  />
 
   <!-- Circle wrapper for proper handle positioning -->
   <div class="flowdrop-terminal-node__circle-wrapper">

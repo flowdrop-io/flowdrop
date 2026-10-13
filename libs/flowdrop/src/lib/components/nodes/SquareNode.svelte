@@ -11,6 +11,7 @@
 -->
 
 <script lang="ts">
+  import { m } from '$lib/messages/index.js';
   import { Position, Handle } from '@xyflow/svelte';
   import type {
     ConfigValues,
@@ -223,7 +224,7 @@
     {/if}
 
     <!-- Config button -->
-    <NodeConfigButton onclick={openConfigSidebar} title="Configure node" />
+    <NodeConfigButton onclick={openConfigSidebar} title={m().nodes.configure} />
   </div>
 </div>
 
