@@ -680,8 +680,9 @@ export function cleanupThemeSubscription(): void {
  *
  * It subscribes to the system color-scheme so 'auto' tracks it live. It does
  * not touch the document: the resolved scheme is `data-theme` on each editor's
- * scope element (see utils/themeScope.ts), never on `<html>`, so the host page
- * around an editor is not themed.
+ * scope element (see utils/themeScope.ts), which is the source. Mounted editors
+ * also mirror it onto `<html data-theme>` as a deprecated 2.11.0 compatibility
+ * behaviour (removed in 3.0).
  */
 export function initializeTheme(): void {
   // Already wired (the system scheme is page-global) — don't stack media-query

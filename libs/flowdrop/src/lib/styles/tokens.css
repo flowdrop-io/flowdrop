@@ -40,7 +40,7 @@
  *
  * Dark mode support
  * -----------------
- * FlowDrop respects `data-theme="dark"` on the <html> element. Override the
+ * The resolved scheme is `data-theme` on each editor scope element (the source); `<html data-theme>` is a deprecated mirror (removed in 3.0). Override the
  * same @public tokens inside `[data-theme="dark"]` to customise dark mode:
  *
  *   [data-theme="dark"] {
@@ -874,7 +874,7 @@
 
 /* =========================================================================
    DARK MODE
-   Users enable with: <html data-theme="dark">
+   Applied by the editor scope element: data-theme="dark" (a host ancestor also works)
    Designed for softer contrast and reduced eye strain
    ========================================================================= */
 

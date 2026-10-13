@@ -80,7 +80,7 @@
   const displayTitle = $derived(navbarTitle ?? workflow?.name ?? 'Playground');
 </script>
 
-<div class="flowdrop-scope fd-playground-app" use:themeScope>
+<div class="flowdrop-scope fd-playground-app" use:themeScope={{ mirror: true }}>
   {#if showNavbar}
     <Navbar
       title={displayTitle}

@@ -108,7 +108,7 @@ FlowDrop's token system has three tiers:
 
 ### Spacing
 
-> **Values may move in minor releases; names stay stable until 3.0.** The scales below were collapsed in 2.13.0
+> **Values may move in minor releases; names stay stable until 3.0.** The scales below were collapsed in 2.12.0
 > (4px spacing grid, six type sizes, `--fd-radius-md` 4px). If you override a token, your value still wins.
 
 | Token            | Value     | Pixels |
@@ -309,17 +309,22 @@ In **dark mode** (`data-theme="dark"`), every `--fd-node-*` colour above is over
 
 ## Dark Mode
 
-The token system supports dark mode. Semantic color tokens (surfaces, primary, accent, status, node port type colors, edges, etc.) have dark-mode equivalents for accessibility. Enable dark mode with:
+The token system supports dark mode. Semantic color tokens (surfaces, primary, accent, status, node port type colors, edges, etc.) have dark-mode equivalents for accessibility. Choose the scheme with the `theme` setting (`light`, `dark`, `auto` or `host`). The resolved scheme is
+`data-theme` on each editor's own scope element (and on its portalled overlays); that attribute is the
+source of truth and what switches the dark palette.
 
 ```html
-<html data-theme="dark"></html>
+<div class="flowdrop-root" data-theme="dark">...</div>
 ```
 
-Or via JavaScript:
+`[data-theme='dark']` also matches an ancestor, so a `data-theme="dark"` set by the host on `<html>` darkens
+the palette for everything below it.
 
-```javascript
-document.documentElement.setAttribute('data-theme', 'dark');
-```
+> **Deprecated: the `<html data-theme>` mirror.** Through 2.11.0 the library wrote the resolved scheme to
+> `<html data-theme>`, and host pages keyed their own styles on `html[data-theme]`. The editor still mirrors
+> its resolved scheme there (last resolved wins with several editors; the attribute is restored or removed
+> when the last editor unmounts), but this is a compatibility behaviour and is removed in 3.0. Read the scheme
+> from the editor's scope element, or from `resolvedTheme()` (core export), instead.
 
 ## Layout Switches and Skin Fonts
 

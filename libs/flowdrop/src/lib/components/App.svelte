@@ -2035,7 +2035,7 @@
 {/snippet}
 
 <!-- MainLayout wrapper for workflow editor -->
-<div class="flowdrop-root" data-fd-scope={scopeId} use:themeScope>
+<div class="flowdrop-root" data-fd-scope={scopeId} use:themeScope={{ mirror: true }}>
   <MainLayout
     {height}
     {width}

@@ -26,8 +26,8 @@
 
 /* Colour scheme: native form controls, their lists (a <select>'s popup) and the
    scrollbars follow the resolved theme instead of the OS setting. The theme is
-   data-theme on <html> today (or on any ancestor of the scope, or the scope
-   itself), so all three forms are matched. */
+   data-theme on the scope itself (or on any ancestor, e.g. the deprecated <html> mirror or a host-set one), so both
+   forms are matched. */
 :where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) {
   color-scheme: light;
 }
