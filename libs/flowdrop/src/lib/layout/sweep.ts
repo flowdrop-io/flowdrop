@@ -92,9 +92,10 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
   const run = (
     phase: SweepPhase,
     id: string,
-    primitive: 'column' | 'ports' | 'align' | 'clear'
+    primitive: 'column' | 'ports' | 'align' | 'clear',
+    with_: LayoutOptions = options
   ) => {
-    const step = propose(current, id, primitive, options);
+    const step = propose(current, id, primitive, with_);
     if (step.accepted) {
       current = step.graph;
       phase.steps.push(step);
@@ -107,7 +108,10 @@ export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
   const byColumn = [...cards].sort(
     (a, b) => (ranks.get(a.id) ?? 0) - (ranks.get(b.id) ?? 0) || a.y - b.y || a.x - b.x
   );
-  for (const card of byColumn) run(phases[0], card.id, 'column');
+  // Columns count from the leftmost card here, not the start node: every card is about to move,
+  // and phase 3 puts the graph back where it was.
+  for (const card of byColumn)
+    run(phases[0], card.id, 'column', { ...options, columnOrigin: 'left' });
 
   // Phase 1: in each overlapping or too-close pair the lower card yields. Stops when `clear`
   // refuses; the bound keeps a pair that trades places from looping.

@@ -40,12 +40,10 @@ describe('sweep: right to left', () => {
     });
   });
 
-  // The design demo reaches 0 crossings; this sweep stops at 2. The demo's column origin is the
-  // leftmost card (x 0), which drags the start node 1440 px left and 580 px down in phase 0. Here
-  // the origin is the leftmost start node, so the start node stays and "check" lands under the
-  // chain instead of above it. See the L4 run log.
-  it('cuts 12 crossings to 2 (the column origin keeps check below parse)', () => {
-    expect(result.after.crossings).toHaveLength(2);
+  // Phase 0 counts columns from the leftmost card (`columnOrigin: 'left'`), as the design demo
+  // does; a single `column` move still counts from the start node.
+  it('cuts 12 crossings to 0, as in the design (columns count from the leftmost card)', () => {
+    expect(result.after.crossings).toHaveLength(0);
   });
 
   it('goes back to the original top-left', () => {

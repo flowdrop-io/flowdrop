@@ -74,6 +74,12 @@ export interface LayoutOptions {
   gapY: number;
   /** How a loopback is drawn: today's bezier, or a return lane under the loop body (decision D5). */
   loopbacks: 'curve' | 'lane';
+  /**
+   * Where column 0 starts. `start` (default): at the leftmost start node, so a single `column`
+   * move lines a node up with what feeds it. `left`: at the leftmost card, which the sweep uses
+   * because it lays out every card and translates the graph back afterwards.
+   */
+  columnOrigin?: 'start' | 'left';
 }
 
 export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {

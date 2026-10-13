@@ -391,7 +391,7 @@ export function columnGrid(
 ): { origin: number; stride: number } {
   const ranks = columnRanks(graph);
   const cards = graph.cards.filter((c) => c.kind === 'card');
-  const first = cards.filter((c) => ranks.get(c.id) === 0);
+  const first = options.columnOrigin === 'left' ? [] : cards.filter((c) => ranks.get(c.id) === 0);
   const origin = snap(Math.min(...(first.length ? first : cards).map((c) => c.x)));
   const widest = Math.max(...cards.map((c) => c.width));
   return { origin, stride: ceilToGrid(widest + options.gapX) };
