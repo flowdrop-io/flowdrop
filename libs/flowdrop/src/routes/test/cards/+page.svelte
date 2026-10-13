@@ -74,7 +74,12 @@
         )
       : { ...DEFAULT_ZOOM_TIERS };
     untrack(() =>
-      updateSettings({ theme: { preference }, editor: { showNodeDescriptions, zoomTiers } })
+      updateSettings({
+        theme: { preference },
+        // Graphite is the default UI theme, so ?theme=default must say so or the stock look never shows.
+        ui: { theme: themeName as never },
+        editor: { showNodeDescriptions, zoomTiers }
+      })
     );
   });
 
