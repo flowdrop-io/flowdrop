@@ -4,16 +4,18 @@
  * `measure` counts what the rules care about; `score` turns that into one
  * tuple compared rank by rank, so a lower rank can never buy back a higher one:
  *
- * 1. overlaps + spacing breaks (H2, H3; fewer)
- * 2. ports passed (H4; fewer)
- * 3. straight wires (H1; more)
- * 4. backward wires (S5; fewer)
- * 5. crossings (S1; fewer)
- * 6. near misses (H4, graded; fewer)
- * 7. pixels moved (S3; fewer, the tie-break)
+ * 1. overlaps (H2; fewer)
+ * 2. spacing breaks (H3; fewer)
+ * 3. ports passed (H4; fewer)
+ * 4. straight wires (H1; more)
+ * 5. backward wires (S5; fewer)
+ * 6. crossings (S1; fewer)
+ * 7. near misses (H4, graded; fewer)
+ * 8. pixels moved (S3; fewer, the tie-break)
  *
- * So only an overlap, a spacing break or a passed port can bend a straight wire (decision D1,
- * widened by H4).
+ * Overlaps rank above spacing: a card on top of another is worse than two cards too close, so a
+ * move can never trade a spacing break for an overlap, whatever it does for the wires. Only an
+ * overlap, a spacing break or a passed port can bend a straight wire (decision D1, widened by H4).
  *
  * Ports passed (H4): a wire that runs through a handle other than its own two ends reads as if
  * it started, ended or was relayed there (a level wire running through a card's unused input and
@@ -33,7 +35,15 @@
  * @module layout/measure
  */
 
-import { boxOf, polylineCrossing, wirePaths, type WirePath, type XY } from './geometry.js';
+import {
+  boxOf,
+  loopbackLanes,
+  polylineCrossing,
+  wirePaths,
+  type LoopbackLane,
+  type WirePath,
+  type XY
+} from './geometry.js';
 import {
   LAYOUT_GRID,
   type LayoutCard,
@@ -89,7 +99,16 @@ export interface LayoutMetrics {
 }
 
 /** Compared rank by rank; lower is better in every rank. */
-export type LayoutScore = readonly [number, number, number, number, number, number, number];
+export type LayoutScore = readonly [
+  overlaps: number,
+  spacing: number,
+  passes: number,
+  straight: number,
+  backward: number,
+  crossings: number,
+  nearMisses: number,
+  moved: number
+];
 
 /** A wire is level when its ends are less than this apart vertically. */
 const LEVEL_EPSILON = 0.5;
@@ -98,6 +117,8 @@ const LEVEL_EPSILON = 0.5;
  * next port row (one grid step away) does not count.
  */
 const PORT_HIT = LAYOUT_GRID / 2;
+/** How far a handle may sit outside its card's box (header pins). */
+const HANDLE_SLACK = 40;
 /** Closer than this (but not a hit) is a near miss: one grid step. */
 const PORT_NEAR = LAYOUT_GRID;
 
@@ -112,6 +133,36 @@ function segmentDistance2(p: XY, a: XY, b: XY): number {
   return dx * dx + dy * dy;
 }
 
+interface PortLinks {
+  fedBySource: Map<string, Set<string>>;
+  feedsTarget: Map<string, Set<string>>;
+}
+
+/** Per wire list: which ports feed which (it never depends on where the cards are). */
+const portLinkCache = new WeakMap<readonly LayoutWire[], PortLinks>();
+
+function portLinks(wires: readonly LayoutWire[]): PortLinks {
+  let links = portLinkCache.get(wires);
+  if (!links) {
+    const fedBySource = new Map<string, Set<string>>();
+    const feedsTarget = new Map<string, Set<string>>();
+    const add = (map: Map<string, Set<string>>, key: string, value: string) => {
+      let set = map.get(key);
+      if (!set) map.set(key, (set = new Set()));
+      set.add(value);
+    };
+    for (const w of wires) {
+      const source = `${w.source}\0${w.sourcePort}`;
+      const target = `${w.target}\0${w.targetPort}`;
+      add(fedBySource, target, source);
+      add(feedsTarget, source, target);
+    }
+    links = { fedBySource, feedsTarget };
+    portLinkCache.set(wires, links);
+  }
+  return links;
+}
+
 /**
  * Every wire that runs through, or close past, a handle other than its own two ends. With `cards`,
  * only the handles on those cards.
@@ -121,21 +172,9 @@ export function portClearance(
   wires: readonly WirePath[],
   cards: readonly LayoutCard[] = graph.cards
 ): { passes: LayoutPortPass[]; nearMisses: LayoutPortPass[] } {
-  // A handle wired to the same port as the wire's other end reads true (the same value goes
-  // there too), so it does not count; neither do the wire's own two ends.
   const sourceOf = (w: LayoutWire) => `${w.source}\0${w.sourcePort}`;
   const targetOf = (w: LayoutWire) => `${w.target}\0${w.targetPort}`;
-  const fedBySource = new Map<string, Set<string>>();
-  const feedsTarget = new Map<string, Set<string>>();
-  const add = (map: Map<string, Set<string>>, key: string, value: string) => {
-    let set = map.get(key);
-    if (!set) map.set(key, (set = new Set()));
-    set.add(value);
-  };
-  for (const w of graph.wires) {
-    add(fedBySource, targetOf(w), sourceOf(w));
-    add(feedsTarget, sourceOf(w), targetOf(w));
-  }
+  const { fedBySource, feedsTarget } = portLinks(graph.wires);
   const passes: LayoutPortPass[] = [];
   const nearMisses: LayoutPortPass[] = [];
   const hit2 = PORT_HIT * PORT_HIT;
@@ -152,6 +191,15 @@ export function portClearance(
     const maxY = box[3] + PORT_NEAR;
     for (const card of cards) {
       if (card.kind !== 'card') continue;
+      // A handle sits on its card (a pin may stick out a little): a card far from the wire has
+      // none to hit.
+      if (
+        card.x - HANDLE_SLACK > maxX ||
+        card.x + card.width + HANDLE_SLACK < minX ||
+        card.y - HANDLE_SLACK > maxY ||
+        card.y + card.height + HANDLE_SLACK < minY
+      )
+        continue;
       for (const direction of ['input', 'output'] as const) {
         for (const handle of direction === 'input' ? card.inputs : card.outputs) {
           // Position first: it rules out almost every handle, and the key below costs a string.
@@ -301,7 +349,8 @@ export function measure(graph: LayoutGraph, options: LayoutOptions): LayoutMetri
 /** The ranked score of a measured layout, given how far the change moved cards (px). */
 export function score(metrics: LayoutMetrics, moved = 0): LayoutScore {
   return [
-    metrics.overlaps + metrics.spacing,
+    metrics.overlaps,
+    metrics.spacing,
     metrics.passes.length,
     -metrics.straight,
     metrics.backward,
@@ -311,24 +360,61 @@ export function score(metrics: LayoutMetrics, moved = 0): LayoutScore {
   ];
 }
 
+/** Whether two polylines are the same points. */
+function samePoints(a: readonly XY[], b: readonly XY[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i][0] !== b[i][0] || a[i][1] !== b[i][1]) return false;
+  return true;
+}
+
 /**
  * The score of `next`, a layout that differs from the measured `base` only in where `cardId`
  * is. Equal to `score(measure(next, options), moved)`, but counts again only what the move can
- * change: the card's pairs, the wires on the card and (with return lanes) every lane, since a
- * lane follows its loop body. A primitive judges its candidates with it and measures the winner.
+ * change: the card's pairs, the wires on the card and (with return lanes) the lanes whose path
+ * the move changed, since a lane follows its loop body and the lanes it nests with. A primitive
+ * judges its candidates with it and measures the winner.
+ *
+ * With `bound` (the best score so far) a candidate that is already worse than it on a higher rank
+ * is dropped before the dear ranks (ports passed, crossings) are counted: the result is then
+ * only guaranteed to rank worse than `bound`, its lower ranks being `Infinity`. Without `bound`
+ * it is exact.
  */
 export function scoreMove(
   base: LayoutMetrics,
   next: LayoutGraph,
   cardId: string,
   options: LayoutOptions,
-  moved = 0
+  moved = 0,
+  bound?: LayoutScore
 ): LayoutScore {
-  const lanes = options.loopbacks === 'lane';
-  const touched = (wire: LayoutWire) =>
-    wire.source === cardId || wire.target === cardId || (lanes && wire.loopback);
+  // `rank` ranks counted so far: worse than the bound on the first difference means stop.
+  const beaten = (counted: number[]): boolean => {
+    if (!bound) return false;
+    for (let i = 0; i < counted.length; i++) {
+      if (counted[i] > bound[i]) return true;
+      if (counted[i] < bound[i]) return false;
+    }
+    return false;
+  };
+  const dropped = (counted: number[]): LayoutScore => {
+    const rest = Array<number>(8 - counted.length).fill(Infinity);
+    return [...counted, ...rest] as unknown as LayoutScore;
+  };
+  const lanesOn = options.loopbacks === 'lane';
+  const basePaths = new Map(base.wires.map((path) => [path.wire.id, path]));
+  // Lanes are cheap polylines; the work is what they cross. Work out the new lanes of the whole
+  // graph and count again only the loopbacks whose path differs from the measured one.
+  let lanes: Map<string, LoopbackLane> | undefined;
+  if (lanesOn && next.wires.some((wire) => wire.loopback)) lanes = loopbackLanes(next);
+  const touched = (wire: LayoutWire) => {
+    if (wire.source === cardId || wire.target === cardId) return true;
+    if (!lanesOn || !wire.loopback) return false;
+    const was = basePaths.get(wire.id);
+    const now = lanes?.get(wire.id);
+    return !was || !now || !samePoints(was.points, now.points);
+  };
   const changed = new Set(next.wires.filter(touched).map((wire) => wire.id));
-  const fresh = wirePaths(next, options, touched);
+  const fresh = wirePaths(next, options, (wire) => changed.has(wire.id), lanes);
   const kept = base.wires.filter((path) => !changed.has(path.wire.id));
 
   let straight = base.straight;
@@ -343,17 +429,40 @@ export function scoreMove(
     else if (isStraight(path)) straight++;
   }
 
-  // Card pairs without the moved card stand; every lane is counted again.
-  let conflicts = base.conflicts.filter(
-    (c) => c.kind !== 'lane' && c.card !== cardId && c.with !== cardId
-  ).length;
+  // Card pairs without the moved card stand; so do the lane breaks of lanes that did not change
+  // (except against the moved card).
+  let overlaps = 0;
+  let spacing = 0;
+  for (const c of base.conflicts) {
+    if (c.kind === 'lane') {
+      if (c.card !== cardId && !changed.has(c.with)) spacing++;
+      continue;
+    }
+    if (c.card === cardId || c.with === cardId) continue;
+    if (c.kind === 'overlap') overlaps++;
+    else spacing++;
+  }
   const card = next.cards.find((c) => c.id === cardId);
   if (card) {
     for (const other of next.cards) {
-      if (other.id !== cardId && cardConflict(card, other, options)) conflicts++;
+      if (other.id === cardId) continue;
+      const kind = cardConflict(card, other, options);
+      if (kind === 'overlap') overlaps++;
+      else if (kind) spacing++;
     }
+    for (const path of kept) spacing += laneConflicts(path, [card], options).length;
   }
-  for (const path of fresh) conflicts += laneConflicts(path, next.cards, options).length;
+  for (const path of fresh) spacing += laneConflicts(path, next.cards, options).length;
+  if (beaten([overlaps, spacing])) return dropped([overlaps, spacing]);
+
+  // Changed wires against every handle, unchanged wires against the moved card's handles.
+  const stands = (pass: LayoutPortPass) => !changed.has(pass.wire) && pass.card !== cardId;
+  const ofFresh = portClearance(next, fresh);
+  const ofKept = card ? portClearance(next, kept, [card]) : { passes: [], nearMisses: [] };
+  const passes = base.passes.filter(stands).length + ofFresh.passes.length + ofKept.passes.length;
+  if (beaten([overlaps, spacing, passes, -straight, backward])) {
+    return dropped([overlaps, spacing, passes, -straight, backward]);
+  }
 
   let crossings = base.crossings.filter((c) => !changed.has(c.a) && !changed.has(c.b)).length;
   for (let i = 0; i < fresh.length; i++) {
@@ -361,15 +470,10 @@ export function scoreMove(
     for (let j = i + 1; j < fresh.length; j++) if (wireCrossing(fresh[i], fresh[j])) crossings++;
   }
 
-  // Changed wires against every handle, unchanged wires against the moved card's handles.
-  const stands = (pass: LayoutPortPass) => !changed.has(pass.wire) && pass.card !== cardId;
-  const ofFresh = portClearance(next, fresh);
-  const ofKept = card ? portClearance(next, kept, [card]) : { passes: [], nearMisses: [] };
-  const passes = base.passes.filter(stands).length + ofFresh.passes.length + ofKept.passes.length;
   const nearMisses =
     base.nearMisses.filter(stands).length + ofFresh.nearMisses.length + ofKept.nearMisses.length;
 
-  return [conflicts, passes, -straight, backward, crossings, nearMisses, moved];
+  return [overlaps, spacing, passes, -straight, backward, crossings, nearMisses, moved];
 }
 
 /** True when `a` beats `b` (strictly). */

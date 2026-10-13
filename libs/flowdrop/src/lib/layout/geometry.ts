@@ -129,32 +129,73 @@ function span(ends: WireEnds): [number, number] {
   return [Math.min(ends.sx, ends.tx), Math.max(ends.sx, ends.tx)];
 }
 
+/** The forward wires of a graph as adjacency lists, by card id. */
+interface ForwardIndex {
+  out: Map<string, string[]>;
+  into: Map<string, string[]>;
+}
+
+const forwardIndexes = new WeakMap<readonly LayoutWire[], ForwardIndex>();
+const bodyCaches = new WeakMap<readonly LayoutWire[], Map<string, Set<string>>>();
+
+function forwardIndex(wires: readonly LayoutWire[]): ForwardIndex {
+  let index = forwardIndexes.get(wires);
+  if (!index) {
+    const out = new Map<string, string[]>();
+    const into = new Map<string, string[]>();
+    const push = (map: Map<string, string[]>, key: string, value: string) => {
+      const list = map.get(key);
+      if (list) list.push(value);
+      else map.set(key, [value]);
+    };
+    for (const w of wires) {
+      if (w.loopback) continue;
+      push(out, w.source, w.target);
+      push(into, w.target, w.source);
+    }
+    index = { out, into };
+    forwardIndexes.set(wires, index);
+  }
+  return index;
+}
+
+/** Every card reachable from `start` along the given adjacency (index-based queue). */
+function reach(start: string, next: Map<string, string[]>): Set<string> {
+  const seen = new Set([start]);
+  const queue = [start];
+  for (let head = 0; head < queue.length; head++) {
+    for (const to of next.get(queue[head]) ?? []) {
+      if (!seen.has(to)) {
+        seen.add(to);
+        queue.push(to);
+      }
+    }
+  }
+  return seen;
+}
+
 /**
  * The loop body of a loopback: every card on a forward path from the wire's
  * target (the loop) to its source, both included.
+ *
+ * It depends only on the wires, never on where the cards are, so it is worked out once per wire
+ * list (a sweep moves cards a thousand times over the same wires) and the same set is returned
+ * every time: do not mutate it.
  */
 export function loopBody(graph: LayoutGraph, wire: LayoutWire): Set<string> {
-  const forward = graph.wires.filter((w) => !w.loopback);
-  const reach = (start: string, next: (w: LayoutWire) => [string, string]): Set<string> => {
-    const seen = new Set([start]);
-    const queue = [start];
-    while (queue.length > 0) {
-      const at = queue.shift()!;
-      for (const w of forward) {
-        const [from, to] = next(w);
-        if (from === at && !seen.has(to)) {
-          seen.add(to);
-          queue.push(to);
-        }
-      }
-    }
-    return seen;
-  };
-  const fromLoop = reach(wire.target, (w) => [w.source, w.target]);
-  const toSource = reach(wire.source, (w) => [w.target, w.source]);
-  const body = new Set([...fromLoop].filter((id) => toSource.has(id)));
-  body.add(wire.source);
-  body.add(wire.target);
+  let cache = bodyCaches.get(graph.wires);
+  if (!cache) bodyCaches.set(graph.wires, (cache = new Map()));
+  const key = `${wire.id}\0${wire.source}\0${wire.target}`;
+  let body = cache.get(key);
+  if (!body) {
+    const { out, into } = forwardIndex(graph.wires);
+    const fromLoop = reach(wire.target, out);
+    const toSource = reach(wire.source, into);
+    body = new Set([...fromLoop].filter((id) => toSource.has(id)));
+    body.add(wire.source);
+    body.add(wire.target);
+    cache.set(key, body);
+  }
   return body;
 }
 
@@ -268,14 +309,17 @@ export function loopbackLanes(
 export function wirePaths(
   graph: LayoutGraph,
   options: Pick<LayoutOptions, 'loopbacks'>,
-  only?: (wire: LayoutWire) => boolean
+  only?: (wire: LayoutWire) => boolean,
+  /** The graph's lanes, when the caller has them already. */
+  known?: ReadonlyMap<string, LoopbackLane>
 ): WirePath[] {
   const cards = cardIndex(graph);
   const picked = only ? graph.wires.filter(only) : graph.wires;
   const lanes =
-    options.loopbacks === 'lane' && picked.some((wire) => wire.loopback)
+    known ??
+    (options.loopbacks === 'lane' && picked.some((wire) => wire.loopback)
       ? loopbackLanes(graph, cards)
-      : new Map<string, LoopbackLane>();
+      : new Map<string, LoopbackLane>());
   const paths: WirePath[] = [];
   for (const wire of picked) {
     const ends = wireEnds(wire, cards);

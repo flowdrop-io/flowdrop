@@ -136,21 +136,28 @@ describe('measure: rules', () => {
 
 describe('score', () => {
   it('ranks overlaps and spacing above straight wires (D1)', () => {
-    expect(better([0, 0, 0, 9, 400], [1, -5, 0, 0, 0])).toBe(true);
+    expect(better([0, 0, 0, 0, 9, 0, 0, 400], [0, 1, 0, -5, 0, 0, 0, 0])).toBe(true);
+    expect(better([0, 0, 0, 0, 9, 0, 0, 400], [1, 0, 0, -5, 0, 0, 0, 0])).toBe(true);
+  });
+
+  it('ranks an overlap above spacing: a spacing break never buys back an overlap', () => {
+    // One overlap and no spacing break is worse than three spacing breaks, whatever the wires do.
+    expect(better([0, 3, 0, 0, 0, 0, 0, 0], [1, 0, 0, -9, 0, 0, 0, 0])).toBe(true);
+    expect(better([1, 0, 0, -9, 0, 0, 0, 0], [0, 3, 0, 0, 0, 0, 0, 0])).toBe(false);
   });
 
   it('ranks straight wires above backward wires, crossings and movement', () => {
-    expect(better([0, -3, 2, 5, 300], [0, -2, 0, 0, 0])).toBe(true);
+    expect(better([0, 0, 0, -3, 2, 5, 0, 300], [0, 0, 0, -2, 0, 0, 0, 0])).toBe(true);
   });
 
   it('a tie is not better', () => {
-    expect(better([0, -1, 0, 0, 20], [0, -1, 0, 0, 20])).toBe(false);
+    expect(better([0, 0, 0, -1, 0, 0, 0, 20], [0, 0, 0, -1, 0, 0, 0, 20])).toBe(false);
   });
 
   it('pixels moved breaks a tie', () => {
     const m = measure(rightToLeft(), curve);
     expect(better(score(m, 20), score(m, 40))).toBe(true);
-    expect(score(m)).toEqual([0, 0, -0, 8, 12, 0, 0]);
+    expect(score(m)).toEqual([0, 0, 0, -0, 8, 12, 0, 0]);
   });
 });
 
@@ -173,7 +180,7 @@ describe('ports passed (H4)', () => {
     expect(passed(row())).toEqual(['a.out>c.in @ b.input.in', 'a.out>c.in @ b.output.out']);
     const m = measure(row(), curve);
     expect(m.straight).toBe(1);
-    expect(score(m).slice(0, 3)).toEqual([0, 2, -1]);
+    expect(score(m).slice(0, 4)).toEqual([0, 0, 2, -1]);
     expect(passCards(m)).toEqual(new Set(['a', 'b', 'c']));
     expect(formatMetrics(m)).toBe(
       'straight 1/1 · backward 0 · crossings 0 · overlaps 0 · spacing ok · ports passed 2'
@@ -203,7 +210,7 @@ describe('ports passed (H4)', () => {
       'b.input.in',
       'b.output.out'
     ]);
-    expect(score(m)).toEqual([0, 0, -1, 0, 0, 2, 0]);
+    expect(score(m)).toEqual([0, 0, 0, -1, 0, 0, 2, 0]);
     expect(formatMetrics(m)).toBe(
       'straight 1/1 · backward 0 · crossings 0 · overlaps 0 · spacing ok · near misses 2'
     );

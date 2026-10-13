@@ -16,8 +16,10 @@ type TidyMessages = typeof defaultMessages.tidy;
 export const TIDY_ANIMATION_MS = 250;
 
 /**
- * What improved, one phrase each, in the order a reader cares about: overlaps and spacing,
- * wires through ports, straight wires, flow direction, crossings. Empty when nothing improved.
+ * What improved, one phrase each, in the order a reader cares about: overlaps and spacing, wires
+ * through ports, straight wires, flow direction, crossings. Overlaps and spacing say how many are
+ * left. When something got worse (the score ranks overlaps and spacing over wires) a last phrase
+ * says what it cost. Empty when nothing changed that it counts.
  */
 export function describeTidy(
   data: LayoutResultData,
@@ -25,15 +27,29 @@ export function describeTidy(
 ): string[] {
   const { before, after } = data;
   const parts: string[] = [];
-  const gain = (n: number, say: (a: { n: number }) => string) => {
-    if (n > 0) parts.push(say({ n }));
+  const gain = (n: number, say: (a: { n: number; left?: number }) => string, left?: number) => {
+    if (n > 0) parts.push(say({ n, left }));
   };
-  gain(before.overlaps - after.overlaps, messages.unoverlapped);
-  gain(before.spacing - after.spacing, messages.spaced);
+  gain(before.overlaps - after.overlaps, messages.unoverlapped, after.overlaps);
+  gain(before.spacing - after.spacing, messages.spaced, after.spacing);
   gain(before.passes - after.passes, messages.unpassed);
   gain(after.straight - before.straight, messages.straightened);
   gain(before.backward - after.backward, messages.unbackward);
   gain(before.crossings - after.crossings, messages.uncrossed);
+
+  // The score ranks overlaps and spacing over wires, so a tidy can trade a worse wire count for
+  // them: say so instead of reading as a pure win.
+  const costs: string[] = [];
+  const loss = (n: number, say: (a: { n: number }) => string) => {
+    if (n > 0) costs.push(say({ n }));
+  };
+  loss(after.overlaps - before.overlaps, messages.moreOverlaps);
+  loss(after.spacing - before.spacing, messages.moreSpacing);
+  loss(after.passes - before.passes, messages.morePassed);
+  loss(before.straight - after.straight, messages.fewerStraight);
+  loss(after.backward - before.backward, messages.moreBackward);
+  loss(after.crossings - before.crossings, messages.moreCrossings);
+  if (costs.length) parts.push(messages.tradeOff({ what: costs.join(', ') }));
   return parts;
 }
 

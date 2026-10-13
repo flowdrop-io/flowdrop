@@ -36,14 +36,48 @@ describe('describeTidy', () => {
     ]);
   });
 
-  it('leaves out what got worse or stayed the same', () => {
+  it('names what got worse, leaves out what stayed the same', () => {
     // A straight wire can be traded for a port pass (H4 outranks straight wires).
     const parts = describeTidy({
       changed: true,
       before: counts({ straight: 3, passes: 1 }),
       after: counts({ straight: 2 })
     });
-    expect(parts).toEqual(['1 wire no longer runs through a port']);
+    expect(parts).toEqual(['1 wire no longer runs through a port', 'but 1 fewer straight wire']);
+  });
+
+  it('says how many overlaps and spacing breaks are left', () => {
+    const parts = describeTidy({
+      changed: true,
+      before: counts({ overlaps: 3, spacing: 4 }),
+      after: counts({ overlaps: 1, spacing: 4 - 2 })
+    });
+    expect(parts).toEqual([
+      '2 overlaps fixed, 1 left',
+      '2 pairs of cards spaced out, 2 still too close'
+    ]);
+  });
+
+  it('does not claim a pure win when something got worse', () => {
+    // Overlaps and spacing outrank wires: fixing one overlap may cost crossings and straight wires.
+    const parts = describeTidy({
+      changed: true,
+      before: counts({ overlaps: 1, straight: 4, crossings: 1, backward: 0 }),
+      after: counts({ overlaps: 0, straight: 2, crossings: 5, backward: 1 })
+    });
+    expect(parts).toEqual([
+      '1 overlap fixed',
+      'but 2 fewer straight wires, 1 more wire running right to left, 4 more crossings'
+    ]);
+  });
+
+  it('a tidy that only traded gives just the trade-off', () => {
+    const parts = describeTidy({
+      changed: true,
+      before: counts({ crossings: 0 }),
+      after: counts({ crossings: 1 })
+    });
+    expect(parts).toEqual(['but 1 more crossing']);
   });
 
   it('is empty when only the port order changed nothing it counts', () => {
