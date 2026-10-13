@@ -139,6 +139,16 @@
      * arrivals down to the canvas without owning a separate status channel.
      */
     refreshTrigger?: number;
+    /**
+     * @deprecated No effect. The console is a bottom strip driven by the `ui.consoleOpen`
+     * setting; the toolbar toggle these three props fed is gone. Accepted so 2.11.0 hosts
+     * keep compiling. Removed in 3.0; use `updateSettings({ ui: { consoleOpen } })`.
+     */
+    consoleOpen?: boolean;
+    /** @deprecated No effect (see `consoleOpen`). Removed in 3.0. */
+    onToggleConsole?: () => void;
+    /** @deprecated No effect (see `consoleOpen`). Removed in 3.0. */
+    consoleToggleLabel?: string;
     /** Take a failed run on the run pill to the Assistant. */
     onAskAssistant?: (runId: string) => void;
     /** Offer the Runs list in Test mode (the canvas toolbar's "Runs"). @default false */
