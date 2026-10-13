@@ -35,4 +35,28 @@ export type DeepPartial<T> = T extends AnyFn
       ? { [K in keyof T]?: DeepPartial<T[K]> }
       : T;
 
-export type MessagesOverride = DeepPartial<Messages>;
+/**
+ * 2.11.0 declared `chat.tools.awaitingApproval` and `chat.tools.rejected` as
+ * `({ tool }) => string`; they are plain strings now. Overrides typed against
+ * 2.11.0 keep compiling: either form is accepted, and the chat panel calls the
+ * function with `{ tool }` as before.
+ *
+ * @deprecated The function form. Removed in 3.0.
+ */
+type LegacyToolLabel = string | ((params: { tool: string }) => string);
+
+type ChatToolsOverride = Omit<
+  DeepPartial<Messages['chat']['tools']>,
+  'awaitingApproval' | 'rejected'
+> & {
+  awaitingApproval?: LegacyToolLabel;
+  rejected?: LegacyToolLabel;
+};
+
+type ChatOverride = Omit<DeepPartial<Messages['chat']>, 'tools'> & {
+  tools?: ChatToolsOverride;
+};
+
+export type MessagesOverride = Omit<DeepPartial<Messages>, 'chat'> & {
+  chat?: ChatOverride;
+};

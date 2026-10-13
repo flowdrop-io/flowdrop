@@ -630,13 +630,32 @@ export const defaultMessages = {
       /** A tool with no label of its own. */
       verbFallback: ({ tool, phase }: { tool: string; phase: 'running' | 'done' }) =>
         phase === 'running' ? `Running ${tool}` : `Ran ${tool}`,
+      /**
+       * @deprecated Not used since the step rows (`verbs`, `used`); kept so 2.11.0 overrides
+       * keep type-checking. Removed in 3.0.
+       */
+      reading: ({ tool, detail }: { tool: string; detail: string }) =>
+        detail ? `Reading: ${tool} ${detail}` : `Reading: ${tool}`,
+      /** @deprecated Not used (see `reading`). Removed in 3.0. */
+      read: ({ tool, detail }: { tool: string; detail: string }) =>
+        detail ? `Read: ${tool} ${detail}` : `Read: ${tool}`,
+      /** @deprecated Not used (see `reading`). Removed in 3.0. */
+      applied: ({ tool, detail }: { tool: string; detail: string }) =>
+        detail ? `Applied: ${detail}` : `Done: ${tool}`,
       /** The row while the reply is still coming. */
       thinking: 'Thinking…',
-      /** The row of a call that waits on the person; the call's own label follows it. */
+      /**
+       * The row of a call that waits on the person; the call's own label follows it.
+       * A 2.11.0 override written as `({ tool }) => string` is still honoured (deprecated; 3.0
+       * takes strings only).
+       */
       awaitingApproval: 'Waiting for your approval',
       /** Title of the approval dialog when the assistant, not a browser agent, asks. */
       confirmTitle: ({ name }: { name: string }) => `The assistant wants to change “${name}”`,
-      /** A call the person turned down; its action follows. */
+      /**
+       * A call the person turned down; its action follows. A 2.11.0 override written as
+       * `({ tool }) => string` is still honoured (deprecated; 3.0 takes strings only).
+       */
       rejected: 'Rejected',
       /** A call that failed: `Adding node failed`, the error follows. */
       failed: ({ action }: { action: string }) => `${action} failed`,

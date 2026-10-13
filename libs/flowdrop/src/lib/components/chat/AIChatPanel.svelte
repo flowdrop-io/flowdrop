@@ -331,6 +331,11 @@
     }
   }
 
+  /** A tool label that 2.11.0 hosts may still supply as `({ tool }) => string`. */
+  function toolLabel(label: string | ((params: { tool: string }) => string), tool: string): string {
+    return typeof label === 'function' ? label({ tool }) : label;
+  }
+
   /**
    * Render a driver event onto the in-progress assistant message. Synchronous
    * on purpose: events arrive in order and land in order.
@@ -349,7 +354,7 @@
           status: 'running',
           verb:
             event.type === 'awaiting-approval'
-              ? tt.awaitingApproval
+              ? toolLabel(tt.awaitingApproval, event.call.name)
               : verb(event.call.name, 'running'),
           detail:
             event.type === 'awaiting-approval'
@@ -382,7 +387,7 @@
         if (line) {
           finishLine(line);
           line.status = 'rejected';
-          line.verb = tt.rejected;
+          line.verb = toolLabel(tt.rejected, event.call.name);
           line.detail = verb(event.call.name, 'running');
         }
         break;
