@@ -53,7 +53,7 @@ import { logger } from '../utils/logger.js';
  */
 let settingsService: {
   savePreferences: (settings: FlowDropSettings) => Promise<void>;
-  getPreferences: () => Promise<FlowDropSettings>;
+  getPreferences: () => Promise<FlowDropSettings | PartialSettings>;
 } | null = null;
 
 /**
@@ -716,7 +716,11 @@ export function isThemeInitialized(): boolean {
 export function setSettingsService(
   service: {
     savePreferences: (settings: FlowDropSettings) => Promise<void>;
-    getPreferences: () => Promise<FlowDropSettings>;
+    /**
+     * Returns the saved settings. A partial object is enough: anything missing (including
+     * settings added after 2.11.0) falls back to the defaults.
+     */
+    getPreferences: () => Promise<FlowDropSettings | PartialSettings>;
   } | null
 ): void {
   settingsService = service;
@@ -781,7 +785,10 @@ export async function loadSettingsFromApi(): Promise<void> {
 
   try {
     const apiSettingsData = await settingsService.getPreferences();
-    const mergedSettings = deepMergeSettings(DEFAULT_SETTINGS, apiSettingsData);
+    const mergedSettings = deepMergeSettings(
+      DEFAULT_SETTINGS,
+      apiSettingsData as Partial<FlowDropSettings>
+    );
 
     storeState = {
       ...storeState,
