@@ -204,6 +204,7 @@
     fitInset?: () => number;
   }
 
+  // eslint-disable-next-line svelte/no-unused-props -- `consoleOpen`, `onToggleConsole` and `consoleToggleLabel` are deprecated no-ops kept for hosts
   let props: Props = $props();
 
   // Resolve (and provide to children) the per-instance state container.

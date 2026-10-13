@@ -42,6 +42,7 @@
     onChange: (value: boolean) => void;
   }
 
+  // eslint-disable-next-line svelte/no-unused-props -- `hideLabel` is a deprecated no-op kept for hosts
   let {
     id,
     value = false,
