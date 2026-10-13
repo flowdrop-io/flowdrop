@@ -15,6 +15,12 @@ export const LAYOUT_GRID = 20;
 export const DEFAULT_LAYOUT_GAP_X = 120;
 /** Default gap between stacked cards (decision D2; an editor setting). */
 export const DEFAULT_LAYOUT_GAP_Y = 40;
+/**
+ * The most cards the graph sweep (`layout beautify`, Tidy up) takes on. It runs synchronously and
+ * its cost grows faster than the card count (about 1 s at 100 cards, 10 to 16 s at 200), so a
+ * bigger graph is refused with a clear message instead of freezing the editor.
+ */
+export const MAX_SWEEP_CARDS = 120;
 /** A return lane runs this far under the lowest card of its loop body. */
 export const LANE_CLEARANCE = 40;
 /** Distance between stacked return-lane tracks. */

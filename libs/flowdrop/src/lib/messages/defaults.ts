@@ -318,8 +318,22 @@ export const defaultMessages = {
     uncrossed: ({ n }: { n: number }) => `${n} crossing${n !== 1 ? 's' : ''} removed`,
     unbackward: ({ n }: { n: number }) =>
       `${n} wire${n !== 1 ? 's' : ''} turned to flow left to right`,
-    unoverlapped: ({ n }: { n: number }) => `${n} overlap${n !== 1 ? 's' : ''} fixed`,
-    spaced: ({ n }: { n: number }) => `${n} pair${n !== 1 ? 's' : ''} of cards spaced out`,
+    // `left` is what is still overlapping or too close afterwards (0 or absent: nothing).
+    unoverlapped: ({ n, left }: { n: number; left?: number }) =>
+      `${n} overlap${n !== 1 ? 's' : ''} fixed${left ? `, ${left} left` : ''}`,
+    spaced: ({ n, left }: { n: number; left?: number }) =>
+      `${n} pair${n !== 1 ? 's' : ''} of cards spaced out${left ? `, ${left} still too close` : ''}`,
+    // When something got worse: what it cost, one phrase each, joined with ", " into `tradeOff`.
+    moreOverlaps: ({ n }: { n: number }) => `${n} more overlap${n !== 1 ? 's' : ''}`,
+    moreSpacing: ({ n }: { n: number }) => `${n} more pair${n !== 1 ? 's' : ''} too close`,
+    morePassed: ({ n }: { n: number }) => `${n} more wire${n !== 1 ? 's' : ''} through a port`,
+    fewerStraight: ({ n }: { n: number }) => `${n} fewer straight wire${n !== 1 ? 's' : ''}`,
+    moreBackward: ({ n }: { n: number }) =>
+      `${n} more wire${n !== 1 ? 's' : ''} running right to left`,
+    moreCrossings: ({ n }: { n: number }) => `${n} more crossing${n !== 1 ? 's' : ''}`,
+    tradeOff: ({ what }: { what: string }) => `but ${what}`,
+    // Toast title when Tidy up refuses the graph (too many nodes).
+    tooLarge: 'Too many nodes to tidy at once',
     unpassed: ({ n }: { n: number }) =>
       `${n} wire${n !== 1 ? 's' : ''} no longer run${n !== 1 ? '' : 's'} through a port`,
     undo: 'Undo',

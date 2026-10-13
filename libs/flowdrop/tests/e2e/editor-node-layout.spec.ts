@@ -92,7 +92,7 @@ test.describe('Node layout commands', () => {
     expect(wide).toMatch(/spacing with/);
 
     const refused = await run(page, 'layout node inspect compose.1 --gap-y 30');
-    expect(refused).toMatch(/multiple of the \d+ px grid/);
+    expect(refused).toMatch(/multiple of the \d+ px layout grid/);
   });
 
   test('layout node beautify ports reorders the card and prints the score', async ({ page }) => {

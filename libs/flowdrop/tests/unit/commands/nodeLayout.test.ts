@@ -11,6 +11,7 @@ import { parseCommand } from '$lib/commands/parser.js';
 import { executeCommand } from '$lib/commands/executor.js';
 import { createStoreCommandContext } from '$lib/commands/storeIntegration.svelte.js';
 import { buildTypeMap } from '$lib/commands/types.js';
+import { MAX_SWEEP_CARDS } from '$lib/layout/index.js';
 import type { Command, CommandContext, CommandDispatch } from '$lib/commands/types.js';
 import {
   createFlowDropInstance,
@@ -197,8 +198,6 @@ describe('parser: layout node', () => {
   it.each([
     'layout node inspect compose --gap-x',
     'layout node inspect compose --gap-x abc',
-    'layout node inspect compose --gap-x -20',
-    'layout node inspect compose --gap-x 2.5',
     'layout node inspect compose --gap 40',
     'layout node inspect compose --dry-run',
     'layout node beautify compose --gap-y',
@@ -398,19 +397,69 @@ describe('executor: layout node', () => {
       ]) {
         const result = executeCommand(parse(cmd), context);
         expect(result.ok).toBe(false);
-        if (!result.ok) expect(result.error).toContain('multiple of the 20 px grid');
+        if (!result.ok) {
+          expect(result.error).toContain('multiple of the 20 px layout grid');
+          expect(result.code).toBe('INVALID_ARGUMENT');
+        }
       }
       expect(dispatch.batchUpdate).not.toHaveBeenCalled();
     });
 
-    it('checks against the grid of the setting', () => {
+    it('says what is wrong with a negative or fractional gap, not "invalid syntax"', () => {
+      for (const cmd of [
+        'layout node inspect compose --gap-x -20',
+        'layout node inspect compose --gap-x 2.5',
+        'layout beautify --gap-y -40'
+      ]) {
+        const result = executeCommand(parse(cmd), context);
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+          expect(result.code).toBe('INVALID_ARGUMENT');
+          expect(result.error).toMatch(/gap must be a non-negative multiple of the 20 px/);
+        }
+      }
+    });
+
+    it('a gap that is not a number reaching the executor (WebMCP) gets the same message', () => {
+      for (const gapX of [Number.NaN, -20, Infinity]) {
+        const result = executeCommand(
+          { type: 'inspect_node_layout', nodeId: 'compose', gapX },
+          context
+        );
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.code).toBe('INVALID_ARGUMENT');
+      }
+    });
+
+    it('checks against the layout grid (20), whatever the editor grid is', () => {
+      // The layout snaps to 20, so a gap of 10 or 50 would not stay on it.
       context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 10 };
-      expect(executeCommand(parse('layout node inspect compose --gap-x 50'), context).ok).toBe(
+      expect(executeCommand(parse('layout node inspect compose --gap-x 40'), context).ok).toBe(
         true
       );
-      expect(executeCommand(parse('layout node inspect compose --gap-x 55'), context).ok).toBe(
+      expect(executeCommand(parse('layout node inspect compose --gap-x 50'), context).ok).toBe(
         false
       );
+      expect(executeCommand(parse('layout node inspect compose --gap-x 10'), context).ok).toBe(
+        false
+      );
+    });
+  });
+
+  describe('layout beautify: size limit', () => {
+    it('refuses a graph above the limit with a clear message and moves nothing', () => {
+      const big = tangled();
+      for (let i = 0; i < MAX_SWEEP_CARDS + 1; i++) {
+        big.nodes.push(node(`extra${i}`, i * 20, 800 + i * 20, ['in'], ['out']));
+      }
+      const ctx = { ...context, getWorkflow: () => big };
+      const result = executeCommand(parse('layout beautify'), ctx);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.code).toBe('TOO_LARGE');
+        expect(result.error).toMatch(/^graph too large to tidy \(\d+ nodes, limit 120\)/);
+      }
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -478,7 +527,7 @@ describe('executor: layout node', () => {
       if (a.ok && b.ok) expect(b.message).not.toBe(a.message);
       const bad = executeCommand(parse('layout beautify --gap-x 50'), context);
       expect(bad.ok).toBe(false);
-      if (!bad.ok) expect(bad.error).toContain('multiple of the 20 px grid');
+      if (!bad.ok) expect(bad.error).toContain('multiple of the 20 px layout grid');
       expect(dispatch.batchUpdate).not.toHaveBeenCalled();
     });
 

@@ -38,7 +38,8 @@ import {
   applyProposalToNodes,
   applySweepToNodes,
   DEFAULT_LAYOUT_OPTIONS,
-  LAYOUT_GRID
+  LAYOUT_GRID,
+  MAX_SWEEP_CARDS
 } from '../layout/index.js';
 import type { LayoutGraph, LayoutMetrics, LayoutOptions } from '../layout/index.js';
 import type { ConfigProperty, ConfigSchema, Branch, DynamicPort } from '../types/index.js';
@@ -1663,14 +1664,15 @@ function layoutGraphOf(workflow: Workflow, context: CommandContext): LayoutGraph
 
 /**
  * The layout options of one `layout node` call: its `--gap-x` / `--gap-y`, else the editor setting,
- * else the library default. A gap that is not a multiple of the grid is refused, so cards stay on it.
+ * else the library default. A gap that is not a multiple of the layout grid (20 px: the layout
+ * always snaps to it, whatever the editor's own grid is) is refused, so cards stay on it.
  * Loopbacks are scored as return lanes when the editor draws them that way.
  */
 function layoutOptionsFor(
   command: { gapX?: number; gapY?: number },
   context: CommandContext
 ): { ok: true; options: LayoutOptions } | { ok: false; result: CommandResult } {
-  const grid = context.layoutGaps?.gridSize ?? LAYOUT_GRID;
+  const grid = LAYOUT_GRID;
   for (const [flag, value] of [
     ['--gap-x', command.gapX],
     ['--gap-y', command.gapY]
@@ -1680,8 +1682,8 @@ function layoutOptionsFor(
         ok: false,
         result: {
           ok: false,
-          error: `${flag} ${value} is not a multiple of the ${grid} px grid; use 0, ${grid}, ${grid * 2}, ...`,
-          code: 'PARSE_ERROR'
+          error: `${flag} ${value} is not valid: a gap must be a non-negative multiple of the ${grid} px layout grid (0, ${grid}, ${grid * 2}, ...)`,
+          code: 'INVALID_ARGUMENT'
         }
       };
     }
@@ -1788,7 +1790,16 @@ function executeSweepLayout(
   const layout = layoutOptionsFor(command, context);
   if (!layout.ok) return layout.result;
   const dryRun = command.dryRun === true;
-  const result = sweepLayout(layoutGraphOf(workflow, context), layout.options);
+  const graph = layoutGraphOf(workflow, context);
+  const cardCount = graph.cards.filter((c) => c.kind === 'card').length;
+  if (cardCount > MAX_SWEEP_CARDS) {
+    return {
+      ok: false,
+      error: `graph too large to tidy (${cardCount} nodes, limit ${MAX_SWEEP_CARDS}); tidy single nodes with layout node beautify instead`,
+      code: 'TOO_LARGE'
+    };
+  }
+  const result = sweepLayout(graph, layout.options);
   const message = shortenLayoutIds(formatSweep(result, dryRun), workflow.nodes);
   const data = layoutResultData(result.accepted, result.before, result.after);
   if (dryRun || !result.accepted) return { ok: true, message, data };

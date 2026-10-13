@@ -69,6 +69,7 @@
     flowdropToastOptions,
     FLOWDROP_TOASTER_CLASS,
     apiToasts,
+    showError,
     showInfo,
     showSuccess
   } from '../services/toastService.js';
@@ -1118,8 +1119,16 @@
     const context = layoutContext();
     if (!context || flowNodes.length === 0) return;
     const from = positionsOf(flowNodes);
-    const data = layoutData(executeCommand({ type: 'beautify_layout' }, context));
-    announceTidy(data, from, getMsgs().tidy.alreadyTidy);
+    const result = executeCommand({ type: 'beautify_layout' }, context);
+    // A refusal (too many nodes) is not "already tidy": say what it is.
+    if (!result.ok) {
+      showError({
+        title: result.code === 'TOO_LARGE' ? getMsgs().tidy.tooLarge : getMsgs().tidy.button,
+        body: result.error
+      });
+      return;
+    }
+    announceTidy(layoutData(result), from, getMsgs().tidy.alreadyTidy);
   }
 
   /**

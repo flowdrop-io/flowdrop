@@ -263,6 +263,10 @@ export type CommandErrorCode =
   | 'CYCLE_DETECTED'
   | 'NO_WORKFLOW'
   | 'PARSE_ERROR'
+  /** An argument is out of range, e.g. a layout gap that is not a multiple of the grid. */
+  | 'INVALID_ARGUMENT'
+  /** The graph is past what the command takes on, e.g. too many nodes to tidy at once. */
+  | 'TOO_LARGE'
   | 'UNKNOWN_COMMAND'
   | 'CONFIG_KEY_NOT_FOUND'
   /** search_types with a blank query — use list_types for the whole catalog. */

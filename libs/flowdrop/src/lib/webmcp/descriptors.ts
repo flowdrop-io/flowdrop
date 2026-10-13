@@ -147,7 +147,7 @@ const EMPTY = object({});
 const gapArg = (between: string): ToolSchemaProperty => ({
   type: 'integer',
   minimum: 0,
-  description: `Gap in px to keep between cards ${between}; a multiple of the grid size (20 or 10). Default: the editor's layout gap setting.`
+  description: `Gap in px to keep between cards ${between}; a multiple of 20 (the layout grid, whatever the editor's grid size is). Default: the editor's layout gap setting.`
 });
 
 // ============================================================================
@@ -432,7 +432,7 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
   },
   beautify_layout: {
     description:
-      'Tidy the layout of all nodes. Moves existing nodes. Puts every node into its column, clears overlaps and tight spacing, reorders ports and straightens wires to cut crossings; prints one line per step and the score before and after, or says nothing improved. Use dryRun to preview. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
+      'Tidy the layout of all nodes. Moves existing nodes. Puts every node into its column, clears overlaps and tight spacing, reorders ports and straightens wires to cut crossings; prints one line per step and the score before and after, or says nothing improved. Refuses a graph of more than 120 nodes (code TOO_LARGE): tidy those one node at a time with beautify_node. Use dryRun to preview. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
     inputSchema: object({
       dryRun: {
         type: 'boolean',
@@ -464,7 +464,7 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
   },
   beautify_node: {
     description:
-      'Tidy the layout of ONE node; no other node moves (only its attached notes). Strategies: column (x into its column), ports (reorder connected ports to cut crossings), align (y that straightens a wire), clear (y out of overlaps), all (those four in turn, the default). It says what changed and the score, or why nothing improved. Call inspect_node_layout first; use dryRun to preview without applying. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
+      'Tidy the layout of ONE node; no other node moves (notes and captions are never moved either, cards just keep clear of them). Strategies: column (x into its column), ports (reorder connected ports to cut crossings), align (y that straightens a wire), clear (y out of overlaps), all (those four in turn, the default). It says what changed and the score, or why nothing improved. Call inspect_node_layout first; use dryRun to preview without applying. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
     inputSchema: object(
       {
         nodeId: nodeId(),

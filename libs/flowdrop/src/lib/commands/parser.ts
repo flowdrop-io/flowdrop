@@ -21,7 +21,7 @@ type ParserRule = {
 /** The `--gap-x <n>` / `--gap-y <n>` flags of a matched flag run (the last of a repeated flag wins). */
 function gapFlags(flags: string): { gapX?: number; gapY?: number } {
   const out: { gapX?: number; gapY?: number } = {};
-  for (const [, axis, value] of flags.matchAll(/--gap-([xy])\s+(\d+)/gi)) {
+  for (const [, axis, value] of flags.matchAll(/--gap-([xy])\s+(-?\d+(?:\.\d+)?)/gi)) {
     out[axis.toLowerCase() === 'x' ? 'gapX' : 'gapY'] = Number(value);
   }
   return out;
@@ -262,14 +262,14 @@ const rules: ParserRule[] = [
   },
   // layout node inspect <nodeId> [--gap-x <n>] [--gap-y <n>]
   {
-    pattern: /^layout\s+node\s+inspect\s+(\S+)((?:\s+--gap-[xy]\s+\d+)*)$/i,
+    pattern: /^layout\s+node\s+inspect\s+(\S+)((?:\s+--gap-[xy]\s+-?\d+(?:\.\d+)?)*)$/i,
     parse: (m) => ({ type: 'inspect_node_layout', nodeId: m[1], ...gapFlags(m[2]) })
   },
   // layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run] [--gap-x <n>] [--gap-y <n>]
   // The flags come in any order after the strategy.
   {
     pattern:
-      /^layout\s+node\s+beautify\s+(\S+)(?:\s+(column|ports|align|clear|all))?((?:\s+(?:--dry-run|--gap-[xy]\s+\d+))*)$/i,
+      /^layout\s+node\s+beautify\s+(\S+)(?:\s+(column|ports|align|clear|all))?((?:\s+(?:--dry-run|--gap-[xy]\s+-?\d+(?:\.\d+)?))*)$/i,
     parse: (m) => {
       const command: BeautifyNodeCommand = { type: 'beautify_node', nodeId: m[1] };
       if (m[2]) command.strategy = m[2].toLowerCase() as BeautifyNodeStrategy;
@@ -293,7 +293,7 @@ const rules: ParserRule[] = [
   // layout beautify [--dry-run] [--gap-x <n>] [--gap-y <n>] — the graph sweep; the flags come in
   // any order. `--sweep` is accepted and changes nothing: the sweep is the default.
   {
-    pattern: /^layout\s+beautify((?:\s+(?:--sweep|--dry-run|--gap-[xy]\s+\d+))*)$/i,
+    pattern: /^layout\s+beautify((?:\s+(?:--sweep|--dry-run|--gap-[xy]\s+-?\d+(?:\.\d+)?))*)$/i,
     parse: (m) => ({
       type: 'beautify_layout',
       ...(/--dry-run/i.test(m[1]) ? { dryRun: true } : {}),
