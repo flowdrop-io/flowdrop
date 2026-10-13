@@ -23,7 +23,6 @@
   import { computeNodeGeometry } from '../../utils/nodeGeometry.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
-  import { m } from '$lib/messages/index.js';
 
   interface Props {
     id: string;
@@ -36,9 +35,6 @@
   let props: Props = $props();
 
   const fd = getInstance();
-
-  // Hoist the graph branch — read in the template and the card.
-  const graph = $derived(m().nodes.graph);
 
   /**
    * Instance-specific title override from config.
@@ -130,7 +126,6 @@
   description={displayDescription}
   icon={getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata.category)}
   color={categoryColor}
-  ariaLabel={graph.gatewayNode({ title: displayTitle })}
   activeOutputs={activeBranches}
   emptyNote={branches.length === 0 && visibleInputPorts.every((p) => p.id === 'trigger')
     ? 'No branches configured'

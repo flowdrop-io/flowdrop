@@ -341,7 +341,6 @@
   class:flowdrop-terminal-node--exit={variant === 'exit'}
   style="--terminal-color: {terminalColor}; --_cat: {terminalColor}; --_d: {diameter}px;"
   ondblclick={handleDoubleClick}
-  aria-label="{variant} node: {displayTitle}"
 >
   <!-- Config button at top -->
   <NodeConfigButton onclick={openConfigSidebar} title="Configure node" placement="top-center" />

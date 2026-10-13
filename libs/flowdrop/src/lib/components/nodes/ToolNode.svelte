@@ -149,7 +149,6 @@
   description={displayDescription}
   icon={toolIcon}
   color={toolColor}
-  ariaLabel={displayTitle}
   processing={props.isProcessing}
   error={props.isError}
   configTitle="Configure tool"

@@ -43,6 +43,7 @@
   } from '../editor/contextMenu.js';
   import type { NodeMetadata } from '../types/index.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
+  import { nodeAriaLabel } from '../utils/nodeAriaLabel.js';
   import { decideInlineCommit } from '../utils/captionText.js';
   import FlowDropZone from './FlowDropZone.svelte';
   import EdgeRefresher from './EdgeRefresher.svelte';
@@ -310,8 +311,16 @@
   // ---------------------------------------------------------------------------
   /** Add the callbacks every node component can call: open config, commit an in-place edit. */
   function withNodeCallbacks(node: WorkflowNodeType) {
+    // Accessible name for xyflow's focusable node wrapper (the inner node
+    // components are role-less, so they cannot carry one).
+    const title =
+      (node.data.config?.instanceTitle as string) || node.data.label || node.data.metadata?.name;
+    const componentName = node.data.metadata
+      ? resolveComponentName(fd.nodes, node.data.metadata, node.data.config?.nodeType as string)
+      : 'workflowNode';
     return {
       ...node,
+      ariaLabel: nodeAriaLabel(getMsgs().nodes.graph, componentName, title ?? node.id),
       data: {
         ...node.data,
         onConfigOpen: props.openConfigSidebar,

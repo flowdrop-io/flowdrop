@@ -13,7 +13,6 @@
   import NodeConfigButton from './NodeConfigButton.svelte';
   import { getDataTypeColor } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { m } from '$lib/messages/index.js';
 
   /**
    * IdeaNode component props
@@ -130,7 +129,6 @@
   class:flowdrop-idea-node--error={props.isError}
   style="--idea-accent-color: {ideaColor};"
   ondblclick={handleDoubleClick}
-  aria-label={m().nodes.graph.ideaNode({ title: displayTitle })}
 >
   <!-- Left Port (Target/Input): center at top 40px (multiple of 10), 20px connection area -->
   {#if enableLeftPort}

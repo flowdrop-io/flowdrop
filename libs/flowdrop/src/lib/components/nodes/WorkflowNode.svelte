@@ -28,7 +28,6 @@
   import { computeNodeGeometry } from '../../utils/nodeGeometry.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
-  import { m } from '$lib/messages/index.js';
 
   interface Props {
     id: string;
@@ -41,9 +40,6 @@
   let props: Props = $props();
 
   const fd = getInstance();
-
-  // Hoist the graph branch: one getter walk per render.
-  const graph = $derived(m().nodes.graph);
 
   /**
    * Instance-specific title override from config.
@@ -161,6 +157,5 @@
   description={displayDescription}
   icon={getNodeIcon(fd.categories, props.data.metadata.icon, props.data.metadata.category)}
   color={categoryColor}
-  ariaLabel={graph.workflowNode({ name: props.data.metadata.name })}
   onconfig={openConfigSidebar}
 />

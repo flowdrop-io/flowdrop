@@ -50,7 +50,6 @@
     icon: string;
     /** Any CSS colour: the header wash and the icon tile. */
     color: string;
-    ariaLabel: string;
     /** Extra BEM modifier on the root, e.g. `gateway`. */
     variant?: string;
     /** Output port ids drawn as taken (a gateway's active branches). */
@@ -73,7 +72,6 @@
     description,
     icon,
     color,
-    ariaLabel,
     variant,
     activeOutputs = [],
     emptyNote,
@@ -268,7 +266,6 @@
     isHandleInteraction = false;
   }}
   data-handle-interaction={isHandleInteraction}
-  aria-label={ariaLabel}
   aria-describedby="node-description-{id}"
   style="--_cat: {color}; width: {geometry.width}px; height: {geometry.height}px;"
 >
