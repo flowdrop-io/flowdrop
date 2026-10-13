@@ -213,6 +213,7 @@
 
   <!-- With no rows the box is a status message, not a listbox (a listbox may only
        own options and groups); it stays focusable so Escape still cancels. -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <div
     id="{idPrefix}-list"
     class="wf-portlist__list"
