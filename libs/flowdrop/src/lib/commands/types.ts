@@ -576,11 +576,10 @@ export interface CommandContext {
   /** The *Show descriptions* setting, which changes card heights. */
   showDescriptions?: boolean;
   /**
-   * The layout gaps of the editor settings and the grid they are multiples of, and whether
-   * loopbacks are drawn as return lanes (then `layout node` scores with the lane kept free).
+   * The layout gaps of the editor settings and the grid they are multiples of.
    * Optional: without it node layout commands use the library defaults on a 20 px grid.
    */
-  layoutGaps?: { gapX: number; gapY: number; gridSize: number; loopbackLanes?: boolean };
+  layoutGaps?: { gapX: number; gapY: number; gridSize: number };
 }
 
 // ============================================================================

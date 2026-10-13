@@ -104,12 +104,6 @@ export interface EditorSettings {
    * commands). A multiple of the 20 px layout grid; default {@link DEFAULT_LAYOUT_GAP_Y}.
    */
   layoutGapY: number;
-  /**
-   * Draw loopback edges as return lanes: out of the source, down under the loop body, back
-   * along a lane and up into `loop_back`, instead of the bezier that doubles back through
-   * the cards. Also what `layout node` commands keep free. Default false.
-   */
-  loopbackLanes: boolean;
   /** Show minimap for navigation */
   showMinimap: boolean;
   /** Default zoom level (1 = 100%) */
@@ -376,7 +370,6 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   gridSize: 20,
   layoutGapX: DEFAULT_LAYOUT_GAP_X,
   layoutGapY: DEFAULT_LAYOUT_GAP_Y,
-  loopbackLanes: false,
   showMinimap: true,
   defaultZoom: 1,
   fitViewOnLoad: true,

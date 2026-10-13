@@ -6,7 +6,10 @@ import {
 } from '../../../src/lib/layout/toWorkflow.js';
 import { propose, beautify } from '../../../src/lib/layout/primitives.js';
 import { fromWorkflow } from '../../../src/lib/layout/fromWorkflow.js';
-import { DEFAULT_LAYOUT_OPTIONS as o } from '../../../src/lib/layout/types.js';
+import { DEFAULT_LAYOUT_OPTIONS as BASE_OPTIONS } from '../../../src/lib/layout/types.js';
+
+/** These examples pin the design numbers of the curved loopback; lanes are covered in measure/geometry. */
+const o = { ...BASE_OPTIONS, loopbacks: 'curve' as const };
 import { sweep } from '../../../src/lib/layout/sweep.js';
 import { rightToLeft, tangled } from './fixtures.js';
 import type { NodePort, WorkflowEdge, WorkflowNode } from '../../../src/lib/types/index.js';

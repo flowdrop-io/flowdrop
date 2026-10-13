@@ -133,7 +133,7 @@ export interface FlowDropInstance {
   readonly highlight: NodeHighlightStore;
   /** The wire being dragged out of a port: cards light the ports that take its type. */
   readonly connectDrag: ConnectDragStore;
-  /** The return lanes loopback edges are drawn along (see the loopback lanes setting). */
+  /** The return lanes loopback edges are drawn along. */
   readonly loopbackLanes: LoopbackLanesStore;
   /**
    * Which nodes changed since the shown run started (the `edited` mark in Test

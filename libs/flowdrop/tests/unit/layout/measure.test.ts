@@ -16,7 +16,7 @@ import {
 } from '../../../src/lib/layout/types.js';
 import { demoCard, demoWire, jurgenDries, rightToLeft, tangled } from './fixtures.js';
 
-const curve = DEFAULT_LAYOUT_OPTIONS;
+const curve = { ...DEFAULT_LAYOUT_OPTIONS, loopbacks: 'curve' as const };
 const lane = { ...DEFAULT_LAYOUT_OPTIONS, loopbacks: 'lane' as const };
 
 const crossingPairs = (graph: LayoutGraph, options = curve) =>

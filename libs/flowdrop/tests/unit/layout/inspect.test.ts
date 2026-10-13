@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { inspect } from '../../../src/lib/layout/inspect.js';
-import { DEFAULT_LAYOUT_OPTIONS as o, type LayoutGraph } from '../../../src/lib/layout/types.js';
+import {
+  DEFAULT_LAYOUT_OPTIONS as BASE_OPTIONS,
+  type LayoutGraph
+} from '../../../src/lib/layout/types.js';
+
+/** These examples pin the design numbers of the curved loopback; lanes are covered in measure/geometry. */
+const o = { ...BASE_OPTIONS, loopbacks: 'curve' as const };
 import { demoCard, rightToLeft, tangled } from './fixtures.js';
 
 describe('inspect', () => {

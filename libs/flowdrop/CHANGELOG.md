@@ -102,9 +102,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Node layout.** Commands `layout node inspect <nodeId>` and `layout node beautify <nodeId>
 [column|ports|align|clear|all] [--dry-run]`, both with `--gap-x` / `--gap-y`, and the WebMCP tools
   `inspect_node_layout` and `beautify_node` (`gapX` / `gapY`). Settings `editor.layoutGapX` / `layoutGapY`
-  (defaults 120 / 40 px) set the spacing the layout keeps; `editor.loopbackLanes` (default off) draws `loop_back`
-  edges as return lanes (out of the source, under the loop body, back along a lane) instead of a curve through
-  the cards, and layout keeps those lanes free.
+  (defaults 120 / 40 px) set the spacing the layout keeps. Loopbacks (`loop_back` edges) are drawn as return lanes
+  (out of the source, under the loop body, back along a lane) instead of a curve through the cards, and layout
+  keeps those lanes free.
 - **Tidy up.** A broom in the canvas controls and **Tidy up** (⇧⌥T) in the pane menu run the graph layout; **Tidy
   node** (⇧S) in the node menu tidies one node. One undo step each. The toast says what changed, how many
   overlaps are left and anything that got worse; a layout that would not improve is left alone. Graphs over

@@ -156,7 +156,7 @@ test.describe('Node layout commands', () => {
     expect(lines.some((l) => /^compose\.1: (moved|inputs reordered) /.test(l))).toBe(true);
     // The canvas's own geometry: the crossings and the overlap are gone.
     expect(lines[lines.length - 1]).toMatch(
-      /^sweep: straight \d+ → \d+ · crossings 3 → 0 · overlaps 1 → 0 · spacing 1 too close → ok$/
+      /^sweep: straight \d+ → \d+ · crossings 2 → 0 · overlaps 1 → 0 · spacing 1 too close → ok$/
     );
 
     await expect.poll(() => positions(page)).not.toEqual(before);
@@ -172,7 +172,7 @@ test.describe('Node layout commands', () => {
     const before = await positions(page);
     const text = await run(page, 'layout beautify --dry-run');
     expect(text).toMatch(/^# phase \d: /);
-    expect(text).toMatch(/\ncompose\.1: would move (up|down) \d+/);
+    expect(text).toMatch(/\ncompose\.1: would move (to column \d|up|down) \d*/);
     expect(text.split('\n').pop()).toMatch(/^would give: /);
     await page.waitForTimeout(300);
     expect(await positions(page)).toEqual(before);

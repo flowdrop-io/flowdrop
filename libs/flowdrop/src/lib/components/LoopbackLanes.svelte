@@ -30,7 +30,7 @@
   const lanes = $derived.by(() => {
     const result = new Map<string, LoopbackLane>();
     const measure = fd.measureNode;
-    if (!measure || !getEditorSettings().loopbackLanes || !edges.some(isLoopbackEdge)) {
+    if (!measure || !edges.some(isLoopbackEdge)) {
       return result;
     }
     const graph = fromWorkflow(nodes, edges, {

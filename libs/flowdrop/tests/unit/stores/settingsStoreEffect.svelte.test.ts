@@ -11,19 +11,19 @@ import { getEditorSettings, updateSettings } from '$lib/stores/settingsStore.sve
 describe('updateSettings inside an effect', () => {
   it('does not subscribe the effect to the settings it writes', () => {
     let runs = 0;
-    const before = getEditorSettings().loopbackLanes;
+    const before = getEditorSettings().showMinimap;
     const stop = $effect.root(() => {
       $effect(() => {
         runs++;
-        updateSettings({ editor: { loopbackLanes: !before } });
+        updateSettings({ editor: { showMinimap: !before } });
       });
     });
     flushSync();
     // A later write elsewhere must not re-run it either.
-    updateSettings({ editor: { loopbackLanes: before } });
+    updateSettings({ editor: { showMinimap: before } });
     flushSync();
     stop();
     expect(runs).toBe(1);
-    expect(getEditorSettings().loopbackLanes).toBe(before);
+    expect(getEditorSettings().showMinimap).toBe(before);
   });
 });

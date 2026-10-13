@@ -78,7 +78,7 @@ export interface LayoutOptions {
   gapX: number;
   /** Gap between stacked cards. */
   gapY: number;
-  /** How a loopback is drawn: today's bezier, or a return lane under the loop body (decision D5). */
+  /** How a loopback is drawn: a return lane under the loop body (decision D5, the default), or the bezier (tests). */
   loopbacks: 'curve' | 'lane';
   /**
    * Where column 0 starts. `start` (default): at the leftmost start node, so a single `column`
@@ -91,5 +91,5 @@ export interface LayoutOptions {
 export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   gapX: DEFAULT_LAYOUT_GAP_X,
   gapY: DEFAULT_LAYOUT_GAP_Y,
-  loopbacks: 'curve'
+  loopbacks: 'lane'
 };

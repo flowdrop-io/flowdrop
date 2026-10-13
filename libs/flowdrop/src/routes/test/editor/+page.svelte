@@ -29,7 +29,7 @@
                            (overlapping classify), compose (wires crossing), a loop with
                            loop_back, send and a caption; for `layout node …` commands
                            (tests/e2e/editor-node-layout.spec.ts)
-    - ?workflow=lanes    -> three loop cases for the return lanes setting: nested loops, loops
+    - ?workflow=lanes    -> three loop cases for the return lanes: nested loops, loops
                            side by side, two loopbacks into one port
                            (tests/e2e/editor-loopback-lanes.spec.ts)
     - ?workflow=caption  -> a text input plus two captions (short, long); also
@@ -1203,8 +1203,7 @@
 
   // Return lanes (?workflow=lanes): the three cases of the loopback lane design. Nested loops
   // (inner d>b wrapped by outer e>a), two loops side by side that share a track, and two
-  // loopbacks into one loop_back port that share the climb. Turn on
-  // Settings > Editor > "Draw loopbacks as return lanes" to see them as lanes.
+  // loopbacks into one loop_back port that share the climb.
   const laneType = tangledType('step', 'Step', ['in', 'loop_back'], ['out']);
   const laneNode = (id: string, x: number, y: number) => tangledNode(id, id, x, y, laneType);
   const lanesWorkflow: Workflow = {

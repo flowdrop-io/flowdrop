@@ -12,9 +12,12 @@ import {
   measure,
   score,
   better,
-  DEFAULT_LAYOUT_OPTIONS as OPTIONS,
+  DEFAULT_LAYOUT_OPTIONS as BASE_OPTIONS,
   LAYOUT_GRID
 } from '$lib/layout/index.js';
+
+/** These examples pin the design numbers of the curved loopback; lanes are covered in measure/geometry. */
+const OPTIONS = { ...BASE_OPTIONS, loopbacks: 'curve' as const };
 import type { LayoutGraph } from '$lib/layout/index.js';
 import { demoCard, jurgenDries, rightToLeft, tangled } from './fixtures.js';
 

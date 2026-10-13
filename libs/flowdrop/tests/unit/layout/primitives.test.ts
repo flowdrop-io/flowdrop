@@ -9,10 +9,13 @@ import {
 } from '../../../src/lib/layout/primitives.js';
 import { formatChange, measure } from '../../../src/lib/layout/measure.js';
 import {
-  DEFAULT_LAYOUT_OPTIONS as o,
+  DEFAULT_LAYOUT_OPTIONS as BASE_OPTIONS,
   LAYOUT_GRID,
   type LayoutGraph
 } from '../../../src/lib/layout/types.js';
+
+/** These examples pin the design numbers of the curved loopback; lanes are covered in measure/geometry. */
+const o = { ...BASE_OPTIONS, loopbacks: 'curve' as const };
 import { demoCard, demoWire, rightToLeft, tangled } from './fixtures.js';
 
 const PRIMITIVES: LayoutPrimitive[] = ['column', 'ports', 'align', 'clear'];

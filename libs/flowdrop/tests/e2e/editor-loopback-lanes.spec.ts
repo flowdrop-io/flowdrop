@@ -1,11 +1,11 @@
 /**
- * Loopbacks as return lanes (Settings > Editor > "Draw loopbacks as return lanes").
+ * Loopbacks are always drawn as return lanes.
  *
  * ?workflow=lanes: nested loops (d>a wraps c>b), two loops side by side (f>e, h>g) and two
- * loopbacks into one port (j>i, k>i). With the setting on a loopback runs under its loop body
- * and nested lanes never cross; with it off the wire is the bezier it always was.
+ * loopbacks into one port (j>i, k>i). A loopback runs under its loop body and nested lanes
+ * never cross.
  */
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const STORAGE_KEY = 'flowdrop-settings';
 const node = (id: string) => `.svelte-flow__node[data-id="${id}"]`;
@@ -21,13 +21,16 @@ const LOOPS: Record<string, string[]> = {
   'k.out>i.loop_back': ['i', 'k']
 };
 
-async function open(page: Page, lanes: boolean): Promise<void> {
-  await page.addInitScript(
-    ([key, on]) => {
-      localStorage.setItem(key as string, JSON.stringify({ editor: { loopbackLanes: on } }));
-    },
-    [STORAGE_KEY, lanes]
-  );
+async function open(page: Page, stale?: boolean): Promise<void> {
+  // A saved settings blob from a pre-release build may still carry the removed key.
+  if (stale !== undefined) {
+    await page.addInitScript(
+      ([key, on]) => {
+        localStorage.setItem(key as string, JSON.stringify({ editor: { loopbackLanes: on } }));
+      },
+      [STORAGE_KEY, stale]
+    );
+  }
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/test/editor?workflow=lanes');
   await page.waitForSelector(`${node('k')} .svelte-flow__handle`);
@@ -92,17 +95,8 @@ test.describe('Loopbacks as return lanes', () => {
     test.skip(testInfo.project.name === 'Mobile Chrome', 'Editor requires desktop-width viewport');
   });
 
-  test('off: a loopback is the bezier, and it runs through its loop body', async ({ page }) => {
-    await open(page, false);
-    await expect(page.locator('.flowdrop-edge--lane')).toHaveCount(0);
-    for (const [id, cards] of Object.entries(LOOPS)) {
-      expect(await page.locator(edgePath(id)).getAttribute('d')).toContain(' C ');
-      expect(await insideCards(page, id, cards)).toBeGreaterThan(0);
-    }
-  });
-
-  test('on: every loopback is a lane that stays out of its loop body', async ({ page }) => {
-    await open(page, true);
+  test('every loopback is a lane that stays out of its loop body', async ({ page }) => {
+    await open(page);
     await expect(page.locator('.flowdrop-edge--lane')).toHaveCount(Object.keys(LOOPS).length);
     for (const [id, cards] of Object.entries(LOOPS)) {
       const d = (await page.locator(edgePath(id)).getAttribute('d')) ?? '';
@@ -113,15 +107,15 @@ test.describe('Loopbacks as return lanes', () => {
     expect(await page.locator(edgePath('a.out>b.in')).getAttribute('d')).toContain(' C ');
   });
 
-  test('on: a lane runs under the lowest card of its body', async ({ page }) => {
-    await open(page, true);
+  test('a lane runs under the lowest card of its body', async ({ page }) => {
+    await open(page);
     const [, y, , h] = await box(page, 'c');
     const points = await sample(page, 'c.out>b.loop_back');
     expect(Math.max(...points.map((p) => p[1]))).toBeGreaterThanOrEqual(y + h + 40 - 1);
   });
 
-  test('on: nested lanes do not cross; the outer lane is below the inner one', async ({ page }) => {
-    await open(page, true);
+  test('nested lanes do not cross; the outer lane is below the inner one', async ({ page }) => {
+    await open(page);
     const outer = await sample(page, 'd.out>a.loop_back');
     const inner = await sample(page, 'c.out>b.loop_back');
     expect(crosses(outer, inner)).toBe(false);
@@ -130,15 +124,15 @@ test.describe('Loopbacks as return lanes', () => {
     );
   });
 
-  test('on: loops side by side share a track', async ({ page }) => {
-    await open(page, true);
+  test('loops side by side share a track', async ({ page }) => {
+    await open(page);
     const left = await sample(page, 'f.out>e.loop_back');
     const right = await sample(page, 'h.out>g.loop_back');
     expect(Math.max(...left.map((p) => p[1]))).toBeCloseTo(Math.max(...right.map((p) => p[1])), 0);
   });
 
-  test('on: two loopbacks into one port share the final climb', async ({ page }) => {
-    await open(page, true);
+  test('two loopbacks into one port share the final climb', async ({ page }) => {
+    await open(page);
     const a = await sample(page, 'j.out>i.loop_back');
     const b = await sample(page, 'k.out>i.loop_back');
     // The last point is the arrow base; the climb is the vertical run before the last bend.
@@ -146,15 +140,8 @@ test.describe('Loopbacks as return lanes', () => {
     expect(climbX(a)).toBeCloseTo(climbX(b), 0);
   });
 
-  test('the setting switches the drawing live', async ({ page }) => {
+  test('a stale loopbackLanes: false in saved settings changes nothing', async ({ page }) => {
     await open(page, false);
-    const root: Locator = page.getByTestId('editor-test');
-    await root.locator('.flowdrop-navbar__settings-btn').click();
-    await page.getByTestId('navbar-all-settings').click();
-    const modal: Locator = root.locator('.flowdrop-settings-modal[open]');
-    await modal.getByRole('tab', { name: 'Editor' }).click();
-    await modal.getByRole('switch', { name: 'Draw loopbacks as return lanes' }).click();
-    await modal.getByRole('button', { name: 'Close settings' }).click();
     await expect(page.locator('.flowdrop-edge--lane')).toHaveCount(Object.keys(LOOPS).length);
   });
 });

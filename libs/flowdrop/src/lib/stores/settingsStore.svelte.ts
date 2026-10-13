@@ -183,8 +183,9 @@ function deepMergeSettings(
   result.editor.layoutGapX = normalizeLayoutGap(result.editor.layoutGapX, DEFAULT_LAYOUT_GAP_X);
   result.editor.layoutGapY = normalizeLayoutGap(result.editor.layoutGapY, DEFAULT_LAYOUT_GAP_Y);
 
-  // Return lanes are opt in: anything but a real `true` is off.
-  result.editor.loopbackLanes = result.editor.loopbackLanes === true;
+  // `loopbackLanes` was a setting in pre-release builds; loopbacks are always return lanes now,
+  // so drop the stale key from saved settings.
+  delete (result.editor as unknown as Record<string, unknown>).loopbackLanes;
 
   return result;
 }

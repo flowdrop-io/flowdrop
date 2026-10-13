@@ -108,8 +108,8 @@ export function createStoreCommandContext(
       return getEditorSettings().showNodeDescriptions;
     },
     get layoutGaps() {
-      const { layoutGapX, layoutGapY, gridSize, loopbackLanes } = getEditorSettings();
-      return { gapX: layoutGapX, gapY: layoutGapY, gridSize, loopbackLanes };
+      const { layoutGapX, layoutGapY, gridSize } = getEditorSettings();
+      return { gapX: layoutGapX, gapY: layoutGapY, gridSize };
     }
   };
 }

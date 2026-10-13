@@ -3,7 +3,7 @@
  *
  * Track assignment needs the whole graph, so the LoopbackLanes component derives every
  * lane once per change (nodes, edges, measured sizes) and the edges only look theirs
- * up by id. Empty while the *Draw loopbacks as return lanes* setting is off, and
+ * up by id. Empty until the canvas is measured, and
  * for a loopback whose cards are not measured yet: that edge stays a bezier.
  *
  * @module stores/loopbackLanesStore

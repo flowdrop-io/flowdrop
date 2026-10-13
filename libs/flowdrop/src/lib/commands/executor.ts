@@ -1666,7 +1666,7 @@ function layoutGraphOf(workflow: Workflow, context: CommandContext): LayoutGraph
  * The layout options of one `layout node` call: its `--gap-x` / `--gap-y`, else the editor setting,
  * else the library default. A gap that is not a multiple of the layout grid (20 px: the layout
  * always snaps to it, whatever the editor's own grid is) is refused, so cards stay on it.
- * Loopbacks are scored as return lanes when the editor draws them that way.
+ * Loopbacks are always scored as return lanes, as the editor draws them.
  */
 function layoutOptionsFor(
   command: { gapX?: number; gapY?: number },
@@ -1694,7 +1694,7 @@ function layoutOptionsFor(
       ...DEFAULT_LAYOUT_OPTIONS,
       gapX: command.gapX ?? context.layoutGaps?.gapX ?? DEFAULT_LAYOUT_OPTIONS.gapX,
       gapY: command.gapY ?? context.layoutGaps?.gapY ?? DEFAULT_LAYOUT_OPTIONS.gapY,
-      loopbacks: context.layoutGaps?.loopbackLanes ? 'lane' : 'curve'
+      loopbacks: 'lane'
     }
   };
 }

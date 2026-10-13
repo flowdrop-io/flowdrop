@@ -356,7 +356,7 @@ describe('executor: layout node', () => {
       expect(last('layout node inspect compose')).not.toContain('spacing with loop');
     });
 
-    it('scores loopbacks as return lanes only when the setting is on', () => {
+    it('scores loopbacks as return lanes', () => {
       // A card 20 under the lane of send > loop: free with the bezier, too close to the lane.
       workflow = {
         ...workflow,
@@ -364,10 +364,6 @@ describe('executor: layout node', () => {
       };
       context.measureNode = demoGeometry(workflow);
       context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 20 };
-      expect(last('layout node inspect below')).not.toContain('lane with');
-      context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 20, loopbackLanes: false };
-      expect(last('layout node inspect below')).not.toContain('lane with');
-      context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 20, loopbackLanes: true };
       expect(last('layout node inspect below')).toContain('lane with send → loop');
       // The sweep scores with lanes too.
       const sweep = executeCommand(parse('layout beautify --dry-run'), context);
@@ -468,7 +464,7 @@ describe('executor: layout node', () => {
       const result = executeCommand(parse('layout beautify'), context);
       expect(result.ok && result.data).toEqual({
         changed: true,
-        before: { straight: 0, backward: 0, crossings: 3, overlaps: 2, spacing: 1, passes: 0 },
+        before: { straight: 0, backward: 0, crossings: 2, overlaps: 2, spacing: 1, passes: 0 },
         after: { straight: 4, backward: 0, crossings: 1, overlaps: 0, spacing: 0, passes: 0 }
       });
       const node = executeCommand(parse('layout node beautify lookup clear --dry-run'), context);
@@ -485,7 +481,7 @@ describe('executor: layout node', () => {
       expect(lines).toContain('compose: moved down 140 (y 160 → 300)');
       expect(lines).toContain('form: outputs reordered message, email (was email, message)');
       expect(lines[lines.length - 1]).toBe(
-        'sweep: straight 0 → 4 · crossings 3 → 1 · overlaps 2 → 0 · spacing 1 too close → ok'
+        'sweep: straight 0 → 4 · crossings 2 → 1 · overlaps 2 → 0 · spacing 1 too close → ok'
       );
 
       expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
@@ -677,11 +673,10 @@ describe('layout node beautify: undo history', () => {
       expect(context.layoutGaps).toEqual({
         gapX: 120,
         gapY: 40,
-        gridSize: before.gridSize,
-        loopbackLanes: false
+        gridSize: before.gridSize
       });
-      updateSettings({ editor: { layoutGapX: 200, layoutGapY: 0, loopbackLanes: true } as never });
-      expect(context.layoutGaps).toMatchObject({ gapX: 200, gapY: 0, loopbackLanes: true });
+      updateSettings({ editor: { layoutGapX: 200, layoutGapY: 0 } as never });
+      expect(context.layoutGaps).toMatchObject({ gapX: 200, gapY: 0 });
     } finally {
       updateSettings({ editor: before });
     }

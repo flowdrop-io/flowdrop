@@ -230,7 +230,11 @@ describe('return lanes: several loopbacks', () => {
   it('loopbackLanes is every loopback and only loopbacks; the curve mode has no lanes', () => {
     const g = nested();
     expect([...loopbackLanes(g).keys()].sort()).toEqual(['c.out>b.loop_back', 'd.out>a.loop_back']);
-    expect(wirePaths(g, DEFAULT_LAYOUT_OPTIONS).every((p) => p.laneY === undefined)).toBe(true);
+    expect(
+      wirePaths(g, { ...DEFAULT_LAYOUT_OPTIONS, loopbacks: 'curve' }).every(
+        (p) => p.laneY === undefined
+      )
+    ).toBe(true);
   });
 
   it('lanePoints without depth is the single lane', () => {

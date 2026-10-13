@@ -1,9 +1,8 @@
 <!--
   LoopbackLanesDecorator: a small graph with loopbacks on a SvelteFlow canvas,
-  with the "Draw loopbacks as return lanes" setting on while it is mounted.
+  with loopbacks drawn as return lanes.
 -->
 <script lang="ts">
-  import { untrack } from 'svelte';
   import { SvelteFlow, MarkerType } from '@xyflow/svelte';
   import type { ColorMode } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
@@ -13,7 +12,6 @@
   import CanvasController from '$lib/components/CanvasController.svelte';
   import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
-  import { getEditorSettings, updateSettings } from '$lib/stores/settingsStore.svelte.js';
   import { EDGE_MARKER_SIZES } from '$lib/config/constants.js';
   import type { WorkflowEdge, WorkflowNode } from '$lib/types/index.js';
 
@@ -96,14 +94,6 @@
     ...wires.map(([s, t]) => edge(s, t, 'in', false)),
     ...loops.map(([s, t]) => edge(s, t, 'loop_back', true))
   ]);
-
-  // The lanes are opt in: turn the setting on while the story is shown, then put it back.
-  // The read is untracked: an effect that tracks the setting it writes re-runs itself.
-  $effect(() => {
-    const before = untrack(() => getEditorSettings().loopbackLanes);
-    updateSettings({ editor: { loopbackLanes: true } as never });
-    return () => updateSettings({ editor: { loopbackLanes: before } as never });
-  });
 
   let colorMode = $state<ColorMode>(
     (document.documentElement.getAttribute('data-theme') as ColorMode) || 'light'
