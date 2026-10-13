@@ -410,6 +410,26 @@ export interface HelpResultData {
   }>;
 }
 
+/** The layout score as counts: what a UI says about a tidy. */
+export interface LayoutCounts {
+  straight: number;
+  backward: number;
+  crossings: number;
+  overlaps: number;
+  /** Pairs of cards too close. */
+  spacing: number;
+  /** Wires running through a port that is not one of their ends. */
+  passes: number;
+}
+
+/** Result data for `beautify_layout` and `beautify_node` (dry runs too). */
+export interface LayoutResultData {
+  /** True when the command changed the workflow, or (dry run) would. */
+  changed: boolean;
+  before: LayoutCounts;
+  after: LayoutCounts;
+}
+
 /** Result data for set_config command — includes validation warnings */
 export interface SetConfigResultData {
   nodeId: string;
@@ -453,7 +473,8 @@ export type CommandResultData =
   | GetConfigResultData
   | SetConfigResultData
   | HelpResultData
-  | SwapNodeResultData;
+  | SwapNodeResultData
+  | LayoutResultData;
 
 /** Successful command result */
 export interface CommandResultOk {

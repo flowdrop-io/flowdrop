@@ -25,7 +25,12 @@
   import CanvasToolbar from './CanvasToolbar.svelte';
   import CanvasController from './CanvasController.svelte';
   import StraightGuides from './StraightGuides.svelte';
-  import { snapToStraight, straightenWires, type StraightGuide } from '../utils/straightWires.js';
+  import { snapToStraight, type StraightGuide } from '../utils/straightWires.js';
+  import { createStoreCommandContext } from '../commands/storeIntegration.svelte.js';
+  import { executeCommand } from '../commands/executor.js';
+  import { executeBatch } from '../commands/batch.js';
+  import type { CommandResult, LayoutResultData } from '../commands/types.js';
+  import { describeTidy, tweenPositions, TIDY_ANIMATION_MS } from '../editor/tidy.js';
   import CanvasZoomControls from './CanvasZoomControls.svelte';
   import CanvasContextMenu from './CanvasContextMenu.svelte';
   import {
@@ -63,7 +68,9 @@
   import {
     flowdropToastOptions,
     FLOWDROP_TOASTER_CLASS,
-    apiToasts
+    apiToasts,
+    showInfo,
+    showSuccess
   } from '../services/toastService.js';
   import {
     ProximityConnectHelper,
@@ -1046,11 +1053,14 @@
         { x: source.position.x + offset, y: source.position.y + offset }
       );
     },
-    straightenWires(ids) {
-      straightenNodeWires(ids);
+    tidyLayout() {
+      tidyLayout();
     },
-    canStraightenWires(ids) {
-      return straightenMoves(ids).size > 0;
+    tidyNodes(ids) {
+      tidyNodes(ids);
+    },
+    canTidyNodes(ids) {
+      return canTidyNodes(ids);
     },
     hideUnconnectedPorts(ids) {
       changePortExposure(ids, 'hide');
@@ -1070,30 +1080,118 @@
     }
   };
 
-  /** Where "Straighten wires" would move these nodes (new y by id). Empty when the wires are straight already. */
-  function straightenMoves(ids: readonly string[]): Map<string, number> {
-    if (!canvasControllerRef) return new Map();
-    const wires = canvasControllerRef.canvasWireEnds(
-      ProximityConnectHelper.removePreviewEdges(flowEdges)
+  // ---------------------------------------------------------------------------
+  // "Tidy up": the layout commands from the canvas button, the menus and the keys
+  // ---------------------------------------------------------------------------
+
+  /** A command context on this instance, for the layout commands. Null without a workflow. */
+  function layoutContext() {
+    return createStoreCommandContext(fd.nodeTypes.current ?? [], undefined, fd);
+  }
+
+  /** The layout counts of a layout command's result, if it has them. */
+  function layoutData(result: CommandResult): LayoutResultData | undefined {
+    return result.ok && result.data && 'changed' in result.data ? result.data : undefined;
+  }
+
+  /** Tidy the whole graph (`layout beautify`): one undo step, or "already tidy" and nothing moves. */
+  function tidyLayout(): void {
+    if (!canvasEditable) return;
+    const context = layoutContext();
+    if (!context || flowNodes.length === 0) return;
+    const from = positionsOf(flowNodes);
+    const data = layoutData(executeCommand({ type: 'beautify_layout' }, context));
+    announceTidy(data, from, getMsgs().tidy.alreadyTidy);
+  }
+
+  /** Whether tidying these nodes would change anything (one dry run each). */
+  function canTidyNodes(ids: readonly string[]): boolean {
+    const context = layoutContext();
+    if (!context) return false;
+    return ids.some(
+      (nodeId) =>
+        layoutData(executeCommand({ type: 'beautify_node', nodeId, dryRun: true }, context))
+          ?.changed === true
     );
-    return straightenWires(ids, wires, new Map(flowNodes.map((n) => [n.id, n.position])));
+  }
+
+  /** Tidy these nodes one after another (`layout node beautify`), as one undo step. */
+  function tidyNodes(ids: readonly string[]): void {
+    if (!canvasEditable || ids.length === 0) return;
+    const msgs = getMsgs().tidy;
+    const already = ids.length > 1 ? msgs.nodesAlreadyTidy : msgs.nodeAlreadyTidy;
+    const context = layoutContext();
+    if (!context) return;
+    // A batch is one undo step, but it records one even when nothing changed: ask first.
+    if (!canTidyNodes(ids)) {
+      announceTidy(undefined, new Map(), already);
+      return;
+    }
+    const from = positionsOf(flowNodes);
+    const commands = ids.map((nodeId) => ({ type: 'beautify_node' as const, nodeId }));
+    const results =
+      commands.length === 1
+        ? [executeCommand(commands[0], context)]
+        : executeBatch(commands, context).results;
+    const steps = results.map(layoutData).filter((d): d is LayoutResultData => !!d);
+    const data: LayoutResultData | undefined = steps.length
+      ? {
+          changed: steps.some((d) => d.changed),
+          before: steps[0].before,
+          after: steps[steps.length - 1].after
+        }
+      : undefined;
+    announceTidy(data, from, already);
+  }
+
+  function positionsOf(nodes: readonly WorkflowNodeType[]): Map<string, { x: number; y: number }> {
+    return new Map(nodes.map((n) => [n.id, { x: n.position.x, y: n.position.y }]));
+  }
+
+  /** The toast after a tidy, and the cards sliding from where they were. */
+  function announceTidy(
+    data: LayoutResultData | undefined,
+    from: Map<string, { x: number; y: number }>,
+    alreadyTidy: string
+  ): void {
+    const msgs = getMsgs().tidy;
+    if (!data?.changed) {
+      showInfo({ title: alreadyTidy, body: msgs.alreadyTidyBody });
+      return;
+    }
+    const parts = describeTidy(data, msgs);
+    showSuccess({
+      title: msgs.done,
+      ...(parts.length ? { body: parts.join(' · ') } : {}),
+      action: { label: msgs.undo, onClick: () => fd.historyBindings.undo() }
+    });
+    void animateFrom(from);
   }
 
   /**
-   * "Straighten wires": each node moves vertically so the wire into its first
-   * connected input is straight (see utils/straightWires). One undo step.
+   * Slide the cards from `from` to where the store now has them. Only the canvas moves: the
+   * store and the history already hold the end state. Stops when the workflow changes again
+   * (an undo, an edit) and skips the slide under reduced motion.
    */
-  function straightenNodeWires(ids: readonly string[]): void {
-    if (!canvasEditable) return;
-    const moved = straightenMoves(ids);
-    if (moved.size === 0) return;
-    flowNodes = flowNodes.map((n) => {
-      const y = moved.get(n.id);
-      return y === undefined ? n : { ...n, position: { x: n.position.x, y } };
-    });
-    syncFlowToStore();
-    const storeValue = fd.workflow.current;
-    if (storeValue) fd.workflow.pushHistory('Straighten wires', storeValue);
+  async function animateFrom(from: Map<string, { x: number; y: number }>): Promise<void> {
+    if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    await tick();
+    const target = fd.workflow.current;
+    const to = positionsOf(flowNodes);
+    if (tweenPositions(from, to, 0).size === 0) return;
+    const start = performance.now();
+    const frame = (now: number) => {
+      if (fd.workflow.current !== target) return;
+      const t = (now - start) / TIDY_ANIMATION_MS;
+      const at = t >= 1 ? to : tweenPositions(from, to, t);
+      flowNodes = flowNodes.map((n) => {
+        const position = at.get(n.id);
+        return position ? { ...n, position } : n;
+      });
+      if (t < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
   }
 
   /** How many ports a bulk exposure change would touch on these nodes. */
@@ -1620,7 +1718,7 @@
       return;
     }
 
-    // Shift+S on the canvas: straighten the wires of the selected nodes.
+    // Shift+S on the canvas: tidy the selected nodes.
     if (
       event.key.toLowerCase() === 's' &&
       event.shiftKey &&
@@ -1633,8 +1731,24 @@
       const ids = flowNodes.filter((n) => n.selected).map((n) => n.id);
       if (ids.length > 0) {
         event.preventDefault();
-        straightenNodeWires(ids);
+        tidyNodes(ids);
       }
+      return;
+    }
+
+    // Shift+Alt+T on the canvas, or with nothing focused (a click on the empty canvas leaves the
+    // focus on the body): tidy up the whole graph. By code: Alt changes the key on a Mac.
+    if (
+      event.code === 'KeyT' &&
+      event.shiftKey &&
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      canvasEditable &&
+      (target === document.body || target.closest('.flowdrop-canvas'))
+    ) {
+      event.preventDefault();
+      tidyLayout();
       return;
     }
 
@@ -1775,6 +1889,7 @@
               edgeCount={flowEdges.length}
               {hasCycles}
               onfit={() => canvasControllerRef?.canvasFitView()}
+              ontidy={canvasEditable ? tidyLayout : undefined}
             />
             <!-- Always render Background for consistent bg color in dark/light mode -->
             <Background

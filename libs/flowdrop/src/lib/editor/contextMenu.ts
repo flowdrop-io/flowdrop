@@ -42,11 +42,23 @@ export interface ContextMenuActions {
   /** Start the node-swap flow for a node. Absent when swapping is not offered here. */
   swapNode?(id: string): void;
   /**
-   * Move nodes vertically so each one's primary incoming wire is straight, as
-   * one undo step. Absent when the editor cannot measure its handles.
+   * Tidy the whole graph ("Tidy up", `layout beautify`), as one undo step. Absent when the
+   * canvas is read-only or cannot measure its cards.
+   */
+  tidyLayout?(): void;
+  /**
+   * Tidy these nodes one after another (`layout node beautify`: column, port order, straight
+   * wires, free space), as one undo step. Absent when the canvas cannot offer it.
+   */
+  tidyNodes?(ids: string[]): void;
+  /** Whether {@link tidyNodes} would change anything for these nodes. Absent: assume yes. */
+  canTidyNodes?(ids: string[]): boolean;
+  /**
+   * @deprecated The built-in menu offers "Tidy node" ({@link tidyNodes}) instead; kept so
+   * consumer entries that call it still work.
    */
   straightenWires?(ids: string[]): void;
-  /** Whether {@link straightenWires} would move any of these nodes. Absent: assume yes. */
+  /** @deprecated See {@link straightenWires}. */
   canStraightenWires?(ids: string[]): boolean;
   /**
    * Hide the exposed data ports that have no wire, as one undo step. This is
@@ -129,8 +141,9 @@ export function isSeparator(entry: ContextMenuEntry): entry is { id: string; sep
 
 /**
  * The built-in entries for a menu: node -> Configure (or Edit text for a node
- * that edits in place), Duplicate, Swap node (when offered), Straighten wires (when offered), separator, Delete;
- * selection (2+ nodes) -> Straighten wires (when offered), separator, Delete n nodes; pane -> Add caption when the node types include a caption, else none.
+ * that edits in place), Duplicate, Swap node (when offered), Tidy node (when offered), separator, Delete;
+ * selection (2+ nodes) -> Tidy n nodes (when offered), separator, Delete n nodes; pane -> Add caption
+ * when the node types include a caption, and Tidy up when offered.
  *
  * @param messages - the `contextMenu` message branch (`m().contextMenu` in a component)
  * @param options - facts the context does not carry (see `DefaultEntriesOptions`)
@@ -142,17 +155,27 @@ export function buildDefaultContextMenuEntries(
 ): ContextMenuEntry[] {
   if (ctx.target === 'pane') {
     const caption = findCaptionMetadata(ctx.nodeTypes);
-    if (!caption) return [];
-    return [
-      {
+    const entries: ContextMenuEntry[] = [];
+    if (caption) {
+      entries.push({
         id: 'add-caption',
         icon: 'mdi:text-box-plus-outline',
         label: messages.addCaption,
         run: (c) => {
           c.actions.addNode(caption, c.position, { edit: true });
         }
-      }
-    ];
+      });
+    }
+    if (ctx.actions.tidyLayout) {
+      entries.push({
+        id: 'tidy-layout',
+        icon: 'mdi:broom',
+        label: messages.tidyLayout,
+        shortcut: messages.shortcutTidyLayout,
+        run: (c) => c.actions.tidyLayout?.()
+      });
+    }
+    return entries;
   }
 
   if (ctx.target === 'node' && ctx.nodes.length === 1) {
@@ -173,10 +196,8 @@ export function buildDefaultContextMenuEntries(
           run: (c) => c.actions.openConfig(c.nodes[0].id)
         };
     const swap = ctx.actions.swapNode;
-    // A caption is edited in place and has no ports, so there is no wire to straighten.
-    const straighten = inPlace
-      ? []
-      : [...straightenEntry(ctx, messages), ...portEntries(ctx, messages)];
+    // A caption is edited in place and has no ports: nothing to tidy.
+    const straighten = inPlace ? [] : [...tidyEntry(ctx, messages), ...portEntries(ctx, messages)];
     return [
       first,
       {
@@ -209,7 +230,7 @@ export function buildDefaultContextMenuEntries(
   }
 
   if (ctx.target === 'selection' && ctx.nodes.length > 1) {
-    const straighten = [...straightenEntry(ctx, messages), ...portEntries(ctx, messages)];
+    const straighten = [...tidyEntry(ctx, messages), ...portEntries(ctx, messages)];
     return [
       ...straighten,
       ...(straighten.length > 0 ? [{ id: 'separator-selection', separator: true } as const] : []),
@@ -227,21 +248,18 @@ export function buildDefaultContextMenuEntries(
   return [];
 }
 
-/** The "Straighten wires" entry, when the editor offers it. */
-function straightenEntry(
-  ctx: ContextMenuContext,
-  messages: ContextMenuMessages
-): ContextMenuEntry[] {
-  if (!ctx.actions.straightenWires) return [];
+/** The "Tidy node" entry ("Tidy n nodes" on a selection), when the editor offers it. */
+function tidyEntry(ctx: ContextMenuContext, messages: ContextMenuMessages): ContextMenuEntry[] {
+  if (!ctx.actions.tidyNodes) return [];
   const ids = ctx.nodes.map((n) => n.id);
   return [
     {
-      id: 'straighten-wires',
-      icon: 'mdi:vector-line',
-      label: messages.straightenWires,
-      shortcut: messages.shortcutStraighten,
-      disabled: ctx.actions.canStraightenWires ? !ctx.actions.canStraightenWires(ids) : false,
-      run: (c) => c.actions.straightenWires?.(c.nodes.map((n) => n.id))
+      id: 'tidy-node',
+      icon: 'mdi:broom',
+      label: ids.length > 1 ? messages.tidyNodes({ n: ids.length }) : messages.tidyNode,
+      shortcut: messages.shortcutTidyNode,
+      disabled: ctx.actions.canTidyNodes ? !ctx.actions.canTidyNodes(ids) : false,
+      run: (c) => c.actions.tidyNodes?.(c.nodes.map((n) => n.id))
     }
   ];
 }

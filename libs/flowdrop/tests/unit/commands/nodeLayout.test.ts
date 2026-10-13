@@ -415,6 +415,17 @@ describe('executor: layout node', () => {
   });
 
   describe('layout beautify (the sweep)', () => {
+    it('returns the counts before and after, for the Tidy up toast', () => {
+      const result = executeCommand(parse('layout beautify'), context);
+      expect(result.ok && result.data).toEqual({
+        changed: true,
+        before: { straight: 0, backward: 0, crossings: 3, overlaps: 2, spacing: 1, passes: 0 },
+        after: { straight: 4, backward: 0, crossings: 1, overlaps: 0, spacing: 0, passes: 0 }
+      });
+      const node = executeCommand(parse('layout node beautify lookup clear --dry-run'), context);
+      expect(node.ok && node.data).toMatchObject({ changed: true });
+    });
+
     it('prints the phases, a line per step and the score, in one batchUpdate', () => {
       const result = executeCommand(parse('layout beautify'), context);
       expect(result.ok).toBe(true);

@@ -305,6 +305,28 @@ export const defaultMessages = {
     cyclesTitle: 'The workflow contains a cycle'
   },
 
+  // "Tidy up": the layout sweep from the canvas button, the canvas menu and the node menu.
+  tidy: {
+    // The canvas button's accessible name, tooltip and the canvas menu entry.
+    button: 'Tidy up',
+    // Toast after a tidy that changed something. The body lists what improved, joined with " · ".
+    done: 'Tidied up',
+    straightened: ({ n }: { n: number }) => `${n} wire${n !== 1 ? 's' : ''} straightened`,
+    uncrossed: ({ n }: { n: number }) => `${n} crossing${n !== 1 ? 's' : ''} removed`,
+    unbackward: ({ n }: { n: number }) =>
+      `${n} wire${n !== 1 ? 's' : ''} turned to flow left to right`,
+    unoverlapped: ({ n }: { n: number }) => `${n} overlap${n !== 1 ? 's' : ''} fixed`,
+    spaced: ({ n }: { n: number }) => `${n} pair${n !== 1 ? 's' : ''} of cards spaced out`,
+    unpassed: ({ n }: { n: number }) =>
+      `${n} wire${n !== 1 ? 's' : ''} no longer run${n !== 1 ? '' : 's'} through a port`,
+    undo: 'Undo',
+    // Toast when nothing would improve: nothing moved.
+    alreadyTidy: 'Layout is already tidy',
+    alreadyTidyBody: 'Nothing would improve, so nothing moved.',
+    nodeAlreadyTidy: 'Node is already tidy',
+    nodesAlreadyTidy: 'Nodes are already tidy'
+  },
+
   contextMenu: {
     // aria-label of the canvas context menu.
     menuLabel: 'Canvas actions',
@@ -315,7 +337,12 @@ export const defaultMessages = {
     editText: 'Edit text',
     duplicate: 'Duplicate',
     swap: 'Swap node',
-    // Moves the node(s) up or down so the wire into the first connected input is straight.
+    // Tidies the node(s): column, port order, straight wires, free space (`layout node beautify`).
+    tidyNode: 'Tidy node',
+    tidyNodes: ({ n }: { n: number }) => `Tidy ${n} nodes`,
+    // The pane menu's "Tidy up" (the whole graph).
+    tidyLayout: 'Tidy up',
+    // Unused since "Tidy node" replaced it; kept so existing overrides still type-check.
     straightenWires: 'Straighten wires',
     // Hide / show ports of the node(s). These change which ports are exposed (as the Ports
     // form's eye does), they do not just fold the card. The counted form is used when n > 0.
@@ -333,7 +360,9 @@ export const defaultMessages = {
     // Key hints shown beside an entry, as key glyphs.
     shortcutEnter: '↵',
     shortcutDelete: '⌫',
-    shortcutStraighten: '⇧S'
+    shortcutStraighten: '⇧S',
+    shortcutTidyNode: '⇧S',
+    shortcutTidyLayout: '⇧⌥T'
   },
 
   // The "Connect to…" picker opened from a port's menu.

@@ -25,7 +25,8 @@ import type {
   ConfigKeyDescription,
   PortDescription,
   HelpResultData,
-  SwapNodeResultData
+  SwapNodeResultData,
+  LayoutResultData
 } from './types.js';
 import {
   fromWorkflow,
@@ -39,7 +40,7 @@ import {
   DEFAULT_LAYOUT_OPTIONS,
   LAYOUT_GRID
 } from '../layout/index.js';
-import type { LayoutGraph, LayoutOptions } from '../layout/index.js';
+import type { LayoutGraph, LayoutMetrics, LayoutOptions } from '../layout/index.js';
 import type { ConfigProperty, ConfigSchema, Branch, DynamicPort } from '../types/index.js';
 import type {
   NodeMetadata,
@@ -1741,7 +1742,8 @@ function executeBeautifyNode(
     layout.options
   );
   const message = shortenLayoutIds(formatBeautify(result, dryRun), workflow.nodes);
-  if (dryRun || !result.accepted) return { ok: true, message };
+  const data = layoutResultData(result.accepted, result.before, result.after);
+  if (dryRun || !result.accepted) return { ok: true, message, data };
 
   // One batchUpdate is one undo step: position and port order land together.
   const updates = new Map(
@@ -1757,7 +1759,24 @@ function executeBeautifyNode(
     };
   });
   context.dispatch.batchUpdate({ nodes });
-  return { ok: true, message };
+  return { ok: true, message, data };
+}
+
+/** The score before and after as counts, for a UI to describe. */
+function layoutResultData(
+  changed: boolean,
+  before: LayoutMetrics,
+  after: LayoutMetrics
+): LayoutResultData {
+  const counts = (m: LayoutMetrics) => ({
+    straight: m.straight,
+    backward: m.backward,
+    crossings: m.crossings.length,
+    overlaps: m.overlaps,
+    spacing: m.spacing,
+    passes: m.passes.length
+  });
+  return { changed, before: counts(before), after: counts(after) };
 }
 
 /** `layout beautify`: the graph sweep, one `batchUpdate` (one undo step) for every change. */
@@ -1771,7 +1790,8 @@ function executeSweepLayout(
   const dryRun = command.dryRun === true;
   const result = sweepLayout(layoutGraphOf(workflow, context), layout.options);
   const message = shortenLayoutIds(formatSweep(result, dryRun), workflow.nodes);
-  if (dryRun || !result.accepted) return { ok: true, message };
+  const data = layoutResultData(result.accepted, result.before, result.after);
+  if (dryRun || !result.accepted) return { ok: true, message, data };
 
   const updates = new Map(applySweepToNodes(workflow.nodes, result).map((u) => [u.nodeId, u]));
   const nodes = workflow.nodes.map((n) => {
@@ -1784,7 +1804,7 @@ function executeSweepLayout(
     };
   });
   context.dispatch.batchUpdate({ nodes });
-  return { ok: true, message };
+  return { ok: true, message, data };
 }
 
 // ============================================================================

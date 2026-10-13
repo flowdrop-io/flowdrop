@@ -62,39 +62,63 @@ const captionMeta = meta({ node_type_id: 'caption', name: 'Caption', type: 'capt
 const ids = (entries: ContextMenuEntry[]): string[] => entries.map((e) => e.id);
 
 describe('buildDefaultContextMenuEntries', () => {
-  it('Straighten wires: offered on a node and a selection only when the editor provides it', () => {
+  it('Tidy node: offered on a node and a selection only when the editor provides it', () => {
     const ctx = makeCtx('node', [node('a')]);
-    expect(ids(buildDefaultContextMenuEntries(ctx))).not.toContain('straighten-wires');
+    expect(ids(buildDefaultContextMenuEntries(ctx))).not.toContain('tidy-node');
 
-    ctx.actions.straightenWires = vi.fn();
+    ctx.actions.tidyNodes = vi.fn();
     const entries = buildDefaultContextMenuEntries(ctx);
     expect(ids(entries)).toEqual([
       'configure',
       'duplicate',
-      'straighten-wires',
+      'tidy-node',
       'separator-node',
       'delete'
     ]);
-    expect(entries[2]).toMatchObject({ label: 'Straighten wires', shortcut: '⇧S' });
+    expect(entries[2]).toMatchObject({ label: 'Tidy node', shortcut: '⇧S', icon: 'mdi:broom' });
     runContextMenuEntry(entries[2], ctx);
-    expect(ctx.actions.straightenWires).toHaveBeenCalledWith(['a']);
+    expect(ctx.actions.tidyNodes).toHaveBeenCalledWith(['a']);
 
     const many = makeCtx('selection', [node('a'), node('b')]);
-    many.actions.straightenWires = vi.fn();
+    many.actions.tidyNodes = vi.fn();
     const selection = buildDefaultContextMenuEntries(many);
-    expect(ids(selection)).toEqual(['straighten-wires', 'separator-selection', 'delete']);
+    expect(ids(selection)).toEqual(['tidy-node', 'separator-selection', 'delete']);
+    expect(selection[0]).toMatchObject({ label: 'Tidy 2 nodes' });
     runContextMenuEntry(selection[0], many);
-    expect(many.actions.straightenWires).toHaveBeenCalledWith(['a', 'b']);
+    expect(many.actions.tidyNodes).toHaveBeenCalledWith(['a', 'b']);
   });
 
-  it('Straighten wires is disabled when nothing would move', () => {
+  it('Tidy node is disabled when nothing would change', () => {
     const ctx = makeCtx('node', [node('a')]);
-    ctx.actions.straightenWires = vi.fn();
-    ctx.actions.canStraightenWires = () => false;
-    const entry = buildDefaultContextMenuEntries(ctx).find((e) => e.id === 'straighten-wires');
+    ctx.actions.tidyNodes = vi.fn();
+    ctx.actions.canTidyNodes = () => false;
+    const entry = buildDefaultContextMenuEntries(ctx).find((e) => e.id === 'tidy-node');
     expect(entry).toMatchObject({ disabled: true });
     runContextMenuEntry(entry!, ctx);
-    expect(ctx.actions.straightenWires).not.toHaveBeenCalled();
+    expect(ctx.actions.tidyNodes).not.toHaveBeenCalled();
+  });
+
+  it('the old Straighten wires action no longer adds an entry', () => {
+    const ctx = makeCtx('node', [node('a')]);
+    ctx.actions.straightenWires = vi.fn();
+    expect(ids(buildDefaultContextMenuEntries(ctx))).toEqual([
+      'configure',
+      'duplicate',
+      'separator-node',
+      'delete'
+    ]);
+  });
+
+  it('pane: Tidy up when the editor provides it, after Add caption', () => {
+    const ctx = makeCtx('pane');
+    expect(buildDefaultContextMenuEntries(ctx)).toEqual([]);
+    ctx.actions.tidyLayout = vi.fn();
+    ctx.nodeTypes = [captionMeta];
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual(['add-caption', 'tidy-layout']);
+    expect(entries[1]).toMatchObject({ label: 'Tidy up', shortcut: '⇧⌥T', icon: 'mdi:broom' });
+    runContextMenuEntry(entries[1], ctx);
+    expect(ctx.actions.tidyLayout).toHaveBeenCalled();
   });
 
   it('node: Configure, separator, Delete', () => {
@@ -373,14 +397,14 @@ describe('port exposure entries', () => {
     expect(ids(entries)).not.toContain('show-hidden-ports');
   });
 
-  it('node: both entries sit after Straighten wires and before the separator, with counts', () => {
+  it('node: both entries sit after Tidy node and before the separator, with counts', () => {
     const ctx = withPortActions(makeCtx('node', [node('a')]), 3, 1);
-    ctx.actions.straightenWires = vi.fn();
+    ctx.actions.tidyNodes = vi.fn();
     const entries = buildDefaultContextMenuEntries(ctx);
     expect(ids(entries)).toEqual([
       'configure',
       'duplicate',
-      'straighten-wires',
+      'tidy-node',
       'hide-unconnected-ports',
       'show-hidden-ports',
       'separator-node',

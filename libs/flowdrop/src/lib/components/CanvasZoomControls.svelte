@@ -1,7 +1,8 @@
 <!--
   CanvasZoomControls
 
-  The canvas's zoom / fit / lock buttons with a read-only count of what is on the
+  The canvas's zoom / fit / lock buttons, the "Tidy up" broom (when the canvas offers it), and a
+  read-only count of what is on the
   canvas ("6 nodes") beside them. The count replaced the editor's status bar; the
   full "6 nodes · 6 connections" is its title and accessible name. A cycle warning,
   also formerly in the status bar, appears next to the count when the graph loops.
@@ -12,7 +13,8 @@
   Must render inside <SvelteFlow>: xyflow's Controls reads the flow store.
 -->
 <script lang="ts">
-  import { Controls, Panel, useStore } from '@xyflow/svelte';
+  import { ControlButton, Controls, Panel, useStore } from '@xyflow/svelte';
+  import Icon from '@iconify/svelte';
   import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
   import { getMessages } from '$lib/messages/index.js';
   import WebMCPBridgeMenu from './WebMCPBridgeMenu.svelte';
@@ -26,9 +28,11 @@
     hasCycles?: boolean;
     /** Fit the view. Replaces xyflow's own fit, which would clip interface tags and ignore an open sheet. */
     onfit?: () => void;
+    /** Tidy up the whole graph. No broom without it (read-only canvas). */
+    ontidy?: () => void;
   }
 
-  let { nodeCount, edgeCount, hasCycles = false, onfit }: Props = $props();
+  let { nodeCount, edgeCount, hasCycles = false, onfit, ontidy }: Props = $props();
 
   // Capture phase: take the fit button's click before xyflow's own handler runs.
   function takeFitClick(event: MouseEvent): void {
@@ -39,6 +43,8 @@
 
   const getMsgs = getMessages();
   const msg = $derived(getMsgs().canvasStatus);
+  const tidyLabel = $derived(getMsgs().tidy.button);
+  const tidyTitle = $derived(`${tidyLabel} (${getMsgs().contextMenu.shortcutTidyLayout})`);
   const flowStore = useStore();
   const zoomPercent = $derived(Math.round(flowStore.viewport.zoom * 100));
   const summary = $derived(msg.summary({ nodes: nodeCount, edges: edgeCount }));
@@ -51,6 +57,17 @@
     onclickcapture={takeFitClick}
   >
     {#snippet after()}
+      {#if ontidy}
+        <ControlButton
+          class="fd-tidy-button"
+          title={tidyTitle}
+          aria-label={tidyLabel}
+          aria-keyshortcuts="Shift+Alt+T"
+          onclick={ontidy}
+        >
+          <Icon icon="mdi:broom" />
+        </ControlButton>
+      {/if}
       <div class="fd-zoom-status">
         <!-- Shown by themes that set --fd-zoom-percent-display; outside the live region so zooming is not announced -->
         <span class="fd-zoom-status__zoom" aria-hidden="true">{zoomPercent}% ·</span>

@@ -32,7 +32,7 @@ test.describe('Canvas context menu', () => {
       /Configure/,
       /Duplicate/,
       /Swap node/,
-      /Straighten wires/,
+      /Tidy node/,
       /Hide unconnected ports/,
       /Show hidden ports/,
       /Delete/
@@ -133,7 +133,7 @@ test.describe('Canvas context menu', () => {
     // After a box selection, xyflow overlays the selected nodes with a selection wrapper.
     await page.locator('.svelte-flow__selection-wrapper').click({ button: 'right' });
     await expect(menu(page).getByRole('menuitem')).toHaveText([
-      /Straighten wires/,
+      /Tidy 2 nodes/,
       /Hide unconnected ports/,
       /Show hidden ports/,
       /Delete 2 nodes/
@@ -221,7 +221,7 @@ test.describe('Canvas context menu', () => {
       /Configure/,
       /Duplicate/,
       /Swap node/,
-      /Straighten wires/,
+      /Tidy node/,
       /Hide unconnected ports/,
       /Show hidden ports/,
       /Delete/
@@ -232,19 +232,15 @@ test.describe('Canvas context menu', () => {
     await expect(page.locator('.config-panel').first()).toBeVisible({ timeout: 5000 });
   });
 
-  test('the empty canvas keeps the browser menu while the pane menu has no entries', async ({
-    page
-  }) => {
+  test('the empty canvas offers Tidy up', async ({ page }) => {
     await gotoEditor(page, 'simple');
 
-    const prevented = await page.evaluate(() => {
-      const el = document.querySelector('.svelte-flow__pane');
-      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
-      el?.dispatchEvent(ev);
-      return ev.defaultPrevented;
-    });
-    expect(prevented).toBe(false);
-    await expect(menu(page)).toHaveCount(0);
+    const pane = page.locator('.svelte-flow__pane');
+    const box = await pane.boundingBox();
+    if (!box) throw new Error('Canvas pane not found');
+    await page.mouse.click(box.x + box.width - 40, box.y + 40, { button: 'right' });
+    await expect(menu(page)).toBeVisible();
+    await expect(menu(page).getByRole('menuitem', { name: /Tidy up/ })).toBeVisible();
   });
 
   test('read-only mode shows no custom menu', async ({ page }) => {

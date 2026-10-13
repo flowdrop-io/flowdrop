@@ -1,6 +1,7 @@
 /**
  * Node layout commands in the Console: `layout node inspect` and
- * `layout node beautify`, on the canvas's own measurement.
+ * `layout node beautify`, on the canvas's own measurement; and "Tidy up" from the canvas
+ * (the broom in the canvas controls, Shift+Alt+T), with its toast.
  *
  * ?workflow=tangled: Form -> Classify / Lookup (one over the other) -> Compose (two wires
  * cross) -> Loop (loop_back from Send) -> Send, with a caption above Compose.
@@ -175,5 +176,41 @@ test.describe('Node layout commands', () => {
     expect(text.split('\n').pop()).toMatch(/^would give: /);
     await page.waitForTimeout(300);
     expect(await positions(page)).toEqual(before);
+  });
+
+  test('the broom tidies up the graph, says what improved, and Undo in the toast restores it', async ({
+    page
+  }) => {
+    await open(page);
+    const before = await positions(page);
+    await page.getByRole('button', { name: 'Tidy up' }).click();
+
+    // The test page mounts two toasters (layout and editor), stacked: take the top one.
+    const toast = page.locator('.flowdrop-toast-row').filter({ hasText: 'Tidied up' }).last();
+    await expect(toast).toBeVisible();
+    await expect(toast).toContainText('crossings removed');
+    await expect.poll(() => positions(page)).not.toEqual(before);
+
+    await toast.getByRole('button', { name: 'Undo' }).click();
+    await expect.poll(() => positions(page)).toEqual(before);
+  });
+
+  test('a tidy graph stays where it is: "already tidy" and nothing moves', async ({ page }) => {
+    await open(page);
+    await page.getByRole('button', { name: 'Tidy up' }).click();
+    await expect(
+      page.locator('.flowdrop-toast-row').filter({ hasText: 'Tidied up' }).last()
+    ).toBeVisible();
+    await page.waitForTimeout(400);
+    const tidy = await positions(page);
+
+    // Focus the canvas on an empty spot (the top-left corner holds the Edit | Test switch).
+    const pane = (await page.locator('.svelte-flow__pane').boundingBox())!;
+    await page.mouse.click(pane.x + pane.width - 40, pane.y + 40);
+    await page.keyboard.press('Shift+Alt+T');
+    await expect(
+      page.locator('.flowdrop-toast-row').filter({ hasText: 'Layout is already tidy' }).last()
+    ).toBeVisible();
+    expect(await positions(page)).toEqual(tidy);
   });
 });

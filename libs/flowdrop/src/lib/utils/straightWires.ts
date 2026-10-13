@@ -1,6 +1,6 @@
 /**
- * Straight wires: magnetic alignment while dragging, and the "Straighten
- * wires" command.
+ * Straight wires: magnetic alignment while dragging. (The "Straighten wires"
+ * command became "Tidy node", the `layout node beautify` command.)
  *
  * A wire is straight when its source handle and its target handle are at the
  * same y. Every handle centre of a node card is a multiple of 20 from the node
@@ -155,58 +155,4 @@ export function snapToStraight(
     }
   }
   return { dy, guides };
-}
-
-/**
- * The wire a node is straightened to: its primary incoming wire. The first
- * connected data input, by the row it sits on (top row first); a node wired
- * only through its trigger uses that wire.
- */
-export function primaryIncomingWire(
-  nodeId: string,
-  wires: readonly StraightWire[]
-): StraightWire | undefined {
-  const incoming = wires.filter((w) => w.targetId === nodeId && w.sourceId !== nodeId);
-  const data = incoming.filter((w) => !w.exec);
-  const pool = data.length > 0 ? data : incoming;
-  return pool.reduce<StraightWire | undefined>(
-    (best, w) => (best === undefined || w.targetDy < best.targetDy ? w : best),
-    undefined
-  );
-}
-
-/**
- * "Straighten wires": where each of the given nodes moves (vertically only) so
- * that its primary incoming wire is straight, i.e. its first connected input
- * lines up with the output that feeds it.
- *
- * Nodes are handled left to right, so in a selected chain each node follows its
- * already-moved source and the whole chain ends up straight. A node with no
- * incoming wire stays where it is (nothing to align to), and so does one whose
- * source is the node itself. Returns only the nodes that move, with their new y.
- */
-export function straightenWires(
-  nodeIds: readonly string[],
-  wires: readonly StraightWire[],
-  positions: ReadonlyMap<string, Point>
-): Map<string, number> {
-  const current = new Map(positions);
-  const moved = new Map<string, number>();
-  const ordered = [...new Set(nodeIds)]
-    .filter((id) => current.has(id))
-    .sort((a, b) => current.get(a)!.x - current.get(b)!.x);
-
-  for (const id of ordered) {
-    const wire = primaryIncomingWire(id, wires);
-    if (!wire) continue;
-    const ys = handleYs(wire, current);
-    if (!ys) continue;
-    const delta = ys.sy - ys.ty;
-    if (delta === 0) continue;
-    const pos = current.get(id)!;
-    const y = pos.y + delta;
-    current.set(id, { x: pos.x, y });
-    moved.set(id, y);
-  }
-  return moved;
 }

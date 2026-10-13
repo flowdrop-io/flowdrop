@@ -1,6 +1,6 @@
 /**
  * Straight wires (Graphite G8f): magnetic alignment while dragging, Alt to
- * switch it off, the Straighten wires command, and undo as one step.
+ * switch it off, Tidy node (which replaced Straighten wires), and undo as one step.
  *
  * ?workflow=straight: Entity Insert at (100, 120) feeds Data Shaper at (520, 200)
  * through the trigger pin (y = 20) and the first data row (y = 80). Data Shaper
@@ -109,7 +109,7 @@ test.describe('Straight wires', () => {
     expect(y).toBeLessThan(130);
   });
 
-  test('Straighten wires from the node menu moves it in one undo step; Shift+S does the same', async ({
+  test('Tidy node from the node menu straightens it in one undo step; Shift+S does the same', async ({
     page
   }) => {
     await open(page);
@@ -117,7 +117,7 @@ test.describe('Straight wires', () => {
       .locator(`${SHAPER} .flowdrop-workflow-node__header`)
       .first()
       .click({ button: 'right' });
-    await page.getByRole('menuitem', { name: /Straighten wires/ }).click();
+    await page.getByRole('menuitem', { name: /Tidy node/ }).click();
     await expect.poll(() => shaperY(page)).toBe(120);
 
     await page.keyboard.press(`${process.platform === 'darwin' ? 'Meta' : 'Control'}+z`);

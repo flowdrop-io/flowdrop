@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  primaryIncomingWire,
   snapToStraight,
-  straightenWires,
   STRAIGHT_SNAP_THRESHOLD,
   type Point,
   type StraightWire
@@ -146,80 +144,5 @@ describe('snapToStraight', () => {
       });
       expect(result.dy).toBeCloseTo(-3.7);
     });
-  });
-});
-
-describe('primaryIncomingWire', () => {
-  it('prefers a data wire to the trigger wire, and the top row among data wires', () => {
-    const wires = [
-      wire('t', 'a', 'x', { exec: true }),
-      wire('low', 'a', 'x', { targetDy: 120 }),
-      wire('high', 'b', 'x', { targetDy: 80 })
-    ];
-    expect(primaryIncomingWire('x', wires)?.id).toBe('high');
-  });
-
-  it('falls back to the trigger wire', () => {
-    expect(primaryIncomingWire('x', [wire('t', 'a', 'x', { exec: true })])?.id).toBe('t');
-  });
-
-  it('is undefined with no incoming wire', () => {
-    expect(primaryIncomingWire('a', chain)).toBeUndefined();
-  });
-});
-
-describe('straightenWires', () => {
-  it('moves a node so its first connected input lines up with its source', () => {
-    const moved = straightenWires(['b'], chain, at({ a: [0, 100], b: [400, 260] }));
-    expect([...moved]).toEqual([['b', 100]]);
-  });
-
-  it('leaves nodes that are straight, and nodes with no incoming wire, alone', () => {
-    expect(straightenWires(['b'], chain, at({ a: [0, 100], b: [400, 100] })).size).toBe(0);
-    expect(straightenWires(['a'], chain, at({ a: [0, 100], b: [400, 260] })).size).toBe(0);
-  });
-
-  it('handles a multi-selection left to right, so a selected chain ends up straight', () => {
-    const wires = [wire('ab', 'a', 'b'), wire('bc', 'b', 'c')];
-    const moved = straightenWires(
-      ['c', 'b'],
-      wires,
-      at({ a: [0, 100], b: [400, 180], c: [800, 40] })
-    );
-    expect(moved.get('b')).toBe(100);
-    // c follows b's new place, not its old one.
-    expect(moved.get('c')).toBe(100);
-  });
-
-  it('aligns to a source that is not selected and does not move it', () => {
-    const moved = straightenWires(['b'], chain, at({ a: [0, 140], b: [400, 100] }));
-    expect(moved.has('a')).toBe(false);
-    expect(moved.get('b')).toBe(140);
-  });
-
-  it('keeps nodes on the grid when the source is on it', () => {
-    const moved = straightenWires(
-      ['b'],
-      [wire('ab', 'a', 'b', { sourceDy: 120, targetDy: 80 })],
-      at({ a: [0, 100], b: [400, 360] })
-    );
-    expect(moved.get('b')! % 20).toBe(0);
-    expect(moved.get('b')).toBe(140);
-  });
-
-  it('straightens the data wire when the source row and target row differ', () => {
-    const moved = straightenWires(
-      ['b'],
-      [wire('ab', 'a', 'b', { sourceDy: 160, targetDy: 80 })],
-      at({ a: [0, 100], b: [400, 100] })
-    );
-    expect(moved.get('b')).toBe(180);
-  });
-
-  it('is idempotent', () => {
-    const positions = at({ a: [0, 100], b: [400, 260] });
-    const first = straightenWires(['b'], chain, positions);
-    const again = straightenWires(['b'], chain, at({ a: [0, 100], b: [400, first.get('b')!] }));
-    expect(again.size).toBe(0);
   });
 });
