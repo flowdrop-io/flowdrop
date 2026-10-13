@@ -122,7 +122,6 @@
       title={msgs.triggerTitle({ status: statusText })}
       aria-expanded={open}
       aria-controls={open ? popoverId : undefined}
-      aria-haspopup="true"
       data-testid="webmcp-bridge-trigger"
       data-status={status}
       onclick={() => (open ? close(false) : void show())}
