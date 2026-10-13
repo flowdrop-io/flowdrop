@@ -102,8 +102,8 @@ clear                              — Remove all nodes and edges from the canva
 select <nodeId>                    — Select a node on the canvas.
 layout auto [--direction horizontal|vertical]  — Auto-arrange nodes. Default: horizontal. USER-REQUESTED ONLY.
 layout beautify                    — Normalize spacing, preserve arrangement. USER-REQUESTED ONLY.
-layout node inspect <nodeId>       — Report one node's wires (straight or off by px), crossings, overlaps, spacing. Read-only.
-layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run]  — Tidy ONE node (x column, port order, wire alignment, free space); prints what changed and the score. Inspect first; --dry-run previews. USER-REQUESTED ONLY.
+layout node inspect <nodeId> [--gap-x <px>] [--gap-y <px>]  — Report one node's wires (straight or off by px), crossings, overlaps, spacing. Read-only. Gaps are multiples of the grid; default: the editor's layout gap settings.
+layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run] [--gap-x <px>] [--gap-y <px>]  — Tidy ONE node (x column, port order, wire alignment, free space); prints what changed and the score. Inspect first; --dry-run previews; --gap-x/--gap-y override the layout gaps for this call. USER-REQUESTED ONLY.
 canvas fitview                     — Fit all nodes into viewport. Also: canvas fit.
 canvas zoom in|out|<level>         — Zoom in, out, or to level (e.g. 1.5 = 150%).
 canvas pan <x>,<y>                 — Pan canvas to center on position.

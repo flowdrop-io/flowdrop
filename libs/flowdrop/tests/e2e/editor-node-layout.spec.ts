@@ -66,6 +66,22 @@ test.describe('Node layout commands', () => {
     expect(lines[lines.length - 1]).toMatch(/overlap|spacing/);
   });
 
+  test('--gap-x / --gap-y change what inspect reports as too close', async ({ page }) => {
+    await open(page);
+    const conflicts = async (flags: string): Promise<string> => {
+      const text = await run(page, `layout node inspect compose.1${flags}`);
+      return text.split('\n').pop()!.trim();
+    };
+    // Gaps of 0 leave only real overlaps; a huge gap makes every neighbour too close.
+    const tight = await conflicts(' --gap-x 0 --gap-y 0');
+    const wide = await conflicts(' --gap-x 600 --gap-y 400');
+    expect(tight).not.toMatch(/spacing with/);
+    expect(wide).toMatch(/spacing with/);
+
+    const refused = await run(page, 'layout node inspect compose.1 --gap-y 30');
+    expect(refused).toMatch(/multiple of the \d+ px grid/);
+  });
+
   test('layout node beautify ports reorders the card and prints the score', async ({ page }) => {
     await open(page);
     expect(await inputOrder(page, 'compose.1')).toEqual(['contact', 'label']);

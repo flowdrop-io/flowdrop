@@ -397,6 +397,49 @@ describe('settingsStore persistence', { timeout: 30_000 }, () => {
       expect(store.getEditorSettings().gridSize).toBe(20);
     });
   });
+  describe('layout gaps (node layout L3)', () => {
+    it('defaults to 120 and 40', async () => {
+      const store = await freshStore();
+      expect(store.getEditorSettings()).toMatchObject({ layoutGapX: 120, layoutGapY: 40 });
+    });
+
+    it('rounds stored values to the grid and clamps negatives to 0', async () => {
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ editor: { layoutGapX: 130, layoutGapY: -50 } })
+      );
+      const store = await freshStore();
+      // 130 / 20 = 6.5 rounds up to 7 cells.
+      expect(store.getEditorSettings()).toMatchObject({ layoutGapX: 140, layoutGapY: 0 });
+    });
+
+    it('follows the grid size: 10 keeps what 20 would round', async () => {
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ editor: { gridSize: 10, layoutGapX: 130, layoutGapY: 44 } })
+      );
+      const store = await freshStore();
+      expect(store.getEditorSettings()).toMatchObject({ layoutGapX: 130, layoutGapY: 40 });
+    });
+
+    it('replaces a value that is not a number with the default', async () => {
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ editor: { layoutGapX: 'wide', layoutGapY: null } })
+      );
+      const store = await freshStore();
+      expect(store.getEditorSettings()).toMatchObject({ layoutGapX: 120, layoutGapY: 40 });
+    });
+
+    it('normalises an update and a host default', async () => {
+      const store = await freshStore();
+      await store.initializeSettings({ defaults: { editor: { layoutGapY: 25 } } as never });
+      expect(store.getEditorSettings().layoutGapY).toBe(20);
+      store.updateSettings({ editor: { layoutGapX: 90 } });
+      expect(store.getEditorSettings().layoutGapX).toBe(100);
+    });
+  });
+
   describe('zoom tiers (Graphite G9)', () => {
     it('defaults to the four-tier library set', async () => {
       const store = await freshStore();

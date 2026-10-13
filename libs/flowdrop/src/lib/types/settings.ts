@@ -8,6 +8,7 @@
  */
 
 import { DEFAULT_ZOOM_TIERS, type ZoomTierConfig } from '../utils/zoomTier.js';
+import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y } from '../layout/types.js';
 
 // =========================================================================
 // Theme Settings
@@ -93,6 +94,16 @@ export interface EditorSettings {
   snapToGrid: boolean;
   /** Grid cell size in pixels */
   gridSize: number;
+  /**
+   * Layout gap between cards side by side, in pixels (`layout node` commands).
+   * A multiple of the grid size; default {@link DEFAULT_LAYOUT_GAP_X}.
+   */
+  layoutGapX: number;
+  /**
+   * Layout gap between stacked cards, in pixels (`layout node` commands).
+   * A multiple of the grid size; default {@link DEFAULT_LAYOUT_GAP_Y}.
+   */
+  layoutGapY: number;
   /** Show minimap for navigation */
   showMinimap: boolean;
   /** Default zoom level (1 = 100%) */
@@ -340,12 +351,24 @@ export function normalizeGridSize(value: unknown): number {
 }
 
 /**
+ * A layout gap as the editor stores it: a number of at least 0, rounded to a
+ * multiple of the grid so cards still land on grid lines. Anything that is not a
+ * finite number becomes `fallback`.
+ */
+export function normalizeLayoutGap(value: unknown, gridSize: number, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.max(0, Math.round(value / gridSize) * gridSize);
+}
+
+/**
  * Default editor settings
  */
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   showGrid: true,
   snapToGrid: true,
   gridSize: 20,
+  layoutGapX: DEFAULT_LAYOUT_GAP_X,
+  layoutGapY: DEFAULT_LAYOUT_GAP_Y,
   showMinimap: true,
   defaultZoom: 1,
   fitViewOnLoad: true,

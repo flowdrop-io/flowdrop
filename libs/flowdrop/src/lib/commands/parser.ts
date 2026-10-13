@@ -18,6 +18,15 @@ type ParserRule = {
   parse: (match: RegExpMatchArray) => Command;
 };
 
+/** The `--gap-x <n>` / `--gap-y <n>` flags of a matched flag run (the last of a repeated flag wins). */
+function gapFlags(flags: string): { gapX?: number; gapY?: number } {
+  const out: { gapX?: number; gapY?: number } = {};
+  for (const [, axis, value] of flags.matchAll(/--gap-([xy])\s+(\d+)/gi)) {
+    out[axis.toLowerCase() === 'x' ? 'gapX' : 'gapY'] = Number(value);
+  }
+  return out;
+}
+
 /**
  * Count the `"""` delimiters in a string, ignoring escaped ones.
  *
@@ -251,20 +260,21 @@ const rules: ParserRule[] = [
       position: parseCoords(m[2], m[3])
     })
   },
-  // layout node inspect <nodeId>
+  // layout node inspect <nodeId> [--gap-x <n>] [--gap-y <n>]
   {
-    pattern: /^layout\s+node\s+inspect\s+(\S+)$/i,
-    parse: (m) => ({ type: 'inspect_node_layout', nodeId: m[1] })
+    pattern: /^layout\s+node\s+inspect\s+(\S+)((?:\s+--gap-[xy]\s+\d+)*)$/i,
+    parse: (m) => ({ type: 'inspect_node_layout', nodeId: m[1], ...gapFlags(m[2]) })
   },
-  // layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run]
+  // layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run] [--gap-x <n>] [--gap-y <n>]
+  // The flags come in any order after the strategy.
   {
     pattern:
-      /^layout\s+node\s+beautify\s+(\S+)(?:\s+(column|ports|align|clear|all))?(\s+--dry-run)?$/i,
+      /^layout\s+node\s+beautify\s+(\S+)(?:\s+(column|ports|align|clear|all))?((?:\s+(?:--dry-run|--gap-[xy]\s+\d+))*)$/i,
     parse: (m) => {
       const command: BeautifyNodeCommand = { type: 'beautify_node', nodeId: m[1] };
       if (m[2]) command.strategy = m[2].toLowerCase() as BeautifyNodeStrategy;
-      if (m[3]) command.dryRun = true;
-      return command;
+      if (/--dry-run/i.test(m[3])) command.dryRun = true;
+      return { ...command, ...gapFlags(m[3]) };
     }
   },
   // layout auto [--direction horizontal|vertical] (Phase 2)

@@ -166,6 +166,50 @@ describe('parser: layout node', () => {
     if (!parsed.ok) expect(parsed.error).toContain("Invalid syntax for 'layout'");
   });
 
+  it('accepts --gap-x and --gap-y in any order, with a strategy and --dry-run', () => {
+    expect(parse('layout node inspect compose --gap-y 80')).toEqual({
+      type: 'inspect_node_layout',
+      nodeId: 'compose',
+      gapY: 80
+    });
+    expect(parse('layout node inspect compose --gap-y 80 --gap-x 160')).toEqual({
+      type: 'inspect_node_layout',
+      nodeId: 'compose',
+      gapX: 160,
+      gapY: 80
+    });
+    expect(parse('layout node beautify lookup clear --gap-x 160 --dry-run --gap-y 0')).toEqual({
+      type: 'beautify_node',
+      nodeId: 'lookup',
+      strategy: 'clear',
+      dryRun: true,
+      gapX: 160,
+      gapY: 0
+    });
+    expect(parse('layout node beautify lookup --dry-run --gap-y 60')).toEqual({
+      type: 'beautify_node',
+      nodeId: 'lookup',
+      dryRun: true,
+      gapY: 60
+    });
+  });
+
+  it.each([
+    'layout node inspect compose --gap-x',
+    'layout node inspect compose --gap-x abc',
+    'layout node inspect compose --gap-x -20',
+    'layout node inspect compose --gap-x 2.5',
+    'layout node inspect compose --gap 40',
+    'layout node inspect compose --dry-run',
+    'layout node beautify compose --gap-y',
+    'layout node beautify compose --gap-z 40',
+    'layout node beautify compose --gap-y 40 ports'
+  ])('rejects "%s" as invalid syntax', (input) => {
+    const parsed = parseCommand(input);
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.error).toContain("Invalid syntax for 'layout'");
+  });
+
   it('leaves the general layout commands alone', () => {
     expect(parse('layout auto')).toEqual({ type: 'auto_layout' });
     expect(parse('layout beautify')).toEqual({ type: 'beautify_layout' });
@@ -264,6 +308,64 @@ describe('executor: layout node', () => {
         expect(result.message.split('\n')[0]).toMatch(/^compose\.1 {2}y=160/);
         expect(result.message).not.toContain('ns.compose.1');
       }
+    });
+  });
+
+  describe('gap settings', () => {
+    const last = (cmd: string): string => {
+      const result = executeCommand(parse(cmd), context);
+      expect(result.ok).toBe(true);
+      return result.ok ? (result.message.split('\n').pop() ?? '') : '';
+    };
+
+    it('the library defaults apply without a setting', () => {
+      // compose (x 720) and loop (x 1080) sit 120 apart: exactly the default gap.
+      expect(last('layout node inspect compose')).not.toContain('spacing with loop');
+    });
+
+    it('changing a gap changes which cards inspect reports as too close', () => {
+      context.layoutGaps = { gapX: 160, gapY: 40, gridSize: 20 };
+      expect(last('layout node inspect compose')).toContain('spacing with loop');
+      context.layoutGaps = { gapX: 60, gapY: 40, gridSize: 20 };
+      expect(last('layout node inspect compose')).not.toContain('spacing with loop');
+    });
+
+    it('a flag overrides the setting for one call', () => {
+      context.layoutGaps = { gapX: 160, gapY: 40, gridSize: 20 };
+      expect(last('layout node inspect compose --gap-x 60')).not.toContain('spacing with loop');
+      expect(last('layout node inspect compose')).toContain('spacing with loop');
+    });
+
+    it('beautify takes the gaps too (dry run)', () => {
+      const a = executeCommand(parse('layout node beautify lookup clear --dry-run'), context);
+      const b = executeCommand(
+        parse('layout node beautify lookup clear --dry-run --gap-y 200'),
+        context
+      );
+      expect(a.ok && b.ok).toBe(true);
+      if (a.ok && b.ok) expect(b.message).not.toBe(a.message);
+    });
+
+    it('refuses a gap that is not a multiple of the grid, and dispatches nothing', () => {
+      for (const cmd of [
+        'layout node inspect compose --gap-x 50',
+        'layout node beautify compose --gap-y 30'
+      ]) {
+        const result = executeCommand(parse(cmd), context);
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error).toContain('multiple of the 20 px grid');
+      }
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('checks against the grid of the setting', () => {
+      context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 10 };
+      expect(executeCommand(parse('layout node inspect compose --gap-x 50'), context).ok).toBe(
+        true
+      );
+      expect(executeCommand(parse('layout node inspect compose --gap-x 55'), context).ok).toBe(
+        false
+      );
     });
   });
 
@@ -377,6 +479,20 @@ describe('layout node beautify: undo history', () => {
     JSON.stringify(
       fd.workflow.current?.nodes.map((n) => [n.id, n.position, n.data.config.ports ?? null])
     );
+
+  it('the store context carries the layout gap settings and the grid', async () => {
+    const { updateSettings, getEditorSettings } = await import(
+      '$lib/stores/settingsStore.svelte.js'
+    );
+    const before = { ...getEditorSettings() };
+    try {
+      expect(context.layoutGaps).toEqual({ gapX: 120, gapY: 40, gridSize: before.gridSize });
+      updateSettings({ editor: { layoutGapX: 200, layoutGapY: 0 } as never });
+      expect(context.layoutGaps).toMatchObject({ gapX: 200, gapY: 0 });
+    } finally {
+      updateSettings({ editor: before });
+    }
+  });
 
   it('the store context carries the instance measurement', () => {
     expect(context.measureNode?.('compose')?.width).toBe(240);

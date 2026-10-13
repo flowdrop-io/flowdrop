@@ -143,12 +143,25 @@ const object = (
 
 const EMPTY = object({});
 
+/** A layout gap in pixels, for the two `layout node` tools. */
+const gapArg = (between: string): ToolSchemaProperty => ({
+  type: 'integer',
+  minimum: 0,
+  description: `Gap in px to keep between cards ${between}; a multiple of the grid size (20 or 10). Default: the editor's layout gap setting.`
+});
+
 // ============================================================================
 // Argument → Command
 // ============================================================================
 
 type Args = Record<string, unknown>;
 type Pos = { x: number; y: number };
+
+/** The optional `gapX` / `gapY` arguments of the `layout node` tools, when given. */
+const gapArgs = (a: Args): { gapX?: number; gapY?: number } => ({
+  ...(typeof a.gapX === 'number' ? { gapX: a.gapX } : {}),
+  ...(typeof a.gapY === 'number' ? { gapY: a.gapY } : {})
+});
 
 /**
  * `SetConfigCommand.value` is the DSL's raw token: the executor parses it with
@@ -425,14 +438,21 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
   },
   inspect_node_layout: {
     description:
-      'Report how one node sits on the canvas: for each wire, whether it is straight or off by how many pixels, plus crossings, overlaps and spacing. Changes nothing. Run it before beautify_node to see what is wrong.',
-    inputSchema: object({ nodeId: nodeId() }, ['nodeId']),
-    build: (a) => ({ type: 'inspect_node_layout', nodeId: a.nodeId as string }),
+      'Report how one node sits on the canvas: for each wire, whether it is straight or off by how many pixels, plus crossings, overlaps and spacing. Changes nothing. Run it before beautify_node to see what is wrong. gapX / gapY set the spacing to judge against for this call (default: the layout gap settings of the editor).',
+    inputSchema: object(
+      { nodeId: nodeId(), gapX: gapArg('side by side'), gapY: gapArg('stacked') },
+      ['nodeId']
+    ),
+    build: (a) => ({
+      type: 'inspect_node_layout',
+      nodeId: a.nodeId as string,
+      ...gapArgs(a)
+    }),
     summarize: (c) => `Inspect layout of ${c.nodeId}`
   },
   beautify_node: {
     description:
-      'Tidy the layout of ONE node; no other node moves (only its attached notes). Strategies: column (x into its column), ports (reorder connected ports to cut crossings), align (y that straightens a wire), clear (y out of overlaps), all (those four in turn, the default). It says what changed and the score, or why nothing improved. Call inspect_node_layout first; use dryRun to preview without applying. One undo step.',
+      'Tidy the layout of ONE node; no other node moves (only its attached notes). Strategies: column (x into its column), ports (reorder connected ports to cut crossings), align (y that straightens a wire), clear (y out of overlaps), all (those four in turn, the default). It says what changed and the score, or why nothing improved. Call inspect_node_layout first; use dryRun to preview without applying. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
     inputSchema: object(
       {
         nodeId: nodeId(),
@@ -444,7 +464,9 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
         dryRun: {
           type: 'boolean',
           description: 'Report the proposal and its score without changing the workflow.'
-        }
+        },
+        gapX: gapArg('side by side'),
+        gapY: gapArg('stacked')
       },
       ['nodeId']
     ),
@@ -452,7 +474,8 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
       type: 'beautify_node',
       nodeId: a.nodeId as string,
       ...(a.strategy ? { strategy: a.strategy as BeautifyNodeStrategy } : {}),
-      ...(a.dryRun === true ? { dryRun: true } : {})
+      ...(a.dryRun === true ? { dryRun: true } : {}),
+      ...gapArgs(a)
     }),
     summarize: (c) =>
       `${c.dryRun ? 'Preview beautify of' : 'Beautify'} ${c.nodeId}${c.strategy ? ` (${c.strategy})` : ''}`

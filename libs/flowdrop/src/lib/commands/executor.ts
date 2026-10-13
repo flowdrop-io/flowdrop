@@ -33,9 +33,10 @@ import {
   beautify as beautifyLayout,
   formatBeautify,
   applyProposalToNodes,
-  DEFAULT_LAYOUT_OPTIONS
+  DEFAULT_LAYOUT_OPTIONS,
+  LAYOUT_GRID
 } from '../layout/index.js';
-import type { LayoutGraph } from '../layout/index.js';
+import type { LayoutGraph, LayoutOptions } from '../layout/index.js';
 import type { ConfigProperty, ConfigSchema, Branch, DynamicPort } from '../types/index.js';
 import type {
   NodeMetadata,
@@ -1202,15 +1203,16 @@ export const COMMAND_HELP: Array<{
   },
   {
     name: 'layout',
-    syntax: 'layout node inspect <nodeId>',
+    syntax: 'layout node inspect <nodeId> [--gap-x <px>] [--gap-y <px>]',
     description:
-      "Report one node's wires (straight or off by how many px), crossings, overlaps and spacing; changes nothing"
+      "Report one node's wires (straight or off by how many px), crossings, overlaps and spacing; changes nothing. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call"
   },
   {
     name: 'layout',
-    syntax: 'layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run]',
+    syntax:
+      'layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run] [--gap-x <px>] [--gap-y <px>]',
     description:
-      'Tidy one node: column (x), ports (port order), align (straighten wires), clear (free space). Default all. Prints what changed and the score; --dry-run only previews. One undo step'
+      'Tidy one node: column (x), ports (port order), align (straighten wires), clear (free space). Default all. Prints what changed and the score; --dry-run only previews. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call. One undo step'
   },
   {
     name: 'layout',
@@ -1690,6 +1692,40 @@ function layoutGraphOf(workflow: Workflow, context: CommandContext): LayoutGraph
   });
 }
 
+/**
+ * The layout options of one `layout node` call: its `--gap-x` / `--gap-y`, else the editor setting,
+ * else the library default. A gap that is not a multiple of the grid is refused, so cards stay on it.
+ */
+function layoutOptionsFor(
+  command: { gapX?: number; gapY?: number },
+  context: CommandContext
+): { ok: true; options: LayoutOptions } | { ok: false; result: CommandResult } {
+  const grid = context.layoutGaps?.gridSize ?? LAYOUT_GRID;
+  for (const [flag, value] of [
+    ['--gap-x', command.gapX],
+    ['--gap-y', command.gapY]
+  ] as const) {
+    if (value !== undefined && (!Number.isInteger(value) || value < 0 || value % grid !== 0)) {
+      return {
+        ok: false,
+        result: {
+          ok: false,
+          error: `${flag} ${value} is not a multiple of the ${grid} px grid; use 0, ${grid}, ${grid * 2}, ...`,
+          code: 'PARSE_ERROR'
+        }
+      };
+    }
+  }
+  return {
+    ok: true,
+    options: {
+      ...DEFAULT_LAYOUT_OPTIONS,
+      gapX: command.gapX ?? context.layoutGaps?.gapX ?? DEFAULT_LAYOUT_OPTIONS.gapX,
+      gapY: command.gapY ?? context.layoutGaps?.gapY ?? DEFAULT_LAYOUT_OPTIONS.gapY
+    }
+  };
+}
+
 function executeInspectNodeLayout(
   command: Extract<Command, { type: 'inspect_node_layout' }>,
   context: CommandContext
@@ -1704,7 +1740,9 @@ function executeInspectNodeLayout(
       code: 'NODE_NOT_FOUND'
     };
   }
-  const lines = inspectLayout(layoutGraphOf(workflow, context), node.id, DEFAULT_LAYOUT_OPTIONS);
+  const layout = layoutOptionsFor(command, context);
+  if (!layout.ok) return layout.result;
+  const lines = inspectLayout(layoutGraphOf(workflow, context), node.id, layout.options);
   return { ok: true, message: shortenLayoutIds(lines, workflow.nodes) };
 }
 
@@ -1723,12 +1761,14 @@ function executeBeautifyNode(
     };
   }
 
+  const layout = layoutOptionsFor(command, context);
+  if (!layout.ok) return layout.result;
   const dryRun = command.dryRun === true;
   const result = beautifyLayout(
     layoutGraphOf(workflow, context),
     node.id,
     command.strategy ?? 'all',
-    DEFAULT_LAYOUT_OPTIONS
+    layout.options
   );
   const message = shortenLayoutIds(formatBeautify(result, dryRun), workflow.nodes);
   if (dryRun || !result.accepted) return { ok: true, message };

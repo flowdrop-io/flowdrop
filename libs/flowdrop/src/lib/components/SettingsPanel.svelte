@@ -52,6 +52,7 @@
     getHostColorScheme
   } from '$lib/stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
+  import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y } from '../layout/types.js';
   import { appearanceChoices } from '../utils/appearance.js';
   import {
     zoomRows,
@@ -150,6 +151,22 @@
             { const: '20', title: '20 px' }
           ],
           default: 20
+        },
+        layoutGapX: {
+          type: 'number',
+          title: 'Layout gap between columns',
+          description:
+            'Space kept between cards side by side when tidying or inspecting a node. Rounded to the grid.',
+          minimum: 0,
+          default: DEFAULT_LAYOUT_GAP_X
+        },
+        layoutGapY: {
+          type: 'number',
+          title: 'Layout gap between stacked cards',
+          description:
+            'Space kept between cards one above the other when tidying or inspecting a node. Rounded to the grid.',
+          minimum: 0,
+          default: DEFAULT_LAYOUT_GAP_Y
         },
         showMinimap: {
           type: 'boolean',
@@ -617,6 +634,9 @@
                     class="flowdrop-settings-row__number"
                     min={row.min}
                     max={row.max}
+                    step={category === 'editor' && row.key.startsWith('layoutGap')
+                      ? getSettings().editor.gridSize
+                      : undefined}
                     value={Number(values[row.key] ?? 0)}
                     onchange={(e) => setNumber(category, row, e.currentTarget.value)}
                   />

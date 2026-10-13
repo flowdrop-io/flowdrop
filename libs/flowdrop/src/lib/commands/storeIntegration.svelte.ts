@@ -106,6 +106,10 @@ export function createStoreCommandContext(
     },
     get showDescriptions() {
       return getEditorSettings().showNodeDescriptions;
+    },
+    get layoutGaps() {
+      const { layoutGapX, layoutGapY, gridSize } = getEditorSettings();
+      return { gapX: layoutGapX, gapY: layoutGapY, gridSize };
     }
   };
 }

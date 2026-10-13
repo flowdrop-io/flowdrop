@@ -415,7 +415,17 @@ const PAIRS: Array<{ dsl: string; verb: string; args: Record<string, unknown> }>
     verb: 'inspect_node_layout',
     args: { nodeId: 'compose.1' }
   },
+  {
+    dsl: 'layout node inspect compose.1 --gap-x 160 --gap-y 60',
+    verb: 'inspect_node_layout',
+    args: { nodeId: 'compose.1', gapX: 160, gapY: 60 }
+  },
   { dsl: 'layout node beautify compose.1', verb: 'beautify_node', args: { nodeId: 'compose.1' } },
+  {
+    dsl: 'layout node beautify compose.1 clear --gap-y 0',
+    verb: 'beautify_node',
+    args: { nodeId: 'compose.1', strategy: 'clear', gapY: 0 }
+  },
   {
     dsl: 'layout node beautify compose.1 ports --dry-run',
     verb: 'beautify_node',
@@ -468,7 +478,7 @@ describe('describeCommand', () => {
         search_types: { query: 'a' },
         auto_layout: {},
         inspect_node_layout: { nodeId: 'a.1' },
-        beautify_node: { nodeId: 'a.1', strategy: 'ports', dryRun: true },
+        beautify_node: { nodeId: 'a.1', strategy: 'ports', dryRun: true, gapX: 120, gapY: 40 },
         view: { action: 'fit_view' }
       };
       const [cmd] = d.toCommands(validateToolArgs(d.inputSchema, sample[d.verb] ?? {}));

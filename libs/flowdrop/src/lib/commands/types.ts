@@ -151,6 +151,10 @@ export interface BeautifyLayoutCommand {
 export interface InspectNodeLayoutCommand {
   type: 'inspect_node_layout';
   nodeId: string;
+  /** Gap between cards side by side, px. Default: the editor setting. */
+  gapX?: number;
+  /** Gap between stacked cards, px. Default: the editor setting. */
+  gapY?: number;
 }
 
 /** What `beautify_node` may run; `all` is column, ports, align, clear in turn. */
@@ -163,6 +167,10 @@ export interface BeautifyNodeCommand {
   strategy?: BeautifyNodeStrategy;
   /** Report the proposal and its score without applying it. */
   dryRun?: boolean;
+  /** Gap between cards side by side, px. Default: the editor setting. */
+  gapX?: number;
+  /** Gap between stacked cards, px. Default: the editor setting. */
+  gapY?: number;
 }
 
 /** Canvas viewport commands */
@@ -536,6 +544,11 @@ export interface CommandContext {
   visualType?(node: WorkflowNode): string;
   /** The *Show descriptions* setting, which changes card heights. */
   showDescriptions?: boolean;
+  /**
+   * The layout gaps of the editor settings and the grid they are multiples of.
+   * Optional: without it node layout commands use the library defaults on a 20 px grid.
+   */
+  layoutGaps?: { gapX: number; gapY: number; gridSize: number };
 }
 
 // ============================================================================

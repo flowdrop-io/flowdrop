@@ -34,7 +34,13 @@ export type {
   ColorSchemeOption,
   HostColorSchemeValue
 } from '$lib/types/settings.js';
-import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, normalizeGridSize } from '$lib/types/settings.js';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_STORAGE_KEY,
+  normalizeGridSize,
+  normalizeLayoutGap
+} from '$lib/types/settings.js';
+import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y } from '$lib/layout/types.js';
 import { logger } from '../utils/logger.js';
 
 // =========================================================================
@@ -171,6 +177,18 @@ function deepMergeSettings(
   if (result.editor.gridSize !== normalizeGridSize(result.editor.gridSize)) {
     result.editor.gridSize = normalizeGridSize(result.editor.gridSize);
   }
+
+  // Layout gaps: at least 0, a multiple of the grid.
+  result.editor.layoutGapX = normalizeLayoutGap(
+    result.editor.layoutGapX,
+    result.editor.gridSize,
+    DEFAULT_LAYOUT_GAP_X
+  );
+  result.editor.layoutGapY = normalizeLayoutGap(
+    result.editor.layoutGapY,
+    result.editor.gridSize,
+    DEFAULT_LAYOUT_GAP_Y
+  );
 
   return result;
 }
