@@ -22,7 +22,7 @@
   keyboard-focusable and opens config on Enter/Space, so tabbing moves straight
   from node to node instead of stopping on the gear. The button stays clickable
   and is revealed on node hover via the --fd-config-btn-opacity custom property
-  the parent sets.
+  the parent sets, and on a selected or focused node and on touch (see the styles).
 -->
 <button
   class="flowdrop-node-config-btn"
@@ -68,6 +68,23 @@
     border-color: var(--fd-node-config-btn-hover-border);
     color: var(--fd-foreground);
     transform: scale(var(--fd-node-config-btn-hover-scale));
+  }
+
+  /* Hover alone hides the gear from keyboard and touch users: show it on the
+     selected node, while the focusable xyflow wrapper (or anything in it) has
+     focus, and always where there is no hover. The nodes' own :hover rules keep
+     setting --fd-config-btn-opacity for the pointer case. */
+  :global(.svelte-flow__node.selected) .flowdrop-node-config-btn,
+  :global(.svelte-flow__node:focus-visible) .flowdrop-node-config-btn,
+  :global(.svelte-flow__node:focus-within) .flowdrop-node-config-btn,
+  .flowdrop-node-config-btn:focus-visible {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .flowdrop-node-config-btn {
+      opacity: 1;
+    }
   }
 
   /* TerminalNode: circular badge centered above the node. */
