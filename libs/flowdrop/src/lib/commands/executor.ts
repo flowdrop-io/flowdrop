@@ -1219,14 +1219,14 @@ export const COMMAND_HELP: Array<{
   },
   {
     name: 'layout',
-    syntax: 'layout beautify',
-    description: 'Normalize spacing while preserving node arrangement'
+    syntax: 'layout beautify [--dry-run] [--gap-x <px>] [--gap-y <px>]',
+    description:
+      'Tidy the whole graph: every node into its column, overlaps and tight spacing cleared, ports reordered and wires straightened to cut crossings, back at the original top-left. Prints one line per step and the score before and after; --dry-run only previews. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call. One undo step'
   },
   {
     name: 'layout',
-    syntax: 'layout beautify --sweep [--dry-run] [--gap-x <px>] [--gap-y <px>]',
-    description:
-      'Tidy the whole graph: every node into its column, overlaps and tight spacing cleared, ports reordered and wires straightened to cut crossings, back at the original top-left. Prints one line per step and the score before and after; --dry-run only previews. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call. One undo step'
+    syntax: 'layout beautify --spacing',
+    description: 'Only normalize spacing, keeping the arrangement as it is'
   },
   { name: 'undo', syntax: 'undo', description: 'Undo the last action' },
   { name: 'redo', syntax: 'redo', description: 'Redo the last undone action' },
@@ -1635,7 +1635,7 @@ function executeBeautifyLayout(
     return { ok: true, message: 'No nodes to beautify' };
   }
 
-  if (command.sweep) return executeSweepLayout(command, workflow, context);
+  if (!command.spacing) return executeSweepLayout(command, workflow, context);
 
   // Collect current positions
   const currentPositions = new Map<string, { x: number; y: number }>();
@@ -1803,7 +1803,7 @@ function executeBeautifyNode(
   return { ok: true, message };
 }
 
-/** `layout beautify --sweep`: the graph sweep, one `batchUpdate` (one undo step) for every change. */
+/** `layout beautify`: the graph sweep, one `batchUpdate` (one undo step) for every change. */
 function executeSweepLayout(
   command: Extract<Command, { type: 'beautify_layout' }>,
   workflow: Workflow,

@@ -142,14 +142,14 @@ test.describe('Node layout commands', () => {
     await expect.poll(() => y(page, 'lookup.1')).toBe(200);
   });
 
-  test('layout beautify --sweep prints the log and the score, and one undo restores every node', async ({
+  test('layout beautify prints the log and the score, and one undo restores every node', async ({
     page
   }) => {
     await open(page);
     const before = await positions(page);
     const order = await inputOrder(page, 'compose.1');
 
-    const text = await run(page, 'layout beautify --sweep');
+    const text = await run(page, 'layout beautify');
     const lines = text.split('\n');
     expect(lines[0]).toMatch(/^# phase \d: /);
     expect(lines.some((l) => /^compose\.1: (moved|inputs reordered) /.test(l))).toBe(true);
@@ -166,10 +166,10 @@ test.describe('Node layout commands', () => {
     await expect.poll(() => inputOrder(page, 'compose.1')).toEqual(order);
   });
 
-  test('layout beautify --sweep --dry-run prints the steps and moves nothing', async ({ page }) => {
+  test('layout beautify --dry-run prints the steps and moves nothing', async ({ page }) => {
     await open(page);
     const before = await positions(page);
-    const text = await run(page, 'layout beautify --sweep --dry-run');
+    const text = await run(page, 'layout beautify --dry-run');
     expect(text).toMatch(/^# phase \d: /);
     expect(text).toMatch(/\ncompose\.1: would move (up|down) \d+/);
     expect(text.split('\n').pop()).toMatch(/^would give: /);

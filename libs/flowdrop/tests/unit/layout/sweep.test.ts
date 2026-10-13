@@ -1,5 +1,5 @@
 /**
- * Unit Test — the graph sweep (`layout beautify --sweep`)
+ * Unit Test — the graph sweep (`layout beautify`)
  *
  * The two demo graphs of the design: "right to left" (every wire backwards, 12 crossings) and
  * "tangled" (crossings, an overlap, a loop, a caption and a note).

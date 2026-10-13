@@ -432,31 +432,30 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
   },
   beautify_layout: {
     description:
-      'Tidy the layout of all nodes. Moves existing nodes. Plain: normalises spacing only and keeps the arrangement. With sweep: true it is the crossing and straight-wire tidy: every node into its column, overlaps and tight spacing cleared, ports reordered and wires straightened to cut crossings; it prints one line per step and the score before and after, or says nothing improved. Use dryRun with sweep to preview. gapX / gapY (sweep only) set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
+      'Tidy the layout of all nodes. Moves existing nodes. Puts every node into its column, clears overlaps and tight spacing, reorders ports and straightens wires to cut crossings; prints one line per step and the score before and after, or says nothing improved. Use dryRun to preview. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). With spacing: true it only normalises spacing and keeps the arrangement. One undo step.',
     inputSchema: object({
-      sweep: {
-        type: 'boolean',
-        description:
-          'Run the graph sweep (columns, clear overlaps, port order, straight wires) instead of the spacing-only pass.'
-      },
       dryRun: {
         type: 'boolean',
-        description: 'Sweep only: report the steps and the score without changing the workflow.'
+        description: 'Report the steps and the score without changing the workflow.'
       },
       gapX: gapArg('side by side'),
-      gapY: gapArg('stacked')
+      gapY: gapArg('stacked'),
+      spacing: {
+        type: 'boolean',
+        description:
+          'Only normalise spacing and keep the arrangement, instead of the full tidy. Takes no other argument.'
+      }
     }),
     build: (a) =>
-      a.sweep === true
-        ? {
+      a.spacing === true
+        ? { type: 'beautify_layout', spacing: true }
+        : {
             type: 'beautify_layout',
-            sweep: true,
             ...(a.dryRun === true ? { dryRun: true } : {}),
             ...gapArgs(a)
-          }
-        : { type: 'beautify_layout' },
+          },
     summarize: (c) =>
-      c.sweep ? `${c.dryRun ? 'Preview sweep of' : 'Sweep'} layout` : 'Beautify layout'
+      c.spacing ? 'Normalise layout spacing' : `${c.dryRun ? 'Preview tidy of' : 'Tidy'} layout`
   },
   inspect_node_layout: {
     description:

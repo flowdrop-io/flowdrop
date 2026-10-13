@@ -210,36 +210,41 @@ describe('parser: layout node', () => {
     if (!parsed.ok) expect(parsed.error).toContain("Invalid syntax for 'layout'");
   });
 
-  it('layout beautify --sweep takes --dry-run and the gaps in any order', () => {
-    expect(parse('layout beautify --sweep')).toEqual({ type: 'beautify_layout', sweep: true });
-    expect(parse('layout beautify --sweep --dry-run')).toEqual({
+  it('layout beautify (the sweep) takes --dry-run and the gaps in any order', () => {
+    expect(parse('layout beautify')).toEqual({ type: 'beautify_layout' });
+    expect(parse('layout beautify --dry-run')).toEqual({ type: 'beautify_layout', dryRun: true });
+    expect(parse('layout beautify --gap-y 60 --dry-run --gap-x 160')).toEqual({
       type: 'beautify_layout',
-      sweep: true,
-      dryRun: true
-    });
-    expect(parse('layout beautify --gap-y 60 --dry-run --sweep --gap-x 160')).toEqual({
-      type: 'beautify_layout',
-      sweep: true,
       dryRun: true,
       gapX: 160,
       gapY: 60
     });
-    expect(parse('LAYOUT BEAUTIFY --SWEEP')).toEqual({ type: 'beautify_layout', sweep: true });
+  });
+
+  it('still takes --sweep, which changes nothing', () => {
+    expect(parse('layout beautify')).toEqual({ type: 'beautify_layout' });
+    expect(parse('LAYOUT BEAUTIFY --SWEEP --DRY-RUN')).toEqual({
+      type: 'beautify_layout',
+      dryRun: true
+    });
+  });
+
+  it('--spacing is the old spacing pass and takes nothing else', () => {
+    expect(parse('layout beautify --spacing')).toEqual({ type: 'beautify_layout', spacing: true });
   });
 
   it.each([
-    'layout beautify --dry-run',
-    'layout beautify --gap-x 40',
-    'layout beautify --sweep --gap-x',
-    'layout beautify --sweep --gap-z 40',
-    'layout beautify --sweep now'
+    'layout beautify --gap-x',
+    'layout beautify --gap-z 40',
+    'layout beautify now',
+    'layout beautify --spacing --dry-run',
+    'layout beautify --sweep --spacing'
   ])('rejects "%s" as invalid syntax', (input) => {
     expect(parseCommand(input).ok).toBe(false);
   });
 
-  it('leaves the general layout commands alone', () => {
+  it('leaves layout auto alone', () => {
     expect(parse('layout auto')).toEqual({ type: 'auto_layout' });
-    expect(parse('layout beautify')).toEqual({ type: 'beautify_layout' });
   });
 });
 
@@ -371,7 +376,7 @@ describe('executor: layout node', () => {
       context.layoutGaps = { gapX: 120, gapY: 40, gridSize: 20, loopbackLanes: true };
       expect(last('layout node inspect below')).toContain('lane with send → loop');
       // The sweep scores with lanes too.
-      const sweep = executeCommand(parse('layout beautify --sweep --dry-run'), context);
+      const sweep = executeCommand(parse('layout beautify --dry-run'), context);
       expect(sweep.ok).toBe(true);
     });
 
@@ -414,9 +419,9 @@ describe('executor: layout node', () => {
     });
   });
 
-  describe('layout beautify --sweep', () => {
+  describe('layout beautify (the sweep)', () => {
     it('prints the phases, a line per step and the score, in one batchUpdate', () => {
-      const result = executeCommand(parse('layout beautify --sweep'), context);
+      const result = executeCommand(parse('layout beautify'), context);
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       const lines = result.message.split('\n');
@@ -443,7 +448,7 @@ describe('executor: layout node', () => {
     });
 
     it('--dry-run prints the steps and dispatches nothing', () => {
-      const result = executeCommand(parse('layout beautify --sweep --dry-run'), context);
+      const result = executeCommand(parse('layout beautify --dry-run'), context);
       expect(result.ok).toBe(true);
       if (!result.ok) return;
       expect(result.message).toContain('lookup: would move down 100 (y 200 → 300)');
@@ -454,18 +459,18 @@ describe('executor: layout node', () => {
     it('says so and dispatches nothing when nothing improves', () => {
       workflow = { ...workflow, nodes: workflow.nodes.filter((n) => n.id === 'send'), edges: [] };
       context.measureNode = demoGeometry(workflow);
-      const result = executeCommand(parse('layout beautify --sweep'), context);
+      const result = executeCommand(parse('layout beautify'), context);
       expect(result.ok).toBe(true);
       if (result.ok) expect(result.message.split('\n')[0]).toMatch(/^sweep: no change; /);
       expect(dispatch.batchUpdate).not.toHaveBeenCalled();
     });
 
     it('takes the gaps like the node commands do', () => {
-      const a = executeCommand(parse('layout beautify --sweep --dry-run'), context);
-      const b = executeCommand(parse('layout beautify --sweep --dry-run --gap-y 200'), context);
+      const a = executeCommand(parse('layout beautify --dry-run'), context);
+      const b = executeCommand(parse('layout beautify --dry-run --gap-y 200'), context);
       expect(a.ok && b.ok).toBe(true);
       if (a.ok && b.ok) expect(b.message).not.toBe(a.message);
-      const bad = executeCommand(parse('layout beautify --sweep --gap-x 50'), context);
+      const bad = executeCommand(parse('layout beautify --gap-x 50'), context);
       expect(bad.ok).toBe(false);
       if (!bad.ok) expect(bad.error).toContain('multiple of the 20 px grid');
       expect(dispatch.batchUpdate).not.toHaveBeenCalled();
@@ -484,7 +489,7 @@ describe('executor: layout node', () => {
         }))
       };
       context.measureNode = demoGeometry(workflow);
-      const result = executeCommand(parse('layout beautify --sweep --dry-run'), context);
+      const result = executeCommand(parse('layout beautify --dry-run'), context);
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.message).toContain('lookup.1: would move down 100');
@@ -659,7 +664,7 @@ describe('layout node beautify: undo history', () => {
     const before = snapshot();
     expect(fd.history.canUndo()).toBe(false);
 
-    const result = executeCommand(parse('layout beautify --sweep'), context);
+    const result = executeCommand(parse('layout beautify'), context);
     expect(result.ok).toBe(true);
     const after = snapshot();
     expect(after).not.toBe(before);
@@ -679,7 +684,7 @@ describe('layout node beautify: undo history', () => {
 
   it('a sweep dry run adds no history step', () => {
     const before = snapshot();
-    executeCommand(parse('layout beautify --sweep --dry-run'), context);
+    executeCommand(parse('layout beautify --dry-run'), context);
     expect(snapshot()).toBe(before);
     expect(fd.history.canUndo()).toBe(false);
   });

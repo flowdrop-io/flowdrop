@@ -290,18 +290,17 @@ const rules: ParserRule[] = [
     pattern: /^layout\s+auto$/i,
     parse: () => ({ type: 'auto_layout' })
   },
-  // layout beautify — preserve relative positions, normalize spacing
+  // layout beautify --spacing — the old pass: normalize spacing, keep the arrangement
   {
-    pattern: /^layout\s+beautify$/i,
-    parse: () => ({ type: 'beautify_layout' })
+    pattern: /^layout\s+beautify\s+--spacing$/i,
+    parse: () => ({ type: 'beautify_layout', spacing: true })
   },
-  // layout beautify --sweep [--dry-run] [--gap-x <n>] [--gap-y <n>] — the flags come in any order
+  // layout beautify [--dry-run] [--gap-x <n>] [--gap-y <n>] — the graph sweep; the flags come in
+  // any order. `--sweep` is accepted and changes nothing: the sweep is the default.
   {
-    pattern:
-      /^layout\s+beautify(?=.*\s--sweep(?:\s|$))((?:\s+(?:--sweep|--dry-run|--gap-[xy]\s+\d+))+)$/i,
+    pattern: /^layout\s+beautify((?:\s+(?:--sweep|--dry-run|--gap-[xy]\s+\d+))*)$/i,
     parse: (m) => ({
       type: 'beautify_layout',
-      sweep: true,
       ...(/--dry-run/i.test(m[1]) ? { dryRun: true } : {}),
       ...gapFlags(m[1])
     })

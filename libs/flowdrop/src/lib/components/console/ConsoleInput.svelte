@@ -289,7 +289,7 @@
   const SUBCOMMAND_MAP: Record<string, Array<{ value: string; detail?: string }>> = {
     layout: [
       { value: 'auto', detail: 'Re-arrange all nodes from scratch' },
-      { value: 'beautify', detail: 'Normalize spacing, preserve arrangement' }
+      { value: 'beautify', detail: 'Tidy: columns, no overlaps, straight wires' }
     ],
     list: [
       { value: 'nodes', detail: 'List all workflow nodes' },
