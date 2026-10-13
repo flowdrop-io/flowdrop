@@ -206,11 +206,11 @@ describe('clear', () => {
     expect(card(p.graph, 'compose').x).toBe(720);
   });
 
-  it('refuses a card with no overlap or spacing break', () => {
+  it('refuses a card with no overlap, spacing break or wire through a port', () => {
     const g = tangled();
     const p = propose(g, 'form', 'clear', o);
     expect(p.accepted).toBe(false);
-    expect(p.reason).toBe('no overlap or spacing break on this card');
+    expect(p.reason).toBe('no overlap, spacing break or wire through a port on this card');
     expect(p.graph).toBe(g);
   });
 });
@@ -356,7 +356,7 @@ describe('beautify', () => {
       'parse: moved to column 1 (x 1080 → 1800, y 120 → 300)',
       'parse: outputs reordered customer, order (was order, customer)',
       'parse: align: no change; best candidate (moved up 100 (y 300 → 200)) does not beat the current layout',
-      'parse: clear: no change; no overlap or spacing break on this card',
+      'parse: clear: no change; no overlap, spacing break or wire through a port on this card',
       '  straight 0 → 1 · backward 8 → 7 · crossings 12 → 5 · overlaps 0 · spacing ok'
     ]);
     expect(r.before.crossings).toHaveLength(12);

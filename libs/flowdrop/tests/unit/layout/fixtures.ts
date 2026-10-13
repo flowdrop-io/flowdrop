@@ -139,3 +139,96 @@ export function rightToLeft(): LayoutGraph {
     ]
   };
 }
+
+/** Header pins (trigger) and gateway branches (True, False) never move (D4). */
+const fixed = (portId: string) =>
+  ['trigger', 'True', 'False'].includes(portId) ? { fixed: true } : {};
+
+/** A card with handles where the canvas measured them: `[portId, dy]`, inputs at 0, outputs at the width. */
+function measuredCard(
+  id: string,
+  x: number,
+  y: number,
+  height: number,
+  inputs: Array<[string, number]>,
+  outputs: Array<[string, number]>
+): LayoutCard {
+  return {
+    id,
+    kind: 'card',
+    x,
+    y,
+    width: 280,
+    height,
+    inputs: inputs.map(([portId, dy]) => ({ portId, dx: 0, dy, ...fixed(portId) })),
+    outputs: outputs.map(([portId, dy]) => ({ portId, dx: 280, dy, ...fixed(portId) }))
+  };
+}
+
+/**
+ * "Demo Jurgen - Dries" on the fddo dev site, as measured there (2026-10-13). Before H4 the sweep
+ * levelled `message → values` through four ports: Preview's message in and out, Confirm's message
+ * in and True out. Confirm starts off the grid (y -35). The trigger wires out of the chat input
+ * have no visible handle there, so they stay unresolved.
+ */
+export function jurgenDries(): LayoutGraph {
+  return {
+    cards: [
+      measuredCard('chat_input', -620, 80, 100, [['message', 80]], [['message', 80]]),
+      measuredCard(
+        'messenger',
+        -60,
+        -80,
+        180,
+        [
+          ['trigger', 40],
+          ['message', 80]
+        ],
+        [
+          ['trigger', 40],
+          ['message', 80],
+          ['type', 120],
+          ['displayed', 160]
+        ]
+      ),
+      measuredCard(
+        'confirmation',
+        370,
+        -35,
+        140,
+        [
+          ['trigger', 40],
+          ['message', 80]
+        ],
+        [
+          ['True', 80],
+          ['False', 120]
+        ]
+      ),
+      measuredCard(
+        'entity_save',
+        780,
+        -160,
+        140,
+        [
+          ['trigger', 40],
+          ['entity_id', 80],
+          ['values', 120]
+        ],
+        [
+          ['trigger', 40],
+          ['revision_id', 80],
+          ['entity', 120]
+        ]
+      )
+    ],
+    wires: [
+      demoWire('chat_input', 'trigger', 'confirmation', 'trigger'),
+      demoWire('chat_input', 'message', 'entity_save', 'values'),
+      demoWire('confirmation', 'True', 'entity_save', 'trigger'),
+      demoWire('chat_input', 'trigger', 'messenger', 'trigger'),
+      demoWire('chat_input', 'message', 'messenger', 'message'),
+      demoWire('messenger', 'trigger', 'confirmation', 'trigger')
+    ]
+  };
+}

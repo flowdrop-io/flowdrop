@@ -5,12 +5,20 @@
  * tuple compared rank by rank, so a lower rank can never buy back a higher one:
  *
  * 1. overlaps + spacing breaks (H2, H3; fewer)
- * 2. straight wires (H1; more)
- * 3. backward wires (S5; fewer)
- * 4. crossings (S1; fewer)
- * 5. pixels moved (S3; fewer, the tie-break)
+ * 2. ports passed (H4; fewer)
+ * 3. straight wires (H1; more)
+ * 4. backward wires (S5; fewer)
+ * 5. crossings (S1; fewer)
+ * 6. pixels moved (S3; fewer, the tie-break)
  *
- * So only an overlap or a spacing break can bend a straight wire (decision D1).
+ * So only an overlap, a spacing break or a passed port can bend a straight wire (decision D1,
+ * widened by H4).
+ *
+ * Ports passed (H4): a wire that runs through a handle other than its own two ends reads as if
+ * it started, ended or was relayed there (a level wire running through a card's unused input and
+ * output looks like it goes through the card). Every such wire and handle counts once, except a
+ * handle wired to the same port as the wire's other end (what it suggests is true), and a wire
+ * drawn right to left (counted as backward instead).
  *
  * Spacing (decision D2): cards side by side need `gapX` between them, stacked
  * cards need `gapY`, diagonal neighbours need neither. Annotations count as
@@ -21,7 +29,13 @@
  */
 
 import { polylineCrossing, wirePaths, type WirePath, type XY } from './geometry.js';
-import type { LayoutCard, LayoutGraph, LayoutOptions } from './types.js';
+import {
+  LAYOUT_GRID,
+  type LayoutCard,
+  type LayoutGraph,
+  type LayoutOptions,
+  type LayoutWire
+} from './types.js';
 
 /** Two things too close: two cards, or a card and a return lane (`with` is then the loopback's wire id). */
 export interface LayoutConflict {
@@ -37,6 +51,16 @@ export interface LayoutCrossing {
   at: XY;
 }
 
+/** A wire running through a handle that is not one of its ends (H4). */
+export interface LayoutPortPass {
+  /** Wire id. */
+  wire: string;
+  /** The card and port the wire runs through. */
+  card: string;
+  port: string;
+  direction: 'input' | 'output';
+}
+
 export interface LayoutMetrics {
   /** Level, left-to-right wires (loopbacks not counted). */
   straight: number;
@@ -49,6 +73,8 @@ export interface LayoutMetrics {
   spacing: number;
   conflicts: LayoutConflict[];
   crossings: LayoutCrossing[];
+  /** Wires running through a port that is not one of their ends (H4). */
+  passes: LayoutPortPass[];
   /** Every resolved wire with its path. */
   wires: WirePath[];
   /** Wires whose card or handle is unknown (left out of every count). */
@@ -56,10 +82,82 @@ export interface LayoutMetrics {
 }
 
 /** Compared rank by rank; lower is better in every rank. */
-export type LayoutScore = readonly [number, number, number, number, number];
+export type LayoutScore = readonly [number, number, number, number, number, number];
 
 /** A wire is level when its ends are less than this apart vertically. */
 const LEVEL_EPSILON = 0.5;
+/**
+ * A wire closer than this to a handle centre runs through it: half the grid, so a wire on the
+ * next port row (one grid step away) does not count.
+ */
+const PORT_HIT = LAYOUT_GRID / 2;
+
+/** Squared distance from a point to a segment. */
+function segmentDistance2(p: XY, a: XY, b: XY): number {
+  const vx = b[0] - a[0];
+  const vy = b[1] - a[1];
+  const len2 = vx * vx + vy * vy;
+  const t = len2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / len2)) : 0;
+  const dx = a[0] + t * vx - p[0];
+  const dy = a[1] + t * vy - p[1];
+  return dx * dx + dy * dy;
+}
+
+/** Every wire that runs through a handle other than its own two ends. */
+export function portPasses(graph: LayoutGraph, wires: readonly WirePath[]): LayoutPortPass[] {
+  // A handle wired to the same port as the wire's other end reads true (the same value goes
+  // there too), so it does not count; neither do the wire's own two ends.
+  const sourceOf = (w: LayoutWire) => `${w.source}\0${w.sourcePort}`;
+  const targetOf = (w: LayoutWire) => `${w.target}\0${w.targetPort}`;
+  const fedBySource = new Map<string, Set<string>>();
+  const feedsTarget = new Map<string, Set<string>>();
+  const add = (map: Map<string, Set<string>>, key: string, value: string) => {
+    let set = map.get(key);
+    if (!set) map.set(key, (set = new Set()));
+    set.add(value);
+  };
+  for (const w of graph.wires) {
+    add(fedBySource, targetOf(w), sourceOf(w));
+    add(feedsTarget, sourceOf(w), targetOf(w));
+  }
+  const passes: LayoutPortPass[] = [];
+  const hit2 = PORT_HIT * PORT_HIT;
+  for (const path of wires) {
+    // A wire drawn right to left loops back past its own cards; the backward rank already
+    // counts it, and the sweep's first phase turns it around.
+    if (path.tx < path.sx && path.laneY === undefined) continue;
+    const { wire, points } = path;
+    const xs = points.map((p) => p[0]);
+    const ys = points.map((p) => p[1]);
+    const minX = Math.min(...xs) - PORT_HIT;
+    const maxX = Math.max(...xs) + PORT_HIT;
+    const minY = Math.min(...ys) - PORT_HIT;
+    const maxY = Math.max(...ys) + PORT_HIT;
+    for (const card of graph.cards) {
+      if (card.kind !== 'card') continue;
+      for (const direction of ['input', 'output'] as const) {
+        for (const handle of direction === 'input' ? card.inputs : card.outputs) {
+          const key = `${card.id}\0${handle.portId}`;
+          if (
+            direction === 'output'
+              ? feedsTarget.get(key)?.has(targetOf(wire))
+              : fedBySource.get(key)?.has(sourceOf(wire))
+          )
+            continue;
+          const at: XY = [card.x + handle.dx, card.y + handle.dy];
+          if (at[0] < minX || at[0] > maxX || at[1] < minY || at[1] > maxY) continue;
+          for (let i = 0; i < points.length - 1; i++) {
+            if (segmentDistance2(at, points[i], points[i + 1]) < hit2) {
+              passes.push({ wire: wire.id, card: card.id, port: handle.portId, direction });
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  return passes;
+}
 
 /** Whether a resolved, non-loopback wire is straight: level and left to right. */
 export function isStraight(path: WirePath): boolean {
@@ -154,6 +252,7 @@ export function measure(graph: LayoutGraph, options: LayoutOptions): LayoutMetri
     spacing,
     conflicts,
     crossings,
+    passes: portPasses(graph, wires),
     wires,
     unresolved
   };
@@ -163,6 +262,7 @@ export function measure(graph: LayoutGraph, options: LayoutOptions): LayoutMetri
 export function score(metrics: LayoutMetrics, moved = 0): LayoutScore {
   return [
     metrics.overlaps + metrics.spacing,
+    metrics.passes.length,
     -metrics.straight,
     metrics.backward,
     metrics.crossings.length,
@@ -189,14 +289,33 @@ export function conflictCards(metrics: LayoutMetrics): Set<string> {
   return ids;
 }
 
-/** One line for the console: `straight 3/6 · backward 0 · crossings 0 · overlaps 0 · spacing ok`. */
+/** The cards a passed port is on, and the two ends of each wire that passes one. */
+export function passCards(metrics: LayoutMetrics): Set<string> {
+  const ends = new Map(metrics.wires.map((p) => [p.wire.id, p.wire]));
+  const ids = new Set<string>();
+  for (const pass of metrics.passes) {
+    ids.add(pass.card);
+    const wire = ends.get(pass.wire);
+    if (wire) {
+      ids.add(wire.source);
+      ids.add(wire.target);
+    }
+  }
+  return ids;
+}
+
+/**
+ * One line for the console: `straight 3/6 · backward 0 · crossings 0 · overlaps 0 · spacing ok`,
+ * with `· ports passed 2` when a wire runs through a port.
+ */
 export function formatMetrics(metrics: LayoutMetrics): string {
   return [
     `straight ${metrics.straight}/${metrics.total}`,
     `backward ${metrics.backward}`,
     `crossings ${metrics.crossings.length}`,
     `overlaps ${metrics.overlaps}`,
-    `spacing ${metrics.spacing ? `${metrics.spacing} too close` : 'ok'}`
+    `spacing ${metrics.spacing ? `${metrics.spacing} too close` : 'ok'}`,
+    ...(metrics.passes.length ? [`ports passed ${metrics.passes.length}`] : [])
   ].join(' · ');
 }
 
@@ -230,6 +349,8 @@ export function formatChange(
     ['overlaps', before.overlaps, after.overlaps],
     ['spacing', spacing(before), spacing(after)]
   );
+  if (before.passes.length || after.passes.length)
+    parts.push(['ports passed', before.passes.length, after.passes.length]);
   return parts
     .filter(([, b, a]) => !options.onlyChanged || b !== a)
     .map(([name, b, a]) => `${name} ${change(b, a)}`)

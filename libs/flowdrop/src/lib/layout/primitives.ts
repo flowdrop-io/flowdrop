@@ -12,7 +12,8 @@
  * - `ports`: connected, non-fixed handles re-sorted by the y of what they connect to, within the
  *   slots they already hold. Never moves the node.
  * - `align`: y, one candidate per wire (the shift that levels it). Never changes x.
- * - `clear`: y, only for a card in an overlap or spacing break. Never changes x.
+ * - `clear`: y, only for a card in an overlap or spacing break, or on a wire through a port (H4).
+ *   Never changes x.
  *
  * `clear` and `column` never move a card above the topmost card of the graph (Q2).
  *
@@ -27,6 +28,7 @@ import {
   better,
   conflictCards,
   formatChange,
+  passCards,
   measure,
   score,
   type LayoutMetrics
@@ -175,12 +177,13 @@ function judgeMove(
   before: LayoutMetrics,
   best: Candidate | undefined,
   message: (best: Candidate) => string,
-  noCandidates: string
+  noCandidates: string,
+  force = false
 ): LayoutProposal {
   if (!best) return refuse(graph, card.id, primitive, before, noCandidates);
   const moved = Math.abs(best.dx) + Math.abs(best.dy);
   const text = message(best);
-  if (!better(score(best.metrics, moved), score(before, 0))) {
+  if (!force && !better(score(best.metrics, moved), score(before, 0))) {
     return refuse(
       graph,
       card.id,
@@ -337,8 +340,14 @@ function proposeClear(
   before: LayoutMetrics,
   options: LayoutOptions
 ): LayoutProposal {
-  if (!conflictCards(before).has(card.id)) {
-    return refuse(graph, card.id, 'clear', before, 'no overlap or spacing break on this card');
+  if (!conflictCards(before).has(card.id) && !passCards(before).has(card.id)) {
+    return refuse(
+      graph,
+      card.id,
+      'clear',
+      before,
+      'no overlap, spacing break or wire through a port on this card'
+    );
   }
   const shifts: Array<[number, number]> = [];
   const top = topEdge(graph);
@@ -401,7 +410,8 @@ function proposeColumn(
   graph: LayoutGraph,
   card: LayoutCard,
   before: LayoutMetrics,
-  options: LayoutOptions
+  options: LayoutOptions,
+  force: boolean
 ): LayoutProposal {
   const rank = columnRanks(graph).get(card.id) ?? 0;
   const { origin, stride } = columnGrid(graph, options);
@@ -410,11 +420,13 @@ function proposeColumn(
     return refuse(graph, card.id, 'column', before, `already in column ${rank}`);
   }
   const dx = targetX - card.x;
-  const shifts: Array<[number, number]> = [[dx, 0]];
+  // A card off the grid lands on it (H0), so its wires can be levelled with cards that are on it.
+  const dy0 = snap(card.y) - card.y;
+  const shifts: Array<[number, number]> = [[dx, dy0]];
   const top = topEdge(graph);
   for (let k = LAYOUT_GRID; k <= COLUMN_REACH; k += LAYOUT_GRID) {
-    shifts.push([dx, k]);
-    if (card.y - k >= top) shifts.push([dx, -k]);
+    shifts.push([dx, dy0 + k]);
+    if (card.y + dy0 - k >= top) shifts.push([dx, dy0 - k]);
   }
   return judgeMove(
     graph,
@@ -426,18 +438,29 @@ function proposeColumn(
       `moved to column ${rank} (x ${card.x} → ${targetX}${
         best.dy ? `, y ${card.y} → ${card.y + best.dy}` : ''
       })`,
-    'no free spot in this column'
+    'no free spot in this column',
+    force
   );
 }
 
 // ---- public ----
+
+export interface ProposeOptions {
+  /**
+   * `column` only: take the best spot in the column even when it scores worse than where the card
+   * is now. The sweep's phase 0 uses it: every card goes into its column first, and a half-done
+   * graph (some cards in columns, some not) is no fair judge of a single move.
+   */
+  force?: boolean;
+}
 
 /** What a primitive would do to one node, judged against the current layout. */
 export function propose(
   graph: LayoutGraph,
   nodeId: string,
   primitive: LayoutPrimitive,
-  options: LayoutOptions
+  options: LayoutOptions,
+  { force = false }: ProposeOptions = {}
 ): LayoutProposal {
   const card = cardOrThrow(graph, nodeId);
   const before = measure(graph, options);
@@ -452,7 +475,7 @@ export function propose(
   }
   switch (primitive) {
     case 'column':
-      return proposeColumn(graph, card, before, options);
+      return proposeColumn(graph, card, before, options, force);
     case 'ports':
       return proposePorts(graph, card, before, options);
     case 'align':

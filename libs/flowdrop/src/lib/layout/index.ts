@@ -5,8 +5,23 @@
  */
 
 export * from './types.js';
-export { measure, score, better, conflictCards, formatMetrics, formatChange } from './measure.js';
-export type { LayoutMetrics, LayoutScore, LayoutConflict, LayoutCrossing } from './measure.js';
+export {
+  measure,
+  score,
+  better,
+  conflictCards,
+  passCards,
+  portPasses,
+  formatMetrics,
+  formatChange
+} from './measure.js';
+export type {
+  LayoutMetrics,
+  LayoutScore,
+  LayoutConflict,
+  LayoutCrossing,
+  LayoutPortPass
+} from './measure.js';
 export { fromWorkflow } from './fromWorkflow.js';
 export type { FromWorkflowOptions, MeasuredCard } from './fromWorkflow.js';
 export {

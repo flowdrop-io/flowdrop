@@ -4,10 +4,11 @@ import {
   score,
   better,
   formatMetrics,
-  conflictCards
+  conflictCards,
+  passCards
 } from '../../../src/lib/layout/measure.js';
 import { DEFAULT_LAYOUT_OPTIONS, type LayoutGraph } from '../../../src/lib/layout/types.js';
-import { demoCard, demoWire, rightToLeft, tangled } from './fixtures.js';
+import { demoCard, demoWire, jurgenDries, rightToLeft, tangled } from './fixtures.js';
 
 const curve = DEFAULT_LAYOUT_OPTIONS;
 const lane = { ...DEFAULT_LAYOUT_OPTIONS, loopbacks: 'lane' as const };
@@ -143,6 +144,76 @@ describe('score', () => {
   it('pixels moved breaks a tie', () => {
     const m = measure(rightToLeft(), curve);
     expect(better(score(m, 20), score(m, 40))).toBe(true);
-    expect(score(m)).toEqual([0, -0, 8, 12, 0]);
+    expect(score(m)).toEqual([0, 0, -0, 8, 12, 0]);
+  });
+});
+
+describe('ports passed (H4)', () => {
+  // a → c runs level through b's unused input and output on the same row.
+  const row = (): LayoutGraph => ({
+    cards: [
+      demoCard({ id: 'a', x: 0, y: 0, inputs: [], outputs: ['out'] }),
+      demoCard({ id: 'b', x: 360, y: 0, inputs: ['in'], outputs: ['out'] }),
+      demoCard({ id: 'c', x: 720, y: 0, inputs: ['in'], outputs: [] })
+    ],
+    wires: [demoWire('a', 'out', 'c', 'in')]
+  });
+  const passed = (graph: LayoutGraph) =>
+    measure(graph, curve)
+      .passes.map((p) => `${p.wire} @ ${p.card}.${p.direction}.${p.port}`)
+      .sort();
+
+  it('counts every handle a wire runs through, unconnected or not', () => {
+    expect(passed(row())).toEqual(['a.out>c.in @ b.input.in', 'a.out>c.in @ b.output.out']);
+    const m = measure(row(), curve);
+    expect(m.straight).toBe(1);
+    expect(score(m).slice(0, 3)).toEqual([0, 2, -1]);
+    expect(passCards(m)).toEqual(new Set(['a', 'b', 'c']));
+    expect(formatMetrics(m)).toBe(
+      'straight 1/1 · backward 0 · crossings 0 · overlaps 0 · spacing ok · ports passed 2'
+    );
+  });
+
+  it('outranks a straight wire: a bent wire past the ports scores better', () => {
+    const bent = row();
+    bent.cards[2] = { ...bent.cards[2], y: 100 };
+    expect(passed(bent)).toEqual([]);
+    expect(better(score(measure(bent, curve)), score(measure(row(), curve)))).toBe(true);
+  });
+
+  it('a handle one row away does not count', () => {
+    const g = row();
+    g.cards[1] = { ...g.cards[1], y: 40 };
+    expect(passed(g)).toEqual([]);
+  });
+
+  it('a handle wired to the same port as the other end does not count (it reads true)', () => {
+    const g = row();
+    g.wires.push(demoWire('a', 'out', 'b', 'in'), demoWire('b', 'out', 'c', 'in'));
+    // a.out feeds b.in, and b.out feeds c.in: both readings are true.
+    expect(passed(g)).toEqual([]);
+  });
+
+  it('a wire drawn right to left does not count (it is backward)', () => {
+    const g = row();
+    g.wires = [demoWire('c', 'out', 'a', 'out')];
+    g.cards[2] = { ...g.cards[2], outputs: [{ portId: 'out', dx: 240, dy: 80 }] };
+    g.cards[0] = { ...g.cards[0], inputs: [{ portId: 'out', dx: 0, dy: 80 }] };
+    expect(measure(g, curve).backward).toBe(1);
+    expect(passed(g)).toEqual([]);
+  });
+
+  it('Jurgen - Dries as the old sweep left it: message → values runs through Preview and Confirm', () => {
+    const g = jurgenDries();
+    const at = (id: string, x: number, y: number) =>
+      (g.cards = g.cards.map((c) => (c.id === id ? { ...c, x, y } : c)));
+    at('chat_input', -620, -120);
+    at('messenger', -220, -120);
+    at('confirmation', 180, -155);
+    at('entity_save', 580, -160);
+    expect(passed(g)).toEqual([
+      'chat_input.message>entity_save.values @ confirmation.output.False',
+      'chat_input.message>entity_save.values @ messenger.output.message'
+    ]);
   });
 });

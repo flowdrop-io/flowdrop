@@ -16,7 +16,7 @@ import {
   LAYOUT_GRID
 } from '$lib/layout/index.js';
 import type { LayoutGraph } from '$lib/layout/index.js';
-import { rightToLeft, tangled } from './fixtures.js';
+import { jurgenDries, rightToLeft, tangled } from './fixtures.js';
 
 const positions = (g: LayoutGraph) => Object.fromEntries(g.cards.map((c) => [c.id, [c.x, c.y]]));
 const topLeft = (g: LayoutGraph) => {
@@ -134,6 +134,39 @@ describe('sweep: tangled', () => {
       current = step.after;
     }
     expect(current.crossings).toEqual(result.after.crossings);
+  });
+});
+
+describe('sweep: Jurgen - Dries (H4, no wire through a port)', () => {
+  const result = sweep(jurgenDries(), OPTIONS);
+
+  it('leaves no wire running through a port, and straightens the trigger chain', () => {
+    expect(result.before.passes).toHaveLength(1);
+    expect(result.after.passes).toEqual([]);
+    expect(result.after).toMatchObject({ straight: 3, backward: 0, overlaps: 0, spacing: 0 });
+    expect(result.after.crossings).toEqual([]);
+  });
+
+  it('message → values bends instead of running level through Preview and Confirm', () => {
+    const values = result.after.wires.find(
+      (w) => w.wire.id === 'chat_input.message>entity_save.values'
+    )!;
+    expect(values.sy).not.toBe(values.ty);
+  });
+
+  it('puts a card that started off the grid on it', () => {
+    for (const card of result.graph.cards) {
+      expect(Math.abs(card.x % LAYOUT_GRID)).toBe(0);
+      expect(Math.abs(card.y % LAYOUT_GRID)).toBe(0);
+    }
+  });
+
+  it('phase 0 puts every card into its column even when one move alone scores worse', () => {
+    expect(result.phases[0].steps.map((s) => s.nodeId)).toEqual([
+      'messenger',
+      'confirmation',
+      'entity_save'
+    ]);
   });
 });
 

@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-  import { useSvelteFlow } from '@xyflow/svelte';
+  import { useSvelteFlow, useStore } from '@xyflow/svelte';
   import { useNodesInitialized } from '@xyflow/svelte';
   import { boundsWithTags, fitPadding, type FitBox } from '../utils/canvasFit.js';
   import { getEditorSettings } from '../stores/settingsStore.svelte.js';
@@ -25,6 +25,7 @@
   let { tagReserve, fitInset, fitOnLoad = false }: Props = $props();
 
   const nodesInitialized = useNodesInitialized();
+  const flowStore = useStore();
 
   const {
     fitView,
@@ -155,8 +156,14 @@
    */
   export function canvasMeasureNode(nodeId: string): MeasuredCard | undefined {
     const internal = getInternalNode(nodeId);
-    const width = internal?.measured.width;
-    const height = internal?.measured.height;
+    // The rendered card, not `measured`: a node written back by a command carries the size saved
+    // with the workflow (possibly from an older card design), xyflow adopts it, and nothing
+    // remeasures while the DOM size stays the same.
+    const element = flowStore.domNode?.querySelector<HTMLElement>(
+      `.svelte-flow__node[data-id="${CSS.escape(nodeId)}"]`
+    );
+    const width = element?.offsetWidth || internal?.measured.width;
+    const height = element?.offsetHeight || internal?.measured.height;
     const bounds = internal?.internals.handleBounds;
     if (!width || !height || !bounds) return undefined;
     const centres = (handles: typeof bounds.source) =>
@@ -172,7 +179,13 @@
             ]
           : [];
       });
-    return { width, height, inputs: centres(bounds.target), outputs: centres(bounds.source) };
+    // Rounded, or a 280px card measured at some zoom as 280.00002 reads as too close at gap x.
+    return {
+      width: Math.round(width),
+      height: Math.round(height),
+      inputs: centres(bounds.target),
+      outputs: centres(bounds.source)
+    };
   }
 
   /**
