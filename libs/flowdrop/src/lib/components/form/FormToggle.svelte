@@ -28,6 +28,12 @@
      * `messages.form.toggle.disabled`.
      */
     offLabel?: string;
+    /**
+     * @deprecated No effect: the switch no longer renders its state word (the state is the
+     * track colour; the label is the accessible name only), which is what `hideLabel` asked
+     * for in 2.11.0. Accepted so existing hosts keep compiling. Removed in 3.0.
+     */
+    hideLabel?: boolean;
     /** Whether the field is disabled (read-only) */
     disabled?: boolean;
     /** ARIA description ID */
