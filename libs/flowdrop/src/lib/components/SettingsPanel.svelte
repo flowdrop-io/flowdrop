@@ -655,11 +655,10 @@
           {#if category === 'editor'}
             <div class="flowdrop-settings-group" role="group" aria-labelledby="{uid}-zoom-title">
               <div>
-                <h3 class="flowdrop-settings-group__title" id="{uid}-zoom-title">Zoom levels</h3>
-                <p class="flowdrop-settings-group__help">
-                  Draw simpler nodes as you zoom out. The full node shows above the first level that
-                  is on.
-                </p>
+                <h3 class="flowdrop-settings-group__title" id="{uid}-zoom-title">
+                  {m().layout.zoomLevelsTitle}
+                </h3>
+                <p class="flowdrop-settings-group__help">{m().layout.zoomLevelsHelp}</p>
               </div>
               {#each zoomLevels as row (row.tier)}
                 {@const id = `${uid}-zoom-${row.tier}`}
