@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.12.0] - 2026-10-14
 
 ### Added
 
@@ -104,7 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `inspect_node_layout` and `beautify_node` (`gapX` / `gapY`). Settings `editor.layoutGapX` / `layoutGapY`
   (defaults 120 / 40 px) set the spacing the layout keeps. Loopbacks (`loop_back` edges) are drawn as return lanes
   (out of the source, under the loop body, back along a lane) instead of a curve through the cards, and layout
-  keeps those lanes free.
+  keeps those lanes free. A card's interface tags count as part of the card.
 - **Tidy up.** A broom in the canvas controls and **Tidy up** (⇧⌥T) in the pane menu run the graph layout; **Tidy
   node** (⇧S) in the node menu tidies one node. One undo step each. The toast says what changed, how many
   overlaps are left and anything that got worse; a layout that would not improve is left alone. Graphs over
