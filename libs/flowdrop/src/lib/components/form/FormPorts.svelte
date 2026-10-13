@@ -44,7 +44,7 @@
     validateInterfaceId,
     type InterfaceDirection
   } from '$lib/utils/interfaceTags.js';
-  import { m } from '$lib/messages/index.js';
+  import { m, getMessages } from '$lib/messages/index.js';
   import {
     getDataTypeColorToken,
     getDataTypeDisplayText,
@@ -245,6 +245,8 @@
   let root: HTMLDivElement | undefined = $state();
   /** Live text for a keyboard reorder, which would otherwise change nothing a screen reader hears. */
   let announcement = $state('');
+  // Taken at setup: `m()` reads the context, which an event handler cannot.
+  const messages = getMessages();
 
   /** A keyed row can lose focus when its node is moved; put it back. */
   async function refocusRow(direction: Direction, portId: string): Promise<void> {
@@ -262,7 +264,7 @@
     const ordered = orderedPorts(direction);
     const to = index + delta;
     if (to >= 0 && to < ordered.length) {
-      announcement = m().form.array.movedTo({
+      announcement = messages().form.array.movedTo({
         name: ordered[index].name,
         n: to + 1,
         total: ordered.length

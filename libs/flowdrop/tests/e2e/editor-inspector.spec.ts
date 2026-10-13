@@ -14,8 +14,8 @@ async function open(page: Page, nodeId: string) {
   await expect(page.locator('.config-panel').first()).toBeVisible();
 }
 
-const portNames = (page: Page, group: 'inputs' | 'outputs') =>
-  page.locator(`[data-port-row^="${group}:"] .fd-ports__name`).allTextContents();
+const portRows = (page: Page, group: 'inputs' | 'outputs') =>
+  page.locator(`[data-port-row^="${group}:"] .fd-ports__name`);
 
 test.describe('Node inspector', () => {
   test('tabs: Config | Ports | Execution, one panel at a time', async ({ page }) => {
@@ -68,11 +68,21 @@ test.describe('Node inspector', () => {
     const row = page.locator('[data-port-row="inputs:message"]');
     await row.focus();
     await page.keyboard.press('Alt+ArrowDown');
-    expect(await portNames(page, 'inputs')).toEqual(['Format', 'Message', 'Timestamp', 'Trigger']);
+    await expect(portRows(page, 'inputs')).toHaveText([
+      'Format',
+      'Message',
+      'Timestamp',
+      'Trigger'
+    ]);
     // Focus stays on the moved row, so the next press moves it again.
     await expect(page.locator('[data-port-row="inputs:message"]')).toBeFocused();
     await page.keyboard.press('Alt+ArrowUp');
-    expect(await portNames(page, 'inputs')).toEqual(['Message', 'Format', 'Timestamp', 'Trigger']);
+    await expect(portRows(page, 'inputs')).toHaveText([
+      'Message',
+      'Format',
+      'Timestamp',
+      'Trigger'
+    ]);
   });
 
   test('a subworkflow node shows "Runs <name>" as a link in the meta area', async ({ page }) => {
