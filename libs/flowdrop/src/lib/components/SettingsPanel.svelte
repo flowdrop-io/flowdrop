@@ -52,7 +52,7 @@
     getHostColorScheme
   } from '$lib/stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
-  import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y } from '../layout/types.js';
+  import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y, LAYOUT_GRID } from '../layout/types.js';
   import { appearanceChoices } from '../utils/appearance.js';
   import {
     zoomRows,
@@ -156,7 +156,7 @@
           type: 'number',
           title: 'Layout gap between columns',
           description:
-            'Space kept between cards side by side when tidying or inspecting a node. Rounded to the grid.',
+            'Space kept between cards side by side by Tidy up and the layout commands. Rounded to 20 px.',
           minimum: 0,
           default: DEFAULT_LAYOUT_GAP_X
         },
@@ -164,7 +164,7 @@
           type: 'number',
           title: 'Layout gap between stacked cards',
           description:
-            'Space kept between cards one above the other when tidying or inspecting a node. Rounded to the grid.',
+            'Space kept between cards one above the other by Tidy up and the layout commands. Rounded to 20 px.',
           minimum: 0,
           default: DEFAULT_LAYOUT_GAP_Y
         },
@@ -642,7 +642,7 @@
                     min={row.min}
                     max={row.max}
                     step={category === 'editor' && row.key.startsWith('layoutGap')
-                      ? getSettings().editor.gridSize
+                      ? LAYOUT_GRID
                       : undefined}
                     value={Number(values[row.key] ?? 0)}
                     onchange={(e) => setNumber(category, row, e.currentTarget.value)}

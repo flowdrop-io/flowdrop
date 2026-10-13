@@ -8,7 +8,7 @@
  */
 
 import { DEFAULT_ZOOM_TIERS, type ZoomTierConfig } from '../utils/zoomTier.js';
-import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y } from '../layout/types.js';
+import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y, LAYOUT_GRID } from '../layout/types.js';
 
 // =========================================================================
 // Theme Settings
@@ -95,13 +95,13 @@ export interface EditorSettings {
   /** Grid cell size in pixels */
   gridSize: number;
   /**
-   * Layout gap between cards side by side, in pixels (`layout node` commands).
-   * A multiple of the grid size; default {@link DEFAULT_LAYOUT_GAP_X}.
+   * Layout gap between cards side by side, in pixels (Tidy up and the `layout`
+   * commands). A multiple of the 20 px layout grid; default {@link DEFAULT_LAYOUT_GAP_X}.
    */
   layoutGapX: number;
   /**
-   * Layout gap between stacked cards, in pixels (`layout node` commands).
-   * A multiple of the grid size; default {@link DEFAULT_LAYOUT_GAP_Y}.
+   * Layout gap between stacked cards, in pixels (Tidy up and the `layout`
+   * commands). A multiple of the 20 px layout grid; default {@link DEFAULT_LAYOUT_GAP_Y}.
    */
   layoutGapY: number;
   /**
@@ -358,12 +358,13 @@ export function normalizeGridSize(value: unknown): number {
 
 /**
  * A layout gap as the editor stores it: a number of at least 0, rounded to a
- * multiple of the grid so cards still land on grid lines. Anything that is not a
- * finite number becomes `fallback`.
+ * multiple of the 20 px layout grid (layout always snaps to it, whatever the
+ * editor's grid size), the same rule the `--gap-x` / `--gap-y` flags enforce.
+ * Anything that is not a finite number becomes `fallback`.
  */
-export function normalizeLayoutGap(value: unknown, gridSize: number, fallback: number): number {
+export function normalizeLayoutGap(value: unknown, fallback: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
-  return Math.max(0, Math.round(value / gridSize) * gridSize);
+  return Math.max(0, Math.round(value / LAYOUT_GRID) * LAYOUT_GRID);
 }
 
 /**

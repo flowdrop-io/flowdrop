@@ -456,13 +456,13 @@ describe('settingsStore persistence', { timeout: 30_000 }, () => {
       expect(store.getEditorSettings()).toMatchObject({ layoutGapX: 140, layoutGapY: 0 });
     });
 
-    it('follows the grid size: 10 keeps what 20 would round', async () => {
+    it('rounds to the 20 px layout grid even when the editor grid is 10', async () => {
       localStorage.setItem(
         SETTINGS_STORAGE_KEY,
         JSON.stringify({ editor: { gridSize: 10, layoutGapX: 130, layoutGapY: 44 } })
       );
       const store = await freshStore();
-      expect(store.getEditorSettings()).toMatchObject({ layoutGapX: 130, layoutGapY: 40 });
+      expect(store.getEditorSettings()).toMatchObject({ layoutGapX: 140, layoutGapY: 40 });
     });
 
     it('replaces a value that is not a number with the default', async () => {

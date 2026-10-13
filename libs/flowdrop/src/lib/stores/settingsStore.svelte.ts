@@ -180,16 +180,8 @@ function deepMergeSettings(
   }
 
   // Layout gaps: at least 0, a multiple of the grid.
-  result.editor.layoutGapX = normalizeLayoutGap(
-    result.editor.layoutGapX,
-    result.editor.gridSize,
-    DEFAULT_LAYOUT_GAP_X
-  );
-  result.editor.layoutGapY = normalizeLayoutGap(
-    result.editor.layoutGapY,
-    result.editor.gridSize,
-    DEFAULT_LAYOUT_GAP_Y
-  );
+  result.editor.layoutGapX = normalizeLayoutGap(result.editor.layoutGapX, DEFAULT_LAYOUT_GAP_X);
+  result.editor.layoutGapY = normalizeLayoutGap(result.editor.layoutGapY, DEFAULT_LAYOUT_GAP_Y);
 
   // Return lanes are opt in: anything but a real `true` is off.
   result.editor.loopbackLanes = result.editor.loopbackLanes === true;
