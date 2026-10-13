@@ -287,13 +287,13 @@ export interface FlowDropFeatures {
   assistant?: boolean;
 
   /**
-   * Offer Test mode: the Edit | Test switch in the navbar. Test mode docks the
+   * Offer Test mode: the Edit | Test switch in the canvas toolbar. Test mode docks the
    * Playground beside the canvas and keeps the inspector open, for testing a
    * workflow while you edit it.
    *
    * The switch is only shown for a saved workflow on an editable canvas
-   * (`mode: 'edit'`, no `pipelineId`). A host that hides the navbar, or that
-   * wants to drive the mode itself, uses `instance.editorMode` (and the
+   * (`mode: 'edit'`, no `pipelineId`). A host that wants to drive the mode
+   * itself uses `instance.editorMode` (and the
    * `editorMode` option to start in Test). Turn this off for a backend that
    * has no Playground endpoints.
    *
