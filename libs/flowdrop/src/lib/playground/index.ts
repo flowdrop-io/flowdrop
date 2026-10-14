@@ -241,6 +241,7 @@ export type {
   PlaygroundTurnResponse,
   PlaygroundMessagesResult,
   PlaygroundConfig,
+  EditorPlaygroundConfig,
   PlaygroundMode,
   PlaygroundSessionStatus,
   PlaygroundMessageRole,

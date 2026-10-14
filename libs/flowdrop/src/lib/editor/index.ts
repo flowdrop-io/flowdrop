@@ -326,6 +326,8 @@ export type { EndpointConfig } from '../config/endpoints.js';
 
 export type { UIAction } from '../commands/types.js';
 
+export type { EditorPlaygroundConfig } from '../types/playground.js';
+
 export type {
   FlowDropMountOptions,
   MountedFlowDropApp,

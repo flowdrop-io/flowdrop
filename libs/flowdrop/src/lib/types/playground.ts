@@ -607,6 +607,19 @@ export interface PlaygroundConfig {
 }
 
 /**
+ * The part of {@link PlaygroundConfig} that steers how the editor's Test mode
+ * follows a run: how often it polls and when it stops. Passed to the editor as
+ * the `playground` mount option. Not set, the defaults apply (poll every 1500 ms, stop on
+ * `idle` only).
+ *
+ * `isTerminalStatus` is not offered: nothing in the editor reads it.
+ */
+export type EditorPlaygroundConfig = Pick<
+  PlaygroundConfig,
+  'pollingInterval' | 'shouldStopPolling'
+>;
+
+/**
  * Metadata field to control Run button state from backend.
  * When a message contains this field set to true, the Run button becomes enabled.
  *

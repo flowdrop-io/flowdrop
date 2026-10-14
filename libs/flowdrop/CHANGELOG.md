@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`playground` mount option.** `mountFlowDropApp` (and the `App` component) take
+  `playground: { pollingInterval?, shouldStopPolling? }`, which configures the editor's docked Playground
+  (Test mode); it had no way to set them. A backend that leaves a session `completed` or `failed` after a
+  turn can now stop polling there; unset, the defaults are unchanged (1500 ms, stop on `idle` only). Type:
+  `EditorPlaygroundConfig`, exported from `@flowdrop/flowdrop/editor` and `/playground`. fdnpm#46.
+
 ## [2.12.0] - 2026-10-14
 
 ### Added

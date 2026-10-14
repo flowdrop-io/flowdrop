@@ -13,6 +13,7 @@ import App from './components/App.svelte';
 import type { Workflow, NodeMetadata, PortConfig, CategoryDefinition } from './types/index.js';
 import type { EndpointConfig } from './config/endpoints.js';
 import type { AuthProvider } from './types/auth.js';
+import type { EditorPlaygroundConfig } from './types/playground.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
 import type { FlowDropTheme, FlowDropThemeName } from './types/theme.js';
 import type { WorkflowFormatAdapter } from './registry/workflowFormatRegistry.js';
@@ -129,6 +130,14 @@ export interface FlowDropMountOptions {
    * its URL in step. Not called for the initial value.
    */
   onEditorModeChange?: (mode: 'edit' | 'test') => void;
+  /**
+   * How Test mode's Playground follows a run: `pollingInterval` (ms, default
+   * 1500) and `shouldStopPolling` (default: stop on `idle` only, on purpose,
+   * since an async server may still emit messages). A backend that leaves a
+   * session `completed` or `failed` after a turn passes its own
+   * `shouldStopPolling` here. Unset, nothing changes.
+   */
+  playground?: EditorPlaygroundConfig;
 
   // Pipeline mode
   /** Pipeline ID for status display */
@@ -529,6 +538,7 @@ export async function mountFlowDropApp(
     mode,
     editorMode,
     onEditorModeChange,
+    playground,
     pipelineId,
     navbarTitle,
     navbarActions,
@@ -624,6 +634,7 @@ export async function mountFlowDropApp(
       mode,
       editorMode,
       onEditorModeChange,
+      playground,
       pipelineId,
       navbarTitle,
       navbarActions,

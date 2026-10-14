@@ -17,6 +17,7 @@
   import type { Snippet } from 'svelte';
   import PlaygroundSurface from './PlaygroundSurface.svelte';
   import type { Workflow } from '../../types/index.js';
+  import type { EditorPlaygroundConfig } from '../../types/playground.js';
 
   interface Props {
     /** The editor's workflow, live: its unsaved edits are what the next turn runs. */
@@ -34,9 +35,14 @@
      * acting). The editor's own actions for a run go here.
      */
     menuItems?: Snippet<[{ close: () => void }]>;
+    /**
+     * How the surface follows a run (`pollingInterval`, `shouldStopPolling`).
+     * Forwarded to PlaygroundSurface's `config`; unset, the defaults apply.
+     */
+    config?: EditorPlaygroundConfig;
   }
 
-  let { workflow, onOpenSettings, onSave, menuItems }: Props = $props();
+  let { workflow, onOpenSettings, onSave, menuItems, config }: Props = $props();
 </script>
 
 <div class="docked-playground" data-testid="docked-playground">
@@ -50,6 +56,7 @@
       sessionOptional
       playgroundSessionsOnly
       historyHeader
+      {config}
       {menuItems}
       {onSave}
       {onOpenSettings}

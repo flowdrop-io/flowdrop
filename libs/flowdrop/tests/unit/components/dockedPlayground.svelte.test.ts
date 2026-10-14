@@ -12,6 +12,7 @@ import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js'
 import { FLOWDROP_INSTANCE_KEY } from '$lib/stores/getInstance.svelte.js';
 import { defaultEndpointConfig } from '$lib/config/endpoints.js';
 import type { Workflow } from '$lib/types/index.js';
+import type { EditorPlaygroundConfig } from '$lib/types/playground.js';
 
 vi.mock('@iconify/svelte', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@iconify/svelte')>();
@@ -37,6 +38,7 @@ interface Call {
 
 let calls: Call[] = [];
 let sessionList: unknown[] = [];
+let pollStatus = 'running';
 const originalFetch = global.fetch;
 let fd: ReturnType<typeof createFlowDropInstance>;
 let mounted: ReturnType<typeof mount> | null = null;
@@ -65,12 +67,12 @@ async function settle(): Promise<void> {
   flushSync();
 }
 
-function render(wf: Workflow) {
+function render(wf: Workflow, config?: EditorPlaygroundConfig) {
   const target = document.createElement('div');
   document.body.appendChild(target);
   mounted = mount(DockedPlayground, {
     target,
-    props: { workflow: wf },
+    props: { workflow: wf, config },
     context: new Map([[FLOWDROP_INSTANCE_KEY, fd]])
   });
   return target;
@@ -86,6 +88,7 @@ async function unmountDock(): Promise<void> {
 beforeEach(() => {
   calls = [];
   sessionList = [];
+  pollStatus = 'running';
   fd = createFlowDropInstance();
   fd.api.configure({
     ...structuredClone(defaultEndpointConfig),
@@ -113,7 +116,7 @@ beforeEach(() => {
       });
     }
     if (url.includes('/playground/sessions/s-1/messages')) {
-      return json({ success: true, data: [], sessionStatus: 'running', hasOlder: false });
+      return json({ success: true, data: [], sessionStatus: pollStatus, hasOlder: false });
     }
     return new Response('{}', { status: 404 });
   }) as typeof fetch;
@@ -222,5 +225,49 @@ describe('DockedPlayground', () => {
     await settle();
     expect(fd.playground.inputMode).toBe('chat');
     expect(target.querySelector('textarea')).not.toBeNull();
+  });
+});
+
+describe('DockedPlayground polling config', () => {
+  async function sendHi(target: HTMLElement): Promise<void> {
+    const textarea = target.querySelector<HTMLTextAreaElement>('textarea')!;
+    textarea.value = 'hi';
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    flushSync();
+    target
+      .querySelector<HTMLButtonElement>(
+        'button[aria-label="Send message"], button[aria-label="Save the workflow, then send the message"]'
+      )!
+      .click();
+    await settle();
+  }
+
+  const pollCount = () =>
+    calls.filter((c) => c.url.includes('/s-1/messages') && c.method === 'GET').length;
+
+  it('keeps polling a completed session by default (stops on idle only)', async () => {
+    pollStatus = 'completed';
+    const target = render(workflow(), { pollingInterval: 5 });
+    await settle();
+    await sendHi(target);
+    await new Promise((r) => setTimeout(r, 60));
+    const first = pollCount();
+    await new Promise((r) => setTimeout(r, 60));
+    expect(pollCount()).toBeGreaterThan(first);
+    expect(fd.runs.isPolling).toBe(true);
+  });
+
+  it('polls with the hook the host passed, and stops when it says so', async () => {
+    pollStatus = 'completed';
+    const shouldStopPolling = vi.fn((status: string) => status === 'completed');
+    const target = render(workflow(), { pollingInterval: 5, shouldStopPolling });
+    await settle();
+    await sendHi(target);
+    await new Promise((r) => setTimeout(r, 60));
+    expect(shouldStopPolling).toHaveBeenCalledWith('completed');
+    expect(fd.runs.isPolling).toBe(false);
+    const settled = pollCount();
+    await new Promise((r) => setTimeout(r, 60));
+    expect(pollCount()).toBe(settled);
   });
 });

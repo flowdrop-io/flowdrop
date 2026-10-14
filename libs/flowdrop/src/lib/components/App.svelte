@@ -92,6 +92,7 @@
   } from '../utils/inspectorSurface.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
+  import type { EditorPlaygroundConfig } from '../types/playground.js';
   import type { EditorMode } from '../stores/editorModeStore.svelte.js';
   import { defaultMessages, mergeMessages, setMessages, m } from '$lib/messages/index.js';
   import type { MessagesOverride } from '$lib/messages/index.js';
@@ -169,6 +170,13 @@
      * initial value. A host uses it to keep its URL in step.
      */
     onEditorModeChange?: (mode: EditorMode) => void;
+    /**
+     * How Test mode's Playground follows a run: `pollingInterval` (ms, default
+     * 1500) and `shouldStopPolling` (default: stop on `idle` only). A backend
+     * that leaves a session `completed` or `failed` after a turn sets
+     * `shouldStopPolling` here. Unset, nothing changes.
+     */
+    playground?: EditorPlaygroundConfig;
     /** Pipeline ID for fetching node execution info */
     pipelineId?: string;
     /** Increments to force a refresh of pipeline node status from the server */
@@ -287,6 +295,7 @@
     workflowFormats,
     messages: messagesOverride,
     contextMenu,
+    playground,
     instance
   }: Props = $props();
 
@@ -2026,6 +2035,7 @@
   {#if fd.workflow.current}
     <DockedPlayground
       workflow={fd.workflow.current}
+      config={playground}
       onSave={saveWorkflow}
       onOpenSettings={fd.workflow.current.playground !== undefined
         ? openPlaygroundSettings
