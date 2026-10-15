@@ -102,9 +102,17 @@
     --_frame: 0 0 0 var(--fd-node-status-edge) var(--_status);
     position: absolute;
     inset: 0;
-    z-index: 1000;
+    /* No z-index here: that would make the overlay one stacking context and lift
+       the frame over the ports. The pill, badge and outline sit on top; the
+       frame goes behind the card. */
     /* Clicks go through to the node; only the pill itself takes hover. */
     pointer-events: none;
+  }
+
+  .node-status-overlay__pill,
+  .node-status-overlay__outline,
+  .node-status-overlay__badge {
+    z-index: 1000;
   }
 
   .node-status-overlay--running {
@@ -154,10 +162,12 @@
   }
 
   /* Carries the shadows that thicken the node's status-coloured border (and
-     draw the waiting halo); UniversalNode sets them, in Test mode only. */
+     draw the waiting halo); UniversalNode sets them, in Test mode only. Behind
+     the card, so the ports on its edge stay on top of the halo. */
   .node-status-overlay__frame {
     position: absolute;
     inset: 0;
+    z-index: -1;
     border-radius: var(--fd-node-radius, 8px);
     pointer-events: none;
   }
