@@ -38,10 +38,11 @@ export const defaultMessages = {
       hidden: 'Hidden from the canvas',
       locked: ({ port }: { port: string }) => `${port} is always shown`,
       lockedHint: 'Always shown. The node type decides this port.',
-      confirmHide: ({ n }: { n: number }) =>
-        n === 1 ? 'Hide and remove 1 connection?' : `Hide and remove ${n} connections?`,
-      confirm: 'Hide',
-      cancel: 'Cancel'
+      wired: ({ port }: { port: string }) => `${port} is connected`,
+      wiredHint: ({ n }: { n: number }) =>
+        n === 1
+          ? 'Connected (1). Remove its connection on the canvas to hide it.'
+          : `Connected (${n}). Remove its connections on the canvas to hide it.`
     },
     array: {
       // Item-level controls — `n` is the 1-based item position the user sees.

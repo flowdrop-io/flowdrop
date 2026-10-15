@@ -60,21 +60,35 @@ test.describe('Node inspector', () => {
     await expect(page.getByRole('button', { name: 'Hide port Format' }).first()).toBeVisible();
   });
 
-  test('a locked port shows as on, with a lock and no toggle', async ({ page }) => {
+  test('a locked port shows as on, with a lock, and explains itself instead of toggling', async ({
+    page
+  }) => {
     await gotoEditor(page, 'inspector');
     await open(page, 'chat_output.2');
     await page.getByRole('tab', { name: 'Ports' }).click();
 
     for (const group of ['inputs', 'outputs'] as const) {
       const locked = page.getByTestId(`port-locked-${group}-trigger`);
+      const row = page.locator(`[data-port-row="${group}:trigger"]`);
       await expect(locked).toBeVisible();
+      await expect(locked).toHaveAttribute('aria-disabled', 'true');
       await expect(locked).toHaveAttribute('aria-label', 'Trigger is always shown');
-      await expect(page.locator(`[data-port-row="${group}:trigger"]`)).not.toHaveClass(/--hidden/);
+      await expect(row).not.toHaveClass(/--hidden/);
+
+      const hint = row.getByText('Always shown. The node type decides this port.');
+      await expect(hint).toHaveCount(0);
+      // Playwright treats aria-disabled as not enabled; the button is meant to be activated.
+      await locked.click({ force: true });
+      await expect(hint).toBeVisible();
+      await expect(locked).toHaveAttribute('aria-expanded', 'true');
+      await locked.press('Escape');
+      await expect(hint).toHaveCount(0);
+      await expect(row).not.toHaveClass(/--hidden/);
     }
     await expect(page.getByRole('button', { name: 'Hide port Trigger' })).toHaveCount(0);
   });
 
-  test('hiding a wired port asks, then removes its wires in one undo step', async ({ page }) => {
+  test('a wired port says why it cannot hide; once unwired it hides', async ({ page }) => {
     await gotoEditor(page, 'inspector');
     await open(page, 'chat_output.2');
     await page.getByRole('tab', { name: 'Ports' }).click();
@@ -82,23 +96,36 @@ test.describe('Node inspector', () => {
     await expect(edge).toHaveCount(1);
 
     const row = page.locator('[data-port-row="outputs:format"]');
-    await row.getByRole('button', { name: 'Hide port format' }).click();
-    await expect(row.getByText('Hide and remove 1 connection?')).toBeVisible();
+    const blocked = page.getByTestId('port-wired-outputs-format');
+    await expect(blocked).toBeVisible();
+    await expect(blocked).toHaveAttribute('aria-disabled', 'true');
+    await expect(row.getByRole('button', { name: 'Hide port format' })).toHaveCount(0);
 
-    // Cancel leaves everything as it was.
-    await row.getByTestId('port-hide-cancel').click();
+    await blocked.click({ force: true });
+    await expect(
+      row.getByText('Connected (1). Remove its connection on the canvas to hide it.')
+    ).toBeVisible();
+    await expect(edge).toHaveCount(1);
     await expect(row).not.toHaveClass(/--hidden/);
-    await expect(edge).toHaveCount(1);
 
-    await row.getByRole('button', { name: 'Hide port format' }).click();
-    await row.getByTestId('port-hide-confirm').click();
-    await expect(row).toHaveClass(/--hidden/);
-    await expect(edge).toHaveCount(0);
-
-    // One undo brings back both the port and its wire.
+    // Delete the wire on the canvas: the eye works again. Select the edge by
+    // keyboard, not by a click on its path: a missed click leaves focus on the
+    // body, where WebKit's Backspace navigates away and the edge "disappears"
+    // with the page.
     await page.locator('.svelte-flow__pane').click({ position: { x: 5, y: 5 } });
-    await page.keyboard.press('ControlOrMeta+z');
-    await expect(edge).toHaveCount(1);
+    await edge.focus();
+    await page.keyboard.press('Enter');
+    await expect(edge).toHaveClass(/selected/);
+    await page.keyboard.press('Backspace');
+    await expect(edge).toHaveCount(0);
+    await expect(page.locator('.svelte-flow__node[data-id="chat_output.2"]')).toHaveCount(1);
+    // Selecting the edge leaves the node; open it again.
+    await open(page, 'chat_output.2');
+    await page.getByRole('tab', { name: 'Ports' }).click();
+    await expect(blocked).toHaveCount(0);
+    await expect(row.getByText(/Connected \(/)).toHaveCount(0);
+    await row.getByRole('button', { name: 'Hide port format' }).click();
+    await expect(row).toHaveClass(/--hidden/);
   });
 
   test('Alt+ArrowDown / Alt+ArrowUp on a focused row reorders it', async ({ page }) => {

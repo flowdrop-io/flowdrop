@@ -11,6 +11,11 @@
   `ports` reserved config property (a PortsConfig: a per-direction ordered list
   of {id, exposed?} entries).
 
+  A port whose exposure cannot change (locked by the node type, or exposed and
+  still wired) shows an "on" eye with a badge; activating it opens an inline
+  reason instead of touching the graph. The widget only ever writes through
+  `onChange`.
+
   Order is cosmetic — the engine ignores it. Exposure is semantic in v2: a
   not-exposed port is hidden on the canvas, not wireable, and not
   runtime-overridable.
@@ -223,12 +228,10 @@
     onChange(buildPortsConfig(portsConfig, direction, ordered, portsFor(direction), exposureOf));
   }
 
-  /** A wired port the author asked to hide: the row asks before its wires go. */
-  let confirmHide = $state<{ direction: Direction; portId: string; count: number } | null>(null);
+  /** Why this port's exposure can't be toggled right now, or null. */
+  type ExposureBlock = { kind: 'locked' } | { kind: 'wired'; count: number };
 
-  const confirmText = (n: number) => messages().form.ports.confirmHide({ n });
-
-  /** The edges on one of this node's handles. */
+  /** The edges on one of this node's handles (a read: nothing here writes the graph). */
   function edgesOn(handleId: string) {
     const nodeId = node?.id;
     return (fd.workflow.current?.edges ?? []).filter(
@@ -238,55 +241,38 @@
     );
   }
 
-  /** Show/Hide. Hiding a wired port would strand its wires, so it asks first. */
-  function toggleExposed(
+  /**
+   * A locked port (the node type decides) or an exposed port that still has
+   * wires can't be hidden. Showing a hidden port is never blocked.
+   */
+  function exposureBlock(
     direction: Direction,
-    portId: string,
+    port: NodePort,
     exposed: boolean,
     handleId: string
-  ): void {
-    const count = exposed ? edgesOn(handleId).length : 0;
-    if (count > 0) {
-      confirmHide = { direction, portId, count };
-      void tick().then(() =>
-        root?.querySelector<HTMLButtonElement>('[data-testid="port-hide-confirm"]')?.focus()
-      );
-      return;
+  ): ExposureBlock | null {
+    if (port.exposureLocked || (direction === 'inputs' && isTriggerEventInput(node, port.id))) {
+      return { kind: 'locked' };
     }
-    setExposed(direction, portId, !exposed);
+    if (exposed) {
+      const count = edgesOn(handleId).length;
+      if (count > 0) return { kind: 'wired', count };
+    }
+    return null;
   }
 
-  /** Hide the port and remove its wires, as one undo step. */
-  function hideAndDisconnect(): void {
-    const pending = confirmHide;
-    confirmHide = null;
-    const workflow = fd.workflow.current;
-    if (!pending || !workflow || !node) return;
-    const handleId = buildHandleId(
-      node.id,
-      pending.direction === 'inputs' ? 'input' : 'output',
-      pending.portId
-    );
-    const gone = new Set(edgesOn(handleId).map((edge) => edge.id));
-    const ports = buildPortsConfig(
-      portsConfig,
-      pending.direction,
-      orderedPorts(pending.direction),
-      portsFor(pending.direction),
-      (port) =>
-        port.id === pending.portId ? false : isPortExposed(port, portsConfig[pending.direction])
-    );
-    const config = { ...(node.data.config ?? {}) };
-    if (ports === undefined) delete config.ports;
-    else config.ports = ports;
-    // Close any open field session first, so this lands as its own undo step.
-    fd.workflow.finalizeNodeConfig();
-    fd.workflow.batchUpdate({
-      nodes: workflow.nodes.map((n) =>
-        n.id === node.id ? { ...n, data: { ...n.data, config } } : n
-      ),
-      edges: workflow.edges.filter((edge) => !gone.has(edge.id))
-    });
+  /** The row whose refusal reason is open. Tied to a node, so it can't outlive it. */
+  let reasonOpen = $state<{ nodeId: string; direction: Direction; portId: string } | null>(null);
+
+  const isReasonOpen = (direction: Direction, portId: string): boolean =>
+    reasonOpen !== null &&
+    reasonOpen.nodeId === node?.id &&
+    reasonOpen.direction === direction &&
+    reasonOpen.portId === portId;
+
+  function toggleReason(direction: Direction, portId: string): void {
+    if (!node) return;
+    reasonOpen = isReasonOpen(direction, portId) ? null : { nodeId: node.id, direction, portId };
   }
 
   function setExposed(direction: Direction, portId: string, exposed: boolean): void {
@@ -392,13 +378,14 @@
               : undefined}
             {@const ifaceItems = interfaceMenu(direction, port)}
             {@const laneName = checker.getDataTypeConfig(port.dataType)?.name ?? port.dataType}
-            {@const confirming =
-              confirmHide?.direction === direction && confirmHide.portId === port.id}
             {@const handleId = buildHandleId(
               node?.id ?? '',
               direction === 'inputs' ? 'input' : 'output',
               port.id
             )}
+            {@const block = exposureBlock(direction, port, exposed, handleId)}
+            {@const reasonId = `${id}-${direction}-${port.id}-reason`}
+            {@const reasonShown = block !== null && isReasonOpen(direction, port.id)}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
             <li
               class="fd-ports__item"
@@ -468,20 +455,43 @@
                   />
                 {/if}
               </span>
-              <!-- A trigger's event input is always exposed (SCH-47), and so is a
-                   port whose exposure is locked: on, with a lock, no toggle. -->
-              {#if port.exposureLocked || (direction === 'inputs' && isTriggerEventInput(node, port.id))}
-                <span
-                  class="fd-ports__eye-locked"
-                  role="img"
-                  tabindex="0"
-                  aria-label={messages().form.ports.locked({ port: port.name })}
-                  title={messages().form.ports.lockedHint}
-                  data-testid={`port-locked-${direction}-${port.id}`}
+              <!-- A port whose exposure can't change (locked by the node type, or
+                   still wired) shows why instead of toggling. -->
+              {#if block}
+                <IconButton
+                  size="sm"
+                  class="fd-ports__eye fd-ports__eye-blocked"
+                  aria-disabled="true"
+                  aria-expanded={reasonShown}
+                  aria-describedby={reasonShown ? reasonId : undefined}
+                  ariaLabel={block.kind === 'locked'
+                    ? messages().form.ports.locked({ port: port.name })
+                    : messages().form.ports.wired({ port: port.name })}
+                  data-testid={block.kind === 'locked'
+                    ? `port-locked-${direction}-${port.id}`
+                    : `port-wired-${direction}-${port.id}`}
+                  onclick={() => toggleReason(direction, port.id)}
+                  onkeydown={(e) => {
+                    if (e.key !== 'Escape' || !reasonShown) return;
+                    e.stopPropagation();
+                    reasonOpen = null;
+                  }}
                 >
                   <Icon icon="heroicons:eye" />
-                  <Icon class="fd-ports__lock" icon="heroicons:lock-closed-solid" />
-                </span>
+                  <Icon
+                    class="fd-ports__badge"
+                    icon={block.kind === 'locked'
+                      ? 'heroicons:lock-closed-solid'
+                      : 'heroicons:link-solid'}
+                  />
+                </IconButton>
+                {#if reasonShown}
+                  <span class="fd-ports__reason" id={reasonId}>
+                    {block.kind === 'locked'
+                      ? messages().form.ports.lockedHint
+                      : messages().form.ports.wiredHint({ n: block.count })}
+                  </span>
+                {/if}
               {:else}
                 <IconButton
                   size="sm"
@@ -492,36 +502,10 @@
                     : messages().form.ports.show({ port: port.name })}
                   title={exposed ? messages().form.ports.shown : messages().form.ports.hidden}
                   {disabled}
-                  onclick={() => toggleExposed(direction, port.id, exposed, handleId)}
+                  onclick={() => setExposed(direction, port.id, !exposed)}
                 >
                   <Icon icon={exposed ? 'heroicons:eye' : 'heroicons:eye-slash'} />
                 </IconButton>
-              {/if}
-              {#if confirming && confirmHide}
-                <span
-                  class="fd-ports__confirm"
-                  role="group"
-                  aria-label={confirmText(confirmHide.count)}
-                  onkeydown={(e) => {
-                    if (e.key !== 'Escape') return;
-                    e.stopPropagation();
-                    confirmHide = null;
-                  }}
-                >
-                  <span class="fd-ports__confirm-text">{confirmText(confirmHide.count)}</span>
-                  <button
-                    type="button"
-                    class="fd-ports__confirm-yes"
-                    data-testid="port-hide-confirm"
-                    onclick={hideAndDisconnect}>{messages().form.ports.confirm}</button
-                  >
-                  <button
-                    type="button"
-                    class="fd-ports__confirm-no"
-                    data-testid="port-hide-cancel"
-                    onclick={() => (confirmHide = null)}>{messages().form.ports.cancel}</button
-                  >
-                </span>
               {/if}
             </li>
           {/each}
@@ -617,32 +601,24 @@
     width: var(--fd-control-sm);
   }
 
-  /* A locked port: the "on" eye with a lock, not a button. */
-  .fd-ports__eye-locked {
+  /* A blocked port: the "on" eye with a badge; a button that explains, not toggles. */
+  .fd-ports__item :global(.fd-ports__eye-blocked) {
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--fd-control-sm);
-    height: var(--fd-control-sm);
-    color: var(--fd-muted-foreground);
-    border-radius: var(--fd-radius-sm);
-    cursor: default;
   }
 
-  .fd-ports__eye-locked:focus-visible {
+  .fd-ports__item :global(.fd-ports__eye-blocked:focus-visible) {
     outline: 2px solid var(--fd-primary);
     outline-offset: 1px;
   }
 
-  .fd-ports__eye-locked :global(svg) {
+  .fd-ports__item :global(.fd-ports__eye-blocked svg) {
     width: 1rem;
     height: 1rem;
   }
 
   /* The badge sits on the eye's lower right, inside the cell (the eye column
      is the panel's last, so anything past it is clipped). */
-  .fd-ports__eye-locked :global(.fd-ports__lock) {
+  .fd-ports__item :global(.fd-ports__eye-blocked .fd-ports__badge) {
     position: absolute;
     right: 0.15rem;
     bottom: 0.2rem;
@@ -652,37 +628,18 @@
     box-sizing: content-box;
     color: var(--fd-foreground);
     background: var(--fd-background);
-    border-radius: 50%;
+    border-radius: var(--fd-radius-full);
   }
 
-  /* "Hide and remove N connections?" on its own line under the row. */
-  .fd-ports__confirm {
+  /* Why a port can't be hidden, on its own line under the row. */
+  .fd-ports__reason {
     grid-column: 1 / -1;
     grid-row: 2;
     min-width: 0;
-    flex-wrap: wrap;
     padding: 0 var(--fd-space-xs) var(--fd-space-xs) 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: var(--fd-space-xs);
+    text-align: right;
     font-size: var(--fd-text-xs);
-    white-space: nowrap;
-  }
-
-  .fd-ports__confirm button {
-    padding: 0 var(--fd-space-xs);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    background: var(--fd-background);
-    color: var(--fd-foreground);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .fd-ports__confirm .fd-ports__confirm-yes {
-    border-color: var(--fd-error);
-    color: var(--fd-error);
+    color: var(--fd-muted-foreground);
   }
 
   /* Room for the hint or error under the tag being typed. */
