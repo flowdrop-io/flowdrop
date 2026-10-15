@@ -1,0 +1,27 @@
+import { Meta, Story } from '@storybook/addon-docs/blocks';
+import * as AllTokens from './AllTokens.stories.svelte';
+
+<Meta of={AllTokens} />
+
+# All tokens
+
+Every design token of the editor, in one searchable list. Use it when you know roughly what you
+are looking for; to choose a colour or a size for new UI, start with
+[Colour](?path=/docs/foundations-colour--docs) or
+[Spacing and sizes](?path=/docs/foundations-spacing-and-sizes--docs) instead.
+
+## How to read it
+
+- **Base tokens** are the ones new UI builds with: surfaces, text, borders, the primary and
+  accent colours, status colours, spacing, radius, shadow and type.
+- **Editor parts** each restyle one part of the editor, such as nodes, wires or the navbar. A
+  skin changes them; new UI should not use them.
+- Values are what the editor gets with the skin and the light or dark scheme picked in the
+  toolbar. Switch either one and the list follows. A small dot after a name means that skin
+  sets the value itself instead of taking the library default.
+- **→** names the token a value comes from. Click it to look that token up.
+- Click a token's name to copy it as `var(--fd-…)`.
+- **Internal** tokens are hidden by default. The library uses them for its own parts, and they
+  can change in any release.
+
+<Story of={AllTokens.AllTokensStory} />

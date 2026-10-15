@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/sveltekit';
+import remarkGfm from 'remark-gfm';
 import { componentDescriptions } from './componentDescriptions.ts';
 
 const config: StorybookConfig = {
@@ -6,7 +7,11 @@ const config: StorybookConfig = {
   addons: [
     '@storybook/addon-svelte-csf',
     '@chromatic-com/storybook',
-    '@storybook/addon-docs',
+    {
+      // GitHub-style tables in the MDX pages; MDX 3 does not parse them on its own.
+      name: '@storybook/addon-docs',
+      options: { mdxPluginOptions: { mdxCompileOptions: { remarkPlugins: [remarkGfm] } } }
+    },
     '@storybook/addon-vitest',
     '@storybook/addon-themes',
     'storybook-addon-tag-badges'

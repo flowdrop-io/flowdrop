@@ -702,7 +702,7 @@
   --fd-node-title-weight: 500; /* @internal */
   --fd-node-title-clamp: 2; /* @internal  title lines before an ellipsis */
 
-  /* ----- NODE CARD v2 (G8): category wash header, icon tile, half-pill ports -----
+  /* ----- NODE CARD (category wash header, icon tile, half-pill ports) -----
      Geometry (60px header, 20/40px grid, 280/320 width) is fixed in utils/nodeGeometry.ts and is
      not a token: only the look is. Defaults are the Classic theme's look; Graphite sets its own. */
   --fd-node-header-wash: 8%; /* @internal  how much of the category colour the header surface takes */
@@ -914,7 +914,7 @@
   --fd-node-border: #4a4a52;
   --fd-node-border-hover: #5a5a62;
 
-  /* ----- NODE CARD v2 (dark) ----- */
+  /* ----- NODE CARD (dark) ----- */
   --fd-node-header-wash: 16%;
   --fd-node-tile-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   --fd-node-pin-open: #7d8594;

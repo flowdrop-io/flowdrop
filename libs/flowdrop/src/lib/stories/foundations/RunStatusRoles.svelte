@@ -1,13 +1,15 @@
 <!--
   @component
   The five run status roles: what each means, its strong and soft colour, and
-  the real StatusPill the canvas draws with it.
+  the real StatusPill the canvas draws with it. Colours are for the light or
+  dark scheme the toolbar is set to.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import StatusPill, { type StatusPillStatus } from '../../components/primitives/StatusPill.svelte';
   import { STATUS_ROLES } from './keyTokens.js';
-  import { readTokens, onSkinChange } from './probe.js';
+  import { readTokens, onSkinChange, currentScheme } from './probe.js';
+  import './docsChrome.css';
 
   const roles = STATUS_ROLES.map((r) => ({
     ...r,
@@ -15,13 +17,12 @@
     soft: `${r.name}-soft`
   }));
 
-  let light: Record<string, string> = $state({});
-  let dark: Record<string, string> = $state({});
+  // Values in the scheme the toolbar shows.
+  let values: Record<string, string> = $state({});
 
   function refresh() {
     const names = roles.flatMap((r) => [r.name, r.soft]);
-    light = readTokens(names, 'light');
-    dark = readTokens(names, 'dark');
+    values = readTokens(names, currentScheme());
   }
 
   onMount(() => {
@@ -30,7 +31,7 @@
   });
 </script>
 
-<ul class="roles">
+<ul class="roles docs-chrome">
   {#each roles as r (r.name)}
     <li class="roles__row">
       <span class="roles__pill"><StatusPill status={r.status} /></span>
@@ -39,10 +40,8 @@
         <span class="roles__use">{r.use}</span>
       </span>
       <span class="roles__chips" aria-hidden="true">
-        <span title="Strong, light" class="roles__chip" style:background={light[r.name]}></span>
-        <span title="Soft, light" class="roles__chip" style:background={light[r.soft]}></span>
-        <span title="Strong, dark" class="roles__chip" style:background={dark[r.name]}></span>
-        <span title="Soft, dark" class="roles__chip" style:background={dark[r.soft]}></span>
+        <span title="Strong" class="roles__chip" style:background={values[r.name]}></span>
+        <span title="Soft" class="roles__chip" style:background={values[r.soft]}></span>
       </span>
     </li>
   {/each}
@@ -50,15 +49,15 @@
 
 <style>
   .roles {
-    /* Its own surface: the docs page around it stays light in dark mode. */
-    background: var(--fd-background);
+    /* Its own surface: the docs page around it stays light in either scheme. */
+    background: var(--docs-bg);
     border-radius: var(--fd-radius-lg);
     list-style: none;
     margin: 0;
     padding: 24px;
     max-width: 880px;
     font-family: var(--fd-font-sans);
-    color: var(--fd-foreground);
+    color: var(--docs-fg);
   }
   .roles__row {
     display: grid;
@@ -66,7 +65,7 @@
     gap: 16px;
     align-items: center;
     padding: 12px 0;
-    border-bottom: 1px solid var(--fd-border-muted);
+    border-bottom: 1px solid var(--docs-border-muted);
   }
   .roles__text {
     display: grid;
@@ -78,7 +77,7 @@
   }
   .roles__use {
     font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
+    color: var(--docs-muted-fg);
   }
   .roles__chips {
     display: inline-flex;
@@ -89,9 +88,6 @@
     height: 20px;
     border-radius: var(--fd-radius-sm);
     box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1);
-  }
-  .roles__chip:nth-child(3) {
-    margin-left: 8px;
   }
   @media (max-width: 640px) {
     .roles__row {

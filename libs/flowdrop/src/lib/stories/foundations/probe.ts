@@ -12,7 +12,16 @@ export type Scheme = 'light' | 'dark';
 
 const SKIN_STYLE_ID = 'storybook-skin-tokens';
 
-/** Computed values of `names` (with leading `--`) for one scheme. */
+/** The light/dark scheme the toolbar shows (the preview puts it on <body>). */
+export function currentScheme(): Scheme {
+  return document.body.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+
+/**
+ * Computed values of `names` (with leading `--`) for one scheme. Ask only for
+ * `currentScheme()`: on a dark page nothing re-declares the library's light
+ * tokens on the probe, so 'light' comes back with the dark library values.
+ */
 export function readTokens(names: readonly string[], scheme: Scheme): Record<string, string> {
   const probe = document.createElement('div');
   const scope = document.body.getAttribute(SCOPE_ATTR);
@@ -31,6 +40,22 @@ export function readTokens(names: readonly string[], scheme: Scheme): Record<str
 export function skinSetTokens(): Set<string> {
   const css = document.getElementById(SKIN_STYLE_ID)?.textContent ?? '';
   return new Set([...css.matchAll(/(--fd-[\w-]+)\s*:/g)].map((m) => m[1]));
+}
+
+/**
+ * The values the active skin declares, as written (`var(--fd-gray-4)`, not the
+ * resolved colour), split by its light rule and its `[data-theme='dark']` rule.
+ */
+export function skinDeclarations(): Record<Scheme, Record<string, string>> {
+  const css = document.getElementById(SKIN_STYLE_ID)?.textContent ?? '';
+  const out: Record<Scheme, Record<string, string>> = { light: {}, dark: {} };
+  for (const rule of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    const into = /data-theme=['"]?dark/.test(rule[1]) ? out.dark : out.light;
+    for (const d of rule[2].matchAll(/(--fd-[\w-]+)\s*:\s*([^;]+);/g)) {
+      into[d[1]] = d[2].replace(/\s+/g, ' ').trim();
+    }
+  }
+  return out;
 }
 
 /** Calls `cb` whenever the skin or the light/dark switch changes. Returns a stop function. */

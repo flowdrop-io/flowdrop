@@ -7,6 +7,7 @@
   import SkinSample from './SkinSample.svelte';
   import { resolveTheme } from '../../themes/index.js';
   import type { FlowDropThemeName } from '../../types/theme.js';
+  import './docsChrome.css';
 
   let base: FlowDropThemeName = $state('graphite');
   let primary = $state('#7c3aed');
@@ -42,7 +43,7 @@
   });
 </script>
 
-<div class="play">
+<div class="play docs-chrome">
   <form class="play__controls" onsubmit={(e) => e.preventDefault()}>
     <label class="play__field">
       <span>Base theme</span>
@@ -72,8 +73,8 @@
 
 <style>
   .play {
-    /* Its own surface: the docs page around it stays light in dark mode. */
-    background: var(--fd-background);
+    /* Docs chrome stays light in either scheme; only the samples follow the toolbar. */
+    background: var(--docs-bg);
     border-radius: var(--fd-radius-lg);
     display: grid;
     grid-template-columns: minmax(200px, 260px) minmax(240px, 320px);
@@ -81,7 +82,7 @@
     gap: 16px;
     padding: 24px;
     font-family: var(--fd-font-sans);
-    color: var(--fd-foreground);
+    color: var(--docs-fg);
   }
   .play__controls {
     grid-area: controls;
@@ -101,10 +102,10 @@
   }
   .play__field select {
     height: var(--fd-control-md);
-    border: 1px solid var(--fd-border-strong);
+    border: 1px solid var(--docs-border-strong);
     border-radius: var(--fd-control-radius);
-    background: var(--fd-background);
-    color: var(--fd-foreground);
+    background: var(--docs-bg);
+    color: var(--docs-fg);
     font: inherit;
   }
   .play__code {
@@ -112,7 +113,7 @@
     margin: 0;
     padding: 12px 14px;
     border-radius: var(--fd-radius-lg);
-    background: var(--fd-muted);
+    background: var(--docs-subtle);
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-xs);
     overflow-x: auto;

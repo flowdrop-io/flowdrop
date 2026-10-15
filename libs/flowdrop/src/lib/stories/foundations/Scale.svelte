@@ -1,12 +1,14 @@
 <!--
   @component
   One design scale (type, spacing, radius, shadow or control height), drawn
-  at its real size with the value the selected skin gives each step.
+  at its real size with the value the selected skin gives each step, in the
+  light or dark scheme the toolbar is set to.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { SCALES, type ScaleKind } from './keyTokens.js';
-  import { readTokens, skinSetTokens, onSkinChange } from './probe.js';
+  import { readTokens, skinSetTokens, onSkinChange, currentScheme } from './probe.js';
+  import './docsChrome.css';
 
   interface Props {
     kind: ScaleKind;
@@ -27,7 +29,7 @@
   function refresh() {
     values = readTokens(
       steps.map((s) => s.name),
-      'light'
+      currentScheme()
     );
     fromSkin = skinSetTokens();
   }
@@ -38,7 +40,7 @@
   });
 </script>
 
-<ul class="scale scale--{kind}">
+<ul class="scale docs-chrome scale--{kind}">
   {#each steps as s (s.name)}
     {@const v = values[s.name] ?? ''}
     <li class="scale__row">
@@ -73,8 +75,8 @@
 
 <style>
   .scale {
-    /* Its own surface: the docs page around it stays light in dark mode. */
-    background: var(--fd-background);
+    /* Its own surface: the docs page around it stays light in either scheme. */
+    background: var(--docs-bg);
     border-radius: var(--fd-radius-lg);
     list-style: none;
     margin: 0;
@@ -83,7 +85,7 @@
     gap: 0;
     max-width: 880px;
     font-family: var(--fd-font-sans);
-    color: var(--fd-foreground);
+    color: var(--docs-fg);
   }
   .scale__row {
     display: grid;
@@ -91,7 +93,7 @@
     gap: 16px;
     align-items: center;
     padding: 12px 0;
-    border-bottom: 1px solid var(--fd-border-muted);
+    border-bottom: 1px solid var(--docs-border-muted);
   }
   .scale__sample {
     display: flex;
@@ -108,7 +110,7 @@
   }
   .scale__use {
     font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
+    color: var(--docs-muted-fg);
   }
   .scale__value {
     display: flex;
@@ -116,15 +118,15 @@
     align-items: center;
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
+    color: var(--docs-muted-fg);
   }
   .scale__skin {
     font-family: var(--fd-font-sans);
     font-size: var(--fd-text-2xs);
     padding: 1px 6px;
     border-radius: var(--fd-radius-full);
-    background: var(--fd-accent-muted);
-    color: var(--fd-accent);
+    background: var(--docs-accent-muted);
+    color: var(--docs-accent);
   }
   .scale__space {
     display: inline-flex;
@@ -134,24 +136,24 @@
     width: 16px;
     height: 16px;
     border-radius: 3px;
-    background: var(--fd-muted);
-    box-shadow: inset 0 0 0 1px var(--fd-border-strong);
+    background: var(--docs-subtle);
+    box-shadow: inset 0 0 0 1px var(--docs-border-strong);
   }
   .scale__gap {
     height: 16px;
-    background: var(--fd-accent-muted);
+    background: var(--docs-accent-muted);
   }
   .scale__radius {
     width: 56px;
     height: 36px;
-    background: var(--fd-card);
-    border: 1px solid var(--fd-border-strong);
+    background: var(--docs-bg);
+    border: 1px solid var(--docs-border-strong);
   }
   .scale__shadow {
     width: 88px;
     height: 44px;
     border-radius: var(--fd-radius-lg);
-    background: var(--fd-card);
+    background: var(--docs-bg);
   }
   .scale--shadow .scale__row {
     padding: 18px 0;
@@ -161,8 +163,8 @@
     align-items: center;
     padding: 0 12px;
     border-radius: var(--fd-control-radius);
-    border: 1px solid var(--fd-border-strong);
-    background: var(--fd-background);
+    border: 1px solid var(--docs-border-strong);
+    background: var(--docs-bg);
     font-size: var(--fd-text-sm);
   }
   @media (max-width: 640px) {

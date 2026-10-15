@@ -1,12 +1,13 @@
 <!--
   @component
-  The colours you use most, grouped by job. Each token shows its light and dark
-  value side by side, read from the skin selected in the toolbar.
+  The colours you use most, grouped by job. Each token shows its value for the
+  skin and the light or dark scheme selected in the toolbar.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { KEY_COLOURS, type KeyGroup } from './keyTokens.js';
-  import { readTokens, skinSetTokens, onSkinChange } from './probe.js';
+  import { readTokens, skinSetTokens, onSkinChange, currentScheme, type Scheme } from './probe.js';
+  import './docsChrome.css';
 
   interface Props {
     /** Which groups to show, by title. All when empty. */
@@ -20,13 +21,14 @@
   );
   const names = $derived(shown.flatMap((g) => g.tokens.map((t) => t.name)));
 
-  let light: Record<string, string> = $state({});
-  let dark: Record<string, string> = $state({});
+  // Values in the scheme the toolbar shows.
+  let scheme: Scheme = $state('light');
+  let values: Record<string, string> = $state({});
   let fromSkin: Set<string> = $state(new Set());
 
   function refresh() {
-    light = readTokens(names, 'light');
-    dark = readTokens(names, 'dark');
+    scheme = currentScheme();
+    values = readTokens(names, scheme);
     fromSkin = skinSetTokens();
   }
 
@@ -36,7 +38,7 @@
   });
 </script>
 
-<div class="key">
+<div class="key docs-chrome">
   {#each shown as group (group.title)}
     <section class="key__group">
       <h3 class="key__title">{group.title}</h3>
@@ -44,17 +46,13 @@
       <ul class="key__list">
         {#each group.tokens as t (t.name)}
           <li class="key__row">
-            <span class="key__pair" aria-hidden="true">
-              <span class="key__chip" style:background={light[t.name]}></span>
-              <span class="key__chip" style:background={dark[t.name]}></span>
-            </span>
+            <span class="key__chip" aria-hidden="true" style:background={values[t.name]}></span>
             <span class="key__text">
               <code class="key__name">{t.name}</code>
               <span class="key__use">{t.use}</span>
             </span>
             <span class="key__values">
-              <span title="Light">{light[t.name]}</span>
-              <span title="Dark">{dark[t.name]}</span>
+              <span title="Value ({scheme})">{values[t.name]}</span>
               {#if fromSkin.has(t.name)}<span class="key__skin">set by skin</span>{/if}
             </span>
           </li>
@@ -62,20 +60,20 @@
       </ul>
     </section>
   {/each}
-  <p class="key__legend">Left chip light, right chip dark.</p>
+  <p class="key__legend">Values for the {scheme} scheme, as set in the toolbar.</p>
 </div>
 
 <style>
   .key {
-    /* Its own surface: the docs page around it stays light in dark mode. */
-    background: var(--fd-background);
+    /* Its own surface: the docs page around it stays light in either scheme. */
+    background: var(--docs-bg);
     border-radius: var(--fd-radius-lg);
     display: grid;
     gap: 28px;
     padding: 24px;
     max-width: 880px;
     font-family: var(--fd-font-sans);
-    color: var(--fd-foreground);
+    color: var(--docs-fg);
   }
   .key__title {
     margin: 0 0 4px;
@@ -85,14 +83,14 @@
   .key__intro {
     margin: 0 0 12px;
     font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
+    color: var(--docs-muted-fg);
     max-width: 62ch;
   }
   .key__list {
     list-style: none;
     margin: 0;
     padding: 0;
-    border: 1px solid var(--fd-border);
+    border: 1px solid var(--docs-border);
     border-radius: var(--fd-radius-lg);
     overflow: hidden;
   }
@@ -102,20 +100,15 @@
     align-items: center;
     gap: 14px;
     padding: 10px 14px;
-    background: var(--fd-background);
+    background: var(--docs-bg);
   }
   .key__row + .key__row {
-    border-top: 1px solid var(--fd-border-muted);
-  }
-  .key__pair {
-    display: inline-flex;
-    border-radius: var(--fd-radius-md);
-    overflow: hidden;
-    box-shadow: inset 0 0 0 1px var(--fd-border);
+    border-top: 1px solid var(--docs-border-muted);
   }
   .key__chip {
     width: 28px;
     height: 28px;
+    border-radius: var(--fd-radius-md);
     box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08);
   }
   .key__text {
@@ -129,7 +122,7 @@
   }
   .key__use {
     font-size: var(--fd-text-sm);
-    color: var(--fd-muted-foreground);
+    color: var(--docs-muted-fg);
   }
   .key__values {
     display: flex;
@@ -137,19 +130,19 @@
     align-items: center;
     font-family: var(--fd-font-mono);
     font-size: var(--fd-text-2xs);
-    color: var(--fd-muted-foreground);
+    color: var(--docs-muted-fg);
   }
   .key__skin {
     font-family: var(--fd-font-sans);
     padding: 1px 6px;
     border-radius: var(--fd-radius-full);
-    background: var(--fd-accent-muted);
-    color: var(--fd-accent);
+    background: var(--docs-accent-muted);
+    color: var(--docs-accent);
   }
   .key__legend {
     margin: 0;
     font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
+    color: var(--docs-muted-fg);
   }
   @media (max-width: 640px) {
     .key__row {
