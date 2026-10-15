@@ -231,15 +231,18 @@
   /** Why this port's exposure can't be toggled right now, or null. */
   type ExposureBlock = { kind: 'locked' } | { kind: 'wired'; count: number };
 
-  /** The edges on one of this node's handles (a read: nothing here writes the graph). */
-  function edgesOn(handleId: string) {
+  /** Edges on each of this node's handles, counted once per edge change. */
+  const wiresByHandle = $derived.by(() => {
+    const counts = new Map<string, number>();
     const nodeId = node?.id;
-    return (fd.workflow.current?.edges ?? []).filter(
-      (edge) =>
-        (edge.source === nodeId && edge.sourceHandle === handleId) ||
-        (edge.target === nodeId && edge.targetHandle === handleId)
-    );
-  }
+    for (const edge of fd.workflow.current?.edges ?? []) {
+      if (edge.source === nodeId && edge.sourceHandle)
+        counts.set(edge.sourceHandle, (counts.get(edge.sourceHandle) ?? 0) + 1);
+      if (edge.target === nodeId && edge.targetHandle)
+        counts.set(edge.targetHandle, (counts.get(edge.targetHandle) ?? 0) + 1);
+    }
+    return counts;
+  });
 
   /**
    * A locked port (the node type decides) or an exposed port that still has
@@ -255,7 +258,7 @@
       return { kind: 'locked' };
     }
     if (exposed) {
-      const count = edgesOn(handleId).length;
+      const count = wiresByHandle.get(handleId) ?? 0;
       if (count > 0) return { kind: 'wired', count };
     }
     return null;
@@ -461,7 +464,6 @@
                 <IconButton
                   size="sm"
                   class="fd-ports__eye fd-ports__eye-blocked"
-                  aria-disabled="true"
                   aria-expanded={reasonShown}
                   aria-describedby={reasonShown ? reasonId : undefined}
                   ariaLabel={block.kind === 'locked'

@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Console `clear --all`.** Removes everything `clear` does and also the workflow's interface and the
+  Playground chat settings.
+- **`NodePort.exposureLocked`.** Port metadata for a node type that always shows a port: the instance
+  `ports` config can't hide it, and `exposedByDefault` is ignored for it. The Ports tab shows the port's
+  "on" eye with a lock badge and no toggle.
+
+### Changed
+
+- **Console `clear` keeps the interface.** Its entries stay, with their bindings dropped, and the Playground
+  replies are removed, all in one undo step.
+- **A wired port can't be hidden in the Ports tab.** A shown port that still has connections keeps its eye,
+  with a link badge; activating it says to remove the connections on the canvas first. Locked ports use the
+  same eye with a lock badge.
+
+### Fixed
+
+- **Deleting a node drops the Playground replies that named it.** A workflow with such a reply was refused
+  when saved.
+
 ## [2.13.0] - 2026-10-14
 
 ### Added

@@ -71,14 +71,12 @@ test.describe('Node inspector', () => {
       const locked = page.getByTestId(`port-locked-${group}-trigger`);
       const row = page.locator(`[data-port-row="${group}:trigger"]`);
       await expect(locked).toBeVisible();
-      await expect(locked).toHaveAttribute('aria-disabled', 'true');
       await expect(locked).toHaveAttribute('aria-label', 'Trigger is always shown');
       await expect(row).not.toHaveClass(/--hidden/);
 
       const hint = row.getByText('Always shown. The node type decides this port.');
       await expect(hint).toHaveCount(0);
-      // Playwright treats aria-disabled as not enabled; the button is meant to be activated.
-      await locked.click({ force: true });
+      await locked.click();
       await expect(hint).toBeVisible();
       await expect(locked).toHaveAttribute('aria-expanded', 'true');
       await locked.press('Escape');
@@ -98,10 +96,10 @@ test.describe('Node inspector', () => {
     const row = page.locator('[data-port-row="outputs:format"]');
     const blocked = page.getByTestId('port-wired-outputs-format');
     await expect(blocked).toBeVisible();
-    await expect(blocked).toHaveAttribute('aria-disabled', 'true');
+    await expect(blocked).toHaveAttribute('aria-label', "format is connected and can't be hidden");
     await expect(row.getByRole('button', { name: 'Hide port format' })).toHaveCount(0);
 
-    await blocked.click({ force: true });
+    await blocked.click();
     await expect(
       row.getByText('Connected (1). Remove its connection on the canvas to hide it.')
     ).toBeVisible();

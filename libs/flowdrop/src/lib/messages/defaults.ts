@@ -38,7 +38,7 @@ export const defaultMessages = {
       hidden: 'Hidden from the canvas',
       locked: ({ port }: { port: string }) => `${port} is always shown`,
       lockedHint: 'Always shown. The node type decides this port.',
-      wired: ({ port }: { port: string }) => `${port} is connected`,
+      wired: ({ port }: { port: string }) => `${port} is connected and can't be hidden`,
       wiredHint: ({ n }: { n: number }) =>
         n === 1
           ? 'Connected (1). Remove its connection on the canvas to hide it.'
