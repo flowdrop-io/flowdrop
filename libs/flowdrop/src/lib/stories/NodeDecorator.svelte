@@ -8,18 +8,24 @@
   - `statuses`: run status by node id (a single `data` node has the id `story-node`).
   - `testMode`: Test mode, which also draws the status border and dims nodes the run did not reach.
   - `zoom`: the zoom the canvas opens at (see `ZOOM_LEVELS` in utils.ts for the tier of each).
+  - `problems`: the Doctor's findings (see `seedDoctor` in utils.ts).
+  - `header`: drawn above the canvas with the same instance, e.g. the Navbar with the
+    Problems indicator.
 -->
 <script lang="ts">
   import { SvelteFlow } from '@xyflow/svelte';
   import type { Node } from '@xyflow/svelte';
+  import { onDestroy, type Snippet } from 'svelte';
   import '@xyflow/svelte/dist/style.css';
   import UniversalNode from '$lib/components/UniversalNode.svelte';
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import type { WorkflowNode } from '$lib/types/index.js';
+  import type { DoctorProblem } from '$lib/types/doctor.js';
   import CanvasChrome from './CanvasChrome.svelte';
   import { useColorMode } from './colorMode.svelte.js';
   import {
     createStoryInstance,
+    seedDoctor,
     seedRunState,
     type StoryNode,
     type StoryStatuses
@@ -38,6 +44,10 @@
     testMode?: boolean;
     /** Zoom the canvas opens at. Without it the view fits the nodes (up to 100%). */
     zoom?: number;
+    /** The Doctor's findings: node badges, and the Problems indicator if `header` draws it. */
+    problems?: DoctorProblem[];
+    /** Drawn above the canvas, inside the same instance. */
+    header?: Snippet;
     width?: number;
     height?: number;
   }
@@ -49,6 +59,8 @@
     statuses,
     testMode = false,
     zoom,
+    problems,
+    header,
     width = 800,
     height = 400
   }: Props = $props();
@@ -72,6 +84,12 @@
     )
   );
 
+  // svelte-ignore state_referenced_locally
+  if (problems) {
+    const stop = seedDoctor(fd, given ?? [{ id: 'story-node', data: data!, selected }], problems);
+    onDestroy(stop);
+  }
+
   const color = useColorMode();
   let fitViewOptions = $derived(
     zoom === undefined
@@ -80,6 +98,9 @@
   );
 </script>
 
+{#if header}
+  <div style:width="{width}px">{@render header()}</div>
+{/if}
 <div class="node-decorator-wrapper" style:width="{width}px" style:height="{height}px">
   <SvelteFlow
     {nodes}

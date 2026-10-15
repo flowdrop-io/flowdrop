@@ -21,6 +21,8 @@ import type {
   ReviewConfig,
   ReviewChange
 } from '$lib/types/interrupt.js';
+import type { DoctorProblem } from '$lib/types/doctor.js';
+import { createEndpointConfig } from '$lib/config/endpoints.js';
 
 /** Fields of a node on the canvas, with the node type's metadata given as a partial. */
 export type SampleNodeOverrides = Omit<Partial<WorkflowNode['data']>, 'metadata'> & {
@@ -162,6 +164,74 @@ export function seedRunState(
     );
   }
   fd.editedNodes.setVisible(testMode);
+}
+
+/** The Doctor's fake backend: nothing listens there; `seedDoctor` answers it. */
+const DOCTOR_API_BASE = 'https://storybook.invalid/api/doctor';
+
+/** Diagnose answers by workflow id, for every story that seeded the Doctor. */
+const diagnoseAnswers = new Map<string, DoctorProblem[]>();
+let fetchBeforeDoctor: typeof fetch | null = null;
+
+function doctorFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  const match = url.startsWith(DOCTOR_API_BASE)
+    ? /\/workflow\/([^/?]+)\/diagnose/.exec(url.slice(DOCTOR_API_BASE.length))
+    : null;
+  const problems = match ? diagnoseAnswers.get(decodeURIComponent(match[1])) : undefined;
+  if (problems) {
+    return Promise.resolve(
+      new Response(JSON.stringify({ success: true, data: { problems } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    );
+  }
+  return fetchBeforeDoctor!(input, init);
+}
+
+/**
+ * Show the Doctor's findings without a backend: the node badges, the error
+ * border and the navbar's Problems indicator are then the editor's own. The
+ * instance gets a saved workflow holding `nodes` (the Problems list names them)
+ * and an endpoint config with a Doctor, and its diagnose request is answered
+ * with `problems`. One fetch stub serves every story on the page, so several
+ * can be mounted at once. Returns the function that stops answering.
+ */
+export function seedDoctor(
+  fd: FlowDropInstance,
+  nodes: StoryNode[],
+  problems: DoctorProblem[]
+): () => void {
+  const workflowId = `${fd.id}-workflow`;
+  const now = new Date().toISOString();
+  fd.api.configure(createEndpointConfig(DOCTOR_API_BASE));
+  fd.workflow.initialize({
+    id: workflowId,
+    name: 'Story workflow',
+    nodes: nodes.map((n) => ({
+      id: n.id,
+      type: 'universalNode',
+      position: { x: n.x ?? 0, y: n.y ?? 0 },
+      data: n.data
+    })),
+    edges: [],
+    metadata: { schemaVersion: '1.0.0', createdAt: now, updatedAt: now }
+  });
+  if (!fetchBeforeDoctor) {
+    fetchBeforeDoctor = window.fetch;
+    window.fetch = doctorFetch;
+  }
+  diagnoseAnswers.set(workflowId, problems);
+  // The first check of a workflow does not wait; schedule() also turns the feature on.
+  fd.doctor.schedule();
+  return () => {
+    diagnoseAnswers.delete(workflowId);
+    if (diagnoseAnswers.size === 0 && fetchBeforeDoctor && window.fetch === doctorFetch) {
+      window.fetch = fetchBeforeDoctor;
+      fetchBeforeDoctor = null;
+    }
+  };
 }
 
 /** The canvas zoom a story opens at, and what it draws there. */
