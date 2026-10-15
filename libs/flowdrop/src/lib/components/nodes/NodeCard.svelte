@@ -712,8 +712,11 @@
   }
 
   /* Handles: placed from the geometry (inline top), centred on the card edge.
-     Wired = filled with the type colour; open = outlined in it. */
+     Wired = filled with the type colour; open = outlined in it. Above the
+     card's border ring (::after, z-index 1), so an open port's fill hides the
+     border it sits on instead of letting it run through the ring. */
   :global(.svelte-flow .svelte-flow__handle.flowdrop-workflow-node__handle) {
+    z-index: 2;
     --fd-handle-fill: var(--_c);
     --fd-handle-border-color: var(--fd-handle-border);
   }
