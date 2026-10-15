@@ -44,7 +44,7 @@ export type {
 export { inspect } from './inspect.js';
 export { sweep, formatSweep } from './sweep.js';
 export type { SweepPhase, SweepResult } from './sweep.js';
-export { applyProposalToNodes, applySweepToNodes, buildPortsConfig } from './toWorkflow.js';
+export { applyProposalToNodes, applySweepToNodes, portsConfigForOrder } from './toWorkflow.js';
 export type { NodeLayoutUpdate } from './toWorkflow.js';
 export { loopbackLanes } from './geometry.js';
 export type { LoopbackLane } from './geometry.js';

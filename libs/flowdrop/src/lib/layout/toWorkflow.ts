@@ -3,23 +3,22 @@
  *
  * The executor dispatches the result: a new `position`, and for a port reorder the node's whole
  * next `data.config` with `ports` rebuilt so the stored order matches the new handle order (D6).
- * Ports that are hidden, and ports the card does not show, keep their entries exactly; only the
- * visible ports trade places, among the slots the visible ports already held. Like the Ports tab,
- * a direction that ends up in default order with no exposure override stores nothing. Reserved
- * ports are always written last.
+ * Hidden ports, and entries for ports the node does not have, keep their places; only the visible
+ * ports trade places, among the slots the visible ports already held. The write itself is the
+ * Ports tab's (`buildPortsConfig`), so a direction that ends up in default order with no exposure
+ * override stores nothing. Reserved ports are always written last.
  *
  * @module layout/toWorkflow
  */
 
-import type {
-  DynamicPort,
-  NodePort,
-  PortConfigEntry,
-  PortsConfig,
-  WorkflowNode
-} from '../types/index.js';
+import type { DynamicPort, NodePort, PortsConfig, WorkflowNode } from '../types/index.js';
 import { dynamicPortToNodePort } from '../types/index.js';
-import { byDefaultOrder, isReservedPort, orderPortsFor } from '../utils/portUtils.js';
+import {
+  buildPortsConfig,
+  isPortExposed,
+  isReservedPort,
+  orderPortsFor
+} from '../utils/portUtils.js';
 import type { LayoutProposal } from './primitives.js';
 import type { SweepResult } from './sweep.js';
 
@@ -46,53 +45,34 @@ function allPorts(node: WorkflowNode, direction: Direction): NodePort[] {
 }
 
 /**
- * The `ports` config after the visible ports of one direction take the order `to`. Entries are
- * kept as stored (exposure included); `undefined` when nothing needs storing.
+ * The `ports` config after the visible ports of one direction take the order `to`. The visible
+ * ports trade places among the slots they already held; hidden ports keep theirs. Written by
+ * `buildPortsConfig`, like every other `ports` edit; `undefined` when nothing needs storing.
  */
-export function buildPortsConfig(
+export function portsConfigForOrder(
   node: WorkflowNode,
   direction: Direction,
   to: readonly string[]
 ): PortsConfig | undefined {
-  const stored = (node.data?.config?.ports as PortsConfig | undefined) ?? {};
-  const entries = stored[direction];
+  const stored = node.data?.config?.ports as PortsConfig | undefined;
+  const entries = stored?.[direction];
   const ports = allPorts(node, direction);
-  const known = new Set(ports.map((p) => p.id));
-  const current = orderPortsFor(ports, entries).map((p) => p.id);
+  const current = orderPortsFor(ports, entries);
 
   // The visible ports hold slots in the current order; `to` refills them. Hidden ports stay put.
+  const byId = new Map(ports.map((p) => [p.id, p]));
   const wanted = new Set(to);
-  const slots = current.flatMap((id, i) => (wanted.has(id) ? [i] : []));
-  const refill = to.filter((id) => known.has(id));
-  const order = [...current];
-  slots.forEach((slot, i) => {
-    order[slot] = refill[i];
-  });
+  const refill = to.flatMap((id) => byId.get(id) ?? []);
+  let next = 0;
+  const order = current.map((p) => (wanted.has(p.id) ? (refill[next++] ?? p) : p));
 
   // Reserved ports (trigger, tool, error, loop_back) are written last, the way the card shows
   // them, whatever slot an older stored order gave them (Q3).
-  const reserved = new Set(ports.filter(isReservedPort).map((p) => p.id));
   const tidy = [
-    ...order.filter((id) => !reserved.has(id)),
-    ...order.filter((id) => reserved.has(id))
+    ...order.filter((p) => !isReservedPort(p)),
+    ...order.filter((p) => isReservedPort(p))
   ];
-
-  const byId = new Map((entries ?? []).map((e) => [e.id, e]));
-  const next: PortConfigEntry[] = tidy.map((id) => ({ ...(byId.get(id) ?? { id }) }));
-  // Entries for ports the node no longer has stay as they were.
-  for (const entry of entries ?? []) if (!known.has(entry.id)) next.push({ ...entry });
-
-  const defaultOrder = byDefaultOrder(ports).map((p) => p.id);
-  const keep =
-    next.some((e, i) => e.id !== defaultOrder[i]) || next.some((e) => e.exposed !== undefined);
-
-  const result: PortsConfig = { ...stored };
-  if (keep) result[direction] = next;
-  else delete result[direction];
-  for (const key of ['inputs', 'outputs'] as const) {
-    if (result[key]?.length === 0) delete result[key];
-  }
-  return Object.keys(result).length === 0 ? undefined : result;
+  return buildPortsConfig(stored, direction, tidy, ports, (p) => isPortExposed(p, entries));
 }
 
 /**
@@ -122,7 +102,7 @@ export function applyProposalToNodes(
     for (const direction of ['inputs', 'outputs'] as const) {
       const change = proposal.changes.ports?.[direction];
       if (!change) continue;
-      const ports = buildPortsConfig(next, direction, change.to);
+      const ports = portsConfigForOrder(next, direction, change.to);
       const config = { ...(next.data?.config ?? {}) } as Record<string, unknown>;
       if (ports) config.ports = ports;
       else delete config.ports;

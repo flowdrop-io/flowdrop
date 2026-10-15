@@ -120,6 +120,9 @@ export type PortsDirection = 'inputs' | 'outputs';
  * is dropped when it equals the port's default, the whole direction is dropped
  * when it carries neither a reorder nor an exposure override, and the result
  * collapses to `undefined` when empty, so an untouched node stores nothing.
+ * Entries for ports the node doesn't have (a port of a newer node type, say)
+ * are kept as stored, after the others. The one writer of `config.ports`: the
+ * Ports tab, bulk Show/Hide and the layout reorder all go through it.
  *
  * @param current - the stored value; the other direction is carried over from it
  * @param direction - the direction being written
@@ -144,13 +147,17 @@ export function buildPortsConfig(
     return entry;
   });
 
+  const known = new Set(allPorts.map((p) => p.id));
+  const unknown = (current?.[direction] ?? []).filter((e) => !known.has(e.id));
+
   const defaultOrder = byDefaultOrder(allPorts).map((p) => p.id);
   const orderChanged = entries.some((e, i) => e.id !== defaultOrder[i]);
   const hasExposureOverride = entries.some((e) => e.exposed !== undefined);
 
   const next: PortsConfig = { ...current };
-  if (orderChanged || hasExposureOverride) next[direction] = entries;
-  else delete next[direction];
+  if (orderChanged || hasExposureOverride || unknown.length > 0) {
+    next[direction] = [...entries, ...unknown.map((e) => ({ ...e }))];
+  } else delete next[direction];
 
   // The untouched direction is carried over verbatim, but an earlier edit may
   // have left an empty array; prune it so an all-default node collapses to

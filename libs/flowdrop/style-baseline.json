@@ -33,9 +33,6 @@
   "src/lib/components/EditorStatusBar.svelte": {
     "radius": 1
   },
-  "src/lib/components/IconButton.svelte": {
-    "button": 1
-  },
   "src/lib/components/Logo.svelte": {
     "colour": 8
   },

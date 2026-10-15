@@ -18,7 +18,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import Button from '$lib/components/Button.svelte';
-  import IconButton from '$lib/components/IconButton.svelte';
+  import IconButton from '$lib/components/primitives/IconButton.svelte';
   import { m } from '$lib/messages/index.js';
   import type { RankedBindablePort } from '$lib/utils/workflowInterface.js';
   import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
@@ -83,7 +83,6 @@
       </div>
     </div>
     <IconButton
-      size="sm"
       class="wf-composer__close"
       ariaLabel={m().workflowInterface.composerClose}
       onclick={onCancel}

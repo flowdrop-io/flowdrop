@@ -3,7 +3,7 @@
 
   `ariaLabel` is required because there is no visible text. `active` renders a
   toggle (aria-pressed). Heights/widths come from --fd-control-sm / -md. The
-  legacy `components/IconButton.svelte` is untouched.
+  library's only icon button.
 
   @internal Not exported from any package entry; not public API yet.
 -->

@@ -319,6 +319,18 @@ describe('buildPortsConfig', () => {
     ).toBeUndefined();
   });
 
+  it('keeps entries for ports the node does not have, after the others', () => {
+    expect(
+      buildPortsConfig(
+        { inputs: [{ id: 'ghost', exposed: false }, { id: 'a' }] },
+        'inputs',
+        inputs,
+        inputs,
+        () => true
+      )
+    ).toEqual({ inputs: [{ id: 'a' }, { id: 'b' }, { id: 'ghost', exposed: false }] });
+  });
+
   it('never stores an exposure flag for a locked port', () => {
     const locked = [port('a', 'input', { exposureLocked: true, exposedByDefault: false })];
     expect(buildPortsConfig(undefined, 'inputs', locked, locked, () => true)).toBeUndefined();

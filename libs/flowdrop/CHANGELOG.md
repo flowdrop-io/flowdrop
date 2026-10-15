@@ -31,6 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that empties the chat settings, the interface's old `turn` marks no longer take over as the chat.
 - **"Hide unconnected ports" no longer counts a locked port.** A port the node type always shows is left
   alone, as in the Ports tab.
+- **Editing ports keeps entries for ports the node doesn't have.** The Ports tab and bulk Show/Hide used to
+  drop a stored `ports` entry whose port the node type no longer lists; they now keep it, as Tidy up already
+  did. All three write `ports` the same way.
+
+### Removed
+
+- **The `.flowdrop-btn--icon*` classes in `base.css`.** Every icon button in the library uses the
+  `IconButton` primitive, which has its own styles.
 
 ## [2.13.0] - 2026-10-14
 

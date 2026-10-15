@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   applyProposalToNodes,
   applySweepToNodes,
-  buildPortsConfig
+  portsConfigForOrder
 } from '../../../src/lib/layout/toWorkflow.js';
 import { propose, beautify } from '../../../src/lib/layout/primitives.js';
 import { fromWorkflow } from '../../../src/lib/layout/fromWorkflow.js';
@@ -51,12 +51,12 @@ const edge = (s: string, sp: string, t: string, tp: string): WorkflowEdge =>
     targetHandle: `${t}-input-${tp}`
   }) as WorkflowEdge;
 
-describe('buildPortsConfig', () => {
+describe('portsConfigForOrder', () => {
   const ins = ['contact', 'label', 'extra'].map((id) => port(id, 'input'));
 
   it('stores the new order as entries', () => {
     const n = node('compose', 0, 0, ins, []);
-    expect(buildPortsConfig(n, 'inputs', ['label', 'contact', 'extra'])).toEqual({
+    expect(portsConfigForOrder(n, 'inputs', ['label', 'contact', 'extra'])).toEqual({
       inputs: [{ id: 'label' }, { id: 'contact' }, { id: 'extra' }]
     });
   });
@@ -79,7 +79,7 @@ describe('buildPortsConfig', () => {
         }
       }
     );
-    expect(buildPortsConfig(n, 'inputs', ['trigger', 'matchText', 'data'])).toEqual({
+    expect(portsConfigForOrder(n, 'inputs', ['trigger', 'matchText', 'data'])).toEqual({
       inputs: [{ id: 'matchText' }, { id: 'data' }, { id: 'trigger' }, { id: 'loop_back' }]
     });
   });
@@ -88,7 +88,7 @@ describe('buildPortsConfig', () => {
     const n = node('compose', 0, 0, ins, [], {
       ports: { inputs: [{ id: 'label' }, { id: 'contact' }, { id: 'extra' }] }
     });
-    expect(buildPortsConfig(n, 'inputs', ['contact', 'label', 'extra'])).toBeUndefined();
+    expect(portsConfigForOrder(n, 'inputs', ['contact', 'label', 'extra'])).toBeUndefined();
   });
 
   it('a hidden port keeps its entry and its slot; the visible ones trade places', () => {
@@ -100,8 +100,9 @@ describe('buildPortsConfig', () => {
       [],
       { ports: { inputs: [{ id: 'a' }, { id: 'hid', exposed: false }, { id: 'b' }] } }
     );
-    expect(buildPortsConfig(n, 'inputs', ['b', 'a'])).toEqual({
-      inputs: [{ id: 'b' }, { id: 'hid', exposed: false }, { id: 'a' }]
+    // `hid` is hidden by default, so its stored flag says nothing and is dropped.
+    expect(portsConfigForOrder(n, 'inputs', ['b', 'a'])).toEqual({
+      inputs: [{ id: 'b' }, { id: 'hid' }, { id: 'a' }]
     });
   });
 
@@ -112,7 +113,7 @@ describe('buildPortsConfig', () => {
         outputs: [{ id: 'reply', exposed: false }]
       }
     });
-    expect(buildPortsConfig(n, 'inputs', ['label', 'contact', 'extra'])).toEqual({
+    expect(portsConfigForOrder(n, 'inputs', ['label', 'contact', 'extra'])).toEqual({
       inputs: [
         { id: 'label' },
         { id: 'contact' },

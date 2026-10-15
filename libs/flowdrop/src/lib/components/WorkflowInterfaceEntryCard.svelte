@@ -21,7 +21,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import Button from '$lib/components/Button.svelte';
-  import IconButton from '$lib/components/IconButton.svelte';
+  import IconButton from '$lib/components/primitives/IconButton.svelte';
   import Input from '$lib/components/Input.svelte';
   import Select from '$lib/components/primitives/Select.svelte';
   import Checkbox from '$lib/components/primitives/Checkbox.svelte';
