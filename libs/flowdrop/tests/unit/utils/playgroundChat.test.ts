@@ -21,7 +21,7 @@ import {
   withoutInterfaceTurns,
   followInterfaceInputEdit,
   rewritePlaygroundReplies,
-  withoutPlaygroundRepliesOn,
+  withoutRepliesOnNodes,
   hasKnownInterfaceTurns
 } from '$lib/utils/playgroundChat.js';
 import {
@@ -577,7 +577,9 @@ describe('rewritePlaygroundReplies', () => {
   });
 });
 
-describe('withoutPlaygroundRepliesOn', () => {
+describe('withoutRepliesOnNodes', () => {
+  const gone = new Set(['gone']);
+
   it('drops replies on removed nodes and keeps the inputs', () => {
     const playground = {
       chat: binding({
@@ -588,22 +590,38 @@ describe('withoutPlaygroundRepliesOn', () => {
         ]
       })
     };
-    const next = withoutPlaygroundRepliesOn(playground, (id) => id === 'gone');
-    expect(next?.chat?.replies).toEqual([{ node_id: 'kept', port: 'text' }]);
-    expect(next?.chat?.message).toBe('m');
+    const next = withoutRepliesOnNodes({ playground }, gone);
+    expect(next.playground?.chat?.replies).toEqual([{ node_id: 'kept', port: 'text' }]);
+    expect(next.playground?.chat?.message).toBe('m');
   });
 
-  it('clears the binding when the replies were all it bound', () => {
+  it('clears the binding, and the interface turn marks, when the replies were all it bound', () => {
     const playground = { chat: binding({ replies: [{ node_id: 'gone', port: 'text' }] }) };
-    expect(withoutPlaygroundRepliesOn(playground, () => true)?.chat).toBeNull();
+    const workflowInterface = { inputs: [entry('m', { turn: 'message' })] };
+    const next = withoutRepliesOnNodes({ playground, interface: workflowInterface }, gone);
+    expect(next.playground?.chat).toBeNull();
+    expect(next.interface?.inputs?.[0].turn).toBeUndefined();
+  });
+
+  it('keeps the interface when other settings remain', () => {
+    const playground = {
+      chat: binding({ message: 'm', replies: [{ node_id: 'gone', port: 'text' }] })
+    };
+    const workflowInterface = { inputs: [entry('m', { turn: 'message' })] };
+    const next = withoutRepliesOnNodes({ playground, interface: workflowInterface }, gone);
+    expect(next.interface).toBe(workflowInterface);
   });
 
   it('returns the same object when no reply is on a removed node, or nothing is stored', () => {
-    const playground = { chat: binding({ replies: [{ node_id: 'kept', port: 'p' }] }) };
-    expect(withoutPlaygroundRepliesOn(playground, (id) => id === 'gone')).toBe(playground);
-    expect(withoutPlaygroundRepliesOn(undefined, () => true)).toBeUndefined();
-    const unbound = { chat: null };
-    expect(withoutPlaygroundRepliesOn(unbound, () => true)).toBe(unbound);
+    const kept = {
+      playground: { chat: binding({ replies: [{ node_id: 'kept', port: 'p' }] }) }
+    };
+    expect(withoutRepliesOnNodes(kept, gone)).toBe(kept);
+    expect(withoutRepliesOnNodes(kept, new Set())).toBe(kept);
+    const none = {};
+    expect(withoutRepliesOnNodes(none, gone)).toBe(none);
+    const unbound = { playground: { chat: null } };
+    expect(withoutRepliesOnNodes(unbound, gone)).toBe(unbound);
   });
 });
 

@@ -59,11 +59,7 @@ import { applyConnectionStyling } from '../utils/edgeStyling.js';
 import { computeSwapPreview, executeSwap } from '../utils/nodeSwap.js';
 import { computeAutoLayout } from '../adapters/agentspec/autoLayout.js';
 import { interfaceTagReserve } from '../utils/interfaceTags.js';
-import {
-  withPlaygroundChat,
-  withoutInterfaceTurns,
-  withoutPlaygroundRepliesOn
-} from '../utils/playgroundChat.js';
+import { normalizePlaygroundChat, withPlaygroundChat } from '../utils/playgroundChat.js';
 
 // ============================================================================
 // Internal Helpers
@@ -1242,7 +1238,7 @@ export const COMMAND_HELP: Array<{
     name: 'clear',
     syntax: 'clear [--all]',
     description:
-      'Remove all nodes and edges. The interface stays (its entries become unbound) and Playground replies are dropped; --all also removes the interface and the Playground chat settings. One undo step'
+      'Remove all nodes and edges; the interface stays, unbound. --all also removes the interface and the Playground chat settings'
   },
   {
     name: 'canvas',
@@ -1331,8 +1327,8 @@ function executeRedo(context: CommandContext): CommandResult {
 
 /**
  * Empty the canvas. The interface is the workflow's contract and outlives its
- * body, so plain `clear` keeps every entry and only drops its bindings, plus
- * the Playground replies on the removed nodes. `clear --all` removes the
+ * body, so plain `clear` keeps every entry and only unbinds it (the store drops
+ * the Playground replies on the removed nodes). `clear --all` removes the
  * interface and the Playground chat settings too. Either is one undo step.
  */
 function executeClear(
@@ -1369,26 +1365,18 @@ function executeClear(
   const unbind = (entry: WorkflowInterfaceEntry): WorkflowInterfaceEntry =>
     entry.bindings.length === 0 ? entry : { ...entry, bindings: [] };
   const bound = [...inputs, ...outputs].some((entry) => entry.bindings.length > 0);
-  const playground = withoutPlaygroundRepliesOn(workflow.playground, () => true);
-  const repliesDropped = playground !== workflow.playground;
-  // Settings that bind nothing any more must not fall back to `turn` marks on
-  // the interface, as after an interface edit.
-  const nextInterface =
-    repliesDropped && playground?.chat === null
-      ? withoutInterfaceTurns(workflow.interface)
-      : workflow.interface;
-  const interfaceChanged = bound || nextInterface !== workflow.interface;
+  // The store drops the Playground replies on the removed nodes.
+  const hadReplies = normalizePlaygroundChat(workflow.playground?.chat).replies.length > 0;
   context.dispatch.batchUpdate({
     nodes: [],
     edges: [],
-    ...(interfaceChanged && {
+    ...(bound && {
       interface: {
-        ...nextInterface,
-        ...(nextInterface?.inputs && { inputs: nextInterface.inputs.map(unbind) }),
-        ...(nextInterface?.outputs && { outputs: nextInterface.outputs.map(unbind) })
+        ...workflow.interface,
+        ...(workflow.interface?.inputs && { inputs: workflow.interface.inputs.map(unbind) }),
+        ...(workflow.interface?.outputs && { outputs: workflow.interface.outputs.map(unbind) })
       }
-    }),
-    ...(repliesDropped && { playground })
+    })
   });
 
   const notes: string[] = [];
@@ -1399,7 +1387,7 @@ function executeClear(
         (bound ? ', now unbound' : '')
     );
   }
-  if (repliesDropped) notes.push('Dropped the Playground replies');
+  if (hadReplies) notes.push('Dropped the Playground replies');
   if (kept) notes.push('`clear --all` removes the interface too');
   return { ok: true, message: [cleared, ...notes].join('. ') };
 }

@@ -23,7 +23,7 @@ import {
   followInterfaceInputEdit,
   rewritePlaygroundReplies,
   withoutInterfaceTurns,
-  withoutPlaygroundRepliesOn,
+  withoutRepliesOnNodes,
   type InterfaceInputEdit
 } from '../utils/playgroundChat.js';
 
@@ -534,6 +534,21 @@ export class WorkflowStore {
     }
   }
 
+  /**
+   * The workflow with Playground replies on nodes it lost since the current one
+   * dropped, so every way of removing a node (canvas, console, clear) keeps the
+   * replies pointing at live nodes. Cheap when nothing is stored: node moves
+   * call this on every drag.
+   */
+  #withoutRepliesOnRemovedNodes(next: Workflow): Workflow {
+    const previous = this.#workflow;
+    if (!previous || previous.nodes === next.nodes) return next;
+    if (!next.playground?.chat?.replies?.length) return next;
+    const kept = new Set(next.nodes.map((node) => node.id));
+    const removed = new Set(previous.nodes.map((node) => node.id).filter((id) => !kept.has(id)));
+    return withoutRepliesOnNodes(next, removed);
+  }
+
   // -----------------------------------------------------------------------
   // Mutation actions
   // -----------------------------------------------------------------------
@@ -564,7 +579,7 @@ export class WorkflowStore {
    * for every small change. History is pushed by specific actions or drag handlers.
    */
   updateWorkflow(workflow: Workflow): void {
-    this.#workflow = workflow;
+    this.#workflow = this.#withoutRepliesOnRemovedNodes(workflow);
     this.#bumpVersion();
     this.#notifyWorkflowChange('metadata');
   }
@@ -598,14 +613,14 @@ export class WorkflowStore {
     // Generate unique version identifier
     const versionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    this.#workflow = {
+    this.#workflow = this.#withoutRepliesOnRemovedNodes({
       ...this.#workflow,
       nodes,
       metadata: buildMetadata(this.#workflow.metadata, {
         versionId,
         updateNumber: (this.#workflow.metadata?.updateNumber ?? 0) + 1
       })
-    };
+    });
     this.#bumpVersion();
     this.#notifyWorkflowChange('node_move');
   }
@@ -667,17 +682,14 @@ export class WorkflowStore {
    */
   removeNode(nodeId: string): void {
     if (!this.#workflow) return;
-    // The server refuses a save whose Playground replies name a missing node.
-    const playground = withoutPlaygroundRepliesOn(this.#workflow.playground, (id) => id === nodeId);
-    this.#workflow = {
+    this.#workflow = this.#withoutRepliesOnRemovedNodes({
       ...this.#workflow,
       nodes: this.#workflow.nodes.filter((node) => node.id !== nodeId),
       edges: this.#workflow.edges.filter(
         (edge) => edge.source !== nodeId && edge.target !== nodeId
       ),
-      ...(playground !== this.#workflow.playground && { playground }),
       metadata: buildMetadata(this.#workflow.metadata)
-    };
+    });
     this.#pushToHistory('Delete node');
     this.#bumpVersion();
     this.#notifyWorkflowChange('node_remove');
@@ -848,7 +860,7 @@ export class WorkflowStore {
     playground?: Workflow['playground'];
   }): void {
     if (!this.#workflow) return;
-    this.#workflow = {
+    const next: Workflow = {
       ...this.#workflow,
       ...(updates.nodes && { nodes: updates.nodes }),
       ...(updates.edges && { edges: updates.edges }),
@@ -865,6 +877,7 @@ export class WorkflowStore {
       ...('playground' in updates && { playground: updates.playground }),
       metadata: buildMetadata(this.#workflow.metadata, updates.metadata ?? undefined)
     };
+    this.#workflow = updates.nodes ? this.#withoutRepliesOnRemovedNodes(next) : next;
     this.#pushToHistory('Batch update');
     this.#bumpVersion();
     this.#notifyWorkflowChange('metadata');

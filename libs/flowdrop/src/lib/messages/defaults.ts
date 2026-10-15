@@ -42,7 +42,10 @@ export const defaultMessages = {
       wiredHint: ({ n }: { n: number }) =>
         n === 1
           ? 'Connected (1). Remove its connection on the canvas to hide it.'
-          : `Connected (${n}). Remove its connections on the canvas to hide it.`
+          : `Connected (${n}). Remove its connections on the canvas to hide it.`,
+      published: ({ port }: { port: string }) =>
+        `${port} is on the workflow interface and can't be hidden`,
+      publishedHint: 'On the workflow interface. Remove it from the interface to hide it.'
     },
     array: {
       // Item-level controls — `n` is the 1-based item position the user sees.

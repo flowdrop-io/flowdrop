@@ -79,7 +79,6 @@
   } from '../helpers/proximityConnect.js';
   import PortCoordinateTracker from './PortCoordinateTracker.svelte';
   import { interfaceTagReserve } from '../utils/interfaceTags.js';
-  import { withoutPlaygroundRepliesOn } from '../utils/playgroundChat.js';
   import ZoomTier from './ZoomTier.svelte';
   import InterfaceTagLayer, { type InterfaceTagEdit } from './InterfaceTagLayer.svelte';
   import type { InterfaceMenuActions, PortTarget } from '../editor/interfaceMenu.js';
@@ -798,21 +797,6 @@
   /**
    * Handle node deletion - automatically remove connected edges and push to history
    */
-  /**
-   * Drop the Playground replies on deleted nodes, in the same history step as
-   * the delete: the server refuses a save whose replies name a missing node.
-   */
-  function pruneRepliesOn(deletedNodeIds: ReadonlySet<string>): void {
-    const storeValue = untrack(() => fd.workflow.current);
-    if (!storeValue || deletedNodeIds.size === 0) return;
-    const playground = withoutPlaygroundRepliesOn(storeValue.playground, (id) =>
-      deletedNodeIds.has(id)
-    );
-    if (playground !== storeValue.playground) {
-      fd.workflow.updateWorkflow({ ...storeValue, playground });
-    }
-  }
-
   function handleNodesDelete(params: { nodes: WorkflowNodeType[]; edges: WorkflowEdge[] }): void {
     machine.send('START_DELETE');
 
@@ -825,7 +809,6 @@
 
     // Sync to store
     syncFlowToStore();
-    pruneRepliesOn(deletedNodeIds);
 
     // Push to history AFTER the deletion so undo restores the previous state
     const nodeCount = params.nodes.length;

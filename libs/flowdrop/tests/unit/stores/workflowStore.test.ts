@@ -773,6 +773,74 @@ describe('WorkflowStore', () => {
       expect(fd.workflow.editVersion).toBe(versionBefore + 1);
     });
 
+    function repliesOn(...ids: string[]) {
+      return {
+        chat: {
+          message: null,
+          history: null,
+          session_id: null,
+          message_id: null,
+          replies: ids.map((id) => ({ node_id: id, port: 'text' })),
+          sub_workflow_replies: false
+        }
+      };
+    }
+
+    it('drops replies on a node an updateWorkflow call removed', () => {
+      const a = createTestNode({ id: 'a' });
+      const b = createTestNode({ id: 'b' });
+      const workflow = createTestWorkflow({ nodes: [a, b], playground: repliesOn('a', 'b') });
+      fd.workflow.initialize(workflow);
+
+      fd.workflow.updateWorkflow({ ...workflow, nodes: [b] });
+
+      expect(fd.workflow.current?.playground?.chat?.replies).toEqual([
+        { node_id: 'b', port: 'text' }
+      ]);
+    });
+
+    it('drops every reply when batchUpdate empties the nodes', () => {
+      fd.workflow.initialize(
+        createTestWorkflow({
+          nodes: [createTestNode({ id: 'a' }), createTestNode({ id: 'b' })],
+          playground: { chat: { ...repliesOn('a', 'b').chat, message: 'm' } }
+        })
+      );
+
+      fd.workflow.batchUpdate({ nodes: [], edges: [] });
+
+      expect(fd.workflow.current?.playground?.chat?.replies).toEqual([]);
+      expect(fd.workflow.current?.playground?.chat?.message).toBe('m');
+    });
+
+    it('clears the chat and the interface turn marks when the reply was all it bound', () => {
+      fd.workflow.initialize(
+        createTestWorkflow({
+          nodes: [createTestNode({ id: 'a' })],
+          playground: repliesOn('a'),
+          interface: {
+            inputs: [{ id: 'm', dataType: 'string', bindings: [], turn: 'message' }],
+            outputs: []
+          }
+        })
+      );
+
+      fd.workflow.removeNode('a');
+
+      expect(fd.workflow.current?.playground?.chat).toBeNull();
+      expect(fd.workflow.current?.interface?.inputs?.[0].turn).toBeUndefined();
+    });
+
+    it('leaves playground the same object when the node set is unchanged', () => {
+      const a = createTestNode({ id: 'a' });
+      fd.workflow.initialize(createTestWorkflow({ nodes: [a], playground: repliesOn('a') }));
+      const before = fd.workflow.current?.playground;
+
+      fd.workflow.updateNodes([{ ...a, position: { x: 50, y: 60 } }]);
+
+      expect(fd.workflow.current?.playground).toBe(before);
+    });
+
     it('adds no playground key to a workflow without one', () => {
       fd.workflow.initialize(createTestWorkflow({ nodes: [createTestNode({ id: 'a' })] }));
       fd.workflow.removeNode('a');

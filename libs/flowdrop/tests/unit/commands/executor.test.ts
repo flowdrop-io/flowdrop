@@ -2173,7 +2173,7 @@ describe('executeCommand — clear', () => {
     };
   }
 
-  it('keeps the interface unbound and drops the Playground replies', () => {
+  it('keeps the interface unbound and says the Playground replies are dropped', () => {
     const dispatch = createMockDispatch();
     const context = createMockContext(chatWorkflow(), nodeTypes, dispatch);
 
@@ -2192,8 +2192,7 @@ describe('executeCommand — clear', () => {
       { id: 'message', dataType: 'string', required: true, bindings: [] }
     ]);
     expect(update.interface?.outputs).toEqual([{ id: 'answer', dataType: 'string', bindings: [] }]);
-    expect(update.playground?.chat?.message).toBe('message');
-    expect(update.playground?.chat?.replies).toEqual([]);
+    expect(update).not.toHaveProperty('playground');
   });
 
   it('with --all removes the interface and the Playground chat settings', () => {

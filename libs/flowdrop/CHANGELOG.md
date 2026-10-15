@@ -21,12 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   replies are removed, all in one undo step.
 - **A wired port can't be hidden in the Ports tab.** A shown port that still has connections keeps its eye,
   with a link badge; activating it says to remove the connections on the canvas first. Locked ports use the
-  same eye with a lock badge.
+  same eye with a lock badge. A port on the workflow interface can't be hidden either: its eye gets a tag
+  badge and says to remove it from the interface first.
 
 ### Fixed
 
 - **Deleting a node drops the Playground replies that named it.** A workflow with such a reply was refused
-  when saved.
+  when saved. The replies are dropped whichever way the node is removed (canvas, console, `clear`), and when
+  that empties the chat settings, the interface's old `turn` marks no longer take over as the chat.
+- **"Hide unconnected ports" no longer counts a locked port.** A port the node type always shows is left
+  alone, as in the Ports tab.
 
 ## [2.13.0] - 2026-10-14
 

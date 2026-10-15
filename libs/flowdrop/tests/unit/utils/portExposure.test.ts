@@ -6,6 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   applyPortExposure,
+  countPortWires,
+  hideBlock,
   hideCandidates,
   showCandidates
 } from '../../../src/lib/utils/portExposure.js';
@@ -122,12 +124,67 @@ describe('hideCandidates', () => {
     expect(ids(hideCandidates(n, w))).toEqual(['inputs:b']);
   });
 
+  it('excludes a port the node type locks', () => {
+    const n = makeNode('n', [port('a', 'input', { exposureLocked: true }), port('b', 'input')], []);
+    expect(ids(hideCandidates(n, wf([n])))).toEqual(['inputs:b']);
+  });
+
   it('covers dynamic ports but not gateway branches', () => {
     const n = makeNode('n', [], [], {
       dynamicInputs: [{ name: 'dyn', label: 'Dyn', dataType: 'string' }],
       branches: [{ name: 'yes' }]
     });
     expect(ids(hideCandidates(n, wf([n])))).toEqual(['inputs:dyn']);
+  });
+});
+
+describe('hideBlock', () => {
+  const n = makeNode(
+    'n',
+    [port('a', 'input'), port('lock', 'input', { exposureLocked: true })],
+    [port('o', 'output')]
+  );
+  const src = makeNode('s', [], [port('p', 'output')]);
+  const published = {
+    interface: {
+      inputs: [
+        { id: 'in', bindings: [{ nodeId: 'n', portId: 'a' }] },
+        { id: 'in2', bindings: [{ nodeId: 'n', portId: 'lock' }] }
+      ],
+      outputs: []
+    }
+  };
+  const blockOf = (w: Workflow, direction: 'inputs' | 'outputs', id: string) => {
+    const p = [...(n.data.metadata?.inputs ?? []), ...(n.data.metadata?.outputs ?? [])].find(
+      (x) => x.id === id
+    ) as NodePort;
+    return hideBlock(n, w, direction, p, countPortWires(n, w));
+  };
+
+  it('is null for a free port', () => {
+    expect(blockOf(wf([n, src]), 'inputs', 'a')).toBeNull();
+  });
+
+  it('reports a port published on the workflow interface', () => {
+    expect(blockOf(wf([n, src], [], published), 'inputs', 'a')).toEqual({ kind: 'published' });
+  });
+
+  it('prefers wired over published, and locked over both', () => {
+    const w = wf([n, src], [edge('s', 'p', 'n', 'a'), edge('s', 'p', 'n', 'lock')], published);
+    expect(blockOf(w, 'inputs', 'a')).toEqual({ kind: 'wired', count: 1 });
+    expect(blockOf(w, 'inputs', 'lock')).toEqual({ kind: 'locked' });
+  });
+
+  it('counts an edge that names the bare port id, per direction', () => {
+    const bare = { id: 'e', source: 's', target: 'n', sourceHandle: 'p', targetHandle: 'a' };
+    const w = wf([n, src], [bare as Workflow['edges'][number]]);
+    expect(blockOf(w, 'inputs', 'a')).toEqual({ kind: 'wired', count: 1 });
+    expect(blockOf(w, 'outputs', 'o')).toBeNull();
+  });
+
+  it('counts every wire on a port', () => {
+    const w = wf([n, src], [edge('s', 'p', 'n', 'a'), { ...edge('s', 'p', 'n', 'a'), id: 'e2' }]);
+    expect(blockOf(w, 'inputs', 'a')).toEqual({ kind: 'wired', count: 2 });
   });
 });
 

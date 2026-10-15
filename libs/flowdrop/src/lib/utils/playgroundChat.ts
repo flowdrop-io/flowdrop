@@ -291,23 +291,30 @@ export function rewritePlaygroundReplies(
 }
 
 /**
- * The `playground` value once the nodes `removed` names are gone: replies on
+ * The workflow once the nodes `removed` names are gone: Playground replies on
  * them are dropped, so the stored binding never prints a reply from a node the
  * workflow no longer has (the server refuses such a save). The inputs stay:
- * they name interface entries, not nodes. The same object when no reply is on
- * a removed node, or nothing is stored.
+ * they name interface entries, not nodes. When that leaves settings that bind
+ * nothing, the interface's deprecated `turn` marks go too, or they would take
+ * over as the chat. The same object when no reply is on a removed node, or
+ * nothing is stored.
  */
-export function withoutPlaygroundRepliesOn(
-  playground: WorkflowPlayground | undefined,
-  removed: (nodeId: string) => boolean
-): WorkflowPlayground | undefined {
-  if (!playground?.chat) return playground;
-  const chat = normalizePlaygroundChat(playground.chat);
-  if (!chat.replies.some((reply) => removed(reply.node_id))) return playground;
-  return withPlaygroundChat(playground, {
+export function withoutRepliesOnNodes<W extends Pick<Workflow, 'playground' | 'interface'>>(
+  workflow: W,
+  removed: ReadonlySet<string>
+): W {
+  if (!workflow.playground?.chat || removed.size === 0) return workflow;
+  const chat = normalizePlaygroundChat(workflow.playground.chat);
+  if (!chat.replies.some((reply) => removed.has(reply.node_id))) return workflow;
+  const playground = withPlaygroundChat(workflow.playground, {
     ...chat,
-    replies: chat.replies.filter((reply) => !removed(reply.node_id))
+    replies: chat.replies.filter((reply) => !removed.has(reply.node_id))
   });
+  const next: W = { ...workflow, playground };
+  if (playground.chat === null && workflow.interface !== undefined) {
+    next.interface = withoutInterfaceTurns(workflow.interface);
+  }
+  return next;
 }
 
 /**

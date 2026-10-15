@@ -12,7 +12,7 @@
   of {id, exposed?} entries).
 
   A port whose exposure cannot change (locked by the node type, or exposed and
-  still wired) shows an "on" eye with a badge; activating it opens an inline
+  still wired or on the workflow interface) shows an "on" eye with a badge; activating it opens an inline
   reason instead of touching the graph. The widget only ever writes through
   `onChange`.
 
@@ -38,7 +38,7 @@
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { buildPortsConfig, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
-  import { isTriggerEventInput } from '$lib/utils/reservedPorts.js';
+  import { countPortWires, hideBlock, isExposureLocked } from '$lib/utils/portExposure.js';
   import {
     entryAtPort,
     exposableCandidate,
@@ -228,41 +228,12 @@
     onChange(buildPortsConfig(portsConfig, direction, ordered, portsFor(direction), exposureOf));
   }
 
-  /** Why this port's exposure can't be toggled right now, or null. */
-  type ExposureBlock = { kind: 'locked' } | { kind: 'wired'; count: number };
-
-  /** Edges on each of this node's handles, counted once per edge change. */
-  const wiresByHandle = $derived.by(() => {
-    const counts = new Map<string, number>();
-    const nodeId = node?.id;
-    for (const edge of fd.workflow.current?.edges ?? []) {
-      if (edge.source === nodeId && edge.sourceHandle)
-        counts.set(edge.sourceHandle, (counts.get(edge.sourceHandle) ?? 0) + 1);
-      if (edge.target === nodeId && edge.targetHandle)
-        counts.set(edge.targetHandle, (counts.get(edge.targetHandle) ?? 0) + 1);
-    }
-    return counts;
-  });
-
-  /**
-   * A locked port (the node type decides) or an exposed port that still has
-   * wires can't be hidden. Showing a hidden port is never blocked.
-   */
-  function exposureBlock(
-    direction: Direction,
-    port: NodePort,
-    exposed: boolean,
-    handleId: string
-  ): ExposureBlock | null {
-    if (port.exposureLocked || (direction === 'inputs' && isTriggerEventInput(node, port.id))) {
-      return { kind: 'locked' };
-    }
-    if (exposed) {
-      const count = wiresByHandle.get(handleId) ?? 0;
-      if (count > 0) return { kind: 'wired', count };
-    }
-    return null;
-  }
+  /** Edges on each of this node's ports, counted once per edge change. */
+  const wires = $derived(
+    node && fd.workflow.current
+      ? countPortWires(node, fd.workflow.current)
+      : new Map<string, number>()
+  );
 
   /** The row whose refusal reason is open. Tied to a node, so it can't outlive it. */
   let reasonOpen = $state<{ nodeId: string; direction: Direction; portId: string } | null>(null);
@@ -381,12 +352,11 @@
               : undefined}
             {@const ifaceItems = interfaceMenu(direction, port)}
             {@const laneName = checker.getDataTypeConfig(port.dataType)?.name ?? port.dataType}
-            {@const handleId = buildHandleId(
-              node?.id ?? '',
-              direction === 'inputs' ? 'input' : 'output',
-              port.id
-            )}
-            {@const block = exposureBlock(direction, port, exposed, handleId)}
+            {@const workflow = fd.workflow.current}
+            {@const block =
+              node && workflow && (exposed || isExposureLocked(node, direction, port))
+                ? hideBlock(node, workflow, direction, port, wires)
+                : null}
             {@const reasonId = `${id}-${direction}-${port.id}-reason`}
             {@const reasonShown = block !== null && isReasonOpen(direction, port.id)}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
@@ -458,8 +428,8 @@
                   />
                 {/if}
               </span>
-              <!-- A port whose exposure can't change (locked by the node type, or
-                   still wired) shows why instead of toggling. -->
+              <!-- A port whose exposure can't change (locked by the node type,
+                   wired, or on the workflow interface) shows why instead of toggling. -->
               {#if block}
                 <IconButton
                   size="sm"
@@ -468,10 +438,10 @@
                   aria-describedby={reasonShown ? reasonId : undefined}
                   ariaLabel={block.kind === 'locked'
                     ? messages().form.ports.locked({ port: port.name })
-                    : messages().form.ports.wired({ port: port.name })}
-                  data-testid={block.kind === 'locked'
-                    ? `port-locked-${direction}-${port.id}`
-                    : `port-wired-${direction}-${port.id}`}
+                    : block.kind === 'wired'
+                      ? messages().form.ports.wired({ port: port.name })
+                      : messages().form.ports.published({ port: port.name })}
+                  data-testid={`port-${block.kind}-${direction}-${port.id}`}
                   onclick={() => toggleReason(direction, port.id)}
                   onkeydown={(e) => {
                     if (e.key !== 'Escape' || !reasonShown) return;
@@ -484,14 +454,18 @@
                     class="fd-ports__badge"
                     icon={block.kind === 'locked'
                       ? 'heroicons:lock-closed-solid'
-                      : 'heroicons:link-solid'}
+                      : block.kind === 'wired'
+                        ? 'heroicons:link-solid'
+                        : 'heroicons:tag-solid'}
                   />
                 </IconButton>
                 {#if reasonShown}
                   <span class="fd-ports__reason" id={reasonId}>
                     {block.kind === 'locked'
                       ? messages().form.ports.lockedHint
-                      : messages().form.ports.wiredHint({ n: block.count })}
+                      : block.kind === 'wired'
+                        ? messages().form.ports.wiredHint({ n: block.count })
+                        : messages().form.ports.publishedHint}
                   </span>
                 {/if}
               {:else}

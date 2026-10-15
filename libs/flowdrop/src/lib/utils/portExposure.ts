@@ -44,20 +44,65 @@ export function nodePortsFor(node: Pick<WorkflowNode, 'data'>, direction: PortsD
   ];
 }
 
-/** Whether any edge of the workflow touches a port's handle. */
-function hasEdgeOnPort(
-  workflow: Workflow,
-  nodeId: string,
+/** Why an exposed port can't be hidden right now. */
+export type ExposureBlock =
+  | { kind: 'locked' }
+  | { kind: 'wired'; count: number }
+  | { kind: 'published' };
+
+/** Whether the node type fixes a port as always shown (a trigger's event input included). */
+export function isExposureLocked(
+  node: Pick<WorkflowNode, 'id' | 'data'>,
   direction: PortsDirection,
-  portId: string
+  port: NodePort
 ): boolean {
-  const isInputs = direction === 'inputs';
-  const handleId = buildHandleId(nodeId, isInputs ? 'input' : 'output', portId);
-  return workflow.edges.some((edge) =>
-    isInputs
-      ? edge.target === nodeId && (edge.targetHandle === handleId || edge.targetHandle === portId)
-      : edge.source === nodeId && (edge.sourceHandle === handleId || edge.sourceHandle === portId)
+  return Boolean(
+    port.exposureLocked || (direction === 'inputs' && isTriggerEventInput(node, port.id))
   );
+}
+
+/**
+ * Edges on each of the node's ports, counted in one pass. Keyed
+ * `${direction}:${portId}`. An edge counts on a port when its handle is the
+ * port's full handle id or the bare port id.
+ */
+export function countPortWires(
+  node: Pick<WorkflowNode, 'id'>,
+  workflow: Workflow
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  const add = (direction: PortsDirection, type: 'input' | 'output', handle: string | undefined) => {
+    if (!handle) return;
+    const prefix = buildHandleId(node.id, type, '');
+    const portId = handle.startsWith(prefix) ? handle.slice(prefix.length) : handle;
+    const key = `${direction}:${portId}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  };
+  for (const edge of workflow.edges) {
+    if (edge.source === node.id) add('outputs', 'output', edge.sourceHandle ?? undefined);
+    if (edge.target === node.id) add('inputs', 'input', edge.targetHandle ?? undefined);
+  }
+  return counts;
+}
+
+/**
+ * Why an exposed port can't be hidden, or `null` when it can. Locked (the node
+ * type decides) comes before wired, which comes before published on the
+ * workflow interface. `wires` is {@link countPortWires} for the node.
+ */
+export function hideBlock(
+  node: Pick<WorkflowNode, 'id' | 'data'>,
+  workflow: Workflow,
+  direction: PortsDirection,
+  port: NodePort,
+  wires: ReadonlyMap<string, number>
+): ExposureBlock | null {
+  if (isExposureLocked(node, direction, port)) return { kind: 'locked' };
+  const count = wires.get(`${direction}:${port.id}`) ?? 0;
+  if (count > 0) return { kind: 'wired', count };
+  const dir = direction === 'inputs' ? 'input' : 'output';
+  if (entryAtPort(workflow, node.id, dir, port.id)) return { kind: 'published' };
+  return null;
 }
 
 /** Whether the node's config holds a value for a parameter (an empty string counts as none). */
@@ -69,20 +114,19 @@ function hasConfigValue(node: Pick<WorkflowNode, 'data'>, key: string): boolean 
 /**
  * Exposed data ports with no edge on them, the ones worth hiding. Left out:
  * reserved ports (error output, trigger and tool types), control-flow ports
- * (loop-back), a trigger's event input (always exposed), ports published on
+ * (loop-back), locked ports (a trigger's event input), ports published on
  * the workflow interface (hiding them would break the binding), and a required
  * input with no config value (hiding it would only hide the missing value).
  */
 export function hideCandidates(node: WorkflowNode, workflow: Workflow): PortExposureCandidate[] {
   const ports = node.data?.config?.ports as PortsConfig | undefined;
+  const wires = countPortWires(node, workflow);
   const result: PortExposureCandidate[] = [];
   for (const direction of ['inputs', 'outputs'] as const) {
-    const dir = direction === 'inputs' ? 'input' : 'output';
     for (const port of nodePortsFor(node, direction)) {
       if (!isPortExposed(port, ports?.[direction])) continue;
       if (!isBulkToggleable(node, direction, port)) continue;
-      if (hasEdgeOnPort(workflow, node.id, direction, port.id)) continue;
-      if (entryAtPort(workflow, node.id, dir, port.id)) continue;
+      if (hideBlock(node, workflow, direction, port, wires)) continue;
       if (direction === 'inputs' && port.required && !hasConfigValue(node, port.id)) continue;
       result.push({ direction, port });
     }
@@ -94,7 +138,7 @@ export function hideCandidates(node: WorkflowNode, workflow: Workflow): PortExpo
 function isBulkToggleable(node: WorkflowNode, direction: PortsDirection, port: NodePort): boolean {
   const dir = direction === 'inputs' ? 'input' : 'output';
   if (isReservedPort(port) || isControlFlowPort(port, dir)) return false;
-  return !(direction === 'inputs' && isTriggerEventInput(node, port.id));
+  return !isExposureLocked(node, direction, port);
 }
 
 /**
