@@ -116,6 +116,14 @@ describe('settingsStore persistence', { timeout: 30_000 }, () => {
       expect(store.getEditorSettings().showGrid).toBe(true);
     });
 
+    it('a theme saved as "default" (its name until 2.14) loads as "classic"', async () => {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ ui: { theme: 'default' } }));
+
+      const store = await freshStore();
+
+      expect(store.getUiSettings().theme).toBe('classic');
+    });
+
     it('corrupt storage falls back to defaults instead of throwing', async () => {
       localStorage.setItem(SETTINGS_STORAGE_KEY, '{not json');
 

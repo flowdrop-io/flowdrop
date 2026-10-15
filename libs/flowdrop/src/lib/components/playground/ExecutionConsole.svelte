@@ -1,10 +1,10 @@
 <!--
-  ExecutionConsole Component
+  @component
+  The running workflow's own output surface.
+  The user sees it in the Playground above the input area. It lists the messages the flow sends during a run and shows any question the flow asks (an interrupt) right in the feed. It is not a chat box: what the user types goes through `ControlPanel`.
 
-  The running workflow's runtime surface. Renders the message feed via
-  MessageStream and surfaces the flow's own UI (interrupts) inline during
-  execution. This is *not* a chat — it's the console where the flow speaks
-  to the user during a run. User-initiated commands live in ControlPanel.
+  **Use it for** reading what a run says and answering its questions.
+  **Not for** typing messages or starting runs; use `ControlPanel` instead.
 -->
 
 <script lang="ts">
@@ -15,12 +15,17 @@
   import { m } from '$lib/messages/index.js';
 
   interface Props {
+    /** Show a time on each message. Default: true. */
     showTimestamps?: boolean;
+    /** Keep the feed scrolled to the newest message. Default: true. */
     autoScroll?: boolean;
+    /** Render message text as Markdown. Default: true. */
     enableMarkdown?: boolean;
     /** Whether log messages can appear when the user toggle is on. Defaults to true for the execution console. */
     allowLogs?: boolean;
+    /** Show system messages in a smaller, quieter style. Default: true. */
     compactSystemMessages?: boolean;
+    /** Called after the user answers a question the flow asked mid-run. */
     onInterruptResolved?: () => void;
     /** Optional callback that, when provided, shows a "New session" CTA in the welcome state */
     onCreateSession?: () => void;

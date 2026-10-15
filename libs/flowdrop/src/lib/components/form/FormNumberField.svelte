@@ -1,11 +1,9 @@
 <!--
-  FormNumberField Component
-  Number input field for numeric values
-  
-  Features:
-  - Tabular numeric font for alignment
-  - Min/max/step support
-  - Proper ARIA attributes for accessibility
+  @component
+  A number input with optional `min`, `max` and `step`. The value is a number, or an empty string when the box is cleared.
+
+  **Use it for** counts, limits and timeouts. The factory picks it for `type: "number"` and `"integer"`.
+  **Not for** a value the person should drag within a range (use `FormRangeField`).
 -->
 
 <script lang="ts">

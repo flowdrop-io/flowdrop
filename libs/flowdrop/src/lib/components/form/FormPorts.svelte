@@ -1,29 +1,17 @@
 <!--
-  Unified port widget — order + exposure
+  @component
+  The ports list of a node's inspector: one row per port with a drag grip, the lane dot, the name, the lane name,
+  an interface menu and an eye button that shows or hides the port. Rows reorder by drag or Alt+Up and Alt+Down.
+  A gateway's branches are listed too, read-only.
 
-  Renders one flat row per port of the node being configured on a fixed grid:
-  drag grip (on hover/focus) · lane dot · name · lane name (mono, muted) ·
-  interface menu · eye button that shows or hides the port. Every cell is always
-  rendered (an empty one is `visibility: hidden`), so columns never stagger.
-  Rows reorder by drag or by Alt+Up / Alt+Down on the focused row. A gateway's
-  branches (`config.branches`) are listed too, read-only: they are authored in
-  Config and always drawn. Binds to the injected
-  `ports` reserved config property (a PortsConfig: a per-direction ordered list
-  of {id, exposed?} entries).
+  Order is only cosmetic. Hiding a port removes it from the canvas, so it cannot be wired or overridden at run time.
+  The stored value is the full ordered list after the first edit, and is cleared again when it returns to the default.
 
-  A port whose exposure cannot change (locked by the node type, or exposed and
-  still wired or on the workflow interface) shows an "on" eye with a badge; activating it opens an inline
-  reason instead of touching the graph. The widget only ever writes through
-  `onChange`.
+  A port that can't be hidden (locked by the node type, wired, or on the workflow interface) keeps its "on" eye
+  with a badge; activating it shows the reason instead of changing anything.
 
-  Order is cosmetic — the engine ignores it. Exposure is semantic in v2: a
-  not-exposed port is hidden on the canvas, not wireable, and not
-  runtime-overridable.
-
-  The stored value is materialized as the FULL ordered list on the first edit
-  (so order + exposure stay independent inside one positional array), and reset
-  to `undefined` when it lands back on the metadata default order with no
-  exposure override.
+  **Use it for** the Ports tab of the inspector (schema `format: "ports"`).
+  **Not for** adding or removing ports (the node type decides which exist).
 -->
 
 <script lang="ts">
@@ -63,10 +51,15 @@
   import { tick } from 'svelte';
 
   interface Props {
+    /** Field identifier */
     id: string;
+    /** The stored ports config (a per-direction ordered list of `{ id, exposed? }`); empty means the node type's default. */
     value: unknown;
+    /** ARIA description ID */
     ariaDescribedBy?: string;
+    /** Whether the field is disabled (read-only) */
     disabled?: boolean;
+    /** Callback when the order or exposure changes */
     onChange: (value: unknown) => void;
     /** The node being configured, source of the port list + metadata defaults. */
     node?: WorkflowNode;

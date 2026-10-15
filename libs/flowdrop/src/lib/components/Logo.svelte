@@ -1,3 +1,14 @@
+<!--
+  @component
+  Logo: the FlowDrop mark (the rocket in a rounded square).
+
+  It fills the box you give it, so size it with the parent. Colours come from the
+  `--fd-logo-*` tokens, so a skin can recolour it, and it switches to an outline in dark mode.
+
+  **Use it for** a square mark, such as an app icon or a favicon-sized spot.
+  **Not for** the navbar; the editor uses `LogoWordmark`, the mark with the name.
+-->
+
 <div class="flowdrop-logo">
   <svg
     viewBox="0 0 500 499.99999"

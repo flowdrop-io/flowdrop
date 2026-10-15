@@ -1,13 +1,15 @@
 <!--
-  Simple Node Component
-  A simple node with optional input and output ports
-  Styled with BEM syntax
+  @component
+  A compact node: a header with an icon and a description, and the ports on its edges.
 
   Port rendering:
-  - Exposure (data.config.ports, falling back to each port's exposedByDefault)
-    decides which ports render — a not-exposed port is hidden.
-  - Order: data.config.ports order overrides the metadata default (displayOrder);
-    unlisted ports follow in default order.
+  - Exposure (`data.config.ports`, falling back to each port's `exposedByDefault`) decides
+    which ports render. A port that is not exposed is hidden.
+  - Order: `data.config.ports` overrides the metadata default (`displayOrder`); ports it does
+    not list follow in the default order.
+
+  **Use it for** a node type that declares `type: "simple"`.
+  **Not for** the node the editor draws by default; that is `WorkflowNode`.
 -->
 
 <script lang="ts">
@@ -31,11 +33,14 @@
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import NodeProblemMark from './NodeProblemMark.svelte';
+  import { getNodeProblem } from '../../utils/nodeProblem.js';
   import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`ports`, dynamic ports) and node type. */
     data: {
       label: string;
       config: ConfigValues;
@@ -47,14 +52,18 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 
   let props: Props = $props();
 
   const fd = getInstance();
+  const problem = getNodeProblem();
   const checker = fd.portCompatibility;
 
   /** Handle ids bound to a `workflow.interface` entry — see workflowStore. */
@@ -189,7 +198,10 @@
   ondblclick={handleDoubleClick}
 >
   <div class="flowdrop-simple-node__header">
-    <div class="flowdrop-simple-node__header-content">
+    <div
+      class="flowdrop-simple-node__header-content"
+      class:flowdrop-simple-node__header-content--problem={problem?.severity != null}
+    >
       <!-- Node Icon (squircle) — visibility controlled by --fd-node-icon-display -->
       <div
         class="flowdrop-simple-node__icon-wrapper"
@@ -326,6 +338,21 @@
     display: flex;
     align-items: center;
     gap: var(--fd-space-md);
+  }
+
+  /* The gear sits over the header's top-right: end the mark left of it, and keep
+     it there whether or not the gear is showing. (The header already pads 20px.) */
+  .flowdrop-simple-node__header-content--problem {
+    padding-right: calc(var(--fd-node-config-btn-slot) - 20px);
+  }
+
+  /* Level with the gear, as on the default card: centred on its middle, not the row's. */
+  .flowdrop-simple-node__header-content--problem > :global(.fd-node-problem) {
+    align-self: flex-start;
+    margin-top: calc(
+      var(--fd-space-xs) + var(--fd-node-config-btn-size) / 2 - 10px - var(--fd-node-problem-size) /
+        2
+    );
   }
 
   /* Squircle icon wrapper - Apple-style rounded square background */

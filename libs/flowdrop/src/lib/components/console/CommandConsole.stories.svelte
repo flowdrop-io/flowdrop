@@ -1,111 +1,139 @@
-<script module>
+<script module lang="ts">
+  // The editor's bottom panel: the strip is its header, the console fills the rest.
   import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { fn, userEvent, within } from 'storybook/test';
   import CommandConsole from './CommandConsole.svelte';
-  import { fn } from 'storybook/test';
-
-  const mockNodeTypes = [
-    {
-      id: 'llm_chat',
-      name: 'LLM Chat',
-      description: 'Chat completion using an LLM provider',
-      category: 'AI',
-      version: '1.0.0',
-      inputs: [
-        { id: 'prompt', name: 'Prompt', type: 'input', dataType: 'string' },
-        { id: 'context', name: 'Context', type: 'input', dataType: 'string' }
-      ],
-      outputs: [
-        {
-          id: 'response',
-          name: 'Response',
-          type: 'output',
-          dataType: 'string'
-        }
-      ],
-      configSchema: {
-        type: 'object',
-        properties: {
-          model: { type: 'string', default: 'gpt-4' },
-          temperature: { type: 'number', default: 0.7 },
-          maxTokens: { type: 'number', default: 1024 }
-        }
-      }
-    },
-    {
-      id: 'http_request',
-      name: 'HTTP Request',
-      description: 'Send HTTP requests to external APIs',
-      category: 'Integration',
-      version: '1.0.0',
-      inputs: [
-        { id: 'url', name: 'URL', type: 'input', dataType: 'string' },
-        { id: 'body', name: 'Body', type: 'input', dataType: 'object' }
-      ],
-      outputs: [
-        {
-          id: 'response',
-          name: 'Response',
-          type: 'output',
-          dataType: 'object'
-        },
-        {
-          id: 'status',
-          name: 'Status Code',
-          type: 'output',
-          dataType: 'number'
-        }
-      ],
-      configSchema: {
-        type: 'object',
-        properties: {
-          method: { type: 'string', default: 'GET' },
-          headers: { type: 'object', default: {} },
-          timeout: { type: 'number', default: 30000 }
-        }
-      }
-    },
-    {
-      id: 'text_template',
-      name: 'Text Template',
-      description: 'Render text templates with variable substitution',
-      category: 'Transform',
-      version: '1.0.0',
-      inputs: [
-        {
-          id: 'variables',
-          name: 'Variables',
-          type: 'input',
-          dataType: 'object'
-        }
-      ],
-      outputs: [{ id: 'text', name: 'Text', type: 'output', dataType: 'string' }],
-      configSchema: {
-        type: 'object',
-        properties: {
-          template: { type: 'string', default: '' },
-          delimiter: { type: 'string', default: '{{' }
-        }
-      }
-    }
-  ];
+  import ConsoleStrip from './ConsoleStrip.svelte';
+  import InstanceDecorator from '../../stories/InstanceDecorator.svelte';
+  import { chatWorkflow, nodeTypes } from '../../stories/fixtures.js';
 
   const { Story } = defineMeta({
-    title: 'Patterns/Editor/CommandConsole',
+    title: 'Editor/Canvas/Console',
     component: CommandConsole,
     tags: ['autodocs'],
-    parameters: {
-      layout: 'padded'
-    },
-    args: {
-      nodeTypes: mockNodeTypes,
-      onUIAction: fn()
-    }
+    parameters: { layout: 'padded' },
+    args: { nodeTypes, onUIAction: fn() }
   });
+
+  const PANEL_ID = 'story-console-panel';
+
+  /** Click one of the example commands the empty Console offers. */
+  const runExample = (name: string) => async (ctx: { canvasElement: HTMLElement }) => {
+    await userEvent.click(
+      await within(ctx.canvasElement).findByRole('button', { name: new RegExp(name) })
+    );
+  };
 </script>
 
+{#snippet panel(args: Record<string, unknown>)}
+  <div class="console-panel">
+    <ConsoleStrip open controls={PANEL_ID} onToggle={() => {}} />
+    <div class="console-panel__body">
+      <CommandConsole
+        id={PANEL_ID}
+        nodeTypes={args.nodeTypes as typeof nodeTypes}
+        onUIAction={args.onUIAction as () => void}
+      />
+    </div>
+  </div>
+{/snippet}
+
 <Story
-  name="Default"
-  args={{
-    nodeTypes: mockNodeTypes
+  name="In the editor"
+  asChild
+  play={runExample('list nodes')}
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The Console open under the canvas, with the workflow loaded. An empty Console offers read-only examples to click; this story clicks "list nodes". Type `help` to see every command.'
+      }
+    }
   }}
-/>
+>
+  <InstanceDecorator workflow={chatWorkflow} {nodeTypes}>
+    {@render panel({ nodeTypes, onUIAction: () => {} })}
+  </InstanceDecorator>
+</Story>
+
+<Story
+  name="Empty"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story: 'The first thing a person sees: a prompt and three commands to try.'
+      }
+    }
+  }}
+>
+  <InstanceDecorator workflow={chatWorkflow} {nodeTypes}>
+    {@render panel({ nodeTypes, onUIAction: () => {} })}
+  </InstanceDecorator>
+</Story>
+
+<Story
+  name="Node types"
+  asChild
+  play={runExample('list types')}
+  parameters={{
+    docs: {
+      description: {
+        story: '`list types` shows the node types the palette offers, by category.'
+      }
+    }
+  }}
+>
+  <InstanceDecorator workflow={chatWorkflow} {nodeTypes}>
+    {@render panel({ nodeTypes, onUIAction: () => {} })}
+  </InstanceDecorator>
+</Story>
+
+<Story
+  name="Help"
+  asChild
+  play={runExample('help')}
+  parameters={{
+    docs: {
+      description: {
+        story: '`help` lists the editing commands, then the `session` commands that drive runs.'
+      }
+    }
+  }}
+>
+  <InstanceDecorator workflow={chatWorkflow} {nodeTypes}>
+    {@render panel({ nodeTypes, onUIAction: () => {} })}
+  </InstanceDecorator>
+</Story>
+
+<Story
+  name="No workflow open"
+  asChild
+  play={runExample('list nodes')}
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'Commands act on the workflow open in the editor. With none open they answer "No workflow loaded".'
+      }
+    }
+  }}
+>
+  <InstanceDecorator {nodeTypes}>
+    {@render panel({ nodeTypes, onUIAction: () => {} })}
+  </InstanceDecorator>
+</Story>
+
+<style>
+  .console-panel {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--fd-border);
+  }
+
+  .console-panel__body {
+    height: 260px;
+  }
+</style>

@@ -1,7 +1,13 @@
 <!--
-  Node Sidebar Component
-  Displays available node types organized by category with accordion-style groups
-  Styled with BEM syntax
+  @component
+  The node palette: every node type the editor knows, grouped by category in accordions, with a search field.
+  Drag a node onto the canvas to add it. In Test mode the same list opens as a popover.
+
+  Nodes that do not fit the workflow's format are left out. The list keeps the order the backend sent. The look
+  (cards, flat or rows) follows the theme's `display.sidebarList`.
+
+  **Use it for** finding and adding nodes.
+  **Not for** changing a node that is already on the canvas (that is the config panel).
 -->
 
 <script lang="ts">

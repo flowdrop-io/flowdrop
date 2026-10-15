@@ -1,13 +1,13 @@
 <!--
-  CanvasContextMenu Component
-  The editor's right-click / Shift+F10 menu. Renders already-resolved entries
-  (see editor/contextMenu.ts) as an ARIA menu positioned at the pointer and
-  clamped inside the viewport. It is a manual popover, so it sits in the top
-  layer and no ancestor's overflow or stacking context can clip or cover it;
-  that is also why it is positioned in viewport coordinates. A manual popover
-  does not light-dismiss, so it closes itself on outside pointerdown, wheel
-  (zoom/pan), window blur, Escape, and after an entry runs.
-  Styled with BEM syntax.
+  @component
+  The right-click menu of the canvas (also Shift+F10). It draws entries that are already resolved
+  (see `editor/contextMenu.ts`) as an ARIA menu at the pointer, kept inside the window.
+
+  It is a manual popover, so it sits above everything and no parent can clip it. For that reason it uses
+  window coordinates. It closes on a click elsewhere, wheel, window blur, Escape, and after an entry runs.
+
+  **Use it for** actions on a node, a selection or the empty canvas.
+  **Not for** menus that hang off a button (use the `Menu` primitive).
 -->
 
 <script lang="ts">

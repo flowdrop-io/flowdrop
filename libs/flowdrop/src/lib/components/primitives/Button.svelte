@@ -1,12 +1,17 @@
 <!--
-  Button primitive — the design-system button (variant x size x state).
+  @component
+  Button: the editor's text button, with a variant, a size and optional icons.
 
-  Scoped styles built only on --fd-* tokens; heights come from --fd-control-sm
-  (24) / --fd-control-md (28). The focus ring is the library-wide one in
-  base.css (never declared here). The legacy `components/Button.svelte` is a thin
-  wrapper over this component.
+  Sizes are the control heights: `sm` is 24px, `md` is 28px, `lg` is 32px. The editor
+  uses `sm` almost everywhere. `loading` shows a spinner and blocks clicks but keeps focus.
+  The focus ring comes from base.css, never from this file.
 
-  @internal Not exported from any package entry; not public API yet.
+  **Use it for** any labelled action: Save, Run, Retry, Cancel.
+  **Not for** icon-only actions; use `IconButton`. For a list of actions behind one
+  trigger use `Menu`.
+
+  Not exported from the package; internal to the editor. The wrapper `components/Button.svelte`
+  is the old API on top of this.
 -->
 
 <script lang="ts">
@@ -14,7 +19,10 @@
   import type { HTMLButtonAttributes } from 'svelte/elements';
 
   interface Props extends Omit<HTMLButtonAttributes, 'children' | 'class' | 'type' | 'title'> {
-    /** Visual style */
+    /**
+     * Visual style. `danger` follows the theme. `destructive` is always the red fill (a final
+     * confirm). `danger-ghost` is red text with no fill, for a quiet delete.
+     */
     variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'destructive' | 'danger-ghost';
     /** Height: `sm` = --fd-control-sm (24), `md` = --fd-control-md (28), `lg` = --fd-control-lg (32) */
     size?: 'sm' | 'md' | 'lg';

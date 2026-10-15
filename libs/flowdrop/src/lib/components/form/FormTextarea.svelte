@@ -1,11 +1,9 @@
 <!--
-  FormTextarea Component
-  Multiline text input field for longer string values
-  
-  Features:
-  - Resizable textarea with minimum height
-  - Focus and hover states
-  - Proper ARIA attributes for accessibility
+  @component
+  A multi-line text box that can be resized, with a minimum height.
+
+  **Use it for** longer plain text such as a system prompt. The factory picks it for `format: "multiline"`.
+  **Not for** text with `{{ variables }}` (use `FormTemplateEditor`) or Markdown (use `FormMarkdownEditor`).
 -->
 
 <script lang="ts">

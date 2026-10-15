@@ -1,13 +1,16 @@
 <!--
-  NodeTip
+  @component
+  The tooltip and popover of a node card: a port's name, type and help, or the full title and
+  description of the node.
 
-  The tooltip and popover of a node card: a port's name, type and help, or the
-  full title with the node's description. It is portalled to <body> and placed
-  from the anchor's screen rectangle, so it keeps its size at any canvas zoom
-  and is never clipped by the node or the canvas transform.
+  It is portalled to `<body>` and placed from the anchor's screen rectangle, so it keeps its
+  size at any canvas zoom and is never clipped by the node or the canvas transform.
 
-  `tip` variant: an inverted chip for short port help. `pop` variant: a
-  surface with a rule, for the node description.
+  `tip` is an inverted chip for short port help. `pop` is a surface with a rule, for the node
+  description.
+
+  **Use it for** help that must stay readable while the canvas is scaled.
+  **Not for** ordinary controls; use the primitives' own tooltips.
 -->
 
 <script lang="ts">

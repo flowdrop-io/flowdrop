@@ -1,10 +1,14 @@
 <!--
-  Chip primitive — a small label (not interactive by default).
+  @component
+  Chip: a small, rounded label. Not interactive unless you give it `onremove`.
 
-  Tones map to the semantic muted/solid token pairs. `onremove` adds a trailing
-  x IconButton with an accessible label.
+  Tones map to the muted/solid colour pairs. `onremove` adds a trailing x button with an
+  accessible label.
 
-  @internal Not exported from any package entry; not public API yet.
+  **Use it for** tags and short status words next to a title.
+  **Not for** run status; use `StatusPill`. Not used in the editor yet.
+
+  Not exported from the package; not public API yet.
 -->
 
 <script lang="ts">

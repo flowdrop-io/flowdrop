@@ -1,10 +1,17 @@
 <!--
-  Segmented primitive — a single-choice switch (e.g. Edit | Test).
+  @component
+  Segmented: a switch that picks one option, for example Edit | Test.
 
-  role="radiogroup" with role="radio" items and a roving tabindex: Tab enters on
-  the selected option, Left/Right (Up/Down) move and select, Home/End jump.
+  `role="radiogroup"` with `role="radio"` items. Tab enters on the selected option; Left/Right
+  (or Up/Down) move and select; Home/End jump to the ends.
 
-  @internal Not exported from any package entry; not public API yet.
+  **Segmented, Tabs or Toolbar?** Use Segmented to switch a MODE (Edit | Test). Use `Tabs` to
+  switch a VIEW of the same content (Form | JSON | Steps). Use `Toolbar` to group several
+  different controls so arrow keys move between them.
+
+  `float` draws the switch as its own floating control, as in the canvas toolbar.
+
+  Not exported from the package; not public API yet.
 -->
 
 <script lang="ts">

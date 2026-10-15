@@ -1,16 +1,14 @@
 <!--
-  SchemaForm Component
-  
-  A standalone form generator that creates dynamic forms from JSON Schema definitions.
-  Designed for external use without coupling to FlowDrop workflow nodes.
-  
-  Features:
-  - Dynamic form generation from JSON Schema
-  - Two-way binding with value updates via onChange callback
-  - Optional save/cancel action buttons
-  - Support for all standard JSON Schema field types
-  - Accessible form controls with ARIA attributes
-  
+  @component
+  A form built from a JSON Schema, with two-way values, optional Save and Cancel, and no tie to a workflow.
+
+  Node configuration does not use it: that is `ConfigForm`, which knows about nodes, ports and the inspector.
+  `SchemaForm` is for the places that only have a schema and some values: the interrupt `FormPrompt`
+  and the public form entry that hosts mount on their own pages.
+
+  **Use it for** a standalone form from a schema.
+  **Not for** editing a node (use `ConfigForm`).
+
   @example
   ```svelte
   <script lang="ts">
@@ -52,7 +50,6 @@
   />
   ```
 -->
-
 <script lang="ts">
   import { setContext } from 'svelte';
   import Icon from '@iconify/svelte';

@@ -1,9 +1,13 @@
 <!--
-  Tool Node Component
-  A specialized node for tools, on the card v2 geometry (see NodeCard): the same
-  header, with the tool's badge and version on the "kind" line, and its tool
-  ports (the ones of `metadata.portDataType`, default `tool`) as one row. The
-  tool colour washes the header.
+  @component
+  A node an agent can call, drawn on the shared card.
+
+  It has the same header as `WorkflowNode` (see `NodeCard`), with the tool's badge and
+  version on the kind line and a wash in the tool colour. Its tool ports (those of
+  `metadata.portDataType`, default `tool`) are one row.
+
+  **Use it for** a node type that declares `type: "tool"`.
+  **Not for** a node that only has ordinary data ports; use `WorkflowNode`.
 -->
 
 <script lang="ts">
@@ -20,7 +24,9 @@
   }
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (tool name, description, version, parameters) and node type. */
     data: {
       label: string;
       config: ConfigValues & {
@@ -42,8 +48,11 @@
         };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 

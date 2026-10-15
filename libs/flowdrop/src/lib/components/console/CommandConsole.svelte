@@ -1,7 +1,13 @@
 <!--
-  CommandConsole Component
-  Bottom-panel REPL shell for the FlowDrop Command DSL
-  Styled with BEM syntax matching ConfigPanel pattern
+  @component
+  The editor's Console: a terminal-style panel for the FlowDrop command language (`list nodes`, `add ...`,
+  `help`) and for `session` commands that drive runs.
+
+  Commands act on the workflow open in the instance (`getInstance()`). With no workflow loaded they answer
+  "No workflow loaded". An empty Console offers a few read-only example commands to click.
+
+  **Use it for** inspecting and editing the workflow by typing, and for scripted batches.
+  **Not for** the open/close toggle (that is `ConsoleStrip`).
 -->
 
 <script lang="ts">

@@ -223,7 +223,7 @@ export interface FlowDropMountOptions {
   workflowFormats?: string[];
 
   // NEW: Visual theme
-  /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
+  /** Visual theme — named built-in ('graphite' | 'classic' | 'minimal' | 'drafter') or custom theme object */
   theme?: FlowDropTheme | FlowDropThemeName;
 
   // Settings modal customization

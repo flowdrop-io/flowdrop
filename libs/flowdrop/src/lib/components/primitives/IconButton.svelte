@@ -1,11 +1,16 @@
 <!--
-  IconButton primitive — square, icon-only button (variant x size x state).
+  @component
+  IconButton: a square, icon-only button.
 
-  `ariaLabel` is required because there is no visible text. `active` renders a
-  toggle (aria-pressed). Heights/widths come from --fd-control-sm / -md. The
-  library's only icon button.
+  `ariaLabel` is required because there is no visible text. Pass `active` (true or false)
+  to make it a toggle; it then exposes `aria-pressed`. Sizes are 24px (`sm`) and 28px
+  (`md`); the editor uses `sm` in rows and panel headers.
+  It is the library's only icon button.
 
-  @internal Not exported from any package entry; not public API yet.
+  **Use it for** close, delete, move up/down, show/hide and other single-glyph actions.
+  **Not for** an action that needs a text label; use `Button`.
+
+  Not exported from the package; internal to the editor.
 -->
 
 <script lang="ts">

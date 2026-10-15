@@ -1,9 +1,10 @@
 <!--
-  ConfirmationPrompt Component
-  
-  Renders a Yes/No confirmation prompt for confirmation-type interrupts.
-  Two action buttons with customizable labels, secondary then primary. The question
-  itself is the card's title (InterruptBubble); an answered card folds to one line there.
+  @component
+  Two buttons for a yes or no question, with labels the step can set: the second action first, then the primary one.
+  The question itself is the card title, drawn by `InterruptBubble`.
+
+  **Use it for** the body of an `InterruptBubble` of type `confirmation`.
+  **Not for** more than two answers (use `ChoicePrompt`).
 -->
 
 <script lang="ts">

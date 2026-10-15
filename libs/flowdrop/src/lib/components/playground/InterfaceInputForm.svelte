@@ -1,19 +1,12 @@
 <!--
-  InterfaceInputForm Component
+  @component
+  The inputs card of the Playground for a workflow whose interface has inputs: one field for each input, a blue Run
+  (Cmd/Ctrl+Enter), which becomes Stop while a run is going, and "Fill from last run".
 
-  The inputs card a workflow's interface inputs render as in the Playground:
-  one field per input entry without a chat turn (the session fills turn
-  ports, so they never appear here). Values are keyed by entry id, the name
-  the server matches `inputs` on. The fields are InputFields'; this component
-  frames them and adds what a form-first panel needs:
+  Without `onRun` (the folded Inputs row above a chat composer) the card has no Run: the composer's Send takes the turn.
 
-   - a blue Run (⌘↵ / Ctrl+↵ from anywhere in the card), turned into Stop while
-     a run is in flight, with a refusal named under it;
-   - "Fill from last run", and the session's earlier runs below the card (pick
-     one to refill, never to run).
-
-  Without `onRun` (the folded Inputs row above a chat composer) the card has
-  no Run: the composer's Send takes the turn.
+  **Use it for** the panel of a workflow that has inputs and no chat.
+  **Not for** one line of chat (use `ChatInput`).
 -->
 
 <script lang="ts">

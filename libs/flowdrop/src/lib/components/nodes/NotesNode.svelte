@@ -1,8 +1,20 @@
+<!--
+  @component
+  A sticky note on the canvas: markdown text with a tone (info, note, warning, success, error).
+
+  A note has no ports and does not run. It grows with its text, in steps of the 20 px grid,
+  and has no status overlay. Double-click it to edit.
+
+  **Use it for** documentation that sits next to the nodes it explains.
+  **Not for** a one-line label; use `CaptionNode`.
+-->
+
 <script lang="ts">
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import { onMount } from 'svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
   import { m } from '$lib/messages/index.js';
 
@@ -11,7 +23,9 @@
    * Displays a styled note with markdown content
    */
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The note: `config.content` is the markdown, `config.noteType` the tone (default `info`). */
     data: {
       label: string;
       config: ConfigValues;
@@ -22,8 +36,11 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 
@@ -178,6 +195,9 @@
     {/if}
   </div>
 
+  <!-- The Doctor's mark: no header here, so it sits in the corner, left of the gear. -->
+  <NodeProblemMark />
+
   <!-- Config button -->
   <NodeConfigButton onclick={openConfigSidebar} title={notes.configure} />
 </div>
@@ -205,6 +225,16 @@
     transition: box-shadow var(--fd-transition-fast);
     overflow: hidden;
     z-index: 5;
+  }
+
+  /* Level with the gear: centred on its middle. */
+  .flowdrop-notes-node :global(.fd-node-problem) {
+    position: absolute;
+    top: calc(
+      var(--fd-space-xs) + (var(--fd-node-config-btn-size) - var(--fd-node-problem-size)) / 2
+    );
+    right: var(--fd-node-config-btn-slot);
+    z-index: 2;
   }
 
   /* Variants: the tint is the type (accent mixed into the paper for the edge). */

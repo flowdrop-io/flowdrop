@@ -1,3 +1,12 @@
+<!--
+  @component
+  **Legacy.** The Kanban view of a run, shown by `PipelinePanel`, which only the deprecated standalone Playground renders.
+  The user sees nodes as cards in columns by status (pending, running, done and so on), with time and error details, and the cards refresh as the run goes.
+
+  **Use it for** a status-board view of a run inside `PipelinePanel`.
+  **Not for** the editor's Test mode; the docked Playground shows the run on the canvas and in `StepsSummary` instead.
+-->
+
 <script module lang="ts">
   import type { KanbanColumnDef } from '$lib/types/index.js';
 
@@ -49,10 +58,15 @@
   import type { AuthProvider } from '$lib/types/auth.js';
 
   interface Props {
+    /** Id of the run to show. */
     pipelineId: string;
+    /** The workflow the run belongs to, used for node names. */
     workflow: Workflow;
+    /** API endpoints used to load the run. Must stay stable. */
     endpointConfig: EndpointConfig;
+    /** Auth provider for the API requests. Default: none. */
     authProvider?: AuthProvider;
+    /** Bump this number to reload the run soon after. Default: 0. */
     refreshTrigger?: number;
   }
 

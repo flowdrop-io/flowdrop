@@ -1,11 +1,14 @@
 <!--
-  Checkbox — a 16px box with a check, replacing the native control.
+  @component
+  Checkbox: a 16px box with a check mark, in place of the native control.
 
-  A real checkbox underneath (keyboard, forms, screen readers). The label is
-  optional: pass `label` for visible text, or `ariaLabel` when the row around it
-  already names it.
+  A real checkbox sits underneath, so keyboard, forms and screen readers work as usual.
+  Pass `label` for visible text, or `aria-label` when the row around it already names it.
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** a yes/no option in a form or a list of choices.
+  **Not for** an instant on/off setting; use `Switch`.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">

@@ -1,0 +1,28 @@
+import { Meta, Story } from '@storybook/addon-docs/blocks';
+import * as Typography from './Typography.stories.svelte';
+
+<Meta of={Typography} />
+
+# Typography
+
+The editor is a dense tool, so its type is small and calm. In Graphite, running text is 13px and
+meta text (timestamps, help, labels) is 12px. Headings are rare; weight (600) does more work than
+size.
+
+## The type scale
+
+Six steps. Use the names below; the others are older names kept so existing CSS still works
+(`--fd-text-xsm` equals `--fd-text-sm`, `--fd-text-base` equals `--fd-text-md`, `--fd-text-lg`
+equals `--fd-text-xl`).
+
+<Story of={Typography.TypeScale} />
+
+## Fonts
+
+A skin can name a font. Graphite names **Inter**, but does not load it: import
+`@flowdrop/flowdrop/styles/fonts/inter.css` (or serve the same `@font-face`). Without it the
+editor falls back to the system font. Code and IDs use `--fd-font-mono`.
+
+## All type tokens
+
+<Story of={Typography.AllTypeTokens} />

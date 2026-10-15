@@ -13,7 +13,7 @@ import type { FlowDropSkin } from '../types/skin.js';
  *
  * This is not the flowdrop.io or Factorial brand kit. Every token a colour
  * role needs is set here in both modes, so nothing falls back to the blue
- * of the default theme.
+ * of the Classic theme.
  *
  * The font is named, not loaded: import `@flowdrop/flowdrop/styles/fonts/inter.css`
  * (or serve the same @font-face) to get Inter; without it the stack falls

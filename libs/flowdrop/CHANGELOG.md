@@ -17,12 +17,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The "Default" theme is now called "Classic".** It was never the default: the editor opens in
+  Graphite. Its id is `'classic'` (`classicTheme`), and Settings → Theme lists Graphite first. A
+  settings snapshot or Drupal config that says `'default'` loads as `'classic'`, and
+  `resolveTheme('default')` still returns it.
 - **Console `clear` keeps the interface.** Its entries stay, with their bindings dropped, and the Playground
   replies are removed, all in one undo step.
 - **A wired port can't be hidden in the Ports tab.** A shown port that still has connections keeps its eye,
   with a link badge; activating it says to remove the connections on the canvas first. Locked ports use the
   same eye with a lock badge. A port on the workflow interface can't be hidden either: its eye gets a tag
   badge and says to remove it from the interface first.
+
+### Deprecated
+
+- The theme name `'default'` and the `defaultTheme` export. Use `'classic'` and `classicTheme`;
+  the old names are removed in 3.0.
+
+### Removed
+
+- **The `.flowdrop-btn--icon*` classes in `base.css`.** Every icon button in the library uses the
+  `IconButton` primitive, which has its own styles.
 
 ### Fixed
 
@@ -34,11 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Editing ports keeps entries for ports the node doesn't have.** The Ports tab and bulk Show/Hide used to
   drop a stored `ports` entry whose port the node type no longer lists; they now keep it, as Tidy up already
   did. All three write `ports` the same way.
-
-### Removed
-
-- **The `.flowdrop-btn--icon*` classes in `base.css`.** Every icon button in the library uses the
-  `IconButton` primitive, which has its own styles.
 
 ## [2.13.0] - 2026-10-14
 

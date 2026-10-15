@@ -1,20 +1,13 @@
 <!--
-  FormArray Component
-  Dynamic array field that allows adding, removing, and reordering items
-  Generates sub-forms for each item based on the schema's items property
-  
-  Features:
-  - Add/remove items with animated transitions
-  - Supports simple types (string, number, boolean) and complex types (objects)
-  - Recursively uses FormField for item rendering
-  - Drag handle for future reordering support
-  - Collapsible items for complex object arrays
-  - Empty state with helpful prompt
-  
-  Accessibility:
-  - Proper ARIA labels for add/remove buttons
-  - Keyboard navigation support
-  - Screen reader friendly item descriptions
+  @component
+  A list field where the person adds, removes and reorders items. Each item is drawn from the schema's `items`:
+  simple types as one control, objects as a small sub-form. Arrays of small objects (up to two scalar fields)
+  draw as compact rows through `FormArrayRows`.
+
+  An empty list shows a short prompt. `minItems` and `maxItems` limit the list. `readOnly` shows the items as a plain list.
+
+  **Use it for** a config value that is a list: headers, tags, branches.
+  **Not for** a fixed set of choices (use `FormCheckboxGroup`).
 -->
 
 <script lang="ts">

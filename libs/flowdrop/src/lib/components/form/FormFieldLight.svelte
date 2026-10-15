@@ -1,10 +1,11 @@
 <!--
-  FormFieldLight Component (exported as `FormField` from "@flowdrop/flowdrop/form")
+  @component
+  The field factory without the heavy editors. It is exported as `FormField` from `@flowdrop/flowdrop/form`, and the editor's
+  config form uses it. Code, markdown and template fields draw through the instance's field registry,
+  or as a plain textarea with a hint when nothing is registered.
 
-  The field factory without heavy editors: code, markdown and template fields
-  render through the instance's field registry, or as a plain textarea with a
-  hint naming the registration call. All field resolution lives in
-  FieldFactory; see its header for the order.
+  **Use it for** rendering one field from a schema while keeping CodeMirror out of your bundle.
+  **Not for** a whole form (use `SchemaForm` or `ConfigForm`).
 -->
 
 <script lang="ts">

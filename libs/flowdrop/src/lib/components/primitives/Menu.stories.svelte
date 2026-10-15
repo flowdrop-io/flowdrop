@@ -6,18 +6,25 @@
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Primitives/Menu',
+    title: 'Components/Menu',
     component: Menu,
     tags: ['autodocs'],
     parameters: { layout: 'centered' },
     argTypes: {
       size: { control: 'select', options: ['sm', 'md'] },
-      align: { control: 'select', options: ['start', 'end'] }
+      align: { control: 'select', options: ['start', 'end'] },
+      minWidth: { control: { type: 'number', min: 120, max: 400 } }
     },
-    args: { size: 'md', align: 'start', label: 'More actions' }
+    args: { size: 'sm', align: 'end', label: 'Row actions', minWidth: 180 }
   });
 
   const onselect = fn();
+  const rowItems: MenuEntry[] = [
+    { label: 'Move up', icon: 'mdi:arrow-up', onselect },
+    { label: 'Move down', icon: 'mdi:arrow-down', onselect },
+    { type: 'separator' },
+    { label: 'Delete', icon: 'mdi:delete-outline', onselect }
+  ];
   const items: MenuEntry[] = [
     { label: 'Show steps', hint: 'Log every node as it runs', checked: true, onselect },
     { label: 'JSON view', checked: false, onselect },
@@ -32,42 +39,45 @@
     { label: 'Duplicate', onselect },
     { label: 'Delete', disabled: true, onselect }
   ];
-  const sizes = ['sm', 'md'] as const;
+  let open = $state(false);
 </script>
 
-<!-- The popup is absolutely positioned: reserve room under the trigger. -->
-{#snippet matrix()}
-  <div style="display:grid; grid-template-columns:repeat(2, 300px); gap:1rem 2rem;">
-    {#each sizes as size (size)}
-      <div style="min-height:300px;">
-        <Menu {size} label="Actions {size}" {items} open />
-      </div>
-      <div style="min-height:300px;">
-        <Menu {size} label="Plain {size}" items={plainItems} open align="start">
-          {#snippet trigger()}
-            <span
-              style="display:inline-flex; align-items:center; gap:var(--fd-space-xs); height:var(--fd-control-{size}); padding-inline:var(--fd-space-md); border:1px solid var(--fd-border); border-radius:var(--fd-radius-full); font-size:var(--fd-text-xs);"
-            >
-              Support triage <Icon icon="mdi:chevron-down" />
-            </span>
-          {/snippet}
-        </Menu>
-      </div>
-    {/each}
-  </div>
-{/snippet}
-
-<Story name="Default" asChild>
-  <div style="min-height:280px;"><Menu {items} /></div>
+<Story
+  name="In the editor"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A row menu: the small three-dot trigger, with the popup lined up to the right edge (`align="end"`).'
+      }
+    }
+  }}
+>
+  {#snippet template(args)}
+    <div style="min-height:200px; min-width:240px; display:flex; justify-content:flex-end;">
+      <Menu {...args} items={rowItems} />
+    </div>
+  {/snippet}
 </Story>
 
-<Story name="Open" asChild>
-  <div style="min-height:300px; min-width:280px;"><Menu {items} open /></div>
+<Story
+  name="Checks and groups"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'Items can be checkable (`checked`), carry a hint or an icon, be disabled, and be split with separators and group labels. Shown open.'
+      }
+    }
+  }}
+  asChild
+>
+  <div style="min-height:320px; min-width:280px;"><Menu {items} open /></div>
 </Story>
 
-<Story name="CustomTrigger" asChild>
+<Story name="Custom trigger" asChild>
   <div style="min-height:200px; min-width:240px;">
-    <Menu label="Workflow" items={plainItems} open>
+    <Menu label="Workflow" items={plainItems} minWidth={200} open>
       {#snippet trigger()}
         Support triage <Icon icon="mdi:chevron-down" />
       {/snippet}
@@ -75,10 +85,22 @@
   </div>
 </Story>
 
-<Story name="Matrix" parameters={{ layout: 'padded' }} asChild>
-  {@render matrix()}
-</Story>
-
-<Story name="MatrixDark" globals={{ theme: 'dark' }} parameters={{ layout: 'padded' }} asChild>
-  {@render matrix()}
+<Story
+  name="Controlled"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          '`bind:open` lets the page open and close the menu. The text shows the current state.'
+      }
+    }
+  }}
+  asChild
+>
+  <div style="min-height:240px; min-width:260px; display:grid; gap:var(--fd-space-sm);">
+    <Menu bind:open items={plainItems} label="Actions" />
+    <span style="font-size:var(--fd-text-xs); color:var(--fd-muted-foreground);">
+      The menu is {open ? 'open' : 'closed'}.
+    </span>
+  </div>
 </Story>

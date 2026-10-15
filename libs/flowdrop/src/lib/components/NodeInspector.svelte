@@ -1,14 +1,13 @@
 <!--
-  NodeInspector — what the inspector shows for an open node.
+  @component
+  What the right-hand panel shows for an open node: a 40px tab row (Config, Ports, Execution, and Last run in Test mode) over the node's form.
 
-  A 40px tab row under the meta lines: Config | Ports | Execution, plus Last run
-  in Test mode. The form tabs come from the form itself (ConfigForm reports the
-  sections it has through the inspector context), so a node without ports or an
-  Execution group simply has fewer tabs, and a node with a single tab shows no
-  strip at all. The form stays mounted behind every tab, so an edit in progress
-  survives looking at another tab or at the last run.
+  The form tabs come from the form itself. A node without ports or an Execution group has fewer tabs, and a node with one tab shows no strip.
+  The form stays mounted behind every tab, so an edit in progress survives a look at the last run.
+  A node that points to another workflow shows a link row above the tabs.
 
-  The external-workflow link ("Runs Calculator ↗") is a row above the tabs.
+  **Use it for** the content of `ConfigPanel` when a node is open.
+  **Not for** other panels (workflow settings use the panel without it).
 -->
 
 <script lang="ts">

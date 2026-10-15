@@ -1,10 +1,10 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import Tabs from './Tabs.svelte';
+  import Tabs, { tabId, tabPanelId } from './Tabs.svelte';
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Primitives/Tabs',
+    title: 'Components/Tabs',
     component: Tabs,
     tags: ['autodocs'],
     parameters: { layout: 'centered' },
@@ -23,23 +23,43 @@
     { value: 'logs', label: 'Logs', icon: 'mdi:text-long' }
   ];
   const sizes = ['sm', 'md'] as const;
+
+  const text: Record<string, string> = {
+    form: 'Fill in the fields one by one.',
+    json: 'Edit the same values as JSON.',
+    steps: 'See each step of the run.'
+  };
+
+  let view = $state('form');
 </script>
 
-{#snippet matrix()}
-  <div style="display:grid; gap:1rem; justify-items:start;">
-    {#each sizes as size (size)}
-      <Tabs {size} ariaLabel="Plain {size}" tabs={plain} value="json" />
-      <Tabs {size} ariaLabel="Rich {size}" tabs={rich} value="inputs" />
-      <Tabs {size} ariaLabel="Rich {size} (last)" tabs={rich} value="logs" />
-    {/each}
+<Story
+  name="With panels"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The editor passes `idBase` and renders a panel with the ids the component exposes: `tabPanelId(idBase, value)` for the panel and `tabId(idBase, value)` for `aria-labelledby`. That ties each tab to its panel for screen readers.'
+      }
+    }
+  }}
+  asChild
+>
+  <div style="width: 320px;">
+    <Tabs idBase="story-views" ariaLabel="Views" tabs={plain} bind:value={view} />
+    <div
+      role="tabpanel"
+      id={tabPanelId('story-views', view)}
+      aria-labelledby={tabId('story-views', view)}
+      tabindex="0"
+      style="padding: var(--fd-space-sm); font-size: var(--fd-text-sm);"
+    >
+      {text[view]}
+    </div>
   </div>
-{/snippet}
-
-<Story name="Default" asChild>
-  <Tabs ariaLabel="Views" tabs={plain} value="form" />
 </Story>
 
-<Story name="WithIconsAndCounts" asChild>
+<Story name="Icons and counts" asChild>
   <Tabs ariaLabel="Sections" tabs={rich} value="inputs" />
 </Story>
 
@@ -47,10 +67,12 @@
   <Tabs size="sm" ariaLabel="Views" tabs={plain} value="form" />
 </Story>
 
-<Story name="Matrix" parameters={{ layout: 'padded' }} asChild>
-  {@render matrix()}
-</Story>
-
-<Story name="MatrixDark" globals={{ theme: 'dark' }} parameters={{ layout: 'padded' }} asChild>
-  {@render matrix()}
+<Story name="All variants" parameters={{ layout: 'padded' }} asChild>
+  <div style="display:grid; gap:1rem; justify-items:start;">
+    {#each sizes as size (size)}
+      <Tabs {size} ariaLabel="Plain {size}" tabs={plain} value="json" />
+      <Tabs {size} ariaLabel="Rich {size}" tabs={rich} value="inputs" />
+      <Tabs {size} ariaLabel="Rich {size} (last)" tabs={rich} value="logs" />
+    {/each}
+  </div>
 </Story>

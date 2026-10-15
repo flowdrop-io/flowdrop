@@ -1,36 +1,54 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import FormNumberField from './FormNumberField.svelte';
   import { fn } from 'storybook/test';
+  import FormNumberField from './FormNumberField.svelte';
+  import FieldInEditor from '../../stories/FieldInEditor.svelte';
+  import { fieldSchemas } from '../../stories/formFixtures.js';
 
   const { Story } = defineMeta({
-    title: 'Patterns/Form/FormNumberField',
+    title: 'Editor/Forms/Number field',
     component: FormNumberField,
     tags: ['autodocs'],
-    argTypes: {
-      value: { control: 'number' },
-      placeholder: { control: 'text' },
-      min: { control: 'number' },
-      max: { control: 'number' },
-      step: { control: 'number' },
-      required: { control: 'boolean' },
-      disabled: { control: 'boolean' }
-    },
-    args: {
-      id: 'demo-number-field',
-      value: '',
-      onChange: fn()
-    }
+    parameters: { layout: 'padded' },
+    args: { id: 'max-results', value: '', onChange: fn() }
   });
 </script>
 
-<Story name="Default" args={{ placeholder: 'Enter a number...' }} />
-
-<Story name="With Value" args={{ value: 42 }} />
+<Story
+  name="In the editor"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          "A number or integer field in a node's config form, with the limits from the schema (`minimum`, `maximum`)."
+      }
+    }
+  }}
+>
+  <FieldInEditor schema={fieldSchemas.number} value={10} />
+</Story>
 
 <Story
-  name="With Constraints"
-  args={{ value: 50, min: 0, max: 100, step: 5, placeholder: '0-100, step 5' }}
-/>
+  name="Empty"
+  asChild
+  parameters={{
+    docs: { description: { story: 'A cleared box gives an empty string, not zero.' } }
+  }}
+>
+  <FieldInEditor schema={fieldSchemas.number} />
+</Story>
 
-<Story name="Disabled" args={{ value: 10, disabled: true }} />
+<Story name="Read only" asChild>
+  <FieldInEditor schema={{ ...fieldSchemas.number, readOnly: true }} value={25} />
+</Story>
+
+<Story
+  name="Bare input"
+  args={{ value: 5, min: 0, max: 10, step: 1 }}
+  parameters={{
+    docs: {
+      description: { story: 'The input alone, with no label. Use the controls to try the props.' }
+    }
+  }}
+/>

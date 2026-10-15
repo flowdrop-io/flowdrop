@@ -1,9 +1,9 @@
 <!--
-  FormCheckboxGroup Component
-  Checkbox group for multiple value selection (enum with multiple=true)
-  
-  Features:
-  - Checkbox primitive per option: no box around the group
+  @component
+  A list of checkboxes for choosing several values from a fixed set.
+
+  **Use it for** an `enum` with `multiple: true`.
+  **Not for** one choice (use `FormSelect`) or a single yes or no (use `FormToggle`).
 -->
 
 <script lang="ts">

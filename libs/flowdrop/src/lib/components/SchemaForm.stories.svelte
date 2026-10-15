@@ -1,122 +1,132 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import SchemaForm from './SchemaForm.svelte';
   import { fn } from 'storybook/test';
+  import SchemaForm from './SchemaForm.svelte';
+  import InstanceDecorator from '../stories/InstanceDecorator.svelte';
+  import type { ConfigSchema } from '../types/index.js';
 
   const { Story } = defineMeta({
-    title: 'Patterns/Form/SchemaForm',
+    title: 'Editor/Forms/Schema form',
     component: SchemaForm,
     tags: ['autodocs'],
-    args: {
-      onChange: fn(),
-      onSave: fn(),
-      onCancel: fn()
-    }
+    parameters: { layout: 'padded' },
+    args: { onChange: fn(), onSave: fn(), onCancel: fn() }
   });
+
+  const feedback: ConfigSchema = {
+    type: 'object',
+    properties: {
+      email: { type: 'string', title: 'Email', description: 'Where we send the answer.' },
+      topic: {
+        type: 'string',
+        title: 'Topic',
+        oneOf: [
+          { const: 'billing', title: 'Billing' },
+          { const: 'shipping', title: 'Shipping' },
+          { const: 'other', title: 'Something else' }
+        ]
+      },
+      message: { type: 'string', title: 'Message', format: 'multiline' },
+      subscribe: { type: 'boolean', title: 'Keep me updated', default: false }
+    },
+    required: ['email']
+  };
+
+  const model: ConfigSchema = {
+    type: 'object',
+    properties: {
+      model: {
+        type: 'string',
+        title: 'AI model',
+        oneOf: [
+          { const: 'gpt-4o', title: 'GPT-4o' },
+          { const: 'claude-sonnet', title: 'Claude Sonnet' }
+        ]
+      },
+      temperature: {
+        type: 'number',
+        title: 'Temperature',
+        format: 'range',
+        minimum: 0,
+        maximum: 2,
+        step: 0.1
+      },
+      prompt: { type: 'string', title: 'System prompt', format: 'multiline' }
+    }
+  };
+</script>
+
+<script lang="ts">
+  let values = $state<Record<string, unknown>>({ email: '', topic: 'shipping', subscribe: false });
 </script>
 
 <Story
-  name="Simple Form"
-  args={{
-    schema: {
-      type: 'object',
-      properties: {
-        name: {
-          type: 'string',
-          title: 'Name',
-          description: 'Enter your full name'
-        },
-        age: { type: 'number', title: 'Age', minimum: 0, maximum: 120 },
-        active: { type: 'boolean', title: 'Active', default: true }
-      },
-      required: ['name']
-    },
-    values: { name: 'Alice', age: 30, active: true }
+  name="Interrupt form"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'How a run uses it. When a workflow pauses to ask a person for several values, the interrupt card draws its fields with `SchemaForm` and a submit button (the card relabels Save as Submit and hides Cancel). Required fields get a mark.'
+      }
+    }
   }}
-/>
+>
+  <InstanceDecorator width="26rem">
+    <SchemaForm
+      schema={feedback}
+      {values}
+      showActions
+      onChange={(next) => (values = next)}
+      onSave={fn()}
+    />
+  </InstanceDecorator>
+</Story>
 
 <Story
-  name="Select Fields"
+  name="Choices and a slider"
   args={{
-    schema: {
-      type: 'object',
-      properties: {
-        model: {
-          type: 'string',
-          title: 'AI Model',
-          oneOf: [
-            { const: 'gpt-4', title: 'GPT-4' },
-            { const: 'gpt-3.5', title: 'GPT-3.5 Turbo' },
-            { const: 'claude-3', title: 'Claude 3' }
-          ]
-        },
-        temperature: {
-          type: 'number',
-          title: 'Temperature',
-          format: 'range',
-          minimum: 0,
-          maximum: 2,
-          step: 0.1,
-          default: 0.7
-        },
-        prompt: {
-          type: 'string',
-          title: 'System Prompt',
-          format: 'multiline',
-          description: 'The system prompt for the AI model'
-        }
+    schema: model,
+    values: { model: 'gpt-4o', temperature: 0.7, prompt: 'You are a helpful assistant.' }
+  }}
+  parameters={{
+    docs: {
+      description: {
+        story: 'A choice, a slider and a long text. Use the controls to change the props.'
       }
-    },
-    values: {
-      model: 'gpt-4',
-      temperature: 0.7,
-      prompt: 'You are a helpful assistant.'
     }
   }}
 />
 
 <Story
-  name="With Actions"
+  name="Saving"
   args={{
-    schema: {
-      type: 'object',
-      properties: {
-        email: { type: 'string', title: 'Email' },
-        notifications: { type: 'boolean', title: 'Enable Notifications' }
-      },
-      required: ['email']
-    },
-    values: { email: '', notifications: true },
-    showActions: true
-  }}
-/>
-
-<Story
-  name="Loading"
-  args={{
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', title: 'Name' }
-      }
-    },
-    values: { name: 'Test' },
+    schema: feedback,
+    values: { email: 'ada@example.com' },
     showActions: true,
     loading: true
   }}
+  parameters={{
+    docs: {
+      description: {
+        story: 'After Save is pressed and until the answer comes back, the buttons are off.'
+      }
+    }
+  }}
 />
 
 <Story
-  name="Disabled"
+  name="Answered"
   args={{
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', title: 'Name' },
-        role: { type: 'string', title: 'Role' }
-      }
-    },
-    values: { name: 'Admin', role: 'Super User' },
+    schema: feedback,
+    values: { email: 'ada@example.com', topic: 'billing', message: 'Thanks!' },
     disabled: true
+  }}
+  parameters={{
+    docs: {
+      description: {
+        story: 'The form is read only, as an interrupt shows it after it has been answered.'
+      }
+    }
   }}
 />

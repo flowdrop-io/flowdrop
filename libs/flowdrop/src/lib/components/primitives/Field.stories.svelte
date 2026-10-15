@@ -1,10 +1,11 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import Field from './Field.svelte';
+  import Select from './Select.svelte';
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Primitives/Field',
+    title: 'Components/Field',
     component: Field,
     tags: ['autodocs'],
     parameters: { layout: 'centered' },
@@ -17,36 +18,58 @@
     { name: 'Required', props: { required: true, typeTag: 'string' } },
     { name: 'Help', props: { help: 'Where replies are sent.' } },
     { name: 'Error', props: { error: 'Enter a valid email address.', required: true } },
-    { name: 'Help + error', props: { help: 'Where replies are sent.', error: 'Required.' } },
+    { name: 'Help and error', props: { help: 'Where replies are sent.', error: 'Required.' } },
     {
       name: 'Examples',
       props: { typeTag: 'array', examples: ['["a", "b"]', '[]', '["support@example.com"]'] }
     }
+  ];
+
+  const formats = [
+    { value: 'plain', label: 'Plain text' },
+    { value: 'markdown', label: 'Markdown' },
+    { value: 'json', label: 'JSON' }
   ];
 </script>
 
 {#snippet input(ctx: { id: string; describedBy: string | undefined; invalid: boolean })}
   <input
     id={ctx.id}
+    class="flowdrop-input"
+    class:flowdrop-input--invalid={ctx.invalid}
     aria-describedby={ctx.describedBy}
     aria-invalid={ctx.invalid}
-    style="padding:0 var(--fd-space-sm); height:var(--fd-control-md); border:1px solid {ctx.invalid
-      ? 'var(--fd-error)'
-      : 'var(--fd-border)'}; border-radius:var(--fd-radius-md); background:var(--fd-background); color:var(--fd-foreground); font:inherit; font-size:var(--fd-text-sm);"
   />
 {/snippet}
 
-{#snippet matrix()}
-  <div style="display:grid; grid-template-columns:repeat(2, 280px); gap:1.5rem;">
-    {#each states as state (state.name)}
-      <Field label={state.name} {...state.props}>
-        {#snippet children(ctx)}{@render input(ctx)}{/snippet}
-      </Field>
-    {/each}
+<Story
+  name="With a Select"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'How config forms use it: the Field gives the control its `id` and `aria-describedby`, so the label and the help text are tied to it.'
+      }
+    }
+  }}
+  asChild
+>
+  <div style="width:280px; min-height:160px">
+    <Field label="Message format" typeTag="string" help="How the reply text is written." required>
+      {#snippet children(ctx)}
+        <Select
+          id={ctx.id}
+          aria-describedby={ctx.describedBy}
+          invalid={ctx.invalid}
+          options={formats}
+          value="markdown"
+        />
+      {/snippet}
+    </Field>
   </div>
-{/snippet}
+</Story>
 
-<Story name="Default" asChild>
+<Story name="With an input" asChild>
   <div style="width:280px">
     <Field label="Customer email" typeTag="string" help="Where replies are sent.">
       {#snippet children(ctx)}{@render input(ctx)}{/snippet}
@@ -54,7 +77,18 @@
   </div>
 </Story>
 
-<Story name="Error" asChild>
+<Story
+  name="With an error"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The error is read out as an alert and shown in the error colour. The control turns red.'
+      }
+    }
+  }}
+  asChild
+>
   <div style="width:280px">
     <Field label="Customer email" required error="Enter a valid email address.">
       {#snippet children(ctx)}{@render input(ctx)}{/snippet}
@@ -62,7 +96,17 @@
   </div>
 </Story>
 
-<Story name="WithExamples" asChild>
+<Story
+  name="With examples"
+  parameters={{
+    docs: {
+      description: {
+        story: 'Clicking an example calls `onexample`; the form can use it to fill the control.'
+      }
+    }
+  }}
+  asChild
+>
   <div style="width:280px">
     <Field label="Tags" typeTag="array" examples={['["a", "b"]', '[]']}>
       {#snippet children(ctx)}{@render input(ctx)}{/snippet}
@@ -70,10 +114,12 @@
   </div>
 </Story>
 
-<Story name="Matrix" parameters={{ layout: 'padded' }} asChild>
-  {@render matrix()}
-</Story>
-
-<Story name="MatrixDark" globals={{ theme: 'dark' }} parameters={{ layout: 'padded' }} asChild>
-  {@render matrix()}
+<Story name="All variants" parameters={{ layout: 'padded' }} asChild>
+  <div style="display:grid; grid-template-columns:repeat(2, 280px); gap:1.5rem;">
+    {#each states as state (state.name)}
+      <Field label={state.name} {...state.props}>
+        {#snippet children(ctx)}{@render input(ctx)}{/snippet}
+      </Field>
+    {/each}
+  </div>
 </Story>

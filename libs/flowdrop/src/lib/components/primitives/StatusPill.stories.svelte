@@ -3,7 +3,7 @@
   import StatusPill from './StatusPill.svelte';
 
   const { Story } = defineMeta({
-    title: 'Primitives/StatusPill',
+    title: 'Components/StatusPill',
     component: StatusPill,
     tags: ['autodocs'],
     parameters: { layout: 'centered' },
@@ -23,17 +23,33 @@
   const sizes = ['sm', 'md'] as const;
 </script>
 
-<Story name="Running" args={{ status: 'running' }} />
-<Story name="Completed" args={{ status: 'completed' }} />
-<Story name="Waiting" args={{ status: 'waiting' }} />
-<Story name="Failed" args={{ status: 'failed' }} />
-<Story name="Skipped" args={{ status: 'skipped' }} />
-<Story name="With count" args={{ status: 'failed', count: 3 }} />
+<Story
+  name="In the editor"
+  args={{ status: 'failed', count: 3 }}
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The pill sits on a node and shows its status. The count shows how many nodes share it.'
+      }
+    }
+  }}
+/>
+
 <Story name="Custom label" args={{ status: 'waiting', label: 'Approve draft' }} />
 
-<Story name="Screen size (zoom 0.4)" args={{ status: 'running', zoom: 0.4, screenSize: true }} />
-
-<Story name="Screen size on a zoomed-out node" asChild>
+<Story
+  name="Counter-scaled on a node"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'With `screenSize` the pill grows as the canvas zooms out, so it stays readable. The nodes shrink; the pill does not.'
+      }
+    }
+  }}
+  asChild
+>
   <div style="display:flex; gap:3rem; align-items:flex-end;">
     {#each [1, 0.6, 0.4, 0.2] as z (z)}
       <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem;">
@@ -53,7 +69,7 @@
   </div>
 </Story>
 
-<Story name="Matrix" asChild>
+<Story name="All variants" parameters={{ layout: 'padded' }} asChild>
   <div
     style="display:grid; grid-template-columns:auto auto auto auto; gap:0.75rem 1rem; align-items:center;"
   >
@@ -67,18 +83,6 @@
         <StatusPill {status} {size} count={3} />
         <StatusPill {status} {size} label="A much longer label" />
       {/each}
-    {/each}
-  </div>
-</Story>
-
-<Story name="Matrix (dark)" globals={{ theme: 'dark' }} asChild>
-  <div
-    style="display:grid; grid-template-columns:auto auto auto; gap:0.75rem 1rem; align-items:center;"
-  >
-    {#each statuses as status (status)}
-      <StatusPill {status} size="sm" />
-      <StatusPill {status} />
-      <StatusPill {status} count={12} />
     {/each}
   </div>
 </Story>

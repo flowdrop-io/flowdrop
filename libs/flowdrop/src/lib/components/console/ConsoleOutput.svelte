@@ -1,7 +1,9 @@
 <!--
-  ConsoleOutput Component
-  Scrollable output area for displaying command results in the console
-  Styled with BEM syntax matching CommandConsole pattern
+  @component
+  The scrolling output area of the Console. It draws the lines you typed, results, errors and formatted tables,
+  with the command language highlighted, and stays scrolled to the newest line.
+
+  **Use it for** showing command results inside `CommandConsole`.
 -->
 
 <script lang="ts">

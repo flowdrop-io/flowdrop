@@ -1,13 +1,15 @@
 <!--
-  Square Node Component
-  A simple square node with optional input and output ports
-  Styled with BEM syntax
+  @component
+  A square node that shows only its icon, with the ports on its edges.
 
   Port rendering:
-  - Exposure (data.config.ports, falling back to each port's exposedByDefault)
-    decides which ports render — a not-exposed port is hidden.
-  - Order: data.config.ports order overrides the metadata default (displayOrder);
-    unlisted ports follow in default order.
+  - Exposure (`data.config.ports`, falling back to each port's `exposedByDefault`) decides
+    which ports render. A port that is not exposed is hidden.
+  - Order: `data.config.ports` overrides the metadata default (`displayOrder`); ports it does
+    not list follow in the default order.
+
+  **Use it for** a node type that declares `type: "square"`, where the icon says enough.
+  **Not for** a node that needs a title or a description; use `WorkflowNode`.
 -->
 
 <script lang="ts">
@@ -36,7 +38,9 @@
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`ports`, dynamic ports) and node type. */
     data: {
       label: string;
       config: ConfigValues;
@@ -48,8 +52,11 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 
@@ -207,6 +214,7 @@
       ></span>
     </div>
 
+    <!-- The Doctor's mark: a badge on the tile's bottom-right, clear of the ports, the gear and the top edge. -->
     <NodeProblemMark />
 
     <!-- Processing indicator -->
@@ -224,7 +232,12 @@
     {/if}
 
     <!-- Config button -->
-    <NodeConfigButton onclick={openConfigSidebar} title={m().nodes.configure} />
+    <!-- Above the square, as on TerminalNode: the corners carry the ports. -->
+    <NodeConfigButton
+      onclick={openConfigSidebar}
+      title={m().nodes.configure}
+      placement="top-center"
+    />
   </div>
 </div>
 
@@ -320,6 +333,23 @@
   .flowdrop-square-node--error .flowdrop-square-node__square {
     --_border: var(--fd-error);
     background-color: var(--fd-error-muted) !important;
+  }
+
+  /* The Doctor's mark, centred at the top of the square just below the gear that
+     floats above it (as on TerminalNode): in the middle of the band between the
+     square's edge and the 48px icon tile. A disc in the card colour keeps it
+     legible where it meets the border. */
+  .flowdrop-square-node__square :global(.fd-node-problem) {
+    position: absolute;
+    top: calc((16px - var(--fd-node-problem-size)) / 2);
+    left: 50%;
+    right: auto;
+    translate: -50% 0;
+    transform-origin: top center;
+    z-index: 2;
+    border-radius: var(--fd-radius-full);
+    background: var(--fd-node-bg);
+    box-shadow: 0 0 0 1px var(--fd-node-bg);
   }
 
   /* Compact layout styles */

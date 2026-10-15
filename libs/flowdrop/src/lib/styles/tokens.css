@@ -355,7 +355,7 @@
   --fd-scrollbar-size: 10px; /* @internal  scrollbar width in the editor */
 
   /* ----- FORM CONTROL, BUTTON, MENU, SHEET AND MODAL KNOBS -----
-     Defaults reproduce the Default theme; Graphite sets its own (skins/graphite.ts). */
+     Defaults reproduce the Classic theme; Graphite sets its own (skins/graphite.ts). */
   --fd-field-height: auto; /* @internal  input/select height; auto = padding + line */
   --fd-field-height-sm: auto; /* @internal  small input/select height */
   --fd-field-padding: 0.625rem 0.875rem; /* @internal  input/select padding */
@@ -563,7 +563,7 @@
   --fd-navbar-height: 48px; /* @internal — controlled programmatically */
   --fd-toolbar-height: 40px; /* @internal — controlled programmatically */
 
-  /* ----- NAVBAR (defaults reproduce the Default look; Graphite sets quiet values) ----- */
+  /* ----- NAVBAR (defaults reproduce the Classic look; Graphite sets quiet values) ----- */
   --fd-navbar-start-width: 240px; /* @internal  width of the logo column */
   --fd-navbar-logo-height: 24px; /* @internal  wordmark lockup height */
   --fd-navbar-rule-display: none; /* @internal  1px x 16px rule between logo and workflow name */
@@ -702,9 +702,9 @@
   --fd-node-title-weight: 500; /* @internal */
   --fd-node-title-clamp: 2; /* @internal  title lines before an ellipsis */
 
-  /* ----- NODE CARD v2 (G8): category wash header, icon tile, half-pill ports -----
+  /* ----- NODE CARD (category wash header, icon tile, half-pill ports) -----
      Geometry (60px header, 20/40px grid, 280/320 width) is fixed in utils/nodeGeometry.ts and is
-     not a token: only the look is. Defaults are the Default theme's look; Graphite sets its own. */
+     not a token: only the look is. Defaults are the Classic theme's look; Graphite sets its own. */
   --fd-node-header-wash: 8%; /* @internal  how much of the category colour the header surface takes */
   --fd-node-header-pad-x: 16px; /* @internal  header and description-band side padding */
   --fd-node-tile-size: 32px; /* @internal  solid icon tile edge */
@@ -748,6 +748,10 @@
   --fd-node-halo-mix: 28%; /* @internal  port colour in the halo, the rest transparent */
   --fd-node-halo-breath: 1.8s; /* @internal  one breath in (or out) of a port ready to receive */
   --fd-node-drag-dull-opacity: 0.35; /* @internal  a port that does not take the dragged type */
+  --fd-node-config-btn-size: 24px; /* @internal  the gear's width and height */
+  --fd-node-config-btn-slot: calc(
+    var(--fd-space-xs) + var(--fd-node-config-btn-size) + 4px
+  ); /* @internal  room a node keeps for the gear at its top-right: offset, gear and a gap */
   --fd-node-config-btn-bg: var(--fd-backdrop); /* @internal  the gear on a hovered card */
   --fd-node-config-btn-border: var(--fd-border); /* @internal */
   --fd-node-config-btn-radius: var(--fd-radius-sm); /* @internal */
@@ -914,7 +918,7 @@
   --fd-node-border: #4a4a52;
   --fd-node-border-hover: #5a5a62;
 
-  /* ----- NODE CARD v2 (dark) ----- */
+  /* ----- NODE CARD (dark) ----- */
   --fd-node-header-wash: 16%;
   --fd-node-tile-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
   --fd-node-pin-open: #7d8594;

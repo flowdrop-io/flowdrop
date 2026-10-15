@@ -1,21 +1,13 @@
 <!--
-  ConfigForm Component
-  Handles dynamic form rendering for node or entity configuration
-  Supports both node-based config and direct schema/values
-  Uses reactive $state for proper Svelte 5 reactivity
-  
-  Features:
-  - Dynamic form generation from JSON Schema using modular form components
-  - Node-level settings the editor contributes for every node (port order +
-    exposure), rendered even when the node type declares no config schema
-  - Extensible architecture for complex schema types (array, object)
-  - Admin/Edit support for external configuration links and dynamic schema fetching
-  
-  Accessibility features:
-  - Proper label associations with for/id attributes
-  - ARIA describedby for field descriptions
-  - Focus-visible states for keyboard navigation
-  - Required field indicators
+  @component
+  The form for one node's configuration. It draws the fields from the node type's `configSchema` (or a fetched schema),
+  adds the settings every node has (port order and exposure), splits them into the inspector's Config, Ports and Execution tabs,
+  and reports edits through `onChange`.
+
+  It can also run on its own with a direct `schema` and `values`. It shows an external edit link, or fetches its schema, when the node type asks for it.
+
+  **Use it for** editing a node, inside `NodeInspector`.
+  **Not for** a plain schema with no node (use `SchemaForm`).
 -->
 
 <script lang="ts">

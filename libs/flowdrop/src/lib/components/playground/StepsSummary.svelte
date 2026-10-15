@@ -1,14 +1,10 @@
 <!--
-  StepsSummary — one row for the steps of a turn.
+  @component
+  One row that sums up the steps of a turn.
+  The user sees it in the conversation, such as "4 steps - 46 ms - 1 waiting". Opening it shows a compact list (status dot, node, runs, time). A failed step's error stays visible under the row, open or closed. Steps from sub-workflows are indented, and their full path is the cell's title.
 
-  "4 steps · 46 ms · 1 waiting ▸" opens a compact list (status dot · node · runs ·
-  time). A failed step's error stays visible under the row, folded or not,
-  because that is what people look for. Nested (sub-workflow) steps are indented
-  in the node column; their full path is the cell's title. The origin chip and
-  the per-node breadcrumb rows of the old log rows are gone: the Playground is
-  where the reader already is, and the table says which node it was.
-
-  @internal Used by MessageStream.
+  **Use it for** showing what a run did, in place of one log line per step.
+  **Not for** a full run view; use `PipelinePanel` instead.
 -->
 
 <script lang="ts">
@@ -19,8 +15,11 @@
   import type { StepsSummary } from './stepSummary.js';
 
   interface Props {
+    /** The steps of the turn to sum up. */
     summary: StepsSummary;
+    /** Whether the step list is open. */
     expanded: boolean;
+    /** Called when the user opens or closes the list. */
     onToggle: () => void;
     /** Used to tie the toggle to the table it opens. */
     id: string;

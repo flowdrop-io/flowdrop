@@ -1,14 +1,27 @@
+<!--
+  @component
+  The message in the middle of an empty canvas: an icon, a title and a line of help.
+
+  It fills the canvas and lets clicks through, so the canvas under it still takes drops. The editor shows it
+  while the workflow has no nodes and removes it with the first node.
+
+  **Use it for** telling a person what to do on a canvas with nothing on it.
+  **Not for** errors or progress (use `EditorStatusBar` or a notice).
+-->
+
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  let {
-    title,
-    description,
-    icon
-  }: {
+
+  interface Props {
+    /** The headline, for example "Drag components here to start building". */
     title: string;
+    /** One line of help under the title. */
     description: string;
+    /** The icon above the title. Nothing is drawn when it is left out. */
     icon?: Snippet;
-  } = $props();
+  }
+
+  let { title, description, icon }: Props = $props();
 </script>
 
 <div class="flowdrop-canvas-banner">

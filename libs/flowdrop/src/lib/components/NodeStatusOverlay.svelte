@@ -1,21 +1,22 @@
 <!--
-  Node Status Overlay Component
-  The run status of a node: a StatusPill (icon + label, plus a count when the
-  node has more than one run) centred on the node's top edge, growing upward off
-  the node. Each zoom tier draws it at a fixed size in flow px (a multiplier per
-  tier, tokens `--fd-node-zoom-status-scale-*`), never divided by the zoom. In
-  the map tier (`data-fd-zoom='map'` on the editor root) the pill gives way to a
-  status-coloured outline around the node and a count badge; both are in the DOM
-  and CSS picks one, so crossing a boundary re-renders nothing.
+  @component
+  The run status of a node: a pill with an icon and a label (and a count when the node ran
+  more than once), centred on the node's top edge and growing upward off the node.
 
-  Hover shows the count and the last error line, nothing else; durations and
-  job history live in the inspector's Last run tab.
+  Each zoom tier draws it at a fixed size in flow px, never divided by the zoom. In the map tier
+  (`data-fd-zoom="map"` on the editor root) the pill gives way to an outline in the status
+  colour and a count badge. Both are in the DOM and CSS picks one, so crossing a boundary
+  re-renders nothing. In Test mode `UniversalNode` also thickens the node's border in the status
+  colour; the frame for that is drawn here, behind the card so the ports stay on top.
 
-  Execution statuses map onto the five pill statuses with `toPillStatus()`
-  (utils/nodeStatus.ts); a node whose status maps to nothing (idle, pending)
-  draws nothing.
+  Hover shows the count and the last error line. Durations and job history live in the
+  inspector's Last run tab.
 
-  Styled with BEM syntax
+  Execution statuses map onto five pill statuses with `toPillStatus()` (`utils/nodeStatus.ts`).
+  A node whose status maps to nothing (idle, pending) draws nothing.
+
+  **Use it for** run state on a node. `UniversalNode` mounts it; you rarely need to.
+  **Not for** a status in a list or a toolbar; use `StatusPill`.
 -->
 
 <script lang="ts">
@@ -102,9 +103,17 @@
     --_frame: 0 0 0 var(--fd-node-status-edge) var(--_status);
     position: absolute;
     inset: 0;
-    z-index: 1000;
+    /* No z-index here: that would make the overlay one stacking context and lift
+       the frame over the ports. The pill, badge and outline sit on top; the
+       frame goes behind the card. */
     /* Clicks go through to the node; only the pill itself takes hover. */
     pointer-events: none;
+  }
+
+  .node-status-overlay__pill,
+  .node-status-overlay__outline,
+  .node-status-overlay__badge {
+    z-index: 1000;
   }
 
   .node-status-overlay--running {
@@ -154,10 +163,12 @@
   }
 
   /* Carries the shadows that thicken the node's status-coloured border (and
-     draw the waiting halo); UniversalNode sets them, in Test mode only. */
+     draw the waiting halo); UniversalNode sets them, in Test mode only. Behind
+     the card, so the ports on its edge stay on top of the halo. */
   .node-status-overlay__frame {
     position: absolute;
     inset: 0;
+    z-index: -1;
     border-radius: var(--fd-node-radius, 8px);
     pointer-events: none;
   }

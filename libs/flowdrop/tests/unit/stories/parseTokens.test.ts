@@ -4,7 +4,8 @@ import { resolve } from 'node:path';
 import {
   parseTokens,
   groupBySection,
-  resolveLiteral
+  resolveLiteral,
+  prettySection
 } from '../../../src/lib/stories/tokens/parseTokens';
 
 const SAMPLE = `
@@ -97,5 +98,27 @@ describe('real tokens.css', () => {
     expect(cat('--fd-panel-header')).toBe('size');
     expect(cat('--fd-status-running')).toBe('status');
     expect(cat('--fd-primary')).toBe('colour');
+  });
+});
+
+describe('prettySection', () => {
+  it('turns a shouting heading into a title and a note', () => {
+    expect(prettySection('SURFACES (Backgrounds)')).toEqual({
+      title: 'Surfaces',
+      note: 'Backgrounds'
+    });
+    expect(prettySection('STATUS: ERROR/DESTRUCTIVE').title).toBe('Status: Error/destructive');
+    expect(prettySection('NODE CARD v2 (G8): category wash').title).toBe('Node card v2');
+  });
+
+  it('drops the dangling part of a heading cut mid-parenthesis', () => {
+    expect(prettySection('CANVAS GRID (pattern color for the grid; any theme')).toEqual({
+      title: 'Canvas grid',
+      note: 'pattern color for the grid'
+    });
+  });
+
+  it('keeps a mixed-case palette heading as it is', () => {
+    expect(prettySection('Grays - tinted').title).toBe('Grays - tinted');
   });
 });

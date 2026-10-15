@@ -231,12 +231,12 @@
           title: 'Theme',
           description: 'Visual style and layout of the editor',
           oneOf: [
-            { const: 'default', title: 'Default' },
+            { const: 'graphite', title: 'Graphite' },
+            { const: 'classic', title: 'Classic' },
             { const: 'minimal', title: 'Minimal' },
-            { const: 'drafter', title: 'Drafter' },
-            { const: 'graphite', title: 'Graphite' }
+            { const: 'drafter', title: 'Drafter' }
           ],
-          default: 'default'
+          default: 'graphite'
         },
         configPlacement: {
           type: 'string',
@@ -479,7 +479,7 @@
 
   /**
    * Swatch colours of a registered theme, from its own skin for the scheme in
-   * use. Themes without a skin (Default) fall back to the stock palette.
+   * use. Themes without a skin (Classic) fall back to the stock palette.
    */
   const STOCK_SWATCH = {
     light: { background: '#ffffff', primary: '#3b82f6', accent: '#8b5cf6' },

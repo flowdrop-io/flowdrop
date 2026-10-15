@@ -1,12 +1,15 @@
 <!--
-  Switch — an on/off control (28×16 track, round thumb).
+  @component
+  Switch: an on/off control with a 28x16 track and a round thumb.
 
-  A real checkbox with `role="switch"`, so keyboard, form and screen-reader
-  behaviour come from the browser. No state word: the on state is the track
-  colour and `aria-checked`. Name it with `label` (visually hidden) or by
-  putting it inside / next to a <label for={id}>.
+  A real checkbox with `role="switch"`, so keyboard, form and screen-reader behaviour come
+  from the browser. There is no state word: the track colour and `aria-checked` show the
+  state. Name it with `label` (hidden visually) or put it next to a `<label for={id}>`.
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** a setting that takes effect right away.
+  **Not for** an option that is saved later with a form; use `Checkbox`.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">

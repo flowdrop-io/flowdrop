@@ -1,10 +1,9 @@
 <!--
-  LogRow — dense terminal-style entry for one log message.
+  @component
+  A dense, terminal-style line for one log message. The conversation folds a turn's log rows into one steps row
+  (`StepsSummary`), so this stays for hosts that render a single message through `MessageBubble`.
 
-  The conversation no longer renders these: MessageStream folds a turn's log
-  rows into one StepsSummary row. LogRow stays for consumers that render a
-  single message through MessageBubble. It carries no breadcrumb trail, and
-  the origin chip (OriginBadge) is not drawn for the Playground's own rows.
+  **Use it for** nothing on its own. Render a message with `MessageBubble`.
 -->
 
 <script lang="ts">

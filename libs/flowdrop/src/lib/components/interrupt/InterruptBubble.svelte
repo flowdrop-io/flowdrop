@@ -1,13 +1,14 @@
 <!--
-  InterruptBubble Component
-  
-  Container component for rendering interrupt prompts inline in the chat flow.
-  Displays the appropriate prompt component based on interrupt type.
-  Handles resolve/cancel actions using state machine for safe transitions.
+  @component
+  The card that holds a question from a paused run, inline in the chat. It picks the prompt for the
+  interrupt's type (confirmation, choice, text, form or review) and sends the answer.
 
-  One card: a title line (warning icon and the prompt), the prompt's content and its
-  actions. No header band, no footer band, no timestamp. Once answered it folds to
-  one muted line ("Confirmed · Yes"). Used by the Playground and the AI Assistant.
+  The card has a title line (the question), the prompt and its actions. A failed send shows the error with a
+  Retry button. Once answered it folds to one muted line, such as "Confirmed · Yes". Optional hierarchy and
+  tags show in a footer.
+
+  **Use it for** any question a run asks a person. The Playground and the AI Assistant both use it.
+  **Not for** a prompt without the card (use the prompt component itself, for example `ChoicePrompt`).
 -->
 
 <script lang="ts">

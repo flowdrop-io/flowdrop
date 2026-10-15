@@ -1,3 +1,12 @@
+<!--
+  @component
+  **Legacy.** The table view of a run, shown by `PipelinePanel`, which only the deprecated standalone Playground renders.
+  The user sees one row per node job with status, times, retries and any error, and can open a row to see its input and output data. Rows refresh as the run goes.
+
+  **Use it for** a sortable list of a run's jobs inside `PipelinePanel`.
+  **Not for** the editor's Test mode; use `StepsSummary` there instead.
+-->
+
 <script module lang="ts">
   import type { NodeStatus } from './pipelineViewUtils.svelte.js';
 
@@ -58,10 +67,15 @@
   import type { AuthProvider } from '$lib/types/auth.js';
 
   interface Props {
+    /** Id of the run to show. */
     pipelineId: string;
+    /** The workflow the run belongs to, used for node names. */
     workflow: Workflow;
+    /** API endpoints used to load the run. */
     endpointConfig: EndpointConfig;
+    /** Auth provider for the API requests. Default: none. */
     authProvider?: AuthProvider;
+    /** Bump this number to reload the run soon after. Default: 0. */
     refreshTrigger?: number;
   }
 

@@ -1,15 +1,24 @@
 import type { FlowDropTheme, FlowDropThemeName } from '../types/theme.js';
-import { defaultTheme } from './default.js';
+import { classicTheme, defaultTheme } from './classic.js';
 import { minimalTheme } from './minimal.js';
 import { drafterTheme } from './drafter.js';
 import { graphiteTheme } from './graphite.js';
 
 const builtinThemes: Record<FlowDropThemeName, FlowDropTheme> = {
-  default: defaultTheme,
+  classic: classicTheme,
+  default: classicTheme,
   minimal: minimalTheme,
   drafter: drafterTheme,
   graphite: graphiteTheme
 };
+
+/**
+ * The current name of a built-in theme: `'default'` (its name until 2.14)
+ * becomes `'classic'`. Any other name is returned as it is.
+ */
+export function normalizeThemeName(name: string): string {
+  return name === 'default' ? 'classic' : name;
+}
 
 /**
  * Resolve a theme prop to a complete FlowDropTheme object.
@@ -20,12 +29,14 @@ const builtinThemes: Record<FlowDropThemeName, FlowDropTheme> = {
  *   → minimal theme + { skin.tokens.primary: '#e11d48' }
  */
 export function resolveTheme(theme: FlowDropTheme | FlowDropThemeName | undefined): FlowDropTheme {
-  if (!theme || theme === 'default') return defaultTheme;
-  if (typeof theme === 'string') return builtinThemes[theme as FlowDropThemeName] ?? defaultTheme;
+  if (!theme) return classicTheme;
+  if (typeof theme === 'string') {
+    return builtinThemes[normalizeThemeName(theme) as FlowDropThemeName] ?? classicTheme;
+  }
 
   // Object form — check for a named base to merge on top of
-  const baseName = theme.name as FlowDropThemeName | undefined;
-  if (baseName && baseName !== 'default' && builtinThemes[baseName]) {
+  const baseName = theme.name ? (normalizeThemeName(theme.name) as FlowDropThemeName) : undefined;
+  if (baseName && baseName !== 'classic' && builtinThemes[baseName]) {
     const base = builtinThemes[baseName];
     return {
       name: baseName,
@@ -67,7 +78,8 @@ export function resolveTheme(theme: FlowDropTheme | FlowDropThemeName | undefine
     };
   }
 
-  return theme;
+  // Classic has no skin to merge; only its old name is brought up to date.
+  return baseName === 'classic' ? { ...theme, name: 'classic' } : theme;
 }
 
-export { defaultTheme, minimalTheme, drafterTheme, graphiteTheme };
+export { classicTheme, defaultTheme, minimalTheme, drafterTheme, graphiteTheme };

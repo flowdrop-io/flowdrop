@@ -1,7 +1,10 @@
 <!--
-  FormAutocomplete Component
-  Text input with autocomplete suggestions fetched from a callback URL
-  
+  @component
+  A text input with suggestions fetched from a URL as the person types, for one value or several (shown as removable tags).
+
+  **Use it for** values that come from a server list, such as users or content types.
+  **Not for** a short fixed list (use `FormSelect`).
+
   Features:
   - Single or multiple selection support
   - Selected values displayed as removable tags with light blue background

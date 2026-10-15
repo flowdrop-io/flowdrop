@@ -114,6 +114,7 @@ export const LIGHT_ALIASES: Readonly<Record<string, string>> = {
   'node-config-btn-hover-bg': 'var(--fd-muted)',
   'node-config-btn-hover-border': 'var(--fd-border-strong)',
   'node-config-btn-radius': 'var(--fd-radius-sm)',
+  'node-config-btn-slot': 'calc(var(--fd-space-xs) + var(--fd-node-config-btn-size) + 4px)',
   'node-desc-rule': 'var(--fd-border-muted)',
   'node-group-rule': 'var(--fd-border-muted)',
   'node-header-bg': 'var(--fd-header)',

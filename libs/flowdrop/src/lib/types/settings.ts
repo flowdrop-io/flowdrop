@@ -9,6 +9,7 @@
 
 import { DEFAULT_ZOOM_TIERS, type ZoomTierConfig } from '../utils/zoomTier.js';
 import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y, LAYOUT_GRID } from '../layout/types.js';
+import type { FlowDropThemeName } from './theme.js';
 
 // =========================================================================
 // Theme Settings
@@ -175,8 +176,11 @@ export interface UISettings {
   sidebarCollapsed: boolean;
   /** Enable compact mode for denser UI */
   compactMode: boolean;
-  /** Active theme name — overridden by the theme prop when explicitly provided */
-  theme: 'default' | 'minimal' | 'drafter' | 'graphite';
+  /**
+   * Active theme name — overridden by the theme prop when explicitly provided.
+   * A saved `'default'` (the old name of `'classic'`) is read as `'classic'`.
+   */
+  theme: FlowDropThemeName;
   /** Whether the command console panel is open */
   consoleOpen: boolean;
   /** Height of the command console panel in pixels (opens at 220, saved on resize) */

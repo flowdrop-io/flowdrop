@@ -1,14 +1,19 @@
 <!--
-  Node Problem Mark Component
-  The Doctor's finding on a node, drawn as a status glyph in the card header
-  (after the title) instead of a count bubble on the corner. The tooltip lists
-  the problems; the count is in the accessible name. In the glyph and map zoom
-  tiers the header is gone, so the mark moves to the card's top-right corner
-  and is counter-scaled (up to 2.2x) to stay visible.
+  @component
+  The Doctor's finding on a node, as a status glyph after the title. Each node component
+  places it level with the config gear: in the header just left of it, in the corner of a
+  note left of it, or centred below it at the top of a square or terminal node. A pill or
+  caption, which has no gear, takes it inline after the text.
 
-  Reads the node's problems from the UniversalNode context (or `problem`), and
-  claims them, so UniversalNode does not draw its own corner mark.
-  Styled with BEM syntax
+  The tooltip lists the problems; the count is in the accessible name. In the glyph and map
+  zoom tiers the header is gone, so the mark moves to the card's top-right corner and is
+  scaled up (to 2.2x) to stay visible.
+
+  It reads the node's problems from the `UniversalNode` context (or `problem`) and claims
+  them, so `UniversalNode` does not draw its own corner mark.
+
+  **Use it for** a node component that draws its own header.
+  **Not for** run status; use `NodeStatusOverlay`.
 -->
 
 <script lang="ts">

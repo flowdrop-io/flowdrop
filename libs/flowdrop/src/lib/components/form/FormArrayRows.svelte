@@ -1,14 +1,14 @@
 <!--
-  FormArrayRows — an array of small objects (up to two scalar fields) as a row
-  list: column headers once, one row per item (a hover grip, a control per
-  field, a ⋯ menu), nothing boxed.
+  @component
+  The row layout of `FormArray`, used when each item is a small object with at most two scalar fields: column headers once,
+  one row per item with a grip, a control per field and a menu. Nothing is boxed.
 
-  Reorder by dragging the grip, with Alt+Up / Alt+Down on a row's control, or
-  from the ⋯ menu. When the array is the target of an `x-item-ref` field, one row
-  carries a "default" badge, "Make default" sits in the ⋯ menu, and a line under
-  the list says what an empty, wired or dangling reference means.
+  Rows reorder by dragging the grip, with Alt+Up and Alt+Down, or from the row menu. When another field names one
+  of the rows (`x-item-ref`), that row shows a "default" mark and the menu offers "Make default".
+  It holds no data of its own; every change goes through the callbacks.
 
-  Used by FormArray; it owns no data, every change goes through the callbacks.
+  **Use it for** nothing directly. `FormArray` picks it.
+  **Not for** arrays of larger objects (`FormArray` draws those as cards).
 -->
 
 <script lang="ts">

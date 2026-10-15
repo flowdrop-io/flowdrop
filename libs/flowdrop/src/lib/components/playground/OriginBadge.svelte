@@ -1,8 +1,10 @@
 <!--
-  OriginBadge — small, subtle chip naming which component posted a message
-  (engine, playground, interrupt). Renders nothing for user/workflow rows or
-  rows from servers that do not send `origin`. Colours come from currentColor
-  so the chip reads on any bubble background (user bubbles are primary-bg).
+  @component
+  A small chip that names which part posted a message (engine, playground or interrupt).
+  The user sees it beside a message's name. It shows nothing for user or workflow messages, or when the server sends no `origin`. Colours follow the surrounding text, so it reads on any bubble background.
+
+  **Use it for** telling system sources apart in the feed.
+  **Not for** the message text or tags; use `MessageMarkdown` or `MessageTagStrip` instead.
 -->
 
 <script lang="ts">
@@ -11,6 +13,7 @@
   import { m } from '$lib/messages/index.js';
 
   interface Props {
+    /** The message whose `origin` to show. */
     message: Pick<PlaygroundMessage, 'origin'>;
   }
 

@@ -1,6 +1,10 @@
 <!--
-  FieldFactory Component (internal — not exported)
-  Factory component that renders the appropriate field based on schema type.
+  @component
+  The one field factory: it looks at a field's schema and draws the matching control inside a `FormFieldWrapper`.
+  Not exported; `FormField` and `FormFieldLight` are its public wrappers.
+
+  **Use it for** nothing directly. Use `FormField` or `FormFieldLight`.
+  **Not for** a whole form (use `SchemaForm` or `ConfigForm`).
 
   The one field factory. The public components are thin wrappers around it:
   - FormFieldLight (exported as `FormField` from "@flowdrop/flowdrop/form")

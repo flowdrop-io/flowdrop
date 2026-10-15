@@ -1,8 +1,8 @@
 <!--
-  ConsoleAutocomplete Component
-  Dropdown suggestion list for command verbs and node type IDs
-  Positioned above the input, max 8 visible items, scrollable
-  Styled with BEM syntax matching console component pattern
+  @component
+  The suggestion list above the Console input: command verbs and node type ids, at most eight rows visible, scrollable.
+
+  **Use it for** completing a command while typing in `ConsoleInput`.
 -->
 
 <script lang="ts">

@@ -1,8 +1,14 @@
 <!--
-  EmptyState — a quiet, centred "nothing here yet" block: optional icon,
-  title, description and an actions row.
+  @component
+  EmptyState: a quiet, centred "nothing here yet" block with an optional icon, title,
+  description and actions row.
 
-  @internal Not exported from any package entry; the API may still change.
+  `size="sm"` is for lists and small panels (the runs list uses it); `md` is for a whole pane.
+
+  **Use it for** an empty list or panel, and say what the user can do next.
+  **Not for** an error or a warning; use `Notice`.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">

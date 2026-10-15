@@ -216,7 +216,7 @@
     onAfterSwap?: FlowDropEventHandlers['onAfterSwap'];
     /** Feature configuration */
     features?: FlowDropFeatures;
-    /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
+    /** Visual theme — named built-in ('graphite' | 'classic' | 'minimal' | 'drafter') or custom theme object */
     theme?: FlowDropTheme | FlowDropThemeName;
     /** Which settings tabs to show in the modal */
     settingsCategories?: SettingsCategory[];

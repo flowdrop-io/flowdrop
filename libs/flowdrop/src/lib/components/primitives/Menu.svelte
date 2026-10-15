@@ -1,22 +1,23 @@
 <!--
-  Menu — a dropdown menu: a trigger button and a popup of items.
+  @component
+  Menu: a dropdown with a trigger button and a popup of items.
 
-  Items come from `items` (declarative: actions, checkable and radio items,
-  separators, group labels) and/or free-form `children` (which receives
-  `close`; any element with `role="menuitem"`, `menuitemcheckbox` or
-  `menuitemradio` takes part in keyboard navigation).
+  Items come from `items` (actions, checkable and radio items, separators, group labels)
+  and/or from free-form `children`, which receive `close`. Any element with
+  `role="menuitem"`, `menuitemcheckbox` or `menuitemradio` joins keyboard navigation.
 
-  Keyboard: Enter / Space / ArrowDown open it and focus the first item (ArrowUp
-  the last); ArrowUp / ArrowDown / Home / End move between items (disabled ones
-  are skipped); typing a character jumps to the next item starting with it;
-  Escape closes it and returns focus to the trigger (the event stops there, the
-  editor clears the selection on Escape); Tab closes it. A click outside closes
-  it without taking focus back.
+  Keys: Enter, Space or ArrowDown open it and focus the first item (ArrowUp the last).
+  Arrow keys, Home and End move between items (disabled ones are skipped). Typing jumps to
+  the next item that starts with that letter. Escape closes it and returns focus to the
+  trigger. Tab closes it. A click outside closes it without taking focus back.
 
-  The trigger is an `IconButton` showing `⋯` unless `trigger` (the content of
-  the trigger button) is given; `triggerClass` styles that custom button.
+  The trigger is an `IconButton` showing the three dots, unless you pass a `trigger` snippet.
+  The editor uses `size="sm"` and `align="end"` for row menus.
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** a list of actions behind one control.
+  **Not for** choosing a value for a field; use `Select`.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts" module>

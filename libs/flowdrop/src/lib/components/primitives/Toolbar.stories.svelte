@@ -5,42 +5,60 @@
   import ToolbarSeparator from './ToolbarSeparator.svelte';
   import Segmented from './Segmented.svelte';
   import IconButton from './IconButton.svelte';
-  import Chip from './Chip.svelte';
 
   const { Story } = defineMeta({
-    title: 'Primitives/Toolbar',
+    title: 'Components/Toolbar',
     component: Toolbar,
     tags: ['autodocs'],
     parameters: { layout: 'centered' },
     argTypes: { orientation: { control: 'select', options: ['horizontal', 'vertical'] } },
-    args: { ariaLabel: 'Canvas controls', orientation: 'horizontal' }
+    args: { ariaLabel: 'Text tools', orientation: 'horizontal' }
   });
 
-  const modes = [
-    { value: 'edit', label: 'Edit', icon: 'mdi:pencil' },
-    { value: 'test', label: 'Test', icon: 'mdi:play' }
+  const align = [
+    { value: 'left', label: 'Left' },
+    { value: 'center', label: 'Centre' },
+    { value: 'right', label: 'Right' }
   ];
 </script>
 
-{#snippet composed(orientation: 'horizontal' | 'vertical')}
-  <Toolbar ariaLabel="Canvas controls" {orientation}>
-    <Segmented ariaLabel="Editor mode" options={modes} value="edit" />
+{#snippet tools(orientation: 'horizontal' | 'vertical')}
+  <Toolbar ariaLabel="Text tools" {orientation}>
+    <Segmented size="sm" ariaLabel="Alignment" options={align} value="left" />
     <ToolbarSeparator {orientation} />
-    <Chip tone="success">Run 3 done</Chip>
-    <IconButton ariaLabel="Zoom to fit"><Icon icon="mdi:fit-to-screen-outline" /></IconButton>
-    <IconButton ariaLabel="Console" active><Icon icon="mdi:console" /></IconButton>
-    <IconButton ariaLabel="More"><Icon icon="mdi:dots-horizontal" /></IconButton>
+    <IconButton size="sm" variant="secondary" ariaLabel="Bold"
+      ><Icon icon="mdi:format-bold" /></IconButton
+    >
+    <IconButton size="sm" variant="secondary" ariaLabel="Italic">
+      <Icon icon="mdi:format-italic" />
+    </IconButton>
+    <IconButton size="sm" variant="secondary" ariaLabel="Link"><Icon icon="mdi:link" /></IconButton>
   </Toolbar>
 {/snippet}
 
-<Story name="Default" asChild>
-  {@render composed('horizontal')}
+<Story
+  name="Arrow keys across controls"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'Click the first control, then press the Left and Right arrow keys, Home or End. Focus moves across the segmented switch and the buttons as one row. The real editor toolbar is `CanvasToolbar` under Editor/Canvas.'
+      }
+    }
+  }}
+  asChild
+>
+  <div style="display:flex; align-items:center; gap:var(--fd-space-xs);">
+    {@render tools('horizontal')}
+  </div>
 </Story>
 
-<Story name="Vertical" asChild>
-  {@render composed('vertical')}
-</Story>
-
-<Story name="Dark" globals={{ theme: 'dark' }} asChild>
-  {@render composed('horizontal')}
+<Story
+  name="Vertical"
+  parameters={{
+    docs: { description: { story: 'Vertical toolbars use the Up and Down arrow keys.' } }
+  }}
+  asChild
+>
+  {@render tools('vertical')}
 </Story>

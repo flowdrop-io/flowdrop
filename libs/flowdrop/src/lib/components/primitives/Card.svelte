@@ -1,12 +1,14 @@
 <!--
-  Card — a surface container with an optional header and footer row.
+  @component
+  Card: a surface with an optional header row and footer row.
 
-  `variant="attention"` is the amber "needs you" frame (interrupts): the
-  waiting-status border on its soft background. It is a plain `<section>`
-  (named by `ariaLabel`, which makes it a landmark-ish region) or a `<div>`
-  when no label is given.
+  `variant="attention"` is the amber "needs you" frame. It is a plain `<section>` named by
+  `ariaLabel`, or a `<div>` when no label is given.
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** a bordered group of content, such as an input form or a prompt that waits for an answer.
+  **Not for** a whole panel; use `PanelHeader` for the top strip of a panel.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">

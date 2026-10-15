@@ -1,9 +1,10 @@
 <!--
-  ToolbarSeparator — a thin divider between Toolbar groups. Orientation is
-  inherited from the surrounding Toolbar via CSS (`aria-orientation` is the
-  perpendicular axis of the toolbar, so it is set explicitly here).
+  @component
+  ToolbarSeparator: a thin divider between groups inside a `Toolbar`.
 
-  @internal Not exported from any package entry; not public API yet.
+  Pass the same `orientation` as the toolbar. The line is drawn across that axis.
+
+  Not exported from the package; not public API yet.
 -->
 
 <script lang="ts">

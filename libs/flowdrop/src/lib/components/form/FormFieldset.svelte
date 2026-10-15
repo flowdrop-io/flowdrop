@@ -1,16 +1,10 @@
 <!--
-  FormFieldset Component
-  Renders a UISchema Group element as a collapsible or static fieldset.
+  @component
+  A titled group of fields, drawn from a `Group` in a node's UI schema. By default it folds open and closed;
+  with `collapsible: false` it is a plain fieldset with a legend.
 
-  Two rendering modes:
-  - Collapsible (default): Uses HTML5 <details>/<summary> with .flowdrop-details CSS
-  - Static (collapsible: false): Uses a styled <fieldset> with <legend>
-
-  Features:
-  - HTML5 <details> for native accessible collapse behavior
-  - Reuses existing .flowdrop-details CSS pattern from base.css
-  - Optional description text below the group title
-  - Chevron rotation animation on open/close
+  **Use it for** splitting a long config form into sections.
+  **Not for** the tabs of the inspector (those are `NodeInspector`).
 -->
 
 <script lang="ts">

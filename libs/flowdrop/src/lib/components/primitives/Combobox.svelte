@@ -1,27 +1,24 @@
 <!--
-  Combobox — the searchable rendering of `Select`.
+  @component
+  Combobox: the searchable rendering of `Select`.
 
-  An ARIA 1.2 editable combobox with a listbox popup: the input holds focus the
-  whole time and the highlighted option is named by `aria-activedescendant`, so
-  the options carry no key handlers. Typing filters (label, description and
-  group, every word has to match) and bolds what matched; a status line says
-  "n of m"; options with a `group` are listed under their title.
+  An ARIA 1.2 editable combobox with a listbox popup. The input keeps focus the whole time and
+  the highlighted option is named by `aria-activedescendant`. Typing filters by label,
+  description and group (every word has to match) and bolds what matched. A status line
+  says "n of m". Options with a `group` are listed under their title.
 
-  Keyboard: ArrowDown / ArrowUp open the list and move the highlight (disabled
-  options are skipped), Home / End jump to the ends, Enter chooses the
-  highlighted option, Escape closes and drops the query (the event stops there,
-  the editor clears the selection on Escape), Tab closes without choosing.
-  A click outside closes it.
+  Keys: ArrowDown/ArrowUp open the list and move the highlight (disabled options are
+  skipped), Home/End jump to the ends, Enter chooses, Escape closes and drops the query, Tab
+  closes without choosing. A click outside closes it.
 
-  Closed, the field shows the chosen option's label; open, it is the search box
-  and the label moves to the placeholder. The popup is positioned under the
-  field and as wide as it; it is not portalled, so a host that clips overflow
-  clips it (the same as `Menu`).
+  Closed, the field shows the chosen label. Open, it is the search box and the label moves
+  to the placeholder. The popup sits under the field and is as wide as it. It is not
+  portalled, so a host that clips overflow clips it too (same as `Menu`).
 
-  Use it through `Select` (which picks this rendering for long, grouped or
-  described lists); mount it directly only to force it.
+  **Use it** through `Select`, which picks this rendering for long, grouped or described lists.
+  **Not for** a short flat list; use `Select`, which then renders the browser's own `<select>`.
 
-  @internal Not exported from any package entry; the API may still change.
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">
@@ -37,21 +34,33 @@
   } from '../../utils/selectOptions.js';
 
   interface Props {
+    /** The options, optionally with a `description` and a `group`. */
     options: SelectOption[];
     /** The chosen option's value; '' (or any unknown value) is "nothing chosen". */
     value?: string;
+    /** Runs with the new value when the user chooses an option. */
     onValueChange?: (value: string) => void;
+    /** Id of the input, for a `<label for>`. */
     id?: string;
+    /** Form field name. */
     name?: string;
+    /** Disables the field. */
     disabled?: boolean;
+    /** Shows the error border. */
     invalid?: boolean;
+    /** Field height, matching Button: `sm` 24, `md` 28, `lg` 32. */
     size?: 'sm' | 'md' | 'lg';
     /** Shown when nothing is chosen. */
     placeholder?: string;
+    /** Extra classes on the input. */
     class?: string;
+    /** Accessible name when there is no visible label. */
     'aria-label'?: string;
+    /** Id of the element that names the field. */
     'aria-labelledby'?: string;
+    /** Id(s) of help or error text for the field. */
     'aria-describedby'?: string;
+    /** Marks the field as required for screen readers. */
     'aria-required'?: boolean | 'true' | 'false';
   }
 

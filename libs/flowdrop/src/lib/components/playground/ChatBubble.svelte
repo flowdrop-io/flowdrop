@@ -1,7 +1,8 @@
 <!--
-  ChatBubble — avatar + bubble layout for user/assistant/system messages.
-  Markdown typography comes from MessageMarkdown; user-bubble overrides
-  (primary-bg) are scoped here.
+  @component
+  The avatar and bubble layout for user, assistant and system messages. `MessageBubble` picks it.
+
+  **Use it for** nothing on its own. Render a message with `MessageBubble`.
 -->
 
 <script lang="ts">
