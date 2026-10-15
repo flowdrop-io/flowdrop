@@ -714,6 +714,17 @@ describe('parseCommand', () => {
         command: { type: 'clear' }
       });
     });
+
+    it('parses clear --all', () => {
+      expect(parseCommand('clear --all')).toEqual({
+        ok: true,
+        command: { type: 'clear', all: true }
+      });
+    });
+
+    it('rejects an unknown flag', () => {
+      expect(parseCommand('clear --everything').ok).toBe(false);
+    });
   });
 
   // ==========================================================================

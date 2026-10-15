@@ -742,6 +742,44 @@ describe('WorkflowStore', () => {
     });
   });
 
+  describe('workflow.playground through a node delete', () => {
+    it('drops replies on the deleted node in the same history entry', () => {
+      fd.workflow.initialize(
+        createTestWorkflow({
+          nodes: [createTestNode({ id: 'a' }), createTestNode({ id: 'b' })],
+          playground: {
+            chat: {
+              message: 'm',
+              history: null,
+              session_id: null,
+              message_id: null,
+              replies: [
+                { node_id: 'a', port: 'text' },
+                { node_id: 'b', port: 'text' }
+              ],
+              sub_workflow_replies: false
+            }
+          }
+        })
+      );
+      const versionBefore = fd.workflow.editVersion;
+
+      fd.workflow.removeNode('a');
+
+      expect(fd.workflow.current?.playground?.chat?.replies).toEqual([
+        { node_id: 'b', port: 'text' }
+      ]);
+      expect(fd.workflow.current?.playground?.chat?.message).toBe('m');
+      expect(fd.workflow.editVersion).toBe(versionBefore + 1);
+    });
+
+    it('adds no playground key to a workflow without one', () => {
+      fd.workflow.initialize(createTestWorkflow({ nodes: [createTestNode({ id: 'a' })] }));
+      fd.workflow.removeNode('a');
+      expect(fd.workflow.current && 'playground' in fd.workflow.current).toBe(false);
+    });
+  });
+
   describe('workflow.interface round-trip', () => {
     /** An interface carrying an unrecognized `meta` key — the passthrough guarantee. */
     function interfaceFixture(): WorkflowInterface {

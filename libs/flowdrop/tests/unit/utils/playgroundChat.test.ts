@@ -21,6 +21,7 @@ import {
   withoutInterfaceTurns,
   followInterfaceInputEdit,
   rewritePlaygroundReplies,
+  withoutPlaygroundRepliesOn,
   hasKnownInterfaceTurns
 } from '$lib/utils/playgroundChat.js';
 import {
@@ -573,6 +574,36 @@ describe('rewritePlaygroundReplies', () => {
     const playground = { chat: binding({ replies: [{ node_id: 'other', port: 'p' }] }) };
     expect(rewritePlaygroundReplies(playground, 'old', 'new', [])).toBe(playground);
     expect(rewritePlaygroundReplies(undefined, 'old', 'new', [])).toBeUndefined();
+  });
+});
+
+describe('withoutPlaygroundRepliesOn', () => {
+  it('drops replies on removed nodes and keeps the inputs', () => {
+    const playground = {
+      chat: binding({
+        message: 'm',
+        replies: [
+          { node_id: 'gone', port: 'text' },
+          { node_id: 'kept', port: 'text' }
+        ]
+      })
+    };
+    const next = withoutPlaygroundRepliesOn(playground, (id) => id === 'gone');
+    expect(next?.chat?.replies).toEqual([{ node_id: 'kept', port: 'text' }]);
+    expect(next?.chat?.message).toBe('m');
+  });
+
+  it('clears the binding when the replies were all it bound', () => {
+    const playground = { chat: binding({ replies: [{ node_id: 'gone', port: 'text' }] }) };
+    expect(withoutPlaygroundRepliesOn(playground, () => true)?.chat).toBeNull();
+  });
+
+  it('returns the same object when no reply is on a removed node, or nothing is stored', () => {
+    const playground = { chat: binding({ replies: [{ node_id: 'kept', port: 'p' }] }) };
+    expect(withoutPlaygroundRepliesOn(playground, (id) => id === 'gone')).toBe(playground);
+    expect(withoutPlaygroundRepliesOn(undefined, () => true)).toBeUndefined();
+    const unbound = { chat: null };
+    expect(withoutPlaygroundRepliesOn(unbound, () => true)).toBe(unbound);
   });
 });
 

@@ -48,7 +48,8 @@ import type {
   NodePort,
   Workflow,
   WorkflowNode,
-  WorkflowEdge
+  WorkflowEdge,
+  WorkflowInterfaceEntry
 } from '../types/index.js';
 import { generateNodeId } from '../utils/nodeIds.js';
 import { extractConfigDefaults } from '../utils/nodeIds.js';
@@ -58,6 +59,11 @@ import { applyConnectionStyling } from '../utils/edgeStyling.js';
 import { computeSwapPreview, executeSwap } from '../utils/nodeSwap.js';
 import { computeAutoLayout } from '../adapters/agentspec/autoLayout.js';
 import { interfaceTagReserve } from '../utils/interfaceTags.js';
+import {
+  withPlaygroundChat,
+  withoutInterfaceTurns,
+  withoutPlaygroundRepliesOn
+} from '../utils/playgroundChat.js';
 
 // ============================================================================
 // Internal Helpers
@@ -1232,7 +1238,12 @@ export const COMMAND_HELP: Array<{
     syntax: 'help [<command>]',
     description: 'Show help for all or a specific command'
   },
-  { name: 'clear', syntax: 'clear', description: 'Remove all nodes and edges' },
+  {
+    name: 'clear',
+    syntax: 'clear [--all]',
+    description:
+      'Remove all nodes and edges. The interface stays (its entries become unbound) and Playground replies are dropped; --all also removes the interface and the Playground chat settings. One undo step'
+  },
   {
     name: 'canvas',
     syntax: 'canvas fitview',
@@ -1318,7 +1329,16 @@ function executeRedo(context: CommandContext): CommandResult {
   return { ok: true, message: 'Redone' };
 }
 
-function executeClear(context: CommandContext): CommandResult {
+/**
+ * Empty the canvas. The interface is the workflow's contract and outlives its
+ * body, so plain `clear` keeps every entry and only drops its bindings, plus
+ * the Playground replies on the removed nodes. `clear --all` removes the
+ * interface and the Playground chat settings too. Either is one undo step.
+ */
+function executeClear(
+  command: Extract<Command, { type: 'clear' }>,
+  context: CommandContext
+): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
     return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
@@ -1326,13 +1346,62 @@ function executeClear(context: CommandContext): CommandResult {
 
   const nodeCount = workflow.nodes.length;
   const edgeCount = workflow.edges.length;
+  const cleared = `Cleared ${nodeCount} node(s) and ${edgeCount} edge(s)`;
+  const inputs = workflow.interface?.inputs ?? [];
+  const outputs = workflow.interface?.outputs ?? [];
 
-  context.dispatch.batchUpdate({ nodes: [], edges: [] });
+  if (command.all) {
+    const hadInterface = inputs.length + outputs.length > 0;
+    const hadChat = Boolean(workflow.playground?.chat);
+    context.dispatch.batchUpdate({
+      nodes: [],
+      edges: [],
+      // An empty contract, not `undefined`: a save omits an absent interface,
+      // and the server would keep the stored one.
+      ...(hadInterface && { interface: { inputs: [], outputs: [] } }),
+      ...(hadChat && { playground: withPlaygroundChat(workflow.playground, null) })
+    });
+    const also = [hadInterface && 'the interface', hadChat && 'the Playground chat settings'];
+    const extra = also.filter(Boolean).join(' and ');
+    return { ok: true, message: extra ? `${cleared}, and removed ${extra}` : cleared };
+  }
 
-  return {
-    ok: true,
-    message: `Cleared ${nodeCount} node(s) and ${edgeCount} edge(s)`
-  };
+  const unbind = (entry: WorkflowInterfaceEntry): WorkflowInterfaceEntry =>
+    entry.bindings.length === 0 ? entry : { ...entry, bindings: [] };
+  const bound = [...inputs, ...outputs].some((entry) => entry.bindings.length > 0);
+  const playground = withoutPlaygroundRepliesOn(workflow.playground, () => true);
+  const repliesDropped = playground !== workflow.playground;
+  // Settings that bind nothing any more must not fall back to `turn` marks on
+  // the interface, as after an interface edit.
+  const nextInterface =
+    repliesDropped && playground?.chat === null
+      ? withoutInterfaceTurns(workflow.interface)
+      : workflow.interface;
+  const interfaceChanged = bound || nextInterface !== workflow.interface;
+  context.dispatch.batchUpdate({
+    nodes: [],
+    edges: [],
+    ...(interfaceChanged && {
+      interface: {
+        ...nextInterface,
+        ...(nextInterface?.inputs && { inputs: nextInterface.inputs.map(unbind) }),
+        ...(nextInterface?.outputs && { outputs: nextInterface.outputs.map(unbind) })
+      }
+    }),
+    ...(repliesDropped && { playground })
+  });
+
+  const notes: string[] = [];
+  const kept = inputs.length + outputs.length > 0;
+  if (kept) {
+    notes.push(
+      `Kept the interface (${inputs.length} input(s), ${outputs.length} output(s))` +
+        (bound ? ', now unbound' : '')
+    );
+  }
+  if (repliesDropped) notes.push('Dropped the Playground replies');
+  if (kept) notes.push('`clear --all` removes the interface too');
+  return { ok: true, message: [cleared, ...notes].join('. ') };
 }
 
 function executeConfigOpen(
@@ -1922,7 +1991,7 @@ export function executeCommand(command: Command, context: CommandContext): Comma
     case 'redo':
       return executeRedo(context);
     case 'clear':
-      return executeClear(context);
+      return executeClear(command, context);
     case 'config_open':
       return executeConfigOpen(command, context);
     case 'select_node':

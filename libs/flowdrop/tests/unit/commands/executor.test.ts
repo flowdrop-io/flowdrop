@@ -2139,6 +2139,77 @@ describe('executeCommand — clear', () => {
     expect(dispatch.batchUpdate).toHaveBeenCalledWith({ nodes: [], edges: [] });
   });
 
+  function chatWorkflow(): Workflow {
+    const llmNode = createMockNode('agentspec.llm_node.1', llmMetadata);
+    return {
+      ...createMockWorkflow([llmNode]),
+      interface: {
+        inputs: [
+          {
+            id: 'message',
+            dataType: 'string',
+            required: true,
+            bindings: [{ nodeId: 'agentspec.llm_node.1', portId: 'prompt' }]
+          }
+        ],
+        outputs: [
+          {
+            id: 'answer',
+            dataType: 'string',
+            bindings: [{ nodeId: 'agentspec.llm_node.1', portId: 'text' }]
+          }
+        ]
+      },
+      playground: {
+        chat: {
+          message: 'message',
+          history: null,
+          session_id: null,
+          message_id: null,
+          replies: [{ node_id: 'agentspec.llm_node.1', port: 'text' }],
+          sub_workflow_replies: false
+        }
+      }
+    };
+  }
+
+  it('keeps the interface unbound and drops the Playground replies', () => {
+    const dispatch = createMockDispatch();
+    const context = createMockContext(chatWorkflow(), nodeTypes, dispatch);
+
+    const result = executeCommand({ type: 'clear' }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain('Kept the interface (1 input(s), 1 output(s)), now unbound');
+    expect(result.message).toContain('Dropped the Playground replies');
+    expect(result.message).toContain('clear --all');
+    expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+    const update = vi.mocked(dispatch.batchUpdate).mock.calls[0][0];
+    expect(update.nodes).toEqual([]);
+    expect(update.edges).toEqual([]);
+    expect(update.interface?.inputs).toEqual([
+      { id: 'message', dataType: 'string', required: true, bindings: [] }
+    ]);
+    expect(update.interface?.outputs).toEqual([{ id: 'answer', dataType: 'string', bindings: [] }]);
+    expect(update.playground?.chat?.message).toBe('message');
+    expect(update.playground?.chat?.replies).toEqual([]);
+  });
+
+  it('with --all removes the interface and the Playground chat settings', () => {
+    const dispatch = createMockDispatch();
+    const context = createMockContext(chatWorkflow(), nodeTypes, dispatch);
+
+    const result = executeCommand({ type: 'clear', all: true }, context);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.message).toContain('removed the interface and the Playground chat settings');
+    const update = vi.mocked(dispatch.batchUpdate).mock.calls[0][0];
+    expect(update.interface).toEqual({ inputs: [], outputs: [] });
+    expect(update.playground?.chat).toBeNull();
+  });
+
   it('returns NO_WORKFLOW when no workflow loaded', () => {
     const context = createMockContext(null, nodeTypes);
 

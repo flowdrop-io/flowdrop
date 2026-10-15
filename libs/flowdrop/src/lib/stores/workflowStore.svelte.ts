@@ -23,6 +23,7 @@ import {
   followInterfaceInputEdit,
   rewritePlaygroundReplies,
   withoutInterfaceTurns,
+  withoutPlaygroundRepliesOn,
   type InterfaceInputEdit
 } from '../utils/playgroundChat.js';
 
@@ -666,12 +667,15 @@ export class WorkflowStore {
    */
   removeNode(nodeId: string): void {
     if (!this.#workflow) return;
+    // The server refuses a save whose Playground replies name a missing node.
+    const playground = withoutPlaygroundRepliesOn(this.#workflow.playground, (id) => id === nodeId);
     this.#workflow = {
       ...this.#workflow,
       nodes: this.#workflow.nodes.filter((node) => node.id !== nodeId),
       edges: this.#workflow.edges.filter(
         (edge) => edge.source !== nodeId && edge.target !== nodeId
       ),
+      ...(playground !== this.#workflow.playground && { playground }),
       metadata: buildMetadata(this.#workflow.metadata)
     };
     this.#pushToHistory('Delete node');

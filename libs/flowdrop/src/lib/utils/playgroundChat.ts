@@ -291,6 +291,26 @@ export function rewritePlaygroundReplies(
 }
 
 /**
+ * The `playground` value once the nodes `removed` names are gone: replies on
+ * them are dropped, so the stored binding never prints a reply from a node the
+ * workflow no longer has (the server refuses such a save). The inputs stay:
+ * they name interface entries, not nodes. The same object when no reply is on
+ * a removed node, or nothing is stored.
+ */
+export function withoutPlaygroundRepliesOn(
+  playground: WorkflowPlayground | undefined,
+  removed: (nodeId: string) => boolean
+): WorkflowPlayground | undefined {
+  if (!playground?.chat) return playground;
+  const chat = normalizePlaygroundChat(playground.chat);
+  if (!chat.replies.some((reply) => removed(reply.node_id))) return playground;
+  return withPlaygroundChat(playground, {
+    ...chat,
+    replies: chat.replies.filter((reply) => !removed(reply.node_id))
+  });
+}
+
+/**
  * Whether the interface still carries a deprecated `turn` mark this library
  * knows (one `withoutInterfaceTurns` removes).
  */

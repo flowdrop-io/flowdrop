@@ -123,6 +123,8 @@ export interface HelpCommand {
 
 export interface ClearCommand {
   type: 'clear';
+  /** Also remove the interface and the Playground chat settings. */
+  all?: boolean;
 }
 
 /** Phase 2 commands */

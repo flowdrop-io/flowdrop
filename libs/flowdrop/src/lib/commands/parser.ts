@@ -237,10 +237,10 @@ const rules: ParserRule[] = [
     pattern: /^help$/i,
     parse: () => ({ type: 'help' })
   },
-  // clear
+  // clear [--all]
   {
-    pattern: /^clear$/i,
-    parse: () => ({ type: 'clear' })
+    pattern: /^clear(\s+--all)?$/i,
+    parse: (m) => (m[1] ? { type: 'clear', all: true } : { type: 'clear' })
   },
   // swap <nodeId> with <type> (Phase 2)
   {
