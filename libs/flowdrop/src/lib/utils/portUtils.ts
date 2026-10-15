@@ -74,11 +74,11 @@ export function orderPortsFor(
 /**
  * Effective exposure for a port: the instance's explicit `exposed` override if
  * present, else the port's metadata `exposedByDefault` (which itself defaults to
- * exposed). A port whose exposure is locked ({@link NodePort.exposureLocked})
- * ignores the override: the node type decides.
+ * exposed). A locked port ({@link NodePort.exposureLocked}) is always exposed:
+ * it ignores both.
  */
 export function isPortExposed(port: NodePort, entries: PortConfigEntry[] | undefined): boolean {
-  if (port.exposureLocked) return port.exposedByDefault ?? true;
+  if (port.exposureLocked) return true;
   const entry = entries?.find((candidate) => candidate.id === port.id);
   if (entry && entry.exposed !== undefined) return entry.exposed;
   return port.exposedByDefault ?? true;
@@ -137,7 +137,10 @@ export function buildPortsConfig(
   const entries: PortConfigEntry[] = ordered.map((port) => {
     const entry: PortConfigEntry = { id: port.id };
     const exposed = exposureOf(port);
-    if (exposed !== (port.exposedByDefault ?? true)) entry.exposed = exposed;
+    // A locked port has no override to store: it is always exposed.
+    if (!port.exposureLocked && exposed !== (port.exposedByDefault ?? true)) {
+      entry.exposed = exposed;
+    }
     return entry;
   });
 

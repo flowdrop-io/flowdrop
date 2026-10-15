@@ -187,9 +187,10 @@ export interface NodePort {
    */
   exposedByDefault?: boolean;
   /**
-   * Whether the port's exposure is fixed by its node type: the instance's
-   * `ports` config cannot override it, and the editor offers no Show/Hide
-   * toggle. The server decides which ports are locked; absent means `false`.
+   * Whether the port is locked on by its node type: always shown, whatever
+   * `exposedByDefault` or the instance's `ports` config says, and the editor
+   * offers no Show/Hide toggle. The server decides which ports are locked;
+   * absent means `false`.
    */
   exposureLocked?: boolean;
   /**

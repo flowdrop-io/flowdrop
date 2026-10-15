@@ -261,4 +261,9 @@ describe('buildPortsConfig', () => {
       )
     ).toBeUndefined();
   });
+
+  it('never stores an exposure flag for a locked port', () => {
+    const locked = [port('a', 'input', { exposureLocked: true, exposedByDefault: false })];
+    expect(buildPortsConfig(undefined, 'inputs', locked, locked, () => true)).toBeUndefined();
+  });
 });
