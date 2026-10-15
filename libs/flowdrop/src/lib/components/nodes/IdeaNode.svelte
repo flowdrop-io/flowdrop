@@ -18,6 +18,8 @@
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { getNodeProblem } from '../../utils/nodeProblem.js';
   import { getDataTypeColor } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
 
@@ -48,6 +50,8 @@
   }
 
   let props: Props = $props();
+
+  const problem = getNodeProblem();
 
   const checker = getInstance().portCompatibility;
 
@@ -176,11 +180,15 @@
     <div class="flowdrop-idea-node__accent-bar"></div>
 
     <!-- Header with icon and title -->
-    <div class="flowdrop-idea-node__header">
+    <div
+      class="flowdrop-idea-node__header"
+      class:flowdrop-idea-node__header--problem={problem?.severity != null}
+    >
       <div class="flowdrop-idea-node__icon-wrapper">
         <Icon icon={ideaIcon} class="flowdrop-idea-node__icon" />
       </div>
       <h3 class="flowdrop-idea-node__title">{displayTitle}</h3>
+      <NodeProblemMark />
     </div>
 
     <!-- Description Body -->
@@ -445,5 +453,27 @@
     .flowdrop-idea-node__description {
       font-size: var(--fd-text-xs);
     }
+  }
+
+  /* The gear sits over the header's top-right: end the mark left of it, and keep
+     it there whether or not the gear is showing. After the narrow-width rule above. */
+  .flowdrop-idea-node__header--problem {
+    padding-right: var(--fd-node-config-btn-slot);
+  }
+
+  /* Level with the gear, as on the default card: centred on its middle, not the row's
+     (the row starts below the 1px border, the 4px accent bar and the 8px padding). */
+  .flowdrop-idea-node__header--problem > :global(.fd-node-problem) {
+    align-self: flex-start;
+    margin-top: calc(
+      var(--fd-space-xs) + var(--fd-node-config-btn-size) / 2 - 13px - var(--fd-node-problem-size) /
+        2
+    );
+  }
+
+  /* Title takes the spare room, so the mark stays put whatever the title's length. */
+  .flowdrop-idea-node__header--problem .flowdrop-idea-node__title {
+    flex: 1;
+    min-width: 0;
   }
 </style>

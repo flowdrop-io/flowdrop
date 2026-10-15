@@ -748,6 +748,10 @@
   --fd-node-halo-mix: 28%; /* @internal  port colour in the halo, the rest transparent */
   --fd-node-halo-breath: 1.8s; /* @internal  one breath in (or out) of a port ready to receive */
   --fd-node-drag-dull-opacity: 0.35; /* @internal  a port that does not take the dragged type */
+  --fd-node-config-btn-size: 24px; /* @internal  the gear's width and height */
+  --fd-node-config-btn-slot: calc(
+    var(--fd-space-xs) + var(--fd-node-config-btn-size) + 4px
+  ); /* @internal  room a node keeps for the gear at its top-right: offset, gear and a gap */
   --fd-node-config-btn-bg: var(--fd-backdrop); /* @internal  the gear on a hovered card */
   --fd-node-config-btn-border: var(--fd-border); /* @internal */
   --fd-node-config-btn-radius: var(--fd-radius-sm); /* @internal */

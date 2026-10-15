@@ -33,6 +33,7 @@
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
   import NodeProblemMark from './NodeProblemMark.svelte';
+  import { getNodeProblem } from '../../utils/nodeProblem.js';
   import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
@@ -62,6 +63,7 @@
   let props: Props = $props();
 
   const fd = getInstance();
+  const problem = getNodeProblem();
   const checker = fd.portCompatibility;
 
   /** Handle ids bound to a `workflow.interface` entry — see workflowStore. */
@@ -196,7 +198,10 @@
   ondblclick={handleDoubleClick}
 >
   <div class="flowdrop-simple-node__header">
-    <div class="flowdrop-simple-node__header-content">
+    <div
+      class="flowdrop-simple-node__header-content"
+      class:flowdrop-simple-node__header-content--problem={problem?.severity != null}
+    >
       <!-- Node Icon (squircle) — visibility controlled by --fd-node-icon-display -->
       <div
         class="flowdrop-simple-node__icon-wrapper"
@@ -333,6 +338,21 @@
     display: flex;
     align-items: center;
     gap: var(--fd-space-md);
+  }
+
+  /* The gear sits over the header's top-right: end the mark left of it, and keep
+     it there whether or not the gear is showing. (The header already pads 20px.) */
+  .flowdrop-simple-node__header-content--problem {
+    padding-right: calc(var(--fd-node-config-btn-slot) - 20px);
+  }
+
+  /* Level with the gear, as on the default card: centred on its middle, not the row's. */
+  .flowdrop-simple-node__header-content--problem > :global(.fd-node-problem) {
+    align-self: flex-start;
+    margin-top: calc(
+      var(--fd-space-xs) + var(--fd-node-config-btn-size) / 2 - 10px - var(--fd-node-problem-size) /
+        2
+    );
   }
 
   /* Squircle icon wrapper - Apple-style rounded square background */

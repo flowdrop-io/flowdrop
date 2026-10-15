@@ -14,6 +14,7 @@
   import Icon from '@iconify/svelte';
   import { onMount } from 'svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
   import { m } from '$lib/messages/index.js';
 
@@ -194,6 +195,9 @@
     {/if}
   </div>
 
+  <!-- The Doctor's mark: no header here, so it sits in the corner, left of the gear. -->
+  <NodeProblemMark />
+
   <!-- Config button -->
   <NodeConfigButton onclick={openConfigSidebar} title={notes.configure} />
 </div>
@@ -221,6 +225,16 @@
     transition: box-shadow var(--fd-transition-fast);
     overflow: hidden;
     z-index: 5;
+  }
+
+  /* Level with the gear: centred on its middle. */
+  .flowdrop-notes-node :global(.fd-node-problem) {
+    position: absolute;
+    top: calc(
+      var(--fd-space-xs) + (var(--fd-node-config-btn-size) - var(--fd-node-problem-size)) / 2
+    );
+    right: var(--fd-node-config-btn-slot);
+    z-index: 2;
   }
 
   /* Variants: the tint is the type (accent mixed into the paper for the edge). */

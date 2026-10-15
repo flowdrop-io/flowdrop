@@ -1,6 +1,9 @@
 <!--
   @component
-  The Doctor's finding on a node, as a status glyph in the card header after the title.
+  The Doctor's finding on a node, as a status glyph after the title. Each node component
+  places it level with the config gear: in the header just left of it, in the corner of a
+  note left of it, or centred below it at the top of a square or terminal node. A pill or
+  caption, which has no gear, takes it inline after the text.
 
   The tooltip lists the problems; the count is in the accessible name. In the glyph and map
   zoom tiers the header is gone, so the mark moves to the card's top-right corner and is

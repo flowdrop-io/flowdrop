@@ -52,8 +52,8 @@
     position: absolute;
     top: var(--fd-space-xs);
     right: var(--fd-space-xs);
-    width: 24px;
-    height: 24px;
+    width: var(--fd-node-config-btn-size);
+    height: var(--fd-node-config-btn-size);
     background-color: var(--fd-node-config-btn-bg);
     border: 1px solid var(--fd-node-config-btn-border);
     border-radius: var(--fd-node-config-btn-radius);

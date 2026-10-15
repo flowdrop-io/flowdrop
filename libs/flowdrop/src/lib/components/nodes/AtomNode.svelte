@@ -23,6 +23,7 @@
     WorkflowNode as WorkflowNodeType
   } from '../../types/index.js';
   import { getPortColorToken } from '$lib/utils/colors.js';
+  import NodeProblemMark from './NodeProblemMark.svelte';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { ProximityConnectHelper } from '../../helpers/proximityConnect.js';
@@ -165,6 +166,8 @@
       <span class="flowdrop-atom-node__prefix" aria-hidden="true">{atomCfg.prefix}</span>
     {/if}
     <span class="flowdrop-atom-node__body" title={display.text}>{display.text}</span>
+    <!-- Outside the truncated body, so a long value never hides it. -->
+    <NodeProblemMark />
   </div>
 </div>
 
@@ -258,6 +261,21 @@
     color: var(--fd-muted-foreground);
     font-size: var(--fd-text-sm);
     line-height: 20px;
+  }
+
+  .flowdrop-atom-node__pill :global(.fd-node-problem) {
+    margin-left: 4px;
+  }
+
+  /* Zoom tiers scale the mark up. The pill is only 40px tall, so the glyph and map
+     tiers keep the mark inline at the outline size (no corner mark over the text),
+     and every tier grows it into the pill's padding, not over the text. */
+  :global([data-fd-zoom='outline']) .flowdrop-atom-node__pill :global(.fd-node-problem),
+  :global([data-fd-zoom='glyph']) .flowdrop-atom-node__pill :global(.fd-node-problem),
+  :global([data-fd-zoom='map']) .flowdrop-atom-node__pill :global(.fd-node-problem) {
+    position: static;
+    scale: var(--fd-node-zoom-mark-scale-outline);
+    transform-origin: left center;
   }
 
   .flowdrop-atom-node__body {

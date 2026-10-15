@@ -468,6 +468,9 @@
 
   .flowdrop-workflow-node__header--problem {
     grid-template-columns: var(--fd-node-tile-size) minmax(0, 1fr) auto;
+    /* The gear sits over the header's top-right: end the mark left of it, and
+       keep it there whether or not the gear is showing. */
+    padding-right: var(--fd-node-config-btn-slot);
   }
 
   /* The Doctor's glyph, after the title (first row). */
