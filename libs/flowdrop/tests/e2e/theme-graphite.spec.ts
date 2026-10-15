@@ -3,7 +3,7 @@
  *
  * Asserts what the theme is for: the editor root takes Inter, the primary
  * action is ink (not the default blue), the accent is blue, and the choice
- * survives a reload. Switching back to Default restores the stock look.
+ * survives a reload. Switching back to Classic restores the stock look.
  */
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { gotoEditor } from './helpers/editor-helpers';
@@ -49,8 +49,8 @@ test.describe('Graphite theme', () => {
     // Graphite is the default theme (63aab27f): a fresh editor already applies Inter.
     await expect.poll(() => fontFamily(page)).toContain('Inter Variable');
 
-    // Pick Default, then Graphite again, so the settings picker itself is exercised.
-    await chooseUiTheme(page, 'default');
+    // Pick Classic, then Graphite again, so the settings picker itself is exercised.
+    await chooseUiTheme(page, 'classic');
     await expect.poll(() => fontFamily(page)).not.toContain('Inter Variable');
     await chooseUiTheme(page, 'graphite');
 
@@ -101,11 +101,11 @@ test.describe('Graphite theme', () => {
     expect(await token(page, 'background')).toBe('#16181d');
   });
 
-  test('switching back to Default drops the graphite look', async ({ page }) => {
+  test('switching back to Classic drops the graphite look', async ({ page }) => {
     await gotoEditor(page, 'simple');
     await chooseUiTheme(page, 'graphite');
     await expect.poll(() => token(page, 'primary')).toBe('#16191f');
-    await chooseUiTheme(page, 'default');
+    await chooseUiTheme(page, 'classic');
     await expect.poll(() => fontFamily(page)).not.toContain('Inter Variable');
     expect(await token(page, 'primary')).not.toBe('#16191f');
   });

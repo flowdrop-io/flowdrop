@@ -562,7 +562,13 @@ export type {
   FlowDropThemeConfig,
   FlowDropDisplayConfig
 } from '../types/theme.js';
-export { defaultTheme, minimalTheme, resolveTheme } from '../themes/index.js';
+export {
+  classicTheme,
+  defaultTheme,
+  minimalTheme,
+  normalizeThemeName,
+  resolveTheme
+} from '../themes/index.js';
 
 // Skin primitives — for custom theme authors who need to compose skins
 export type { FlowDropSkin, FlowDropSkinName, FlowDropSkinTokens } from '../types/skin.js';

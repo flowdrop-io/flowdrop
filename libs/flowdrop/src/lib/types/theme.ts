@@ -70,7 +70,7 @@ export interface FlowDropThemeConfig {
 /**
  * A FlowDrop theme bundles a visual skin (CSS tokens) with UI config (behavioral defaults).
  *
- * Built-in themes: 'default' | 'minimal' | 'drafter' | 'graphite'
+ * Built-in themes: 'graphite' (the editor's default) | 'classic' | 'minimal' | 'drafter'
  *
  * @example
  * // Use a built-in theme by name
@@ -89,4 +89,8 @@ export interface FlowDropTheme {
   config?: FlowDropThemeConfig;
 }
 
-export type FlowDropThemeName = 'default' | 'minimal' | 'drafter' | 'graphite';
+/**
+ * Names of the built-in themes. `'default'` is the old name of `'classic'`
+ * and still resolves to it; it is removed in 3.0.
+ */
+export type FlowDropThemeName = 'classic' | 'minimal' | 'drafter' | 'graphite' | 'default';

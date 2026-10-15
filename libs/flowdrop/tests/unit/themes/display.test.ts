@@ -42,7 +42,7 @@ describe('displayTokens', () => {
 
   it('graphite asks for the document layout, the other themes do not', () => {
     expect(resolveTheme('graphite').config?.display?.messages).toBe('document');
-    for (const name of ['default', 'minimal', 'drafter'] as const) {
+    for (const name of ['classic', 'minimal', 'drafter'] as const) {
       expect(resolveTheme(name).config?.display?.messages).toBeUndefined();
     }
   });

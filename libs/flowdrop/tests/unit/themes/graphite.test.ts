@@ -13,7 +13,7 @@ describe('graphite theme', () => {
 
   it('is opt-in: the default theme does not change', () => {
     expect(resolveTheme(undefined).skin).toBeUndefined();
-    expect(resolveTheme('default').skin).toBeUndefined();
+    expect(resolveTheme('classic').skin).toBeUndefined();
     expect(defaultSkin.tokens).toBeUndefined();
   });
 

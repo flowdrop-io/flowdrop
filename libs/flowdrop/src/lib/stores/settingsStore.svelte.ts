@@ -43,6 +43,8 @@ import {
 } from '$lib/types/settings.js';
 import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y } from '$lib/layout/types.js';
 import { logger } from '../utils/logger.js';
+import { normalizeThemeName } from '../themes/index.js';
+import type { FlowDropThemeName } from '../types/theme.js';
 
 // =========================================================================
 // Internal State
@@ -163,6 +165,9 @@ function deepMergeSettings(
       result.ui.sheetWidths = { ...target.ui.sheetWidths, ...source.ui.sheetWidths };
     }
   }
+
+  // A theme saved under its old name ('default', until 2.14) loads as 'classic'.
+  result.ui.theme = normalizeThemeName(result.ui.theme) as FlowDropThemeName;
 
   // Merge behavior settings
   if (source.behavior) {
