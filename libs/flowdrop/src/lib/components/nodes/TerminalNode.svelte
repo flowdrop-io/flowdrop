@@ -603,15 +603,20 @@
     color: var(--fd-node-terminal-icon-color, var(--fd-node-icon));
   }
 
-  /* The Doctor's glyph, at the circle's upper right (the corner of the box is outside the circle). */
+  /* The Doctor's glyph, centred at the top of the circle, just below the gear that
+     floats above it: in the middle of the band between the circle's edge and the
+     44px icon tile. */
   .flowdrop-terminal-node__circle-wrapper {
-    --_pm-inset: calc(var(--_d) * 0.14);
+    --_pm-inset: calc(((var(--_d) - 44px) / 2 - var(--fd-node-problem-size)) / 2);
   }
 
   .flowdrop-terminal-node__circle-wrapper > :global(.fd-node-problem) {
     position: absolute;
     top: var(--_pm-inset);
-    right: var(--_pm-inset);
+    left: 50%;
+    right: auto;
+    translate: -50% 0;
+    transform-origin: top center;
     z-index: 31;
   }
 

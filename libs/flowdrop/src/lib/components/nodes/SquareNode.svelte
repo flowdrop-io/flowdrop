@@ -214,6 +214,7 @@
       ></span>
     </div>
 
+    <!-- The Doctor's mark: a badge on the tile's bottom-right, clear of the ports, the gear and the top edge. -->
     <NodeProblemMark />
 
     <!-- Processing indicator -->
@@ -231,7 +232,12 @@
     {/if}
 
     <!-- Config button -->
-    <NodeConfigButton onclick={openConfigSidebar} title={m().nodes.configure} />
+    <!-- Above the square, as on TerminalNode: the corners carry the ports. -->
+    <NodeConfigButton
+      onclick={openConfigSidebar}
+      title={m().nodes.configure}
+      placement="top-center"
+    />
   </div>
 </div>
 
@@ -327,6 +333,23 @@
   .flowdrop-square-node--error .flowdrop-square-node__square {
     --_border: var(--fd-error);
     background-color: var(--fd-error-muted) !important;
+  }
+
+  /* The Doctor's mark, centred at the top of the square just below the gear that
+     floats above it (as on TerminalNode): in the middle of the band between the
+     square's edge and the 48px icon tile. A disc in the card colour keeps it
+     legible where it meets the border. */
+  .flowdrop-square-node__square :global(.fd-node-problem) {
+    position: absolute;
+    top: calc((16px - var(--fd-node-problem-size)) / 2);
+    left: 50%;
+    right: auto;
+    translate: -50% 0;
+    transform-origin: top center;
+    z-index: 2;
+    border-radius: var(--fd-radius-full);
+    background: var(--fd-node-bg);
+    box-shadow: 0 0 0 1px var(--fd-node-bg);
   }
 
   /* Compact layout styles */
