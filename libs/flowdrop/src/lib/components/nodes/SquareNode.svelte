@@ -349,7 +349,7 @@
     z-index: 2;
     border-radius: var(--fd-radius-full);
     background: var(--fd-node-bg);
-    box-shadow: 0 0 0 1px var(--fd-node-bg);
+    outline: 1px solid var(--fd-node-bg);
   }
 
   /* Compact layout styles */
