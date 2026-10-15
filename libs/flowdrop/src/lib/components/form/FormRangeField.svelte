@@ -1,13 +1,9 @@
 <!--
-  FormRangeField Component
-  Range slider input field for numeric values
-  
-  Features:
-  - Modern styled range slider with custom track and thumb
-  - Min/max/step support for value constraints
-  - Real-time value display with tabular numeric font
-  - Proper ARIA attributes for accessibility
-  - Visual feedback for current value position
+  @component
+  A slider for a number inside a range, with the current value shown beside it. Set `min`, `max` and `step`.
+
+  **Use it for** values with a natural scale such as temperature. The factory picks it for numbers with `format: "range"`.
+  **Not for** exact entry of large numbers (use `FormNumberField`).
 -->
 
 <script lang="ts">

@@ -1,15 +1,12 @@
 <!--
-  MessageMarkdown Component
+  @component
+  The text of a message, as formatted Markdown or plain text.
+  The user sees it inside every message in the conversation. It parses the Markdown, cleans the result, and applies one set of text styles so `ChatBubble` and `MessageCard` look the same. With `enableMarkdown` off, or for log rows, it shows plain text.
 
-  Renders message content. Wraps marked + sanitizeHtml and applies the
-  shared markdown typography. Used by ChatBubble (assistant/system/user)
-  and MessageCard so they share one set of typography rules.
+  Parents can adjust the look with `:global(.message-markdown ...)` rules in their own CSS (see the user-bubble rules in `ChatBubble`).
 
-  Consumers scope overrides via :global(.message-markdown ...) from their
-  own component CSS — see ChatBubble's user-bubble rules.
-
-  When `enableMarkdown` is false (or the role is 'log'), the content is
-  rendered as plain text.
+  **Use it for** the body text of any message.
+  **Not for** the message frame, name or tags; use `MessageCard` or `ChatBubble` instead.
 -->
 
 <script lang="ts">
@@ -17,7 +14,9 @@
   import { sanitizeHtml } from '../../utils/sanitize.js';
 
   interface Props {
+    /** The message text to show. */
     content: string;
+    /** Render the text as Markdown; when false, show plain text. Default: true. */
     enableMarkdown?: boolean;
   }
 

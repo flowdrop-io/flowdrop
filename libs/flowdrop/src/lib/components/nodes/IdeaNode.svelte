@@ -1,9 +1,15 @@
 <!--
-  Idea Node Component
-  A BPMN-like conceptual flow node with card design and configurable ports.
-  Allows users to create and chain ideas together without committing to specific node types.
-  Supports 4 connection points: left, right, top, and bottom (configurable via checkboxes).
-  Styled with BEM syntax
+  @component
+  A planning card for a conceptual flow, with ports you switch on or off.
+
+  Users can chain ideas together without committing to node types. It has four connection
+  points (left, right, top, bottom), each one a checkbox in the config.
+
+  The editor draws it only for a node type that declares `type: "idea"`. Nothing in the
+  library creates one on its own.
+
+  **Use it for** sketching a flow before the real nodes exist.
+  **Not for** steps that run; use `WorkflowNode`.
 -->
 
 <script lang="ts">
@@ -20,7 +26,9 @@
    * Displays a card-style node for conceptual flow diagrams
    */
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`content`, `instanceTitle`) and node type. */
     data: {
       label: string;
       config: ConfigValues;
@@ -31,8 +39,11 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 

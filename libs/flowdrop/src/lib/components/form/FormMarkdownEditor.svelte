@@ -1,19 +1,12 @@
 <!--
-  FormMarkdownEditor Component
-  CodeMirror 6-based Markdown editor for rich text content
+  @component
+  A Markdown editor built on CodeMirror 6: syntax colours, a formatting toolbar with shortcuts, a status bar with word and line
+  counts, and optional autosave to the browser.
 
-  Features:
-  - Full Markdown editing with CodeMirror 6
-  - Markdown syntax highlighting via @codemirror/lang-markdown
-  - Toolbar with common formatting options + keyboard shortcuts
-  - Autosave support (optional, localStorage)
-  - Status bar with word/line/character count
-  - Consistent styling with other form components
-  - Proper ARIA attributes for accessibility
-  - Dark/light theme support
+  Schema fields with `format: "markdown"` draw this. It is bundled only in `form/full` or when registered with `registerMarkdownEditorField()`.
 
-  Usage:
-  Use with schema format: "markdown" to render this editor
+  **Use it for** longer formatted text such as a note or an instruction.
+  **Not for** one-line text (use `FormTextField`).
 -->
 
 <script lang="ts">

@@ -1,20 +1,21 @@
 <!--
-  Toolbar primitive — a bare row (or column) that groups canvas controls for
-  keyboard navigation. It draws nothing itself: each control inside floats on its
-  own (Segmented `float`, a FloatingControl, the run pill).
+  @component
+  Toolbar: a bare row (or column) that groups controls so arrow keys move between them.
 
-  role="toolbar" with arrow-key navigation: arrow keys (Left/Right for
-  horizontal, Up/Down for vertical), Home and End move between the focusable
-  children. It is not a roving tabindex: every control keeps its own place in
-  the Tab order (the children own their tabindex, and Segmented already roves
-  its radios), so the arrows are a shortcut on top of Tab, not a replacement. Compose with Segmented, IconButton, Chip, and
-  ToolbarSeparator. Native focusable elements only (buttons, links, inputs,
-  elements with a non-negative tabindex).
+  It draws nothing itself; each control inside floats on its own. `role="toolbar"`: the arrow
+  keys (Left/Right when horizontal, Up/Down when vertical), Home and End move focus between
+  the focusable children. This is a shortcut on top of Tab, not a replacement: every control
+  keeps its place in the Tab order. A `Segmented` inside keeps its own arrow keys; the
+  toolbar skips events a child already handled.
 
-  Note: a Segmented inside the toolbar keeps its own arrow-key handling; the
-  toolbar skips events that a child already handled (defaultPrevented).
+  **Toolbar, Segmented or Tabs?** Toolbar groups several different controls. `Segmented` picks
+  a mode. `Tabs` picks a view.
 
-  @internal Not exported from any package entry; not public API yet.
+  **Use it for** a group of buttons and switches. The real canvas toolbar is `CanvasToolbar`
+  (Editor/Canvas).
+  **Not for** drawing a bar; it has no surface of its own.
+
+  Not exported from the package; not public API yet.
 -->
 
 <script lang="ts">

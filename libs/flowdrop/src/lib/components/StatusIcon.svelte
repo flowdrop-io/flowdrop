@@ -1,7 +1,14 @@
 <!--
-  Status Icon Component
-  Reusable status icon that can be used anywhere in the application
-  Displays status with appropriate icon, color, and styling
+  @component
+  StatusIcon: an icon for a node execution status, in the status colour.
+
+  Exported for host apps; the editor uses `StatusPill` and the node status overlay instead.
+  It knows all nine statuses (`idle`, `pending`, `running`, `completed`, `failed`,
+  `cancelled`, `skipped`, `paused`, `interrupted`). `showBackground` puts the icon on a
+  tinted square.
+
+  **Use it for** a status icon in your own list or table.
+  **Not for** a status with a word next to it; use `StatusPill`.
 -->
 
 <script lang="ts">
@@ -10,9 +17,13 @@
   import { getStatusColor, getStatusIcon } from '../utils/nodeStatus.js';
 
   interface Props {
+    /** The status; selects the icon and colour. */
     status: NodeExecutionStatus;
+    /** Icon size: 12, 16, 24 or 28px. */
     size?: 'sm' | 'md' | 'lg' | 'xl';
+    /** Puts the icon on a tinted square. */
     showBackground?: boolean;
+    /** Extra classes on the root. */
     class?: string;
   }
 

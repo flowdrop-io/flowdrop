@@ -1,101 +1,97 @@
 <!--
-  EdgeDecorator: Renders two connected nodes inside a SvelteFlow canvas
-  to showcase edge rendering with arrowhead markers.
+  EdgeDecorator: two connected nodes on a canvas set up like the editor's, with the
+  wire drawn by FlowDropEdge and styled the way the editor styles a new connection
+  (`applyConnectionStyling`: trigger, tool, loopback or data, from the source port).
+
+  Seed state without a backend:
+  - `selected`: the wire is selected.
+  - `statuses`: run status by node id (`source-node`, `target-node`). A wire whose source
+    completed and whose target was reached is "hot" and draws in the success colour.
+  - `testMode`, `zoom`: as in NodeDecorator.
 -->
 <script lang="ts">
-  import { SvelteFlow, Controls, MarkerType } from '@xyflow/svelte';
-  import type { Node, Edge, ColorMode } from '@xyflow/svelte';
+  import { SvelteFlow } from '@xyflow/svelte';
+  import type { Node, Edge } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
   import UniversalNode from '$lib/components/UniversalNode.svelte';
   import FlowDropEdge from '$lib/components/FlowDropEdge.svelte';
-  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
-  import { EDGE_MARKER_SIZES } from '$lib/config/constants.js';
+  import { buildHandleId } from '$lib/utils/handleIds.js';
+  import { applyConnectionStyling } from '$lib/utils/edgeStyling.js';
+  import type { WorkflowEdge, WorkflowNode } from '$lib/types/index.js';
+  import CanvasChrome from './CanvasChrome.svelte';
+  import { useColorMode } from './colorMode.svelte.js';
+  import { createStoryInstance, seedRunState, type StoryStatuses } from './utils.js';
 
   interface Props {
-    sourceData: Record<string, unknown>;
-    targetData: Record<string, unknown>;
-    edgeStyle?: string;
-    edgeClass?: string;
-    edgeMarkerColor?: string;
-    edgeMarkerSize?: { width: number; height: number };
+    sourceData: WorkflowNode['data'];
+    targetData: WorkflowNode['data'];
+    /** Output port of the source node the wire starts at. */
     sourceHandleId?: string;
+    /** Input port of the target node the wire ends at. */
     targetHandleId?: string;
+    selected?: boolean;
+    statuses?: StoryStatuses;
+    testMode?: boolean;
+    zoom?: number;
   }
 
   let {
     sourceData,
     targetData,
-    edgeStyle = 'stroke: #64748b;',
-    edgeClass = 'flowdrop--edge--data',
-    edgeMarkerColor = '#64748b',
-    edgeMarkerSize = EDGE_MARKER_SIZES.data,
     sourceHandleId = 'output',
-    targetHandleId = 'input'
+    targetHandleId = 'input',
+    selected = false,
+    statuses,
+    testMode = false,
+    zoom
   }: Props = $props();
 
-  // Provide an instance so UniversalNode can resolve built-in node components
-  // (the registry is seeded with BUILTIN_NODE_COMPONENTS at construction).
-  provideInstance(getDefaultInstance());
+  const fd = createStoryInstance();
+  provideInstance(fd);
+  $effect(() => seedRunState(fd, statuses, testMode));
 
-  const nodeTypes = {
-    universalNode: UniversalNode
-  };
-
-  const edgeTypes = {
-    default: FlowDropEdge
-  };
+  const nodeTypes = { universalNode: UniversalNode };
+  const edgeTypes = { default: FlowDropEdge };
 
   const SOURCE_ID = 'source-node';
   const TARGET_ID = 'target-node';
 
+  const workflowNode = (id: string, x: number, data: WorkflowNode['data']): WorkflowNode => ({
+    id,
+    type: 'universalNode',
+    position: { x, y: 0 },
+    data
+  });
+
   let nodes = $derived<Node[]>([
-    {
-      id: SOURCE_ID,
-      type: 'universalNode',
-      position: { x: 0, y: 0 },
-      data: { ...sourceData, nodeId: SOURCE_ID }
-    },
-    {
-      id: TARGET_ID,
-      type: 'universalNode',
-      position: { x: 350, y: 0 },
-      data: { ...targetData, nodeId: TARGET_ID }
-    }
+    workflowNode(SOURCE_ID, 0, sourceData),
+    workflowNode(TARGET_ID, 420, targetData)
   ]);
 
-  // Handle IDs follow the format: {nodeId}-{input|output}-{portId}
-  let edges = $derived<Edge[]>([
-    {
+  let edges = $derived.by<Edge[]>(() => {
+    const edge: WorkflowEdge = {
       id: 'edge-1',
       source: SOURCE_ID,
       target: TARGET_ID,
-      sourceHandle: `${SOURCE_ID}-output-${sourceHandleId}`,
-      targetHandle: `${TARGET_ID}-input-${targetHandleId}`,
-      style: edgeStyle,
-      class: edgeClass,
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        ...edgeMarkerSize,
-        color: edgeMarkerColor
-      }
-    }
-  ]);
-
-  let colorMode = $state<ColorMode>(
-    (document.documentElement.getAttribute('data-theme') as ColorMode) || 'light'
-  );
-
-  $effect(() => {
-    const observer = new MutationObserver(() => {
-      colorMode = (document.documentElement.getAttribute('data-theme') as ColorMode) || 'light';
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme']
-    });
-    return () => observer.disconnect();
+      sourceHandle: buildHandleId(SOURCE_ID, 'output', sourceHandleId),
+      targetHandle: buildHandleId(TARGET_ID, 'input', targetHandleId),
+      selected
+    };
+    applyConnectionStyling(
+      edge,
+      workflowNode(SOURCE_ID, 0, sourceData),
+      workflowNode(TARGET_ID, 420, targetData)
+    );
+    return [edge];
   });
+
+  const color = useColorMode();
+  let fitViewOptions = $derived(
+    zoom === undefined
+      ? { maxZoom: 0.85, padding: 0.3 }
+      : { minZoom: zoom, maxZoom: zoom, padding: 0.3 }
+  );
 </script>
 
 <div class="edge-decorator-wrapper">
@@ -105,10 +101,13 @@
     {nodeTypes}
     {edgeTypes}
     fitView
-    fitViewOptions={{ maxZoom: 0.85, padding: 0.3 }}
-    {colorMode}
+    {fitViewOptions}
+    minZoom={0.2}
+    maxZoom={3}
+    elevateEdgesOnSelect={true}
+    colorMode={color.current}
   >
-    <Controls />
+    <CanvasChrome nodeCount={nodes.length} edgeCount={edges.length} />
   </SvelteFlow>
 </div>
 

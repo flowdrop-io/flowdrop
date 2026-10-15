@@ -1,13 +1,15 @@
 <!--
-  Square Node Component
-  A simple square node with optional input and output ports
-  Styled with BEM syntax
+  @component
+  A square node that shows only its icon, with the ports on its edges.
 
   Port rendering:
-  - Exposure (data.config.ports, falling back to each port's exposedByDefault)
-    decides which ports render — a not-exposed port is hidden.
-  - Order: data.config.ports order overrides the metadata default (displayOrder);
-    unlisted ports follow in default order.
+  - Exposure (`data.config.ports`, falling back to each port's `exposedByDefault`) decides
+    which ports render. A port that is not exposed is hidden.
+  - Order: `data.config.ports` overrides the metadata default (`displayOrder`); ports it does
+    not list follow in the default order.
+
+  **Use it for** a node type that declares `type: "square"`, where the icon says enough.
+  **Not for** a node that needs a title or a description; use `WorkflowNode`.
 -->
 
 <script lang="ts">
@@ -36,7 +38,9 @@
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`ports`, dynamic ports) and node type. */
     data: {
       label: string;
       config: ConfigValues;
@@ -48,8 +52,11 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 

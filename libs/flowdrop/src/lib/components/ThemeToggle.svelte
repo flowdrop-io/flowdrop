@@ -1,10 +1,13 @@
 <!--
-  Theme Toggle Component
-  A button that cycles through light, dark, and auto theme modes.
-  Displays the icon for the current theme state.
+  @component
+  ThemeToggle: a button that cycles the theme: light, dark, auto (and host, when the host app
+  sets a colour scheme). The icon shows the current choice and the tooltip says what a click does.
 
-  Built on the shared Button primitive so it stays visually and dimensionally
-  aligned with every other control (height, focus ring, hover) for free.
+  Exported for host apps; the editor sets the theme in its settings panel instead. It is built on the primitive
+  Button, so height and focus ring match other controls. The choice is stored in the settings store.
+
+  **Use it for** a theme switch in your own toolbar.
+  **Not for** the editor's own settings; those have their own theme picker.
 -->
 
 <script lang="ts">

@@ -1,14 +1,17 @@
 <!--
-  Notice — inline message (info / success / warning / error) with optional
-  title, body, actions and a dismiss button.
+  @component
+  Notice: an inline message (info, success, warning or error) with an optional title, body,
+  actions and a dismiss button.
 
-  ARIA: error and warning use role="alert" (assertive: the user has to act or
-  has just lost something); info and success use role="status" (polite: nothing
-  to interrupt for). Override with `role` when a notice that is rendered on
-  load (a persistent warning, say) should not be announced: pass "status" or
-  "note".
+  Error and warning use `role="alert"` (read out at once: the user has to act or just lost
+  something). Info and success use `role="status"` (polite). Pass `role` to change that: a
+  warning that is on screen from the start should be `"status"` or `"note"` so it is not
+  announced on load.
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** a message that belongs to a part of the page: a failed save, a missing setting.
+  **Not for** an empty list; use `EmptyState`. Not for run status; use `StatusPill`.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">

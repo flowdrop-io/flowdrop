@@ -1,69 +1,102 @@
 <!--
-  NodeDecorator: Renders node components as real SvelteFlow nodes
-  inside a canvas, matching how they appear in the workflow editor.
+  NodeDecorator: node cards as real SvelteFlow nodes on a canvas set up like the
+  editor's (zoom tier, zoom controls, background), each drawn through
+  UniversalNode, so the status pill, the Test mode border and the zoom-tier
+  drawings are the real ones.
+
+  Pass one node with `data`, or several with `nodes`. Seed state without a backend:
+  - `statuses`: run status by node id (a single `data` node has the id `story-node`).
+  - `testMode`: Test mode, which also draws the status border and dims nodes the run did not reach.
+  - `zoom`: the zoom the canvas opens at (see `ZOOM_LEVELS` in utils.ts for the tier of each).
 -->
 <script lang="ts">
-  import { SvelteFlow, Controls } from '@xyflow/svelte';
-  import type { Node, ColorMode } from '@xyflow/svelte';
+  import { SvelteFlow } from '@xyflow/svelte';
+  import type { Node } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
   import UniversalNode from '$lib/components/UniversalNode.svelte';
-  import { getDefaultInstance } from '$lib/stores/instanceContainer.svelte.js';
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
+  import type { WorkflowNode } from '$lib/types/index.js';
+  import CanvasChrome from './CanvasChrome.svelte';
+  import { useColorMode } from './colorMode.svelte.js';
+  import {
+    createStoryInstance,
+    seedRunState,
+    type StoryNode,
+    type StoryStatuses
+  } from './utils.js';
 
-  let { data, selected = false }: { data: Record<string, unknown>; selected?: boolean } = $props();
+  interface Props {
+    /** A single node, with the id `story-node`. */
+    data?: WorkflowNode['data'];
+    /** Several nodes; used instead of `data`. */
+    nodes?: StoryNode[];
+    /** Whether the single node is selected. */
+    selected?: boolean;
+    /** Run status by node id. */
+    statuses?: StoryStatuses;
+    /** Test mode: the status border is drawn and nodes without a status are dimmed. */
+    testMode?: boolean;
+    /** Zoom the canvas opens at. Without it the view fits the nodes (up to 100%). */
+    zoom?: number;
+    width?: number;
+    height?: number;
+  }
 
-  // Provide an instance so UniversalNode can resolve built-in node components
-  // (the registry is seeded with BUILTIN_NODE_COMPONENTS at construction).
-  provideInstance(getDefaultInstance());
+  let {
+    data,
+    nodes: given,
+    selected = false,
+    statuses,
+    testMode = false,
+    zoom,
+    width = 800,
+    height = 400
+  }: Props = $props();
 
-  const nodeTypes = {
-    universalNode: UniversalNode
-  };
+  // One instance per story: seeded run state must not reach other stories.
+  const fd = createStoryInstance();
+  provideInstance(fd);
+  $effect(() => seedRunState(fd, statuses, testMode));
 
-  let nodes = $derived<Node[]>([
-    {
-      id: 'story-node',
-      type: 'universalNode',
-      position: { x: 0, y: 0 },
-      selected,
-      data
-    }
-  ]);
+  const nodeTypes = { universalNode: UniversalNode };
 
-  // Watch the data-theme attribute set by Storybook's addon-themes
-  let colorMode = $state<ColorMode>(
-    (document.documentElement.getAttribute('data-theme') as ColorMode) || 'light'
+  let nodes = $derived<Node[]>(
+    (given ?? (data ? [{ id: 'story-node', data, selected } satisfies StoryNode] : [])).map(
+      (n) => ({
+        id: n.id,
+        type: 'universalNode',
+        position: { x: n.x ?? 0, y: n.y ?? 0 },
+        selected: n.selected,
+        data: n.data
+      })
+    )
   );
 
-  $effect(() => {
-    const observer = new MutationObserver(() => {
-      colorMode = (document.documentElement.getAttribute('data-theme') as ColorMode) || 'light';
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme']
-    });
-    return () => observer.disconnect();
-  });
+  const color = useColorMode();
+  let fitViewOptions = $derived(
+    zoom === undefined
+      ? { maxZoom: 1, padding: 0.2 }
+      : { minZoom: zoom, maxZoom: zoom, padding: 0.2 }
+  );
 </script>
 
-<div class="node-decorator-wrapper">
+<div class="node-decorator-wrapper" style:width="{width}px" style:height="{height}px">
   <SvelteFlow
     {nodes}
     edges={[]}
     {nodeTypes}
     fitView
-    fitViewOptions={{ maxZoom: 0.85, padding: 0.2 }}
-    {colorMode}
+    {fitViewOptions}
+    minZoom={0.2}
+    maxZoom={3}
+    colorMode={color.current}
   >
-    <Controls />
+    <CanvasChrome nodeCount={nodes.length} />
   </SvelteFlow>
 </div>
 
 <style>
   .node-decorator-wrapper {
-    width: 800px;
-    height: 400px;
     position: relative;
   }
 

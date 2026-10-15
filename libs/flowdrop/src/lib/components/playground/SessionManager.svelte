@@ -1,9 +1,10 @@
 <!--
-  SessionManager Component
-  
-  Manages playground sessions: list, create, switch, and delete.
-  Displayed as a sidebar or dropdown.
-  Styled with BEM syntax.
+  @component
+  **Exported for host apps; the editor does not render it.** A list of Playground sessions; no surface renders it any more. `ControlPanel` and the history menu in `PlaygroundHeader` replaced it.
+  It lists sessions with a relative time, lets the user create, switch and delete (delete asks to press again within 3 seconds), and works as a sidebar or a dropdown.
+
+  **Use it for** a host app's own sessions sidebar.
+  **Not for** the editor; use `ControlPanel` or `PlaygroundHeader` instead.
 -->
 
 <script lang="ts">

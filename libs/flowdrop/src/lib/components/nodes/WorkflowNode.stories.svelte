@@ -1,186 +1,149 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import NodeDecorator from '../../stories/NodeDecorator.svelte';
+  import { typicalNodeData } from '../../stories/nodeFixtures.js';
   import { createSampleNodeData } from '../../stories/utils.js';
+  import type { NodePort } from '../../types/index.js';
+  // The component is imported last: a node component imported first would load the instance
+  // container before its own module has finished, and fail on the import cycle.
+  import WorkflowNode from './WorkflowNode.svelte';
 
   const { Story } = defineMeta({
-    title: 'Patterns/Nodes/WorkflowNode',
+    title: 'Editor/Nodes/Workflow node',
+    component: WorkflowNode,
     tags: ['autodocs'],
-    parameters: {
-      layout: 'centered'
-    }
+    parameters: { layout: 'centered' }
   });
+
+  const input = (id: string, name: string, dataType: string, extra: Partial<NodePort> = {}) =>
+    ({ id, name, type: 'input', dataType, ...extra }) as NodePort;
+  const output = (id: string, name: string, dataType: string) =>
+    ({ id, name, type: 'output', dataType }) as NodePort;
 </script>
 
-<Story name="Default">
-  <NodeDecorator
-    data={createSampleNodeData({
-      label: 'Sub Workflow',
-      metadata: {
-        id: 'sub-workflow',
-        name: 'Sub Workflow',
-        description: 'Execute a nested workflow',
-        category: 'bundles',
-        version: '1.0.0',
-        type: 'workflow',
-        icon: 'mdi:sitemap',
-        inputs: [
-          {
-            id: 'input',
-            name: 'Input',
-            type: 'input',
-            dataType: 'any',
-            required: false
-          }
-        ],
-        outputs: [{ id: 'output', name: 'Output', type: 'output', dataType: 'any' }]
+<Story
+  asChild
+  name="A typical node"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The card the editor draws most. Data ports are rows. The trigger ports are pins in the header; they show when you hover the card.'
       }
-    })}
-  />
+    }
+  }}
+>
+  <NodeDecorator data={typicalNodeData()} />
 </Story>
 
-<Story name="Selected">
-  <NodeDecorator
-    data={createSampleNodeData({
-      label: 'Data Pipeline',
-      metadata: {
-        id: 'data-pipeline',
-        name: 'Data Pipeline',
-        description: 'Process data through a pipeline workflow',
-        category: 'bundles',
-        version: '1.0.0',
-        type: 'workflow',
-        icon: 'mdi:pipe',
-        inputs: [
-          {
-            id: 'data',
-            name: 'Data',
-            type: 'input',
-            dataType: 'any',
-            required: true
-          },
-          {
-            id: 'config',
-            name: 'Config',
-            type: 'input',
-            dataType: 'object',
-            required: false
-          }
-        ],
-        outputs: [{ id: 'result', name: 'Result', type: 'output', dataType: 'any' }]
-      }
-    })}
-    selected={true}
-  />
+<Story
+  asChild
+  name="Selected"
+  parameters={{
+    docs: { description: { story: 'A node you clicked. The border and the config gear show.' } }
+  }}
+>
+  <NodeDecorator data={typicalNodeData()} selected />
 </Story>
 
-<Story name="Dynamic Ports">
+<Story
+  asChild
+  name="Dynamic ports"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'Ports a user adds to one node in its config (`dynamicInputs`, `dynamicOutputs`). They draw like any other port.'
+      }
+    }
+  }}
+>
   <NodeDecorator
     data={createSampleNodeData({
-      label: 'Custom Function',
+      label: 'Custom function',
       config: {
         dynamicInputs: [
-          {
-            name: 'input_1',
-            label: 'First Input',
-            description: 'The first input parameter',
-            dataType: 'string',
-            required: true
-          },
-          {
-            name: 'input_2',
-            label: 'Second Input',
-            description: 'The second input parameter',
-            dataType: 'number',
-            required: false
-          }
+          { name: 'input_1', label: 'First input', dataType: 'string', required: true },
+          { name: 'input_2', label: 'Second input', dataType: 'number' }
         ],
-        dynamicOutputs: [
-          {
-            name: 'output_1',
-            label: 'Primary Output',
-            description: 'The main output value',
-            dataType: 'string',
-            required: false
-          }
-        ]
+        dynamicOutputs: [{ name: 'output_1', label: 'Result', dataType: 'string' }]
       },
       metadata: {
-        id: 'custom-function',
-        name: 'Custom Function',
-        description: 'Execute a custom function with dynamic inputs and outputs',
+        node_type_id: 'custom_function',
+        name: 'Custom function',
+        description: 'Runs a function with inputs and outputs the user defines.',
         category: 'processing',
-        version: '1.0.0',
-        type: 'workflow',
         icon: 'mdi:function-variant',
-        inputs: [
-          {
-            id: 'trigger',
-            name: 'Trigger',
-            type: 'input',
-            dataType: 'trigger',
-            required: false
-          }
-        ],
-        outputs: [
-          {
-            id: 'done',
-            name: 'Done',
-            type: 'output',
-            dataType: 'trigger',
-            required: false
-          }
-        ]
+        inputs: [input('trigger', 'Trigger', 'trigger')],
+        outputs: [output('done', 'Done', 'trigger')]
       }
     })}
   />
 </Story>
 
-<!--
-  Density is where the shape symbols earn their keep: on a two-port node any
-  treatment reads fine, and the specimen sheet only separated the variants once
-  a node carried ten. This story is the regression guard for that — there is no
-  visual-regression harness in this repo, so eyeballing this story IS the
-  coverage.
-
-  It spans every shape in the vocabulary: S # B [] {} ? T (), including the
-  reserved `error` output (red, `{}`), a `messages` port (teal lane, `[]`
-  glyph — the two facts the treatment exists to separate) and a site-defined
-  lane that honestly resolves to `?`.
--->
-<Story name="Dense (every shape)">
+<Story
+  asChild
+  name="Hidden ports"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A port the user switched off in the Ports tab is not drawn and cannot be wired. Here `Style` is hidden.'
+      }
+    }
+  }}
+>
   <NodeDecorator
+    data={{
+      ...typicalNodeData(),
+      config: { ports: { inputs: [{ id: 'style', exposed: false }] } }
+    }}
+  />
+</Story>
+
+<Story
+  asChild
+  name="Every port shape"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'One port for each shape a port can have, to check that they stay apart on a crowded node.'
+      }
+    }
+  }}
+>
+  <NodeDecorator
+    height={720}
     data={createSampleNodeData({
-      label: 'Everything Node',
+      label: 'Everything node',
       metadata: {
-        id: 'everything',
-        name: 'Everything Node',
-        description: 'One port per shape in the vocabulary',
+        node_type_id: 'everything',
+        name: 'Everything node',
+        description: 'One port per shape.',
         category: 'processing',
-        version: '1.0.0',
-        type: 'workflow',
         icon: 'mdi:shape-outline',
         inputs: [
-          { id: 'prompt', name: 'Prompt', type: 'input', dataType: 'string', required: true },
-          { id: 'temperature', name: 'Temperature', type: 'input', dataType: 'number' },
-          { id: 'stream', name: 'Stream', type: 'input', dataType: 'boolean' },
-          { id: 'tags', name: 'Tags', type: 'input', dataType: 'string[]' },
-          { id: 'history', name: 'Chat History', type: 'input', dataType: 'messages' },
-          { id: 'options', name: 'Options', type: 'input', dataType: 'json' },
-          { id: 'payload', name: 'Payload', type: 'input', dataType: 'mixed' },
-          { id: 'order', name: 'Order', type: 'input', dataType: 'order' },
-          { id: 'attachment', name: 'Attachment', type: 'input', dataType: 'image' },
-          { id: 'trigger', name: 'Trigger', type: 'input', dataType: 'trigger' },
-          { id: 'tools', name: 'Tools', type: 'input', dataType: 'tool' }
+          input('prompt', 'Prompt', 'string', { required: true }),
+          input('temperature', 'Temperature', 'number'),
+          input('stream', 'Stream', 'boolean'),
+          input('tags', 'Tags', 'string[]'),
+          input('history', 'Chat history', 'messages'),
+          input('options', 'Options', 'json'),
+          input('payload', 'Payload', 'mixed'),
+          input('order', 'Order', 'order'),
+          input('attachment', 'Attachment', 'image'),
+          input('trigger', 'Trigger', 'trigger'),
+          input('tools', 'Tools', 'tool')
         ],
         outputs: [
-          { id: 'text', name: 'Text', type: 'output', dataType: 'string' },
-          { id: 'count', name: 'Count', type: 'output', dataType: 'number' },
-          { id: 'matched', name: 'Matched', type: 'output', dataType: 'boolean' },
-          { id: 'items', name: 'Items', type: 'output', dataType: 'json[]' },
-          { id: 'result', name: 'Result', type: 'output', dataType: 'json' },
-          { id: 'done', name: 'Done', type: 'output', dataType: 'trigger' },
-          { id: 'error', name: 'Error', type: 'output', dataType: 'json' }
+          output('text', 'Text', 'string'),
+          output('count', 'Count', 'number'),
+          output('matched', 'Matched', 'boolean'),
+          output('items', 'Items', 'json[]'),
+          output('result', 'Result', 'json'),
+          output('done', 'Done', 'trigger'),
+          output('error', 'Error', 'json')
         ]
       }
     })}

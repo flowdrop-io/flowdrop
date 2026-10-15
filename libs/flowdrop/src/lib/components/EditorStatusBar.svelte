@@ -1,11 +1,12 @@
 <!--
-  EditorStatusBar — the dismissible error banner shown above the editor canvas
-  when node types fail to load (endpoint missing or unreachable).
+  @component
+  A red banner above the canvas that says the editor could not load its node types
+  (the endpoint is missing or unreachable). It offers Retry, Set API URL, Test API and Dismiss.
 
-  Extracted from App.svelte so it can be storied/tested in isolation. The action
-  buttons route through the shared Button primitive; all colours come from design
-  tokens, so the banner stays in sync with the rest of the editor chrome.
+  **Use it for** a failed node-type load. The person sees it as soon as the editor opens without a working backend.
+  **Not for** errors in a single run or a single node (those show on the node and in Test mode).
 -->
+
 <script lang="ts">
   import Button from './Button.svelte';
   import CloseIcon from './icons/CloseIcon.svelte';

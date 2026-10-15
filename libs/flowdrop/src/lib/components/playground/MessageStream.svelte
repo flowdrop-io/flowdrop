@@ -1,12 +1,14 @@
 <!--
-  MessageStream Component
+  @component
+  The conversation of the Playground: messages, a folded steps row for each turn, version dividers and questions
+  from paused runs (`InterruptBubble`). It has no input; the composer is `ChatInput`.
 
-  Renders the playground message feed with interrupt UI inline. No input area.
-  This is the shared primitive used by ChatPanel (conversational) and
-  ExecutionConsole (workflow runtime surface).
+  It reads the open conversation from the instance (`fd.playground`). It scrolls to the newest message, loads older
+  ones when you scroll up, and leaves the empty and welcome states to the host through the `emptySession` and
+  `welcome` snippets.
 
-  The empty/welcome state is delegated to consumers via the `welcome` and
-  `emptySession` snippets so each wrapper renders context-appropriate copy.
+  **Use it for** showing a conversation or a run.
+  **Not for** a single message (use `MessageBubble`).
 -->
 
 <script lang="ts">

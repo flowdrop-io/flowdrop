@@ -1,12 +1,10 @@
 <!--
-  FormToggle Component
-  Toggle switch for boolean values
-  
-  Features:
-  - Smooth toggle animation
-  - No state word on screen; the state is the track colour. On/Off labels
-    stay as the switch's accessible name
-  - Focus-visible states for keyboard navigation
+  @component
+  A switch for a true or false value. It shows no state word; the track colour is the state.
+  The on and off labels are only its accessible name.
+
+  **Use it for** on or off options. The factory picks it for `type: "boolean"`.
+  **Not for** choosing several items from a list (use `FormCheckboxGroup`).
 -->
 
 <script lang="ts">

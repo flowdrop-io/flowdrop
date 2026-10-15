@@ -1,9 +1,10 @@
 <!--
-  InputCollector Component
-  
-  Auto-generates input forms from workflow input nodes.
-  Supports various field types and pre-fills with defaults.
-  Styled with BEM syntax.
+  @component
+  **Exported for host apps; the editor does not render it.** An older inputs panel built from the workflow's input nodes; nothing in the editor renders it any more.
+  It builds one field per input node (text, number, checkbox, select, multiline), fills in defaults once, and can be folded away.
+
+  **Use it for** nothing new. The Playground now shows the interface inputs card.
+  **Not for** the Playground's inputs; use `InterfaceInputForm` instead.
 -->
 
 <script lang="ts">

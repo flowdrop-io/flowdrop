@@ -1,21 +1,21 @@
 <!--
-  Workflow Node Component
-  Renders individual nodes in the workflow editor with full functionality
-  Uses SvelteFlow's Handle for connection ports
-  Styled with BEM syntax
+  @component
+  The editor's standard node: a header, then ports as rows. The card the editor draws most.
 
-  Card v2 (Graphite G8): one fixed geometry from utils/nodeGeometry.ts. The
-  header is always 60px, the completion `trigger` ports are pins in it (y = 40),
-  every other port is a half-pill on a shared row (first row y = 80, pitch 40),
-  the width is 280 or 320 and the border is drawn inside the box, so every
-  handle centre is a multiple of 20 and any output can meet any input in a
-  straight wire. Every handle is placed from the geometry, never from layout.
+  It is the default for any node type that does not name another type, and the fallback for
+  one the editor does not know. One fixed geometry (see `NodeCard`): the header is 60 px, the
+  completion `trigger` ports are pins in it, every other port is a half-pill on a shared row,
+  the width is 280 or 320, and the border is drawn inside the box. Every handle centre
+  falls on the 20 px grid, so any output can meet any input in a straight wire.
 
   Port rendering:
-  - Exposure (data.config.ports, falling back to each port's exposedByDefault)
-    decides which ports render — a not-exposed port is hidden.
-  - Order: data.config.ports order overrides the metadata default (displayOrder);
-    cosmetic only, no effect on execution.
+  - Exposure (`data.config.ports`, falling back to each port's `exposedByDefault`) decides
+    which ports render. A port that is not exposed is hidden.
+  - Order: `data.config.ports` overrides the metadata default (`displayOrder`). Cosmetic
+    only; it has no effect on execution.
+
+  **Use it for** most node types. It needs no `type` in the node's metadata.
+  **Not for** branching or tools; use `GatewayNode` or `ToolNode`.
 -->
 
 <script lang="ts">
@@ -30,10 +30,13 @@
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`ports`, dynamic ports, `instanceTitle`) and node type. */
     data: WorkflowNode['data'] & {
       onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
   }
 

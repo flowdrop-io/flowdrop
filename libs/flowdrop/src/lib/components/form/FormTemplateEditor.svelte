@@ -1,20 +1,12 @@
 <!--
-  FormTemplateEditor Component
-  CodeMirror-based template editor for Twig/Liquid-style templates
-  
-  Features:
-  - Custom syntax highlighting for {{ variable }} placeholders
-  - Inline autocomplete for template variables (triggered on {{ and .)
-  - Support for nested object drilling (user.address.city)
-  - Support for array index access (items[0].name)
-  - Dark/light theme support
-  - Consistent styling with other form components
-  - Line wrapping for better template readability
-  - Optional variable hints display (clickable buttons)
-  - Proper ARIA attributes for accessibility
-  
-  Usage:
-  Use with schema format: "template" to render this editor
+  @component
+  An editor for text with `{{ variable }}` placeholders, built on CodeMirror 6. Placeholders are coloured, typing `{{` or `.`
+  offers the variables from connected nodes, and nested values (`user.address.city`, `items[0].name`) can be drilled into.
+
+  Schema fields with `format: "template"` draw this. It is bundled only in `form/full` or when registered on the instance.
+
+  **Use it for** prompts and messages that take values from earlier nodes.
+  **Not for** plain text with no variables (use `FormTextarea`).
 -->
 
 <script lang="ts">

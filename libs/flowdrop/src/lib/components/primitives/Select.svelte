@@ -1,24 +1,21 @@
 <!--
-  Select — typed wrapper over the shared `.flowdrop-input` system (base.css).
+  @component
+  Select: a dropdown that picks one value from a list.
 
-  One API, two renderings. Give it `options` and it picks: a short, flat list of
-  plain options (10 or fewer, no groups, no descriptions) is the browser's own
-  `<select>`; anything longer, grouped or described is a searchable `Combobox`
-  (filter as you type, highlighted matches, "n of m", grouped). `searchable`
-  forces one rendering or the other. See `utils/selectOptions.ts`.
+  One API, two renderings. Give it `options` and it chooses. A short, flat list of plain
+  options (10 or fewer, no groups, no descriptions) is the browser's own `<select>`.
+  A longer, grouped or described list becomes a searchable `Combobox` (type to filter, matches
+  highlighted, "n of m"). `searchable` forces one or the other. Without `options`, pass
+  `<option>` and `<optgroup>` children; that is always the native rendering.
 
-  Native rendering: the field shell (`.flowdrop-input .flowdrop-input--select`)
-  plus a built-in chevron overlay (`.flowdrop-select-wrap`), so selects match the
-  exact look of Input/Textarea. Where the browser supports
-  `appearance: base-select` its list is styled to match (base.css); elsewhere
-  it keeps the platform's list, which follows the editor's `color-scheme`.
-  Native attributes (value, disabled, id, aria-*, onchange…) forward to the
-  underlying <select>.
+  The native rendering uses the same field look as Input and Textarea (base.css), with a
+  built-in chevron. Native attributes (`value`, `disabled`, `id`, `aria-*`, `onchange`) go to
+  the underlying `<select>`. `onValueChange` runs with the new value in either rendering.
 
-  Without `options`, pass <option>/<optgroup> as children: that is always the
-  native rendering (there is nothing to search).
+  **Use it for** choosing one value in a config form.
+  **Not for** a list of actions; use `Menu`. Not for a two or three way mode; use `Segmented`.
 
-  Internal for now; see Button.svelte / Input.svelte for the pattern.
+  Not exported from the package; internal for now.
 -->
 
 <script lang="ts">

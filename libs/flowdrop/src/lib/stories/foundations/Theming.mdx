@@ -1,0 +1,86 @@
+import { Meta, Story } from '@storybook/addon-docs/blocks';
+import * as Theming from './Theming.stories.svelte';
+
+<Meta of={Theming} />
+
+# How theming works
+
+Everything you see in the editor reads its colours, sizes and corners from **design tokens**:
+CSS custom properties named `--fd-something`. Change a few tokens and every panel, node and
+button follows. You never have to touch a component to restyle the editor.
+
+## Three layers
+
+Tokens come in three layers. Each one is built from the one before it.
+
+<Story of={Theming.Layers} />
+
+- **Palette** (`--_blue-2`, `--_gray-9`): the raw colours. They are private and can change in
+  any release. Do not use them.
+- **Meaning** (`--fd-primary`, `--fd-border`, `--fd-radius-lg`): what a value is _for_. This is
+  the layer to change. Tokens marked `@public` in `tokens.css` are a stable API: they only
+  change in a major release.
+- **Editor parts** (`--fd-node-*`, `--fd-edge-*`, `--fd-field-*`): the styling of one part of
+  the editor, made from meaning tokens. Change one only when you want to adjust that one part.
+
+When a box above says **set by the skin**, the selected skin gives that token its own value, so
+the chain from the palette stops there. That is exactly how skins work.
+
+## A theme is a skin plus a few switches
+
+A **theme** has two halves:
+
+- a **skin**: token values for light mode (`tokens`) and dark mode (`darkTokens`), and
+  optionally a font name;
+- a **config**: layout switches that are structure, not colour, such as how the node list in
+  the sidebar looks or whether messages are bubbles or a document.
+
+FlowDrop ships four themes. **Graphite** is the default: it is what the editor opens in and what
+this Storybook shows unless you pick another skin in the toolbar.
+
+<Story of={Theming.Themes} />
+
+## Light and dark
+
+Both modes use the same token names; only the values differ. The editor marks its own element
+with `data-theme="light"` or `data-theme="dark"`, and the matching values apply. If you change a
+colour, give it a dark value too, or the base theme's dark palette keeps its own colour there.
+
+## Make it yours
+
+Pass a theme when you mount the editor. Start from a built-in theme and override what you need:
+
+```js
+mountFlowDropApp(container, {
+  theme: {
+    name: 'graphite',
+    skin: {
+      tokens: { primary: '#7c3aed' },
+      darkTokens: { primary: '#a78bfa' }
+    }
+  }
+});
+```
+
+Token names in a skin drop the `--fd-` prefix: `primary` sets `--fd-primary`. Try it:
+
+<Story of={Theming.TryATheme} />
+
+**Why not a `:root { --fd-primary: … }` rule?** A skin applies its tokens on the editor's own
+element, which beats anything set higher up the page. Graphite sets most colour tokens, so a
+`:root` rule only reaches the tokens it leaves alone. The `theme` option always wins.
+
+## Rules of thumb
+
+- Change **meaning** tokens. Reach for an editor-part token only to adjust that one part.
+- Never use `--_*` tokens or tokens marked `@internal`; they can change in any release.
+- Use tokens in your own CSS too (`color: var(--fd-muted-foreground)`), never raw values. In this
+  repository `pnpm run lint:styles` checks for raw colours, sizes, radii and shadows.
+- When you change a colour, check its contrast in both modes. Graphite's pairs are checked by
+  `tests/unit/styles/contrast.test.ts`.
+
+Next: the **Foundations** pages show each set of tokens: [Colour](?path=/docs/foundations-colour--docs),
+[Typography](?path=/docs/foundations-typography--docs),
+[Spacing and sizes](?path=/docs/foundations-spacing-and-sizes--docs),
+[Radius and shadow](?path=/docs/foundations-radius-and-shadow--docs) and
+[Run status](?path=/docs/foundations-run-status--docs).

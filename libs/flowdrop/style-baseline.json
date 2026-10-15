@@ -59,9 +59,6 @@
   "src/lib/components/NodeSidebar.svelte": {
     "radius": 2
   },
-  "src/lib/components/NodeStatusOverlay.stories.svelte": {
-    "radius": 1
-  },
   "src/lib/components/NodeSwapPicker.svelte": {
     "button": 4,
     "font-size": 2,
@@ -166,9 +163,6 @@
   "src/lib/components/nodes/AtomNode.svelte": {
     "radius": 1,
     "shadow": 1
-  },
-  "src/lib/components/nodes/CaptionNode.stories.svelte": {
-    "colour": 1
   },
   "src/lib/components/nodes/CaptionNode.svelte": {
     "font-size": 1,

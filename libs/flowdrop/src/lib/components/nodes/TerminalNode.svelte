@@ -1,11 +1,15 @@
 <!--
-  Terminal Node Component
-  A circular node for workflow terminal points (start, end, exit/abort)
-  Configurable via metadata to display different variants:
-  - start: Green with play icon, output-only
-  - end: Gray with stop icon, input-only  
-  - exit: Red with X icon, input-only (for abort/error exits)
-  Styled with BEM syntax
+  @component
+  A circle for a workflow's start, end or exit.
+
+  The variant comes from `config.variant`, then from the node type's tags, then from its
+  id or name:
+  - start: green with a play icon, output only.
+  - end: grey with a stop icon, input only.
+  - exit: red with a cross, input only. For an early stop, for example on an error.
+
+  **Use it for** a node type that declares `type: "terminal"`.
+  **Not for** a step in the middle of a flow; use `WorkflowNode`.
 -->
 
 <script lang="ts">
@@ -79,7 +83,9 @@
   };
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`variant`) and node type. */
     data: {
       label: string;
       config: ConfigValues;
@@ -91,8 +97,11 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 

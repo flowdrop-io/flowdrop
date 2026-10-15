@@ -16,7 +16,7 @@
       node_type_id: 'chat_model',
       name: 'Chat Model',
       description: 'Chat completion using an LLM provider',
-      category: 'ai',
+      category: 'models',
       version: '1.0.0',
       type: 'default',
       icon: 'mdi:robot',
@@ -79,23 +79,36 @@
   };
 
   const { Story } = defineMeta({
-    title: 'Patterns/Integrations/WebMCP',
+    title: 'Editor/WebMCP',
     component: WebMCPFakeAgent,
     tags: ['autodocs'],
-    parameters: {
-      layout: 'fullscreen',
-      docs: {
-        description: {
-          component:
-            'The editor’s commands registered as WebMCP editor tools, driven by a fake browser agent in the side panel. ' +
-            'Pick a tool, invoke it, and approve or reject the change in the dialog that the real agent would trigger.'
-        }
-      }
-    },
+    parameters: { layout: 'fullscreen' },
     args: { nodes, workflow }
   });
 </script>
 
-<Story name="Fake agent — confirm gate" args={{ approval: 'confirm' }} />
+<Story
+  name="Asks before changing"
+  args={{ approval: 'confirm' }}
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'Reads run at once. Every change opens the approval dialog first, as it would for a real agent. Pick a tool, press Invoke, then approve or reject.'
+      }
+    }
+  }}
+/>
 
-<Story name="Fake agent — auto approval" args={{ approval: 'auto' }} />
+<Story
+  name="Changes without asking"
+  args={{ approval: 'auto' }}
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The host set approval to auto, so changes are applied as soon as the agent asks. Watch the canvas change after Invoke.'
+      }
+    }
+  }}
+/>

@@ -1,8 +1,10 @@
 <!--
-  ConsoleInput Component
-  Single-line command input with prompt prefix, Enter-to-submit, Escape-to-close
-  Includes autocomplete for command verbs and node type IDs
-  Styled with BEM syntax matching CommandConsole pattern
+  @component
+  The one-line command input of the Console: a prompt, Enter to run, Escape to close, history, multi-line paste
+  as a batch, and autocomplete for command verbs and node type ids.
+
+  **Use it for** typing a command inside `CommandConsole`.
+  **Not for** general text entry (use the `Input` primitive).
 -->
 
 <script lang="ts">

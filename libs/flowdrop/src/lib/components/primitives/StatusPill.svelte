@@ -1,15 +1,18 @@
 <!--
-  StatusPill — compact run-status chip: icon + label (+ optional count).
+  @component
+  StatusPill: a compact run-status chip with an icon, a label and an optional count.
 
-  Colours come from the --fd-status-* tokens. Not a live region on purpose: a
-  canvas can carry dozens of pills and each status change would be announced;
-  the pill is plain text with an accessible name instead. Screen readers reach
-  the status through the node it belongs to.
+  Colours come from the `--fd-status-*` tokens. It is not a live region on purpose: a canvas
+  can carry dozens of pills, and each change would be announced. Screen readers reach the
+  status through the node it belongs to.
 
-  With `screenSize`, the pill counter-scales against the canvas zoom so it stays
-  readable when zoomed out (it is meant to sit centred on a node's top edge).
+  With `screenSize`, the pill scales against the canvas zoom so it stays readable when the
+  canvas is zoomed out. It is meant to sit centred on a node's top edge.
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** the run status of a node or a run on the canvas.
+  **Not for** a free-form tag; use `Chip`.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script module lang="ts">

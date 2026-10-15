@@ -1,17 +1,18 @@
 <!--
-  CanvasZoomControls
+  @component
+  The corner control of the canvas: zoom in, zoom out, fit the view, lock, the "Tidy up" broom (when the canvas
+  offers it) and a read-only count of what is on the canvas ("6 nodes").
 
-  The canvas's zoom / fit / lock buttons, the "Tidy up" broom (when the canvas offers it), and a
-  read-only count of what is on the
-  canvas ("6 nodes") beside them. The count replaced the editor's status bar; the
-  full "6 nodes · 6 connections" is its title and accessible name. A cycle warning,
-  also formerly in the status bar, appears next to the count when the graph loops.
+  The full "6 nodes · 6 connections" is the count's title and accessible name. A cycle warning appears next to the
+  count when the graph loops. When the WebMCP desktop bridge is installed and offers tools, its button is the
+  group's last segment, behind a divider (`WebMCPBridgeMenu`).
 
-  When the WebMCP desktop bridge is installed and offers tools, its button is the group's last
-  segment, behind a divider (WebMCPBridgeMenu): one island for the corner.
+  Must render inside `<SvelteFlow>`: it reads xyflow's store.
 
-  Must render inside <SvelteFlow>: xyflow's Controls reads the flow store.
+  **Use it for** moving around the canvas.
+  **Not for** switching Edit | Test (that is `CanvasToolbar`).
 -->
+
 <script lang="ts">
   import { ControlButton, Controls, Panel, useStore } from '@xyflow/svelte';
   import Icon from '@iconify/svelte';

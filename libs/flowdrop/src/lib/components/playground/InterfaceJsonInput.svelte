@@ -1,10 +1,10 @@
 <!--
-  InterfaceJsonInput
+  @component
+  The interface inputs as raw JSON.
+  The user sees it when they choose "JSON view" in the Playground's ... menu. It edits the same values as the typed form, keyed by entry id. Text that is not a JSON object is held back with a note, and the form keeps its last good values.
 
-  The workflow's interface inputs as JSON: the escape hatch beside the typed
-  form (the Playground's ⋯ menu, "JSON view"). Edits the same values the form
-  does, keyed by entry id. Text that does not parse as a JSON object is held
-  back with a note; the form's last good values stay until it does.
+  **Use it for** pasting or editing all inputs at once.
+  **Not for** the normal typed form; use `InputFields` instead.
 -->
 
 <script lang="ts">
@@ -16,6 +16,7 @@
     values: Record<string, unknown>;
     /** Called with the complete values when the text is a valid JSON object. */
     onChange: (values: Record<string, unknown>) => void;
+    /** Make the text box read-only. Default: false. */
     disabled?: boolean;
   }
 

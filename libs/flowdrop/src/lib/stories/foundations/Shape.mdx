@@ -1,0 +1,24 @@
+import { Meta, Story } from '@storybook/addon-docs/blocks';
+import * as Shape from './Shape.stories.svelte';
+
+<Meta of={Shape} />
+
+# Radius and shadow
+
+Corners and shadows tell you what kind of thing you are looking at.
+
+## Radius
+
+Small things have small corners. In Graphite, controls (inputs, buttons) have 6px corners,
+surfaces (cards, nodes, floating controls, sheets) 8px, and message bubbles 12px. Pills and round
+buttons use `--fd-radius-full`.
+
+<Story of={Shape.RadiusScale} />
+
+## Shadow
+
+Flat by default. A shadow means "this floats above something": a menu over a panel, a control
+over the canvas, a dialog over the page. Graphite uses one soft float elevation for everything
+that sits on the canvas. Use a rule (`--fd-border`) to separate areas, not a shadow.
+
+<Story of={Shape.ShadowScale} />

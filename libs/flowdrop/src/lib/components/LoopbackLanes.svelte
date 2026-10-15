@@ -1,10 +1,16 @@
 <!--
-  LoopbackLanes Component
-  Renderless. Derives the return lane of every loopback in one pass (track
-  assignment needs the whole graph) whenever the nodes, edges or measured sizes
-  change, and lets the edges read them through the instance's loopbackLanes
-  store. Yields no lanes while the setting is off or the canvas has no measurement.
-  Must be rendered inside <SvelteFlow> so the canvas measurement is registered.
+  @component
+  Works out the return lane of every loopback in one pass. Draws nothing itself.
+
+  Track assignment needs the whole graph, so the lanes are derived together whenever the
+  nodes, the edges or the measured sizes change. The edges read them through the instance's
+  `loopbackLanes` store. There are no lanes while the canvas has no measurement; the edges
+  then stay beziers.
+
+  Render it inside `<SvelteFlow>`, so the canvas measurement is registered.
+
+  **Use it for** a canvas that has loopbacks.
+  **Not for** drawing a single wire; that is `FlowDropEdge`.
 -->
 
 <script lang="ts">

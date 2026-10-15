@@ -1,16 +1,19 @@
 <!--
-  FlowDropEdge Component
-  Custom bezier edge that draws its own arrowhead so the line stroke ends
-  at the arrow base instead of poking through to the tip.
+  @component
+  The wire between two ports: a bezier curve that draws its own arrowhead, so the stroke ends
+  at the arrow base and does not poke through the tip.
 
-  Approach:
-  1. Compute the full bezier path (xyflow's getBezierPath)
-  2. Parse the SVG path to extract the cubic bezier control points
-  3. Compute exact tangent at endpoint via bezier derivative P'(1) = 3(P3-P2)
-  4. Shorten the path along that tangent and draw the arrowhead at the target
+  It computes the full bezier path, takes the control points from it, finds the exact
+  tangent at the end (P'(1) = 3(P3 - P2)), shortens the path along it and draws the arrowhead
+  at the target. A loopback that has a return lane in `fd.loopbackLanes` is drawn along the
+  lane instead, with rounded corners and the same arrowhead.
 
-  With the loopback lanes setting on, a loopback that has a lane in
-  fd.loopbackLanes is drawn along it instead (rounded corners, same arrowhead).
+  A wire is hot, drawn in the success colour, when the shown run passed it (see
+  `utils/runEdges.ts`). The colour of a wire comes from its category (trigger, tool, loopback
+  or data), set when the connection is made (`utils/edgeStyling.ts`).
+
+  **Use it for** the edge type of the canvas (`edgeTypes.default`).
+  **Not for** the line you drag while connecting; that is `ConnectionLine`.
 -->
 
 <script lang="ts">

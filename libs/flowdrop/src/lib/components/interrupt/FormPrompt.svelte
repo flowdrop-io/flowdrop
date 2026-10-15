@@ -1,10 +1,10 @@
 <!--
-  FormPrompt Component
-  
-  Renders a JSON Schema-based form for form-type interrupts.
-  Wraps the existing SchemaForm component for consistent form handling. The form
-  sits straight on the interrupt card (no card of its own); the question is the
-  card's title and an answered card folds to one line (InterruptBubble).
+  @component
+  A form built from a JSON Schema, placed straight on the interrupt card. It wraps `SchemaForm`, so the fields look
+  the same as in other forms.
+
+  **Use it for** the body of an `InterruptBubble` of type `form`.
+  **Not for** editing a node (that is `ConfigForm`).
 -->
 
 <script lang="ts">

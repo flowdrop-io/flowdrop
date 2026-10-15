@@ -1,14 +1,12 @@
 <!--
-  HeaderMenu
+  @component
+  A button that opens a menu.
+  The user sees it twice in the docked Playground's header: as the history chip and as the ... menu. It is a thin skin over the `Menu` primitive, which handles keyboard use, screen readers and positioning.
 
-  A button that opens a menu: the one control behind both the history chip and
-  the ⋯ menu of the docked Playground's header. A thin skin over the `Menu`
-  primitive, which owns keyboard handling (arrows, Home/End, typeahead, Escape,
-  Tab), ARIA and positioning.
+  Menu items are any elements with `role="menuitem"`, `menuitemcheckbox` or `menuitemradio` inside `children`. `children` receives `close` so an item can close the menu after it acts.
 
-  Items are any element with `role="menuitem"`, `menuitemcheckbox` or
-  `menuitemradio` inside `children`, which receives `close` so an item can
-  close the menu after it acts.
+  **Use it for** the history chip and the more-actions menu in `PlaygroundHeader`.
+  **Not for** a general dropdown; use the `Menu` primitive directly instead.
 -->
 
 <script lang="ts">

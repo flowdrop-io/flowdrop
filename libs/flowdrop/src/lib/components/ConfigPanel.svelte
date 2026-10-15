@@ -1,9 +1,13 @@
 <!--
-  ConfigPanel Component
-  A generic panel for displaying details and configuration
-  Can be used for node config, workflow settings, or any entity with an ID
-  Accepts a slot for custom form content
-  Styled with BEM syntax
+  @component
+  The right-hand panel of the editor: a header with the title, id and close button, a few read-only details,
+  and the content you pass in as children.
+
+  For a node, the children are the `NodeInspector` with the node's config form. The same panel also hosts
+  workflow settings and any other entity that has an id.
+
+  **Use it for** showing one thing the person selected and letting them edit it.
+  **Not for** the form itself (use `ConfigForm` for a node, `SchemaForm` for a plain schema).
 -->
 
 <script lang="ts">

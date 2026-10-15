@@ -1,16 +1,13 @@
 <!--
-  DockedPlayground
+  @component
+  The Playground of Test mode: the conversation docked beside the canvas, for the editor's workflow and the instance's
+  test session. It has the history header (`PlaygroundHeader`), the conversation and the composer, and no pipeline panel.
 
-  The Playground of the editor's Test mode: the conversation surface beside
-  the canvas, for the editor's current workflow and the instance's current test
-  session (`fd.runs`). Compact by design: no minimum width and no pipeline
-  panel (the canvas shows the run). Its header is two controls: the history
-  chip (conversations and runs) and the ⋯ menu (PlaygroundHeader). Built on
-  PlaygroundSurface, not on the standalone Playground, so it does not go when
-  that one is removed in 3.0.
+  The conversation outlives this component. Switching back to Edit unmounts it, the run goes on, and Test finds the
+  conversation where it was left.
 
-  The session outlives this component: switching back to Edit unmounts it, the
-  run goes on, and Test finds the conversation where it was left.
+  **Use it for** the left panel of Test mode.
+  **Not for** the standalone Playground page, which is deprecated.
 -->
 
 <script lang="ts">

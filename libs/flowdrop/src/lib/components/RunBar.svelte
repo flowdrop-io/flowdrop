@@ -1,21 +1,18 @@
 <!--
-  RunBar — the run pill in the canvas toolbar (`CanvasToolbar` renders it).
+  @component
+  The run pill in the canvas toolbar (`CanvasToolbar` draws it).
 
-  Shown only while the instance has a run (`fd.runs.activeRun`): there is no
-  idle pill. It says where the run stands, offers Stop while the run is live and
-  Open (to Test mode) when it waits for a person, and, in Edit mode, fades out
-  a few seconds after the run ends. The node status badges fade with it:
-  dismissing the run clears `fd.playground.nodeStatuses`.
+  It shows only while the instance has a run (`fd.runs.activeRun`); there is no idle pill. It says where the run
+  stands, offers Stop while the run is live and Open (to Test mode) when it waits for a person. In Edit mode it
+  fades out a few seconds after the run ends, and the status badges on the nodes fade with it.
 
-  In Test mode (`mode="test"`) the pill shows only while the run is live (status
-  and Stop; no Open, you are already there) and never dismisses the run: the
-  Playground owns the run's record there.
+  In Test mode (`mode="test"`) the pill shows only while the run is live (status and Stop, no Open because you are
+  already there) and never dismisses the run: the Playground owns the run's record there.
 
-  Node statuses are not loaded here: `App` owns that (one coalesced
-  `fd.runs.requestNodeStatuses()` for Test mode and the Edit-mode run).
+  Node statuses are not loaded here. `App` loads them once for Test mode and for the Edit-mode run.
 
-  Renders the pill as a floating control of its own (status dot, label, Stop),
-  meant to sit inside a `Toolbar`.
+  **Use it for** seeing the current run at a glance. It is a floating control meant to sit inside a `Toolbar`.
+  **Not for** a list of runs (that is `RunsMenu`) or run details (those live in the Playground).
 -->
 
 <script lang="ts">

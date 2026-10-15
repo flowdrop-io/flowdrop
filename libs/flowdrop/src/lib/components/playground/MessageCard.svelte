@@ -1,6 +1,9 @@
 <!--
-  MessageCard — vertical card layout: hierarchy (top) · body (middle) · tags (bottom).
-  Picks up shared markdown typography via <MessageMarkdown>.
+  @component
+  A vertical card for a message that needs room: path on top, text in the middle, tags at the bottom. The server asks
+  for it with `display: card`. `MessageBubble` picks it.
+
+  **Use it for** nothing on its own. Render a message with `MessageBubble`.
 -->
 
 <script lang="ts">

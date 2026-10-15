@@ -1,3 +1,14 @@
+<!--
+  @component
+  A sticky note on the canvas: markdown text with a tone (info, note, warning, success, error).
+
+  A note has no ports and does not run. It grows with its text, in steps of the 20 px grid,
+  and has no status overlay. Double-click it to edit.
+
+  **Use it for** documentation that sits next to the nodes it explains.
+  **Not for** a one-line label; use `CaptionNode`.
+-->
+
 <script lang="ts">
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
@@ -11,7 +22,9 @@
    * Displays a styled note with markdown content
    */
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The note: `config.content` is the markdown, `config.noteType` the tone (default `info`). */
     data: {
       label: string;
       config: ConfigValues;
@@ -22,8 +35,11 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 

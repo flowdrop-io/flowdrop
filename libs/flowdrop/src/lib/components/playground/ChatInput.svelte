@@ -1,12 +1,13 @@
 <!--
-  ChatInput Component
+  @component
+  The composer at the bottom of the Playground: a text field with Send, a palette for / commands, or just a Run button
+  when the workflow has no chat. While a run is going it shows Stop.
 
-  The Composer + slash-command palette, or the Run button for a workflow with
-  no chat. Shared by ChatPanel (conversational) and ControlPanel
-  (orchestration controls).
+  Reads the run state from the instance and sends through `onSendMessage` or `onRunWorkflow`. When the workflow has
+  unsaved edits, the button reads "Save & send" and `beforeSend` runs first.
 
-  Reads execution state from playgroundStore. Owns its own input string and
-  textarea ref; emits sent content via onSendMessage.
+  **Use it for** typing to a workflow or starting a run.
+  **Not for** forms with several inputs (use `InterfaceInputForm`).
 -->
 
 <script lang="ts">
@@ -29,6 +30,7 @@
   const fd = getInstance();
 
   interface Props {
+    /** Text shown in the empty field. */
     placeholder?: string;
     /** Show the textarea (default: true). When false, only the Run button is shown. */
     showTextarea?: boolean;
@@ -43,7 +45,9 @@
      * Leaving it unset is what lets Run launch without fabricating a turn.
      */
     predefinedMessage?: string;
+    /** Send the typed text as a chat turn. */
     onSendMessage?: (content: string) => void;
+    /** Stop the run in progress (the Stop button). */
     onStopExecution?: () => void;
     /**
      * Start a run without posting a chat message.
@@ -73,6 +77,7 @@
     enableCommands?: boolean;
     /** Transient result of the last slash command. Never a session message. */
     commandFeedback?: CommandOutcome | null;
+    /** Close the command feedback line. */
     onDismissCommandFeedback?: () => void;
     /**
      * The first send creates the session, so typing and sending are allowed

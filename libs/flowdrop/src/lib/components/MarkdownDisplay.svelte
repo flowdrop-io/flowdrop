@@ -1,7 +1,12 @@
 <!--
-  MarkdownDisplay Component
-  Reusable component for rendering markdown content with consistent styling
-  Supports all standard markdown elements with proper typography
+  @component
+  MarkdownDisplay: renders a markdown string as formatted text.
+
+  Headings, lists, tables, quotes, code blocks and links are all styled. The editor uses it for
+  AI chat replies and for note nodes. `className` replaces the default class.
+
+  **Use it for** text written by a person or a model that may contain markdown.
+  **Not for** plain labels; print them as text.
 -->
 
 <script lang="ts">
@@ -9,7 +14,9 @@
   import { sanitizeHtml } from '../utils/sanitize.js';
 
   interface Props {
+    /** The markdown source. */
     content: string;
+    /** Class on the wrapper. Defaults to `markdown-display`. */
     className?: string;
   }
 

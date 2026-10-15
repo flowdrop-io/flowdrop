@@ -46,11 +46,35 @@ function cleanSection(comment: string): string | null {
   // `/* ----- SURFACES (Backgrounds) ----- */` and multi-line `-----` comments.
   const dashed = /^-{3,}\s*([^\n]*?)\s*(?:-{3,})?\s*(?:\n|$)/.exec(text);
   if (dashed) return dashed[1].replace(/\s*-+\s*$/, '').trim() || null;
-  // A short single-line plain comment (`/* Grays - Tinted scale ... */`).
-  if (!text.includes('\n') && !text.includes('@') && !text.startsWith('=') && text.length < 90) {
+  // A palette heading: a short single-line `Name - note` comment
+  // (`/* Grays - Tinted scale ... */`). Other plain comments are notes about
+  // the next token, not headings.
+  if (!text.includes('\n') && text.length < 90 && /^[A-Z][a-z]+ - /.test(text)) {
     return text;
   }
   return null;
+}
+
+/**
+ * A section heading for display: `SURFACES (Backgrounds)` becomes
+ * `{ title: 'Surfaces', note: 'Backgrounds' }`. Unclosed parentheses (a
+ * heading cut at the end of its comment line) lose the dangling part.
+ */
+export function prettySection(section: string): { title: string; note: string } {
+  const open = section.indexOf('(');
+  const head = (open >= 0 ? section.slice(0, open) : section).trim();
+  let note = open >= 0 ? section.slice(open + 1) : '';
+  note = note.includes(')') ? note.slice(0, note.lastIndexOf(')')) : note.split(';')[0];
+  const letters = head.replace(/[^A-Za-z]/g, '');
+  const shouting = letters.replace(/[^A-Z]/g, '').length > letters.length * 0.7;
+  const title = shouting
+    ? head.charAt(0) +
+      head
+        .slice(1)
+        .toLowerCase()
+        .replace(/: (\w)/g, (_, c) => `: ${c.toUpperCase()}`)
+    : head;
+  return { title: title || 'Other', note: note.trim() };
 }
 
 function collapse(value: string): string {

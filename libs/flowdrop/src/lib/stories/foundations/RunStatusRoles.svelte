@@ -1,0 +1,102 @@
+<!--
+  @component
+  The five run status roles: what each means, its strong and soft colour, and
+  the real StatusPill the canvas draws with it.
+-->
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import StatusPill, { type StatusPillStatus } from '../../components/primitives/StatusPill.svelte';
+  import { STATUS_ROLES } from './keyTokens.js';
+  import { readTokens, onSkinChange } from './probe.js';
+
+  const roles = STATUS_ROLES.map((r) => ({
+    ...r,
+    status: r.name.replace('--fd-status-', '') as StatusPillStatus,
+    soft: `${r.name}-soft`
+  }));
+
+  let light: Record<string, string> = $state({});
+  let dark: Record<string, string> = $state({});
+
+  function refresh() {
+    const names = roles.flatMap((r) => [r.name, r.soft]);
+    light = readTokens(names, 'light');
+    dark = readTokens(names, 'dark');
+  }
+
+  onMount(() => {
+    refresh();
+    return onSkinChange(refresh);
+  });
+</script>
+
+<ul class="roles">
+  {#each roles as r (r.name)}
+    <li class="roles__row">
+      <span class="roles__pill"><StatusPill status={r.status} /></span>
+      <span class="roles__text">
+        <code>{r.name}</code>
+        <span class="roles__use">{r.use}</span>
+      </span>
+      <span class="roles__chips" aria-hidden="true">
+        <span title="Strong, light" class="roles__chip" style:background={light[r.name]}></span>
+        <span title="Soft, light" class="roles__chip" style:background={light[r.soft]}></span>
+        <span title="Strong, dark" class="roles__chip" style:background={dark[r.name]}></span>
+        <span title="Soft, dark" class="roles__chip" style:background={dark[r.soft]}></span>
+      </span>
+    </li>
+  {/each}
+</ul>
+
+<style>
+  .roles {
+    /* Its own surface: the docs page around it stays light in dark mode. */
+    background: var(--fd-background);
+    border-radius: var(--fd-radius-lg);
+    list-style: none;
+    margin: 0;
+    padding: 24px;
+    max-width: 880px;
+    font-family: var(--fd-font-sans);
+    color: var(--fd-foreground);
+  }
+  .roles__row {
+    display: grid;
+    grid-template-columns: 160px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--fd-border-muted);
+  }
+  .roles__text {
+    display: grid;
+    gap: 2px;
+  }
+  .roles__text code {
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+  }
+  .roles__use {
+    font-size: var(--fd-text-sm);
+    color: var(--fd-muted-foreground);
+  }
+  .roles__chips {
+    display: inline-flex;
+    gap: 4px;
+  }
+  .roles__chip {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--fd-radius-sm);
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.1);
+  }
+  .roles__chip:nth-child(3) {
+    margin-left: 8px;
+  }
+  @media (max-width: 640px) {
+    .roles__row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+  }
+</style>

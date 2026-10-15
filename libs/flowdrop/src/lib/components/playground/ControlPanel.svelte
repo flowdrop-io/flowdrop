@@ -1,15 +1,12 @@
 <!--
-  ControlPanel Component
+  @component
+  The part of the Playground where the user talks to the flow.
+  The user sees it at the bottom of the Playground (on top for a form-first workflow). It holds the session switcher, the text box with Run and Stop, and the toolbar buttons (Pipeline, Refresh, Logs). It reuses `ChatInput` for typing.
 
-  Where the user talks to the flow: session switcher, orchestration controls
-  (Run/Stop via ChatInput), and toolbar buttons (Pipeline toggle, Refresh,
-  Logs). Owns the session chip popover; delegates input behaviour to the
-  shared ChatInput primitive.
+  A workflow with inputs but no chat shows the inputs form (`InterfaceInputForm`) with its own Run button and no text box. With a chat as well, the inputs fold into one row above the text box that opens the same form.
 
-  A workflow whose interface has inputs but no chat is form-first: the inputs
-  card (InterfaceInputForm) is the panel, with its own Run, and there is no
-  composer. With a chat as well, the inputs fold into one row above the
-  composer that opens the same card.
+  **Use it for** sending messages, starting runs and managing sessions in the Playground.
+  **Not for** showing what the flow says back; use `ExecutionConsole` instead.
 -->
 
 <script lang="ts">
@@ -29,12 +26,18 @@
 
   interface Props {
     // Session management
+    /** Called when the user asks for a new session. */
     onCreateSession: () => void;
+    /** Called with the session id when the user picks a session. */
     onSelectSession: (id: string) => void;
+    /** Called with the session id when the user deletes a session. */
     onDeleteSession: (id: string) => void;
+    /** Called with the session id after a switch, so a host can update its URL. */
     onSessionNavigate?: (id: string) => void;
     // Orchestration
+    /** Called with the text when the user sends a message. */
     onSendMessage: (content: string) => void;
+    /** Called when the user presses Stop during a run. */
     onStopExecution: () => void;
     /** Start a run without posting a chat message. See ChatInput. */
     onRunWorkflow?: () => void;
@@ -49,17 +52,27 @@
      */
     enableCommands?: boolean;
     // Slash-command feedback (transient; never a session message)
+    /** The result of the last slash command, shown briefly. Default: none. */
     commandFeedback?: CommandOutcome | null;
+    /** Called when the user closes the slash-command result. */
     onDismissCommandFeedback?: () => void;
     // Header actions
+    /** Called when the user presses the Pipeline button. */
     onTogglePanel?: () => void;
+    /** Whether the pipeline panel is open, so the button looks pressed. Default: false. */
     isPipelinePanelOpen?: boolean;
+    /** Called when the user presses Refresh. */
     onRefresh: () => void;
+    /** Show the Refresh button as busy. Default: false. */
     isRefreshing?: boolean;
     // Input config
+    /** Show the text box. Default: true. */
     showChatInput?: boolean;
+    /** Show the Run button. Default: true. */
     showRunButton?: boolean;
+    /** Text to put in the text box before the user types. Default: none. */
     predefinedMessage?: string;
+    /** Text shown in the empty text box. Default: the built-in message. */
     placeholder?: string;
     /**
      * Interface inputs to collect in a form above the composer (inputs
@@ -78,8 +91,11 @@
     /** Called with the complete form values on every change. */
     onFormChange?: (values: Record<string, unknown>) => void;
     // Session UI config
+    /** Show the session header row. Default: true. */
     showSessionHeader?: boolean;
+    /** Show the New session button in the header. Default: true. */
     showNewSessionButton?: boolean;
+    /** Show the session list in the session menu. Default: true. */
     showSessionList?: boolean;
     /** The first send creates the session: see ChatInput's `sessionOptional`. */
     sessionOptional?: boolean;
@@ -87,6 +103,7 @@
     beforeSend?: () => Promise<boolean>;
     /** Unsaved edits: the button reads "Save & send". See ChatInput. */
     saveFirst?: boolean;
+    /** Inline CSS applied to the panel root. Default: none. */
     style?: string;
   }
 

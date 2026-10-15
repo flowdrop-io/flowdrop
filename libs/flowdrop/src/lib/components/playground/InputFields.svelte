@@ -1,16 +1,12 @@
 <!--
-  InputFields
+  @component
+  The form fields for an object schema.
+  The user sees them in the Playground's inputs card and in a form question the flow asks mid-run. A string, number, boolean or enum property gets its native control. An array or object property gets a JSON text box with example chips, because a list editor does not fit a narrow panel. The text stays as typed; whoever sends the values parses it.
 
-  One `Field` per property of an object schema: the controls the Playground's
-  inputs card and a form interrupt share. A string, number, boolean or enum
-  property renders as its native control; an array or object property renders
-  as a JSON text box with example chips (the interface definition's
-  `examples` and `default`), since a typed list editor does not fit a panel
-  this narrow. The text is kept as typed: whoever sends the values parses it
-  (`collectInterfaceInputs`).
+  Values are keyed by property name, and every change reports all values.
 
-  Values are keyed by property name, and every change reports the complete
-  values.
+  **Use it for** the controls inside `InterfaceInputForm` and form interrupts.
+  **Not for** the whole inputs card with its Run button; use `InterfaceInputForm` instead.
 -->
 
 <script lang="ts">

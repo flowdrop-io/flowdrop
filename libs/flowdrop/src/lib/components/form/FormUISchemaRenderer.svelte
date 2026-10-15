@@ -1,14 +1,10 @@
 <!--
-  FormUISchemaRenderer Component
-  Recursively renders UISchema elements: VerticalLayout, Group, and Control.
+  @component
+  Draws a node's UI schema tree: a `VerticalLayout` stacks its children, a `Group` wraps them in a `FormFieldset`,
+  and a `Control` draws one field through `FormField`.
 
-  This component bridges the UISchema tree and the existing FormField components.
-  It resolves Control scopes to property keys and delegates field rendering to FormField.
-
-  Rendering logic:
-  - Control -> resolve scope to key, render FormField
-  - VerticalLayout -> vertical flex container with recursive children
-  - Group -> FormFieldset wrapping recursive children
+  **Use it for** nothing directly. `ConfigForm` and `SchemaForm` use it when a schema has a `uiSchema`.
+  **Not for** flat forms (those are drawn in schema order without it).
 -->
 
 <script lang="ts">

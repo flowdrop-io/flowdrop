@@ -1,10 +1,10 @@
 <!--
-  ChoicePrompt Component
-  
-  Renders a selection prompt for choice-type interrupts.
-  Supports single selection (radio buttons) and multiple selection (checkboxes).
-  Shows the selected options when resolved.
-  Styled with BEM syntax.
+  @component
+  The options of a choice question: radio buttons for one answer, check boxes when several are allowed
+  (with optional minimum and maximum).
+
+  **Use it for** the body of an `InterruptBubble` of type `choice`.
+  **Not for** a yes or no question (use `ConfirmationPrompt`) or free text (use `TextInputPrompt`).
 -->
 
 <script lang="ts">

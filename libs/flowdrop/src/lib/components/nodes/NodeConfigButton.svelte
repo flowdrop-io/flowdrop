@@ -1,3 +1,16 @@
+<!--
+  @component
+  The gear that opens a node's config.
+
+  It is out of the Tab order (`tabindex="-1"`): the node itself is keyboard-focusable and
+  opens its config on Enter or Space, so Tab moves from node to node. The gear stays
+  clickable. It shows on node hover (through `--fd-config-btn-opacity`, which the node
+  sets), on a selected or focused node, and on touch.
+
+  **Use it for** a node component that opens the config sidebar.
+  **Not for** other buttons; use `IconButton`.
+-->
+
 <script lang="ts">
   import CogIcon from '../icons/CogIcon.svelte';
 

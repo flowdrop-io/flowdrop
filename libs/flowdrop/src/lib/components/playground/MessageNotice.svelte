@@ -1,4 +1,11 @@
 <!--
+  @component
+  A small, centred line for a system message such as "Support chat started". `MessageBubble` picks it.
+
+  **Use it for** nothing on its own. Render a message with `MessageBubble`.
+-->
+
+<!--
   MessageNotice — compact centered inline notice for system messages.
   No role="status" — the parent <div role="log"> already announces additions.
 -->

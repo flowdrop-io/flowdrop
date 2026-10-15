@@ -1,9 +1,13 @@
 <!--
-  ConsoleStrip — the slim bar along the canvas's bottom edge that opens the
-  Command Console. Closed, it is the whole control ("›_ Console"; the ` shortcut
-  is in its tooltip); open, it
-  becomes the panel's header, so the panel needs no close button of its own.
-  One button: `aria-expanded` says which, `aria-controls` names the panel.
+  @component
+  The slim bar along the canvas's bottom edge that opens the Command Console.
+
+  Closed, it is the whole control ("›_ Console"; its tooltip shows the backquote shortcut). Open, it becomes the panel's
+  header, so the panel needs no close button of its own. It is one button: `aria-expanded` says which state it is
+  in and `aria-controls` names the panel.
+
+  **Use it for** opening and closing the Console.
+  **Not for** the Console itself (that is `CommandConsole`).
 -->
 
 <script lang="ts">

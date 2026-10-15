@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/sveltekit';
+import { componentDescriptions } from './componentDescriptions.ts';
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
@@ -13,6 +14,14 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/sveltekit',
     options: {}
+  },
+  features: {
+    // Storybook's own "Become an expert" checklist; it crowds our sidebar.
+    sidebarOnboardingChecklist: false
+  },
+  async viteFinal(viteConfig) {
+    viteConfig.plugins = [...(viteConfig.plugins ?? []), componentDescriptions()];
+    return viteConfig;
   }
 };
 export default config;

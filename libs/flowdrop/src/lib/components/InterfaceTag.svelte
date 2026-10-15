@@ -1,24 +1,22 @@
 <!--
-  InterfaceTag
+  @component
+  The `[id · Type>` tag of a workflow interface entry: a type swatch, the id in mono and the
+  type in muted text, in a tag that points right, the way the canvas flows.
 
-  The `[id · Type>` glyph of a workflow-interface entry: a type swatch, the id
-  in mono and the type in muted text, in a tag that points right (the canvas's
-  direction of flow). One glyph for the canvas, the Ports tab and the Interface
-  tab, so a published port reads the same everywhere.
+  It is one glyph for the canvas, the Ports tab and the Interface tab, so a published port
+  reads the same everywhere. It is a view only: the data stays in `workflow.interface`. Ids
+  longer than `INTERFACE_TAG_MAX_ID_CHARS` are shortened and the full id is the tooltip.
 
-  - `mismatch`: the entry declares another type than its bound port. The
-    outline turns amber and the type reads "Array ≠ String".
-  - `ghost`: a name being typed. Dashed outline in the ring colour; pass the
-    input as `children`.
-  - `readonly`: a derived entry nobody can rename or remove (a trigger's
-    `event:<node-id>`). Muted fill and id, default cursor.
-  - `compact`: far zoom (the editor sets it through the `data-fd-zoom` tier; the prop forces it). The text drops, the shape and swatch stay.
+  - `mismatch`: the entry declares another type than its bound port. The outline turns
+    amber and the type reads "Array ≠ String".
+  - `ghost`: a name being typed. Dashed outline; pass the input as `children`.
+  - `readonly`: a derived entry nobody can rename or remove (a trigger's `event:<node-id>`).
+  - `compact`: far zoom. The editor sets it through the `data-fd-zoom` tier; the prop forces it.
 
   `title=""` drops the native tooltip (the canvas shows a richer popover).
 
-  A view only: the data stays in `workflow.interface`. Ids longer than
-  `INTERFACE_TAG_MAX_ID_CHARS` are shortened; the full id is the tooltip.
-  Styled with BEM syntax, from the `--fd-iface-tag-*` tokens.
+  **Use it for** showing a published workflow port.
+  **Not for** an ordinary label; use `Chip`.
 -->
 
 <script lang="ts">

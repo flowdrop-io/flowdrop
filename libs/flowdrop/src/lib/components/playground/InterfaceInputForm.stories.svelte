@@ -1,7 +1,9 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import InterfaceInputForm from './InterfaceInputForm.svelte';
   import { fn } from 'storybook/test';
+  import InterfaceInputForm from './InterfaceInputForm.svelte';
+  import InstanceDecorator from '../../stories/InstanceDecorator.svelte';
+  import { seedPlayground } from '../../stories/playgroundFixtures.js';
   import type { WorkflowInterfaceEntry } from '../../types/index.js';
 
   const entries: WorkflowInterfaceEntry[] = [
@@ -31,36 +33,135 @@
   ];
 
   const { Story } = defineMeta({
-    title: 'Patterns/Playground/InterfaceInputForm',
+    title: 'Editor/Playground/Inputs form',
     component: InterfaceInputForm,
     tags: ['autodocs'],
-    parameters: { layout: 'padded' },
-    args: { entries, values: {}, onChange: fn(), onRun: fn(), onStop: fn() }
+    parameters: { layout: 'centered' },
+    args: { entries, values: { topic: 'cats' }, onChange: fn(), onRun: fn(), onStop: fn() }
   });
+
+  const frame = 'width: 440px; background: var(--fd-background); padding: var(--fd-space-md);';
 </script>
 
 <script lang="ts">
   let values = $state<Record<string, unknown>>({ topic: 'cats' });
 </script>
 
-<!-- The form-first panel: fields, a blue Run (⌘↵), the refusal under it. -->
-<Story name="Form first" asChild>
-  <div style="max-width:560px">
-    <InterfaceInputForm
-      {entries}
-      {values}
-      onChange={(next) => (values = next)}
-      onRun={() => {}}
-      onStop={() => {}}
-    />
-  </div>
+<Story
+  name="In the editor"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A workflow with inputs and no chat. The fields are the panel, with a Run under them. Fill in the topic and press Run (or Cmd/Ctrl+Enter).'
+      }
+    }
+  }}
+>
+  <InstanceDecorator setup={(fd) => seedPlayground(fd, { messages: [] })}>
+    <div style={frame}>
+      <InterfaceInputForm
+        {entries}
+        {values}
+        onChange={(next) => (values = next)}
+        onRun={fn()}
+        onStop={fn()}
+      />
+    </div>
+  </InstanceDecorator>
 </Story>
 
-<Story name="Refused Run" args={{ error: 'Fill in the required inputs: Topic' }} />
+<Story
+  name="Run refused"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story: 'Run was pressed with a required input empty. The reason shows under the button.'
+      }
+    }
+  }}
+>
+  <InstanceDecorator setup={(fd) => seedPlayground(fd, { messages: [] })}>
+    <div style={frame}>
+      <InterfaceInputForm
+        {entries}
+        values={{}}
+        onChange={fn()}
+        onRun={fn()}
+        onStop={fn()}
+        error="Fill in the required inputs: Topic"
+      />
+    </div>
+  </InstanceDecorator>
+</Story>
 
-<Story name="Running" args={{ running: true }} />
+<Story
+  name="Running"
+  asChild
+  parameters={{
+    docs: {
+      description: { story: 'A run is going. The fields are locked and Run reads Stop.' }
+    }
+  }}
+>
+  <InstanceDecorator setup={(fd) => seedPlayground(fd, { messages: [], status: 'running' })}>
+    <div style={frame}>
+      <InterfaceInputForm
+        {entries}
+        values={{ topic: 'cats' }}
+        onChange={fn()}
+        onRun={fn()}
+        onStop={fn()}
+        running
+        disabled
+      />
+    </div>
+  </InstanceDecorator>
+</Story>
 
-<!-- Chat + form: the card the folded Inputs row opens. No Run of its own. -->
-<Story name="Without Run" args={{ onRun: undefined }} />
+<Story
+  name="Above a chat box"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A workflow with a chat and inputs folds the inputs into a row above the composer. This is the card that row opens. It has no Run of its own; the composer sends.'
+      }
+    }
+  }}
+>
+  <InstanceDecorator setup={(fd) => seedPlayground(fd, { messages: [] })}>
+    <div style={frame}>
+      <InterfaceInputForm {entries} values={{ topic: 'cats' }} onChange={fn()} />
+    </div>
+  </InstanceDecorator>
+</Story>
 
-<Story name="JSON view" args={{ json: true, values: { topic: 'cats' } }} />
+<Story
+  name="JSON view"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          "The ⋯ menu's JSON view swaps the fields for one JSON box, for pasting a whole input."
+      }
+    }
+  }}
+>
+  <InstanceDecorator setup={(fd) => seedPlayground(fd, { messages: [] })}>
+    <div style={frame}>
+      <InterfaceInputForm
+        {entries}
+        values={{ topic: 'cats' }}
+        onChange={fn()}
+        onRun={fn()}
+        onStop={fn()}
+        json
+      />
+    </div>
+  </InstanceDecorator>
+</Story>

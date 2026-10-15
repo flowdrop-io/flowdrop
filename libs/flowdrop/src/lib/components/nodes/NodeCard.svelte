@@ -1,21 +1,23 @@
 <!--
-  Node Card Component
-  The card v2 body shared by the node types that follow it (Workflow, Gateway,
-  Tool): one fixed geometry from utils/nodeGeometry.ts. The header is always
-  60px, the completion `trigger` ports are pins in it (y = 40), every other port
-  is a half-pill on a shared row (first row y = 80, pitch 40), the width is 280
-  or 320 and the border is drawn inside the box, so every handle centre is a
-  multiple of 20 and any output can meet any input in a straight wire. Every
-  handle is placed from the geometry, never from layout.
+  @component
+  The card body shared by `WorkflowNode`, `GatewayNode` and `ToolNode`.
 
-  The node component decides WHAT is on the card (title, ports, branches); this
-  component draws it. Rows are keyed by index, so two ports with the same id
-  (two unnamed gateway branches) draw two rows instead of crashing the keyed
-  each.
+  One fixed geometry from `utils/nodeGeometry.ts`. The header is always 60 px, the completion
+  `trigger` ports are pins in it (y = 40), every other port is a half-pill on a shared row
+  (first row y = 80, pitch 40), the width is 280 or 320, and the border is drawn inside the
+  box, so every handle centre is a multiple of 20 and any output can meet any input in a
+  straight wire. Every handle is placed from the geometry, never from layout.
 
-  The category glyph and the title carry `data-fd-glyph` and `data-fd-title`
-  so the zoom tiers (outline, glyph, map) can target them.
-  Styled with BEM syntax (`flowdrop-workflow-node`).
+  The node component decides what is on the card (title, ports, branches); this component
+  draws it. Rows are keyed by index, so two ports with the same id (two unnamed gateway
+  branches) draw two rows instead of crashing.
+
+  The category glyph and the title carry `data-fd-glyph` and `data-fd-title`, so the zoom
+  tiers (outline, glyph, map) can target them. See the Zoom levels story.
+
+  **Use it for** a new node type that should look like the standard card.
+  **Not for** a node of another shape (note, caption, terminal). It is not used on its own;
+  see the Workflow node stories.
 -->
 
 <script lang="ts">

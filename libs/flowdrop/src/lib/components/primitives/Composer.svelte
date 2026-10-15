@@ -1,24 +1,23 @@
 <!--
-  Composer — auto-growing message input with a send (or stop) button.
+  @component
+  Composer: an auto-growing message box with a send (or stop) button.
 
-  The textarea grows from one 40px row up to `maxRows`, then scrolls. Enter
-  sends, Shift+Enter inserts a newline, and Enter while an IME composition is
-  active (`isComposing` / keyCode 229) never sends. The component does not
-  clear `value` after sending; the caller decides (clear it in `onsubmit`).
+  The textarea grows from one row up to `maxRows`, then scrolls. Enter sends, Shift+Enter adds
+  a newline, and Enter during IME composition never sends. The component does not clear
+  `value` after sending; clear it in `onsubmit`.
 
-  `busy` turns the send button into a stop button (`onstop`) and blocks
-  submitting. The long placeholder is truncated with an ellipsis on one line
-  instead of being clipped mid-line.
+  `busy` turns send into stop (`onstop`) and blocks sending. The stop button stays enabled
+  even when `disabled` is set, so a run in flight can always be stopped. `sendDisabled` blocks
+  send on top of the built-in checks, and `sendLabel` renames the button.
 
-  A host can intercept keys (`onkeydown` runs first; `preventDefault()` there
-  keeps the composer's own Enter handling out), listen to `oninput` / `onblur`,
-  and set extra attributes on the textarea (`inputProps`, e.g. combobox ARIA for
-  a command palette). `sendDisabled` blocks the send button on top of the
-  built-in blank/busy/disabled checks, and `sendLabel` renames it ("Save & send").
-  The stop button is never greyed out by `disabled`: a run in flight must stay
-  stoppable while the field is locked.
+  A host can listen to keys (`onkeydown` runs first; `preventDefault()` keeps the composer's
+  own Enter handling out), `oninput` and `onblur`, and set extra textarea attributes with
+  `inputProps` (for example combobox ARIA for a command palette).
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** the Playground chat, the AI assistant and the Console prompt.
+  **Not for** a short single-line field; use a plain input inside `Field`.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">

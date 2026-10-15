@@ -1,11 +1,13 @@
 <!--
-  Caption Node Component
+  @component
+  A short, high-contrast line of text that names or marks nearby nodes.
 
-  A short, high-contrast line of text (one or two lines) that names or marks
-  nearby nodes. Text lives in `data.label`. It has no ports, no config panel
-  and no status overlay; it is edited in place (double-click, Enter on the
-  focused node, or the context menu) and the editor owns the write through
-  `data.onInlineCommit`.
+  The text is `data.label`. A caption has no ports, no config panel and no status
+  overlay. It is edited in place (double-click, Enter on the focused node, or the context
+  menu) and the editor owns the write through `data.onInlineCommit`.
+
+  **Use it for** section labels and short reminders on the canvas.
+  **Not for** longer text or markdown; use `NotesNode`.
 -->
 
 <script lang="ts">
@@ -19,7 +21,9 @@
   import { focusWhenVisible } from '../../utils/focus.js';
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The caption: the text is `label`. */
     data: {
       label: string;
       /**
@@ -29,6 +33,7 @@
        */
       onInlineCommit?: (id: string, text: string | null) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
   }
 

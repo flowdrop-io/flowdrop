@@ -1,24 +1,24 @@
 <!--
-  Tabs — underline tabs for switching a VIEW (role="tablist" / "tab") with a
-  roving tabindex. A MODE switch (Edit | Test) is a Segmented control instead:
-  these are the two selected-tab styles of the editor chrome.
+  @component
+  Tabs: underline tabs for switching a VIEW (`role="tablist"` / `"tab"`).
 
-  Tab stop is the selected tab; Left/Right (Up/Down) move focus AND select
-  (automatic activation), Home/End jump. The selected tab is
-  drawn in ink with a 2px underline; the others are muted, with no fill.
+  **Tabs, Segmented or Toolbar?** Use Tabs for views of the same content (Form | JSON | Steps).
+  Use `Segmented` to switch a MODE (Edit | Test). Use `Toolbar` to group different controls
+  for arrow-key navigation.
 
-  Panels are the caller's job. Wire them with the exported helpers, using the
-  same `idBase` you pass here:
+  The tab stop is the selected tab. Left/Right (or Up/Down) move focus and select at once;
+  Home/End jump. The selected tab is drawn in ink with a 2px underline; the others are muted.
 
-    <Tabs idBase="pg" tabs={tabs} bind:value ariaLabel="Views" />
-    <div role="tabpanel" id={tabPanelId('pg', value)}
-         aria-labelledby={tabId('pg', value)} tabindex="0">...</div>
+  Panels are yours. Wire them with the exported helpers, using the same `idBase` you pass here:
 
-  Each tab carries `id={tabId(idBase, value)}` and
-  `aria-controls={tabPanelId(idBase, value)}`. Without `idBase` an id is
-  generated, which the caller cannot know: pass `idBase` whenever panels exist.
+      <Tabs idBase="pg" tabs={tabs} bind:value ariaLabel="Views" />
+      <div role="tabpanel" id={tabPanelId('pg', value)}
+           aria-labelledby={tabId('pg', value)} tabindex="0">...</div>
 
-  @internal Not exported from any package entry; the API may still change.
+  Each tab has `id={tabId(idBase, value)}` and `aria-controls={tabPanelId(idBase, value)}`.
+  Without `idBase` an id is generated that you cannot know, so pass `idBase` whenever panels exist.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts" module>
@@ -47,6 +47,7 @@
   }
 
   interface Props {
+    /** The tabs, in order. */
     tabs: TabItem[];
     /** Selected tab value (bindable) */
     value?: string;

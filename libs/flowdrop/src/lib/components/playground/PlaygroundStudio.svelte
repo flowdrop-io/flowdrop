@@ -1,3 +1,12 @@
+<!--
+  @component
+  **Legacy.** The standalone Playground page: the chat (`Playground`) beside a resizable `PipelinePanel`. Deprecated in favour of the editor's Test mode and removed in 3.0. It warns once per page when mounted.
+  The user sees the conversation on one side and the run's pipeline on the other. The panel width and open state are remembered.
+
+  **Use it for** existing standalone Playground pages and `PlaygroundApp`.
+  **Not for** new work; use the editor's Test mode (`DockedPlayground`) instead.
+-->
+
 <script lang="ts">
   import { warnStandalonePlaygroundDeprecated } from '../../utils/deprecation.js';
   import { onMount, untrack } from 'svelte';

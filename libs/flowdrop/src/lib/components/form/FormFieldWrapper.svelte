@@ -1,12 +1,12 @@
 <!--
-  FormFieldWrapper Component
-  Provides consistent layout for form fields with label, description, and animations
-  
-  Features:
-  - Proper label associations with for/id attributes
-  - ARIA describedby for field descriptions
-  - Staggered fade-in animations
-  - Required field indicators
+  @component
+  The frame around one form field: the label, a required mark, the help text under the field, and the field itself as children.
+
+  `inline` puts a switch on the label's row. `plain` is for section-style fields such as the ports list,
+  where the label is for screen readers only. `aside` adds a short muted note on the label row.
+
+  **Use it for** giving a custom field the same label and help text as the built-in ones.
+  **Not for** choosing which control to draw from a schema (that is `FormField`, which wraps its fields in this).
 -->
 
 <script lang="ts">

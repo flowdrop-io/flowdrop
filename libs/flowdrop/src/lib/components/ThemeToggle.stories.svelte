@@ -3,23 +3,29 @@
   import ThemeToggle from './ThemeToggle.svelte';
 
   const { Story } = defineMeta({
-    title: 'Patterns/Display/ThemeToggle',
+    title: 'Components/ThemeToggle',
     component: ThemeToggle,
     tags: ['autodocs'],
     argTypes: {
-      size: {
-        control: { type: 'select' },
-        options: ['sm', 'md', 'lg']
-      },
+      size: { control: { type: 'select' }, options: ['sm', 'md', 'lg'] },
       showLabel: { control: 'boolean' }
-    }
+    },
+    args: { size: 'md', showLabel: false }
   });
 </script>
 
-<Story name="Default" />
+<Story
+  name="Default"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'Click to cycle light, dark and auto. This changes the editor theme setting, not the Storybook light/dark switch.'
+      }
+    }
+  }}
+/>
+
+<Story name="With label" args={{ showLabel: true }} />
 
 <Story name="Small" args={{ size: 'sm' }} />
-
-<Story name="Large" args={{ size: 'lg' }} />
-
-<Story name="With Label" args={{ showLabel: true }} />

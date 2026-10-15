@@ -1,18 +1,12 @@
 <!--
-  PlaygroundSurface
+  @component
+  The Playground's conversation surface, shared by the editor and the standalone page.
+  The user sees `ExecutionConsole` (the flow's messages) and `ControlPanel` (typing, Run, sessions), with the session and run handling around them. For a form-first workflow the inputs are on top. It has no layout of its own: no pipeline panel and no minimum width.
 
-  The Playground's conversation surface: ExecutionConsole (top) and
-  ControlPanel (bottom, or on top for a form-first workflow) and the session
-  and run wiring around them. It holds no layout opinion of its
-  own beyond that: no pipeline panel, no minimum width.
+  Two callers use it. The docked Playground of the editor's Test mode (`DockedPlayground`) must keep working when the standalone one goes. The standalone `Playground` is deprecated and removed in 3.0. Everything both need lives here.
 
-  Two kinds of caller:
-   - the standalone Playground (`Playground.svelte`, used by PlaygroundStudio,
-     PlaygroundModal and the /workflow/[id]/playground/[sessionId] route),
-     which is deprecated in favour of Test mode and removed in 3.0;
-   - the docked Playground of the editor's Test mode (`DockedPlayground.svelte`),
-     which must keep working when the standalone one goes. Everything both
-     need lives here.
+  **Use it for** the Playground conversation inside a container you lay out yourself.
+  **Not for** the Test mode panel with its header; use `DockedPlayground` instead.
 -->
 
 <script lang="ts">
@@ -37,18 +31,29 @@
   import { isPlaygroundChatHalfSet, isPlaygroundChatSet } from '../../utils/playgroundChat.js';
 
   interface Props {
+    /** Id of the workflow to test. */
     workflowId: string;
+    /** A pre-loaded workflow. Default: fetched by id. */
     workflow?: Workflow;
+    /** Display mode. Default: standalone. */
     mode?: PlaygroundMode;
+    /** Session to open on mount. Default: none. */
     initialSessionId?: string;
+    /** API endpoints. Default: the page default. */
     endpointConfig?: EndpointConfig;
     /** Auth provider applied to this instance's API requests. */
     authProvider?: AuthProvider;
+    /** Playground options. Default: none. */
     config?: PlaygroundConfig;
+    /** Called when the user closes the Playground. */
     onClose?: () => void;
+    /** Called when the user presses the Pipeline button. */
     onTogglePanel?: () => void;
+    /** Whether the pipeline panel is open. Default: false. */
     isPipelinePanelOpen?: boolean;
+    /** Called with the session id after a switch, so a host can update its URL. */
     onSessionNavigate?: (sessionId: string) => void;
+    /** FlowDrop instance to use. Default: from context or the page default. */
     instance?: FlowDropInstance;
     /**
      * Keep the instance's session, messages and polling when this surface goes

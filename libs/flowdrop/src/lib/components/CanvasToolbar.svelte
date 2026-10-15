@@ -1,12 +1,13 @@
 <!--
-  CanvasToolbar — the top-left canvas toolbar: Edit | Test, the Runs list (Test
-  mode) and the run pill.
-  (The Console toggle is a strip along the canvas's bottom edge, ConsoleStrip.)
+  @component
+  The floating toolbar in the top-left corner of the canvas: the Edit | Test switch, the Runs list and the run pill.
 
-  Replaces the navbar's Edit | Test switch, the dot on "Test" and the Edit-mode
-  run bar's top-edge notch. Each group renders only when its prop is given:
-  the mode switch needs `onEditorModeChange`. Without it and with no live
-  run the toolbar is not drawn.
+  Each group draws only when its prop is given. The switch needs `onEditorModeChange`;
+  the Runs list needs `showRuns` (the host turns it on in Test mode); the pill shows while the instance has a run.
+  With no switch and no run, the toolbar is not drawn at all.
+
+  **Use it for** switching between building and testing, and for seeing the run at a glance.
+  **Not for** the Console toggle (that is `ConsoleStrip`, along the bottom edge) or the zoom buttons (`CanvasZoomControls`).
 -->
 
 <script lang="ts">

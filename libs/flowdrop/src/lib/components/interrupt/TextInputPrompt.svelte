@@ -1,10 +1,10 @@
 <!--
-  TextInputPrompt Component
-  
-  Renders a text input prompt for text-type interrupts.
-  Supports single-line input and multiline textarea.
-  Shows the entered text when resolved.
-  Styled with BEM syntax.
+  @component
+  A text field (or text area) for a question that needs a written answer, with optional placeholder,
+  default value and length limits.
+
+  **Use it for** the body of an `InterruptBubble` of type `text`.
+  **Not for** several fields at once (use `FormPrompt`).
 -->
 
 <script lang="ts">

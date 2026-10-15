@@ -1,17 +1,18 @@
 <!--
-  RunsMenu — the Runs list of Test mode: a "Runs" control in the canvas toolbar
-  that opens a popover listing the workflow's past runs (newest first, paged).
+  @component
+  The Runs list of Test mode: a "Runs" control in the canvas toolbar that opens a popover with the workflow's
+  past runs, newest first, paged.
 
-  Read-only apart from two actions: Re-run (a finished run) and Cancel (one
-  that has not finished). Opening a run shows it on the canvas: its node
-  statuses become the badges (`fd.runs.openRun`). Everything else (delete,
-  generate or clear jobs, filters) lives in the host's admin; the footer link
-  and the per-row link are drawn only when the host gave a URL template
-  (`features.adminLinks`), so no host path is hard-coded here.
+  It reads the list from the backend's pipelines endpoint. Each row opens that run on the canvas
+  (`fd.runs.openRun`): its node statuses become the badges. A finished run can be run again; one that has not
+  finished can be cancelled. Delete, filters and the rest live in the host's admin. The footer link and the
+  per-row link are drawn only when the host gave a URL template (`adminLinks`), so no host path is hard-coded here.
 
-  The list is a plain `<ul>`; each row is a button that opens the run, with its
-  actions beside it (shown on hover and focus, always on touch). Escape closes
-  the popover and returns focus to its trigger.
+  The list is a plain `<ul>`. Each row is a button, with its actions beside it (shown on hover and focus, always
+  on touch). Escape closes the popover and returns focus to its trigger.
+
+  **Use it for** going back to an earlier run while testing.
+  **Not for** the run that is going now (that is `RunBar`).
 -->
 
 <script lang="ts">

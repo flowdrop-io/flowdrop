@@ -1,30 +1,50 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import FormToggle from './FormToggle.svelte';
   import { fn } from 'storybook/test';
+  import FormToggle from './FormToggle.svelte';
+  import FieldInEditor from '../../stories/FieldInEditor.svelte';
+  import { fieldSchemas } from '../../stories/formFixtures.js';
 
   const { Story } = defineMeta({
-    title: 'Patterns/Form/FormToggle',
+    title: 'Editor/Forms/Toggle',
     component: FormToggle,
     tags: ['autodocs'],
-    argTypes: {
-      value: { control: 'boolean' },
-      onLabel: { control: 'text' },
-      offLabel: { control: 'text' },
-      disabled: { control: 'boolean' }
-    },
-    args: {
-      id: 'demo-toggle',
-      value: false,
-      onChange: fn()
-    }
+    parameters: { layout: 'padded' },
+    args: { id: 'stream', value: true, onChange: fn() }
   });
 </script>
 
-<Story name="Off" args={{ value: false }} />
+<Story
+  name="In the editor"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          "A boolean field. The switch sits on the label's row and the help text goes underneath. The track colour is the state; there is no On or Off word."
+      }
+    }
+  }}
+>
+  <FieldInEditor schema={fieldSchemas.toggle} value={true} />
+</Story>
 
-<Story name="On" args={{ value: true }} />
+<Story name="Off" asChild>
+  <FieldInEditor schema={fieldSchemas.toggle} value={false} />
+</Story>
 
-<Story name="Custom Labels" args={{ value: true, onLabel: 'Yes', offLabel: 'No' }} />
+<Story name="Read only" asChild>
+  <FieldInEditor schema={{ ...fieldSchemas.toggle, readOnly: true }} value={true} />
+</Story>
 
-<Story name="Disabled" args={{ value: true, disabled: true }} />
+<Story
+  name="Bare switch"
+  args={{ onLabel: 'Hidden', offLabel: 'Visible', value: false }}
+  parameters={{
+    docs: {
+      description: {
+        story: 'The switch alone. `onLabel` and `offLabel` change its accessible name only.'
+      }
+    }
+  }}
+/>

@@ -1,17 +1,12 @@
 <!--
-  FormCodeEditor Component
-  CodeMirror-based code editor for JSON and other structured data
-  
-  Features:
-  - JSON syntax highlighting with CodeMirror 6
-  - Real-time JSON validation with error display
-  - Auto-formatting on blur (optional)
-  - Dark/light theme support
-  - Consistent styling with other form components
-  - Proper ARIA attributes for accessibility
-  
-  Usage:
-  Use with schema format: "json" or format: "code" to render this editor
+  @component
+  A code editor for JSON and other structured values, built on CodeMirror 6. It checks the JSON as the person types,
+  shows the error under the editor, and can format on blur.
+
+  Schema fields with `format: "json"` or `format: "code"` draw this. It is bundled only in `form/full` or when registered with `registerCodeEditorField()`.
+
+  **Use it for** an object or a block of JSON in a node's config.
+  **Not for** prose (use `FormTextarea` or `FormMarkdownEditor`).
 -->
 
 <script lang="ts">

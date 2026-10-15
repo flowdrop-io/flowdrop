@@ -1,10 +1,18 @@
 <!--
-  Universal Node Component
-  Renders any node type with automatic status overlay injection.
-  This component can replace individual node components in SvelteFlow.
+  @component
+  The one node type the canvas registers. It picks the card for a node and adds what every
+  card shares.
 
-  Uses the node component registry to resolve which component to render,
-  enabling custom node types to be registered and used dynamically.
+  It resolves the card from the node type registry: `config.nodeType` first, then
+  `metadata.type`, then the standard card. It then adds the run status (pill, and in Test mode
+  the status border, a dim for nodes the run did not reach, and the `edited` mark), the
+  Doctor's finding, and Enter/Space to open the config.
+
+  The status comes from the instance's playground store (`nodeStatusFor`), keyed by node id.
+  `data.executionInfo` is a deprecated fallback.
+
+  **Use it for** `nodeTypes.universalNode` in a canvas.
+  **Not for** a card of your own; register it with the node type registry instead.
 -->
 
 <script lang="ts">

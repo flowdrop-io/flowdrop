@@ -1,13 +1,13 @@
 <!--
-  Button — typed wrapper over the Button primitive (`primitives/Button.svelte`).
+  @component
+  **Legacy.** Use the primitive Button (`components/primitives/Button.svelte`) instead.
 
-  Keeps the original public prop API (variants primary/secondary/outline/ghost,
-  sizes sm/md/lg) so existing callers are untouched; everything maps onto the
-  primitive:  outline -> secondary (bordered surface),  lg -> md.  Heights are
-  now the control tokens (sm 24px, md 28px), not the old 28/40/48.
+  A thin wrapper over the primitive that keeps the original prop API. It maps onto the
+  primitive: `outline` becomes `secondary`, and `lg` becomes `md`. So Outline looks the same
+  as Secondary, and Large the same as Medium. Heights are the control tokens (sm 24px, md 28px).
 
-  Internal for now (not exported from any public entry) so the API isn't frozen
-  before GA. New code should use the primitive directly.
+  Not exported from the package. New code should use the primitive, which also has `loading`,
+  icons and the `danger` variants.
 -->
 
 <script lang="ts">

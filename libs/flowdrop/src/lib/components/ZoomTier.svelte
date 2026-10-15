@@ -1,14 +1,17 @@
 <!--
-  Zoom Tier Component
-  Renderless. Publishes the canvas zoom tier as `data-fd-zoom` (full | outline |
-  glyph | map) on the editor root, so nodes, status overlays and interface tags
-  restyle themselves in CSS (see utils/zoomTier.ts). The tiers that are on, and
-  where each starts, come from `editor.zoomTiers`; the tier is recomputed when
-  that setting changes. The root is `.flowdrop-root`, or the canvas itself when
-  the editor is mounted without one. Must be rendered inside <SvelteFlow>.
+  @component
+  Publishes the canvas zoom tier as `data-fd-zoom` (`full`, `outline`, `glyph` or `map`) on the
+  editor root, so nodes, status overlays and interface tags restyle themselves in CSS.
 
-  Only the tier is published, never the zoom: every drawing is in fixed flow px
-  and Svelte Flow scales the canvas, so nothing in CSS needs the zoom value.
+  Where each tier starts comes from the `editor.zoomTiers` setting; the tier is recomputed when
+  the setting changes. The root is `.flowdrop-root`, or the canvas itself when the editor is
+  mounted without one. Only the tier is published, never the zoom: every drawing is in fixed
+  flow px and Svelte Flow scales the canvas.
+
+  Renders nothing. Render it inside `<SvelteFlow>`.
+
+  **Use it for** a canvas that should draw less detail as it zooms out.
+  **Not for** the zoom buttons; those are `CanvasZoomControls`.
 -->
 
 <script lang="ts">

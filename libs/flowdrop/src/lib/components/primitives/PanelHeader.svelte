@@ -1,13 +1,16 @@
 <!--
-  PanelHeader — the 40px strip at the top of a panel (docked Playground, AI
-  chat, Console, inspector/settings sheet).
+  @component
+  PanelHeader: the 40px strip at the top of a panel (Playground, AI chat, Console, inspector).
 
-  Left: a `title` string or a free-form `leading` snippet (a workflow chip, a
-  back button...). Right: an `actions` snippet. An optional `subtitle` sits
-  under the title in smaller muted type. The title is a real heading
-  (`as`, default h2) styled small, so panels stay navigable by heading.
+  Left side: a `title` string, or a free-form `leading` snippet (a workflow chip, a back
+  button). Right side: an `actions` snippet. An optional `subtitle` sits under the title.
+  The title is a real heading (`as`, default h2) drawn small, so panels stay easy to
+  navigate with a screen reader.
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** the top of a docked panel or a sheet.
+  **Not for** a section title inside a form; use a heading or `Field`.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">

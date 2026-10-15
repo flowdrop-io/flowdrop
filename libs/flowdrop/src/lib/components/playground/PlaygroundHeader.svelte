@@ -1,18 +1,13 @@
 <!--
-  PlaygroundHeader
+  @component
+  The header of the docked Playground in Test mode: a chip for the open conversation, a plus for a new one, and a menu.
 
-  The docked Playground's header (Test mode): the history chip, a + for a new
-  conversation and the ⋯ menu, and nothing else:
+  The chip lists the conversations and, under them, the runs of the open one (newest first, older versions marked).
+  Picking a run shows it and the canvas follows. The menu has Expand steps by default, JSON view (for a form
+  workflow), Refresh, Reset, Playground settings, and anything the host adds with `menuItems`.
 
-   - the history chip: which conversation (and run) the view is on. Its menu
-     lists the Conversations (the sessions the Playground created) and the
-     Runs of the open one, newest first, older-version runs marked. Picking a
-     conversation opens it; picking a run shows that run (the canvas follows).
-   - the ⋯ menu: Expand steps by default, JSON view (a form workflow), Refresh, Reset,
-     Playground settings, and whatever a host adds through `menuItems`.
-
-  Each fact has one home: which conversation or run is shown lives in the
-  chip; the recovery actions live in the menu. No link to the standalone page.
+  **Use it for** the top of the Test mode panel.
+  **Not for** the editor's own navbar (use `Navbar`).
 -->
 
 <script lang="ts">
@@ -33,6 +28,7 @@
     hasForm?: boolean;
     /** The form is shown as JSON. */
     jsonView?: boolean;
+    /** Switch between the typed form and the JSON view. */
     onToggleJsonView?: () => void;
     /** Opens the workflow's Playground settings (the editor's inspector). */
     onOpenSettings?: () => void;

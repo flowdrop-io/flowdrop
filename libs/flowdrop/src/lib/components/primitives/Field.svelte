@@ -1,16 +1,19 @@
 <!--
-  Field — wraps one form control with its label, type tag, help and error.
+  @component
+  Field: one form control with its label, type tag, help text and error.
 
-  The control is the caller's: `children` receives `{ id, describedBy, invalid }`
-  so the caller puts `id`, `aria-describedby` and `aria-invalid` on its own
-  input. Help and error are both announced (both ids are in `describedBy`);
-  the error is shown in the error colour. `required`
-  shows a marker next to the label (the caller sets the control's `required`).
+  The control is yours. `children` receives `{ id, describedBy, invalid }`; put `id`,
+  `aria-describedby` and `aria-invalid` on your own input. Help and error are both announced
+  (both ids are in `describedBy`) and the error shows in the error colour. `required` shows
+  a marker next to the label (set `required` on the control yourself).
 
-  `examples` renders a row of small mono buttons; clicking one calls
-  `onexample(value)` (e.g. to fill a JSON field from the interface definition).
+  `examples` renders a row of small buttons; clicking one calls `onexample(value)`, for
+  example to fill a JSON field from the interface definition.
 
-  @internal Not exported from any package entry; the API may still change.
+  **Use it for** every labelled input in a config form.
+  **Not for** a checkbox or switch that carries its own label.
+
+  Not exported from the package; the API may still change.
 -->
 
 <script lang="ts">

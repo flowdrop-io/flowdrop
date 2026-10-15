@@ -1,17 +1,21 @@
 <!--
-  Gateway Node Component
-  Branching control flow on the card v2 geometry (see NodeCard): the same
-  header, the completion trigger as a header pin, input ports as rows on the
-  left, and the branches as output rows on the right (their triggers stay rows).
-  Shows active branches and execution paths.
+  @component
+  A node that sends the run down one of several branches, drawn on the shared card.
+
+  It has the same header as `WorkflowNode` (see `NodeCard`), the trigger as a header pin,
+  input ports as rows on the left, and the branches as output rows on the right. After a
+  run, the branches the run took are marked.
 
   Port rendering:
-  - Input-port exposure (data.config.ports, falling back to each port's
-    exposedByDefault) decides which input ports render, in effective order.
-    Branches are authored output paths and always render.
-  - Branches are not NodePorts: each becomes a trigger-lane output row whose
-    port id is the branch name. Rows are keyed by index, so two branches with
-    the same (or an empty) name draw two rows instead of crashing.
+  - Input exposure (`data.config.ports`, falling back to each port's `exposedByDefault`)
+    decides which input ports render, in effective order. Branches are authored paths
+    and always render.
+  - A branch is not a `NodePort`: each becomes a trigger output row whose port id is the
+    branch name. Rows are keyed by index, so two branches with the same (or an empty)
+    name draw two rows instead of crashing.
+
+  **Use it for** a node type that declares `type: "gateway"`, such as If/else or Switch.
+  **Not for** a node with a fixed set of outputs; use `WorkflowNode`.
 -->
 
 <script lang="ts">
@@ -25,10 +29,13 @@
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`branches`, `ports`, `instanceTitle`) and node type. Branches come from `config.branches`. */
     data: WorkflowNode['data'] & {
       onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
   }
 

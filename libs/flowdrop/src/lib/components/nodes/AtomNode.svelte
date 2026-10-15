@@ -1,11 +1,13 @@
 <!--
-  Atom Node Component
-  Minimalist, label-only node for "supplies a value" atoms (Constant now, Cast later).
-  Renders as a pill that hugs its content with handles driven by the node's ports.
+  @component
+  A value as a small pill: a constant or an inline transform. The text is the whole node.
 
-  The body text and the output port's dataType are both driven by config via
-  `extensions.ui.atom` (see AtomUIConfig). This component owns no domain semantics —
-  meaning comes entirely from the node's NodeMetadata.
+  The text comes from `config[valueKey]` (or the label) and the look from
+  `extensions.ui.atom` (see `AtomUIConfig`). The component holds no domain meaning; the
+  node type supplies it. The pill is 40 px tall, and its handles follow the node's ports.
+
+  **Use it for** a node type that declares `type: "atom"`, such as a constant or a cast.
+  **Not for** a node that needs a title, a description or several ports; use `WorkflowNode`.
 -->
 
 <script lang="ts">
@@ -38,10 +40,15 @@
   }
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: its label, config and node type. The body text and look come from `metadata.extensions.ui.atom`. */
     data: AtomNodeData;
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 

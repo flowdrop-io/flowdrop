@@ -1,9 +1,17 @@
 <!--
-  FlowDrop Navbar Component
-  Reusable navigation bar with customizable primary actions
-  - Logo and branding on the left
-  - Primary actions in the center
-  - Status indicator on the right
+  @component
+  The bar along the top of the editor: logo and breadcrumbs on the left, actions in the middle,
+  status, workflow settings and the app settings on the right.
+
+  The first primary action is the main button; the others go in the menu beside it. A skin can instead
+  show every action as its own button (the "split" layout, set with `--fd-navbar-split-display`).
+  The logo is FlowDrop's wordmark unless `branding` gives an image or a component.
+  `onWorkflowSettings` adds the Workflow button, `status` adds the Problems indicator before the actions,
+  and `end` adds your own controls before the settings gear.
+  `saveShortcut` binds Ctrl/Cmd+S to the first action.
+
+  **Use it for** the editor's top bar.
+  **Not for** controls that act on the canvas (those live in `CanvasToolbar`).
 -->
 
 <script lang="ts">

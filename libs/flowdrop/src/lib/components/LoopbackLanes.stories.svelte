@@ -1,19 +1,56 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import LoopbackLanesDecorator from '../../lib/stories/LoopbackLanesDecorator.svelte';
+  import LoopbackLanesDecorator from '../stories/LoopbackLanesDecorator.svelte';
+  // The component is imported last: a node component imported first would load the instance
+  // container before its own module has finished, and fail on the import cycle.
+  import LoopbackLanes from './LoopbackLanes.svelte';
 
   const { Story } = defineMeta({
-    title: 'Patterns/Edges/Return lanes',
+    title: 'Editor/Edges/Loopback lanes',
+    component: LoopbackLanes,
     tags: ['autodocs'],
-    parameters: {
-      layout: 'centered'
-    }
+    parameters: { layout: 'centered' }
   });
 </script>
 
-<!-- Inner loop c > b wrapped by the outer loop d > a: the inner lane sits closer to the cards,
-     and on both ends the outer lane turns further out, so they never cross. -->
-<Story name="Nested loops">
+<Story
+  asChild
+  name="A loop"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A loopback runs back along a lane under the cards, so it never crosses them. It turns with rounded corners and ends in the arrowhead.'
+      }
+    }
+  }}
+>
+  <LoopbackLanesDecorator
+    cards={[
+      { id: 'a', x: 0, y: 0 },
+      { id: 'b', x: 400, y: 0 },
+      { id: 'c', x: 800, y: 0 }
+    ]}
+    wires={[
+      ['a', 'b'],
+      ['b', 'c']
+    ]}
+    loops={[['c', 'b']]}
+  />
+</Story>
+
+<Story
+  asChild
+  name="Nested loops"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A loop inside a loop. The inner lane is closer to the cards, so the two never cross.'
+      }
+    }
+  }}
+>
   <LoopbackLanesDecorator
     cards={[
       { id: 'a', x: 0, y: 0 },
@@ -33,8 +70,17 @@
   />
 </Story>
 
-<!-- Loops whose spans do not overlap share one track. -->
-<Story name="Loops side by side">
+<Story
+  asChild
+  name="Loops side by side"
+  parameters={{
+    docs: {
+      description: {
+        story: 'Loops that do not overlap share one lane height, so the graph stays compact.'
+      }
+    }
+  }}
+>
   <LoopbackLanesDecorator
     cards={[
       { id: 'e', x: 0, y: 0 },
@@ -54,8 +100,17 @@
   />
 </Story>
 
-<!-- Two loopbacks into one loop_back port share the final climb, like a bus. -->
-<Story name="Two loopbacks into one port">
+<Story
+  asChild
+  name="Two loopbacks into one port"
+  parameters={{
+    docs: {
+      description: {
+        story: 'Two loopbacks that end at the same port share the last stretch, like a bus.'
+      }
+    }
+  }}
+>
   <LoopbackLanesDecorator
     cards={[
       { id: 'i', x: 0, y: 100 },
