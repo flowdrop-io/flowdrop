@@ -187,6 +187,12 @@ export interface NodePort {
    */
   exposedByDefault?: boolean;
   /**
+   * Whether the port's exposure is fixed by its node type: the instance's
+   * `ports` config cannot override it, and the editor offers no Show/Hide
+   * toggle. The server decides which ports are locked; absent means `false`.
+   */
+  exposureLocked?: boolean;
+  /**
    * Default sort weight for the port's render position, ascending; ties break
    * on declaration order. Author-declared ports default to `0`. Reserved ports
    * (the `error` output and `trigger`/`tool` control ports) need no value — the

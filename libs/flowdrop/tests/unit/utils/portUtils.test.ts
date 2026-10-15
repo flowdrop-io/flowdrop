@@ -275,6 +275,13 @@ describe('isPortExposed', () => {
     expect(isPortExposed(port, [{ id: 'data-1', exposed: false }])).toBe(false);
     expect(isPortExposed(hiddenByDefault, [{ id: 'error', exposed: true }])).toBe(true);
   });
+
+  it('ignores the override on a port whose exposure is locked', () => {
+    const locked: NodePort = { ...makePort('trigger'), exposureLocked: true };
+    expect(isPortExposed(locked, [{ id: 'trigger', exposed: false }])).toBe(true);
+    const lockedHidden: NodePort = { ...locked, exposedByDefault: false };
+    expect(isPortExposed(lockedHidden, [{ id: 'trigger', exposed: true }])).toBe(false);
+  });
 });
 
 describe('isPortVisible', () => {

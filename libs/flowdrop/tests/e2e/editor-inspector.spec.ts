@@ -60,6 +60,47 @@ test.describe('Node inspector', () => {
     await expect(page.getByRole('button', { name: 'Hide port Format' }).first()).toBeVisible();
   });
 
+  test('a locked port shows as on, with a lock and no toggle', async ({ page }) => {
+    await gotoEditor(page, 'inspector');
+    await open(page, 'chat_output.2');
+    await page.getByRole('tab', { name: 'Ports' }).click();
+
+    for (const group of ['inputs', 'outputs'] as const) {
+      const locked = page.getByTestId(`port-locked-${group}-trigger`);
+      await expect(locked).toBeVisible();
+      await expect(locked).toHaveAttribute('aria-label', 'Trigger is always shown');
+      await expect(page.locator(`[data-port-row="${group}:trigger"]`)).not.toHaveClass(/--hidden/);
+    }
+    await expect(page.getByRole('button', { name: 'Hide port Trigger' })).toHaveCount(0);
+  });
+
+  test('hiding a wired port asks, then removes its wires in one undo step', async ({ page }) => {
+    await gotoEditor(page, 'inspector');
+    await open(page, 'chat_output.2');
+    await page.getByRole('tab', { name: 'Ports' }).click();
+    const edge = page.locator('.svelte-flow__edge[data-id="inspector-edge-format"]');
+    await expect(edge).toHaveCount(1);
+
+    const row = page.locator('[data-port-row="outputs:format"]');
+    await row.getByRole('button', { name: 'Hide port format' }).click();
+    await expect(row.getByText('Hide and remove 1 connection?')).toBeVisible();
+
+    // Cancel leaves everything as it was.
+    await row.getByTestId('port-hide-cancel').click();
+    await expect(row).not.toHaveClass(/--hidden/);
+    await expect(edge).toHaveCount(1);
+
+    await row.getByRole('button', { name: 'Hide port format' }).click();
+    await row.getByTestId('port-hide-confirm').click();
+    await expect(row).toHaveClass(/--hidden/);
+    await expect(edge).toHaveCount(0);
+
+    // One undo brings back both the port and its wire.
+    await page.locator('.svelte-flow__pane').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(edge).toHaveCount(1);
+  });
+
   test('Alt+ArrowDown / Alt+ArrowUp on a focused row reorders it', async ({ page }) => {
     await gotoEditor(page, 'inspector');
     await open(page, 'chat_output.2');

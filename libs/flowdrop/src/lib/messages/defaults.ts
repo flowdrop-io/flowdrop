@@ -30,6 +30,19 @@ export const defaultMessages = {
   },
 
   form: {
+    // The Ports tab: Show/Hide per port.
+    ports: {
+      hide: ({ port }: { port: string }) => `Hide port ${port}`,
+      show: ({ port }: { port: string }) => `Show port ${port}`,
+      shown: 'Shown on the canvas',
+      hidden: 'Hidden from the canvas',
+      locked: ({ port }: { port: string }) => `${port} is always shown`,
+      lockedHint: 'Always shown. The node type decides this port.',
+      confirmHide: ({ n }: { n: number }) =>
+        n === 1 ? 'Hide and remove 1 connection?' : `Hide and remove ${n} connections?`,
+      confirm: 'Hide',
+      cancel: 'Cancel'
+    },
     array: {
       // Item-level controls — `n` is the 1-based item position the user sees.
       itemLabel: ({ n }: { n: number }) => `Item ${n}`,

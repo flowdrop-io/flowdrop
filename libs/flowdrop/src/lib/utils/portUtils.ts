@@ -74,9 +74,11 @@ export function orderPortsFor(
 /**
  * Effective exposure for a port: the instance's explicit `exposed` override if
  * present, else the port's metadata `exposedByDefault` (which itself defaults to
- * exposed).
+ * exposed). A port whose exposure is locked ({@link NodePort.exposureLocked})
+ * ignores the override: the node type decides.
  */
 export function isPortExposed(port: NodePort, entries: PortConfigEntry[] | undefined): boolean {
+  if (port.exposureLocked) return port.exposedByDefault ?? true;
   const entry = entries?.find((candidate) => candidate.id === port.id);
   if (entry && entry.exposed !== undefined) return entry.exposed;
   return port.exposedByDefault ?? true;

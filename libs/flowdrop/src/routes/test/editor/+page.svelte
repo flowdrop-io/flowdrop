@@ -893,14 +893,27 @@
       { id: 'message', name: 'Message', type: 'input', dataType: 'string', required: true },
       { id: 'format', name: 'Format', type: 'input', dataType: 'string' },
       { id: 'timestamp', name: 'Timestamp', type: 'input', dataType: 'boolean' },
-      { id: 'trigger', name: 'Trigger', type: 'input', dataType: 'trigger' }
+      // fddo serves trigger ports locked: always shown, no Show/Hide.
+      {
+        id: 'trigger',
+        name: 'Trigger',
+        type: 'input',
+        dataType: 'trigger',
+        exposureLocked: true
+      }
     ],
     outputs: [
       { id: 'message', name: 'message', type: 'output', dataType: 'string' },
       { id: 'format', name: 'format', type: 'output', dataType: 'string' },
       { id: 'timestamp', name: 'timestamp', type: 'output', dataType: 'boolean' },
       { id: 'loop_back', name: 'Loop back', type: 'output', dataType: 'trigger' },
-      { id: 'trigger', name: 'Trigger', type: 'output', dataType: 'trigger' }
+      {
+        id: 'trigger',
+        name: 'Trigger',
+        type: 'output',
+        dataType: 'trigger',
+        exposureLocked: true
+      }
     ],
     configSchema: {
       type: 'object',
@@ -1016,7 +1029,16 @@
         data: { label: 'Run workflow: Calculator', config: {}, metadata: subworkflowNodeType }
       }
     ],
-    edges: [],
+    // One wire, so the Ports tab has a port it must ask about before hiding.
+    edges: [
+      {
+        id: 'inspector-edge-format',
+        source: 'chat_output.2',
+        target: 'workflow_executor.1',
+        sourceHandle: 'chat_output.2-output-format',
+        targetHandle: 'workflow_executor.1-input-values'
+      }
+    ],
     metadata: {
       schemaVersion: '1.0.0',
       createdAt: '2024-01-01T00:00:00Z',
