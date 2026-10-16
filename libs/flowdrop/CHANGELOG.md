@@ -14,9 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Command`) against the mount's workflow and resolves with its `CommandResult`. It waits for the
   workflow to load, so it can be called right after mounting, and it is one undo step like the
   console. `{ baseline: true }` makes the result the workflow's clean starting point (not dirty,
-  nothing to undo) and is refused with `code: 'DIRTY'` when there are unsaved changes. Works on
+  undo history cleared) and is refused with `code: 'DIRTY'` when there are unsaved changes. Works on
   read-only mounts. New instance field `uiActions` lets the editor shell receive the UI actions of a
   command (select, open config, fit/zoom/pan).
+- **`onExternalEdit` event handler** (#55). A node's `externalEditLink` can now be handled by the host
+  instead of navigating away: the handler receives `(node, link)` and resolves with the node's new config
+  (it replaces the config, as one undo step) or with nothing to leave the node as it is. It covers every
+  place the link opens: the inspector row ("Runs … ↗"), the form buttons and the empty state. The link
+  keeps its `href`, so middle-click and "copy link" still work. `ConfigForm` takes the same `onExternalEdit`
+  prop. While the editor is read-only or locked the handler is still called but its result is not written.
+  Without the handler nothing changes.
+
+### Deprecated
+
+- **`ExternalEditLink.callbackUrlParam`.** It never had any effect, because nothing passes a callback URL.
+  Use `onExternalEdit` to get the config back from the host's form.
 
 ### Fixed
 

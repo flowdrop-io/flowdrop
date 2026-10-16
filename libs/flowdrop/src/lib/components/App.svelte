@@ -53,7 +53,13 @@
   import Navbar from '$lib/components/Navbar.svelte';
   import DoctorMenu from '$lib/components/DoctorMenu.svelte';
   import type { NavbarAction, NavbarBranding } from '$lib/types/navbar.js';
-  import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
+  import type {
+    NodeMetadata,
+    Workflow,
+    WorkflowNode,
+    ConfigSchema,
+    ExternalEditLink
+  } from '$lib/types/index.js';
   import type { InteractiveSwapState, SwapEventContext } from '$lib/utils/nodeSwap.js';
   import {
     computeInteractiveState,
@@ -83,6 +89,7 @@
     initializeTheme
   } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
+  import { runExternalEdit } from '../utils/externalEdit.js';
   import { themeScope } from '../utils/themeScope.svelte.js';
   import {
     resolveInspectorSurface,
@@ -210,6 +217,8 @@
     onApiError?: FlowDropEventHandlers['onApiError'];
     /** Called after a workflow is loaded/imported. */
     onWorkflowLoad?: FlowDropEventHandlers['onWorkflowLoad'];
+    /** Called instead of opening a node's external edit link; resolve with the new config. */
+    onExternalEdit?: FlowDropEventHandlers['onExternalEdit'];
     /** Called before a node swap — return false to cancel. */
     onBeforeSwap?: FlowDropEventHandlers['onBeforeSwap'];
     /** Called after a node swap is applied. */
@@ -283,6 +292,7 @@
     onSaveError,
     onApiError,
     onWorkflowLoad,
+    onExternalEdit,
     onBeforeSwap,
     onAfterSwap,
     features: propFeatures,
@@ -1128,6 +1138,29 @@
     }
   });
 
+  /**
+   * Hand a node's external edit link to the host (`onExternalEdit`) and write
+   * the config it resolves with. Undefined when the host set no handler, so the
+   * link opens as before.
+   */
+  const externalEditForConfig = $derived(
+    onExternalEdit
+      ? (node: WorkflowNode, link: ExternalEditLink) =>
+          runExternalEdit({
+            node,
+            link,
+            handler: (n, l) => onExternalEdit(n, l),
+            store: fd.workflow,
+            canWrite: canvasEditable,
+            onWritten: (written) => {
+              const updated = fd.workflow.current?.nodes.find((n) => n.id === written.id);
+              if (updated) workflowEditorRef?.updateNodeData(updated.id, updated.data);
+              void workflowEditorRef?.refreshEdgePositions(written.id);
+            }
+          })
+      : undefined
+  );
+
   async function saveWorkflow(): Promise<boolean> {
     // Commit any in-flight config edit so the save and its history are
     // consistent (the value itself is already live in the store).
@@ -1746,6 +1779,7 @@
     workflowId={fd.workflow.current?.id}
     workflowNodes={fd.workflow.current?.nodes}
     workflowEdges={fd.workflow.current?.edges}
+    onExternalEdit={externalEditForConfig}
     onChange={(updatedConfig, meta) => {
       if (!node.id) return;
       const updatedData = { ...node.data, config: updatedConfig };

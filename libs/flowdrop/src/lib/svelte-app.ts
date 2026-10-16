@@ -807,6 +807,9 @@ export async function mountFlowDropApp(
       onSaveError: eventHandlers?.onSaveError,
       onApiError: eventHandlers?.onApiError,
       onWorkflowLoad: eventHandlers?.onWorkflowLoad,
+      onExternalEdit: eventHandlers?.onExternalEdit
+        ? (node, link) => eventHandlers.onExternalEdit!(node, link)
+        : undefined,
       onBeforeSwap: eventHandlers?.onBeforeSwap,
       onAfterSwap: eventHandlers?.onAfterSwap,
       features,

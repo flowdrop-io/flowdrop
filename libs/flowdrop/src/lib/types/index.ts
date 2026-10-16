@@ -631,6 +631,9 @@ export interface ExternalEditLink {
   /**
    * Callback URL parameter name for FlowDrop to receive updates
    * If set, the external form should redirect back with config updates
+   *
+   * @deprecated Nothing passes a callback URL, so this has no effect. Handle the
+   * round trip in the host with `FlowDropEventHandlers.onExternalEdit` instead.
    */
   callbackUrlParam?: string;
 }
