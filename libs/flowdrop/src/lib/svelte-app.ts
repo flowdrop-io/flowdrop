@@ -62,6 +62,11 @@ import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.
 import type { NavbarAction, NavbarBranding } from './types/navbar.js';
 import type { HostHooks, WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
 import { whenWorkflowLoaded } from './utils/whenWorkflowLoaded.svelte.js';
+import { parseCommand } from './commands/parser.js';
+import { executeCommand } from './commands/executor.js';
+import { isSessionLine } from './commands/session.js';
+import { createStoreCommandContext } from './commands/storeIntegration.svelte.js';
+import type { Command, CommandResult } from './commands/types.js';
 export type { NavbarAction, NavbarBranding };
 import type { ContextMenuOptions } from './editor/contextMenu.js';
 export type { HostHooks, WebMCPHandle, WebMCPMountOptions };
@@ -298,6 +303,16 @@ export interface FlowDropMountOptions {
   contextMenu?: ContextMenuOptions;
 }
 
+/** Options for {@link MountedFlowDropApp.runCommand}. */
+export interface RunCommandOptions {
+  /**
+   * Make the command's result the workflow's clean starting point: no undo
+   * step and not dirty. Refused with `code: 'DIRTY'` when the workflow already
+   * has unsaved changes.
+   */
+  baseline?: boolean;
+}
+
 /**
  * Return type for mounted FlowDrop app
  */
@@ -355,6 +370,42 @@ export interface MountedFlowDropApp {
    * @returns The number of entries removed.
    */
   clearAllDrafts: () => number;
+
+  /**
+   * Run one Command Console command against this mount's workflow, as if it
+   * had been typed into the console: `await app.runCommand('layout auto')`.
+   *
+   * `command` is a console line (parsed with the editing DSL) or an already
+   * parsed `Command` object. Never rejects: failures (a line that does not
+   * parse, an unknown node, ...) resolve to `{ ok: false, error, code }`.
+   *
+   * - **Waits for the workflow.** The mount resolves before the editor has
+   *   loaded its workflow, so a call made right after mounting waits for it.
+   *   If the mount is destroyed first, or was already destroyed, the call
+   *   resolves with `{ ok: false, code: 'NO_WORKFLOW' }`.
+   * - **One undo step per call**, the same as typing the command in the
+   *   console; the workflow becomes dirty.
+   * - **Sizes before first paint.** `layout auto` reads node sizes the canvas
+   *   has measured and `layout beautify` asks the mounted canvas to measure
+   *   them. A call made before the canvas has rendered falls back to computed
+   *   geometry, so the result can differ slightly from the same command run
+   *   later.
+   * - **`options.baseline`** makes the command's result the workflow's clean
+   *   starting point: no undo step is left and `isDirty()` is `false`
+   *   afterwards. Useful to tidy a loaded model before the user sees it. It
+   *   needs a workflow with no unsaved changes: when the workflow is dirty the
+   *   command is not run and the call resolves with `{ ok: false, code:
+   *   'DIRTY' }`. A failed command changes nothing. A draft saved earlier is
+   *   not overwritten by the re-baselined workflow.
+   * - **Read-only mounts** (`mode: 'readonly' | 'locked'`) accept it too, so a
+   *   host can lay out a model it only displays.
+   * - **UI actions** (select a node, open its config panel, fit/zoom/pan) are
+   *   applied by `mountFlowDropApp`'s editor shell. `mountWorkflowEditor` has
+   *   no shell, so they are dropped there.
+   * - **Session commands** (`session ...`) belong to the console and are not
+   *   available: they resolve with `{ ok: false, code: 'SESSION_REFUSED' }`.
+   */
+  runCommand: (command: string | Command, options?: RunCommandOptions) => Promise<CommandResult>;
 
   /**
    * The WebMCP registration when the `webmcp` mount option was set and the
@@ -507,6 +558,95 @@ function attachWebMCPToMount(
       resolve(attachWebMCP(fd, options) ?? undefined);
     });
   });
+}
+
+/**
+ * Build `runCommand` for a mount (shared by `mountFlowDropApp` and
+ * `mountWorkflowEditor`).
+ *
+ * @param isDestroyed - Whether the mount is gone.
+ * @param registerCancel - Registers a callback the mount calls on destroy to
+ *   settle a call still waiting for the workflow; returns its unregister.
+ * @param onBaseline - Runs after a successful baseline run, e.g. to tell a
+ *   draft manager the re-baselined workflow is not an unsaved draft.
+ */
+function createRunCommand(
+  fd: FlowDropInstance,
+  isDestroyed: () => boolean,
+  registerCancel: (cancel: () => void) => () => void,
+  onBaseline?: () => void
+): MountedFlowDropApp['runCommand'] {
+  const gone = (): CommandResult => ({
+    ok: false,
+    code: 'NO_WORKFLOW',
+    error: 'The editor was destroyed before a workflow was available.'
+  });
+
+  const run = (command: string | Command, options?: RunCommandOptions): CommandResult => {
+    if (isDestroyed() || !fd.workflow.current) return gone();
+
+    let parsed: Command;
+    if (typeof command === 'string') {
+      if (isSessionLine(command)) {
+        return {
+          ok: false,
+          code: 'SESSION_REFUSED',
+          error: '`session` commands run only in the editor Console; they are not available here.'
+        };
+      }
+      const result = parseCommand(command);
+      if (!result.ok) return { ok: false, code: 'PARSE_ERROR', error: result.error };
+      parsed = result.command;
+    } else {
+      parsed = command;
+    }
+
+    const baseline = options?.baseline === true;
+    if (baseline && fd.workflow.isDirty) {
+      return {
+        ok: false,
+        code: 'DIRTY',
+        error:
+          'baseline needs a workflow with no unsaved changes; save or discard them first. Nothing was run.'
+      };
+    }
+
+    const context = createStoreCommandContext(
+      fd.nodeTypes.current ?? [],
+      (action) => fd.uiActions?.(action),
+      fd
+    );
+    if (!context) return gone();
+
+    const result = executeCommand(parsed, context);
+    if (baseline && result.ok) {
+      const current = fd.workflow.current;
+      if (current) fd.workflow.initialize(current);
+      onBaseline?.();
+    }
+    return result;
+  };
+
+  return (command, options) =>
+    new Promise<CommandResult>((resolve) => {
+      if (isDestroyed()) return resolve(gone());
+      let settled = false;
+      let unregister: (() => void) | null = null;
+      const finish = (result: CommandResult) => {
+        if (settled) return;
+        settled = true;
+        unregister?.();
+        resolve(result);
+      };
+      // Fires at once when the workflow is already loaded.
+      const stopWaiting = whenWorkflowLoaded(fd, () => finish(run(command, options)));
+      if (!settled) {
+        unregister = registerCancel(() => {
+          stopWaiting();
+          finish(gone());
+        });
+      }
+    });
 }
 
 /**
@@ -738,6 +878,8 @@ export async function mountFlowDropApp(
   // its default `onSave` is `mountedApp.save()`.
   let webmcpHandle: WebMCPHandle | undefined;
   let destroyed = false;
+  // Calls to runCommand still waiting for the workflow; settled on destroy.
+  const pendingRuns = new Set<() => void>();
 
   // Create the mounted app interface
   const mountedApp: MountedFlowDropApp = {
@@ -750,6 +892,7 @@ export async function mountFlowDropApp(
       // Remove the agent-facing tools before anything else goes away.
       destroyed = true;
       webmcpHandle?.detach();
+      for (const cancel of [...pendingRuns]) cancel();
 
       // Call onBeforeUnmount if provided
       if (state.eventHandlers?.onBeforeUnmount) {
@@ -811,6 +954,17 @@ export async function mountFlowDropApp(
     },
 
     getWorkflow: () => fd.workflow.current,
+
+    runCommand: createRunCommand(
+      fd,
+      () => destroyed,
+      (cancel) => {
+        pendingRuns.add(cancel);
+        return () => pendingRuns.delete(cancel);
+      },
+      // The re-baselined workflow is clean, so it is not a draft to restore.
+      () => state.draftManager?.markAsSaved()
+    ),
 
     save: async () => {
       return globalSaveWorkflow({
@@ -959,11 +1113,16 @@ export async function mountWorkflowEditor(
     }
   });
 
+  let destroyed = false;
+  const pendingRuns = new Set<() => void>();
+
   // Create the mounted app interface (simpler version)
   const mountedApp: MountedFlowDropApp = {
     instance: fd,
 
     destroy: () => {
+      destroyed = true;
+      for (const cancel of [...pendingRuns]) cancel();
       releaseInstance(fd, isDefault);
       unmount(svelteApp);
     },
@@ -973,6 +1132,15 @@ export async function mountWorkflowEditor(
     markAsSaved: () => fd.workflow.markAsSaved(),
 
     getWorkflow: () => fd.workflow.current,
+
+    runCommand: createRunCommand(
+      fd,
+      () => destroyed,
+      (cancel) => {
+        pendingRuns.add(cancel);
+        return () => pendingRuns.delete(cancel);
+      }
+    ),
 
     save: async () => {
       return globalSaveWorkflow({ instance: fd });

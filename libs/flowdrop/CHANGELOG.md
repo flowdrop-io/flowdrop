@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`runCommand` on the object `mountFlowDropApp` and `mountWorkflowEditor` return** (#53).
+  `await app.runCommand('layout auto')` runs one Command Console command (a line, or a parsed
+  `Command`) against the mount's workflow and resolves with its `CommandResult`. It waits for the
+  workflow to load, so it can be called right after mounting, and it is one undo step like the
+  console. `{ baseline: true }` makes the result the workflow's clean starting point (not dirty,
+  nothing to undo) and is refused with `code: 'DIRTY'` when there are unsaved changes. Works on
+  read-only mounts. New instance field `uiActions` lets the editor shell receive the UI actions of a
+  command (select, open config, fit/zoom/pan).
+
 ### Fixed
 
 - **`mountFlowDropApp` passes `workflowSettingsSchema` on to the editor** (#54). The option existed on

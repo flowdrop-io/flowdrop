@@ -264,6 +264,8 @@ export type CommandErrorCode =
   | 'INVALID_CONNECTION'
   | 'CYCLE_DETECTED'
   | 'NO_WORKFLOW'
+  /** `runCommand({ baseline: true })` on a workflow with unsaved changes: nothing was run. */
+  | 'DIRTY'
   | 'PARSE_ERROR'
   /** An argument is out of range, e.g. a layout gap that is not a multiple of the grid. */
   | 'INVALID_ARGUMENT'

@@ -213,6 +213,7 @@ export type { EndpointConfig } from '../config/endpoints.js';
 export type {
   FlowDropMountOptions,
   MountedFlowDropApp,
+  RunCommandOptions,
   NavbarAction,
   NavbarBranding
 } from '../svelte-app.js';
