@@ -15,8 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A filled autocomplete field shows its label when the form opens.** It used to show the stored value
   (`org-acme` instead of "Acme Corp") until the field was focused, because labels were only learned from
   suggestions. When the field's config allows an empty query (`fetchOnFocus: true` and `minChars: 0`), it
-  now sends that request once on open to look up the labels: one request per filled field, the same one
-  focusing it already sent. Other configs still show the stored value until a search returns it.
+  now sends that empty query once when the form opens, and again when an undo or external edit brings in
+  values it has no label for: one extra request per filled field. Only values in that response get a
+  label, so an endpoint that returns just its first page leaves the others showing the stored value, as
+  do other configs until a search returns them. The request goes through the auth provider like any
+  other, so a `401`/`403` from it reaches `onUnauthorized`/`onForbidden` when the form opens. It runs
+  beside the field's own requests: no spinner, no error in the dropdown (a failure is only logged), and
+  focusing the field still loads its suggestions as before.
+- **An autocomplete field keeps its loading state while a newer search is in flight.** A cancelled
+  request used to clear the spinner of the search that replaced it, and left that search impossible to
+  cancel, so results for old dependency values could still land after a dependency field changed.
 
 ## [2.15.0] - 2026-10-16
 

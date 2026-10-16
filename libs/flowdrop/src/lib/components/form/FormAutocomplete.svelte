@@ -25,6 +25,7 @@
 
 <script lang="ts">
   import { getContext, onMount, untrack } from 'svelte';
+  import { SvelteMap } from 'svelte/reactivity';
   import Icon from '@iconify/svelte';
   import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
   import type { FieldOption } from './types.js';
@@ -107,7 +108,7 @@
   let popoverStyle = $state('');
 
   // Cache of value-to-label mappings for selected items
-  let labelCache = $state<Map<string, string>>(new Map());
+  const labelCache = new SvelteMap<string, string>();
 
   // Resolved values for each param dependency: { paramName -> currentFieldValue }
   // Used both in buildUrl (appending to query) and in the dep-change effect.
@@ -170,18 +171,9 @@
    * Get display label for a selected value
    */
   function getDisplayLabel(val: string): string {
-    // Check cache first
-    if (labelCache.has(val)) {
-      return labelCache.get(val) ?? val;
-    }
-    // Check current suggestions
-    const match = suggestions.find((s) => s.value === val);
-    if (match) {
-      labelCache.set(val, match.label);
-      return match.label;
-    }
-    // Return value as fallback
-    return val;
+    // Runs during render, so it only reads; the effect below caches labels
+    // found in suggestions.
+    return labelCache.get(val) ?? suggestions.find((s) => s.value === val)?.label ?? val;
   }
 
   /**
@@ -263,6 +255,8 @@
       }
 
       const data = await response.json();
+      // A newer request (or a dependency change) superseded this one.
+      if (controller.signal.aborted) return;
       const mapped = mapResponse(data);
 
       // Update label cache with fetched suggestions
@@ -282,8 +276,12 @@
       suggestions = [];
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId);
-      isLoading = false;
-      abortController = null;
+      // An aborted request settles after its replacement started; the loading
+      // state and controller belong to that replacement then.
+      if (abortController === controller) {
+        isLoading = false;
+        abortController = null;
+      }
     }
   }
 
@@ -614,14 +612,49 @@
     // not on undo/redo, programmatic resets, or collaborative edits (#33).
     abortController?.abort();
     suggestions = [];
-    labelCache = new Map();
+    labelCache.clear();
   });
 
-  // Labels are only learned from fetched suggestions, so a preloaded value
+  /**
+   * Look up labels for values the cache does not know, with the empty query
+   * the field would send on focus. Its own request: it never touches the
+   * suggestions, the loading state or the error, so it cannot disturb a
+   * search the user is running, and a search cannot cancel it.
+   */
+  let labelController: AbortController | null = null;
+  async function lookupLabels(): Promise<void> {
+    labelController?.abort();
+    const controller = new AbortController();
+    labelController = controller;
+    const fingerprint = depFingerprint;
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await authenticatedFetch(
+        buildUrl(''),
+        { method: 'GET', signal: controller.signal },
+        { authProvider: getAuthProvider?.() }
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const mapped = mapResponse(await response.json());
+      // Labels fetched for other dependency values would be wrong now.
+      if (controller.signal.aborted || fingerprint !== depFingerprint) return;
+      for (const opt of mapped) labelCache.set(opt.value, opt.label);
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      logger.warn('[FormAutocomplete] Label lookup failed:', err);
+    } finally {
+      clearTimeout(timeoutId);
+      if (labelController === controller) labelController = null;
+    }
+  }
+
+  // Labels are otherwise only learned from suggestions, so a preloaded value
   // (form open, undo, external edit) would show its raw value until the user
-  // focuses the field. When the config already allows an empty-query fetch,
-  // run that fetch once for the current values to resolve their labels.
-  // Must stay after the dependency effect above, which resets labelCache.
+  // focuses the field. When the config allows an empty query, look the labels
+  // up once per set of unknown values and dependency values, so a value the
+  // endpoint does not return is not retried in a loop.
   let labelLookupKey = '';
   $effect(() => {
     if (!fetchOnFocus || minChars > 0) return;
@@ -630,9 +663,7 @@
     const key = `${depFingerprint}|${missing.join('\u0000')}`;
     if (key === labelLookupKey) return;
     labelLookupKey = key;
-    untrack(() => {
-      if (!isLoading) fetchSuggestions('');
-    });
+    untrack(() => lookupLabels());
   });
 
   /**
@@ -648,6 +679,7 @@
       if (abortController) {
         abortController.abort();
       }
+      labelController?.abort();
     };
   });
 </script>
