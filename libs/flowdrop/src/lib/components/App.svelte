@@ -1660,6 +1660,14 @@
     }
   }
 
+  // Let the mount API's `runCommand` reach this handler for UI actions.
+  $effect(() => {
+    fd.uiActions = handleConsoleUIAction;
+    return () => {
+      if (fd.uiActions === handleConsoleUIAction) fd.uiActions = null;
+    };
+  });
+
   /** Show the Assistant: its tab beside Nodes, or the console group where there is no left slot. */
   function openAssistant(): void {
     if (chatInConsoleGroup) {

@@ -39,6 +39,7 @@ import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
 import type { MeasuredCard } from '../layout/fromWorkflow.js';
+import type { UIAction } from '../commands/types.js';
 import { NodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
 import { FieldComponentRegistry } from '../form/fieldRegistry.js';
 import { WorkflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
@@ -184,6 +185,13 @@ export interface FlowDropInstance {
    */
   measureNode: ((nodeId: string) => MeasuredCard | undefined) | null;
   /**
+   * The host shell's handler for command UI actions (select a node, open its
+   * config panel, fit/zoom/pan the canvas), registered by `App` while it is
+   * mounted. `null` without a shell. The mount API's `runCommand` routes the
+   * UI actions of a command to it; without a handler they are dropped.
+   */
+  uiActions: ((action: UIAction) => void) | null;
+  /**
    * Run `fn` when this instance is destroyed. Returns an unsubscribe; calling
    * it before `destroy()` means `fn` never runs. Adapters that bind to an
    * instance (WebMCP, host integrations) hook their teardown here instead of
@@ -300,6 +308,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   });
 
   // Reactive, so the loopback lanes recompute once the canvas registers its measurement.
+  let uiActionsFn = $state.raw<((action: UIAction) => void) | null>(null);
   let measureNodeFn = $state.raw<((nodeId: string) => MeasuredCard | undefined) | null>(null);
 
   const cleanups: Array<() => void> = [
@@ -361,6 +370,12 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     },
     set measureNode(fn) {
       measureNodeFn = fn;
+    },
+    get uiActions() {
+      return uiActionsFn;
+    },
+    set uiActions(fn) {
+      uiActionsFn = fn;
     },
     onDestroy(fn) {
       cleanups.push(fn);

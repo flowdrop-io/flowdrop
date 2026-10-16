@@ -331,6 +331,7 @@ export type { EditorPlaygroundConfig } from '../types/playground.js';
 export type {
   FlowDropMountOptions,
   MountedFlowDropApp,
+  RunCommandOptions,
   NavbarAction,
   NavbarBranding
 } from '../svelte-app.js';
