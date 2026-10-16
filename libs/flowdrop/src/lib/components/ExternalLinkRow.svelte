@@ -17,9 +17,23 @@
     href: string;
     /** Open in a new tab */
     newTab?: boolean;
+    /**
+     * Handle a plain left click instead of following the link. The href stays,
+     * so middle-click, modified clicks and "copy link" work as for any link.
+     */
+    onActivate?: () => void;
   }
 
-  let { prefix, name, title, href, newTab = true }: Props = $props();
+  let { prefix, name, title, href, newTab = true, onActivate }: Props = $props();
+
+  function handleClick(event: MouseEvent): void {
+    if (!onActivate) return;
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    event.preventDefault();
+    onActivate();
+  }
 </script>
 
 <div class="external-link-row">
@@ -30,6 +44,7 @@
     target={newTab ? '_blank' : undefined}
     rel={newTab ? 'noopener noreferrer' : undefined}
     title={title ?? name}
+    onclick={handleClick}
     data-testid="external-config-link"
   >
     <span class="external-link-row__name">{name}</span>

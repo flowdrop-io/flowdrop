@@ -18,6 +18,7 @@
     WorkflowNode,
     WorkflowEdge,
     ConfigEditOptions,
+    ExternalEditLink,
     AuthProvider
   } from '$lib/types/index.js';
   import type { UISchemaElement } from '$lib/types/uischema.js';
@@ -107,6 +108,13 @@
       config: Record<string, unknown>,
       meta?: { fieldKey?: string; commit?: boolean }
     ) => void;
+    /**
+     * Called instead of opening the node's external edit link, when set. The
+     * host opens its own form; ConfigForm awaits the call (a second click while
+     * one is pending is ignored) and logs a rejection. Writing the config the
+     * handler resolves with is the caller's job: ConfigForm passes it on as is.
+     */
+    onExternalEdit?: (node: WorkflowNode, link: ExternalEditLink) => Promise<unknown> | void;
     /** Callback when form is saved */
     onSave?: (config: Record<string, unknown>) => void;
     /** Callback when form is cancelled */
@@ -125,6 +133,7 @@
     authProvider,
     commitMode = 'blur',
     onChange,
+    onExternalEdit,
     onSave,
     onCancel
   }: Props = $props();
@@ -399,7 +408,8 @@
         : { name: link.label ?? 'Configure externally' }),
       title: link.description,
       href: getExternalEditUrl(),
-      newTab: link.openInNewTab !== false
+      newTab: link.openInNewTab !== false,
+      ...(onExternalEdit ? { onActivate: handleExternalEditClick } : {})
     };
   });
 
@@ -418,8 +428,28 @@
   /**
    * Handle opening external edit link
    */
+  const externalEditPending = new Set<string>();
+
   function handleExternalEditClick(): void {
     if (!node || !configEditOptions?.externalEditLink) return;
+
+    if (onExternalEdit) {
+      const link = configEditOptions.externalEditLink;
+      const nodeId = node.id;
+      // One host form per node at a time.
+      if (externalEditPending.has(nodeId)) return;
+      externalEditPending.add(nodeId);
+      void (async () => {
+        try {
+          await onExternalEdit(node, link);
+        } catch (error) {
+          logger.warn('onExternalEdit failed:', error);
+        } finally {
+          externalEditPending.delete(nodeId);
+        }
+      })();
+      return;
+    }
 
     const url = getExternalEditUrl();
     const openInNewTab = configEditOptions.externalEditLink.openInNewTab !== false;

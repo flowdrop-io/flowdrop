@@ -7,7 +7,13 @@
  * @module types/events
  */
 
-import type { Workflow, NodeExecutionInfo, WorkflowNode } from './index.js';
+import type {
+  Workflow,
+  NodeExecutionInfo,
+  WorkflowNode,
+  ConfigValues,
+  ExternalEditLink
+} from './index.js';
 import type { SwapEventContext, SwapResult } from '../utils/nodeSwap.js';
 
 /**
@@ -49,6 +55,20 @@ export type WorkflowChangeType =
  * ```
  */
 export interface FlowDropEventHandlers {
+  /**
+   * Called instead of opening a node's externalEditLink. Resolve with the new
+   * config to write it into the node (one undo step), or with nothing to leave
+   * the node as it is.
+   *
+   * The returned config replaces the node's config; it is not merged. A
+   * rejection is logged and leaves the node unchanged. While the editor is
+   * read-only or locked the handler is still called but its result is not written.
+   *
+   * @param node - The node whose external edit link was activated
+   * @param link - That node's resolved external edit link
+   */
+  onExternalEdit?(node: WorkflowNode, link: ExternalEditLink): Promise<ConfigValues | void>;
+
   /**
    * Called when workflow changes (any modification)
    *

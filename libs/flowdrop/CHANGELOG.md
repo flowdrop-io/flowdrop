@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`onExternalEdit` event handler** (#55). A node's `externalEditLink` can now be handled by the host
+  instead of navigating away: the handler receives `(node, link)` and resolves with the node's new config
+  (it replaces the config, as one undo step) or with nothing to leave the node as it is. It covers every
+  place the link opens: the inspector row ("Runs … ↗"), the form buttons and the empty state. The link
+  keeps its `href`, so middle-click and "copy link" still work. `ConfigForm` takes the same `onExternalEdit`
+  prop. While the editor is read-only or locked the handler is still called but its result is not written.
+  Without the handler nothing changes.
+
+### Deprecated
+
+- **`ExternalEditLink.callbackUrlParam`.** It never had any effect, because nothing passes a callback URL.
+  Use `onExternalEdit` to get the config back from the host's form.
+
 ### Fixed
 
 - **`mountFlowDropApp` passes `workflowSettingsSchema` on to the editor** (#54). The option existed on

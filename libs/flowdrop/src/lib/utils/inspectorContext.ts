@@ -14,6 +14,11 @@ export interface ExternalLinkInfo {
   title?: string;
   href: string;
   newTab: boolean;
+  /**
+   * When set, a plain left click calls this instead of following the link
+   * (the host opens its own form). Modified clicks still follow the href.
+   */
+  onActivate?: () => void;
 }
 
 export interface InspectorContext {
