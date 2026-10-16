@@ -309,7 +309,9 @@ export type {
   PortConfig,
   ConfigSchema,
   ConfigProperty,
-  ConfigEditOptions
+  ConfigEditOptions,
+  ConfigValues,
+  ExternalEditLink
 } from '../types/index.js';
 
 export type { WorkflowEditorConfig, EditorFeatures, UIConfig, APIConfig } from '../types/config.js';
@@ -324,7 +326,7 @@ export type {
 
 export type { EndpointConfig } from '../config/endpoints.js';
 
-export type { UIAction } from '../commands/types.js';
+export type { UIAction, Command, CommandResult, CommandErrorCode } from '../commands/types.js';
 
 export type { EditorPlaygroundConfig } from '../types/playground.js';
 

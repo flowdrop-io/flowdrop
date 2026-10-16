@@ -67,6 +67,7 @@ import { executeCommand } from './commands/executor.js';
 import { isSessionLine } from './commands/session.js';
 import { createStoreCommandContext } from './commands/storeIntegration.svelte.js';
 import { dispatchUIAction } from './commands/uiActionTarget.js';
+import { validateCommand } from './commands/validate.js';
 import type { Command, CommandResult } from './commands/types.js';
 export type { NavbarAction, NavbarBranding };
 import type { ContextMenuOptions } from './editor/contextMenu.js';
@@ -377,8 +378,11 @@ export interface MountedFlowDropApp {
    * had been typed into the console: `await app.runCommand('layout auto')`.
    *
    * `command` is a console line (parsed with the editing DSL) or an already
-   * parsed `Command` object. Never rejects: failures (a line that does not
-   * parse, an unknown node, ...) resolve to `{ ok: false, error, code }`.
+   * parsed `Command` object. An object is checked first: an unknown `type`, or
+   * a field that is missing or of the wrong kind, resolves with
+   * `code: 'INVALID_ARGUMENT'` and runs nothing. Never rejects: failures (a
+   * line that does not parse, an unknown node, ...) resolve to
+   * `{ ok: false, error, code }`.
    *
    * - **Waits for the workflow.** The mount resolves before the editor has
    *   loaded its workflow, so a call made right after mounting waits for it.
@@ -396,7 +400,10 @@ export interface MountedFlowDropApp {
    *   starts over from it (earlier undo steps are cleared too). Useful to
    *   tidy a loaded model before the user sees it. It needs a workflow with no
    *   unsaved changes: when the workflow is dirty the command is not run and
-   *   the call resolves with `{ ok: false, code: 'DIRTY' }`. A failed command,
+   *   the call resolves with `{ ok: false, code: 'DIRTY' }`. `undo` and `redo`
+   *   are refused with `code: 'INVALID_ARGUMENT'`. `onDirtyStateChange` and
+   *   `onWorkflowChange` are not called for a baseline run; a failed command
+   *   that still left changes is reported once it returns. A failed command,
    *   or one that changes nothing (`info`, `list nodes`), keeps the undo
    *   history. A draft saved earlier is not overwritten by the re-baselined
    *   workflow.
@@ -601,6 +608,9 @@ function createRunCommand(
       if (!result.ok) return { ok: false, code: 'PARSE_ERROR', error: result.error };
       parsed = result.command;
     } else {
+      // Not from the parser: a host may have built it by hand, in plain JS.
+      const problem = validateCommand(command);
+      if (problem) return { ok: false, code: 'INVALID_ARGUMENT', error: problem };
       parsed = command;
     }
 
@@ -613,6 +623,14 @@ function createRunCommand(
           'baseline needs a workflow with no unsaved changes; save or discard them first. Nothing was run.'
       };
     }
+    // Undo/redo would step past the saved state and then call it clean.
+    if (baseline && (parsed.type === 'undo' || parsed.type === 'redo')) {
+      return {
+        ok: false,
+        code: 'INVALID_ARGUMENT',
+        error: `${parsed.type} cannot be run as a baseline. Nothing was run.`
+      };
+    }
 
     const context = createStoreCommandContext(
       fd.nodeTypes.current ?? [],
@@ -621,15 +639,36 @@ function createRunCommand(
     );
     if (!context) return gone();
 
-    const result = executeCommand(parsed, context);
-    // A command that changed nothing (`info`, `list nodes`, ...) leaves the
-    // workflow clean: keep its undo history.
-    if (baseline && result.ok && fd.workflow.isDirty) {
-      const current = fd.workflow.current;
-      if (current) fd.workflow.initialize(current);
-      onBaseline?.();
+    // A baseline run is not a change the host should hear about: on release
+    // it is told only what is still true (a failed command that left changes).
+    const release = baseline ? fd.workflow.muteCallbacks() : null;
+    try {
+      const result = executeCommand(parsed, context);
+      // A command that changed nothing (`info`, `list nodes`, ...) leaves the
+      // workflow clean: keep its undo history.
+      if (baseline && result.ok && fd.workflow.isDirty) {
+        const current = fd.workflow.current;
+        if (current) fd.workflow.initialize(current);
+        onBaseline?.();
+      }
+      return result;
+    } finally {
+      release?.();
     }
-    return result;
+  };
+
+  // The promise never rejects, whatever the executor does.
+  const settle = (command: string | Command, options?: RunCommandOptions): CommandResult => {
+    try {
+      return run(command, options);
+    } catch (error) {
+      logger.error('runCommand failed:', error);
+      return {
+        ok: false,
+        code: 'INTERNAL_ERROR',
+        error: `The command failed: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
   };
 
   return (command, options) =>
@@ -644,7 +683,7 @@ function createRunCommand(
         resolve(result);
       };
       // Fires at once when the workflow is already loaded.
-      const stopWaiting = whenWorkflowLoaded(fd, () => finish(run(command, options)));
+      const stopWaiting = whenWorkflowLoaded(fd, () => finish(settle(command, options)));
       if (!settled) {
         unregister = registerCancel(() => {
           stopWaiting();

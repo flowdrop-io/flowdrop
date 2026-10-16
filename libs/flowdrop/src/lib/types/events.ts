@@ -62,14 +62,19 @@ export interface FlowDropEventHandlers {
    *
    * `node` and `link` are copies: changing them does not change the workflow;
    * return the config instead. The returned config replaces the node's
-   * config; it is not merged. A
-   * rejection is logged and leaves the node unchanged. While the editor is
-   * read-only or locked the handler is still called but its result is not written.
+   * config; it is not merged, and it is copied, so changing the object later
+   * does not change the workflow either. Anything but a plain object is
+   * ignored. A rejection is logged and leaves the node unchanged. While the
+   * editor is read-only or locked the handler is still called but its result
+   * is not written (a console warning says so).
    *
    * @param node - The node whose external edit link was activated
    * @param link - That node's resolved external edit link
    */
-  onExternalEdit?(node: WorkflowNode, link: ExternalEditLink): Promise<ConfigValues | void>;
+  onExternalEdit?(
+    node: WorkflowNode,
+    link: ExternalEditLink
+  ): ConfigValues | void | Promise<ConfigValues | void>;
 
   /**
    * Called when workflow changes (any modification)

@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mountFlowDropApp, mountWorkflowEditor } from '../../../src/lib/svelte-app.js';
 import type { NodeMetadata, Workflow, WorkflowNode } from '../../../src/lib/types/index.js';
+import * as executor from '../../../src/lib/commands/executor.js';
 import { DEFAULT_PORT_CONFIG } from '../../../src/lib/config/defaultPortConfig.js';
 import {
   hasUIActionTarget,
@@ -54,11 +55,17 @@ const mountOptions = () => ({
   features: { showToasts: false, autoSaveDraft: false }
 });
 
-async function mountApp(workflow: Workflow = makeWorkflow()) {
+async function mountApp(
+  workflow: Workflow = makeWorkflow(),
+  extra: Partial<Parameters<typeof mountFlowDropApp>[1]> = {}
+) {
   const el = document.createElement('div');
   document.body.appendChild(el);
-  return mountFlowDropApp(el, { ...mountOptions(), workflow });
+  return mountFlowDropApp(el, { ...mountOptions(), workflow, ...extra });
 }
+
+const labelOf = (app: { getWorkflow: () => Workflow | null }, id: string) =>
+  app.getWorkflow()?.nodes.find((n) => n.id === id)?.data.label;
 
 function positions(app: { getWorkflow: () => Workflow | null }): string[] {
   return (app.getWorkflow()?.nodes ?? []).map((n) => `${n.position.x},${n.position.y}`);
@@ -141,6 +148,64 @@ describe('runCommand', () => {
   });
 });
 
+describe('runCommand with a hand-built Command object', () => {
+  const malformed: Array<[string, unknown]> = [
+    ['null', null],
+    ['an unknown type', { type: 'bogus' }],
+    ['set_config without key and value', { type: 'set_config', nodeId: 'a.1' }],
+    ['add_node without a node type', { type: 'add_node' }],
+    ['rename_node without a label', { type: 'rename_node', nodeId: 'a.1' }]
+  ];
+
+  it.each(malformed)('refuses %s and changes nothing', async (_name, command) => {
+    const app = await mountApp();
+    await app.runCommand('list nodes'); // waits for the load
+    const result = await app.runCommand(command as never);
+
+    expect(result).toMatchObject({ ok: false, code: 'INVALID_ARGUMENT' });
+    // A rename with no label used to rename the node to "undefined".
+    expect(labelOf(app, 'a.1')).toBe('a.1');
+    expect(app.getWorkflow()?.nodes).toHaveLength(3);
+    expect(app.isDirty()).toBe(false);
+    expect(app.instance.history.canUndo()).toBe(false);
+    app.destroy();
+  });
+
+  it('resolves, not hangs, on a malformed object right after mounting', async () => {
+    const app = await mountApp();
+    // No earlier call: the workflow may not have loaded yet.
+    const result = await app.runCommand({ type: 'rename_node', nodeId: 'a.1' } as never);
+    expect(result).toMatchObject({ ok: false, code: 'INVALID_ARGUMENT' });
+    app.destroy();
+  });
+
+  it('still runs a well-formed object', async () => {
+    const app = await mountApp();
+    const result = await app.runCommand({
+      type: 'move_node',
+      nodeId: 'a.1',
+      position: { x: 40, y: 80 }
+    });
+    expect(result.ok).toBe(true);
+    expect(app.getWorkflow()?.nodes.find((n) => n.id === 'a.1')?.position).toEqual({
+      x: 40,
+      y: 80
+    });
+    app.destroy();
+  });
+
+  it('resolves INTERNAL_ERROR, not a rejection, when the executor throws', async () => {
+    const app = await mountApp();
+    await app.runCommand('list nodes'); // waits for the load
+    vi.spyOn(executor, 'executeCommand').mockImplementation(() => {
+      throw new Error('boom');
+    });
+    const result = await app.runCommand('layout auto');
+    expect(result).toMatchObject({ ok: false, code: 'INTERNAL_ERROR' });
+    app.destroy();
+  });
+});
+
 describe('runCommand({ baseline: true })', () => {
   it('makes the result the clean starting point: not dirty, nothing to undo', async () => {
     const app = await mountApp();
@@ -175,6 +240,39 @@ describe('runCommand({ baseline: true })', () => {
 
     const result = await app.runCommand('list nodes', { baseline: true });
     expect(result.ok).toBe(true);
+    expect(app.instance.history.canUndo()).toBe(true);
+    app.destroy();
+  });
+
+  it('does not tell the host about a successful baseline run', async () => {
+    const onDirtyStateChange = vi.fn();
+    const onWorkflowChange = vi.fn();
+    const app = await mountApp(makeWorkflow(), {
+      eventHandlers: { onDirtyStateChange, onWorkflowChange }
+    });
+    await app.runCommand('list nodes'); // waits for the load
+    onDirtyStateChange.mockClear();
+    onWorkflowChange.mockClear();
+
+    const result = await app.runCommand('layout auto', { baseline: true });
+    expect(result.ok).toBe(true);
+    expect(allAtOrigin(positions(app))).toBe(false);
+    expect(onDirtyStateChange).not.toHaveBeenCalled();
+    expect(onWorkflowChange).not.toHaveBeenCalled();
+    app.destroy();
+  });
+
+  it('refuses undo and redo as a baseline, and changes nothing', async () => {
+    const app = await mountApp();
+    await app.runCommand('rename a.1 Renamed');
+    app.instance.workflow.markAsSaved();
+    expect(app.isDirty()).toBe(false);
+
+    for (const line of ['undo', 'redo']) {
+      const result = await app.runCommand(line, { baseline: true });
+      expect(result).toMatchObject({ ok: false, code: 'INVALID_ARGUMENT' });
+    }
+    expect(labelOf(app, 'a.1')).toBe('Renamed');
     expect(app.instance.history.canUndo()).toBe(true);
     app.destroy();
   });

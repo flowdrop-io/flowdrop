@@ -272,6 +272,8 @@ export type CommandErrorCode =
   /** The graph is past what the command takes on, e.g. too many nodes to tidy at once. */
   | 'TOO_LARGE'
   | 'UNKNOWN_COMMAND'
+  /** The command threw instead of returning a result (a bug, not bad input): see the console. */
+  | 'INTERNAL_ERROR'
   | 'CONFIG_KEY_NOT_FOUND'
   /** search_types with a blank query — use list_types for the whole catalog. */
   | 'EMPTY_QUERY'

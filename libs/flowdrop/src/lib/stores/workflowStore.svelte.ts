@@ -223,6 +223,9 @@ export class WorkflowStore {
   /** Callback for workflow changes — set by the App component. */
   #onWorkflowChange: ((workflow: Workflow, changeType: WorkflowChangeType) => void) | null = null;
 
+  /** While above 0 the two callbacks above are not called (see {@link muteCallbacks}). */
+  #muted = 0;
+
   /**
    * Whether we're currently restoring from history (undo/redo).
    * When true, prevents pushing to history to avoid recursive loops.
@@ -455,9 +458,7 @@ export class WorkflowStore {
   markAsSaved(): void {
     const wasDirty = this.#editVersion !== this.#savedVersion;
     this.#savedVersion = this.#editVersion;
-    if (wasDirty && this.#onDirtyStateChange) {
-      this.#onDirtyStateChange(false);
-    }
+    if (wasDirty) this.#emitDirty(false);
   }
 
   /**
@@ -472,6 +473,31 @@ export class WorkflowStore {
       ...this.#workflow,
       ...(state.revision !== undefined && { revision: state.revision }),
       ...(state.can !== undefined && { can: state.can })
+    };
+  }
+
+  /**
+   * Stop calling the dirty-state and workflow-change callbacks until the
+   * returned release is called, e.g. while a change is made and then taken as
+   * the workflow's new clean state, which the host should not hear about.
+   *
+   * On release the host hears only what is still true: the dirty state when it
+   * differs from the one at muting, and one `'metadata'` change when the
+   * workflow is dirty and was replaced meanwhile. Release is idempotent.
+   */
+  muteCallbacks(): () => void {
+    const dirtyBefore = this.isDirty;
+    const workflowBefore = this.#workflow;
+    this.#muted++;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.#muted--;
+      if (this.#muted > 0) return;
+      const dirty = this.isDirty;
+      if (dirty !== dirtyBefore) this.#emitDirty(dirty);
+      if (dirty && this.#workflow !== workflowBefore) this.#notifyWorkflowChange('metadata');
     };
   }
 
@@ -496,10 +522,13 @@ export class WorkflowStore {
     this.#editVersion++;
     // Dirty state just flipped from clean → dirty
     if (this.#editVersion - 1 === this.#savedVersion) {
-      if (this.#onDirtyStateChange) {
-        this.#onDirtyStateChange(true);
-      }
+      this.#emitDirty(true);
     }
+  }
+
+  /** Tell the host the dirty state changed, unless the callbacks are muted. */
+  #emitDirty(isDirty: boolean): void {
+    if (this.#muted === 0) this.#onDirtyStateChange?.(isDirty);
   }
 
   /**
@@ -507,7 +536,7 @@ export class WorkflowStore {
    * Does NOT bump the version — callers that mutate must call #bumpVersion() explicitly.
    */
   #notifyWorkflowChange(changeType: WorkflowChangeType): void {
-    if (this.#workflow && this.#onWorkflowChange) {
+    if (this.#workflow && this.#onWorkflowChange && this.#muted === 0) {
       this.#onWorkflowChange(this.#workflow, changeType);
     }
   }
@@ -565,9 +594,7 @@ export class WorkflowStore {
     // Reset version counters — workflow is "clean" after initialization
     this.#editVersion = 0;
     this.#savedVersion = 0;
-    if (this.#onDirtyStateChange) {
-      this.#onDirtyStateChange(false);
-    }
+    this.#emitDirty(false);
     // Initialize history with the loaded workflow
     this.#history.initialize(workflow);
   }
@@ -827,9 +854,7 @@ export class WorkflowStore {
     this.#editVersion = 0;
     this.#savedVersion = 0;
     this.#history.clear();
-    if (this.#onDirtyStateChange) {
-      this.#onDirtyStateChange(false);
-    }
+    this.#emitDirty(false);
   }
 
   /** Update workflow metadata. */

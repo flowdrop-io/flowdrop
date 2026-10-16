@@ -7,7 +7,7 @@ import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import ConfigForm from '$lib/components/ConfigForm.svelte';
 import ExternalLinkRow from '$lib/components/ExternalLinkRow.svelte';
-import { runExternalEdit } from '$lib/utils/externalEdit.js';
+import { runExternalEdit } from '$lib/utils/externalEdit.svelte.js';
 import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
 import { createTestWorkflow, createTestNode } from '../../utils/index.js';
 import type { ExternalEditLink, WorkflowNode } from '$lib/types/index.js';
@@ -140,6 +140,37 @@ describe('ConfigForm external edit link', () => {
   });
 });
 
+describe('ConfigForm external edit with a pending field edit', () => {
+  it('commits the pending live edit before calling the host handler', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    const node = nodeWithLink();
+    node.data.metadata.configSchema = {
+      type: 'object',
+      properties: { title: { type: 'string', title: 'Title' } }
+    };
+    const order: string[] = [];
+    const onChange = vi.fn((_config: Record<string, unknown>, meta?: { commit?: boolean }) => {
+      order.push(meta?.commit ? 'commit' : 'change');
+    });
+    const handler = vi.fn(async () => {
+      order.push('host');
+    });
+    const target = mountForm({ node, commitMode: 'live', onChange, onExternalEdit: handler });
+
+    const input = target.querySelector<HTMLInputElement>('input[type="text"], input:not([type])')!;
+    input.value = 'typed';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    flushSync();
+    expect(order).toEqual(['change']);
+
+    target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]')!.click();
+    expect(order).toEqual(['change', 'commit', 'host']);
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'typed' }), {
+      commit: true
+    });
+  });
+});
+
 describe('ExternalLinkRow', () => {
   /** `prevented` records whether the row itself cancelled the click. */
   const seen = { prevented: false };
@@ -230,6 +261,43 @@ describe('runExternalEdit', () => {
     ).resolves.toBeUndefined();
     expect(cfg(fd)).toEqual({ a: 1, b: 2 });
     expect(fd.workflow.isDirty).toBe(false);
+  });
+
+  it('copies the result, so the host cannot change the node afterwards', async () => {
+    const { fd, node } = setup();
+    const result = { c: 3, nested: { d: 4 } };
+    await runExternalEdit({ node, link, handler: async () => result, store: fd.workflow });
+
+    result.c = 99;
+    result.nested.d = 99;
+    expect(cfg(fd)).toEqual({ c: 3, nested: { d: 4 } });
+  });
+
+  it('ignores an array result', async () => {
+    const { fd, node } = setup();
+    await runExternalEdit({
+      node,
+      link,
+      handler: async () => [1, 2] as never,
+      store: fd.workflow
+    });
+    expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+    expect(fd.workflow.isDirty).toBe(false);
+  });
+
+  it('hands onWritten the node as written', async () => {
+    const { fd, node } = setup();
+    const onWritten = vi.fn();
+    await runExternalEdit({
+      node,
+      link,
+      handler: async () => ({ c: 3 }),
+      store: fd.workflow,
+      onWritten
+    });
+    expect(onWritten).toHaveBeenCalledTimes(1);
+    expect(onWritten.mock.calls[0][0].id).toBe('n1');
+    expect(onWritten.mock.calls[0][0].data.config).toEqual({ c: 3 });
   });
 
   it('drops the result when the node was deleted meanwhile', async () => {

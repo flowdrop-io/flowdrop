@@ -89,7 +89,7 @@
     initializeTheme
   } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
-  import { runExternalEdit } from '../utils/externalEdit.js';
+  import { runExternalEdit } from '../utils/externalEdit.svelte.js';
   import { provideUIActionTarget } from '../commands/uiActionTarget.js';
   import { themeScope } from '../utils/themeScope.svelte.js';
   import {
@@ -1159,8 +1159,7 @@
             canWrite: () => canvasEditable,
             pending: externalEditPending,
             onWritten: (written) => {
-              const updated = fd.workflow.current?.nodes.find((n) => n.id === written.id);
-              if (updated) workflowEditorRef?.updateNodeData(updated.id, updated.data);
+              workflowEditorRef?.updateNodeData(written.id, written.data);
               void workflowEditorRef?.refreshEdgePositions(written.id);
             }
           })

@@ -58,8 +58,11 @@ export type {
   WorkflowNode,
   WorkflowEdge,
   NodeMetadata,
-  ConfigSchema
+  ConfigSchema,
+  ConfigValues,
+  ExternalEditLink
 } from './types/index.js';
+export type { Command, CommandResult, CommandErrorCode } from './commands/types.js';
 
 export type { EndpointConfig } from './config/endpoints.js';
 export type { AuthProvider } from './types/auth.js';

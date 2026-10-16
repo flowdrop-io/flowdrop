@@ -110,11 +110,13 @@
     ) => void;
     /**
      * Called instead of opening the node's external edit link, when set, with
-     * copies of the node and the link. The host opens its own form; ConfigForm awaits the call (a second click while
-     * one is pending is ignored) and logs a rejection. Writing the config the
+     * copies of the node and the link, after committing field edits still
+     * pending (as a blur would). The host opens its own form; ConfigForm awaits
+     * the call (a second click while one is pending is ignored) and logs a
+     * rejection. Writing the config the
      * handler resolves with is the caller's job: ConfigForm passes it on as is.
      */
-    onExternalEdit?: (node: WorkflowNode, link: ExternalEditLink) => Promise<unknown> | void;
+    onExternalEdit?: (node: WorkflowNode, link: ExternalEditLink) => unknown;
     /** Callback when form is saved */
     onSave?: (config: Record<string, unknown>) => void;
     /** Callback when form is cancelled */
@@ -442,6 +444,11 @@
       // One host form per node at a time.
       if (externalEditPending.has(nodeId)) return;
       externalEditPending.add(nodeId);
+      // Commit what is still in the edit buffer first: the host then sees it,
+      // and a stale buffered value cannot shadow, and later overwrite, the
+      // config the host writes back. A click on a link does not always blur the
+      // field (Safari does not focus links).
+      if (Object.keys(edits).length > 0) handleFormBlur();
       void (async () => {
         try {
           // Copies: the host must not write into the live workflow behind the editor's back.

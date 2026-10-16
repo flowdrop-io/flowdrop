@@ -21,7 +21,10 @@ export interface RunExternalEditOptions {
   node: WorkflowNode;
   link: ExternalEditLink;
   /** The host's `onExternalEdit` handler. */
-  handler: (node: WorkflowNode, link: ExternalEditLink) => Promise<ConfigValues | void>;
+  handler: (
+    node: WorkflowNode,
+    link: ExternalEditLink
+  ) => ConfigValues | void | Promise<ConfigValues | void>;
   store: ExternalEditStore;
   /**
    * Whether the editor accepts the result, asked when the handler resolves
@@ -35,7 +38,7 @@ export interface RunExternalEditOptions {
    * (the handler is not called again); the caller keeps the set alive.
    */
   pending?: Set<string>;
-  /** Called after a config was written, e.g. to refresh the canvas. */
+  /** Called with the node as written, e.g. to refresh the canvas. */
   onWritten?: (node: WorkflowNode) => void;
 }
 
@@ -43,6 +46,8 @@ export interface RunExternalEditOptions {
  * Run the host handler and apply its result.
  *
  * - A config replaces the node's config (not merged): one undo step, workflow dirty.
+ *   It is copied, so the host keeps no reference into the workflow.
+ * - Anything but a plain object (an array, a string, ...) is logged and dropped.
  * - Nothing resolved: the node is left as it is.
  * - A rejection is logged and swallowed.
  * - A node deleted while the host form was open: the result is dropped.
@@ -62,12 +67,23 @@ export async function runExternalEdit(options: RunExternalEditOptions): Promise<
   } finally {
     pending?.delete(node.id);
   }
-  if (!result || typeof result !== 'object') return;
-
-  if (canWrite && !canWrite()) {
-    logger.debug('onExternalEdit result ignored: the editor is not in edit mode');
+  if (result === undefined || result === null) return;
+  if (typeof result !== 'object' || Array.isArray(result)) {
+    logger.warn(
+      'onExternalEdit resolved with something other than a config object; ignored:',
+      result
+    );
     return;
   }
+
+  if (canWrite && !canWrite()) {
+    logger.warn('onExternalEdit result ignored: the editor is read-only or locked');
+    return;
+  }
+
+  // A copy, so the host keeps no reference into the workflow (a Svelte host's
+  // `$state` proxy included).
+  const config = $state.snapshot(result) as ConfigValues;
 
   const current = store.current?.nodes.find((n) => n.id === node.id);
   if (!current) {
@@ -77,7 +93,8 @@ export async function runExternalEdit(options: RunExternalEditOptions): Promise<
 
   // Close any open field-editing session first so this is a step of its own.
   store.finalizeNodeConfig();
-  store.updateNodeConfig(node.id, { data: { ...current.data, config: result } });
+  store.updateNodeConfig(node.id, { data: { ...current.data, config } });
   store.finalizeNodeConfig();
-  onWritten?.(current);
+  const written = store.current?.nodes.find((n) => n.id === node.id);
+  if (written) onWritten?.(written);
 }
