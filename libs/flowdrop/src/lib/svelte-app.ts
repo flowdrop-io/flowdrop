@@ -391,8 +391,8 @@ export interface MountedFlowDropApp {
    *   geometry, so the result can differ slightly from the same command run
    *   later.
    * - **`options.baseline`** makes the command's result the workflow's clean
-   *   starting point: no undo step is left and `isDirty()` is `false`
-   *   afterwards. Useful to tidy a loaded model before the user sees it. It
+   *   starting point: `isDirty()` is `false` afterwards and the undo history
+   *   starts over from it (earlier undo steps are cleared too). Useful to tidy a loaded model before the user sees it. It
    *   needs a workflow with no unsaved changes: when the workflow is dirty the
    *   command is not run and the call resolves with `{ ok: false, code:
    *   'DIRTY' }`. A failed command changes nothing. A draft saved earlier is
