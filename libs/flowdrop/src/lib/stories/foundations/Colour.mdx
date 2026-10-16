@@ -1,0 +1,35 @@
+import { Meta, Story } from '@storybook/addon-docs/blocks';
+import * as Colour from './Colour.stories.svelte';
+
+<Meta of={Colour} />
+
+# Colour
+
+Most of the editor is neutral: surfaces, text and thin lines in greys. Colour appears only where
+it tells you something:
+
+- the **primary** colour for the one main action of a view;
+- the **accent** for selection, keyboard focus and things that are running;
+- **status** colours only where something has a status.
+
+If everything is coloured, nothing stands out. Keep new UI neutral and let these few colours
+carry the meaning.
+
+## The colours you will use
+
+<Story of={Colour.KeyColoursStory} />
+
+Values come from the skin and the light or dark scheme selected in the toolbar. **set by skin** marks a value the skin
+chooses instead of the library default.
+
+## Node and edge colours
+
+Node categories get their own hues (`--fd-node-blue`, `--fd-node-emerald`, …), and wires use
+`--fd-edge-*`. These are editor-part tokens: change them only to recolour nodes or wires. Run
+status has its own roles, see [Run status](?path=/docs/foundations-run-status--docs).
+
+## All colour tokens
+
+Every colour token, grouped as in `tokens.css`. Open a group or search.
+
+<Story of={Colour.AllColourTokens} />

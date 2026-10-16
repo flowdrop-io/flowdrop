@@ -1,11 +1,19 @@
 <!--
-  Status Label Component
-  Dedicated component for displaying status labels with consistent styling
+  @component
+  StatusLabel: a small text label for a status.
+
+  Exported for host apps; the editor uses `StatusPill` instead. It only styles the text you
+  pass, so get the word from your own status mapping.
+
+  **Use it for** a plain status word in your own list.
+  **Not for** a status with an icon or colour; use `StatusPill`.
 -->
 
 <script lang="ts">
   interface Props {
+    /** The text to show. */
     label: string;
+    /** Extra classes on the root. */
     class?: string;
   }
 

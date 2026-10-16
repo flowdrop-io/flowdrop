@@ -7,7 +7,9 @@
 
 import { getDefaultInstance, type FlowDropInstance } from '../stores/instanceContainer.svelte.js';
 import { buildTypeMap, type CommandContext, type CommandDispatch, type UIAction } from './types.js';
-import type { NodeMetadata } from '../types/index.js';
+import type { NodeMetadata, WorkflowNode } from '../types/index.js';
+import { getEditorSettings } from '../stores/settingsStore.svelte.js';
+import { resolveComponentName } from '../utils/nodeTypes.js';
 
 /**
  * Creates a CommandContext that bridges the command system to the live Svelte stores.
@@ -93,6 +95,21 @@ export function createStoreCommandContext(
     getWorkflow: () => readWorkflow(),
     nodeTypes,
     typeMap: buildTypeMap(nodeTypes),
-    dispatch
+    dispatch,
+    // Node layout reads the canvas's measurement; without a canvas it falls back to computed geometry.
+    measureNode: (nodeId) => fd.measureNode?.(nodeId),
+    visualType: (node: WorkflowNode) => {
+      const metadata = node.data?.metadata;
+      return metadata
+        ? resolveComponentName(fd.nodes, metadata, node.data?.config?.nodeType as string)
+        : 'workflowNode';
+    },
+    get showDescriptions() {
+      return getEditorSettings().showNodeDescriptions;
+    },
+    get layoutGaps() {
+      const { layoutGapX, layoutGapY, gridSize } = getEditorSettings();
+      return { gapX: layoutGapX, gapY: layoutGapY, gridSize };
+    }
   };
 }

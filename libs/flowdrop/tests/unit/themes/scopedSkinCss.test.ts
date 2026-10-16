@@ -19,11 +19,17 @@ describe('buildScopedSkinCss', () => {
     expect(css).not.toContain(':root');
   });
 
-  it('scopes dark tokens under data-theme (on <html> or any ancestor)', () => {
+  it('scopes dark tokens to the scope element carrying data-theme', () => {
     const css = buildScopedSkinCss('a1', { darkTokens: { background: '#000' } });
-    expect(css).toContain(`[data-theme='dark'] [data-fd-scope="a1"] {`);
+    expect(css).toContain(`[data-fd-scope="a1"][data-theme='dark'] {`);
     expect(css).toContain('--fd-background: #000;');
-    expect(css).not.toMatch(/^\[data-fd-scope/m);
+    // the dark rule outranks the light rule and tokens.css's own dark block
+    expect(css).not.toMatch(/^\[data-fd-scope="a1"\] \{/m);
+  });
+
+  it('light rule carries a doubled scope so it outranks tokens.css dark on the same element', () => {
+    const css = buildScopedSkinCss('a1', { tokens: { primary: 'red' } });
+    expect(css).toContain('[data-fd-scope="a1"][data-fd-scope="a1"] {');
   });
 
   it('redeclares aliases that follow a token the skin sets, transitively', () => {

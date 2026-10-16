@@ -12,6 +12,7 @@ import {
   formatTimestamp,
   getLogLevelIcon,
   getRoleIcon,
+  getEmptyTurnLabel,
   getOriginBadge,
   getRoleLabel,
   groupAdjacent,
@@ -121,15 +122,15 @@ describe('getRoleLabel', () => {
 });
 
 describe('getOriginBadge', () => {
-  it('badges engine, playground and interrupt', () => {
+  it('badges engine and interrupt', () => {
     expect(getOriginBadge({ origin: 'engine' })).toBe('engine');
-    expect(getOriginBadge({ origin: 'playground' })).toBe('playground');
     expect(getOriginBadge({ origin: 'interrupt' })).toBe('interrupt');
   });
 
   it('never badges the conversation itself or an absent origin', () => {
     expect(getOriginBadge({ origin: 'user' })).toBeNull();
     expect(getOriginBadge({ origin: 'workflow' })).toBeNull();
+    expect(getOriginBadge({ origin: 'playground' })).toBeNull();
     expect(getOriginBadge({})).toBeNull();
   });
 });
@@ -159,5 +160,33 @@ describe('groupAdjacent', () => {
       { kind: 'single', item: 'a' },
       { kind: 'group', key: 'l1', items: ['l1', 'l2'] }
     ]);
+  });
+});
+
+describe('getEmptyTurnLabel', () => {
+  const LABELS = {
+    run: 'Started a run',
+    withInputs: ({ names }: { names: string }) => `Ran with ${names}`
+  };
+
+  it('is null for a turn with text, and for other roles', () => {
+    expect(getEmptyTurnLabel({ role: 'user', content: 'hi' }, LABELS)).toBeNull();
+    expect(getEmptyTurnLabel({ role: 'assistant', content: '' }, LABELS)).toBeNull();
+  });
+
+  it('says a run was started for an empty turn with no inputs', () => {
+    expect(getEmptyTurnLabel({ role: 'user', content: '' }, LABELS)).toBe('Started a run');
+    expect(
+      getEmptyTurnLabel({ role: 'user', content: '  ', metadata: { inputs: [] } }, LABELS)
+    ).toBe('Started a run');
+  });
+
+  it('names the inputs an empty turn carried', () => {
+    expect(
+      getEmptyTurnLabel(
+        { role: 'user', content: '', metadata: { inputs: { values: [2, 3], mode: 'sum' } } },
+        LABELS
+      )
+    ).toBe('Ran with values, mode');
   });
 });

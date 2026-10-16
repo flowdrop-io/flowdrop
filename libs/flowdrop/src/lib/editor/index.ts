@@ -244,6 +244,17 @@ export {
   getExecutionOrder
 } from '../utils/connections.js';
 
+export {
+  EVENT_PORT_ID,
+  RESERVED_INPUT_EVENT_PREFIX,
+  isTriggerNode,
+  isTriggerEventInput,
+  isEventInputConnection,
+  reservedInputs,
+  isReservedInputName
+} from '../utils/reservedPorts.js';
+export type { ReservedInput } from '../utils/reservedPorts.js';
+
 // ============================================================================
 // Port Shape Symbols
 // ============================================================================
@@ -298,7 +309,9 @@ export type {
   PortConfig,
   ConfigSchema,
   ConfigProperty,
-  ConfigEditOptions
+  ConfigEditOptions,
+  ConfigValues,
+  ExternalEditLink
 } from '../types/index.js';
 
 export type { WorkflowEditorConfig, EditorFeatures, UIConfig, APIConfig } from '../types/config.js';
@@ -313,9 +326,17 @@ export type {
 
 export type { EndpointConfig } from '../config/endpoints.js';
 
-export type { UIAction } from '../commands/types.js';
+export type { UIAction, Command, CommandResult, CommandErrorCode } from '../commands/types.js';
 
-export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from '../svelte-app.js';
+export type { EditorPlaygroundConfig } from '../types/playground.js';
+
+export type {
+  FlowDropMountOptions,
+  MountedFlowDropApp,
+  RunCommandOptions,
+  NavbarAction,
+  NavbarBranding
+} from '../svelte-app.js';
 
 export type {
   ContextMenuActions,

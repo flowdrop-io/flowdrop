@@ -28,7 +28,8 @@ function makeActions(): ContextMenuActions {
     addNode: vi.fn(() => 'new-1'),
     deleteNodes: vi.fn(async () => {}),
     openConfig: vi.fn(),
-    editInPlace: vi.fn()
+    editInPlace: vi.fn(),
+    duplicateNode: vi.fn()
   };
 }
 
@@ -61,12 +62,50 @@ const captionMeta = meta({ node_type_id: 'caption', name: 'Caption', type: 'capt
 const ids = (entries: ContextMenuEntry[]): string[] => entries.map((e) => e.id);
 
 describe('buildDefaultContextMenuEntries', () => {
+  it('Tidy node: offered on a node and a selection only when the editor provides it', () => {
+    const ctx = makeCtx('node', [node('a')]);
+    expect(ids(buildDefaultContextMenuEntries(ctx))).not.toContain('tidy-node');
+
+    ctx.actions.tidyNodes = vi.fn();
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual([
+      'configure',
+      'duplicate',
+      'tidy-node',
+      'separator-node',
+      'delete'
+    ]);
+    expect(entries[2]).toMatchObject({ label: 'Tidy node', shortcut: '⇧S', icon: 'mdi:broom' });
+    runContextMenuEntry(entries[2], ctx);
+    expect(ctx.actions.tidyNodes).toHaveBeenCalledWith(['a']);
+
+    const many = makeCtx('selection', [node('a'), node('b')]);
+    many.actions.tidyNodes = vi.fn();
+    const selection = buildDefaultContextMenuEntries(many);
+    expect(ids(selection)).toEqual(['tidy-node', 'separator-selection', 'delete']);
+    expect(selection[0]).toMatchObject({ label: 'Tidy 2 nodes' });
+    runContextMenuEntry(selection[0], many);
+    expect(many.actions.tidyNodes).toHaveBeenCalledWith(['a', 'b']);
+  });
+
+  it('pane: Tidy up when the editor provides it, after Add caption', () => {
+    const ctx = makeCtx('pane');
+    expect(buildDefaultContextMenuEntries(ctx)).toEqual([]);
+    ctx.actions.tidyLayout = vi.fn();
+    ctx.nodeTypes = [captionMeta];
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual(['add-caption', 'tidy-layout']);
+    expect(entries[1]).toMatchObject({ label: 'Tidy up', shortcut: '⇧⌥T', icon: 'mdi:broom' });
+    runContextMenuEntry(entries[1], ctx);
+    expect(ctx.actions.tidyLayout).toHaveBeenCalled();
+  });
+
   it('node: Configure, separator, Delete', () => {
     const entries = buildDefaultContextMenuEntries(makeCtx('node', [node('a')]));
-    expect(ids(entries)).toEqual(['configure', 'separator-node', 'delete']);
-    expect(entries[0]).toMatchObject({ label: 'Configure', shortcut: 'Enter' });
-    expect(entries[2]).toMatchObject({ label: 'Delete', shortcut: 'Delete' });
-    expect(isSeparator(entries[1])).toBe(true);
+    expect(ids(entries)).toEqual(['configure', 'duplicate', 'separator-node', 'delete']);
+    expect(entries[0]).toMatchObject({ label: 'Configure', shortcut: '↵' });
+    expect(entries[3]).toMatchObject({ label: 'Delete', shortcut: '⌫', danger: true });
+    expect(isSeparator(entries[2])).toBe(true);
   });
 
   it('shortcut hints come from the messages', () => {
@@ -77,12 +116,12 @@ describe('buildDefaultContextMenuEntries', () => {
     };
     const entries = buildDefaultContextMenuEntries(makeCtx('node', [node('a')]), messages);
     expect(entries[0]).toMatchObject({ shortcut: 'Eingabe' });
-    expect(entries[2]).toMatchObject({ shortcut: 'Entf' });
+    expect(entries[3]).toMatchObject({ shortcut: 'Entf' });
   });
 
   it('node: Configure and Delete call the matching actions', () => {
     const ctx = makeCtx('node', [node('a')]);
-    const [configure, , del] = buildDefaultContextMenuEntries(ctx);
+    const [configure, , , del] = buildDefaultContextMenuEntries(ctx);
     runContextMenuEntry(configure, ctx);
     runContextMenuEntry(del, ctx);
     expect(ctx.actions.openConfig).toHaveBeenCalledWith('a');
@@ -96,6 +135,21 @@ describe('buildDefaultContextMenuEntries', () => {
     expect(entries[0]).toMatchObject({ id: 'delete', label: 'Delete 3 nodes' });
     runContextMenuEntry(entries[0], ctx);
     expect(ctx.actions.deleteNodes).toHaveBeenCalledWith(['a', 'b', 'c']);
+  });
+
+  it('node: Duplicate runs duplicateNode; Swap node only when the editor offers it', () => {
+    const ctx = makeCtx('node', [node('a')]);
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(entries[1]).toMatchObject({ id: 'duplicate', label: 'Duplicate' });
+    runContextMenuEntry(entries[1], ctx);
+    expect(ctx.actions.duplicateNode).toHaveBeenCalledWith('a');
+
+    const swapCtx = makeCtx('node', [node('b')]);
+    swapCtx.actions.swapNode = vi.fn();
+    const withSwap = buildDefaultContextMenuEntries(swapCtx);
+    expect(ids(withSwap)).toEqual(['configure', 'duplicate', 'swap', 'separator-node', 'delete']);
+    runContextMenuEntry(withSwap[2], swapCtx);
+    expect(swapCtx.actions.swapNode).toHaveBeenCalledWith('b');
   });
 
   it('plural label: two nodes', () => {
@@ -136,8 +190,8 @@ describe('buildDefaultContextMenuEntries', () => {
     const entries = buildDefaultContextMenuEntries(ctx, defaultMessages.contextMenu, {
       editsInPlace: () => true
     });
-    expect(ids(entries)).toEqual(['edit-text', 'separator-node', 'delete']);
-    expect(entries[0]).toMatchObject({ label: 'Edit text', shortcut: 'Enter' });
+    expect(ids(entries)).toEqual(['edit-text', 'duplicate', 'separator-node', 'delete']);
+    expect(entries[0]).toMatchObject({ label: 'Edit text', shortcut: '↵' });
     runContextMenuEntry(entries[0], ctx);
     expect(ctx.actions.editInPlace).toHaveBeenCalledWith('a');
     expect(ctx.actions.openConfig).not.toHaveBeenCalled();
@@ -148,9 +202,10 @@ describe('buildDefaultContextMenuEntries', () => {
     const withPredicate = buildDefaultContextMenuEntries(ctx, defaultMessages.contextMenu, {
       editsInPlace: (n) => n.id === 'caption.1'
     });
-    expect(ids(withPredicate)).toEqual(['configure', 'separator-node', 'delete']);
+    expect(ids(withPredicate)).toEqual(['configure', 'duplicate', 'separator-node', 'delete']);
     expect(ids(buildDefaultContextMenuEntries(ctx))).toEqual([
       'configure',
+      'duplicate',
       'separator-node',
       'delete'
     ]);
@@ -161,7 +216,7 @@ describe('buildDefaultContextMenuEntries', () => {
     const entries = resolveContextMenuEntries(ctx, undefined, defaultMessages.contextMenu, {
       editsInPlace: () => true
     });
-    expect(ids(entries)).toEqual(['edit-text', 'separator-node', 'delete']);
+    expect(ids(entries)).toEqual(['edit-text', 'duplicate', 'separator-node', 'delete']);
   });
 
   it('uses the supplied messages', () => {
@@ -180,7 +235,12 @@ describe('resolveContextMenuEntries', () => {
 
   it('returns the defaults when there is no items option', () => {
     const ctx = makeCtx('node', [node('a')]);
-    expect(ids(resolveContextMenuEntries(ctx))).toEqual(['configure', 'separator-node', 'delete']);
+    expect(ids(resolveContextMenuEntries(ctx))).toEqual([
+      'configure',
+      'duplicate',
+      'separator-node',
+      'delete'
+    ]);
   });
 
   it('the pane menu is empty by default, so no menu opens there', () => {
@@ -195,8 +255,8 @@ describe('resolveContextMenuEntries', () => {
     const entries = resolveContextMenuEntries(ctx, {
       items: (_c, defaults) => [...defaults, { id: 'extra', label: 'Extra', run }]
     });
-    expect(ids(entries)).toEqual(['configure', 'separator-node', 'delete', 'extra']);
-    runContextMenuEntry(entries[3], ctx);
+    expect(ids(entries)).toEqual(['configure', 'duplicate', 'separator-node', 'delete', 'extra']);
+    runContextMenuEntry(entries[4], ctx);
     expect(run).toHaveBeenCalledWith(ctx);
   });
 
@@ -211,14 +271,14 @@ describe('resolveContextMenuEntries', () => {
     const entries = resolveContextMenuEntries(makeCtx('node', [node('a')]), {
       items: (_c, defaults) => defaults.filter((e) => e.id !== 'delete')
     });
-    expect(ids(entries)).toEqual(['configure']);
+    expect(ids(entries)).toEqual(['configure', 'duplicate']);
   });
 
   it('consumer returning the defaults unchanged yields the defaults', () => {
     const entries = resolveContextMenuEntries(makeCtx('node', [node('a')]), {
       items: (_c, defaults) => defaults
     });
-    expect(ids(entries)).toEqual(['configure', 'separator-node', 'delete']);
+    expect(ids(entries)).toEqual(['configure', 'duplicate', 'separator-node', 'delete']);
   });
 
   it('consumer receives the context and the defaults', () => {
@@ -236,7 +296,7 @@ describe('resolveContextMenuEntries', () => {
         throw new Error('boom');
       }
     });
-    expect(ids(entries)).toEqual(['configure', 'separator-node', 'delete']);
+    expect(ids(entries)).toEqual(['configure', 'duplicate', 'separator-node', 'delete']);
     expect(errorSpy).toHaveBeenCalled();
   });
 
@@ -244,7 +304,7 @@ describe('resolveContextMenuEntries', () => {
     const entries = resolveContextMenuEntries(makeCtx('node', [node('a')]), {
       items: (() => 'nope') as unknown as () => ContextMenuEntry[]
     });
-    expect(ids(entries)).toEqual(['configure', 'separator-node', 'delete']);
+    expect(ids(entries)).toEqual(['configure', 'duplicate', 'separator-node', 'delete']);
     expect(errorSpy).toHaveBeenCalled();
   });
 });
@@ -298,5 +358,87 @@ describe('cleanSeparators', () => {
 
   it('returns an empty list for only separators', () => {
     expect(cleanSeparators([sep('s1'), sep('s2')])).toEqual([]);
+  });
+});
+
+describe('port exposure entries', () => {
+  function withPortActions(ctx: ContextMenuContext, hide?: number, show?: number) {
+    ctx.actions.hideUnconnectedPorts = vi.fn();
+    ctx.actions.showHiddenPorts = vi.fn();
+    if (hide !== undefined) ctx.actions.countUnconnectedPorts = () => hide;
+    if (show !== undefined) ctx.actions.countHiddenPorts = () => show;
+    return ctx;
+  }
+
+  it('absent when the editor offers neither action', () => {
+    const entries = buildDefaultContextMenuEntries(makeCtx('node', [node('a')]));
+    expect(ids(entries)).not.toContain('hide-unconnected-ports');
+    expect(ids(entries)).not.toContain('show-hidden-ports');
+  });
+
+  it('node: both entries sit after Tidy node and before the separator, with counts', () => {
+    const ctx = withPortActions(makeCtx('node', [node('a')]), 3, 1);
+    ctx.actions.tidyNodes = vi.fn();
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual([
+      'configure',
+      'duplicate',
+      'tidy-node',
+      'hide-unconnected-ports',
+      'show-hidden-ports',
+      'separator-node',
+      'delete'
+    ]);
+    expect(entries[3]).toMatchObject({
+      label: 'Hide unconnected ports (3)',
+      icon: 'mdi:eye-off-outline'
+    });
+    expect(entries[3]).not.toMatchObject({ disabled: true });
+    expect(entries[4]).toMatchObject({ label: 'Show hidden ports (1)', icon: 'mdi:eye-outline' });
+    runContextMenuEntry(entries[3], ctx);
+    runContextMenuEntry(entries[4], ctx);
+    expect(ctx.actions.hideUnconnectedPorts).toHaveBeenCalledWith(['a']);
+    expect(ctx.actions.showHiddenPorts).toHaveBeenCalledWith(['a']);
+  });
+
+  it('with nothing to change the entry is disabled and wears the plain label', () => {
+    const ctx = withPortActions(makeCtx('node', [node('a')]), 0, 0);
+    const entries = buildDefaultContextMenuEntries(ctx);
+    const hide = entries.find((e) => e.id === 'hide-unconnected-ports');
+    const show = entries.find((e) => e.id === 'show-hidden-ports');
+    expect(hide).toMatchObject({ label: 'Hide unconnected ports', disabled: true });
+    expect(show).toMatchObject({ label: 'Show hidden ports', disabled: true });
+    runContextMenuEntry(hide!, ctx);
+    expect(ctx.actions.hideUnconnectedPorts).not.toHaveBeenCalled();
+  });
+
+  it('without count helpers the entries are offered enabled, plain', () => {
+    const ctx = withPortActions(makeCtx('node', [node('a')]));
+    const hide = buildDefaultContextMenuEntries(ctx).find((e) => e.id === 'hide-unconnected-ports');
+    expect(hide).toMatchObject({ label: 'Hide unconnected ports' });
+    expect(hide).not.toMatchObject({ disabled: true });
+  });
+
+  it('an in-place node has no ports, so no entries', () => {
+    const ctx = withPortActions(makeCtx('node', [node('a')]), 2, 2);
+    const entries = buildDefaultContextMenuEntries(ctx, defaultMessages.contextMenu, {
+      editsInPlace: () => true
+    });
+    expect(ids(entries)).not.toContain('hide-unconnected-ports');
+    expect(ids(entries)).not.toContain('show-hidden-ports');
+  });
+
+  it('selection: both entries apply to every selected node', () => {
+    const ctx = withPortActions(makeCtx('selection', [node('a'), node('b')]), 5, 2);
+    const entries = buildDefaultContextMenuEntries(ctx);
+    expect(ids(entries)).toEqual([
+      'hide-unconnected-ports',
+      'show-hidden-ports',
+      'separator-selection',
+      'delete'
+    ]);
+    expect(entries[0]).toMatchObject({ label: 'Hide unconnected ports (5)' });
+    runContextMenuEntry(entries[1], ctx);
+    expect(ctx.actions.showHiddenPorts).toHaveBeenCalledWith(['a', 'b']);
   });
 });

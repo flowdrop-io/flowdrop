@@ -1,7 +1,10 @@
 <!--
-  FormAutocomplete Component
-  Text input with autocomplete suggestions fetched from a callback URL
-  
+  @component
+  A text input with suggestions fetched from a URL as the person types, for one value or several (shown as removable tags).
+
+  **Use it for** values that come from a server list, such as users or content types.
+  **Not for** a short fixed list (use `FormSelect`).
+
   Features:
   - Single or multiple selection support
   - Selected values displayed as removable tags with light blue background
@@ -21,6 +24,7 @@
 -->
 
 <script lang="ts">
+  import { resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
   import { getContext, onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
@@ -68,6 +72,7 @@
     'flowdrop:getAuthProvider'
   );
   const getBaseUrl = getContext<(() => string) | undefined>('flowdrop:getBaseUrl');
+  const getApiBaseUrl = getContext<(() => string) | undefined>('flowdrop:getApiBaseUrl');
   const getFormValues = getContext<(() => Record<string, unknown>) | undefined>(
     'flowdrop:getFormValues'
   );
@@ -187,10 +192,10 @@
    * @returns Full URL with query parameter
    */
   function buildUrl(query: string): string {
-    const baseUrl = getBaseUrl?.() ?? '';
-    const url = autocomplete.url.startsWith('http')
-      ? autocomplete.url
-      : `${baseUrl}${autocomplete.url}`;
+    // SchemaForm's `baseUrl` stays a prefix for `/path` URLs, as it always was;
+    // a URL without a leading slash resolves against it or the API base.
+    const prefix = getBaseUrl?.() ?? '';
+    const url = resolveAutocompleteUrl(autocomplete.url, prefix || getApiBaseUrl?.(), prefix);
 
     const separator = url.includes('?') ? '&' : '?';
     let fullUrl = `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
@@ -799,7 +804,7 @@
     min-height: 2.625rem;
     padding: var(--fd-space-3xs) 2.5rem var(--fd-space-3xs) var(--fd-space-md);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     font-size: var(--fd-text-sm);
     font-family: inherit;
     color: var(--fd-foreground);
@@ -995,7 +1000,7 @@
     list-style: none;
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     box-shadow: var(--fd-shadow-lg);
     overflow-y: auto;
     max-height: inherit;

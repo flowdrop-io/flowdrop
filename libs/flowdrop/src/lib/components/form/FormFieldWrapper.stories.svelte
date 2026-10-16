@@ -1,53 +1,95 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import FormFieldWrapper from './FormFieldWrapper.svelte';
+  import FormTextField from './FormTextField.svelte';
+  import FormToggle from './FormToggle.svelte';
 
   const { Story } = defineMeta({
-    title: 'Form/FormFieldWrapper',
+    title: 'Editor/Forms/Field wrapper',
     component: FormFieldWrapper,
     tags: ['autodocs'],
+    parameters: { layout: 'padded' },
     argTypes: {
       label: { control: 'text' },
       required: { control: 'boolean' },
       description: { control: 'text' }
     },
-    args: {
-      id: 'demo-wrapper',
-      label: 'Field Label'
-    }
+    args: { id: 'subject', label: 'Subject' }
   });
 </script>
 
-<Story name="Default" args={{ label: 'Username' }}>
-  <input
-    type="text"
-    id="demo-wrapper"
-    placeholder="Enter username"
-    style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--fd-border); border-radius: var(--fd-radius-lg); font-size: var(--fd-text-sm);"
-  />
+<script lang="ts">
+  let subject = $state('Your order has shipped');
+  let stream = $state(true);
+</script>
+
+<Story
+  name="In the editor"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The frame the field factory puts around every field: label, required mark, the field, and its help text.'
+      }
+    }
+  }}
+>
+  <div style="max-width: 22rem">
+    <FormFieldWrapper
+      id="subject"
+      label="Subject"
+      required
+      description="Shown in the email header."
+    >
+      <FormTextField
+        id="subject"
+        value={subject}
+        ariaDescribedBy="subject-description"
+        onChange={(v) => (subject = v)}
+      />
+    </FormFieldWrapper>
+  </div>
 </Story>
 
 <Story
-  name="With Description"
-  args={{
-    label: 'Email',
-    description: "We'll never share your email with anyone.",
-    required: true
+  name="With a switch"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story: "With `inline`, the switch sits on the label's row and the help goes underneath."
+      }
+    }
   }}
 >
-  <input
-    type="email"
-    id="demo-wrapper"
-    placeholder="email@example.com"
-    style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--fd-border); border-radius: var(--fd-radius-lg); font-size: var(--fd-text-sm);"
-  />
+  <div style="max-width: 22rem">
+    <FormFieldWrapper
+      id="stream"
+      label="Stream the reply"
+      inline
+      description="Send words as they arrive."
+    >
+      <FormToggle id="stream" value={stream} onChange={(v) => (stream = v)} />
+    </FormFieldWrapper>
+  </div>
 </Story>
 
-<Story name="Required" args={{ label: 'Password', required: true }}>
-  <input
-    type="password"
-    id="demo-wrapper"
-    placeholder="Enter password"
-    style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--fd-border); border-radius: var(--fd-radius-lg); font-size: var(--fd-text-sm);"
-  />
+<Story
+  name="With a note"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          '`aside` adds a short muted note on the label row, as an array field does ("Matched in order").'
+      }
+    }
+  }}
+>
+  <div style="max-width: 22rem">
+    <FormFieldWrapper id="rules" label="Rules" aside="Matched in order">
+      <FormTextField id="rules" value="" onChange={() => {}} placeholder="First rule" />
+    </FormFieldWrapper>
+  </div>
 </Story>

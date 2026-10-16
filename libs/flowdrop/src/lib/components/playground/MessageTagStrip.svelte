@@ -1,8 +1,10 @@
 <!--
-  MessageTagStrip Component
+  @component
+  A wrapping row of message tags.
+  The user sees it under a message that carries tags, and nothing when there are none. It holds the layout that the message types used to copy each.
 
-  A flex-wrapped row of MessageTagChips. Encapsulates the layout the four
-  message variants used to copy individually.
+  **Use it for** all the tags of one message.
+  **Not for** a single tag; use `MessageTagChip` instead.
 -->
 
 <script lang="ts">
@@ -10,6 +12,7 @@
   import MessageTagChip from './MessageTagChip.svelte';
 
   interface Props {
+    /** The server-sent tags to show, in order. */
     tags: MessageTag[];
   }
 

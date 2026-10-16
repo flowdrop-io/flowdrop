@@ -108,33 +108,36 @@ FlowDrop's token system has three tiers:
 
 ### Spacing
 
-| Token            | Value      | Pixels |
-| ---------------- | ---------- | ------ |
-| `--fd-space-0`   | `0`        | 0px    |
-| `--fd-space-3xs` | `0.25rem`  | 4px    |
-| `--fd-space-2xs` | `0.375rem` | 6px    |
-| `--fd-space-xs`  | `0.5rem`   | 8px    |
-| `--fd-space-sm`  | `0.625rem` | 10px   |
-| `--fd-space-md`  | `0.75rem`  | 12px   |
-| `--fd-space-lg`  | `0.875rem` | 14px   |
-| `--fd-space-xl`  | `1rem`     | 16px   |
-| `--fd-space-2xl` | `1.25rem`  | 20px   |
-| `--fd-space-3xl` | `1.5rem`   | 24px   |
-| `--fd-space-4xl` | `2rem`     | 32px   |
-| `--fd-space-5xl` | `2.5rem`   | 40px   |
-| `--fd-space-6xl` | `3rem`     | 48px   |
-| `--fd-space-7xl` | `4rem`     | 64px   |
+> **Values may move in minor releases; names stay stable until 3.0.** The scales below were collapsed in 2.12.0
+> (4px spacing grid, six type sizes, `--fd-radius-md` 4px). If you override a token, your value still wins.
+
+| Token            | Value     | Pixels |
+| ---------------- | --------- | ------ |
+| `--fd-space-0`   | `0`       | 0px    |
+| `--fd-space-3xs` | `0.25rem` | 4px    |
+| `--fd-space-2xs` | `0.25rem` | 4px    |
+| `--fd-space-xs`  | `0.5rem`  | 8px    |
+| `--fd-space-sm`  | `0.5rem`  | 8px    |
+| `--fd-space-md`  | `0.75rem` | 12px   |
+| `--fd-space-lg`  | `0.75rem` | 12px   |
+| `--fd-space-xl`  | `1rem`    | 16px   |
+| `--fd-space-2xl` | `1.25rem` | 20px   |
+| `--fd-space-3xl` | `1.5rem`  | 24px   |
+| `--fd-space-4xl` | `2rem`    | 32px   |
+| `--fd-space-5xl` | `2.5rem`  | 40px   |
+| `--fd-space-6xl` | `3rem`    | 48px   |
+| `--fd-space-7xl` | `4rem`    | 64px   |
 
 ### Border Radius
 
-| Token              | Value      | Pixels     |
-| ------------------ | ---------- | ---------- |
-| `--fd-radius-sm`   | `0.25rem`  | 4px        |
-| `--fd-radius-md`   | `0.375rem` | 6px        |
-| `--fd-radius-lg`   | `0.5rem`   | 8px        |
-| `--fd-radius-xl`   | `0.75rem`  | 12px       |
-| `--fd-radius-2xl`  | `1rem`     | 16px       |
-| `--fd-radius-full` | `9999px`   | Pill shape |
+| Token              | Value     | Pixels     |
+| ------------------ | --------- | ---------- |
+| `--fd-radius-sm`   | `0.25rem` | 4px        |
+| `--fd-radius-md`   | `0.25rem` | 4px        |
+| `--fd-radius-lg`   | `0.5rem`  | 8px        |
+| `--fd-radius-xl`   | `0.75rem` | 12px       |
+| `--fd-radius-2xl`  | `1rem`    | 16px       |
+| `--fd-radius-full` | `9999px`  | Pill shape |
 
 ### Shadows
 
@@ -147,14 +150,19 @@ FlowDrop's token system has three tiers:
 
 ### Typography
 
-| Token            | Value      | Pixels |
-| ---------------- | ---------- | ------ |
-| `--fd-text-xs`   | `0.75rem`  | 12px   |
-| `--fd-text-sm`   | `0.875rem` | 14px   |
-| `--fd-text-base` | `1rem`     | 16px   |
-| `--fd-text-lg`   | `1.125rem` | 18px   |
-| `--fd-text-xl`   | `1.25rem`  | 20px   |
-| `--fd-text-2xl`  | `1.5rem`   | 24px   |
+Six visible sizes: 11 meta, 12 small, 13 body, 15 title, 20 heading, 24 display. Aliased names (`sm`=`xsm`, `base`=`md`, `lg`=`xl`) are kept for compatibility.
+
+| Token            | Value       | Pixels |
+| ---------------- | ----------- | ------ |
+| `--fd-text-2xs`  | `0.6875rem` | 11px   |
+| `--fd-text-xs`   | `0.75rem`   | 12px   |
+| `--fd-text-xsm`  | `0.8125rem` | 13px   |
+| `--fd-text-sm`   | `0.8125rem` | 13px   |
+| `--fd-text-md`   | `0.9375rem` | 15px   |
+| `--fd-text-base` | `0.9375rem` | 15px   |
+| `--fd-text-lg`   | `1.25rem`   | 20px   |
+| `--fd-text-xl`   | `1.25rem`   | 20px   |
+| `--fd-text-2xl`  | `1.5rem`    | 24px   |
 
 ### Transitions
 
@@ -169,7 +177,7 @@ FlowDrop's token system has three tiers:
 | Token                 | Description         | Default |
 | --------------------- | ------------------- | ------- |
 | `--fd-sidebar-width`  | Sidebar panel width | `320px` |
-| `--fd-navbar-height`  | Navbar height       | `60px`  |
+| `--fd-navbar-height`  | Navbar height       | `48px`  |
 | `--fd-toolbar-height` | Toolbar height      | `40px`  |
 
 ### Node Layout (10px Grid)
@@ -301,17 +309,57 @@ In **dark mode** (`data-theme="dark"`), every `--fd-node-*` colour above is over
 
 ## Dark Mode
 
-The token system supports dark mode. Semantic color tokens (surfaces, primary, accent, status, node port type colors, edges, etc.) have dark-mode equivalents for accessibility. Enable dark mode with:
+The token system supports dark mode. Semantic color tokens (surfaces, primary, accent, status, node port type colors, edges, etc.) have dark-mode equivalents for accessibility. Choose the scheme with the `theme` setting (`light`, `dark`, `auto` or `host`). The resolved scheme is
+`data-theme` on each editor's own scope element (and on its portalled overlays); that attribute is the
+source of truth and what switches the dark palette.
 
 ```html
-<html data-theme="dark"></html>
+<div class="flowdrop-root" data-theme="dark">...</div>
 ```
 
-Or via JavaScript:
+`[data-theme='dark']` also matches an ancestor, so a `data-theme="dark"` set by the host on `<html>` darkens
+the palette for everything below it.
 
-```javascript
-document.documentElement.setAttribute('data-theme', 'dark');
+> **Deprecated: the `<html data-theme>` mirror.** Through 2.11.0 the library wrote the resolved scheme to
+> `<html data-theme>`, and host pages keyed their own styles on `html[data-theme]`. The editor still mirrors
+> its resolved scheme there (last resolved wins with several editors; the attribute is restored or removed
+> when the last editor unmounts), but this is a compatibility behaviour and is removed in 3.0. Read the scheme
+> from the editor's scope element, or from `resolvedTheme()` (core export), instead.
+
+## Layout Switches and Skin Fonts
+
+A skin changes the **look** (colours, radii, shadows, optionally a font). Which variant of a piece of chrome is shown is **structure**, and lives in the theme's `config.display`:
+
+```ts
+<App
+  theme={{
+    name: 'minimal',
+    config: { display: { nodeIcon: 'dot', sidebarList: 'flat', sidebarSearch: false } }
+  }}
+/>
 ```
+
+| `config.display` field | Values (default first)    | Replaces the deprecated token(s)                            |
+| ---------------------- | ------------------------- | ----------------------------------------------------------- |
+| `nodeIcon`             | `'squircle'` \| `'dot'`   | `--fd-node-icon-display`, `--fd-node-circle-display`        |
+| `sidebarList`          | `'cards'` \| `'flat'`     | `--fd-sidebar-card-display`, `--fd-sidebar-flat-display`    |
+| `sidebarSearch`        | `true` \| `false`         | `--fd-sidebar-search-display`                               |
+| `sidebarHeader`        | `true` \| `false`         | `--fd-sidebar-header-display`                               |
+| `navbarActions`        | `'dropdown'` \| `'split'` | `--fd-navbar-split-display`, `--fd-navbar-dropdown-display` |
+
+Resolution order for each switch: the theme config, then the deprecated token (set in a skin's `tokens`, or in your own CSS), then the built-in default. A field the config leaves unset is left alone, so CSS written for 2.x keeps working.
+
+**Deprecated, removed in 3.0:** the six `*-display` tokens above (and `navbar-*-display`) as a way to switch structure. Move them to `config.display`. The built-in `minimal` theme already has.
+
+### Skin font
+
+A skin can name a font family:
+
+```ts
+const skin: FlowDropSkin = { font: "'Inter Variable', system-ui, sans-serif", tokens: {} };
+```
+
+The editor then uses it: `--fd-font-sans` is set and `font-family` applied on the editor's scope element, so the whole editor subtree and its portalled overlays pick it up. A skin without `font` changes nothing: the editor inherits the host page's font. The skin only names the family; load the `@font-face` yourself (the host page or, in Drupal, the library). List a fallback (`system-ui`) in the value so the editor stays readable if the face is missing. Setting only `tokens['font-sans']` still just styles UI mounted outside the editor.
 
 ## Best Practices
 

@@ -2,19 +2,16 @@ import type { FlowDropSkin } from '../types/skin.js';
 
 export const slateSkin: FlowDropSkin = {
   tokens: {
-    // --- Display / structural tokens (apply in both light and dark) ---
-
-    // Node icon: hide squircle, show circle dot
+    // --- Display / structural tokens: @deprecated, kept until 3.0 ---
+    // Structure (node icon, sidebar list, navbar actions) now lives in the theme
+    // config (themes/minimal.ts `display`), which wins over these. They stay so a
+    // site that uses `skin: slateSkin` directly keeps its layout until 3.0.
     'node-icon-display': 'none',
     'node-circle-display': 'flex',
-
-    // Sidebar: hide search + header, hide cards, show flat list
     'sidebar-search-display': 'none',
     'sidebar-header-display': 'none',
     'sidebar-card-display': 'none',
     'sidebar-flat-display': 'block',
-
-    // Navbar: split buttons instead of dropdown
     'navbar-split-display': 'flex',
     'navbar-dropdown-display': 'none',
 

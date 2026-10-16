@@ -111,6 +111,8 @@ describe('toToolDefinitions', () => {
         "redo",
         "auto_layout",
         "beautify_layout",
+        "inspect_node_layout (ro)",
+        "beautify_node",
         "view",
         "batch",
         "save",

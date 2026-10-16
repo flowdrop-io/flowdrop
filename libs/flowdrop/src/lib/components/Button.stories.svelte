@@ -5,61 +5,66 @@
   import { fn } from 'storybook/test';
 
   const { Story } = defineMeta({
-    title: 'Display/Button',
+    title: 'Legacy/Button',
     component: Button,
     tags: ['autodocs'],
-    parameters: {
-      layout: 'centered'
-    },
+    parameters: { layout: 'centered' },
     argTypes: {
       variant: {
         control: { type: 'select' },
         options: ['primary', 'secondary', 'outline', 'ghost']
       },
-      size: {
-        control: { type: 'select' },
-        options: ['sm', 'md', 'lg']
-      },
+      size: { control: { type: 'select' }, options: ['sm', 'md', 'lg'] },
       disabled: { control: 'boolean' }
     },
-    args: {
-      variant: 'secondary',
-      size: 'md',
-      disabled: false,
-      onclick: fn()
-    }
+    args: { variant: 'secondary', size: 'md', disabled: false, onclick: fn() }
   });
 </script>
 
-<!-- Arg-driven template so the Controls panel can tweak variant/size/disabled live. -->
 {#snippet template(args: Omit<ComponentProps<typeof Button>, 'children'>)}
   <Button {...args}>Button</Button>
 {/snippet}
 
-<Story name="Primary" args={{ variant: 'primary' }} {template} />
+<Story
+  name="Old API"
+  args={{ variant: 'primary' }}
+  {template}
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The wrapper keeps the old props. Use the Controls to try them. New code should use `Components/Button`.'
+      }
+    }
+  }}
+/>
 
-<Story name="Secondary" args={{ variant: 'secondary' }} {template} />
-
-<Story name="Outline" args={{ variant: 'outline' }} {template} />
-
-<Story name="Ghost" args={{ variant: 'ghost' }} {template} />
-
-<Story name="Disabled" args={{ variant: 'primary', disabled: true }} {template} />
-
-<!-- Static showcases comparing every variant / size side by side. -->
-<Story name="Variants" asChild>
-  <div style="display: flex; gap: 0.75rem; align-items: center;">
-    <Button variant="primary">Primary</Button>
-    <Button variant="secondary">Secondary</Button>
-    <Button variant="outline">Outline</Button>
-    <Button variant="ghost">Ghost</Button>
-  </div>
-</Story>
-
-<Story name="Sizes" asChild>
-  <div style="display: flex; gap: 0.75rem; align-items: center;">
-    <Button variant="primary" size="sm">Small</Button>
-    <Button variant="primary" size="md">Medium</Button>
-    <Button variant="primary" size="lg">Large</Button>
+<Story
+  name="How the old props map"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'Nothing here is new: `outline` is drawn as `secondary` and `lg` as `md`, so each pair looks the same.'
+      }
+    }
+  }}
+  asChild
+>
+  <div
+    style="display: grid; grid-template-columns: auto auto auto; gap: 0.75rem; align-items: center; justify-items: start;"
+  >
+    <code style="font-size: var(--fd-text-xs);">secondary</code>
+    <Button variant="secondary">Button</Button>
+    <span style="font-size: var(--fd-text-xs);">same as</span>
+    <code style="font-size: var(--fd-text-xs);">outline</code>
+    <Button variant="outline">Button</Button>
+    <span style="font-size: var(--fd-text-xs);">mapped to secondary</span>
+    <code style="font-size: var(--fd-text-xs);">size md</code>
+    <Button size="md">Button</Button>
+    <span style="font-size: var(--fd-text-xs);">same as</span>
+    <code style="font-size: var(--fd-text-xs);">size lg</code>
+    <Button size="lg">Button</Button>
+    <span style="font-size: var(--fd-text-xs);">mapped to md</span>
   </div>
 </Story>

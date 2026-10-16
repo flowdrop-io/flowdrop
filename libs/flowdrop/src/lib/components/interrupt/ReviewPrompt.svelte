@@ -1,11 +1,10 @@
 <!--
-  ReviewPrompt Component
+  @component
+  A list of changes a run proposes. Each one shows the old and new value with a word-level diff, and the person
+  accepts or rejects it. Accept all and Reject all act on the whole list. Answered, it shows the decisions.
 
-  Renders a review prompt for review-type interrupts.
-  Displays proposed field changes with accept/reject toggles per field.
-  Supports bulk "Accept All" / "Reject All" actions.
-  Shows the review decisions when resolved.
-  Styled with BEM syntax.
+  **Use it for** the body of an `InterruptBubble` of type `review`.
+  **Not for** a single yes or no (use `ConfirmationPrompt`).
 -->
 
 <script lang="ts">
@@ -229,9 +228,6 @@
   class:review-prompt--resolved={isResolved}
   class:review-prompt--submitting={isSubmitting}
 >
-  <!-- Message -->
-  <p class="review-prompt__message">{config.message}</p>
-
   <!-- Error message -->
   {#if error}
     <div class="review-prompt__error">
@@ -474,13 +470,6 @@
 
   .review-prompt--submitting {
     pointer-events: none;
-  }
-
-  .review-prompt__message {
-    margin: 0;
-    font-size: var(--fd-review-font-size-message);
-    line-height: var(--fd-review-line-height);
-    color: var(--fd-foreground);
   }
 
   .review-prompt__error {

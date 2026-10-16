@@ -1,26 +1,36 @@
 <!--
-  Idea Node Component
-  A BPMN-like conceptual flow node with card design and configurable ports.
-  Allows users to create and chain ideas together without committing to specific node types.
-  Supports 4 connection points: left, right, top, and bottom (configurable via checkboxes).
-  Styled with BEM syntax
+  @component
+  A planning card for a conceptual flow, with ports you switch on or off.
+
+  Users can chain ideas together without committing to node types. It has four connection
+  points (left, right, top, bottom), each one a checkbox in the config.
+
+  The editor draws it only for a node type that declares `type: "idea"`. Nothing in the
+  library creates one on its own.
+
+  **Use it for** sketching a flow before the real nodes exist.
+  **Not for** steps that run; use `WorkflowNode`.
 -->
 
 <script lang="ts">
+  import { m } from '$lib/messages/index.js';
   import { Position, Handle } from '@xyflow/svelte';
   import type { ConfigValues, NodeMetadata } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { getNodeProblem } from '../../utils/nodeProblem.js';
   import { getDataTypeColor } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { m } from '$lib/messages/index.js';
 
   /**
    * IdeaNode component props
    * Displays a card-style node for conceptual flow diagrams
    */
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`content`, `instanceTitle`) and node type. */
     data: {
       label: string;
       config: ConfigValues;
@@ -31,12 +41,17 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 
   let props: Props = $props();
+
+  const problem = getNodeProblem();
 
   const checker = getInstance().portCompatibility;
 
@@ -80,7 +95,9 @@
    * Get accent color from config or metadata, with fallback
    */
   const ideaColor = $derived(
-    (props.data.config?.color as string) || (props.data.metadata?.color as string) || '#6366f1'
+    (props.data.config?.color as string) ||
+      (props.data.metadata?.color as string) ||
+      'var(--fd-accent)'
   );
 
   /**
@@ -130,7 +147,6 @@
   class:flowdrop-idea-node--error={props.isError}
   style="--idea-accent-color: {ideaColor};"
   ondblclick={handleDoubleClick}
-  aria-label={m().nodes.graph.ideaNode({ title: displayTitle })}
 >
   <!-- Left Port (Target/Input): center at top 40px (multiple of 10), 20px connection area -->
   {#if enableLeftPort}
@@ -164,11 +180,15 @@
     <div class="flowdrop-idea-node__accent-bar"></div>
 
     <!-- Header with icon and title -->
-    <div class="flowdrop-idea-node__header">
+    <div
+      class="flowdrop-idea-node__header"
+      class:flowdrop-idea-node__header--problem={problem?.severity != null}
+    >
       <div class="flowdrop-idea-node__icon-wrapper">
         <Icon icon={ideaIcon} class="flowdrop-idea-node__icon" />
       </div>
       <h3 class="flowdrop-idea-node__title">{displayTitle}</h3>
+      <NodeProblemMark />
     </div>
 
     <!-- Description Body -->
@@ -194,7 +214,7 @@
   </div>
 
   <!-- Config button -->
-  <NodeConfigButton onclick={openConfigSidebar} title="Configure idea" />
+  <NodeConfigButton onclick={openConfigSidebar} title={m().nodes.configureIdea} />
 
   <!-- Right Port (Source/Output): center at top 40px (multiple of 10), 20px connection area -->
   {#if enableRightPort}
@@ -341,7 +361,7 @@
     margin: 0;
     /* px line-height so the 3-line clamp lands on the 20px grid (3 × 20px) */
     line-height: 20px;
-    display: -webkit-box;
+    display: var(--fd-node-desc-display);
     -webkit-line-clamp: 3;
     line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -433,5 +453,27 @@
     .flowdrop-idea-node__description {
       font-size: var(--fd-text-xs);
     }
+  }
+
+  /* The gear sits over the header's top-right: end the mark left of it, and keep
+     it there whether or not the gear is showing. After the narrow-width rule above. */
+  .flowdrop-idea-node__header--problem {
+    padding-right: var(--fd-node-config-btn-slot);
+  }
+
+  /* Level with the gear, as on the default card: centred on its middle, not the row's
+     (the row starts below the 1px border, the 4px accent bar and the 8px padding). */
+  .flowdrop-idea-node__header--problem > :global(.fd-node-problem) {
+    align-self: flex-start;
+    margin-top: calc(
+      var(--fd-space-xs) + var(--fd-node-config-btn-size) / 2 - 13px - var(--fd-node-problem-size) /
+        2
+    );
+  }
+
+  /* Title takes the spare room, so the mark stays put whatever the title's length. */
+  .flowdrop-idea-node__header--problem .flowdrop-idea-node__title {
+    flex: 1;
+    min-width: 0;
   }
 </style>

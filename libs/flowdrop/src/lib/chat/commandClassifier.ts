@@ -19,6 +19,7 @@ const READ_ONLY_COMMANDS = new Set([
   'search_types',
   'info',
   'get_config',
+  'inspect_node_layout',
   'help'
 ]);
 
@@ -42,7 +43,7 @@ export function isMutatingCommand(commandType: string): boolean {
  * Viewport commands (`canvas fitview`, zoom, pan) are deliberately absent —
  * they only move the camera and leave the stored arrangement intact.
  */
-const LAYOUT_COMMANDS = new Set(['auto_layout', 'beautify_layout']);
+const LAYOUT_COMMANDS = new Set(['auto_layout', 'beautify_layout', 'beautify_node']);
 
 /**
  * Determine whether a DSL command type re-arranges existing node positions.

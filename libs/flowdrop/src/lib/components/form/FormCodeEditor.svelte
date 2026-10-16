@@ -1,17 +1,12 @@
 <!--
-  FormCodeEditor Component
-  CodeMirror-based code editor for JSON and other structured data
-  
-  Features:
-  - JSON syntax highlighting with CodeMirror 6
-  - Real-time JSON validation with error display
-  - Auto-formatting on blur (optional)
-  - Dark/light theme support
-  - Consistent styling with other form components
-  - Proper ARIA attributes for accessibility
-  
-  Usage:
-  Use with schema format: "json" or format: "code" to render this editor
+  @component
+  A code editor for JSON and other structured values, built on CodeMirror 6. It checks the JSON as the person types,
+  shows the error under the editor, and can format on blur.
+
+  Schema fields with `format: "json"` or `format: "code"` draw this. It is bundled only in `form/full` or when registered with `registerCodeEditorField()`.
+
+  **Use it for** an object or a block of JSON in a node's config.
+  **Not for** prose (use `FormTextarea` or `FormMarkdownEditor`).
 -->
 
 <script lang="ts">
@@ -362,7 +357,7 @@
 
   .form-code-editor__container {
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
     /* Match plain form fields (FormTextField/Textarea/Select): rest on the
        input surface, not the recessed --fd-muted. */
@@ -407,13 +402,13 @@
 
   /* CodeMirror styling overrides */
   .form-code-editor__container :global(.cm-editor) {
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
   }
 
   .form-code-editor__container :global(.cm-gutters) {
     background-color: var(--fd-subtle);
     border-right: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg) 0 0 var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius) 0 0 var(--fd-control-radius);
   }
 
   .form-code-editor__container--dark :global(.cm-gutters) {

@@ -22,13 +22,16 @@ import { createTestWorkflow, createTestNode, createTestNodeMetadata } from '../.
 
 const nodeTypes = [createTestNodeMetadata({ node_type_id: 'test_node', name: 'Test Node' })];
 
-/** Deliberately messy, hand-placed positions so beautify has something to change. */
+/**
+ * Deliberately messy, hand-placed positions so beautify has something to change: c sits on top
+ * of b (beautify keeps a layout it cannot improve, so off-grid alone would not do).
+ */
 function messyWorkflow() {
   return createTestWorkflow({
     nodes: [
       createTestNode({ id: 'a', position: { x: 13, y: 217 } }),
       createTestNode({ id: 'b', position: { x: 402, y: 41 } }),
-      createTestNode({ id: 'c', position: { x: 418, y: 733 } })
+      createTestNode({ id: 'c', position: { x: 418, y: 93 } })
     ]
   });
 }

@@ -38,6 +38,8 @@ export interface ToolSchemaProperty {
   anyOf?: readonly ToolSchemaProperty[];
   minimum?: number;
   maximum?: number;
+  /** The value must be a whole multiple of this (JSON Schema `multipleOf`). */
+  multipleOf?: number;
 }
 
 /** A tool's input schema: always an object with `additionalProperties: false`. */

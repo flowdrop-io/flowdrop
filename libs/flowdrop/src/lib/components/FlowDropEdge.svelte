@@ -1,13 +1,19 @@
 <!--
-  FlowDropEdge Component
-  Custom bezier edge that draws its own arrowhead so the line stroke ends
-  at the arrow base instead of poking through to the tip.
+  @component
+  The wire between two ports: a bezier curve that draws its own arrowhead, so the stroke ends
+  at the arrow base and does not poke through the tip.
 
-  Approach:
-  1. Compute the full bezier path (xyflow's getBezierPath)
-  2. Parse the SVG path to extract the cubic bezier control points
-  3. Compute exact tangent at endpoint via bezier derivative P'(1) = 3(P3-P2)
-  4. Shorten the path along that tangent and draw the arrowhead at the target
+  It computes the full bezier path, takes the control points from it, finds the exact
+  tangent at the end (P'(1) = 3(P3 - P2)), shortens the path along it and draws the arrowhead
+  at the target. A loopback that has a return lane in `fd.loopbackLanes` is drawn along the
+  lane instead, with rounded corners and the same arrowhead.
+
+  A wire is hot, drawn in the success colour, when the shown run passed it (see
+  `utils/runEdges.ts`). The colour of a wire comes from its category (trigger, tool, loopback
+  or data), set when the connection is made (`utils/edgeStyling.ts`).
+
+  **Use it for** the edge type of the canvas (`edgeTypes.default`).
+  **Not for** the line you drag while connecting; that is `ConnectionLine`.
 -->
 
 <script lang="ts">
@@ -15,6 +21,9 @@
   import { BaseEdge } from '@xyflow/svelte';
   import type { BezierEdgeProps } from '@xyflow/svelte';
   import { ARROW_LENGTH_PX, ARROW_HALF_WIDTH_PX } from '../config/constants.js';
+  import { getInstance } from '../stores/getInstance.svelte.js';
+  import { isEdgeHot } from '../utils/runEdges.js';
+  import { lanePath } from '../layout/lanePath.js';
 
   let {
     id,
@@ -24,6 +33,8 @@
     markerEnd: _markerEnd,
     markerStart,
     pathOptions,
+    source,
+    target,
     sourcePosition,
     sourceX,
     sourceY,
@@ -31,12 +42,28 @@
     targetPosition,
     targetX,
     targetY
-  }: BezierEdgeProps = $props();
+  }: BezierEdgeProps & { source?: string; target?: string } = $props();
+
+  const fd = getInstance();
+
+  /**
+   * Hot: the shown run passed this edge (see utils/runEdges.ts). Read from the
+   * instance's status store at draw time, so it never touches the edge data
+   * that is saved with the workflow.
+   */
+  let hot = $derived(
+    isEdgeHot(fd.playground.nodeStatusFor(source ?? ''), fd.playground.nodeStatusFor(target ?? ''))
+  );
+
+  // Later declarations win inside one inline style, so the hot stroke is appended.
+  const HOT_STROKE = 'var(--fd-success, #10b981)';
+  let drawnStyle = $derived(hot ? `${style ?? ''};stroke:${HOT_STROKE};stroke-width:2.5;` : style);
 
   /**
    * Extract stroke color from the edge's inline style for the arrowhead fill.
    */
   let strokeColor = $derived.by(() => {
+    if (hot) return HOT_STROKE;
     if (!style) return 'var(--fd-edge-data, #64748b)';
     const match = style.match(/stroke:\s*([^;]+)/);
     return match ? match[1].trim() : 'var(--fd-edge-data, #64748b)';
@@ -61,7 +88,31 @@
     };
   }
 
+  /** Corner radius of a return lane, in flow px. */
+  const LANE_CORNER_RADIUS = 10;
+
+  /**
+   * The return lane of this edge (the loopback lanes setting), or undefined: the edge
+   * is then the bezier below. The lane's ends are the handles xyflow reports.
+   */
+  let lane = $derived.by(() => {
+    const found = fd.loopbackLanes.get(id ?? '');
+    if (!found) return undefined;
+    const points = found.points.map((p) => [...p] as [number, number]);
+    points[0] = [sourceX, sourceY];
+    points[points.length - 1] = [targetX, targetY];
+    return lanePath(points, LANE_CORNER_RADIUS, ARROW_LENGTH_PX);
+  });
+
   let computed = $derived.by(() => {
+    if (lane)
+      return {
+        path: lane.d,
+        labelX: lane.label[0],
+        labelY: lane.label[1],
+        angleDeg: lane.angleDeg
+      };
+
     // 1. Get the full bezier path from xyflow
     const [fullPath, lx, ly] = getBezierPath({
       sourceX,
@@ -106,7 +157,9 @@
   {labelStyle}
   {markerStart}
   {interactionWidth}
-  {style}
+  style={drawnStyle}
+  class={[hot && 'flowdrop-edge--hot', lane && 'flowdrop-edge--lane'].filter(Boolean).join(' ') ||
+    undefined}
 />
 
 <!-- Manual arrowhead: tip at origin pointing right, rotated to the bezier tangent -->

@@ -17,7 +17,7 @@
  * @module webmcp/descriptors
  */
 
-import type { Command } from '../commands/types.js';
+import type { BeautifyNodeStrategy, Command } from '../commands/types.js';
 import type { Messages } from '../messages/types.js';
 import { isMutatingCommand, VIEW_COMMAND_TYPES } from '../chat/commandClassifier.js';
 import {
@@ -27,6 +27,7 @@ import {
   type ToolSchemaProperty
 } from './types.js';
 import { validateToolArgs } from './validate.js';
+import { LAYOUT_GRID } from '../layout/types.js';
 
 export { validateToolArgs };
 
@@ -55,7 +56,9 @@ export const EXPOSED_COMMAND_TYPES = [
   'undo',
   'redo',
   'auto_layout',
-  'beautify_layout'
+  'beautify_layout',
+  'inspect_node_layout',
+  'beautify_node'
 ] as const satisfies readonly Command['type'][];
 
 /**
@@ -141,12 +144,26 @@ const object = (
 
 const EMPTY = object({});
 
+/** A layout gap in pixels, for the two `layout node` tools. */
+const gapArg = (between: string): ToolSchemaProperty => ({
+  type: 'integer',
+  minimum: 0,
+  multipleOf: LAYOUT_GRID,
+  description: `Gap in px to keep between cards ${between}; a multiple of 20 (the layout grid, whatever the editor's grid size is). Default: the editor's layout gap setting.`
+});
+
 // ============================================================================
 // Argument → Command
 // ============================================================================
 
 type Args = Record<string, unknown>;
 type Pos = { x: number; y: number };
+
+/** The optional `gapX` / `gapY` arguments of the `layout node` tools, when given. */
+const gapArgs = (a: Args): { gapX?: number; gapY?: number } => ({
+  ...(typeof a.gapX === 'number' ? { gapX: a.gapX } : {}),
+  ...(typeof a.gapY === 'number' ? { gapY: a.gapY } : {})
+});
 
 /**
  * `SetConfigCommand.value` is the DSL's raw token: the executor parses it with
@@ -416,10 +433,66 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
     summarize: (c) => `Auto-layout (${c.direction ?? 'horizontal'})`
   },
   beautify_layout: {
-    description: 'Tidy the layout of all nodes. Moves existing nodes.',
-    inputSchema: EMPTY,
-    build: () => ({ type: 'beautify_layout' }),
-    summarize: () => 'Beautify layout'
+    description:
+      'Tidy the layout of all nodes. Moves existing nodes. Puts every node into its column, clears overlaps and tight spacing, reorders ports and straightens wires to cut crossings; prints one line per step and the score before and after, or says nothing improved. Refuses a graph of more than 120 nodes (code TOO_LARGE): tidy those one node at a time with beautify_node. Use dryRun to preview. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
+    inputSchema: object({
+      dryRun: {
+        type: 'boolean',
+        description: 'Report the steps and the score without changing the workflow.'
+      },
+      gapX: gapArg('side by side'),
+      gapY: gapArg('stacked')
+    }),
+    build: (a) => ({
+      type: 'beautify_layout',
+      ...(a.dryRun === true ? { dryRun: true } : {}),
+      ...gapArgs(a)
+    }),
+    summarize: (c) => `${c.dryRun ? 'Preview tidy of' : 'Tidy'} layout`
+  },
+  inspect_node_layout: {
+    description:
+      'Report how one node sits on the canvas: for each wire, whether it is straight or off by how many pixels, plus crossings, overlaps and spacing. Changes nothing. Run it before beautify_node to see what is wrong. gapX / gapY set the spacing to judge against for this call (default: the layout gap settings of the editor).',
+    inputSchema: object(
+      { nodeId: nodeId(), gapX: gapArg('side by side'), gapY: gapArg('stacked') },
+      ['nodeId']
+    ),
+    build: (a) => ({
+      type: 'inspect_node_layout',
+      nodeId: a.nodeId as string,
+      ...gapArgs(a)
+    }),
+    summarize: (c) => `Inspect layout of ${c.nodeId}`
+  },
+  beautify_node: {
+    description:
+      'Tidy the layout of ONE node; no other node moves (notes and captions are never moved either, cards just keep clear of them). Strategies: column (x into its column), ports (reorder connected ports to cut crossings), align (y that straightens a wire), clear (y out of overlaps), all (those four in turn, the default). It says what changed and the score, or why nothing improved. Call inspect_node_layout first; use dryRun to preview without applying. gapX / gapY set the spacing to keep between cards for this call (default: the layout gap settings of the editor). One undo step.',
+    inputSchema: object(
+      {
+        nodeId: nodeId(),
+        strategy: {
+          type: 'string',
+          enum: ['column', 'ports', 'align', 'clear', 'all'],
+          description: 'What to fix. Default all.'
+        },
+        dryRun: {
+          type: 'boolean',
+          description: 'Report the proposal and its score without changing the workflow.'
+        },
+        gapX: gapArg('side by side'),
+        gapY: gapArg('stacked')
+      },
+      ['nodeId']
+    ),
+    build: (a) => ({
+      type: 'beautify_node',
+      nodeId: a.nodeId as string,
+      ...(a.strategy ? { strategy: a.strategy as BeautifyNodeStrategy } : {}),
+      ...(a.dryRun === true ? { dryRun: true } : {}),
+      ...gapArgs(a)
+    }),
+    summarize: (c) =>
+      `${c.dryRun ? 'Preview beautify of' : 'Beautify'} ${c.nodeId}${c.strategy ? ` (${c.strategy})` : ''}`
   }
 };
 

@@ -7,24 +7,41 @@
 <script lang="ts">
   import type { ContextMenuOptions } from '../editor/contextMenu.js';
   import { onMount, tick, untrack } from 'svelte';
+  import { MediaQuery } from 'svelte/reactivity';
+  import { on } from 'svelte/events';
   import MainLayout from '$lib/components/layouts/MainLayout.svelte';
   import WorkflowEditor from '$lib/components/WorkflowEditor.svelte';
   import NodeSidebar from '$lib/components/NodeSidebar.svelte';
+  import DockedPlayground from '$lib/components/playground/DockedPlayground.svelte';
   import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
+  import IconButton from '$lib/components/primitives/IconButton.svelte';
   import EditorStatusBar from '$lib/components/EditorStatusBar.svelte';
   import MenuIcon from '$lib/components/icons/MenuIcon.svelte';
   import MenuOpenIcon from '$lib/components/icons/MenuOpenIcon.svelte';
   import ConfigForm from '$lib/components/ConfigForm.svelte';
+  import NodeInspector from '$lib/components/NodeInspector.svelte';
+  import WorkflowSettingsPanel from '$lib/components/WorkflowSettingsPanel.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
   import WorkflowPlaygroundSettings from '$lib/components/WorkflowPlaygroundSettings.svelte';
-  import {
-    followInterfaceInputEdit,
-    withPlaygroundChat,
-    withoutInterfaceTurns
-  } from '$lib/utils/playgroundChat.js';
+  import { withPlaygroundChat, withoutInterfaceTurns } from '$lib/utils/playgroundChat.js';
   import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
+  import ConsoleStrip from '$lib/components/console/ConsoleStrip.svelte';
+  import {
+    resolveSidebarWidths,
+    SIDEBAR_MIN_WIDTH,
+    SIDEBAR_MAX_WIDTH,
+    SIDEBAR_MAX_RATIO,
+    clampSidebarWidth
+  } from '$lib/utils/sidebarWidths.js';
+  import {
+    resolveWorkflowSheetWidth,
+    clampSheetWidth,
+    sheetMaxWidth,
+    SHEET_MIN_WIDTH,
+    SHEET_KEY_STEP
+  } from '$lib/utils/sheetWidths.js';
   import AIChatPanel from '$lib/components/chat/AIChatPanel.svelte';
   import TabbedSurface from '$lib/components/surfaces/TabbedSurface.svelte';
   import type { Snippet } from 'svelte';
@@ -34,8 +51,15 @@
   import NodeSwapPicker from '$lib/components/NodeSwapPicker.svelte';
   import SwapMappingEditor from '$lib/components/SwapMappingEditor.svelte';
   import Navbar from '$lib/components/Navbar.svelte';
-  import type { NavbarAction } from '$lib/types/navbar.js';
-  import type { NodeMetadata, Workflow, WorkflowNode, ConfigSchema } from '$lib/types/index.js';
+  import DoctorMenu from '$lib/components/DoctorMenu.svelte';
+  import type { NavbarAction, NavbarBranding } from '$lib/types/navbar.js';
+  import type {
+    NodeMetadata,
+    Workflow,
+    WorkflowNode,
+    ConfigSchema,
+    ExternalEditLink
+  } from '$lib/types/index.js';
   import type { InteractiveSwapState, SwapEventContext } from '$lib/utils/nodeSwap.js';
   import {
     computeInteractiveState,
@@ -65,9 +89,20 @@
     initializeTheme
   } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
+  import { runExternalEdit } from '../utils/externalEdit.svelte.js';
+  import { provideUIActionTarget } from '../commands/uiActionTarget.js';
+  import { themeScope } from '../utils/themeScope.svelte.js';
+  import {
+    resolveInspectorSurface,
+    closeTarget,
+    openingNodeTab,
+    type NodeInspectorTab
+  } from '../utils/inspectorSurface.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
-  import { defaultMessages, mergeMessages, setMessages } from '$lib/messages/index.js';
+  import type { EditorPlaygroundConfig } from '../types/playground.js';
+  import type { EditorMode } from '../stores/editorModeStore.svelte.js';
+  import { defaultMessages, mergeMessages, setMessages, m } from '$lib/messages/index.js';
   import type { MessagesOverride } from '$lib/messages/index.js';
 
   /**
@@ -94,7 +129,7 @@
      */
     configPlacement?: SurfacePlacement;
     /**
-     * Default host for the console / AI Assistant group. Seeds the user setting
+     * Default host for the Command Console (the AI Assistant is a tab beside Nodes in the left slot). Seeds the user setting
      * on first load — a value the user later changes wins.
      * @default 'below'
      */
@@ -122,6 +157,34 @@
      * @default 'edit'
      */
     mode?: 'edit' | 'readonly' | 'locked';
+    /**
+     * Start in, or switch to, Test mode: the Playground docked beside the
+     * canvas, which keeps the rest of the width (a node opens its inspector as a
+     * sheet over it). A second axis beside `mode`: it
+     * only takes effect on an editable canvas (`mode: 'edit'`) with a saved
+     * workflow and no `pipelineId`, and `features.testMode` not off.
+     *
+     * Seeds `instance.editorMode`, the per-instance store that is the source
+     * of truth afterwards (the canvas toolbar's Edit | Test switch writes it, and so
+     * can a host: `instance.editorMode.set('test')`). A later change of this
+     * prop sets the store again.
+     *
+     * @default 'edit'
+     */
+    editorMode?: EditorMode;
+    /**
+     * Called when the Edit | Test mode changes after mount (the canvas toolbar switch,
+     * the T shortcut, the run pill's "Open", `instance.editorMode.set`). Not called for the
+     * initial value. A host uses it to keep its URL in step.
+     */
+    onEditorModeChange?: (mode: EditorMode) => void;
+    /**
+     * How Test mode's Playground follows a run: `pollingInterval` (ms, default
+     * 1500) and `shouldStopPolling` (default: stop on `idle` only). A backend
+     * that leaves a session `completed` or `failed` after a turn sets
+     * `shouldStopPolling` here. Unset, nothing changes.
+     */
+    playground?: EditorPlaygroundConfig;
     /** Pipeline ID for fetching node execution info */
     pipelineId?: string;
     /** Increments to force a refresh of pipeline node status from the server */
@@ -130,6 +193,8 @@
     navbarTitle?: string;
     /** Custom navbar actions */
     navbarActions?: NavbarAction[];
+    /** White-label logo for the navbar (replaces the FlowDrop wordmark) */
+    branding?: NavbarBranding;
     /** Show settings gear icon in navbar */
     showSettings?: boolean;
     /** Show the "Connected" status indicator in the navbar (default: true) */
@@ -153,13 +218,15 @@
     onApiError?: FlowDropEventHandlers['onApiError'];
     /** Called after a workflow is loaded/imported. */
     onWorkflowLoad?: FlowDropEventHandlers['onWorkflowLoad'];
+    /** Called instead of opening a node's external edit link; resolve with the new config. */
+    onExternalEdit?: FlowDropEventHandlers['onExternalEdit'];
     /** Called before a node swap — return false to cancel. */
     onBeforeSwap?: FlowDropEventHandlers['onBeforeSwap'];
     /** Called after a node swap is applied. */
     onAfterSwap?: FlowDropEventHandlers['onAfterSwap'];
     /** Feature configuration */
     features?: FlowDropFeatures;
-    /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
+    /** Visual theme — named built-in ('graphite' | 'classic' | 'minimal' | 'drafter') or custom theme object */
     theme?: FlowDropTheme | FlowDropThemeName;
     /** Which settings tabs to show in the modal */
     settingsCategories?: SettingsCategory[];
@@ -209,10 +276,13 @@
     configPlacement: configPlacementProp,
     consolePlacement: consolePlacementProp,
     mode = 'edit',
+    editorMode: editorModeProp,
+    onEditorModeChange,
     pipelineId,
     refreshTrigger = 0,
     navbarTitle,
     navbarActions = [],
+    branding,
     showSettings = true,
     showStatus = true,
     apiBaseUrl,
@@ -223,6 +293,7 @@
     onSaveError,
     onApiError,
     onWorkflowLoad,
+    onExternalEdit,
     onBeforeSwap,
     onAfterSwap,
     features: propFeatures,
@@ -235,6 +306,7 @@
     workflowFormats,
     messages: messagesOverride,
     contextMenu,
+    playground,
     instance
   }: Props = $props();
 
@@ -248,10 +320,126 @@
   // svelte-ignore state_referenced_locally
   const features = mergeFeatures(propFeatures);
 
+  // Test mode: the `editorMode` prop seeds the instance's store (the source of
+  // truth from then on); a later change of the prop sets it again. Setting the
+  // value it already holds changes nothing, so the first run is harmless.
+  // svelte-ignore state_referenced_locally
+  if (editorModeProp) fd.editorMode.set(editorModeProp);
+  $effect.pre(() => {
+    const requested = editorModeProp;
+    if (requested) untrack(() => fd.editorMode.set(requested));
+  });
+
+  // Tell the host when the mode moves. The listener is added after the seed,
+  // so the value the editor started with is never reported; the callback is
+  // read when it fires, so a changed callback prop is the one used.
+  onMount(() => fd.editorMode.onChange((mode) => onEditorModeChange?.(mode)));
+
   // `mode` is the public API; internally the canvas only cares whether editing
   // is disabled. 'readonly' and 'locked' both disable the same interactions
   // (see the `mode` prop JSDoc for the full matrix).
   const canvasEditable = $derived(mode === 'edit');
+
+  /**
+   * Test mode can be entered: it is offered, the canvas is editable, this is
+   * not a pipeline view, and the workflow is saved (the Playground runs the
+   * saved workflow's id).
+   */
+  const testModeAvailable = $derived(
+    features.testMode && canvasEditable && !pipelineId && !!fd.workflow.current?.id
+  );
+  /** Test mode is in effect: requested, and available. */
+  const testMode = $derived(testModeAvailable && fd.editorMode.isTest);
+  const effectiveEditorMode = $derived<EditorMode>(testMode ? 'test' : 'edit');
+
+  /** Narrow screens: the Playground is a drawer over the canvas, not a column. */
+  const narrowQuery = new MediaQuery('(max-width: 1199px)');
+  const narrow = $derived(narrowQuery.current);
+  /** Entering Test mode opens the Playground drawer; the person can still close it. */
+  let drawerOpen = $derived(testMode);
+
+  /** The node library popover of Test mode (N). */
+  let libraryOpen = $state(false);
+  let libraryEl = $state<HTMLElement | null>(null);
+  $effect(() => {
+    if (!testMode) libraryOpen = false;
+  });
+  $effect(() => {
+    if (!libraryOpen) return;
+    const closeOnOutside = (event: PointerEvent) => {
+      if (libraryEl && !libraryEl.contains(event.target as Node)) libraryOpen = false;
+    };
+    return on(window, 'pointerdown', closeOnOutside, { capture: true });
+  });
+  function toggleLibrary(): void {
+    libraryOpen = !libraryOpen;
+    if (libraryOpen) {
+      void tick().then(() =>
+        libraryEl?.querySelector<HTMLInputElement>('.flowdrop-sidebar__search input')?.focus()
+      );
+    }
+  }
+
+  // Badges follow a run while it is watched, and this effect is the one owner
+  // of loading them (through the coalesced fd.runs.requestNodeStatuses): in
+  // Test mode always (the shown run, live or finished), in Edit mode while a
+  // run exists (live, or ended and still on the run bar, whose fade drops it).
+  // They are dropped when neither holds, so Edit mode at rest has none.
+  const followRun = $derived(
+    !pipelineId && (testMode || fd.runs.activeRun !== null || fd.runs.isLive)
+  );
+  const EDIT_STATUS_REFRESH_MS = 1500;
+  /**
+   * Changes whenever the shown run's node statuses may have moved; null when no
+   * run is followed. Built from the shown run, its status (a host run changes
+   * nothing else) and every batch of new messages.
+   */
+  const runStatusKey = $derived(
+    followRun
+      ? [
+          fd.playground.activeExecutionId,
+          fd.playground.sessionStatus,
+          fd.playground.pipelineRefreshTrigger,
+          fd.runs.activeRun?.runId,
+          fd.runs.activeRun?.status
+        ].join('|')
+      : null
+  );
+  $effect(() => {
+    if (runStatusKey === null) return;
+    untrack(() => fd.runs.requestNodeStatuses());
+  });
+  // Edit mode has no Playground poll to ride on (and a host run has none at
+  // all), so while a run is live the badges are also asked for on a timer.
+  $effect(() => {
+    if (!followRun || testMode || !fd.runs.isLive) return;
+    const timer = setInterval(() => fd.runs.requestNodeStatuses(), EDIT_STATUS_REFRESH_MS);
+    return () => clearInterval(timer);
+  });
+  $effect(() => {
+    if (!followRun) return;
+    return () => fd.runs.clearNodeStatuses();
+  });
+  // `edited` marks: shown in Test mode only. The baseline is taken when a run
+  // is first seen (live or opened), before any statuses load, so edits made
+  // while its statuses are still loading count.
+  $effect(() => {
+    fd.editedNodes.setVisible(testMode);
+  });
+  $effect(() => {
+    void fd.workflow.current?.id;
+    const runId = fd.runs.activeRun?.runId ?? fd.playground.activeExecutionId ?? null;
+    untrack(() => fd.editedNodes.track(pipelineId ? null : runId));
+  });
+  // Crossing between Edit and Test drops a run that has already ended, so the
+  // bar does not come back stale. A live run keeps its state.
+  $effect(() => {
+    void testMode;
+    untrack(() => {
+      const run = fd.runs.activeRun;
+      if (run && run.endedAt !== null) fd.runs.dismissRun();
+    });
+  });
 
   // Messages: merge consumer overrides over defaults; expose via context as a
   // getter so consumer-side reactivity (e.g. paraglide-js locale switches)
@@ -275,7 +463,7 @@
     {
       label: mergedMessages.navigation.save,
       href: '#save',
-      icon: 'heroicons:document-arrow-down',
+      icon: 'mdi:file-download-outline',
       variant: 'primary' as const,
       onclick: (e: Event) => {
         e.preventDefault();
@@ -285,7 +473,7 @@
     {
       label: mergedMessages.navigation.export,
       href: '#export',
-      icon: 'heroicons:arrow-down-tray',
+      icon: 'mdi:download',
       variant: 'outline' as const,
       onclick: (e: Event) => {
         e.preventDefault();
@@ -295,21 +483,11 @@
     {
       label: mergedMessages.navigation.import,
       href: '#import',
-      icon: 'heroicons:arrow-up-tray',
+      icon: 'mdi:upload',
       variant: 'outline' as const,
       onclick: (e: Event) => {
         e.preventDefault();
         fileInputRef?.click();
-      }
-    },
-    {
-      label: mergedMessages.navigation.workflowSettings,
-      href: '#settings',
-      icon: 'heroicons:cog-6-tooth',
-      variant: 'outline' as const,
-      onclick: (e: Event) => {
-        e.preventDefault();
-        toggleWorkflowSettings();
       }
     }
   ]);
@@ -322,7 +500,8 @@
   // Skin tokens are scoped to this instance (data-fd-scope on .flowdrop-root,
   // copied onto portalled overlays), so two editors with different skins do
   // not overwrite each other and the host page gets no --fd-* variables.
-  // See themes/scopedSkinCss.ts. data-theme stays page-global on <html>.
+  // See themes/scopedSkinCss.ts. The colour scheme is `data-theme` on this scope element (use:themeScope),
+  // not on <html>.
   // One cleaned value for the attribute, the skin rule and fd.skinScope.
   const rawScopeId = $props.id();
   const scopeId = toScopeId(rawScopeId);
@@ -338,7 +517,11 @@
 
   $effect(() => {
     if (typeof document === 'undefined') return;
-    const css = buildScopedSkinCss(scopeId, resolvedTheme.skin);
+    // The user's Compact Mode hides node descriptions in every theme.
+    const display = getUiSettings().compactMode
+      ? { ...themeConfig?.display, nodeDetails: 'compact' as const }
+      : themeConfig?.display;
+    const css = buildScopedSkinCss(scopeId, resolvedTheme.skin, display);
     if (!css) return;
 
     const style = document.createElement('style');
@@ -403,6 +586,23 @@
   // focuses it wherever it lives (sidebar/modal/below).
   let activeSurface = $state<string>(getUiSettings().bottomPanelTab);
 
+  // Entering Test mode, or loading into it with `?mode=test`, starts with no
+  // inspector: the canvas has the room, and a node opens its sheet. Whatever
+  // surface was last focused (the persisted Console tab, say) is reset to the
+  // config, and Edit mode's workflow tabs do not carry over. Later picks of
+  // the Console stick.
+  $effect.pre(() => {
+    if (testMode)
+      untrack(() => {
+        activeSurface = 'config';
+        isWorkflowSettingsOpen = false;
+      });
+  });
+
+  // Edit mode's left slot: Nodes | Assistant. Both stay mounted, so the
+  // conversation survives tab switches and a trip through Test mode.
+  let leftTab = $state<'nodes' | 'assistant'>('nodes');
+
   // Node swap state
   let swapMode = $state<'idle' | 'picking' | 'mapping'>('idle');
   let swapInteractiveState = $state<InteractiveSwapState | null>(null);
@@ -449,13 +649,11 @@
         name: {
           type: 'string',
           title: 'Workflow Name',
-          description: 'The name of the workflow',
           default: ''
         },
         description: {
           type: 'string',
           title: 'Description',
-          description: 'A description of the workflow',
           format: 'multiline',
           default: ''
         },
@@ -652,8 +850,25 @@
     }
     selectedNodeId = node.id;
     isConfigSidebarOpen = true;
+    isWorkflowSettingsOpen = false;
     activeSurface = 'config';
     // Reset swap state when switching nodes
+    swapMode = 'idle';
+    swapInteractiveState = null;
+  }
+
+  /**
+   * Test mode: a node was clicked (or double-clicked). Its sheet opens on Last
+   * run, or, if another node's sheet is open, switches to this node. Unlike
+   * `openConfigSidebar` it never toggles, so the double-click that follows a
+   * click does not close what the click opened.
+   */
+  function showNodeSheet(node: Pick<WorkflowNode, 'id'>): void {
+    if (isConfigSidebarOpen && selectedNodeId === node.id) return;
+    selectedNodeId = node.id;
+    isConfigSidebarOpen = true;
+    isWorkflowSettingsOpen = false;
+    activeSurface = 'config';
     swapMode = 'idle';
     swapInteractiveState = null;
   }
@@ -665,6 +880,71 @@
     swapMode = 'idle';
     swapInteractiveState = null;
   }
+
+  // Which tab the open node shows. Picked when the node opens (Last run in Test
+  // mode, else Config) and kept until another node opens, so a node that starts
+  // running under the cursor does not change the tab by itself: the only
+  // dependency is the selected node, the mode is read untracked. The person's pick is a plain assignment. Edit
+  // mode always resolves to Config (`NodeInspector`).
+  let nodeInspectorTab = $derived<NodeInspectorTab>(
+    selectedNodeId ? untrack(() => openingNodeTab(effectiveEditorMode)) : 'config'
+  );
+
+  // Messages and canvas nodes light each other up through fd.highlight; the
+  // open node is the "selected" one.
+  $effect(() => {
+    fd.highlight.setSelected(selectedNodeForConfig?.id ?? null);
+    return () => fd.highlight.setSelected(null);
+  });
+
+  /**
+   * A message's node link was clicked: select the node, open its Last run and
+   * bring it into view. Only on request (this is the one place the view moves
+   * for a run). False when this is not Test mode or the node is gone.
+   */
+  function revealNodeLastRun(nodeId: string): boolean {
+    const node = fd.workflow.current?.nodes.find((n) => n.id === nodeId);
+    if (!testMode || !node) return false;
+    // Select first: assigning the node afterwards would recompute the tab.
+    selectedNodeId = nodeId;
+    nodeInspectorTab = 'lastRun';
+    isConfigSidebarOpen = true;
+    isWorkflowSettingsOpen = false;
+    activeSurface = 'config';
+    swapMode = 'idle';
+    swapInteractiveState = null;
+    workflowEditorRef?.canvasFocusNode(nodeId);
+    return true;
+  }
+  $effect(() => fd.highlight.setRevealHandler(revealNodeLastRun));
+
+  /**
+   * A problem's node name was clicked: select the node (its inspector opens)
+   * and bring it into view. Unlike a toggle, repeating it keeps it open.
+   */
+  function focusProblemNode(nodeId: string): boolean {
+    const node = fd.workflow.current?.nodes.find((n) => n.id === nodeId);
+    if (!node) return false;
+    selectedNodeId = nodeId;
+    isConfigSidebarOpen = true;
+    isWorkflowSettingsOpen = false;
+    activeSurface = 'config';
+    swapMode = 'idle';
+    swapInteractiveState = null;
+    workflowEditorRef?.canvasFocusNode(nodeId);
+    return true;
+  }
+  $effect(() => fd.doctor.setFocusHandler(focusProblemNode));
+
+  // The Doctor diagnoses the draft a moment after each edit, and on load (and
+  // once the workflow has an id). Reading the version and the id is the trigger.
+  $effect(() => {
+    void fd.workflow.editVersion;
+    void fd.workflow.id;
+    // The endpoints are configured after mount; their arrival is a trigger too.
+    void endpointConfig;
+    untrack(() => fd.doctor.schedule());
+  });
 
   /**
    * Toggle workflow settings sidebar
@@ -679,11 +959,32 @@
   }
 
   /**
+   * Show the workflow's Playground settings: the workflow tabs with the
+   * Playground tab selected, as the workflow-settings surface (in Test mode,
+   * the inspector sheet). The docked Playground links here.
+   */
+  function openPlaygroundSettings(): void {
+    if (fd.workflow.current?.playground === undefined) return;
+    workflowSettingsTab = 'playground';
+    closeConfigSidebar();
+    isWorkflowSettingsOpen = true;
+    activeSurface = 'config';
+  }
+
+  /**
    * Start swap mode — transitions the right sidebar to the node picker
    */
   function startSwap(): void {
     swapMode = 'picking';
     swapInteractiveState = null;
+  }
+
+  /** Swap from the canvas context menu: open the node's panel in the picker. */
+  function swapFromCanvas(nodeId: string): void {
+    selectedNodeId = nodeId;
+    isConfigSidebarOpen = true;
+    activeSurface = 'config';
+    startSwap();
   }
 
   /**
@@ -838,11 +1139,38 @@
     }
   });
 
-  async function saveWorkflow(): Promise<void> {
+  /**
+   * Hand a node's external edit link to the host (`onExternalEdit`) and write
+   * the config it resolves with. Undefined when the host set no handler, so the
+   * link opens as before.
+   */
+  // Nodes whose host form is open, kept here so reopening the inspector does
+  // not open a second one.
+  const externalEditPending = new Set<string>();
+  const externalEditForConfig = $derived(
+    onExternalEdit
+      ? (node: WorkflowNode, link: ExternalEditLink) =>
+          runExternalEdit({
+            node,
+            link,
+            handler: (n, l) => onExternalEdit(n, l),
+            store: fd.workflow,
+            // Read when the host resolves: the editor may have been locked meanwhile.
+            canWrite: () => canvasEditable,
+            pending: externalEditPending,
+            onWritten: (written) => {
+              workflowEditorRef?.updateNodeData(written.id, written.data);
+              void workflowEditorRef?.refreshEdgePositions(written.id);
+            }
+          })
+      : undefined
+  );
+
+  async function saveWorkflow(): Promise<boolean> {
     // Commit any in-flight config edit so the save and its history are
     // consistent (the value itself is already live in the store).
     flushNodeConfigEdit();
-    await globalSaveWorkflow({
+    return globalSaveWorkflow({
       eventHandlers: { onBeforeSave, onAfterSave, onSaveError, onApiError },
       features,
       instance: fd,
@@ -924,7 +1252,15 @@
   function handleCanvasClick(event: MouseEvent): void {
     // Check if the click is outside the right sidebar
     const rightSidebar = document.querySelector('.flowdrop-main-layout__sidebar--right');
-    if (rightSidebar && !rightSidebar.contains(event.target as Node)) {
+    // Test mode's inspector sheet sits inside the canvas region: a click in it is not a pane click.
+    if ((event.target as Element).closest?.('.inspector-sheet')) return;
+    // In Test mode only a click on empty canvas closes the sheet (not a node, not a control).
+    const target = event.target as Element;
+    if (
+      testMode
+        ? !!target.closest?.('.svelte-flow__pane') && !target.closest('.svelte-flow__node')
+        : rightSidebar && !rightSidebar.contains(event.target as Node)
+    ) {
       // Close sidebar when clicking outside of it
       if (isConfigSidebarOpen) {
         closeConfigSidebar();
@@ -1021,26 +1357,109 @@
   // Surface placement — where the config panel and console/chat are hosted.
   // =========================================================================
 
-  const configPlacement = $derived(getUiSettings().configPlacement);
-  const consolePlacement = $derived(getUiSettings().consolePlacement);
+  // Test mode shows the inspector as a sheet over the canvas, whatever
+  // placement the person chose for Edit mode: no column, so the canvas keeps
+  // the width. Workflow settings are a sheet in both modes: the person's
+  // placement is for node settings.
+  const configPlacement = $derived<SurfacePlacement | 'sheet'>(
+    testMode || (!selectedNodeForConfig && isWorkflowSettingsOpen)
+      ? 'sheet'
+      : getUiSettings().configPlacement
+  );
+
+  /** The canvas region's width, for clamping the workflow sheet. */
+  let regionWidth = $state(0);
+  /** The canvas region, to measure how much of it a sheet covers. */
+  let editorMainEl = $state<HTMLElement | null>(null);
+  /** Width while the workflow sheet's left edge is being dragged; `null` otherwise. */
+  let liveSheetWidth = $state<number | null>(null);
+  const workflowSheetWidth = $derived(
+    liveSheetWidth ?? resolveWorkflowSheetWidth(getUiSettings(), regionWidth)
+  );
+  const workflowSheetMax = $derived(sheetMaxWidth(regionWidth));
+  let sheetDrag: { startX: number; startWidth: number } | null = null;
+
+  function saveWorkflowSheetWidth(width: number): void {
+    updateSettings({ ui: { sheetWidths: { workflow: clampSheetWidth(width, regionWidth) } } });
+  }
+  function onSheetResizeDown(event: PointerEvent): void {
+    if (event.button !== 0) return;
+    sheetDrag = { startX: event.clientX, startWidth: workflowSheetWidth };
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    event.preventDefault();
+  }
+  function onSheetResizeMove(event: PointerEvent): void {
+    if (!sheetDrag) return;
+    // The handle is on the left edge: dragging left makes the sheet wider.
+    liveSheetWidth = clampSheetWidth(
+      sheetDrag.startWidth + (sheetDrag.startX - event.clientX),
+      regionWidth
+    );
+  }
+  function onSheetResizeUp(): void {
+    if (!sheetDrag) return;
+    sheetDrag = null;
+    if (liveSheetWidth !== null) saveWorkflowSheetWidth(liveSheetWidth);
+    liveSheetWidth = null;
+  }
+  function onSheetResizeKey(event: KeyboardEvent): void {
+    const step = event.shiftKey ? SHEET_KEY_STEP * 3 : SHEET_KEY_STEP;
+    let next: number | null = null;
+    // Arrow left moves the left edge left, so the sheet grows.
+    if (event.key === 'ArrowLeft') next = workflowSheetWidth + step;
+    else if (event.key === 'ArrowRight') next = workflowSheetWidth - step;
+    else if (event.key === 'Home') next = SHEET_MIN_WIDTH;
+    else if (event.key === 'End') next = workflowSheetMax;
+    if (next === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    saveWorkflowSheetWidth(next);
+  }
+
+  /** How much of the canvas's right side an open sheet covers, for fit view. */
+  function fitInset(): number {
+    const sheet = editorMainEl?.querySelector('.inspector-sheet');
+    if (!editorMainEl || !sheet) return 0;
+    return Math.max(
+      0,
+      editorMainEl.getBoundingClientRect().right - sheet.getBoundingClientRect().left
+    );
+  }
+  // Test mode has no right column, so a Console placed in the sidebar uses the
+  // bottom panel there; Edit mode keeps the person's placement.
+  const consolePlacement = $derived<SurfacePlacement>(
+    testMode && getUiSettings().consolePlacement === 'sidebar'
+      ? 'below'
+      : getUiSettings().consolePlacement
+  );
 
   /** Config surface has something to show (node config or workflow settings). */
   const configActive = $derived(isWorkflowSettingsOpen || !!selectedNodeForConfig);
   /** The Command Console tab is offered by this mount. */
   const consoleTabOffered = features.console;
-  /** The AI Assistant tab is offered: switched on, and a chat backend exists. */
+  /** The AI Assistant is offered: switched on, and a chat backend exists. */
   const chatTabOffered = $derived(
     features.assistant && endpointConfig?.endpoints?.chat !== undefined
   );
-  /** At least one surface of the console/chat group is offered. */
-  const consoleGroupOffered = $derived(consoleTabOffered || chatTabOffered);
-  /** Console/chat group is available (offered, editable canvas, console toggled open). */
+  /**
+   * The Assistant lives in the left slot, as a tab beside Nodes (Edit mode).
+   * A host that disabled the sidebar has no left slot, so the Assistant keeps
+   * its old place in the console group for it (until 3.0). Test mode has no
+   * Assistant at all: it is the Edit-mode helper.
+   */
+  const chatInConsoleGroup = $derived(chatTabOffered && disableSidebar && !testMode);
+  /** The Assistant is a tab beside Nodes in the left slot. */
+  const chatInLeftSlot = $derived(chatTabOffered && !chatInConsoleGroup);
+  /** At least one surface of the console group is offered. */
+  const consoleGroupOffered = $derived(consoleTabOffered || chatInConsoleGroup);
+  /** Console group is available (offered, editable canvas, console toggled open). */
   const consoleActive = $derived(
     consoleGroupOffered && getUiSettings().consoleOpen && canvasEditable
   );
 
   /**
-   * The console-group tabs this mount offers, for whichever host renders them.
+   * The console-group tabs this mount offers, for whichever host renders them:
+   * the Console, plus the Assistant only where there is no left slot for it.
    * Snippets are passed in because they are declared in the template.
    */
   function consoleGroupTabs(consoleBody: Snippet, chatBody: Snippet): SurfaceTab[] {
@@ -1055,11 +1474,15 @@
             }
           ]
         : []),
-      ...(chatTabOffered
+      ...(chatInConsoleGroup
         ? [{ id: 'chat', label: mergedMessages.navigation.bottomPanel.chat, content: chatBody }]
         : [])
     ];
   }
+  /** The Console's toggle strip is drawn: a console group is offered and the canvas is editable. */
+  const consoleStripShown = $derived(consoleGroupOffered && canvasEditable);
+  /** Id of the Console panel, for the strip's `aria-controls`. */
+  const consolePanelId = `${scopeId}-console-panel`;
   /** Node-swap sub-flow occupies the right sidebar regardless of placement. */
   const swapActive = $derived(swapMode !== 'idle');
 
@@ -1073,8 +1496,17 @@
    * Metadata for the active config surface, independent of its host. The form
    * itself is rendered by the host via the `configBody` snippet.
    */
+  const inspectorSurface = $derived(
+    resolveInspectorSurface({
+      hasNode: !!selectedNodeForConfig,
+      workflowOpen: isWorkflowSettingsOpen
+    })
+  );
+  /** The inspector can be closed. */
+  const configClosable = $derived(closeTarget(inspectorSurface) !== null);
+
   const activeConfig = $derived.by(() => {
-    if (isWorkflowSettingsOpen) {
+    if (inspectorSurface === 'workflow') {
       return {
         kind: 'workflow' as const,
         title: mergedMessages.navigation.workflowSettingsPanelTitle,
@@ -1087,18 +1519,21 @@
         configTitle: mergedMessages.navigation.workflowSettingsPanelSubtitle
       };
     }
-    const node = selectedNodeForConfig;
+    const node = inspectorSurface === 'node' ? selectedNodeForConfig : null;
     if (node) {
       return {
         kind: 'node' as const,
         node,
         title: node.data.label,
         id: node.id,
-        description:
-          node.data.metadata?.description || mergedMessages.navigation.nodeConfigDescription,
+        // No filler when the node type has no description: the meta line says enough.
+        description: node.data.metadata?.description ?? '',
         details: [
           { label: 'Type', value: node.data.metadata?.type || node.type },
-          { label: 'Category', value: node.data.metadata?.category || 'general' }
+          {
+            label: 'Category',
+            value: fd.categories.getLabel(node.data.metadata?.category || 'general')
+          }
         ],
         configTitle: undefined as string | undefined
       };
@@ -1108,10 +1543,13 @@
 
   /** Close whichever config surface is currently open. */
   function closeActiveConfig(): void {
-    if (isWorkflowSettingsOpen) {
-      isWorkflowSettingsOpen = false;
-    } else {
+    // A node closes first; the inspector then falls back to the workflow tabs
+    // if they are open. Closing the workflow tabs closes the surface.
+    const target = closeTarget(inspectorSurface);
+    if (target === 'node') {
       closeConfigSidebar();
+    } else if (target === 'workflow') {
+      isWorkflowSettingsOpen = false;
     }
   }
 
@@ -1124,16 +1562,48 @@
   }
 
   const showRightPanel = $derived(
-    !disableSidebar && (swapActive || configHere('sidebar') || consoleHere('sidebar'))
+    (!disableSidebar || testMode) && (swapActive || configHere('sidebar') || consoleHere('sidebar'))
   );
+
+  /** Test mode's docked Playground column; resizable, and a drawer when narrow. */
+  const TEST_DOCK_WIDTH = 360;
+  const dockedInColumn = $derived(testMode && !narrow);
+
+  /** Edit mode's left column keeps a width per tab (Nodes | Assistant). */
+  const sidebarWidths = $derived(resolveSidebarWidths(getUiSettings()));
 
   /**
    * Calculate left sidebar width based on collapsed state
-   * When collapsed, use 0; otherwise use user-configured width
+   * When collapsed, use 0; otherwise use user-configured width.
+   * In Test mode the left slot holds the Playground: its own width, never collapsed.
    */
   const leftSidebarWidth = $derived(
-    getUiSettings().sidebarCollapsed ? 0 : getUiSettings().sidebarWidth
+    testMode
+      ? dockedInColumn
+        ? TEST_DOCK_WIDTH
+        : 0
+      : getUiSettings().sidebarCollapsed
+        ? 0
+        : sidebarWidths[leftTab]
   );
+
+  /** The left column can be resized: the Test dock, or Edit mode's column while it is open. */
+  const leftResizable = $derived(
+    testMode ? dockedInColumn : !disableSidebar && !getUiSettings().sidebarCollapsed
+  );
+
+  /** A drag or arrow-key resize of the left column ended: remember it for the active tab. */
+  function saveLeftWidth(width: number): void {
+    if (testMode) return;
+    updateSettings({
+      ui: { sidebarWidths: { ...sidebarWidths, [leftTab]: clampSidebarWidth(width) } }
+    });
+  }
+
+  /** A resize of the bottom panel ended: remember its height. */
+  function saveConsoleHeight(height: number): void {
+    updateSettings({ ui: { consoleHeight: Math.round(height) } });
+  }
 
   /** Whether the sidebar is collapsed */
   const isSidebarCollapsed = $derived(getUiSettings().sidebarCollapsed);
@@ -1156,14 +1626,49 @@
     // Dead key on international keyboards — do not intercept
     if (event.key === 'Dead') return;
 
-    if (event.key !== '`') return;
+    // N opens the node library in Test mode, where the sidebar is the Playground.
+    const isLibraryKey = testMode && (event.key === 'n' || event.key === 'N');
+    // T toggles Edit | Test where Test mode is offered.
+    const isModeKey = testModeAvailable && (event.key === 't' || event.key === 'T');
+    // / focuses the node library's search in Edit mode.
+    const isSearchKey = !testMode && !disableSidebar && event.key === '/';
+    if (event.key !== '`' && !isLibraryKey && !isModeKey && !isSearchKey) return;
+    if (
+      (isLibraryKey || isModeKey || isSearchKey) &&
+      (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.repeat)
+    ) {
+      return;
+    }
 
-    // Don't intercept when user is typing in an input, textarea, or contenteditable
+    // Don't intercept when user is typing in an input, textarea, contenteditable
+    // or code editor (CodeMirror's content is contenteditable, the closest() is a backstop)
     const target = event.target as HTMLElement;
     const isInputElement =
-      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable ||
+      !!target.closest?.('.cm-editor');
 
     if (isInputElement) return;
+    if (isSearchKey) {
+      event.preventDefault();
+      if (isSidebarCollapsed) toggleSidebar();
+      leftTab = 'nodes';
+      void tick().then(() =>
+        document.querySelector<HTMLInputElement>('input[data-fd-library-search]')?.focus()
+      );
+      return;
+    }
+    if (isModeKey) {
+      event.preventDefault();
+      fd.editorMode.set(testMode ? 'edit' : 'test');
+      return;
+    }
+    if (isLibraryKey) {
+      event.preventDefault();
+      toggleLibrary();
+      return;
+    }
     if (!consoleGroupOffered) return;
 
     event.preventDefault();
@@ -1193,6 +1698,33 @@
     }
   }
 
+  // Let the mount API's `runCommand` reach this handler for UI actions.
+  $effect(() => provideUIActionTarget(fd, handleConsoleUIAction));
+
+  /** Show the Assistant: its tab beside Nodes, or the console group where there is no left slot. */
+  function openAssistant(): void {
+    if (chatInConsoleGroup) {
+      activeSurface = 'chat';
+      updateSettings({ ui: { consoleOpen: true } });
+      return;
+    }
+    leftTab = 'assistant';
+    if (getUiSettings().sidebarCollapsed) updateSettings({ ui: { sidebarCollapsed: false } });
+  }
+
+  /**
+   * "Ask the Assistant about this run": the Assistant is an Edit-mode helper,
+   * so the editor goes back to Edit mode, opens the Assistant beside Nodes and
+   * attaches the run.
+   */
+  function askAssistantAboutRun(runId: string): void {
+    if (!chatTabOffered || !fd.attachedRun.attach(runId, { status: 'failed' })) return;
+    fd.editorMode.set('edit');
+    openAssistant();
+  }
+  /** The ask-the-Assistant actions are offered when there is an Assistant to ask. */
+  const askAssistant = $derived(chatTabOffered ? askAssistantAboutRun : undefined);
+
   function toggleConsole(): void {
     const currentOpen = getUiSettings().consoleOpen;
     updateSettings({ ui: { consoleOpen: !currentOpen } });
@@ -1221,7 +1753,7 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <svelte:head>
-  <title>FlowDrop - Visual Workflow Manager</title>
+  <title>{branding?.name ?? m().navigation.appName} - {m().navigation.tagline}</title>
   <meta name="description" content="A modern drag-and-drop workflow editor for LLM applications" />
 </svelte:head>
 
@@ -1247,6 +1779,7 @@
     workflowId={fd.workflow.current?.id}
     workflowNodes={fd.workflow.current?.nodes}
     workflowEdges={fd.workflow.current?.edges}
+    onExternalEdit={externalEditForConfig}
     onChange={(updatedConfig, meta) => {
       if (!node.id) return;
       const updatedData = { ...node.data, config: updatedConfig };
@@ -1267,6 +1800,40 @@
       workflowEditorRef?.updateNodeData(node.id, updatedData);
     }}
   />
+{/snippet}
+
+<!-- Last run of a failed node: take the run to the Assistant -->
+{#snippet askAboutRunAction()}
+  {@const runId = fd.playground.nodeStatusScope?.pipelineId}
+  {#if runId}
+    <button
+      type="button"
+      class="ask-about-run"
+      data-testid="last-run-ask-assistant"
+      onclick={() => askAssistant?.(runId)}
+    >
+      {mergedMessages.nodeInspector.askAssistant}
+    </button>
+  {/if}
+{/snippet}
+
+{#snippet nodeInspectorEl(node: WorkflowNode)}
+  <NodeInspector
+    editorMode={effectiveEditorMode}
+    tab={nodeInspectorTab}
+    onTabChange={(tab) => (nodeInspectorTab = tab)}
+    info={fd.playground.nodeStatusFor(node.id)}
+    runShown={fd.playground.nodeStatusScope !== null}
+    lastRunActions={askAssistant &&
+    fd.playground.nodeStatusFor(node.id)?.status === 'failed' &&
+    fd.playground.nodeStatusScope?.pipelineId
+      ? askAboutRunAction
+      : undefined}
+  >
+    {#snippet config()}
+      {@render nodeConfigFormEl(node)}
+    {/snippet}
+  </NodeInspector>
 {/snippet}
 
 {#snippet workflowConfigFormEl()}
@@ -1327,20 +1894,7 @@
       workflow={fd.workflow.current}
       dataTypes={fd.portCompatibility.getEnabledDataTypes()}
       checker={fd.portCompatibility}
-      onChange={(next, edit) => {
-        // A renamed or removed input is followed in the chat binding, in the
-        // same update (one undo step), so the binding never names an input
-        // the interface no longer has.
-        const playground = fd.workflow.current?.playground;
-        const followed = edit ? followInterfaceInputEdit(playground, edit) : playground;
-        // Settings that no longer bind anything must not fall back to `turn`
-        // marks left on the interface: they go in the same update.
-        const cleared = followed !== playground && followed?.chat === null;
-        fd.workflow.batchUpdate({
-          interface: cleared ? withoutInterfaceTurns(next) : next,
-          ...(followed !== playground && { playground: followed })
-        });
-      }}
+      onChange={(next, edit) => fd.workflow.editInterface(next, edit)}
       onOpenPlaygroundSettings={fd.workflow.current.playground !== undefined
         ? () => (workflowSettingsTab = 'playground')
         : undefined}
@@ -1372,67 +1926,22 @@
 {/snippet}
 
 <!--
-  Two tabs of the workflow-settings surface: the schema-driven settings form,
-  and the interface editor. A tab, not a field in the settings form — see
-  Phase 3's rationale (`ConfigForm` cannot express a bindings list).
+  The workflow-settings surface: General | Interface | Playground as tabs in
+  the panel header. A tab, not a field in the settings form — see Phase 3's
+  rationale (`ConfigForm` cannot express a bindings list).
 -->
-{#snippet workflowSettingsTabs()}
-  <div class="workflow-settings-tabs">
-    <div class="workflow-settings-tabs__bar" role="tablist">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={activeWorkflowSettingsTab === 'settings'}
-        class="workflow-settings-tabs__tab"
-        class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'settings'}
-        onclick={() => (workflowSettingsTab = 'settings')}
-      >
-        {mergedMessages.navigation.workflowSettingsPanelSubtitle}
-      </button>
-      <button
-        type="button"
-        role="tab"
-        aria-selected={activeWorkflowSettingsTab === 'interface'}
-        class="workflow-settings-tabs__tab"
-        class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'interface'}
-        onclick={() => (workflowSettingsTab = 'interface')}
-      >
-        {mergedMessages.navigation.workflowSettingsInterfaceTab}
-      </button>
-      {#if fd.workflow.current?.playground !== undefined}
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeWorkflowSettingsTab === 'playground'}
-          class="workflow-settings-tabs__tab"
-          class:workflow-settings-tabs__tab--active={activeWorkflowSettingsTab === 'playground'}
-          onclick={() => (workflowSettingsTab = 'playground')}
-        >
-          {mergedMessages.navigation.workflowSettingsPlaygroundTab}
-        </button>
-      {/if}
-    </div>
-    <div
-      class="workflow-settings-tabs__panel"
-      style:display={activeWorkflowSettingsTab === 'settings' ? 'block' : 'none'}
-    >
-      {@render workflowConfigFormEl()}
-    </div>
-    <div
-      class="workflow-settings-tabs__panel"
-      style:display={activeWorkflowSettingsTab === 'interface' ? 'block' : 'none'}
-    >
-      {@render workflowInterfaceEl()}
-    </div>
-    {#if fd.workflow.current?.playground !== undefined}
-      <div
-        class="workflow-settings-tabs__panel"
-        style:display={activeWorkflowSettingsTab === 'playground' ? 'block' : 'none'}
-      >
-        {@render workflowPlaygroundEl()}
-      </div>
-    {/if}
-  </div>
+{#snippet workflowSettingsTabs(onClose?: () => void)}
+  <WorkflowSettingsPanel
+    tab={activeWorkflowSettingsTab}
+    onTabChange={(t) => (workflowSettingsTab = t)}
+    workflowId={fd.workflow.current?.id}
+    nodeCount={fd.workflow.current?.nodes?.length ?? 0}
+    connectionCount={fd.workflow.current?.edges?.length ?? 0}
+    {onClose}
+    general={workflowConfigFormEl}
+    interfaceBody={workflowInterfaceEl}
+    playground={fd.workflow.current?.playground !== undefined ? workflowPlaygroundEl : undefined}
+  />
 {/snippet}
 
 <!--
@@ -1443,19 +1952,21 @@
 {#snippet configBody(showHeader: boolean)}
   {#if activeConfig}
     <div class="config-surface">
-      {#if showHeader}
+      {#if showHeader && activeConfig.kind === 'node'}
         <div class="config-surface__header">
           <h2 class="config-surface__title">{activeConfig.title}</h2>
-          <button
-            class="config-surface__close"
-            onclick={closeActiveConfig}
-            aria-label={mergedMessages.layout.closeConfigPanel}
-          >
-            ×
-          </button>
+          {#if configClosable}
+            <button
+              class="config-surface__close"
+              onclick={closeActiveConfig}
+              aria-label={mergedMessages.layout.closeConfigPanel}
+            >
+              ×
+            </button>
+          {/if}
         </div>
       {/if}
-      {#if activeConfig.id}
+      {#if activeConfig.id && activeConfig.kind === 'node'}
         <div class="config-surface__details">
           <ReadOnlyDetails
             id={activeConfig.id}
@@ -1464,16 +1975,21 @@
           />
         </div>
       {/if}
-      <div class="config-surface__content">
+      <div
+        class="config-surface__content"
+        class:config-surface__content--bare={activeConfig.kind === 'workflow'}
+      >
         {#if activeConfig.kind === 'node'}
           <div class="config-surface__section">
-            <h3 class="config-surface__section-title">
-              {activeConfig.configTitle ?? 'Configuration'}
-            </h3>
-            {@render nodeConfigFormEl(activeConfig.node)}
+            {#if activeConfig.configTitle}
+              <h3 class="config-surface__section-title">{activeConfig.configTitle}</h3>
+            {/if}
+            {@render nodeInspectorEl(activeConfig.node)}
           </div>
         {:else}
-          {@render workflowSettingsTabs()}
+          {@render workflowSettingsTabs(
+            showHeader && configClosable ? closeActiveConfig : undefined
+          )}
         {/if}
       </div>
     </div>
@@ -1489,7 +2005,29 @@
 {/snippet}
 
 {#snippet consoleSurfaceBody()}
-  <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} />
+  <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} id={consolePanelId} />
+{/snippet}
+
+<!-- The Console's toggle: a slim strip on the canvas's bottom edge; the panel's header once open -->
+{#snippet consoleStrip()}
+  <ConsoleStrip
+    open={consoleActive}
+    controls={consolePanelId}
+    label={consoleTabOffered ? undefined : mergedMessages.navigation.bottomPanel.chat}
+    onToggle={toggleConsole}
+  />
+{/snippet}
+
+{#snippet nodesTabContent()}
+  {#if !testMode}
+    <NodeSidebar
+      {nodes}
+      loading={nodeTypesLoading}
+      activeFormat={fd.workflow.format}
+      categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
+      listStyle={themeConfig?.display?.sidebarList}
+    />
+  {/if}
 {/snippet}
 
 {#snippet chatSurfaceBody()}
@@ -1515,70 +2053,135 @@
   so the default experience is unchanged.
 -->
 {#snippet configPanelSidebar()}
-  {#if activeConfig}
+  {#if activeConfig?.kind === 'workflow'}
+    {@render workflowSettingsTabs(configClosable ? closeActiveConfig : undefined)}
+  {:else if activeConfig}
     <ConfigPanel
       title={activeConfig.title}
       id={activeConfig.id}
       description={activeConfig.description}
       details={activeConfig.details}
-      configTitle={activeConfig.configTitle ?? 'Configuration'}
-      onClose={closeActiveConfig}
-      onSwap={activeConfig.kind === 'node' && canvasEditable && features.enableNodeSwap
+      configTitle={activeConfig.configTitle}
+      onClose={configClosable ? closeActiveConfig : undefined}
+      onSwap={activeConfig.kind === 'node' && canvasEditable && !testMode && features.enableNodeSwap
         ? startSwap
         : undefined}
     >
-      {#if activeConfig.kind === 'node'}
-        {@render nodeConfigFormEl(activeConfig.node)}
-      {:else}
-        {@render workflowSettingsTabs()}
-      {/if}
+      {@render nodeInspectorEl(activeConfig.node)}
     </ConfigPanel>
   {/if}
 {/snippet}
 
+<!-- Test mode's Playground, in the left slot or, on a narrow screen, a drawer -->
+{#snippet dockedPlayground()}
+  {#if fd.workflow.current}
+    <DockedPlayground
+      workflow={fd.workflow.current}
+      config={playground}
+      onSave={saveWorkflow}
+      onOpenSettings={fd.workflow.current.playground !== undefined
+        ? openPlaygroundSettings
+        : undefined}
+    />
+  {/if}
+{/snippet}
+
 <!-- MainLayout wrapper for workflow editor -->
-<div class="flowdrop-root" data-fd-scope={scopeId}>
+<div class="flowdrop-root" data-fd-scope={scopeId} use:themeScope={{ mirror: true }}>
   <MainLayout
     {height}
     {width}
     showHeader={showNavbar}
-    showLeftSidebar={!disableSidebar}
+    showLeftSidebar={testMode ? dockedInColumn : !disableSidebar}
     showRightSidebar={showRightPanel}
     showBottomPanel={anyHere('below')}
     bottomPanelHeight={getUiSettings().consoleHeight}
     showFooter={false}
-    headerHeight={60}
+    headerHeight={48}
     {leftSidebarWidth}
     rightSidebarWidth={400}
-    leftSidebarMinWidth={getUiSettings().sidebarCollapsed ? 0 : 280}
-    leftSidebarMaxWidth={getUiSettings().sidebarCollapsed ? 0 : 450}
+    leftSidebarMinWidth={testMode ? 300 : getUiSettings().sidebarCollapsed ? 0 : SIDEBAR_MIN_WIDTH}
+    leftSidebarMaxWidth={testMode ? 560 : getUiSettings().sidebarCollapsed ? 0 : SIDEBAR_MAX_WIDTH}
+    leftSidebarMaxRatio={testMode ? undefined : SIDEBAR_MAX_RATIO}
+    onLeftSidebarResize={saveLeftWidth}
+    onBottomPanelResize={saveConsoleHeight}
+    bottomStrip={consoleStripShown ? consoleStrip : undefined}
+    bottomStripIsHeader={consoleHere('below')}
     rightSidebarMinWidth={320}
     rightSidebarMaxWidth={550}
-    enableLeftSplitPane={false}
+    enableLeftSplitPane={leftResizable}
     enableRightSplitPane={true}
     class="flowdrop-app-layout"
   >
     <!-- Header: Navbar -->
     {#snippet header()}
+      {#snippet doctorStatus()}
+        <DoctorMenu canApply={canvasEditable} />
+      {/snippet}
       <Navbar
         title={breadcrumbTitle}
         primaryActions={navbarActions.length > 0 ? navbarActions : defaultPrimaryActions}
         {showStatus}
         {showSettings}
+        {branding}
+        saveShortcut
+        onWorkflowSettings={toggleWorkflowSettings}
+        status={doctorStatus}
+        workflowSettingsOpen={isWorkflowSettingsOpen}
         {settingsCategories}
         {showSettingsSyncButton}
         {showSettingsResetButton}
       />
     {/snippet}
 
-    <!-- Left Sidebar: Node Components -->
+    <!-- Left Sidebar: Node Components; in Test mode, the Playground -->
     {#snippet leftSidebar()}
-      <NodeSidebar
-        {nodes}
-        loading={nodeTypesLoading}
-        activeFormat={fd.workflow.format}
-        categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
-      />
+      {#if testMode}
+        {@render dockedPlayground()}
+      {/if}
+      {#if chatInLeftSlot || !testMode}
+        <!-- Kept mounted (hidden) in Test mode, so the conversation survives the trip -->
+        <div
+          class="left-slot"
+          data-testid="left-slot"
+          style:display={testMode || isSidebarCollapsed ? 'none' : null}
+        >
+          <TabbedSurface
+            tabs={[
+              {
+                id: 'nodes',
+                label: mergedMessages.layout.nodesTab,
+                content: nodesTabContent
+              },
+              ...(chatInLeftSlot
+                ? [
+                    {
+                      id: 'assistant',
+                      label: mergedMessages.navigation.bottomPanel.chat,
+                      content: chatSurfaceBody
+                    }
+                  ]
+                : [])
+            ]}
+            activeId={leftTab}
+            onSelect={(id) => (leftTab = id === 'assistant' ? 'assistant' : 'nodes')}
+            ariaLabel={mergedMessages.layout.componentsSidebar}
+          >
+            {#snippet headerActions()}
+              {#if !disableSidebar}
+                <IconButton
+                  size="md"
+                  ariaLabel={mergedMessages.layout.collapseSidebar}
+                  title={mergedMessages.layout.collapseSidebar}
+                  onclick={toggleSidebar}
+                >
+                  <MenuOpenIcon />
+                </IconButton>
+              {/if}
+            {/snippet}
+          </TabbedSurface>
+        </div>
+      {/if}
     {/snippet}
 
     <!--
@@ -1667,25 +2270,59 @@
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="flowdrop-editor-main"
+      bind:this={editorMainEl}
+      bind:clientWidth={regionWidth}
       class:pipeline-view={!!pipelineId}
-      style="--fd-canvas-left-offset: {!disableSidebar ? leftSidebarWidth + 'px' : '0px'}"
+      style="--fd-canvas-left-offset: {testMode || !disableSidebar
+        ? leftSidebarWidth + 'px'
+        : '0px'}; --fd-canvas-toolbar-inset: {testMode && narrow && drawerOpen
+        ? 'var(--fd-test-drawer-width)'
+        : !testMode && !disableSidebar && isSidebarCollapsed
+          ? 'calc(var(--fd-canvas-control) + var(--fd-space-xs))'
+          : '0px'}"
       onclick={handleCanvasClick}
-      onkeydown={(e) => e.key === 'Escape' && closeConfigSidebar()}
+      onkeydown={(e) => {
+        if (e.key !== 'Escape') return;
+        // The topmost transient surface first (the node library), then the selection.
+        if (libraryOpen) libraryOpen = false;
+        else if (configPlacement === 'sheet') {
+          // The inspector sheet is inside this region: Esc in one of its fields is the field's.
+          const target = e.target as HTMLElement;
+          if (
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.isContentEditable
+          )
+            return;
+          closeActiveConfig();
+        } else closeConfigSidebar();
+      }}
       role="region"
       aria-label={mergedMessages.layout.workflowCanvas}
     >
-      <!-- Floating sidebar toggle — always visible on the canvas top-left -->
-      {#if !disableSidebar}
+      <!--
+        Floating sidebar toggle — always visible on the canvas top-left. In
+        Test mode the sidebar is the Playground: a column that needs no
+        toggle, or on a narrow screen a drawer that this button opens.
+      -->
+      {#if testMode ? narrow : !disableSidebar && isSidebarCollapsed}
         <CanvasIconButton
-          class="flowdrop-sidebar-fab"
-          label={isSidebarCollapsed
-            ? mergedMessages.layout.expandSidebar
-            : mergedMessages.layout.collapseSidebar}
-          active={!isSidebarCollapsed}
-          onclick={toggleSidebar}
+          class="flowdrop-sidebar-fab {testMode ? '' : 'flowdrop-sidebar-fab--edit'} {testMode &&
+          drawerOpen
+            ? 'flowdrop-sidebar-fab--beside-drawer'
+            : ''}"
+          label={testMode
+            ? drawerOpen
+              ? mergedMessages.layout.hidePlayground
+              : mergedMessages.layout.showPlayground
+            : isSidebarCollapsed
+              ? mergedMessages.layout.expandSidebar
+              : mergedMessages.layout.collapseSidebar}
+          active={testMode ? drawerOpen : !isSidebarCollapsed}
+          onclick={testMode ? () => (drawerOpen = !drawerOpen) : toggleSidebar}
         >
           {#snippet icon()}
-            {#if isSidebarCollapsed}
+            {#if testMode ? !drawerOpen : isSidebarCollapsed}
               <MenuIcon />
             {:else}
               <MenuOpenIcon />
@@ -1694,22 +2331,96 @@
         </CanvasIconButton>
       {/if}
 
+      <!-- Test mode, narrow screen: the Playground as a drawer over the canvas -->
+      {#if testMode && narrow}
+        <div class="test-drawer" data-testid="test-drawer" hidden={!drawerOpen}>
+          {@render dockedPlayground()}
+        </div>
+      {/if}
+
+      <!--
+        The open node (Test mode) or the workflow tabs (both modes) as a sheet over the
+        canvas's right edge. The workflow sheet is wider and resizable from its left edge.
+      -->
+      {#if configPlacement === 'sheet' && activeConfig}
+        <aside
+          class="inspector-sheet"
+          class:inspector-sheet--workflow={activeConfig.kind === 'workflow'}
+          data-testid="inspector-sheet"
+          data-kind={activeConfig.kind}
+          aria-label={activeConfig.title}
+          style={activeConfig.kind === 'workflow'
+            ? `width: min(${workflowSheetWidth}px, 100%)`
+            : undefined}
+        >
+          {#if activeConfig.kind === 'workflow'}
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+            <div
+              class="inspector-sheet__resizer"
+              class:inspector-sheet__resizer--active={liveSheetWidth !== null}
+              data-testid="inspector-sheet-resizer"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label={mergedMessages.layout.resizeWorkflowSheet}
+              aria-valuenow={workflowSheetWidth}
+              aria-valuemin={SHEET_MIN_WIDTH}
+              aria-valuemax={workflowSheetMax}
+              tabindex="0"
+              onpointerdown={onSheetResizeDown}
+              onpointermove={onSheetResizeMove}
+              onpointerup={onSheetResizeUp}
+              onpointercancel={onSheetResizeUp}
+              onkeydown={onSheetResizeKey}
+            ></div>
+          {/if}
+          {@render configPanelSidebar()}
+        </aside>
+      {/if}
+
+      <!-- Test mode: the node library as a popover (N) -->
+      {#if testMode && libraryOpen}
+        <div
+          class="node-library-popover"
+          class:node-library-popover--beside-drawer={narrow && drawerOpen}
+          data-testid="node-library-popover"
+          role="dialog"
+          aria-label={mergedMessages.layout.nodeLibrary}
+          bind:this={libraryEl}
+        >
+          <NodeSidebar
+            popover={true}
+            {nodes}
+            loading={nodeTypesLoading}
+            activeFormat={fd.workflow.format}
+            categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
+            listStyle={themeConfig?.display?.sidebarList}
+          />
+        </div>
+      {/if}
+
       <WorkflowEditor
         bind:this={workflowEditorRef}
         endpointConfig={endpointConfig ?? undefined}
         {authProvider}
-        {openConfigSidebar}
+        openConfigSidebar={testMode ? showNodeSheet : openConfigSidebar}
+        onSwapNode={canvasEditable && !testMode && features.enableNodeSwap
+          ? swapFromCanvas
+          : undefined}
+        onNodeClick={testMode ? showNodeSheet : undefined}
         {mode}
         {pipelineId}
         {refreshTrigger}
         builtinEditors={features.builtinEditors}
         {contextMenu}
         gridVariant={themeConfig?.canvas?.grid ?? 'dots'}
-        consoleOpen={consoleActive}
-        onToggleConsole={consoleGroupOffered ? toggleConsole : undefined}
-        consoleToggleLabel={consoleTabOffered
-          ? undefined
-          : mergedMessages.navigation.bottomPanel.chat}
+        editorMode={effectiveEditorMode}
+        onEditorModeChange={testModeAvailable ? (next) => fd.editorMode.set(next) : undefined}
+        onOpenTest={testModeAvailable ? () => fd.editorMode.set('test') : undefined}
+        onAskAssistant={askAssistant}
+        showRuns={testMode && features.runsList}
+        adminLinks={features.adminLinks}
+        {fitInset}
       />
     </div>
   </MainLayout>
@@ -1745,7 +2456,7 @@
   </SurfaceOverlay>
 {:else if consoleHere('modal')}
   <SurfaceOverlay
-    title={activeSurface === 'chat' || !consoleTabOffered
+    title={(activeSurface === 'chat' && chatInConsoleGroup) || !consoleTabOffered
       ? mergedMessages.navigation.bottomPanel.chat
       : mergedMessages.navigation.bottomPanel.console}
     closeLabel={mergedMessages.layout.closeConfigPanel}
@@ -1760,15 +2471,134 @@
     display: contents;
   }
 
+  /* Edit mode's left slot: the Nodes | Assistant tab strip fills it. */
+  .left-slot {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    min-width: 0;
+  }
+
+  .left-slot :global(.tabbed-surface__panel) {
+    min-width: 0;
+  }
+
+  .ask-about-run {
+    align-self: flex-start;
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md, 0.5rem);
+    background: var(--fd-background);
+    color: var(--fd-primary);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .ask-about-run:hover {
+    background: var(--fd-muted);
+  }
+
   /* Floating sidebar toggle button — placement only; visuals live in CanvasIconButton */
   :global(.flowdrop-sidebar-fab) {
-    top: 12px;
-    left: 12px;
+    /* Below the canvas toolbar, which holds the top-left corner (Test mode, narrow). */
+    top: calc(2 * var(--fd-canvas-inset) + var(--fd-canvas-control));
+    left: var(--fd-canvas-inset);
     z-index: 50;
+  }
+
+  /* Test mode on a narrow screen: the Playground over the canvas's left edge. */
+  .test-drawer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 55;
+    width: var(--fd-test-drawer-width);
+    background: var(--fd-background);
+    border-right: 1px solid var(--fd-border);
+    box-shadow: var(--fd-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+  }
+
+  /* Edit mode, sidebar collapsed: the expand control takes the toolbar row's start;
+     the toolbar is inset by control + gap (App sets --fd-canvas-toolbar-inset). */
+  :global(.flowdrop-sidebar-fab--edit) {
+    top: var(--fd-canvas-inset);
+  }
+
+  :global(.flowdrop-sidebar-fab--beside-drawer) {
+    left: calc(var(--fd-test-drawer-width) + var(--fd-canvas-inset)) !important;
+  }
+
+  /* Test mode's inspector: a sheet over the canvas's right edge; the canvas does not reflow. */
+  .inspector-sheet {
+    position: absolute;
+    top: var(--fd-sheet-inset);
+    right: var(--fd-sheet-inset);
+    bottom: var(--fd-sheet-inset);
+    z-index: 56;
+    width: min(360px, 100%);
+    overflow: hidden;
+    background: var(--fd-panel-bg, var(--fd-background));
+    border-style: solid;
+    border-width: var(--fd-sheet-border-width);
+    border-color: var(--fd-sheet-border);
+    border-radius: var(--fd-sheet-radius);
+    box-shadow: var(--fd-shadow-lg);
+  }
+
+  /* The workflow sheet's left edge: an 8px hit area inside the sheet, a ring line on hover/focus/drag. */
+  .inspector-sheet__resizer {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 1;
+    width: var(--fd-space-sm);
+    cursor: col-resize;
+    touch-action: none;
+    outline: none;
+  }
+  .inspector-sheet__resizer::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: var(--fd-ring);
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+  .inspector-sheet__resizer:hover::after,
+  .inspector-sheet__resizer:focus-visible::after,
+  .inspector-sheet__resizer--active::after {
+    opacity: 1;
+  }
+
+  /* Test mode's node library, over the canvas's top-left corner, below the canvas toolbar. */
+  .node-library-popover {
+    position: absolute;
+    top: 56px;
+    left: 12px;
+    z-index: 60;
+    width: 280px;
+    max-height: calc(100% - 68px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--fd-panel-bg, var(--fd-background));
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-lg, 8px);
+    box-shadow: var(--fd-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+  }
+
+  .node-library-popover--beside-drawer {
+    left: calc(var(--fd-test-drawer-width) + 60px);
   }
 
   /* Main editor area */
   .flowdrop-editor-main {
+    /* Test mode's drawer width. */
+    --fd-test-drawer-width: min(380px, 92%);
     flex: 1;
     position: relative;
     min-width: 0;
@@ -1827,9 +2657,7 @@
   }
 
   .config-surface__details {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--fd-border-muted);
-    background-color: var(--fd-card);
+    padding: 0.75rem 1rem 0;
     flex-shrink: 0;
   }
 
@@ -1851,47 +2679,11 @@
     font-size: var(--fd-text-xs);
     font-weight: 600;
     color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
-  /*
-    Inner tab strip for the workflow-settings surface — Settings vs. Interface
-    (Phase 3 of `.claude/plans/workflow-interface.md`). Deliberately not the
-    `TabbedSurface` component: that one governs which *host* a surface lives in
-    (sidebar/modal/below); this is a surface's own internal navigation, sitting
-    inside whichever host already scrolls it.
-  */
-  .workflow-settings-tabs {
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-xs, 0.5rem);
-  }
-
-  .workflow-settings-tabs__bar {
-    display: flex;
-    gap: 0;
-    border-bottom: 1px solid var(--fd-border);
-  }
-
-  .workflow-settings-tabs__tab {
-    padding: 0.375rem 0.75rem;
-    font-size: var(--fd-text-xs);
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: var(--fd-muted-foreground);
-    transition: all var(--fd-transition-fast);
-  }
-
-  .workflow-settings-tabs__tab:hover {
-    color: var(--fd-foreground);
-  }
-
-  .workflow-settings-tabs__tab--active {
-    color: var(--fd-foreground);
-    border-bottom-color: var(--fd-primary);
+  /* The workflow settings panel owns its own scroll and padding. */
+  .config-surface__content--bare {
+    padding: 0;
+    overflow: hidden;
   }
 </style>

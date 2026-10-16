@@ -17,6 +17,53 @@
   box-sizing: border-box;
 }
 
+/* Type base: untyped elements inside the library (library node items, toggles,
+   port rows) take the body size and ink instead of the host's 16px / black. */
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) {
+  font-size: var(--fd-text-body);
+  color: var(--fd-foreground);
+}
+
+/* Colour scheme: native form controls, their lists (a <select>'s popup) and the
+   scrollbars follow the resolved theme instead of the OS setting. The theme is
+   data-theme on the scope itself (or on any ancestor, e.g. the deprecated <html> mirror or a host-set one), so both
+   forms are matched. */
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) {
+  color-scheme: light;
+}
+
+[data-theme='dark'] :where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal),
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal)[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* One scrollbar for every scrolling area in the library, from the scrollbar
+   tokens. Components with their own ::-webkit-scrollbar rules still win. */
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fd-scrollbar-thumb) transparent;
+}
+
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) ::-webkit-scrollbar {
+  width: var(--fd-scrollbar-size);
+  height: var(--fd-scrollbar-size);
+}
+
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) ::-webkit-scrollbar-thumb {
+  background-color: var(--fd-scrollbar-thumb);
+  border: 2px solid transparent;
+  border-radius: var(--fd-radius-full);
+  background-clip: padding-box;
+}
+
+:where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal) ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--fd-scrollbar-thumb-hover);
+}
+
 /* Drop the UA default margin on paragraphs so block text sits on the grid;
    contexts that want spacing (e.g. .markdown-display p) opt back in. */
 :where(.flowdrop-root, .flowdrop-scope, .flowdrop-portal, .svelte-flow) p {
@@ -80,6 +127,8 @@
   --xy-controls-button-border-color: var(--fd-controls-button-border, var(--fd-border));
   --xy-controls-box-shadow: var(--fd-controls-box-shadow, 0 0 2px 1px rgba(0, 0, 0, 0.08));
 
+  --xy-attribution-background-color: transparent;
+
   --xy-minimap-background-color: var(--fd-minimap-bg, var(--fd-muted));
   --xy-minimap-mask-background-color: var(--fd-minimap-mask-bg, var(--fd-backdrop));
   --xy-minimap-mask-stroke-color: var(--fd-minimap-mask-stroke, var(--fd-border));
@@ -89,13 +138,105 @@
   --xy-minimap-node-stroke-width: var(--fd-minimap-node-stroke-width, 1);
 }
 
+/* Floating canvas controls: one inset from the canvas edge (xyflow's own is
+   15px). The attribution label keeps its corner, so the minimap lifts above it. */
+.svelte-flow .svelte-flow__panel:not(.svelte-flow__attribution) {
+  margin: var(--fd-canvas-inset);
+}
+
+.svelte-flow .svelte-flow__panel.svelte-flow__minimap {
+  margin-bottom: calc(var(--fd-canvas-inset) + var(--fd-minimap-attribution-clearance));
+}
+
 /* Minimap: render as a clearly bounded floating panel so users don't mistake
    it for the canvas and pan unintentionally when clicking/dragging on it. */
 .svelte-flow .svelte-flow__minimap {
-  border: 1px solid var(--fd-border-strong);
-  border-radius: var(--fd-radius-md);
-  box-shadow: var(--fd-shadow-md);
+  border: 1px solid var(--fd-minimap-border);
+  border-radius: var(--fd-minimap-radius);
+  box-shadow: var(--fd-minimap-shadow);
   overflow: hidden;
+}
+
+/* Zoom controls: one group. Default keeps xyflow's bordered buttons; Graphite
+   sets the tokens to a floating group of borderless ghost buttons. */
+.svelte-flow .svelte-flow__controls {
+  box-sizing: border-box;
+  align-items: center;
+  padding: var(--fd-zoom-group-padding);
+  background: var(--fd-zoom-group-bg);
+  border: var(--fd-zoom-group-border);
+  border-radius: var(--fd-zoom-group-radius);
+  box-shadow: var(--fd-zoom-group-shadow);
+  overflow: hidden;
+}
+
+.svelte-flow .svelte-flow__controls .svelte-flow__controls-button {
+  box-sizing: border-box;
+  width: var(--fd-zoom-button-size);
+  height: var(--fd-zoom-button-size);
+  border-radius: var(--fd-zoom-button-radius);
+}
+
+.svelte-flow .svelte-flow__controls.horizontal .svelte-flow__controls-button {
+  border-right: var(--fd-zoom-button-border);
+}
+
+.svelte-flow .svelte-flow__controls.horizontal .svelte-flow__controls-button:last-child {
+  border-right: none;
+}
+
+.svelte-flow .svelte-flow__controls-button svg {
+  max-width: var(--fd-zoom-icon-size);
+  max-height: var(--fd-zoom-icon-size);
+}
+
+/* Node port rows: the type tag, the shape glyph and their order are theme
+   knobs (Graphite: small mono tag, name left, no glyph). Defaults reproduce the
+   built-in look. */
+.svelte-flow__node .flowdrop-port-symbol {
+  display: var(--fd-node-port-symbol-display);
+}
+
+.svelte-flow__node .fd-port-label .flowdrop-badge--outline {
+  padding: var(--fd-node-port-chip-pad);
+  border-color: var(--fd-node-port-chip-border);
+  font-family: var(--fd-node-port-chip-font);
+  font-size: var(--fd-node-port-chip-size);
+}
+
+/* "Required" on a port: the badge, or (Graphite) a small asterisk after the
+   name with the word kept for screen readers. */
+.svelte-flow__node .fd-port-label .fd-port-label__required {
+  position: var(--fd-node-port-required-word-position, static);
+  width: var(--fd-node-port-required-word-size, auto);
+  height: var(--fd-node-port-required-word-size, auto);
+  overflow: var(--fd-node-port-required-word-overflow, visible);
+  clip-path: var(--fd-node-port-required-word-clip, none);
+}
+
+.svelte-flow__node .fd-port-label .fd-port-label__required-mark {
+  display: var(--fd-node-port-required-mark-display);
+  color: var(--fd-error);
+  font-size: var(--fd-node-port-required-mark-size);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.svelte-flow__node .fd-port-label__name {
+  font-weight: var(--fd-node-port-name-weight);
+}
+
+.svelte-flow__node .fd-port-label--right .fd-port-label__name {
+  order: var(--fd-node-port-out-name-order);
+  text-align: var(--fd-node-port-out-name-align);
+}
+
+.svelte-flow__node .fd-port-label--right .flowdrop-badge--outline {
+  order: var(--fd-node-port-out-chip-order);
+}
+
+.svelte-flow__node .fd-port-label--right .flowdrop-port-symbol {
+  order: var(--fd-node-port-out-symbol-order);
 }
 
 /* Flow node handles: 20px connection area, 12px visible circle (::before)
@@ -141,16 +282,6 @@
   outline-offset: var(--fd-ring-offset);
 }
 
-/* Interface-bound marker: a port bound to a `workflow.interface` entry
-   (see utils/workflowInterface.ts#interfaceBoundHandles) gets a subtle ring
-   around its visible dot. One shared class, applied by every node component
-   that renders a Handle, rather than five per-component styles. Reuses the
-   same --fd-ring token as the focus ring so it reads consistently — and
-   stays correct automatically — in both light and dark skins. */
-.svelte-flow .svelte-flow__handle.flowdrop-handle--bound::before {
-  box-shadow: 0 0 0 var(--fd-ring-width) color-mix(in srgb, var(--fd-ring) 55%, transparent);
-}
-
 /* Centralized handle edge positioning — offset derived from --fd-handle-size */
 .svelte-flow .svelte-flow__handle-left {
   left: var(--fd-handle-offset);
@@ -165,6 +296,39 @@
   bottom: var(--fd-handle-offset);
 }
 
+/* Zoom tiers (editor.zoomTiers): a wired port is a stub on the card edge in the
+   outline and glyph tiers, an open port is hidden, and the map tier draws no
+   handles at all. Handles are hidden with `visibility`, never removed or moved,
+   so every edge keeps its endpoint. Sizes are flow px (tokens.css). */
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph']) .svelte-flow__handle::before {
+  width: var(--fd-node-zoom-stub-width);
+  height: var(--fd-node-zoom-stub-height);
+  border: none;
+  border-radius: var(--fd-node-zoom-stub-radius);
+}
+
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph']) .svelte-flow__handle-left::before {
+  translate: calc(var(--fd-node-zoom-stub-width) / -2) 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph']) .svelte-flow__handle-right::before {
+  translate: calc(var(--fd-node-zoom-stub-width) / 2) 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph']) .svelte-flow__handle.fd-handle--open,
+[data-fd-zoom='map'] .svelte-flow__handle {
+  visibility: hidden;
+}
+
+:is([data-fd-zoom='outline'], [data-fd-zoom='glyph'], [data-fd-zoom='map'])
+  .svelte-flow__handle::after {
+  display: none;
+}
+
 /* Button styles */
 .flowdrop-btn {
   display: inline-flex;
@@ -175,7 +339,7 @@
   border: 1px solid transparent;
   border-radius: var(--fd-radius-md);
   font-size: var(--fd-text-sm);
-  font-weight: 500;
+  font-weight: var(--fd-button-font-weight);
   text-decoration: none;
   cursor: pointer;
   transition: all var(--fd-transition-normal);
@@ -216,7 +380,7 @@
 .flowdrop-btn--outline {
   background-color: transparent;
   color: var(--fd-foreground);
-  border-color: var(--fd-border);
+  border-color: var(--fd-button-secondary-border);
 }
 
 .flowdrop-btn--outline:hover {
@@ -231,12 +395,12 @@
 }
 
 .flowdrop-btn--ghost:hover {
-  background-color: var(--fd-muted);
+  background-color: var(--fd-button-ghost-hover);
 }
 
 .flowdrop-btn--sm {
-  /* Same height as IconButton's sm (--fd-size-icon-btn), so the two sit on one
-     line without callers overriding either. */
+  /* The 28px control height (--fd-size-icon-btn), so a small button and an
+     icon button sit on one line without callers overriding either. */
   padding: 0 var(--fd-space-md);
   font-size: var(--fd-text-xs);
   min-height: var(--fd-size-icon-btn);
@@ -246,130 +410,6 @@
   padding: var(--fd-space-md) var(--fd-space-3xl);
   font-size: var(--fd-text-base);
   min-height: var(--fd-space-6xl);
-}
-
-/* ───────────────────────────────────────────────────────────────────────────
-   Icon buttons — square, icon-only. The typed primitive IconButton.svelte
-   routes here (the same way Button.svelte routes through .flowdrop-btn). It
-   composes onto .flowdrop-btn, then overrides geometry to a fixed square and
-   layers a tint variant. Corners follow --fd-control-radius so the Drafter
-   theme gets crisp icon buttons alongside its form controls.
-
-   Sizes: md (default) is 32px with a 16px glyph — the dominant size across the
-   library (form-array actions, modal closes, toolbars). sm maps to the
-   canonical --fd-size-icon-btn token (28px); lg is 36px (canvas-scale). */
-.flowdrop-btn--icon {
-  width: 2rem;
-  height: 2rem;
-  min-height: 0;
-  padding: 0;
-  border-radius: var(--fd-control-radius);
-  color: var(--fd-muted-foreground);
-}
-
-.flowdrop-btn--icon svg {
-  width: 1rem;
-  height: 1rem;
-}
-
-.flowdrop-btn--icon.flowdrop-btn--sm {
-  width: var(--fd-size-icon-btn);
-  height: var(--fd-size-icon-btn);
-  padding: 0;
-}
-
-.flowdrop-btn--icon.flowdrop-btn--sm svg {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-.flowdrop-btn--icon.flowdrop-btn--lg {
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-}
-
-.flowdrop-btn--icon.flowdrop-btn--lg svg {
-  width: 1.125rem;
-  height: 1.125rem;
-}
-
-/* Ghost (default for icon buttons) — transparent until hover. */
-.flowdrop-btn--icon.flowdrop-btn--ghost:hover:not(:disabled) {
-  background-color: var(--fd-muted);
-  color: var(--fd-foreground);
-  border-color: transparent;
-}
-
-/* Default — flat --fd-background surface with a resting border. */
-.flowdrop-btn--icon-default {
-  background-color: var(--fd-background);
-  border-color: var(--fd-border);
-}
-
-.flowdrop-btn--icon-default:hover:not(:disabled) {
-  background-color: var(--fd-muted);
-  color: var(--fd-foreground);
-}
-
-/* Tinted semantic variants — muted fill + semantic border/text, solid on press.
-   Unlike the solid text-button --primary, the icon flavour stays a quiet tint
-   so a row of action buttons reads as a group, not a wall of colour. */
-.flowdrop-btn--icon-primary {
-  background-color: var(--fd-primary-muted);
-  border-color: var(--fd-primary);
-  color: var(--fd-primary-hover);
-}
-
-.flowdrop-btn--icon-primary:hover:not(:disabled) {
-  border-color: var(--fd-primary-hover);
-  color: var(--fd-primary-hover);
-}
-
-.flowdrop-btn--icon-primary:active:not(:disabled) {
-  background-color: var(--fd-primary);
-}
-
-.flowdrop-btn--icon-danger {
-  background-color: var(--fd-error-muted);
-  border-color: var(--fd-error);
-  color: var(--fd-error);
-}
-
-.flowdrop-btn--icon-danger:hover:not(:disabled) {
-  border-color: var(--fd-error-hover);
-  color: var(--fd-error-hover);
-}
-
-.flowdrop-btn--icon-danger:active:not(:disabled) {
-  background-color: var(--fd-error);
-}
-
-.flowdrop-btn--icon-success {
-  background-color: var(--fd-success-muted);
-  border-color: var(--fd-success);
-  color: var(--fd-success);
-}
-
-.flowdrop-btn--icon-success:hover:not(:disabled) {
-  border-color: var(--fd-success-hover);
-  color: var(--fd-success-hover);
-}
-
-.flowdrop-btn--icon-success:active:not(:disabled) {
-  background-color: var(--fd-success);
-}
-
-/* Active / toggled state (e.g. a pressed canvas control) — primary tint. */
-.flowdrop-btn--icon.is-active {
-  color: var(--fd-primary);
-  background-color: var(--fd-primary-muted);
-  border-color: var(--fd-primary);
-}
-
-.flowdrop-btn--icon:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
 }
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -384,15 +424,17 @@
 .flowdrop-input {
   display: block;
   width: 100%;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid var(--fd-border);
+  height: var(--fd-field-height);
+  padding: var(--fd-field-padding);
+  box-sizing: border-box;
+  border: 1px solid var(--fd-field-border-color);
   border-radius: var(--fd-control-radius);
   font-size: var(--fd-text-sm);
   font-family: inherit;
   line-height: 1.25rem;
   color: var(--fd-foreground);
   background-color: var(--fd-background);
-  box-shadow: var(--fd-shadow-sm);
+  box-shadow: var(--fd-field-shadow);
   transition:
     border-color var(--fd-transition-normal),
     box-shadow var(--fd-transition-normal);
@@ -409,6 +451,13 @@
 
 .flowdrop-input:focus {
   border-color: var(--fd-ring);
+  box-shadow: var(--fd-field-focus-shadow);
+}
+
+/* Text controls draw their focus themselves where a theme sets the outline to none
+   (Graphite: accent border + ring), so there is never a double ring. */
+.flowdrop-input.flowdrop-input:focus-visible {
+  outline: var(--fd-field-focus-outline);
 }
 
 .flowdrop-input:disabled {
@@ -426,11 +475,13 @@
 
 /* Sizes */
 .flowdrop-input--sm {
+  height: var(--fd-field-height-sm);
   padding: 0.375rem 0.625rem;
   font-size: var(--fd-text-xs);
 }
 
 .flowdrop-input--lg {
+  height: auto;
   padding: 0.75rem 1rem;
   font-size: var(--fd-text-base);
 }
@@ -442,7 +493,9 @@
 
 /* Multiline */
 .flowdrop-input--textarea {
-  min-height: 5rem;
+  height: auto;
+  padding: var(--fd-field-padding-multiline);
+  min-height: var(--fd-field-min-height-multiline);
   line-height: 1.5;
   resize: vertical;
 }
@@ -450,6 +503,7 @@
 /* Select: room for the chevron overlay; native arrow removed. */
 .flowdrop-input--select {
   padding-right: 2.5rem;
+  line-height: normal; /* a fixed line box clips descenders in a fixed-height select */
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
@@ -479,6 +533,89 @@
 .flowdrop-select-wrap__icon svg {
   width: 1rem;
   height: 1rem;
+}
+
+/* Customisable select: where the browser supports `appearance: base-select`, the
+   native <select>'s list is styled like the rest of the editor's popups (same
+   surface, radius, shadow, item shape as Menu and the searchable Combobox) and
+   it stays a real <select>: keyboard, type-ahead, mobile pickers, screen readers.
+   Elsewhere the rule is skipped and the platform's list shows, in the editor's
+   colour-scheme. Our own chevron overlay replaces the built-in one. */
+@supports (appearance: base-select) {
+  .flowdrop-input--select,
+  .flowdrop-input--select::picker(select) {
+    appearance: base-select;
+  }
+
+  /* The select's inner button fills the field; centre its content like the other inputs. */
+  .flowdrop-input--select {
+    display: flex;
+    align-items: center;
+  }
+
+  .flowdrop-input--select::picker-icon {
+    display: none;
+  }
+
+  .flowdrop-input--select::picker(select) {
+    box-sizing: border-box;
+    margin-block: var(--fd-space-3xs);
+    padding: var(--fd-space-2xs);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-menu-radius);
+    background-color: var(--fd-background);
+    color: var(--fd-foreground);
+    box-shadow: var(--fd-menu-shadow);
+    font-family: var(--fd-font-sans);
+    font-size: var(--fd-text-sm);
+    scrollbar-width: thin;
+  }
+
+  /* 1px between items, so a hovered neighbour of the chosen one never fuses with it. A display
+     on ::picker(select) would override the closed popover's display: none, so it is a margin. */
+  .flowdrop-input--select option + option {
+    margin-block-start: 1px;
+  }
+
+  .flowdrop-input--select option {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-xs) var(--fd-space-sm);
+    border-radius: var(--fd-menu-item-radius);
+    cursor: pointer;
+  }
+
+  .flowdrop-input--select option:hover,
+  .flowdrop-input--select option:focus-visible:not(:checked) {
+    background-color: var(--fd-muted);
+    outline: none;
+  }
+
+  /* Chosen is the check glyph and a touch of weight; the fill belongs to the pointer (hover). */
+  .flowdrop-input--select option:checked {
+    background-color: transparent;
+    font-weight: 500;
+  }
+
+  .flowdrop-input--select option:checked:hover {
+    background-color: var(--fd-muted);
+  }
+
+  /* The browser focuses the chosen option on open: a hairline marks the keyboard position, the fill stays the pointer's. */
+  .flowdrop-input--select option:checked:focus-visible {
+    outline: 1px solid var(--fd-border-strong);
+    outline-offset: -1px;
+  }
+
+  .flowdrop-input--select option::checkmark {
+    color: var(--fd-primary);
+  }
+
+  .flowdrop-input--select option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 /* Input with a leading/trailing affordance (e.g. a search magnifier). */
@@ -1407,11 +1544,11 @@
 	   for a consistent look and to avoid confusion with selected state.
 	   ========================================================================= */
 
-  --fd-notes-node-width: 500px;
-  --fd-notes-node-min-width: 250px;
+  --fd-notes-node-width: 300px;
+  --fd-notes-node-min-width: 200px;
   --fd-notes-node-max-width: 500px;
-  --fd-notes-node-min-height: 200px;
-  --fd-notes-node-backdrop-filter: blur(8px);
+  --fd-notes-node-min-height: 60px;
+  --fd-notes-node-backdrop-filter: none;
 
   /* =========================================================================
 	   Caption Node Component Tokens

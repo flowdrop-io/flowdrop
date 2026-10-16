@@ -3,15 +3,13 @@
   import StatusLabel from './StatusLabel.svelte';
 
   const { Story } = defineMeta({
-    title: 'Display/StatusLabel',
+    title: 'Components/StatusLabel',
     component: StatusLabel,
     tags: ['autodocs'],
-    argTypes: {
-      label: { control: 'text' }
-    }
+    argTypes: { label: { control: 'text' } }
   });
 </script>
 
 <Story name="Default" args={{ label: 'Ready' }} />
 
-<Story name="Long Text" args={{ label: 'Processing workflow execution...' }} />
+<Story name="Long text" args={{ label: 'Processing workflow execution...' }} />

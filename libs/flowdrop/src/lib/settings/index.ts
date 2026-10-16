@@ -45,6 +45,7 @@ export type {
   SyncStatus,
   SettingsStoreState
 } from '../types/settings.js';
+export type { ZoomTierConfig, ZoomTierName } from '../utils/zoomTier.js';
 
 export {
   SETTINGS_CATEGORIES,

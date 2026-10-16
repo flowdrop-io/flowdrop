@@ -8,11 +8,11 @@
   import {
     SvelteFlow,
     ConnectionLineType,
-    Controls,
     Background,
     BackgroundVariant,
     MiniMap,
-    type ColorMode
+    type ColorMode,
+    type OnConnectStart
   } from '@xyflow/svelte';
   import '@xyflow/svelte/dist/style.css';
   import {
@@ -22,7 +22,15 @@
   } from '../stores/settingsStore.svelte.js';
   import type { WorkflowNode as WorkflowNodeType, Workflow, WorkflowEdge } from '../types/index.js';
   import CanvasBanner from './CanvasBanner.svelte';
+  import CanvasToolbar from './CanvasToolbar.svelte';
   import CanvasController from './CanvasController.svelte';
+  import StraightGuides from './StraightGuides.svelte';
+  import { snapToStraight, type StraightGuide } from '../utils/straightWires.js';
+  import { createStoreCommandContext } from '../commands/storeIntegration.svelte.js';
+  import { executeCommand } from '../commands/executor.js';
+  import type { CommandResult, LayoutResultData } from '../commands/types.js';
+  import { describeTidy, tweenPositions, TIDY_ANIMATION_MS } from '../editor/tidy.js';
+  import CanvasZoomControls from './CanvasZoomControls.svelte';
   import CanvasContextMenu from './CanvasContextMenu.svelte';
   import {
     resolveContextMenuEntries,
@@ -35,6 +43,7 @@
   } from '../editor/contextMenu.js';
   import type { NodeMetadata } from '../types/index.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
+  import { nodeAriaLabel } from '../utils/nodeAriaLabel.js';
   import { decideInlineCommit } from '../utils/captionText.js';
   import FlowDropZone from './FlowDropZone.svelte';
   import EdgeRefresher from './EdgeRefresher.svelte';
@@ -43,7 +52,8 @@
   import type { AuthProvider } from '../types/auth.js';
   import ConnectionLine from './ConnectionLine.svelte';
   import FlowDropEdge from './FlowDropEdge.svelte';
-  import { m, getMessages } from '$lib/messages/index.js';
+  import LoopbackLanes from './LoopbackLanes.svelte';
+  import { getMessages } from '$lib/messages/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import type { FlowDropGridVariant } from '../types/theme.js';
@@ -54,31 +64,67 @@
     WorkflowOperationsHelper,
     ConfigurationHelper
   } from '../helpers/workflowEditorHelper.js';
-  import type { NodeExecutionInfo } from '../types/index.js';
   import { Toaster } from 'svelte-5-french-toast';
   import {
     flowdropToastOptions,
     FLOWDROP_TOASTER_CLASS,
-    apiToasts
+    apiToasts,
+    showError,
+    showInfo,
+    showSuccess
   } from '../services/toastService.js';
   import {
     ProximityConnectHelper,
     type ProximityEdgeCandidate
   } from '../helpers/proximityConnect.js';
   import PortCoordinateTracker from './PortCoordinateTracker.svelte';
+  import { interfaceTagReserve } from '../utils/interfaceTags.js';
+  import ZoomTier from './ZoomTier.svelte';
+  import InterfaceTagLayer, { type InterfaceTagEdit } from './InterfaceTagLayer.svelte';
+  import type { InterfaceMenuActions, PortTarget } from '../editor/interfaceMenu.js';
+  import { buildPortMenuEntries, type PortMenuActions } from '../editor/portMenu.js';
+  import {
+    buildConnectEdge,
+    connectPickerGroups,
+    listConnectCandidates,
+    type ConnectCandidate
+  } from '../editor/connectCandidates.js';
+  import ConnectPortPicker from './ConnectPortPicker.svelte';
+  import {
+    applyPortExposure,
+    exposureCandidates,
+    type PortExposureMode
+  } from '../utils/portExposure.js';
+  import {
+    entryAtPort,
+    exposePortAsEntry,
+    removeInterfaceEntry,
+    renameInterfaceEntry
+  } from '../utils/interfaceTags.js';
+  import { extractDirection, extractPortId } from '../utils/handleIds.js';
   import { logger } from '../utils/logger.js';
   import { validateWorkflowData } from '../utils/validation.js';
   import { suppressPortDragSelection } from '../utils/canvasSelection.js';
+  import {
+    MINIMAP_WIDTH,
+    MINIMAP_HEIGHT,
+    MINIMAP_BORDER,
+    shouldShowMinimap
+  } from '../utils/minimapVisibility.js';
   import { createEditorStateMachine } from '../stores/editorStateMachine.svelte.js';
-  import CanvasIconButton from '$lib/components/CanvasIconButton.svelte';
-  import CommandLineIcon from '$lib/components/icons/CommandLineIcon.svelte';
   import { DEV } from 'esm-env';
+  import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
+  import { isEventInputConnection } from '../utils/reservedPorts.js';
 
   interface Props {
     endpointConfig?: EndpointConfig;
     /** Auth provider applied to this instance's API requests. */
     authProvider?: AuthProvider;
     openConfigSidebar?: (node: WorkflowNodeType) => void;
+    /** Start the node-swap flow for a node. Omit to leave "Swap node" out of the context menu. */
+    onSwapNode?: (nodeId: string) => void;
+    /** A node was clicked (not dragged). Test mode opens its inspector sheet from here. */
+    onNodeClick?: (node: WorkflowNodeType) => void;
     /**
      * Editor interaction mode. `'edit'` allows node drag/connect/select and
      * proximity-connect; `'readonly'` and `'locked'` disable all canvas
@@ -95,11 +141,22 @@
      * arrivals down to the canvas without owning a separate status channel.
      */
     refreshTrigger?: number;
-    // Console toggle
+    /**
+     * @deprecated No effect. The console is a bottom strip driven by the `ui.consoleOpen`
+     * setting; the toolbar toggle these three props fed is gone. Accepted so 2.11.0 hosts
+     * keep compiling. Removed in 3.0; use `updateSettings({ ui: { consoleOpen } })`.
+     */
     consoleOpen?: boolean;
+    /** @deprecated No effect (see `consoleOpen`). Removed in 3.0. */
     onToggleConsole?: () => void;
-    /** Label of the console-group toggle; defaults to the Command Console wording. */
+    /** @deprecated No effect (see `consoleOpen`). Removed in 3.0. */
     consoleToggleLabel?: string;
+    /** Take a failed run on the run pill to the Assistant. */
+    onAskAssistant?: (runId: string) => void;
+    /** Offer the Runs list in Test mode (the canvas toolbar's "Runs"). @default false */
+    showRuns?: boolean;
+    /** Host URL templates for the Runs list's admin links (`features.adminLinks`). */
+    adminLinks?: { runs?: string; run?: string };
     /** Per-instance state container (created by mount functions). Defaults to the page-default instance. */
     instance?: FlowDropInstance;
     /**
@@ -125,8 +182,31 @@
      * The menu only opens in `'edit'` mode.
      */
     contextMenu?: ContextMenuOptions;
+    /**
+     * Show the run pill in the canvas toolbar while a run exists (a Console
+     * `session run`, an Assistant run). It appears only for an editable
+     * canvas and never at rest. In Test mode it shows only while the run is
+     * live. Hosts that show runs another way set `false`.
+     * @default true
+     */
+    showRunBar?: boolean;
+    /**
+     * Take the person to the run in Test mode: the run pill's Open button, shown
+     * while a run waits for them. Without it the button is not shown.
+     */
+    onOpenTest?: () => void;
+    /** Current editor mode, shown in the canvas toolbar's Edit | Test switch. @default 'edit' */
+    editorMode?: 'edit' | 'test';
+    /** Switch the editor mode. The toolbar's Edit | Test switch is shown only when this is set. */
+    onEditorModeChange?: (mode: 'edit' | 'test') => void;
+    /**
+     * How much of the canvas's right side an open sheet covers, in px, read when
+     * the view is fitted so the graph lands in the visible part. @default 0
+     */
+    fitInset?: () => number;
   }
 
+  // eslint-disable-next-line svelte/no-unused-props -- `consoleOpen`, `onToggleConsole` and `consoleToggleLabel` are deprecated no-ops kept for hosts
   let props: Props = $props();
 
   // Resolve (and provide to children) the per-instance state container.
@@ -198,17 +278,10 @@
   let flowNodes = $state.raw<WorkflowNodeType[]>([]);
   let flowEdges = $state.raw<WorkflowEdge[]>([]);
 
-  // Execution info loading state
+  // Run status loading. The status itself lives in fd.playground.nodeStatuses
+  // (never on the nodes); the editor only decides when to ask fd.runs to load it.
   /** Cancels the scheduled (not yet started) execution-info load, if any. */
   let cancelScheduledExecutionInfo: (() => void) | null = null;
-  let executionInfoAbortController: AbortController | null = null;
-  /**
-   * The last execution info that loaded for the shown pipeline. Plain (not
-   * reactive) on purpose: it is only read when flowNodes is rebuilt from the
-   * store, which has no executionInfo of its own. Cleared whenever the
-   * pipeline or workflow changes, so it can never paint another run.
-   */
-  let latestExecutionInfo: Record<string, NodeExecutionInfo> | null = null;
 
   /**
    * Key for SvelteFlow component — changes when workflow ID changes.
@@ -239,8 +312,16 @@
   // ---------------------------------------------------------------------------
   /** Add the callbacks every node component can call: open config, commit an in-place edit. */
   function withNodeCallbacks(node: WorkflowNodeType) {
+    // Accessible name for xyflow's focusable node wrapper (the inner node
+    // components are role-less, so they cannot carry one).
+    const title =
+      (node.data.config?.instanceTitle as string) || node.data.label || node.data.metadata?.name;
+    const componentName = node.data.metadata
+      ? resolveComponentName(fd.nodes, node.data.metadata, node.data.config?.nodeType as string)
+      : 'workflowNode';
     return {
       ...node,
+      ariaLabel: nodeAriaLabel(getMsgs().nodes.graph, componentName, title ?? node.id),
       data: {
         ...node.data,
         onConfigOpen: props.openConfigSidebar,
@@ -255,17 +336,14 @@
   } {
     const nodesWithCallbacks = workflow.nodes.map(withNodeCallbacks);
     const styledEdges = EdgeStylingHelper.updateEdgeStyles(workflow.edges, nodesWithCallbacks);
-    // Re-apply the loaded run status: a rebuild must not drop the badges.
-    const nodes = latestExecutionInfo
-      ? NodeOperationsHelper.applyExecutionInfo(nodesWithCallbacks, latestExecutionInfo)
-      : nodesWithCallbacks;
-    return { nodes, edges: styledEdges };
+    return { nodes: nodesWithCallbacks, edges: styledEdges };
   }
 
   // ---------------------------------------------------------------------------
   // Helper: sync current flowNodes/flowEdges back to the global store
   // ---------------------------------------------------------------------------
   function syncFlowToStore(): void {
+    finishTidyAnimation();
     const storeValue = untrack(() => fd.workflow.current);
     if (!storeValue) return;
     const updatedWorkflow = WorkflowOperationsHelper.updateWorkflow(
@@ -302,7 +380,7 @@
     const isNewWorkflow = storeValue.id !== previousSyncedWorkflowId;
 
     // A different workflow never inherits the previous one's run status.
-    if (isNewWorkflow) latestExecutionInfo = null;
+    if (isNewWorkflow) untrack(() => fd.runs.clearNodeStatuses());
 
     if (isNewWorkflow) {
       untrack(() =>
@@ -312,7 +390,19 @@
 
     // Derive flowNodes/flowEdges from store
     const derived = buildFlowNodesFromStore(storeValue);
-    flowNodes = derived.nodes;
+    // The canvas owns selection. The store only holds the flags of its last
+    // structural sync, so rebuilding from it (any config edit) must not bring a
+    // stale selection back: two nodes would show the ring while the inspector
+    // names one. Nodes the canvas has not seen yet keep the store's flag.
+    const canvasSelection = isNewWorkflow
+      ? null
+      : untrack(() => new Map(flowNodes.map((n) => [n.id, !!n.selected])));
+    flowNodes = canvasSelection
+      ? derived.nodes.map((n) => {
+          const selected = canvasSelection.get(n.id);
+          return selected === undefined || selected === !!n.selected ? n : { ...n, selected };
+        })
+      : derived.nodes;
     flowEdges = derived.edges;
     previousSyncedWorkflowId = storeValue.id;
 
@@ -331,12 +421,9 @@
   // ---------------------------------------------------------------------------
   // Execution info effect (separate — async, depends on workflow + pipeline ID)
   // ---------------------------------------------------------------------------
-  /** Forget the loaded run status and take it off the canvas nodes. */
+  /** Forget the loaded run status (and any load still in flight). */
   function resetExecutionInfo(): void {
-    latestExecutionInfo = null;
-    untrack(() => {
-      flowNodes = NodeOperationsHelper.applyExecutionInfo(flowNodes, null);
-    });
+    untrack(() => fd.runs.clearNodeStatuses());
   }
 
   let previousExecWorkflowId: string | null = null;
@@ -365,7 +452,6 @@
     // Cancel any pending schedule and any in-flight fetch (it belongs to the
     // previous pipeline), and drop the previous run's status.
     cancelScheduledExecutionInfo?.();
-    executionInfoAbortController?.abort();
     resetExecutionInfo();
 
     // Schedule loading with requestIdleCallback (falls back to setTimeout)
@@ -379,19 +465,18 @@
   });
 
   // On unmount: drop a scheduled load and discard an in-flight one, so
-  // nothing writes flowNodes after the editor is gone.
+  // nothing writes the store after the editor is gone.
   $effect(() => () => {
     cancelScheduledExecutionInfo?.();
-    executionInfoAbortController?.abort();
-    latestExecutionInfo = null;
+    fd.runs.clearNodeStatuses();
   });
 
   // Re-fetch node execution info when the parent bumps refreshTrigger
   // (poll ticks, chat-message arrivals, manual refresh). loadNodeExecutionInfo()
-  // is the single loader of executionInfo: it keeps the result in
-  // latestExecutionInfo and paints it onto flowNodes. buildFlowNodesFromStore
-  // re-applies that map on every rebuild, so a store change or a settings
-  // change never drops the badges. No parallel channel.
+  // is the single loader of run status: fd.runs puts the result in
+  // fd.playground.nodeStatuses, which the node overlay reads. Nothing is
+  // written onto flowNodes, so a rebuild from the store (any edit, a settings
+  // change) never drops the badges. No parallel channel.
   // svelte-ignore state_referenced_locally
   let _prevExecRefreshTrigger = props.refreshTrigger ?? 0;
   $effect(() => {
@@ -429,42 +514,14 @@
   });
 
   /**
-   * Load node execution information for all nodes in the workflow.
-   * Cancels any in-flight fetch so concurrent callers (pipelineId change
-   * and refreshTrigger bumps) can't race on flowNodes.
+   * Ask the run controller to load node status for the shown pipeline.
+   * A newer call (pipelineId change, refreshTrigger bump) supersedes an
+   * in-flight one, so they can't race.
    */
   async function loadNodeExecutionInfo(): Promise<void> {
     const workflow = untrack(() => fd.workflow.current);
     if (!workflow?.nodes || !props.pipelineId) return;
-
-    if (executionInfoAbortController) {
-      executionInfoAbortController.abort();
-    }
-    const controller = new AbortController();
-    executionInfoAbortController = controller;
-
-    try {
-      const executionInfo = await NodeOperationsHelper.loadNodeExecutionInfo(
-        fd.api,
-        workflow,
-        props.pipelineId
-      );
-
-      if (controller.signal.aborted) return;
-
-      // Keep the map for later rebuilds, and paint it now (visual-only, no
-      // store sync needed).
-      latestExecutionInfo = executionInfo;
-      flowNodes = NodeOperationsHelper.applyExecutionInfo(flowNodes, executionInfo);
-
-      if (executionInfoAbortController === controller) {
-        executionInfoAbortController = null;
-      }
-    } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
-        logger.error('Failed to load node execution info:', error);
-      }
-    }
+    await fd.runs.loadNodeStatuses(props.pipelineId, workflow);
   }
 
   // The global store should be initialized by the parent App component
@@ -493,9 +550,56 @@
    * position updates. SvelteFlow mutates flowNodes directly via bind:nodes.
    */
   function handleNodeDragStart(): void {
+    finishTidyAnimation();
     machine.send('START_DRAG');
+    lastMagnet = null;
+    straightGuides = [];
     // Clear any leftover proximity previews
     currentProximityCandidates = [];
+  }
+
+  /** Guide lines along the wires a dragged node has snapped straight. */
+  let straightGuides = $state.raw<StraightGuide[]>([]);
+  /** The last magnetic shift of the running drag, re-applied at drag stop (xyflow rewrites the raw position then). */
+  let lastMagnet: { dy: number; ids: Set<string> } | null = null;
+
+  /** Move nodes vertically (flow units) in the canvas state. */
+  function shiftNodes(ids: ReadonlySet<string>, dy: number): void {
+    flowNodes = flowNodes.map((n) =>
+      ids.has(n.id) ? { ...n, position: { x: n.position.x, y: n.position.y + dy } } : n
+    );
+  }
+
+  /**
+   * Magnetic alignment: when a wire from a dragged node is within 10px of
+   * straight, shift the dragged node(s) so it is exactly straight and show a
+   * guide along it. Alt switches it off. xyflow recomputes the position from
+   * the pointer on every move, so the shift never accumulates.
+   */
+  function applyMagnet(
+    dragged: WorkflowNodeType[],
+    event: MouseEvent | TouchEvent | null | undefined
+  ): void {
+    const none = (): void => {
+      lastMagnet = null;
+      if (straightGuides.length > 0) straightGuides = [];
+    };
+    if (!canvasEditable || !canvasControllerRef || dragged.length === 0) return none();
+    const moving = new Set(dragged.map((n) => n.id));
+    const wires = canvasControllerRef.canvasWireEnds(
+      ProximityConnectHelper.removePreviewEdges(flowEdges)
+    );
+    const positions = new Map(flowNodes.map((n) => [n.id, n.position]));
+    for (const n of dragged) positions.set(n.id, n.position);
+    const settings = getEditorSettings();
+    const { dy, guides } = snapToStraight(wires, positions, moving, {
+      grid: settings.snapToGrid ? settings.gridSize : undefined,
+      disabled: !!event && 'altKey' in event && event.altKey
+    });
+    if (dy === 0 && guides.length === 0) return none();
+    lastMagnet = { dy, ids: moving };
+    if (dy !== 0) shiftNodes(moving, dy);
+    straightGuides = guides;
   }
 
   /**
@@ -504,12 +608,15 @@
    * Uses port-to-port distance via the port coordinate store.
    */
   function handleNodeDrag({
-    targetNode
+    targetNode,
+    nodes: draggedNodes,
+    event
   }: {
     targetNode: WorkflowNodeType | null;
     nodes: WorkflowNodeType[];
     event: MouseEvent | TouchEvent;
   }): void {
+    applyMagnet(draggedNodes, event);
     if (!getEditorSettings().proximityConnect || !targetNode || !canvasEditable) {
       if (currentProximityCandidates.length > 0) {
         flowEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
@@ -561,6 +668,11 @@
   function handleNodeDragStop(): void {
     portCoordNodeToUpdate = null;
 
+    // xyflow wrote the raw pointer position back at drag end: put the snap back.
+    if (lastMagnet && lastMagnet.dy !== 0) shiftNodes(lastMagnet.ids, lastMagnet.dy);
+    lastMagnet = null;
+    straightGuides = [];
+
     // Finalize proximity connect if there are candidates
     if (getEditorSettings().proximityConnect && currentProximityCandidates.length > 0) {
       const baseEdges = ProximityConnectHelper.removePreviewEdges(flowEdges);
@@ -592,6 +704,27 @@
     // Transition to idle — sync effect is now unblocked
     machine.send('STOP_DRAG');
   }
+
+  /**
+   * A wire is dragged out of a port: record its type so every card can light
+   * the ports that take it. NodeCard puts the port's data type on the handle.
+   */
+  const handleConnectStart: OnConnectStart = (event, { nodeId, handleId, handleType }) => {
+    const handle =
+      event.target instanceof Element ? event.target.closest('.svelte-flow__handle') : null;
+    const dataType = handle instanceof HTMLElement ? handle.dataset.fdPortType : undefined;
+    const portId = extractPortId(handleId ?? undefined);
+    if (!nodeId || !portId || !handleType || !dataType) {
+      fd.connectDrag.set(null);
+      return;
+    }
+    fd.connectDrag.set({
+      nodeId,
+      direction: handleType === 'source' ? 'output' : 'input',
+      portId,
+      dataType
+    });
+  };
 
   /**
    * Handle new connections between nodes.
@@ -791,6 +924,50 @@
   let openMenu = $state.raw<OpenContextMenu | null>(null);
   let canvasEl: HTMLDivElement | undefined = $state();
 
+  // Canvas width, tracked on the canvas element (not the window): the editor can
+  // sit in a narrow column of a wider page. Drives the minimap's 800 px rule.
+  let canvasWidth: number | undefined = $state();
+  $effect(() => {
+    if (!canvasEl) return;
+    const el = canvasEl;
+    canvasWidth = el.clientWidth;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[entries.length - 1];
+      if (entry) canvasWidth = entry.contentRect.width;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
+
+  // A message link's node lights up here, and the node under the pointer
+  // lights its messages (fd.highlight). A class on xyflow's own node wrapper,
+  // so every node type gets it without knowing about it.
+  const LINKED_CLASS = 'fd-node-linked';
+  $effect(() => {
+    const id = fd.highlight.canvasNodeId;
+    // Re-run when nodes are (re)rendered so a node that mounts later is lit too.
+    void flowNodes;
+    if (!id || !canvasEl) return;
+    const el = canvasEl.querySelector<HTMLElement>(
+      `.svelte-flow__node[data-id="${CSS.escape(id)}"]`
+    );
+    el?.classList.add(LINKED_CLASS);
+    return () => el?.classList.remove(LINKED_CLASS);
+  });
+
+  function nodeIdAt(target: EventTarget | null): string | null {
+    const el = (target as Element | null)?.closest?.('.svelte-flow__node');
+    return el?.getAttribute('data-id') ?? null;
+  }
+  function handleCanvasOver(event: MouseEvent): void {
+    const id = nodeIdAt(event.target);
+    if (id !== null) fd.highlight.hoverNode(id);
+  }
+  function handleCanvasOut(event: MouseEvent): void {
+    const leaving = nodeIdAt(event.target);
+    if (leaving !== null && nodeIdAt(event.relatedTarget) !== leaving) fd.highlight.hoverNode(null);
+  }
+
   /** Whether a node's registered component edits its text in place (the caption). */
   function nodeEditsInPlace(node: WorkflowNodeType): boolean {
     return (
@@ -879,8 +1056,235 @@
     },
     editInPlace(id) {
       fd.inlineEdit.request(id);
+    },
+    duplicateNode(id) {
+      const source = flowNodes.find((n) => n.id === id);
+      if (!source?.data.metadata) return;
+      const grid = getEditorSettings().gridSize;
+      const offset = grid * 2;
+      // The same path as a sidebar drop, so the id, history entry and sync all apply.
+      placeNode(
+        JSON.stringify({
+          type: 'node',
+          nodeData: {
+            label: source.data.label,
+            config: structuredClone($state.snapshot(source.data.config ?? {})),
+            metadata: source.data.metadata
+          }
+        }),
+        { x: source.position.x + offset, y: source.position.y + offset }
+      );
+    },
+    tidyLayout() {
+      tidyLayout();
+    },
+    tidyNodes(ids) {
+      tidyNodes(ids);
+    },
+    hideUnconnectedPorts(ids) {
+      changePortExposure(ids, 'hide');
+    },
+    countUnconnectedPorts(ids) {
+      return countExposureChanges(ids, 'hide');
+    },
+    showHiddenPorts(ids) {
+      changePortExposure(ids, 'show');
+    },
+    countHiddenPorts(ids) {
+      return countExposureChanges(ids, 'show');
+    },
+    get swapNode() {
+      const swap = props.onSwapNode;
+      return swap ? (id: string) => swap(id) : undefined;
     }
   };
+
+  // ---------------------------------------------------------------------------
+  // "Tidy up": the layout commands from the canvas button, the menus and the keys
+  // ---------------------------------------------------------------------------
+
+  /** A command context on this instance, for the layout commands. Null without a workflow. */
+  function layoutContext() {
+    return createStoreCommandContext(fd.nodeTypes.current ?? [], undefined, fd);
+  }
+
+  /** The layout counts of a layout command's result, if it has them. */
+  function layoutData(result: CommandResult): LayoutResultData | undefined {
+    return result.ok && result.data && 'changed' in result.data ? result.data : undefined;
+  }
+
+  /** Tidy the whole graph (`layout beautify`): one undo step, or "already tidy" and nothing moves. */
+  function tidyLayout(): void {
+    if (!canvasEditable) return;
+    const context = layoutContext();
+    if (!context || flowNodes.length === 0) return;
+    const from = positionsOf(flowNodes);
+    const result = executeCommand({ type: 'beautify_layout' }, context);
+    // A refusal (too many nodes) is not "already tidy": say what it is.
+    if (!result.ok) {
+      showError({
+        title: result.code === 'TOO_LARGE' ? getMsgs().tidy.tooLarge : getMsgs().tidy.button,
+        body: result.error
+      });
+      return;
+    }
+    announceTidy(layoutData(result), from, getMsgs().tidy.alreadyTidy);
+  }
+
+  /**
+   * Tidy these nodes one after another (`layout node beautify`). One node is one command; several
+   * are one transaction, so one undo step, and none at all when nothing moved.
+   */
+  function tidyNodes(ids: readonly string[]): void {
+    if (!canvasEditable || ids.length === 0) return;
+    const msgs = getMsgs().tidy;
+    const already = ids.length > 1 ? msgs.nodesAlreadyTidy : msgs.nodeAlreadyTidy;
+    const context = layoutContext();
+    if (!context) return;
+    const from = positionsOf(flowNodes);
+    const results: CommandResult[] = [];
+    if (ids.length === 1) {
+      // A beautify that changes nothing writes nothing, so it leaves no undo entry.
+      results.push(executeCommand({ type: 'beautify_node', nodeId: ids[0] }, context));
+    } else {
+      context.dispatch.startTransaction(`Tidy ${ids.length} nodes`);
+      for (const nodeId of ids) {
+        const result = executeCommand({ type: 'beautify_node', nodeId }, context);
+        results.push(result);
+        if (!result.ok) break;
+      }
+      const moved = results.every((r) => r.ok) && results.some((r) => layoutData(r)?.changed);
+      if (moved) context.dispatch.commitTransaction();
+      else context.dispatch.cancelTransaction();
+    }
+    const steps = results.map(layoutData).filter((d): d is LayoutResultData => !!d);
+    const data: LayoutResultData | undefined = steps.length
+      ? {
+          changed: steps.some((d) => d.changed),
+          before: steps[0].before,
+          after: steps[steps.length - 1].after
+        }
+      : undefined;
+    announceTidy(data, from, already);
+  }
+
+  function positionsOf(nodes: readonly WorkflowNodeType[]): Map<string, { x: number; y: number }> {
+    return new Map(nodes.map((n) => [n.id, { x: n.position.x, y: n.position.y }]));
+  }
+
+  /** The toast after a tidy, and the cards sliding from where they were. */
+  function announceTidy(
+    data: LayoutResultData | undefined,
+    from: Map<string, { x: number; y: number }>,
+    alreadyTidy: string
+  ): void {
+    const msgs = getMsgs().tidy;
+    if (!data?.changed) {
+      showInfo({ title: alreadyTidy, body: msgs.alreadyTidyBody });
+      return;
+    }
+    const parts = describeTidy(data, msgs);
+    showSuccess({
+      title: msgs.done,
+      ...(parts.length ? { body: parts.join(' · ') } : {}),
+      action: { label: msgs.undo, onClick: () => fd.historyBindings.undo() }
+    });
+    void animateFrom(from);
+  }
+
+  /**
+   * Slide the cards from `from` to where the store now has them. Only the canvas moves: the
+   * store and the history already hold the end state. Stops when the workflow changes again
+   * (an undo, an edit) and skips the slide under reduced motion.
+   */
+  async function animateFrom(from: Map<string, { x: number; y: number }>): Promise<void> {
+    if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    await tick();
+    const target = fd.workflow.current;
+    const to = positionsOf(flowNodes);
+    if (tweenPositions(from, to, 0).size === 0) return;
+    const tween = { target, to };
+    tidyTween = tween;
+    const start = performance.now();
+    const frame = (now: number) => {
+      if (tidyTween !== tween) return;
+      if (fd.workflow.current !== target) {
+        tidyTween = null;
+        return;
+      }
+      const t = (now - start) / TIDY_ANIMATION_MS;
+      const at = t >= 1 ? to : tweenPositions(from, to, t);
+      flowNodes = flowNodes.map((n) => {
+        const position = at.get(n.id);
+        return position ? { ...n, position } : n;
+      });
+      if (t < 1) requestAnimationFrame(frame);
+      else tidyTween = null;
+    };
+    requestAnimationFrame(frame);
+  }
+
+  /** The running tidy slide, if any: the workflow it belongs to and where the cards end up. */
+  let tidyTween: {
+    target: unknown;
+    to: Map<string, { x: number; y: number }>;
+  } | null = null;
+
+  /**
+   * Stop a running tidy slide and put the cards at its end positions, so a sync to the store
+   * never commits a half-moved card.
+   */
+  function finishTidyAnimation(): void {
+    const tween = tidyTween;
+    if (!tween) return;
+    tidyTween = null;
+    if (fd.workflow.current !== tween.target) return;
+    flowNodes = flowNodes.map((n) => {
+      const position = tween.to.get(n.id);
+      return position ? { ...n, position } : n;
+    });
+  }
+
+  /** How many ports a bulk exposure change would touch on these nodes. */
+  function countExposureChanges(ids: readonly string[], mode: PortExposureMode): number {
+    const workflow = fd.workflow.current;
+    if (!workflow) return 0;
+    return workflow.nodes
+      .filter((n) => ids.includes(n.id))
+      .reduce((sum, n) => sum + exposureCandidates(n, workflow, mode).length, 0);
+  }
+
+  /**
+   * "Hide unconnected ports" / "Show hidden ports": a real exposure edit of
+   * each node's `config.ports` (the same one the Ports form's eye makes), as
+   * one undo step. Hidden ports leave the canvas and stop being wireable.
+   */
+  function changePortExposure(ids: readonly string[], mode: PortExposureMode): void {
+    const workflow = fd.workflow.current;
+    if (!canvasEditable || !workflow) return;
+    const changes = new Map<string, ReturnType<typeof applyPortExposure>>();
+    for (const node of workflow.nodes) {
+      if (!ids.includes(node.id)) continue;
+      if (exposureCandidates(node, workflow, mode).length === 0) continue;
+      changes.set(node.id, applyPortExposure(node, workflow, mode));
+    }
+    if (changes.size === 0) return;
+    flowNodes = flowNodes.map((n) => {
+      if (!changes.has(n.id)) return n;
+      const { ports: _previous, ...rest } = n.data.config ?? {};
+      const ports = changes.get(n.id);
+      return { ...n, data: { ...n.data, config: ports ? { ...rest, ports } : rest } };
+    });
+    syncFlowToStore();
+    const storeValue = fd.workflow.current;
+    if (storeValue) {
+      fd.workflow.pushHistory(
+        mode === 'hide' ? 'Hide unconnected ports' : 'Show hidden ports',
+        storeValue
+      );
+    }
+  }
 
   /**
    * Snap a flow position to the grid cell it falls in (floor, not round), so
@@ -964,9 +1368,161 @@
     node: WorkflowNodeType;
   }): void {
     if (!canvasEditable) return;
+    // A port has its own menu (publish it in the workflow interface).
+    const handle =
+      event.target instanceof Element ? event.target.closest('.svelte-flow__handle') : null;
+    if (handle && showPortMenu(handle as HTMLElement, event.clientX, event.clientY)) {
+      event.preventDefault();
+      return;
+    }
     event.preventDefault();
     openNodeMenu(node.id, event.clientX, event.clientY);
   }
+
+  // ---------------------------------------------------------------------------
+  // Workflow interface: the tags beside published ports
+  // ---------------------------------------------------------------------------
+
+  /** The name being typed beside a port (a new entry, or a rename). */
+  let tagEdit = $state.raw<InterfaceTagEdit | null>(null);
+
+  /** Write an interface edit through the store: one undo step, marks the workflow dirty. */
+  function applyInterfaceEdit(
+    result: ReturnType<typeof exposePortAsEntry> | ReturnType<typeof renameInterfaceEntry>
+  ): void {
+    if (!result) return;
+    fd.workflow.editInterface(result.interface, result.edit);
+  }
+
+  const interfaceMenuActions: InterfaceMenuActions = {
+    expose(target: PortTarget) {
+      // The port id is the starting name; the person edits it in the ghost tag.
+      tagEdit = { mode: 'expose', ...target, value: target.portId };
+    },
+    rename(target: PortTarget) {
+      const workflow = fd.workflow.current;
+      const entry =
+        workflow && entryAtPort(workflow, target.nodeId, target.direction, target.portId);
+      if (entry) tagEdit = { mode: 'rename', ...target, entryId: entry.id, value: entry.id };
+    },
+    remove(target: PortTarget) {
+      const workflow = fd.workflow.current;
+      const entry =
+        workflow && entryAtPort(workflow, target.nodeId, target.direction, target.portId);
+      if (workflow && entry)
+        applyInterfaceEdit(removeInterfaceEntry(workflow, target.direction, entry.id));
+    }
+  };
+
+  function commitTagEdit(): void {
+    const edit = tagEdit;
+    const workflow = fd.workflow.current;
+    tagEdit = null;
+    if (!edit || !workflow) return;
+    applyInterfaceEdit(
+      edit.mode === 'expose'
+        ? exposePortAsEntry(workflow, edit, edit.value)
+        : renameInterfaceEntry(workflow, edit.direction, edit.entryId ?? '', edit.value)
+    );
+  }
+
+  const portMenuActions: PortMenuActions = {
+    ...interfaceMenuActions,
+    connectTo(target: PortTarget) {
+      openConnectPicker(target);
+    }
+  };
+
+  /** The "Connect to…" picker, while open. */
+  interface OpenConnectPicker {
+    target: PortTarget;
+    portName: string;
+    candidates: ReturnType<typeof listConnectCandidates>;
+    /** Viewport (client) position; the picker is in the top layer. */
+    x: number;
+    y: number;
+  }
+
+  let connectPicker = $state.raw<OpenConnectPicker | null>(null);
+  /** Where the port menu was opened, which is where its picker opens. */
+  let portMenuAt: { x: number; y: number } | null = null;
+
+  function openConnectPicker(target: PortTarget): void {
+    const workflow = fd.workflow.current;
+    const at = portMenuAt;
+    if (!workflow || !at) return;
+    const node = flowNodes.find((n) => n.id === target.nodeId);
+    const port = node
+      ? ProximityConnectHelper.getAllPorts(node, target.direction).find(
+          (p) => p.id === target.portId
+        )
+      : undefined;
+    connectPicker = {
+      target,
+      portName: port?.name ?? target.portId,
+      candidates: listConnectCandidates(workflow, fd.portCompatibility, target),
+      x: at.x,
+      y: at.y
+    };
+  }
+
+  /** A port was picked in "Connect to…": the same edge a drag-connect makes. */
+  function connectToCandidate(candidate: ConnectCandidate): void {
+    const picker = connectPicker;
+    connectPicker = null;
+    if (!picker || !canvasEditable || candidate.connected) return;
+    const edge = buildConnectEdge(picker.target, candidate);
+    const sourceNode = flowNodes.find((n) => n.id === edge.source);
+    const targetNode = flowNodes.find((n) => n.id === edge.target);
+    if (!sourceNode || !targetNode) return;
+    EdgeStylingHelper.applyConnectionStyling(edge, sourceNode, targetNode);
+    flowEdges = [...flowEdges, edge];
+    syncFlowToStore();
+    const storeValue = fd.workflow.current;
+    if (storeValue) fd.workflow.pushHistory('Add connection', storeValue);
+  }
+
+  /** Open the menu of a port (a handle element). False when it has nothing to offer. */
+  function showPortMenu(handle: HTMLElement, clientX: number, clientY: number): boolean {
+    const workflow = fd.workflow.current;
+    const handleId = handle.dataset.handleid;
+    const nodeId = handle.dataset.nodeid;
+    const direction = extractDirection(handleId);
+    const portId = extractPortId(handleId);
+    if (!workflow || !nodeId || !direction || !portId || !canvasControllerRef) return false;
+    return openPortMenuAt({ nodeId, direction, portId }, clientX, clientY);
+  }
+
+  function openPortMenuAt(target: PortTarget, clientX: number, clientY: number): boolean {
+    const workflow = fd.workflow.current;
+    const node = flowNodes.find((n) => n.id === target.nodeId);
+    if (!workflow || !node || !canvasControllerRef) return false;
+    const entries = buildPortMenuEntries(workflow, target, portMenuActions, getMsgs().contextMenu);
+    if (entries.length === 0) return false;
+    portMenuAt = { x: clientX, y: clientY };
+    openMenu = {
+      ctx: {
+        target: 'node',
+        nodes: [node],
+        position: canvasControllerRef.canvasScreenToFlow({ x: clientX, y: clientY }),
+        nodeTypes: fd.nodeTypes.current,
+        actions: contextMenuActions
+      },
+      entries,
+      x: clientX,
+      y: clientY
+    };
+    return true;
+  }
+
+  // A name being typed never outlives edit mode, its workflow, or its port (undo).
+  $effect(() => {
+    if (!canvasEditable) tagEdit = null;
+  });
+  $effect(() => {
+    void svelteFlowKey;
+    tagEdit = null;
+  });
 
   function handleSelectionContextMenu({
     event,
@@ -1021,11 +1577,15 @@
 
   // Menus never outlive edit mode or the workflow they were opened on.
   $effect(() => {
-    if (!canvasEditable) openMenu = null;
+    if (!canvasEditable) {
+      openMenu = null;
+      connectPicker = null;
+    }
   });
   $effect(() => {
     void svelteFlowKey;
     openMenu = null;
+    connectPicker = null;
     pendingNewIds.clear();
     fd.inlineEdit.clear();
   });
@@ -1080,6 +1640,18 @@
   // remounted with the canvas and always talks to the live instance's store.
   let canvasControllerRef: CanvasController | undefined = $state();
 
+  // Let node layout commands (console, assistant, WebMCP) read the canvas's
+  // measurement while the canvas is mounted.
+  $effect(() => {
+    const controller = canvasControllerRef;
+    if (!controller) return;
+    const measure = (nodeId: string) => controller.canvasMeasureNode(nodeId);
+    fd.measureNode = measure;
+    return () => {
+      if (fd.measureNode === measure) fd.measureNode = null;
+    };
+  });
+
   /**
    * Update a node's data in the local editor state.
    * Called by App.svelte AFTER it has already updated the global store via
@@ -1129,6 +1701,10 @@
 
   export function canvasFitView(): void {
     canvasControllerRef?.canvasFitView();
+  }
+
+  export function canvasFocusNode(nodeId: string): void {
+    canvasControllerRef?.canvasFocusNode(nodeId);
   }
 
   export function canvasZoomIn(): void {
@@ -1194,6 +1770,40 @@
       return;
     }
 
+    // Shift+S on the canvas: tidy the selected nodes.
+    if (
+      event.key.toLowerCase() === 's' &&
+      event.shiftKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      canvasEditable &&
+      target.closest('.flowdrop-canvas')
+    ) {
+      const ids = flowNodes.filter((n) => n.selected).map((n) => n.id);
+      if (ids.length > 0) {
+        event.preventDefault();
+        tidyNodes(ids);
+      }
+      return;
+    }
+
+    // Shift+Alt+T on the canvas, or with nothing focused (a click on the empty canvas leaves the
+    // focus on the body): tidy up the whole graph. By code: Alt changes the key on a Mac.
+    if (
+      event.code === 'KeyT' &&
+      event.shiftKey &&
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      canvasEditable &&
+      (target === document.body || target.closest('.flowdrop-canvas'))
+    ) {
+      event.preventDefault();
+      tidyLayout();
+      return;
+    }
+
     // Check for Ctrl (Windows/Linux) or Cmd (Mac)
     const isModifierPressed = event.ctrlKey || event.metaKey;
 
@@ -1225,10 +1835,13 @@
     <!-- Flow Canvas.
            Capture-phase mousedown so dragging from a port never turns into a
            WebKit text-selection drag — see suppressPortDragSelection. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="flowdrop-canvas"
       bind:this={canvasEl}
       onmousedowncapture={suppressPortDragSelection}
+      onpointerover={handleCanvasOver}
+      onpointerout={handleCanvasOut}
     >
       <FlowDropZone
         ondrop={handleNodeDrop}
@@ -1244,8 +1857,20 @@
             {edgeTypes}
             {defaultEdgeOptions}
             onconnect={() => void handleConnect()}
+            onconnectstart={handleConnectStart}
+            onconnectend={() => fd.connectDrag.set(null)}
+            isValidConnection={(connection) => !isEventInputConnection(connection, flowNodes)}
             onbeforedelete={handleBeforeDelete}
             ondelete={handleNodesDelete}
+            onnodeclick={({ node }) => {
+              if (!props.onNodeClick) return;
+              const flowNode = {
+                id: node.id,
+                type: node.data.metadata?.type ?? 'default',
+                data: node.data
+              } as WorkflowNodeType;
+              if (!nodeEditsInPlace(flowNode)) props.onNodeClick(flowNode);
+            }}
             onnodedragstart={handleNodeDragStart}
             onnodedrag={handleNodeDrag}
             onnodedragstop={handleNodeDragStop}
@@ -1261,7 +1886,7 @@
             {snapGrid}
             {initialViewport}
             colorMode={getResolvedTheme() as ColorMode}
-            fitView={getEditorSettings().fitViewOnLoad}
+            fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
             nodesDraggable={canvasEditable}
             nodesConnectable={canvasEditable}
             elementsSelectable={canvasEditable}
@@ -1271,26 +1896,53 @@
                    store with an empty one when a SvelteFlow is destroyed, so after
                    the {#key} remount a helper outside would act on that empty
                    store (context-menu Delete silently did nothing). -->
-            <CanvasController bind:this={canvasControllerRef} />
+            <LoopbackLanes nodes={flowNodes} edges={flowEdges} />
+            <CanvasController
+              bind:this={canvasControllerRef}
+              fitOnLoad={getEditorSettings().fitViewOnLoad}
+              fitInset={props.fitInset}
+              tagReserve={() =>
+                fd.workflow.current
+                  ? interfaceTagReserve(fd.workflow.current)
+                  : new Map<string, { left: number; right: number }>()}
+            />
+            <ZoomTier />
+            <StraightGuides guides={straightGuides} />
             <EdgeRefresher {nodeIdToRefresh} onRefreshComplete={handleEdgeRefreshComplete} />
             <PortCoordinateTracker
               nodeToUpdate={portCoordNodeToUpdate}
               rebuildTrigger={portCoordRebuildTrigger}
               nodes={flowNodes}
             />
-            <Controls />
-            {#if canvasEditable && props.onToggleConsole}
-              <CanvasIconButton
-                class="flowdrop-console-toggle"
-                label={props.consoleToggleLabel ?? m().layout.commandConsole}
-                active={props.consoleOpen}
-                onclick={props.onToggleConsole}
-              >
-                {#snippet icon()}
-                  <CommandLineIcon />
-                {/snippet}
-              </CanvasIconButton>
+            {#if fd.workflow.current}
+              <InterfaceTagLayer
+                workflow={fd.workflow.current}
+                editable={canvasEditable}
+                edit={tagEdit}
+                onedit={(value) => tagEdit && (tagEdit = { ...tagEdit, value })}
+                onsubmit={commitTagEdit}
+                oncancel={() => (tagEdit = null)}
+                onrename={(tag) =>
+                  interfaceMenuActions.rename({
+                    nodeId: tag.nodeId,
+                    direction: tag.direction,
+                    portId: tag.portId
+                  })}
+                onmenu={(tag, event) =>
+                  openPortMenuAt(
+                    { nodeId: tag.nodeId, direction: tag.direction, portId: tag.portId },
+                    event.clientX,
+                    event.clientY
+                  )}
+              />
             {/if}
+            <CanvasZoomControls
+              nodeCount={flowNodes.length}
+              edgeCount={flowEdges.length}
+              {hasCycles}
+              onfit={() => canvasControllerRef?.canvasFitView()}
+              ontidy={canvasEditable ? tidyLayout : undefined}
+            />
             <!-- Always render Background for consistent bg color in dark/light mode -->
             <Background
               gap={getEditorSettings().gridSize}
@@ -1301,8 +1953,11 @@
                 ? 'var(--fd-grid-pattern-color)'
                 : 'transparent'}
             />
-            {#if getEditorSettings().showMinimap}
-              <MiniMap />
+            {#if shouldShowMinimap(getEditorSettings().showMinimap, canvasWidth)}
+              <MiniMap
+                width={MINIMAP_WIDTH - 2 * MINIMAP_BORDER}
+                height={MINIMAP_HEIGHT - 2 * MINIMAP_BORDER}
+              />
             {/if}
           </SvelteFlow>
         {/key}
@@ -1335,6 +1990,18 @@
         {/if}
       </FlowDropZone>
 
+      {#if canvasEditable}
+        <CanvasToolbar
+          editorMode={props.editorMode}
+          onEditorModeChange={props.onEditorModeChange}
+          onOpenTest={props.onOpenTest}
+          onAskAssistant={props.onAskAssistant}
+          showRun={props.showRunBar ?? true}
+          showRuns={props.showRuns}
+          adminLinks={props.adminLinks}
+        />
+      {/if}
+
       {#if openMenu}
         <CanvasContextMenu
           entries={openMenu.entries}
@@ -1344,24 +2011,19 @@
           onclose={closeContextMenu}
         />
       {/if}
-    </div>
 
-    <!-- Status Bar: aria-live announces dynamic changes (node/edge counts, cycle warnings) -->
-    <div class="flowdrop-status-bar" aria-live="polite" aria-atomic="true">
-      <div class="flowdrop-status-bar__content">
-        <div class="flowdrop-flex flowdrop-gap--4">
-          <span class="flowdrop-text--xs flowdrop-text--gray">{flowNodes.length} nodes</span>
-          <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
-          <span class="flowdrop-text--xs flowdrop-text--gray">{flowEdges.length} connections</span>
-
-          {#if hasCycles}
-            <span class="flowdrop-text--xs flowdrop-text--gray">•</span>
-            <span class="flowdrop-text--xs flowdrop-font--medium flowdrop-text--error"
-              >⚠️ Cycles detected</span
-            >
-          {/if}
-        </div>
-      </div>
+      {#if connectPicker}
+        <ConnectPortPicker
+          portName={connectPicker.portName}
+          fromInput={connectPicker.target.direction === 'input'}
+          groups={connectPickerGroups(connectPicker.candidates, getMsgs().connectTo)}
+          checker={fd.portCompatibility}
+          x={connectPicker.x}
+          y={connectPicker.y}
+          onselect={connectToCandidate}
+          onclose={() => (connectPicker = null)}
+        />
+      {/if}
     </div>
   </div>
 </div>
@@ -1370,7 +2032,7 @@
 <!-- aria-live="polite" ensures screen readers announce toast messages without interrupting -->
 <div class="flowdrop-scope" aria-live="polite" aria-atomic="true">
   <Toaster
-    position="bottom-center"
+    position="top-center"
     containerClassName={FLOWDROP_TOASTER_CLASS}
     toastOptions={flowdropToastOptions}
   />
@@ -1392,41 +2054,11 @@
     transition: margin-left 0.3s ease-in-out;
   }
 
-  .flowdrop-text--error {
-    color: var(--fd-error);
-  }
-
   .flowdrop-canvas {
     flex: 1;
     min-height: 0;
     position: relative;
     background: transparent;
-  }
-
-  .flowdrop-status-bar {
-    background-color: var(--fd-backdrop);
-    backdrop-filter: var(--fd-backdrop-blur);
-    border-top: 1px solid var(--fd-border);
-    padding: 0.75rem;
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-  }
-
-  .flowdrop-status-bar__content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  /* Console toggle — placement only; visuals live in CanvasIconButton */
-  :global(.flowdrop-console-toggle) {
-    bottom: 140px;
-    left: 12px;
-    z-index: 5;
   }
 
   :global(.flowdrop-workflow-editor .svelte-flow__node:hover) {
@@ -1450,6 +2082,13 @@
 
   :global(.flowdrop-workflow-editor .svelte-flow__edge:hover path) {
     stroke-width: 3 !important;
+  }
+
+  :global(.flowdrop-workflow-editor .svelte-flow__node.fd-node-linked) {
+    border-radius: var(--fd-radius-lg);
+    outline: 2px solid var(--fd-primary);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--fd-primary) 18%, transparent);
   }
 
   :global(.flowdrop-workflow-editor .svelte-flow__edge.selected) {
@@ -1538,6 +2177,20 @@
   :global(.flowdrop--edge--data.selected path.svelte-flow__edge-path) {
     stroke: var(--fd-edge-data-selected);
     stroke-width: 2;
+  }
+
+  /* Zoom tiers: wires get thicker as the canvas zooms out, so the topology still
+     reads. Fixed flow px; the canvas scales them. */
+  :global([data-fd-zoom='glyph'] .svelte-flow__edge path.svelte-flow__edge-path) {
+    stroke-width: var(--fd-node-zoom-edge-width-glyph) !important;
+  }
+
+  :global([data-fd-zoom='map'] .svelte-flow__edge path.svelte-flow__edge-path) {
+    stroke-width: var(--fd-node-zoom-edge-width-map) !important;
+  }
+
+  :global([data-fd-zoom='map'] .svelte-flow__edge:not(.selected) path.svelte-flow__edge-path) {
+    stroke: var(--fd-node-zoom-edge-map);
   }
 
   /* Loopback Edge: Dashed gray line for loop iteration connections */

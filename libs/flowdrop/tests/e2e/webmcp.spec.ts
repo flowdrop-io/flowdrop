@@ -12,6 +12,7 @@
 
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { assertNodeCount } from './helpers/editor-helpers';
 
 declare global {
   interface Window {
@@ -63,9 +64,7 @@ function installFakeModelContext(): void {
 }
 
 async function expectNodeCount(page: Page, expected: number): Promise<void> {
-  await expect(page.locator('.flowdrop-status-bar')).toContainText(`${expected} nodes`, {
-    timeout: 5000
-  });
+  await assertNodeCount(page, expected);
 }
 
 /** Start a tool call; resolve it later with `awaitResult`. */

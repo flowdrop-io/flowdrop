@@ -25,17 +25,41 @@ import type {
   ConfigKeyDescription,
   PortDescription,
   HelpResultData,
-  SwapNodeResultData
+  SwapNodeResultData,
+  LayoutResultData
 } from './types.js';
+import {
+  fromWorkflow,
+  inspect as inspectLayout,
+  beautify as beautifyLayout,
+  formatBeautify,
+  sweep as sweepLayout,
+  formatSweep,
+  applyProposalToNodes,
+  applySweepToNodes,
+  DEFAULT_LAYOUT_OPTIONS,
+  LAYOUT_GRID,
+  MAX_SWEEP_CARDS
+} from '../layout/index.js';
+import type { LayoutGraph, LayoutMetrics, LayoutOptions } from '../layout/index.js';
 import type { ConfigProperty, ConfigSchema, Branch, DynamicPort } from '../types/index.js';
-import type { NodeMetadata, NodePort, WorkflowNode, WorkflowEdge } from '../types/index.js';
+import type {
+  NodeMetadata,
+  NodePort,
+  Workflow,
+  WorkflowNode,
+  WorkflowEdge,
+  WorkflowInterfaceEntry
+} from '../types/index.js';
 import { generateNodeId } from '../utils/nodeIds.js';
 import { extractConfigDefaults } from '../utils/nodeIds.js';
 import { computeAutoPosition } from './positioner.js';
 import { buildHandleId, extractPortId } from '../utils/handleIds.js';
 import { applyConnectionStyling } from '../utils/edgeStyling.js';
 import { computeSwapPreview, executeSwap } from '../utils/nodeSwap.js';
-import { computeAutoLayout, computeBeautifyLayout } from '../adapters/agentspec/autoLayout.js';
+import { computeAutoLayout } from '../adapters/agentspec/autoLayout.js';
+import { interfaceTagReserve } from '../utils/interfaceTags.js';
+import { normalizePlaygroundChat, withPlaygroundChat } from '../utils/playgroundChat.js';
 
 // ============================================================================
 // Internal Helpers
@@ -1186,8 +1210,22 @@ export const COMMAND_HELP: Array<{
   },
   {
     name: 'layout',
-    syntax: 'layout beautify',
-    description: 'Normalize spacing while preserving node arrangement'
+    syntax: 'layout node inspect <nodeId> [--gap-x <px>] [--gap-y <px>]',
+    description:
+      "Report one node's wires (straight or off by how many px), crossings, overlaps and spacing; changes nothing. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call"
+  },
+  {
+    name: 'layout',
+    syntax:
+      'layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run] [--gap-x <px>] [--gap-y <px>]',
+    description:
+      'Tidy one node: column (x), ports (port order), align (straighten wires), clear (free space). Default all. Prints what changed and the score; --dry-run only previews. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call. One undo step'
+  },
+  {
+    name: 'layout',
+    syntax: 'layout beautify [--dry-run] [--gap-x <px>] [--gap-y <px>]',
+    description:
+      'Tidy the whole graph: every node into its column, overlaps and tight spacing cleared, ports reordered and wires straightened to cut crossings, back at the original top-left. Prints one line per step and the score before and after; --dry-run only previews. --gap-x / --gap-y (multiples of the grid) override the layout gap settings for this call. One undo step'
   },
   { name: 'undo', syntax: 'undo', description: 'Undo the last action' },
   { name: 'redo', syntax: 'redo', description: 'Redo the last undone action' },
@@ -1196,7 +1234,12 @@ export const COMMAND_HELP: Array<{
     syntax: 'help [<command>]',
     description: 'Show help for all or a specific command'
   },
-  { name: 'clear', syntax: 'clear', description: 'Remove all nodes and edges' },
+  {
+    name: 'clear',
+    syntax: 'clear [--all]',
+    description:
+      'Remove all nodes and edges; the interface stays, unbound. --all also removes the interface and the Playground chat settings'
+  },
   {
     name: 'canvas',
     syntax: 'canvas fitview',
@@ -1282,7 +1325,16 @@ function executeRedo(context: CommandContext): CommandResult {
   return { ok: true, message: 'Redone' };
 }
 
-function executeClear(context: CommandContext): CommandResult {
+/**
+ * Empty the canvas. The interface is the workflow's contract and outlives its
+ * body, so plain `clear` keeps every entry and only unbinds it (the store drops
+ * the Playground replies on the removed nodes). `clear --all` removes the
+ * interface and the Playground chat settings too. Either is one undo step.
+ */
+function executeClear(
+  command: Extract<Command, { type: 'clear' }>,
+  context: CommandContext
+): CommandResult {
   const workflow = context.getWorkflow();
   if (!workflow) {
     return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
@@ -1290,13 +1342,54 @@ function executeClear(context: CommandContext): CommandResult {
 
   const nodeCount = workflow.nodes.length;
   const edgeCount = workflow.edges.length;
+  const cleared = `Cleared ${nodeCount} node(s) and ${edgeCount} edge(s)`;
+  const inputs = workflow.interface?.inputs ?? [];
+  const outputs = workflow.interface?.outputs ?? [];
 
-  context.dispatch.batchUpdate({ nodes: [], edges: [] });
+  if (command.all) {
+    const hadInterface = inputs.length + outputs.length > 0;
+    const hadChat = Boolean(workflow.playground?.chat);
+    context.dispatch.batchUpdate({
+      nodes: [],
+      edges: [],
+      // An empty contract, not `undefined`: a save omits an absent interface,
+      // and the server would keep the stored one.
+      ...(hadInterface && { interface: { inputs: [], outputs: [] } }),
+      ...(hadChat && { playground: withPlaygroundChat(workflow.playground, null) })
+    });
+    const also = [hadInterface && 'the interface', hadChat && 'the Playground chat settings'];
+    const extra = also.filter(Boolean).join(' and ');
+    return { ok: true, message: extra ? `${cleared}, and removed ${extra}` : cleared };
+  }
 
-  return {
-    ok: true,
-    message: `Cleared ${nodeCount} node(s) and ${edgeCount} edge(s)`
-  };
+  const unbind = (entry: WorkflowInterfaceEntry): WorkflowInterfaceEntry =>
+    entry.bindings.length === 0 ? entry : { ...entry, bindings: [] };
+  const bound = [...inputs, ...outputs].some((entry) => entry.bindings.length > 0);
+  // The store drops the Playground replies on the removed nodes.
+  const hadReplies = normalizePlaygroundChat(workflow.playground?.chat).replies.length > 0;
+  context.dispatch.batchUpdate({
+    nodes: [],
+    edges: [],
+    ...(bound && {
+      interface: {
+        ...workflow.interface,
+        ...(workflow.interface?.inputs && { inputs: workflow.interface.inputs.map(unbind) }),
+        ...(workflow.interface?.outputs && { outputs: workflow.interface.outputs.map(unbind) })
+      }
+    })
+  });
+
+  const notes: string[] = [];
+  const kept = inputs.length + outputs.length > 0;
+  if (kept) {
+    notes.push(
+      `Kept the interface (${inputs.length} input(s), ${outputs.length} output(s))` +
+        (bound ? ', now unbound' : '')
+    );
+  }
+  if (hadReplies) notes.push('Dropped the Playground replies');
+  if (kept) notes.push('`clear --all` removes the interface too');
+  return { ok: true, message: [cleared, ...notes].join('. ') };
 }
 
 function executeConfigOpen(
@@ -1477,6 +1570,18 @@ function executeMoveNode(
   };
 }
 
+/**
+ * Node width to assume when a node has not been measured. The layout default
+ * (220) is narrower than a real node (280, `--fd-node-default-width`), which
+ * would eat the gap interface tags were given room in; so when there are
+ * tags, assume the real width. Without tags the layout is unchanged.
+ */
+function tagWidthFallback(reserve: Map<string, unknown> | undefined): {
+  defaultNodeWidth?: number;
+} {
+  return reserve && reserve.size > 0 ? { defaultNodeWidth: 280 } : {};
+}
+
 function executeAutoLayout(
   command: Extract<Command, { type: 'auto_layout' }>,
   context: CommandContext
@@ -1543,10 +1648,13 @@ function executeAutoLayout(
     }
   }
 
+  const tagReserve = isVertical ? undefined : interfaceTagReserve(workflow);
   const positions = computeAutoLayout(
     flow,
-    {},
-    nodeDimensions.size > 0 ? nodeDimensions : undefined
+    tagWidthFallback(tagReserve),
+    nodeDimensions.size > 0 ? nodeDimensions : undefined,
+    // Interface tags sit beside the ports: keep the columns far enough apart for them.
+    tagReserve
   );
 
   // Apply positions — swap x/y for vertical layout
@@ -1569,7 +1677,7 @@ function executeAutoLayout(
 }
 
 function executeBeautifyLayout(
-  _command: Extract<Command, { type: 'beautify_layout' }>,
+  command: Extract<Command, { type: 'beautify_layout' }>,
   context: CommandContext
 ): CommandResult {
   const workflow = context.getWorkflow();
@@ -1581,41 +1689,192 @@ function executeBeautifyLayout(
     return { ok: true, message: 'No nodes to beautify' };
   }
 
-  // Collect current positions
-  const currentPositions = new Map<string, { x: number; y: number }>();
-  for (const n of workflow.nodes) {
-    currentPositions.set(n.id, { x: n.position.x, y: n.position.y });
-  }
+  return executeSweepLayout(command, workflow, context);
+}
 
-  // Collect measured node dimensions when available
-  const nodeDimensions = new Map<string, { width: number; height: number }>();
-  for (const n of workflow.nodes) {
-    const w = n.measured?.width ?? (n as { width?: number }).width;
-    const h = n.measured?.height ?? (n as { height?: number }).height;
-    if (w != null && h != null) {
-      nodeDimensions.set(n.id, { width: w, height: h });
+// ============================================================================
+// Node Layout Commands
+// ============================================================================
+
+/** Node ids in layout output the way other commands show them: short, not namespaced. */
+function shortenLayoutIds(lines: string[], nodes: WorkflowNode[]): string {
+  const renames = nodes
+    .filter((n) => toShortId(n.id) !== n.id)
+    .sort((a, b) => b.id.length - a.id.length);
+  if (renames.length === 0) return lines.join('\n');
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(
+    `(?<![\\w.-])(${renames.map((n) => escape(n.id)).join('|')})(?![\\w-])`,
+    'g'
+  );
+  return lines.join('\n').replace(pattern, (id) => toShortId(id));
+}
+
+/** The workflow's layout model, from the canvas measurement when the context has one. */
+function layoutGraphOf(workflow: Workflow, context: CommandContext): LayoutGraph {
+  return fromWorkflow(workflow.nodes, workflow.edges, {
+    measured: context.measureNode,
+    visualType: context.visualType,
+    showDescriptions: context.showDescriptions,
+    // Interface tags sit beside their ports: cards keep clear of them like of the card itself.
+    tagReserve: interfaceTagReserve(workflow)
+  });
+}
+
+/**
+ * The layout options of one `layout node` call: its `--gap-x` / `--gap-y`, else the editor setting,
+ * else the library default. A gap that is not a multiple of the layout grid (20 px: the layout
+ * always snaps to it, whatever the editor's own grid is) is refused, so cards stay on it.
+ * Loopbacks are always scored as return lanes, as the editor draws them.
+ */
+function layoutOptionsFor(
+  command: { gapX?: number; gapY?: number },
+  context: CommandContext
+): { ok: true; options: LayoutOptions } | { ok: false; result: CommandResult } {
+  const grid = LAYOUT_GRID;
+  for (const [flag, value] of [
+    ['--gap-x', command.gapX],
+    ['--gap-y', command.gapY]
+  ] as const) {
+    if (value !== undefined && (!Number.isInteger(value) || value < 0 || value % grid !== 0)) {
+      return {
+        ok: false,
+        result: {
+          ok: false,
+          error: `${flag} ${value} is not valid: a gap must be a non-negative multiple of the ${grid} px layout grid (0, ${grid}, ${grid * 2}, ...)`,
+          code: 'INVALID_ARGUMENT'
+        }
+      };
     }
   }
-
-  const positions = computeBeautifyLayout(
-    currentPositions,
-    {},
-    nodeDimensions.size > 0 ? nodeDimensions : undefined
-  );
-
-  // Apply positions
-  const updatedNodes = workflow.nodes.map((n) => {
-    const pos = positions.get(n.id);
-    if (!pos) return n;
-    return { ...n, position: pos };
-  });
-
-  context.dispatch.batchUpdate({ nodes: updatedNodes });
-
   return {
     ok: true,
-    message: `Beautified layout for ${workflow.nodes.length} nodes`
+    options: {
+      ...DEFAULT_LAYOUT_OPTIONS,
+      gapX: command.gapX ?? context.layoutGaps?.gapX ?? DEFAULT_LAYOUT_OPTIONS.gapX,
+      gapY: command.gapY ?? context.layoutGaps?.gapY ?? DEFAULT_LAYOUT_OPTIONS.gapY,
+      loopbacks: 'lane'
+    }
   };
+}
+
+function executeInspectNodeLayout(
+  command: Extract<Command, { type: 'inspect_node_layout' }>,
+  context: CommandContext
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: nodeNotFoundMessage(command.nodeId, workflow.nodes),
+      code: 'NODE_NOT_FOUND'
+    };
+  }
+  const layout = layoutOptionsFor(command, context);
+  if (!layout.ok) return layout.result;
+  const lines = inspectLayout(layoutGraphOf(workflow, context), node.id, layout.options);
+  return { ok: true, message: shortenLayoutIds(lines, workflow.nodes) };
+}
+
+function executeBeautifyNode(
+  command: Extract<Command, { type: 'beautify_node' }>,
+  context: CommandContext
+): CommandResult {
+  const workflow = context.getWorkflow();
+  if (!workflow) return { ok: false, error: 'No workflow loaded', code: 'NO_WORKFLOW' };
+  const node = resolveNode(command.nodeId, workflow.nodes);
+  if (!node) {
+    return {
+      ok: false,
+      error: nodeNotFoundMessage(command.nodeId, workflow.nodes),
+      code: 'NODE_NOT_FOUND'
+    };
+  }
+
+  const layout = layoutOptionsFor(command, context);
+  if (!layout.ok) return layout.result;
+  const dryRun = command.dryRun === true;
+  const result = beautifyLayout(
+    layoutGraphOf(workflow, context),
+    node.id,
+    command.strategy ?? 'all',
+    layout.options
+  );
+  const message = shortenLayoutIds(formatBeautify(result, dryRun), workflow.nodes);
+  const data = layoutResultData(result.accepted, result.before, result.after);
+  if (dryRun || !result.accepted) return { ok: true, message, data };
+
+  // One batchUpdate is one undo step: position and port order land together.
+  const updates = new Map(
+    applyProposalToNodes(workflow.nodes, result.steps).map((u) => [u.nodeId, u])
+  );
+  const nodes = workflow.nodes.map((n) => {
+    const update = updates.get(n.id);
+    if (!update) return n;
+    return {
+      ...n,
+      ...(update.position ? { position: update.position } : {}),
+      ...(update.config ? { data: { ...n.data, config: update.config } } : {})
+    };
+  });
+  context.dispatch.batchUpdate({ nodes });
+  return { ok: true, message, data };
+}
+
+/** The score before and after as counts, for a UI to describe. */
+function layoutResultData(
+  changed: boolean,
+  before: LayoutMetrics,
+  after: LayoutMetrics
+): LayoutResultData {
+  const counts = (m: LayoutMetrics) => ({
+    straight: m.straight,
+    backward: m.backward,
+    crossings: m.crossings.length,
+    overlaps: m.overlaps,
+    spacing: m.spacing,
+    passes: m.passes.length
+  });
+  return { changed, before: counts(before), after: counts(after) };
+}
+
+/** `layout beautify`: the graph sweep, one `batchUpdate` (one undo step) for every change. */
+function executeSweepLayout(
+  command: Extract<Command, { type: 'beautify_layout' }>,
+  workflow: Workflow,
+  context: CommandContext
+): CommandResult {
+  const layout = layoutOptionsFor(command, context);
+  if (!layout.ok) return layout.result;
+  const dryRun = command.dryRun === true;
+  const graph = layoutGraphOf(workflow, context);
+  const cardCount = graph.cards.filter((c) => c.kind === 'card').length;
+  if (cardCount > MAX_SWEEP_CARDS) {
+    return {
+      ok: false,
+      error: `graph too large to tidy (${cardCount} nodes, limit ${MAX_SWEEP_CARDS}); tidy single nodes with layout node beautify instead`,
+      code: 'TOO_LARGE'
+    };
+  }
+  const result = sweepLayout(graph, layout.options);
+  const message = shortenLayoutIds(formatSweep(result, dryRun), workflow.nodes);
+  const data = layoutResultData(result.accepted, result.before, result.after);
+  if (dryRun || !result.accepted) return { ok: true, message, data };
+
+  const updates = new Map(applySweepToNodes(workflow.nodes, result).map((u) => [u.nodeId, u]));
+  const nodes = workflow.nodes.map((n) => {
+    const update = updates.get(n.id);
+    if (!update) return n;
+    return {
+      ...n,
+      ...(update.position ? { position: update.position } : {}),
+      ...(update.config ? { data: { ...n.data, config: update.config } } : {})
+    };
+  });
+  context.dispatch.batchUpdate({ nodes });
+  return { ok: true, message, data };
 }
 
 // ============================================================================
@@ -1720,7 +1979,7 @@ export function executeCommand(command: Command, context: CommandContext): Comma
     case 'redo':
       return executeRedo(context);
     case 'clear':
-      return executeClear(context);
+      return executeClear(command, context);
     case 'config_open':
       return executeConfigOpen(command, context);
     case 'select_node':
@@ -1733,6 +1992,10 @@ export function executeCommand(command: Command, context: CommandContext): Comma
       return executeAutoLayout(command, context);
     case 'beautify_layout':
       return executeBeautifyLayout(command, context);
+    case 'inspect_node_layout':
+      return executeInspectNodeLayout(command, context);
+    case 'beautify_node':
+      return executeBeautifyNode(command, context);
     case 'canvas_fit_view':
       return executeCanvasFitView(context);
     case 'canvas_zoom_in':

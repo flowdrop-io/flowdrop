@@ -1,0 +1,22 @@
+import { Meta, Story } from '@storybook/addon-docs/blocks';
+import * as RunStatus from './RunStatus.stories.svelte';
+
+<Meta of={RunStatus} />
+
+# Run status
+
+When a workflow runs, every node gets a status. Five roles cover all of them, and the same colour
+means the same thing everywhere: on the status pill above a node, on the node's frame, in the run
+bar and in the runs list.
+
+<Story of={RunStatus.StatusRoles} />
+
+Each role has a **strong** colour (icons, borders, the pill's text) and a **soft** one (fills
+behind them). Chips above: strong, then soft, in the scheme (light or dark) set in the toolbar.
+
+The roles start from the feedback colours: running follows `--fd-info` (in Graphite the same
+blue as the accent), completed follows `--fd-success`, and so on. They are separate tokens on
+purpose, so a theme can tune run colours without changing every success or error message.
+
+**Waiting for you** is the only status that asks a person to act, so it also draws a halo around
+the node in Test mode.

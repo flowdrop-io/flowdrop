@@ -171,3 +171,21 @@ describe('mountPlayground without an instanceId', () => {
     mounted.destroy();
   });
 });
+
+describe('playground mount and the host colour scheme', () => {
+  it('destroy releases the colorScheme.host subscription the mount registered', async () => {
+    const unsubscribe = vi.fn();
+    const subscribe = vi.fn(() => unsubscribe);
+    const container = document.createElement('div');
+    const mounted = await mountPlayground(container, {
+      workflowId: 'wf',
+      endpointConfig,
+      colorScheme: { host: { value: 'dark', label: 'Host', subscribe } }
+    });
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(unsubscribe).not.toHaveBeenCalled();
+
+    mounted.destroy();
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+  });
+});

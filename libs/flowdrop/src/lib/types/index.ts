@@ -187,6 +187,13 @@ export interface NodePort {
    */
   exposedByDefault?: boolean;
   /**
+   * Whether the port is locked on by its node type: always shown, whatever
+   * `exposedByDefault` or the instance's `ports` config says, and the editor
+   * offers no Show/Hide toggle. The server decides which ports are locked;
+   * absent means `false`.
+   */
+  exposureLocked?: boolean;
+  /**
    * Default sort weight for the port's render position, ascending; ties break
    * on declaration order. Author-declared ports default to `0`. Reserved ports
    * (the `error` output and `trigger`/`tool` control ports) need no value — the
@@ -388,7 +395,13 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH';
 export interface AutocompleteConfig {
   /**
    * The callback URL to fetch autocomplete suggestions from.
-   * Can be relative (resolved against API base URL) or absolute.
+   *
+   * - `https://host/…` or `//host/…`: used as given.
+   * - `/path`: relative to the site, used as given (SchemaForm puts its
+   *   `baseUrl` prop in front of it).
+   * - `path` without a leading slash: relative to the API base
+   *   (`endpointConfig.baseUrl`), so `secrets/options` reaches
+   *   `{baseUrl}/secrets/options` wherever the editor mounts the API.
    */
   url: string;
 
@@ -616,8 +629,17 @@ export interface ExternalEditLink {
   description?: string;
 
   /**
+   * Display name of the thing the link opens (e.g. the sub-workflow a node runs).
+   * When set the inspector shows "Runs <targetName> ↗" instead of the label.
+   */
+  targetName?: string;
+
+  /**
    * Callback URL parameter name for FlowDrop to receive updates
    * If set, the external form should redirect back with config updates
+   *
+   * @deprecated Nothing passes a callback URL, so this has no effect. Handle the
+   * round trip in the host with `FlowDropEventHandlers.onExternalEdit` instead.
    */
   callbackUrlParam?: string;
 }
@@ -1409,7 +1431,13 @@ export interface WorkflowNode extends Node {
     isProcessing?: boolean;
     /** Error message if the node execution failed */
     error?: string;
-    /** Node execution tracking information */
+    /**
+     * Node execution tracking information.
+     *
+     * @deprecated Run status lives in the instance's `fd.playground.nodeStatuses`
+     * (keyed by node id), which the node overlay reads first. Still read as a
+     * fallback, but never saved, exported or kept across edits. Removed in 3.0.
+     */
     executionInfo?: NodeExecutionInfo;
     /**
      * Per-instance extension properties for 3rd party integrations
@@ -1786,6 +1814,10 @@ export interface NodeJobExecution {
   executionTimeUs?: number;
   /** Error message if the job failed */
   error?: string;
+  /** What the job was given (the pipeline payload's `input_data`), when the backend sends it */
+  input?: unknown;
+  /** What the job produced (`output_data`), when the backend sends it */
+  output?: unknown;
 }
 
 /**
@@ -1882,6 +1914,8 @@ export type {
   ApiSettings,
   ThemePreference,
   ResolvedTheme,
+  ColorSchemeOption,
+  HostColorSchemeValue,
   SettingsCategory,
   PartialSettings,
   SyncStatus,

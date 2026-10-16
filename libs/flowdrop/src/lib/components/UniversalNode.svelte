@@ -1,18 +1,30 @@
 <!--
-  Universal Node Component
-  Renders any node type with automatic status overlay injection.
-  This component can replace individual node components in SvelteFlow.
+  @component
+  The one node type the canvas registers. It picks the card for a node and adds what every
+  card shares.
 
-  Uses the node component registry to resolve which component to render,
-  enabling custom node types to be registered and used dynamically.
+  It resolves the card from the node type registry: `config.nodeType` first, then
+  `metadata.type`, then the standard card. It then adds the run status (pill, and in Test mode
+  the status border, a dim for nodes the run did not reach, and the `edited` mark), the
+  Doctor's finding, and Enter/Space to open the config.
+
+  The status comes from the instance's playground store (`nodeStatusFor`), keyed by node id.
+  `data.executionInfo` is a deprecated fallback.
+
+  **Use it for** `nodeTypes.universalNode` in a canvas.
+  **Not for** a card of your own; register it with the node type registry instead.
 -->
 
 <script lang="ts">
   import type { WorkflowNode } from '../types/index.js';
   import { resolveBuiltinAlias } from '../registry/builtinNodes.js';
   import NodeStatusOverlay from './NodeStatusOverlay.svelte';
-  import { shouldShowNodeStatus, getOptimalStatusPosition } from '../utils/nodeWrapper.js';
+  import NodeProblemMark from './nodes/NodeProblemMark.svelte';
+  import { provideNodeProblem, type NodeProblem } from '../utils/nodeProblem.js';
+  import { shouldShowNodeStatus } from '../utils/nodeWrapper.js';
+  import { toPillStatus } from '../utils/nodeStatus.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
+  import { m } from '../messages/index.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
 
   const fd = getInstance();
@@ -53,9 +65,22 @@
   let nodeComponent = $derived(getNodeComponent(resolvedComponentName));
 
   /**
-   * Get execution info for status overlay
+   * Run status for the overlay: from the instance's store, keyed by node id.
+   * `data.executionInfo` is a deprecated fallback for hosts that still write it.
    */
-  let executionInfo = $derived(data.executionInfo);
+  let executionInfo = $derived(fd.playground.nodeStatusFor(id) ?? data.executionInfo);
+
+  /**
+   * The `edited` mark: Test mode only, only on a node that has a last run
+   * (a node that never ran has no result to be stale), and only when its
+   * configuration changed since the shown run started.
+   */
+  let showEdited = $derived(
+    fd.editedNodes.visible &&
+      !!executionInfo &&
+      executionInfo.status !== 'idle' &&
+      fd.editedNodes.isEdited(id)
+  );
 
   /**
    * Determine if status overlay should be shown.
@@ -65,6 +90,66 @@
     shouldShowNodeStatus(executionInfo) &&
       resolvedComponentName !== 'note' &&
       resolvedComponentName !== 'caption'
+  );
+
+  /**
+   * Test mode with a run on screen: a node that has no status in that run is
+   * dimmed (by `--fd-node-dim-opacity`, 1 unless a theme sets it); hover and
+   * selection bring it back.
+   */
+  let isAnnotation = $derived(
+    resolvedComponentName === 'note' || resolvedComponentName === 'caption'
+  );
+  let dimmed = $derived(
+    fd.editedNodes.visible &&
+      Object.keys(fd.playground.nodeStatuses).length > 0 &&
+      !shouldShowStatus &&
+      !isAnnotation
+  );
+
+  /**
+   * The Doctor's findings on this node: the worst severity and how many. A
+   * quiet badge and outline, only while the backend offers a Doctor.
+   */
+  let problemSeverity = $derived(fd.doctor.supported ? fd.doctor.severityOf(id) : null);
+  let problems = $derived(problemSeverity ? fd.doctor.forNode(id) : []);
+  let problemLabel = $derived(
+    problemSeverity
+      ? m().doctor.badge({
+          severity: m().doctor.severity[problemSeverity],
+          count: problems.length
+        })
+      : ''
+  );
+  let problemClaimed = $state(false);
+  const problem: NodeProblem = {
+    get severity() {
+      return problemSeverity;
+    },
+    get label() {
+      return problemLabel;
+    },
+    get tooltip() {
+      return [problemLabel, ...problems.map((p) => p.message)].join('\n');
+    },
+    get claimed() {
+      return problemClaimed;
+    },
+    set claimed(value: boolean) {
+      problemClaimed = value;
+    }
+  };
+  provideNodeProblem(problem);
+
+  /**
+   * Test mode: the node border takes the status colour (nodes draw their
+   * border from `--fd-node-border`, which is inherited from here). In Edit
+   * mode with a live run the pill shows but the border stays.
+   */
+  let borderStatus = $derived(
+    shouldShowStatus && fd.editedNodes.visible && executionInfo
+      ? toPillStatus(executionInfo.status)
+      : null
   );
 
   // Keyboard activation lives on xyflow's node wrapper — the single focusable,
@@ -119,48 +204,20 @@
     // Return the default component from registry
     return fd.nodes.getComponent('workflowNode');
   }
-
-  /**
-   * Get optimal status position for this node type.
-   * Uses registry if available, otherwise falls back to defaults.
-   */
-  function getStatusPosition(): 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' {
-    // Try registry first
-    const position = fd.nodes.getStatusPosition(resolvedComponentName);
-    if (position) {
-      return position;
-    }
-
-    // Fallback based on node type
-    return getOptimalStatusPosition(resolvedComponentName) ?? 'top-right';
-  }
-
-  /**
-   * Get optimal status size for this node type.
-   * Uses registry if available, otherwise falls back to defaults.
-   */
-  function getStatusSize(): 'sm' | 'md' | 'lg' {
-    // Try registry first
-    const size = fd.nodes.getStatusSize(resolvedComponentName);
-    if (size) {
-      return size;
-    }
-
-    // Fallback based on node type
-    switch (resolvedComponentName) {
-      case 'tool':
-      case 'note':
-      case 'caption':
-      case 'square':
-        return 'sm';
-      case 'simple':
-      default:
-        return 'md';
-    }
-  }
 </script>
 
-<div class="universal-node" bind:this={universalNodeEl}>
+<div
+  class="universal-node"
+  class:universal-node--status-border={borderStatus}
+  class:universal-node--dim={dimmed}
+  class:universal-node--terminal={resolvedComponentName === 'terminal'}
+  class:universal-node--selected={selected}
+  class:universal-node--problem={problemSeverity !== null}
+  style={borderStatus
+    ? `--fd-node-border: var(--fd-status-${borderStatus}); --fd-node-border-hover: var(--fd-status-${borderStatus}); --fd-node-terminal-border-color: var(--fd-status-${borderStatus});`
+    : undefined}
+  bind:this={universalNodeEl}
+>
   <!-- Render the node component dynamically (Svelte 5 dynamic component syntax) -->
   {#if nodeComponent}
     <!-- Svelte 5 dynamic component limitation; reactivity maintained via $derived -->
@@ -168,21 +225,73 @@
     <NodeComponent {id} {data} {selected} />
   {/if}
 
+  <!-- The Doctor's finding: drawn in the card header by the node itself; a node type
+       that draws no header gets the mark in its corner. -->
+  {#if problemSeverity && !problem.claimed}
+    <NodeProblemMark {problem} />
+  {/if}
+
+  {#if showEdited && shouldShowStatus}
+    <span
+      class="universal-node__edited"
+      data-testid="node-edited"
+      title={m().status.overlay.editedTooltip}>{m().status.overlay.edited}</span
+    >
+  {/if}
+
   <!-- Status overlay - only show if there's meaningful status information -->
   {#if shouldShowStatus}
-    <NodeStatusOverlay
-      nodeId={id}
-      {executionInfo}
-      position={getStatusPosition()}
-      size={getStatusSize()}
-      showDetails={true}
-    />
+    <NodeStatusOverlay nodeId={id} {executionInfo} />
   {/if}
 </div>
 
 <style>
   .universal-node {
     position: relative;
-    display: inline-block;
+    /* Block, not inline-block: an inline box leaves a descender gap under the
+       card, which made the node 3px taller than its 20px-grid geometry. */
+    display: block;
+  }
+
+  /* Test mode: the border takes the status colour; a theme may thicken it
+     (--fd-node-status-edge) and add a soft halo while a node waits. */
+  .universal-node--status-border :global(.node-status-overlay__frame) {
+    box-shadow: var(--_frame);
+  }
+
+  /* The circle of a terminal node carries the status frame, not the whole box. */
+  .universal-node--terminal :global(.node-status-overlay__frame) {
+    inset: 0 auto auto 50%;
+    width: var(--fd-node-terminal-size);
+    height: var(--fd-node-terminal-size);
+    translate: -50% 0;
+    border-radius: var(--fd-radius-full);
+  }
+
+  .universal-node--dim {
+    opacity: var(--fd-node-dim-opacity);
+    transition: opacity var(--fd-transition-fast);
+  }
+  .universal-node--dim:hover,
+  .universal-node--dim.universal-node--selected {
+    opacity: 1;
+  }
+
+  .universal-node__edited {
+    position: absolute;
+    top: -9px;
+    left: 8px;
+    z-index: 1000;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background:
+      linear-gradient(var(--fd-warning-muted), var(--fd-warning-muted)), var(--fd-background);
+    color: var(--fd-foreground);
+    border: 1px solid var(--fd-warning);
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    pointer-events: none;
   }
 </style>

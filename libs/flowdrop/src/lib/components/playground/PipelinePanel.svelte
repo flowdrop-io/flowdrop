@@ -1,3 +1,12 @@
+<!--
+  @component
+  **Legacy.** The side panel that shows a run's pipeline. Only the deprecated standalone Playground (`PlaygroundStudio`) renders it; Test mode in the editor does not.
+  The user sees a Pipeline header with view buttons (graph, Kanban, table, plus any extras), a run switcher chip, and the chosen view. The view choice is remembered per instance.
+
+  **Use it for** inspecting one run in a standalone host app.
+  **Not for** the editor; use the docked Playground and `StepsSummary` instead.
+-->
+
 <script module lang="ts">
   const VIEW_MODE_KEY_BASE = 'fd-pipeline-view-mode';
   const BUILTIN_VIEWS = ['graph', 'kanban', 'table'] as const;
@@ -20,10 +29,15 @@
   import type { PlaygroundExecution } from '$lib/types/playground.js';
 
   interface Props {
+    /** Id of the run to show, or null for none yet. */
     pipelineId: string | null;
+    /** The workflow the run belongs to. */
     workflow: Workflow;
+    /** API endpoints used to load the run. */
     endpointConfig: EndpointConfig;
+    /** Auth provider for the API requests. Default: none. */
     authProvider?: AuthProvider;
+    /** True when the user pinned one run; false when the panel follows the latest. */
     isPinned: boolean;
     /** All executions for the current session, oldest-first */
     executions?: PlaygroundExecution[];

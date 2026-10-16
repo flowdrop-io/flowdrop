@@ -1,14 +1,19 @@
 <!--
-  Terminal Node Component
-  A circular node for workflow terminal points (start, end, exit/abort)
-  Configurable via metadata to display different variants:
-  - start: Green with play icon, output-only
-  - end: Gray with stop icon, input-only  
-  - exit: Red with X icon, input-only (for abort/error exits)
-  Styled with BEM syntax
+  @component
+  A circle for a workflow's start, end or exit.
+
+  The variant comes from `config.variant`, then from the node type's tags, then from its
+  id or name:
+  - start: green with a play icon, output only.
+  - end: grey with a stop icon, input only.
+  - exit: red with a cross, input only. For an early stop, for example on an error.
+
+  **Use it for** a node type that declares `type: "terminal"`.
+  **Not for** a step in the middle of a flow; use `WorkflowNode`.
 -->
 
 <script lang="ts">
+  import { m } from '$lib/messages/index.js';
   import { Position, Handle } from '@xyflow/svelte';
   import type {
     ConfigValues,
@@ -19,9 +24,11 @@
   } from '../../types/index.js';
   import Icon from '@iconify/svelte';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getNodeIcon } from '../../utils/icons.js';
-  import { getCircleHandlePosition } from '$lib/utils/handlePositioning.js';
+  import { computeShapeGeometry } from '../../utils/nodeGeometry.js';
   import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
@@ -76,7 +83,9 @@
   };
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`variant`) and node type. */
     data: {
       label: string;
       config: ConfigValues;
@@ -88,8 +97,11 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 
@@ -284,14 +296,24 @@
   );
 
   /**
-   * Determine if we should show inputs based on visible ports
+   * The circle and its handles, from the shared geometry. The circle is as wide
+   * as it is tall (80, or 40 per port beyond two), every handle centre is a
+   * multiple of 20 from the top, and each handle sits on the circle's edge at
+   * that height. Only the y is on the grid; the x follows the arc.
    */
-  let showInputs = $derived(visibleInputPorts.length > 0);
-
-  /**
-   * Determine if we should show outputs based on visible ports
-   */
-  let showOutputs = $derived(visibleOutputPorts.length > 0);
+  const geometry = $derived(
+    computeShapeGeometry({ inputs: visibleInputPorts, outputs: visibleOutputPorts })
+  );
+  const diameter = $derived(geometry.height);
+  /** Handle ids with an edge on them: the zoom tiers hide the open ones. */
+  const wired = $derived(wiredHandleIds(fd.workflow.edges, props.id));
+  function arcX(y: number, direction: 'input' | 'output'): number {
+    const r = diameter / 2;
+    const inset = r - Math.sqrt(Math.max(r * r - (y - r) ** 2, 0));
+    return direction === 'input' ? inset : diameter - inset;
+  }
+  const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
+  const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 
   /**
    * Handle configuration sidebar - using global ConfigSidebar
@@ -327,64 +349,75 @@
   class:flowdrop-terminal-node--start={variant === 'start'}
   class:flowdrop-terminal-node--end={variant === 'end'}
   class:flowdrop-terminal-node--exit={variant === 'exit'}
-  style="--terminal-color: {terminalColor};"
+  style="--terminal-color: {terminalColor}; --_cat: {terminalColor}; --_d: {diameter}px;"
   ondblclick={handleDoubleClick}
-  aria-label="{variant} node: {displayTitle}"
 >
   <!-- Config button at top -->
-  <NodeConfigButton onclick={openConfigSidebar} title="Configure node" placement="top-center" />
+  <NodeConfigButton
+    onclick={openConfigSidebar}
+    title={m().nodes.configure}
+    placement="top-center"
+  />
 
   <!-- Circle wrapper for proper handle positioning -->
   <div class="flowdrop-terminal-node__circle-wrapper">
     <!-- Input Handles (for end/exit variants) -->
-    {#if showInputs}
-      {#each visibleInputPorts as port, index (`${port.id}-${visibleInputPorts.length}`)}
-        {@const pos = getCircleHandlePosition(index, visibleInputPorts.length, 'left')}
-        {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
-        <Handle
-          type="target"
-          position={Position.Left}
-          class={boundEntry ? 'flowdrop-handle--bound' : undefined}
-          title={interfaceBoundTooltip(boundEntry)}
-          style="--fd-handle-fill: {getPortColorToken(
-            checker,
-            port
-          )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
-          id={`${props.id}-input-${port.id}`}
-        />
-      {/each}
-    {/if}
+    {#each inputHandles as h (h.portId)}
+      {@const port = h.port}
+      {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
+      <Handle
+        type="target"
+        position={Position.Left}
+        title={interfaceBoundTooltip(boundEntry)}
+        style="--fd-handle-fill: {getPortColorToken(
+          checker,
+          port
+        )}; --fd-handle-border-color: var(--fd-handle-border); left: {arcX(
+          h.y,
+          'input'
+        )}px; top: {h.y}px; transform: translate(-50%, -50%); z-index: 30;"
+        id={`${props.id}-input-${port.id}`}
+        class={wired.has(`${props.id}-input-${port.id}`) ? undefined : 'fd-handle--open'}
+      />
+    {/each}
+
+    <NodeProblemMark />
 
     <!-- Circular content with icon in squircle wrapper -->
     <div class="flowdrop-terminal-node__content">
-      <div class="flowdrop-terminal-node__icon-wrapper" style="--_icon-color: {terminalColor}">
+      <div
+        class="flowdrop-terminal-node__icon-wrapper"
+        style="--_icon-color: {terminalColor}"
+        data-fd-glyph
+      >
         <Icon icon={terminalIcon} class="flowdrop-terminal-node__icon" />
       </div>
     </div>
 
     <!-- Output Handles (for start variant) -->
-    {#if showOutputs}
-      {#each visibleOutputPorts as port, index (`${port.id}-${visibleOutputPorts.length}`)}
-        {@const pos = getCircleHandlePosition(index, visibleOutputPorts.length, 'right')}
-        {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
-        <Handle
-          type="source"
-          position={Position.Right}
-          id={`${props.id}-output-${port.id}`}
-          class={boundEntry ? 'flowdrop-handle--bound' : undefined}
-          title={interfaceBoundTooltip(boundEntry)}
-          style="--fd-handle-fill: {getPortColorToken(
-            checker,
-            port
-          )}; --fd-handle-border-color: var(--fd-handle-border); left: {pos.left}px; top: {pos.top}px; transform: translate(-50%, -50%); z-index: 30;"
-        />
-      {/each}
-    {/if}
+    {#each outputHandles as h (h.portId)}
+      {@const port = h.port}
+      {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id={`${props.id}-output-${port.id}`}
+        class={wired.has(`${props.id}-output-${port.id}`) ? undefined : 'fd-handle--open'}
+        title={interfaceBoundTooltip(boundEntry)}
+        style="--fd-handle-fill: {getPortColorToken(
+          checker,
+          port
+        )}; --fd-handle-border-color: var(--fd-handle-border); left: {arcX(
+          h.y,
+          'output'
+        )}px; top: {h.y}px; transform: translate(-50%, -50%); z-index: 30;"
+      />
+    {/each}
   </div>
 
   <!-- Label and description below the circle -->
   <div class="flowdrop-terminal-node__label-container">
-    <div class="flowdrop-terminal-node__label">
+    <div class="flowdrop-terminal-node__label" data-fd-title>
       {displayTitle}
     </div>
     {#if displayDescription}
@@ -410,13 +443,13 @@
 </div>
 
 <style>
+  /* The box is the circle plus a 40px label strip, so it is a multiple of 20
+     both ways; the label hangs centred below the circle and may be wider than
+     the box. */
   .flowdrop-terminal-node {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* px (not rem) on the 20px grid */
-    gap: 8px;
+    width: var(--_d);
+    height: calc(var(--_d) + 40px);
     cursor: pointer;
     transition: all var(--fd-transition-normal);
     z-index: 10;
@@ -426,16 +459,17 @@
   /* Wrapper for circle and handles - ensures handles are vertically centered to circle */
   .flowdrop-terminal-node__circle-wrapper {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: var(--_d);
+    height: var(--_d);
   }
 
   .flowdrop-terminal-node__content {
-    width: var(--fd-node-terminal-size);
-    height: var(--fd-node-terminal-size);
-    background-color: var(--fd-background);
-    border: 3px solid var(--terminal-color, var(--fd-muted-foreground));
+    box-sizing: border-box;
+    width: var(--_d);
+    height: var(--_d);
+    background-color: var(--fd-node-terminal-bg);
+    border: var(--fd-node-terminal-border-width) solid
+      var(--fd-node-terminal-border-color, var(--terminal-color, var(--fd-muted-foreground)));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -452,15 +486,19 @@
   .flowdrop-terminal-node--selected .flowdrop-terminal-node__content {
     box-shadow:
       var(--fd-node-shadow-hover),
-      0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
-    border-color: var(--fd-primary);
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-terminal-ring-width))
+        var(--fd-node-terminal-ring);
+    border-color: var(--fd-node-selected-border);
   }
 
   .flowdrop-terminal-node--selected:hover .flowdrop-terminal-node__content {
     box-shadow:
       var(--fd-node-shadow-hover),
-      0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
-    border-color: var(--fd-primary);
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-terminal-ring-width))
+        var(--fd-node-terminal-ring);
+    border-color: var(--fd-node-selected-border);
     transform: scale(1.05);
   }
 
@@ -478,43 +516,61 @@
 
   /* Variant-specific glow effects */
   .flowdrop-terminal-node--start .flowdrop-terminal-node__content {
-    box-shadow:
+    box-shadow: var(
+      --fd-node-terminal-shadow,
       0 4px 6px -1px color-mix(in srgb, var(--fd-success) 20%, transparent),
-      0 2px 4px -1px color-mix(in srgb, var(--fd-success) 10%, transparent);
+      0 2px 4px -1px color-mix(in srgb, var(--fd-success) 10%, transparent)
+    );
   }
 
   .flowdrop-terminal-node--start:hover .flowdrop-terminal-node__content {
-    box-shadow:
+    box-shadow: var(
+      --fd-node-terminal-shadow-hover,
       0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
-      0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent);
+      0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent)
+    );
   }
 
   .flowdrop-terminal-node--start.flowdrop-terminal-node--selected:hover
     .flowdrop-terminal-node__content {
     box-shadow:
-      0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
-      0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent),
-      0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
+      var(
+        --fd-node-terminal-shadow-hover,
+        0 10px 15px -3px color-mix(in srgb, var(--fd-success) 30%, transparent),
+        0 4px 6px -2px color-mix(in srgb, var(--fd-success) 15%, transparent)
+      ),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-terminal-ring-width))
+        var(--fd-node-terminal-ring);
   }
 
   .flowdrop-terminal-node--exit .flowdrop-terminal-node__content {
-    box-shadow:
+    box-shadow: var(
+      --fd-node-terminal-shadow,
       0 4px 6px -1px color-mix(in srgb, var(--fd-error) 20%, transparent),
-      0 2px 4px -1px color-mix(in srgb, var(--fd-error) 10%, transparent);
+      0 2px 4px -1px color-mix(in srgb, var(--fd-error) 10%, transparent)
+    );
   }
 
   .flowdrop-terminal-node--exit:hover .flowdrop-terminal-node__content {
-    box-shadow:
+    box-shadow: var(
+      --fd-node-terminal-shadow-hover,
       0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
-      0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent);
+      0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent)
+    );
   }
 
   .flowdrop-terminal-node--exit.flowdrop-terminal-node--selected:hover
     .flowdrop-terminal-node__content {
     box-shadow:
-      0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
-      0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent),
-      0 0 0 3px color-mix(in srgb, var(--fd-primary) 50%, transparent);
+      var(
+        --fd-node-terminal-shadow-hover,
+        0 10px 15px -3px color-mix(in srgb, var(--fd-error) 30%, transparent),
+        0 4px 6px -2px color-mix(in srgb, var(--fd-error) 15%, transparent)
+      ),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-terminal-ring-width))
+        var(--fd-node-terminal-ring);
   }
 
   /* Squircle icon wrapper - px (not rem) so the icon stays grid-locked
@@ -526,40 +582,141 @@
     width: 44px;
     height: 44px;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent);
+    background: var(
+      --fd-node-terminal-icon-bg,
+      color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity), transparent)
+    );
     flex-shrink: 0;
     transition: all var(--fd-transition-normal);
   }
 
   .flowdrop-terminal-node:hover .flowdrop-terminal-node__icon-wrapper {
-    background: color-mix(
-      in srgb,
-      var(--_icon-color) var(--fd-node-icon-bg-opacity-hover),
-      transparent
+    background: var(
+      --fd-node-terminal-icon-bg,
+      color-mix(in srgb, var(--_icon-color) var(--fd-node-icon-bg-opacity-hover), transparent)
     );
   }
 
   .flowdrop-terminal-node__icon-wrapper :global(.flowdrop-terminal-node__icon) {
-    width: 24px;
-    height: 24px;
-    color: var(--fd-node-icon);
+    width: var(--fd-node-terminal-icon-size);
+    height: var(--fd-node-terminal-icon-size);
+    color: var(--fd-node-terminal-icon-color, var(--fd-node-icon));
+  }
+
+  /* The Doctor's glyph, centred at the top of the circle, just below the gear that
+     floats above it: in the middle of the band between the circle's edge and the
+     44px icon tile. */
+  .flowdrop-terminal-node__circle-wrapper {
+    --_pm-inset: calc(((var(--_d) - 44px) / 2 - var(--fd-node-problem-size)) / 2);
+  }
+
+  .flowdrop-terminal-node__circle-wrapper > :global(.fd-node-problem) {
+    position: absolute;
+    top: var(--_pm-inset);
+    left: 50%;
+    right: auto;
+    translate: -50% 0;
+    transform-origin: top center;
+    z-index: 31;
+  }
+
+  /* ----- Zoom tiers (editor.zoomTiers): see NodeCard. The circle keeps its size;
+     outline sets the label at the outline title size, glyph puts the solid tile
+     in the circle with a larger label, map fills the circle with its category
+     and a white glyph and drops the label. Fixed flow px. ----- */
+  :global([data-fd-zoom='outline']) .flowdrop-terminal-node__label {
+    font-size: var(--fd-node-zoom-outline-title-size);
+    line-height: var(--fd-node-zoom-outline-title-line);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-terminal-node__description,
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__description,
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__description,
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__label-container,
+  :global([data-fd-zoom='outline']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__icon-wrapper,
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__icon-wrapper {
+    width: var(--fd-node-zoom-tile-size);
+    height: var(--fd-node-zoom-tile-size);
+    border-radius: var(--fd-node-zoom-tile-radius);
+    background: var(--_cat);
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-terminal-node__icon-wrapper
+    :global(.flowdrop-terminal-node__icon),
+  :global([data-fd-zoom='map'])
+    .flowdrop-terminal-node__icon-wrapper
+    :global(.flowdrop-terminal-node__icon) {
+    width: var(--fd-node-zoom-tile-glyph);
+    height: var(--fd-node-zoom-tile-glyph);
+    color: var(--fd-node-tile-fg);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__label-container {
+    max-width: calc(var(--_d) * 2);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-terminal-node__label {
+    font-size: var(--fd-node-zoom-title-size);
+    line-height: var(--fd-node-zoom-title-leading);
+    letter-spacing: var(--fd-node-zoom-title-tracking);
+    white-space: normal;
+    max-width: calc(var(--_d) * 2);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__content {
+    background-color: color-mix(
+      in srgb,
+      var(--_cat) var(--fd-node-zoom-map-mix),
+      var(--fd-node-terminal-bg)
+    );
+    box-shadow: var(--fd-node-zoom-map-shadow);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node--error {
+    --_cat: var(--fd-error);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-terminal-node__icon-wrapper {
+    width: min(var(--fd-node-zoom-map-tile-size), calc(var(--_d) * 0.7));
+    height: min(var(--fd-node-zoom-map-tile-size), calc(var(--_d) * 0.7));
+    border-radius: var(--fd-node-zoom-map-tile-radius);
+    background: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-map-tile-mix), transparent);
+  }
+
+  :global([data-fd-zoom='map'])
+    .flowdrop-terminal-node__icon-wrapper
+    :global(.flowdrop-terminal-node__icon) {
+    width: min(var(--fd-node-zoom-map-glyph), calc(var(--_d) * 0.7));
+    height: min(var(--fd-node-zoom-map-glyph), calc(var(--_d) * 0.7));
   }
 
   .flowdrop-terminal-node__label-container {
+    position: absolute;
+    top: calc(var(--_d) + 8px);
+    left: 50%;
+    translate: -50% 0;
+    width: max-content;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    background-color: var(--fd-backdrop);
+    background-color: var(--fd-node-terminal-label-bg);
     padding: 4px 8px;
     border-radius: var(--fd-radius-sm);
-    box-shadow: var(--fd-shadow-sm);
+    box-shadow: var(--fd-node-terminal-label-shadow);
     max-width: 140px;
   }
 
   .flowdrop-terminal-node__label {
     font-size: var(--fd-text-xs);
-    font-weight: 500;
+    font-weight: var(--fd-node-terminal-label-weight);
     color: var(--fd-foreground);
     text-align: center;
     overflow: hidden;
@@ -576,6 +733,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 100%;
+    display: var(--fd-node-desc-block-display);
   }
 
   .flowdrop-terminal-node__processing {

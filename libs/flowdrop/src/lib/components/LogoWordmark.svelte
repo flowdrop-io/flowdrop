@@ -1,7 +1,12 @@
 <!--
-  FlowDrop horizontal lockup: rocket mark + "FlowDrop" wordmark.
-  Theme-aware via the same --fd-logo-* variables as Logo.svelte, plus
-  --fd-logo-text for the wordmark glyphs.
+  @component
+  LogoWordmark: the FlowDrop mark with the "FlowDrop" name next to it, as one wide logo.
+
+  It fills the box you give it (five times wider than tall). It uses the same `--fd-logo-*`
+  tokens as `Logo`, plus `--fd-logo-text` for the letters.
+
+  **Use it for** the navbar and other headers. The editor shows it at the top left.
+  **Not for** a small square spot; use `Logo`.
 -->
 <div class="flowdrop-logo-wordmark">
   <svg viewBox="0 0 2500 499.99999" version="1.1" xmlns="http://www.w3.org/2000/svg">

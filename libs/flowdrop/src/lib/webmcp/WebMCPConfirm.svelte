@@ -124,7 +124,7 @@
   /* Mounted on document.body, outside the editor tree. Tokens come from :root
      (tokens.css) and, for a skinned editor, from the editor's scope, which the
      gate copies onto the host element; the dark palette follows
-     [data-theme='dark'] on <html>; the buttons are .flowdrop-btn from
+     [data-theme='dark'] on the host element (gate.ts); the buttons are .flowdrop-btn from
      base.css. Everything else is set here, because the host page's own
      element rules (h2, p, ol, li, label) reach a dialog on <body>: every
      element below states its margin, padding, font and list style rather than

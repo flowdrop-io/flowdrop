@@ -1,6 +1,10 @@
 <!--
-  FieldFactory Component (internal — not exported)
-  Factory component that renders the appropriate field based on schema type.
+  @component
+  The one field factory: it looks at a field's schema and draws the matching control inside a `FormFieldWrapper`.
+  Not exported; `FormField` and `FormFieldLight` are its public wrappers.
+
+  **Use it for** nothing directly. Use `FormField` or `FormFieldLight`.
+  **Not for** a whole form (use `SchemaForm` or `ConfigForm`).
 
   The one field factory. The public components are thin wrappers around it:
   - FormFieldLight (exported as `FormField` from "@flowdrop/flowdrop/form")
@@ -54,6 +58,7 @@
   import FormArray from './FormArray.svelte';
   import FormPorts from './FormPorts.svelte';
   import FormAutocomplete from './FormAutocomplete.svelte';
+  import { humanizeKey } from './humanizeKey.js';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
   import type { FormFieldFactoryProps } from './types.js';
@@ -88,6 +93,7 @@
     workflowId,
     authProvider,
     editors,
+    itemRef,
     onChange
   }: Props = $props();
 
@@ -109,9 +115,9 @@
   const animationDelay = $derived(animationIndex * 30);
 
   /**
-   * Field label - prefer title, fall back to description, then key
+   * Field label - prefer title, fall back to description, then the humanised key
    */
-  const fieldLabel = $derived(String(schema.title ?? schema.description ?? fieldKey));
+  const fieldLabel = $derived(String(schema.title ?? schema.description ?? humanizeKey(fieldKey)));
 
   /**
    * The heavy editor this schema asks for, if any
@@ -228,14 +234,36 @@
         return 'This field type requires additional registration.';
     }
   }
+
+  /**
+   * An array's description reads as two parts: the first sentence is a short note
+   * on the label row ("Matched in order"), the rest is help under the Add button.
+   */
+  const isArrayField = $derived(fieldType === 'array' && !!schema.items);
+  const arrayText = $derived.by((): { note?: string; help?: string } => {
+    const text = isArrayField && typeof schema.description === 'string' ? schema.description : '';
+    if (!text) return {};
+    const cut = text.search(/[.!?](\s|$)/);
+    if (cut < 0) return { note: text };
+    const note = text.slice(0, cut).trim();
+    const help = text.slice(cut + 1).trim();
+    return { note, help: help || undefined };
+  });
 </script>
 
 {#if fieldType !== 'hidden'}
   <FormFieldWrapper
+    aside={arrayText.note}
     id={fieldKey}
     label={fieldLabel}
     {required}
-    description={schema.title ? schema.description : undefined}
+    description={isArrayField
+      ? undefined
+      : schema.title || fieldType === 'ports'
+        ? schema.description
+        : undefined}
+    plain={fieldType === 'ports'}
+    inline={fieldType === 'toggle'}
     {animationDelay}
   >
     {#if fieldType === 'registered' && RegisteredComponent}
@@ -367,7 +395,9 @@
         minItems={schema.minItems}
         maxItems={schema.maxItems}
         addLabel={`Add ${schema.items.title ?? 'Item'}`}
-        disabled={isReadOnly}
+        readOnly={isReadOnly}
+        {itemRef}
+        help={arrayText.help}
         onChange={(val) => onChange(val)}
       />
     {:else if fieldType === 'ports'}

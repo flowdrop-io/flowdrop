@@ -9,7 +9,7 @@
 
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { gotoEditor, assertStatusBar, selectNode } from './helpers/editor-helpers';
+import { gotoEditor, assertStatusBar, assertNodeCount, selectNode } from './helpers/editor-helpers';
 
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 
@@ -28,7 +28,15 @@ test.describe('Canvas context menu', () => {
 
     await page.locator('.svelte-flow__node').first().click({ button: 'right' });
     await expect(menu(page)).toBeVisible();
-    await expect(menu(page).getByRole('menuitem')).toHaveText([/Configure/, /Delete/]);
+    await expect(menu(page).getByRole('menuitem')).toHaveText([
+      /Configure/,
+      /Duplicate/,
+      /Swap node/,
+      /Tidy node/,
+      /Hide unconnected ports/,
+      /Show hidden ports/,
+      /Delete/
+    ]);
 
     await menu(page)
       .getByRole('menuitem', { name: /Delete/ })
@@ -38,6 +46,53 @@ test.describe('Canvas context menu', () => {
 
     await page.keyboard.press(`${modifier}+z`);
     await assertStatusBar(page, 2, 1);
+  });
+
+  test('Duplicate places a copy beside the node, with its own id; undo removes it', async ({
+    page
+  }) => {
+    await gotoEditor(page, 'simple');
+    await assertStatusBar(page, 2, 1);
+
+    await page.locator('.svelte-flow__node').first().click({ button: 'right' });
+    await menu(page)
+      .getByRole('menuitem', { name: /Duplicate/ })
+      .click();
+    await expect(menu(page)).toHaveCount(0);
+    await assertNodeCount(page, 3);
+    const ids = await page
+      .locator('.svelte-flow__node')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('data-id')));
+    expect(new Set(ids).size).toBe(3);
+
+    await page.keyboard.press(`${modifier}+z`);
+    await assertNodeCount(page, 2);
+  });
+
+  test('Swap node opens the swap picker for that node', async ({ page }) => {
+    await gotoEditor(page, 'simple');
+
+    await page.locator('.svelte-flow__node').first().click({ button: 'right' });
+    await menu(page)
+      .getByRole('menuitem', { name: /Swap node/ })
+      .click();
+    await expect(menu(page)).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Swap Node' })).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Delete is drawn in the danger tone, with the key glyph beside it', async ({ page }) => {
+    await gotoEditor(page, 'simple');
+
+    await page.locator('.svelte-flow__node').first().click({ button: 'right' });
+    const del = menu(page).getByRole('menuitem', { name: /Delete/ });
+    await expect(del.locator('kbd')).toHaveText('⌫');
+    const [deleteColor, labelColor] = await Promise.all([
+      del.evaluate((el) => getComputedStyle(el).color),
+      menu(page)
+        .getByRole('menuitem', { name: /Configure/ })
+        .evaluate((el) => getComputedStyle(el).color)
+    ]);
+    expect(deleteColor).not.toBe(labelColor);
   });
 
   test('right-clicking an unselected node selects it alone', async ({ page }) => {
@@ -77,10 +132,15 @@ test.describe('Canvas context menu', () => {
 
     // After a box selection, xyflow overlays the selected nodes with a selection wrapper.
     await page.locator('.svelte-flow__selection-wrapper').click({ button: 'right' });
-    await expect(menu(page).getByRole('menuitem')).toHaveText([/Delete 2 nodes/]);
+    await expect(menu(page).getByRole('menuitem')).toHaveText([
+      /Tidy 2 nodes/,
+      /Hide unconnected ports/,
+      /Show hidden ports/,
+      /Delete 2 nodes/
+    ]);
 
     await menu(page).getByRole('menuitem', { name: 'Delete 2 nodes' }).click();
-    await expect(page.locator('.flowdrop-status-bar')).toContainText('0 nodes');
+    await assertNodeCount(page, 0);
   });
 
   test('Configure opens the config panel', async ({ page }) => {
@@ -125,13 +185,17 @@ test.describe('Canvas context menu', () => {
 
     await page.locator('.svelte-flow__node').first().click({ button: 'right' });
     const items = menu(page).getByRole('menuitem');
+    const count = await items.count();
     await expect(items.nth(0)).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(items.nth(1)).toBeFocused();
-    await page.keyboard.press('ArrowDown');
-    await expect(items.nth(0)).toBeFocused();
     await page.keyboard.press('ArrowUp');
-    await expect(items.nth(1)).toBeFocused();
+    await expect(items.nth(0)).toBeFocused();
+    // Up from the first item wraps to the last; down from the last wraps to the first.
+    await page.keyboard.press('ArrowUp');
+    await expect(items.nth(count - 1)).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(items.nth(0)).toBeFocused();
   });
 
   test('outside click closes the menu', async ({ page }) => {
@@ -153,26 +217,30 @@ test.describe('Canvas context menu', () => {
     await page.locator('.svelte-flow__node').first().focus();
     await page.keyboard.press('Shift+F10');
     await expect(menu(page)).toBeVisible();
-    await expect(menu(page).getByRole('menuitem')).toHaveText([/Configure/, /Delete/]);
+    await expect(menu(page).getByRole('menuitem')).toHaveText([
+      /Configure/,
+      /Duplicate/,
+      /Swap node/,
+      /Tidy node/,
+      /Hide unconnected ports/,
+      /Show hidden ports/,
+      /Delete/
+    ]);
 
     await page.keyboard.press('Enter');
     await expect(menu(page)).toHaveCount(0);
     await expect(page.locator('.config-panel').first()).toBeVisible({ timeout: 5000 });
   });
 
-  test('the empty canvas keeps the browser menu while the pane menu has no entries', async ({
-    page
-  }) => {
+  test('the empty canvas offers Tidy up', async ({ page }) => {
     await gotoEditor(page, 'simple');
 
-    const prevented = await page.evaluate(() => {
-      const el = document.querySelector('.svelte-flow__pane');
-      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
-      el?.dispatchEvent(ev);
-      return ev.defaultPrevented;
-    });
-    expect(prevented).toBe(false);
-    await expect(menu(page)).toHaveCount(0);
+    const pane = page.locator('.svelte-flow__pane');
+    const box = await pane.boundingBox();
+    if (!box) throw new Error('Canvas pane not found');
+    await page.mouse.click(box.x + box.width - 40, box.y + 40, { button: 'right' });
+    await expect(menu(page)).toBeVisible();
+    await expect(menu(page).getByRole('menuitem', { name: /Tidy up/ })).toBeVisible();
   });
 
   test('read-only mode shows no custom menu', async ({ page }) => {
@@ -292,5 +360,92 @@ test.describe('Canvas context menu', () => {
       .getByRole('menuitem', { name: /Delete/ })
       .click();
     await assertStatusBar(page, 2, 1);
+  });
+
+  // The 'complex' workflow's Calculator has inputs a (wired) and b, and an unwired
+  // output result: hiding the unconnected ports takes result off the canvas
+  // (b is required with no value, so it stays).
+  const calc = '.svelte-flow__node[data-id="node-calc"]';
+  const handle = (id: string) => `${calc} .svelte-flow__handle[data-handleid="${id}"]`;
+
+  test('Hide unconnected ports removes them from the canvas; one undo brings them back', async ({
+    page
+  }) => {
+    await gotoEditor(page, 'complex');
+    await expect(page.locator(handle('node-calc-input-b'))).toHaveCount(1);
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(1);
+
+    await page.locator(calc).click({ button: 'right' });
+    await menu(page).getByRole('menuitem', { name: 'Hide unconnected ports (1)' }).click();
+    await expect(menu(page)).toHaveCount(0);
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(0);
+    // b is required and has no value: hiding it would only hide the gap, so it stays.
+    await expect(page.locator(handle('node-calc-input-b'))).toHaveCount(1);
+    // The wired input stays.
+    await expect(page.locator(`${calc} .svelte-flow__handle`).first()).toBeAttached();
+
+    // Nothing left to hide: the entry stays, disabled, with the plain label.
+    await page.locator(calc).click({ button: 'right' });
+    await expect(
+      menu(page).getByRole('menuitem', { name: 'Hide unconnected ports' })
+    ).toHaveAttribute('aria-disabled', 'true');
+    await page.keyboard.press('Escape');
+
+    await page.keyboard.press(`${modifier}+z`);
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(1);
+  });
+
+  test('Show hidden ports brings every hidden port of the node back', async ({ page }) => {
+    await gotoEditor(page, 'complex');
+
+    await page.locator(calc).click({ button: 'right' });
+    await menu(page)
+      .getByRole('menuitem', { name: /Hide unconnected ports/ })
+      .click();
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(0);
+
+    await page.locator(calc).click({ button: 'right' });
+    await menu(page).getByRole('menuitem', { name: 'Show hidden ports (1)' }).click();
+    await expect(page.locator(handle('node-calc-output-result'))).toHaveCount(1);
+  });
+
+  test('Connect to… on a port adds an edge from the keyboard; one undo removes it', async ({
+    page
+  }) => {
+    await gotoEditor(page, 'complex');
+    await assertStatusBar(page, 4, 3);
+
+    await page.locator(handle('node-calc-output-result')).click({ button: 'right', force: true });
+    const connect = menu(page).getByRole('menuitem', { name: 'Connect to…' });
+    await expect(connect).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(menu(page)).toHaveCount(0);
+
+    const picker = page.getByTestId('connect-port-picker');
+    await expect(picker).toBeVisible();
+    await expect(picker).toContainText('Connect Result to…');
+    await expect(picker.getByRole('listbox')).toBeFocused();
+    // Never refused for its type: the string input is offered for a number output (under "Other types").
+    await expect(picker.getByRole('option')).toHaveCount(1);
+    await expect(picker.getByRole('option')).toContainText('Text Output');
+
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(picker).toHaveCount(0);
+    await assertStatusBar(page, 4, 4);
+
+    await page.keyboard.press(`${modifier}+z`);
+    await assertStatusBar(page, 4, 3);
+  });
+
+  test('Escape closes the Connect to… picker without connecting', async ({ page }) => {
+    await gotoEditor(page, 'complex');
+
+    await page.locator(handle('node-calc-output-result')).click({ button: 'right', force: true });
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('connect-port-picker')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('connect-port-picker')).toHaveCount(0);
+    await assertStatusBar(page, 4, 3);
   });
 });

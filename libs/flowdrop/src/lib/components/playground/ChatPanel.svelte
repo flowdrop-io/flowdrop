@@ -1,12 +1,10 @@
 <!--
-  ChatPanel Component
+  @component
+  **Exported for host apps; the editor does not render it.** A ready-made chat panel; the editor's Test mode uses `DockedPlayground` instead.
+  It shows the message feed above a text box with send and stop buttons. The user sees it only where a host app mounts it from the public API.
 
-  Public conversational chat interface for the playground. Composes
-  MessageStream (message + interrupt feed) and ChatInput (textarea +
-  send/run/stop). Use this for chat-style agent interactions.
-
-  For view-only execution surfaces, use the MessageStream primitive directly.
-  Log visibility is managed by the playground store (fd.playground.setShowLogs).
+  **Use it for** a simple chat-style agent conversation in a host app that does not use the editor.
+  **Not for** a read-only view of a run; use `MessageStream` for that.
 -->
 
 <script lang="ts">
@@ -16,17 +14,27 @@
   import { m } from '$lib/messages/index.js';
 
   interface Props {
+    /** Show a time on each message. Default: true. */
     showTimestamps?: boolean;
+    /** Keep the feed scrolled to the newest message. Default: true. */
     autoScroll?: boolean;
+    /** Text shown in the empty input box. Default: the built-in message. */
     placeholder?: string;
+    /** Called with the text when the user sends a message. */
     onSendMessage?: (content: string) => void;
+    /** Called when the user presses Stop during a run. */
     onStopExecution?: () => void;
+    /** Show log messages in the feed. Default: false. */
     showLogsInline?: boolean;
+    /** Render message text as Markdown. Default: true. */
     enableMarkdown?: boolean;
+    /** Called after the user answers a question the flow asked mid-run. */
     onInterruptResolved?: () => void;
     /** Render a "New session" CTA in the welcome state */
     onCreateSession?: () => void;
+    /** Text to put in the input box before the user types. Default: none. */
     predefinedMessage?: string;
+    /** Show system messages in a smaller, quieter style. Default: true. */
     compactSystemMessages?: boolean;
   }
 

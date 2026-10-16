@@ -1,0 +1,91 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Start here/Writing stories" />
+
+# Writing stories
+
+A story is only useful while it shows what the editor really does. These rules keep
+Storybook honest as the editor changes.
+
+## Where a story goes
+
+| Group                 | What belongs there                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| **Start here**        | Guides like this one.                                                                               |
+| **Foundations**       | Design tokens: colour, type, spacing, radius, shadow, run status.                                   |
+| **Components**        | The building blocks in `components/primitives/` plus small shared pieces (spinner, markdown, logo). |
+| **Editor/Canvas**     | The canvas chrome: toolbar, context menu, banners, navbar, status bar, console, zoom.               |
+| **Editor/Nodes**      | Node cards and everything drawn on them (status, ports, tags).                                      |
+| **Editor/Edges**      | Wires and loopback lanes.                                                                           |
+| **Editor/Runs**       | Run pill, runs list and other run state.                                                            |
+| **Editor/Playground** | Test mode panels, messages, interface inputs, interrupt prompts.                                    |
+| **Editor/Forms**      | Config forms and their fields.                                                                      |
+| **Legacy**            | Components kept for compatibility. Do not use them in new code.                                     |
+
+## The component describes itself
+
+The text under a docs page title comes from the component file, not the story. Start
+every component with an `@component` header:
+
+```svelte
+<!--
+  @component
+  One sentence: what it is.
+
+  **Use it for** the job it does in the editor.
+  **Not for** the nearby case; use `OtherComponent` instead.
+-->
+```
+
+Document each prop with a JSDoc comment on its `Props` field; the props table picks those up.
+Only use `parameters.docs.description.component` in a story when there is no single
+component (an MDX page, or a story that composes several).
+
+## Stories show the real thing
+
+- **First story = how the editor uses it.** Use the props the editor actually passes
+  (grep for the component before writing). If the editor always uses `size="sm"`, the
+  first story does too.
+- **Render the real component.** A story for editor UI renders that component, never a
+  hand-made copy built from primitives. Copies drift; this is how the old Toolbar story
+  ended up showing a toolbar the editor no longer has.
+- **Real data shapes.** Type fixtures with the library types (`NodeMetadata`,
+  `WorkflowNode`, …) so a renamed field breaks the type check instead of the story.
+- **Name stories in plain words**: `With actions`, `Waiting for you`, not `WithActions`.
+- **Explain non-obvious stories** with one line in `parameters.docs.description.story`:
+  when does a user see this state?
+- **No dark copies.** Use the light/dark switch in the toolbar. One `All variants`
+  story at the end (labelled rows) replaces `Matrix` / `MatrixDark` pairs.
+- **No backend.** Seed state through the decorators in `src/lib/stories/` (see below). A story
+  that needs a server is a story nobody can open.
+
+## Decorators that seed real state
+
+| Decorator           | Use it for                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| `NodeDecorator`     | Nodes on a real canvas. Props: `data` or `nodes`, `statuses`, `testMode`, `zoom`, `selected`. |
+| `EdgeDecorator`     | Wires between real nodes, styled as the editor styles them. Same seeding props.               |
+| `CanvasDecorator`   | Canvas chrome (zoom tier, zoom controls, grid) around anything that sits on the canvas.       |
+| `InstanceDecorator` | Panels that read the editor instance: `workflow`, `nodeTypes`, `editorMode`, `run`, `runs`.   |
+
+Run statuses go in as `{ nodeId: 'completed' }` or `{ nodeId: { status, executionCount, output } }`.
+Zoom levels come from `ZOOM_LEVELS` in `stories/utils.ts` (full, outline, glyph, map).
+Shared fixtures live next to them: `fixtures.ts`, `nodeFixtures.ts`, `formFixtures.ts`,
+`interruptFixtures.ts`, `playgroundFixtures.ts`.
+
+## Traps in `.stories.svelte` files
+
+- **No HTML comment before a `<Story>` or snippet.** It breaks the file without an error on
+  screen: the story module just 404s, and it can take the whole sidebar down. Write notes as `//`
+  comments inside `<script module>`.
+- **Custom markup needs `asChild`** when the meta sets `component`. A shared template goes in
+  `defineMeta({ render: template })`; a bare top-level `{#snippet template}` is ignored.
+- **Import decorators before the component** in node stories, or a circular import fails with
+  "Cannot access … before initialization".
+- **No `'` inside a double-quoted `description.story` string**: it can break indexing.
+
+## Legacy
+
+Move a component that the editor no longer uses to `Legacy/<Name>` and start its
+`@component` header with `**Legacy.** Use X instead.` Delete it from Storybook when it
+is removed from the package.

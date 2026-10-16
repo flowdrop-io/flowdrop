@@ -16,7 +16,9 @@ import type {
   PlaygroundSessionsResponse,
   PlaygroundSessionStatus,
   PlaygroundTurnResponse,
-  PlaygroundTurnResult
+  PlaygroundTurnResult,
+  SessionRunsResponse,
+  SessionRunsResult
 } from '../types/playground.js';
 import { defaultShouldStopPolling } from '../types/playground.js';
 import type {
@@ -24,7 +26,11 @@ import type {
   ResolvedSessionEndpoint,
   SessionEndpointKey
 } from '../config/endpoints.js';
-import { buildEndpointUrl, resolveSessionEndpoint } from '../config/endpoints.js';
+import {
+  buildEndpointUrl,
+  resolveSessionEndpoint,
+  resolveSessionRunsEndpoint
+} from '../config/endpoints.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import type { AuthProvider } from '../types/auth.js';
 import { logger } from '../utils/logger.js';
@@ -153,7 +159,7 @@ export class PlaygroundService {
         (errorData as { error?: string; message?: string }).error ||
         (errorData as { error?: string; message?: string }).message ||
         `HTTP ${response.status}: ${response.statusText}`;
-      throw new Error(errorMessage);
+      throw Object.assign(new Error(errorMessage), { status: response.status });
     }
     return response.json();
   }
@@ -443,19 +449,27 @@ export class PlaygroundService {
     endpointConfig: EndpointConfig | null,
     sessionId: string,
     authProvider?: AuthProvider
-  ): Promise<void> {
+  ): Promise<'stopped' | 'nothing-to-stop'> {
     const config = this.getConfig(endpointConfig);
     const { url, group } = this.sessionEndpoint(config, 'stop', sessionId);
 
-    await this.request<{ success: boolean }>(
-      config,
-      url,
-      {
-        method: 'POST'
-      },
-      authProvider,
-      group
-    );
+    try {
+      await this.request<{ success: boolean }>(
+        config,
+        url,
+        {
+          method: 'POST'
+        },
+        authProvider,
+        group
+      );
+      return 'stopped';
+    } catch (err) {
+      // 409: the server found nothing running or waiting. That is the state
+      // the caller wanted, so it is a result, not a failure.
+      if ((err as { status?: number }).status === 409) return 'nothing-to-stop';
+      throw err;
+    }
   }
 
   /**
@@ -492,6 +506,48 @@ export class PlaygroundService {
       authProvider,
       endpoint.group
     );
+  }
+
+  /**
+   * The runs a session started, oldest first, each stamped with the workflow
+   * version it ran (`GET /sessions/{id}/runs`).
+   *
+   * Resolves `null` when the backend has no such endpoint (no `sessions`
+   * group, or a 404/405/501 answer from an older server): the feature is
+   * optional and callers degrade to "no version information". Any other
+   * failure throws.
+   *
+   * @param sessionId - The session UUID
+   * @param options - `limit`: the newest this many runs (server default 50)
+   */
+  async getSessionRuns(
+    endpointConfig: EndpointConfig | null,
+    sessionId: string,
+    options?: { limit?: number },
+    authProvider?: AuthProvider
+  ): Promise<SessionRunsResult | null> {
+    const config = this.getConfig(endpointConfig);
+    const path = resolveSessionRunsEndpoint(config);
+    if (!path) return null;
+
+    let url = buildEndpointUrl(config, path, { sessionId });
+    if (options?.limit !== undefined) url = `${url}?limit=${options.limit}`;
+
+    const response = await authenticatedFetch(
+      url,
+      {},
+      { config, endpointKey: 'sessions', authProvider }
+    );
+    if (response.status === 404 || response.status === 405 || response.status === 501) {
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const body = (await response.json()) as SessionRunsResponse;
+    const data = body.data;
+    if (!data || !Array.isArray(data.runs)) return null;
+    return { workflowVersion: data.workflowVersion ?? null, runs: data.runs };
   }
 
   // =========================================================================

@@ -11,6 +11,7 @@ import type { NodeExecutionInfo } from '../types/index.js';
 export interface NodeStatusConfig {
   position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   size?: 'sm' | 'md' | 'lg';
+  /** @deprecated No effect: the badge shows status only. Details are in the inspector's Last run tab. */
   showDetails?: boolean;
 }
 

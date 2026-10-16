@@ -1,13 +1,13 @@
 <!--
-  CanvasContextMenu Component
-  The editor's right-click / Shift+F10 menu. Renders already-resolved entries
-  (see editor/contextMenu.ts) as an ARIA menu positioned at the pointer and
-  clamped inside the viewport. It is a manual popover, so it sits in the top
-  layer and no ancestor's overflow or stacking context can clip or cover it;
-  that is also why it is positioned in viewport coordinates. A manual popover
-  does not light-dismiss, so it closes itself on outside pointerdown, wheel
-  (zoom/pan), window blur, Escape, and after an entry runs.
-  Styled with BEM syntax.
+  @component
+  The right-click menu of the canvas (also Shift+F10). It draws entries that are already resolved
+  (see `editor/contextMenu.ts`) as an ARIA menu at the pointer, kept inside the window.
+
+  It is a manual popover, so it sits above everything and no parent can clip it. For that reason it uses
+  window coordinates. It closes on a click elsewhere, wheel, window blur, Escape, and after an entry runs.
+
+  **Use it for** actions on a node, a selection or the empty canvas.
+  **Not for** menus that hang off a button (use the `Menu` primitive).
 -->
 
 <script lang="ts">
@@ -31,6 +31,9 @@
   }
 
   const { entries, x, y, onselect, onclose }: Props = $props();
+
+  /** The icon column exists only when some entry has an icon. */
+  const hasIcons = $derived(entries.some((e) => !isSeparator(e) && e.icon));
 
   let menuEl: HTMLDivElement | undefined = $state();
 
@@ -161,19 +164,22 @@
       <button
         type="button"
         class="canvas-context-menu__item"
+        class:canvas-context-menu__item--danger={entry.danger}
         role="menuitem"
         tabindex="-1"
         aria-disabled={entry.disabled ? 'true' : undefined}
         onclick={() => run(entry)}
       >
-        <span class="canvas-context-menu__icon" aria-hidden="true">
-          {#if entry.icon}
-            <Icon icon={entry.icon} />
-          {/if}
-        </span>
+        {#if hasIcons}
+          <span class="canvas-context-menu__icon" aria-hidden="true">
+            {#if entry.icon}
+              <Icon icon={entry.icon} />
+            {/if}
+          </span>
+        {/if}
         <span class="canvas-context-menu__label">{entry.label}</span>
         {#if entry.shortcut}
-          <span class="canvas-context-menu__shortcut" aria-hidden="true">{entry.shortcut}</span>
+          <kbd class="canvas-context-menu__shortcut" aria-hidden="true">{entry.shortcut}</kbd>
         {/if}
       </button>
     {/if}
@@ -192,8 +198,8 @@
     padding: 0.25rem;
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
-    box-shadow: var(--fd-shadow-lg);
+    border-radius: var(--fd-menu-radius);
+    box-shadow: var(--fd-menu-shadow);
     color: var(--fd-foreground);
     font-size: var(--fd-text-sm);
     outline: none;
@@ -205,8 +211,9 @@
     gap: 0.5rem;
     width: 100%;
     padding: 0.375rem 0.5rem;
+    min-height: var(--fd-menu-item-height);
     border: none;
-    border-radius: var(--fd-radius-sm);
+    border-radius: var(--fd-menu-item-radius);
     background: none;
     color: inherit;
     font: inherit;
@@ -245,10 +252,24 @@
     text-overflow: ellipsis;
   }
 
+  /* A key glyph (⌫ ↵), not a word and not a chip. */
   .canvas-context-menu__shortcut {
-    margin-left: 1rem;
+    margin-left: var(--fd-space-md);
     color: var(--fd-muted-foreground);
+    font-family: inherit;
     font-size: var(--fd-text-xs);
+    line-height: 1;
+  }
+
+  /* Destructive entry: danger tone on the label and icon, a faint danger fill on hover. */
+  .canvas-context-menu__item--danger,
+  .canvas-context-menu__item--danger .canvas-context-menu__icon {
+    color: var(--fd-error);
+  }
+
+  .canvas-context-menu__item--danger:hover,
+  .canvas-context-menu__item--danger:focus-visible {
+    background-color: var(--fd-error-muted);
   }
 
   .canvas-context-menu__separator {

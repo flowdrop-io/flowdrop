@@ -12,10 +12,49 @@ import type { FlowDropSkin } from './skin.js';
 export type FlowDropGridVariant = 'dots' | 'lines' | 'cross';
 
 /**
+ * Structural layout switches: which variant of a piece of chrome the editor
+ * shows. They are structure, not colour, so they belong to the theme's
+ * config and not to a skin's tokens. Every field is optional; an unset field
+ * falls back to the deprecated `--fd-*-display` token (so CSS written for
+ * 2.x keeps working until 3.0) and then to the built-in default.
+ */
+export interface FlowDropDisplayConfig {
+  /** Node icon: a rounded-square icon wrapper ('squircle', default) or a small colour dot ('dot'). */
+  nodeIcon?: 'squircle' | 'dot';
+  /**
+   * Sidebar node list: accordion cards per category ('cards', default), a flat
+   * dot-and-name list ('flat'), or quiet 32px category rows with the nodes
+   * indented under the open one ('rows').
+   */
+  sidebarList?: 'cards' | 'flat' | 'rows';
+  /** Show the sidebar search input. Defaults to true. */
+  sidebarSearch?: boolean;
+  /** Show the sidebar "Components" header. Defaults to true. */
+  sidebarHeader?: boolean;
+  /**
+   * Node detail on the canvas: 'full' (default) shows each node's description under its title;
+   * 'compact' hides it (it stays in the hover tooltip and the inspector) and shortens the header
+   * by one grid row. The user's "Compact Mode" setting turns it on for any theme.
+   */
+  nodeDetails?: 'full' | 'compact';
+  /** Navbar actions: a primary action plus a dropdown ('dropdown', default) or all actions as separate buttons ('split'). */
+  navbarActions?: 'dropdown' | 'split';
+  /**
+   * Message anatomy in the Playground and the AI Assistant: bubbles with avatars and
+   * role labels ('bubbles', default), or a document ('document'): your own messages
+   * as a right-aligned bubble, replies as plain full-width text with one meta line
+   * (origin node, time) under them, no avatars, no role labels.
+   */
+  messages?: 'bubbles' | 'document';
+}
+
+/**
  * Behavioral configuration bundled with a theme.
  * These are initial-state flags, not CSS — they control runtime defaults.
  */
 export interface FlowDropThemeConfig {
+  /** Layout switches that used to be skin tokens (`--fd-node-icon-display` and friends). */
+  display?: FlowDropDisplayConfig;
   sidebar?: {
     /** Whether the sidebar starts open. Defaults to true. */
     defaultOpen?: boolean;
@@ -31,7 +70,7 @@ export interface FlowDropThemeConfig {
 /**
  * A FlowDrop theme bundles a visual skin (CSS tokens) with UI config (behavioral defaults).
  *
- * Built-in themes: 'default' | 'minimal' | 'drafter'
+ * Built-in themes: 'graphite' (the editor's default) | 'classic' | 'minimal' | 'drafter'
  *
  * @example
  * // Use a built-in theme by name
@@ -50,4 +89,8 @@ export interface FlowDropTheme {
   config?: FlowDropThemeConfig;
 }
 
-export type FlowDropThemeName = 'default' | 'minimal' | 'drafter';
+/**
+ * Names of the built-in themes. `'default'` is the old name of `'classic'`
+ * and still resolves to it; it is removed in 3.0.
+ */
+export type FlowDropThemeName = 'classic' | 'minimal' | 'drafter' | 'graphite' | 'default';

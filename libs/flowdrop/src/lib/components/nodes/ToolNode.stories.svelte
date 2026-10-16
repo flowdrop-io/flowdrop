@@ -1,188 +1,101 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import NodeDecorator from '../../stories/NodeDecorator.svelte';
   import { createSampleNodeData } from '../../stories/utils.js';
+  import type { NodePort } from '../../types/index.js';
+  // The component is imported last: a node component imported first would load the instance
+  // container before its own module has finished, and fail on the import cycle.
+  import ToolNode from './ToolNode.svelte';
 
   const { Story } = defineMeta({
-    title: 'Nodes/ToolNode',
+    title: 'Editor/Nodes/Tool node',
+    component: ToolNode,
     tags: ['autodocs'],
-    parameters: {
-      layout: 'centered'
-    }
+    parameters: { layout: 'centered' }
   });
-</script>
 
-<Story name="Default">
-  <NodeDecorator
-    data={createSampleNodeData({
-      label: 'AI Content Analyzer',
-      metadata: {
-        id: 'ai_content_analyzer',
-        name: 'AI Content Analyzer',
-        description:
-          'AI-powered content analysis for smart text processing and context understanding',
-        category: 'ai',
-        version: '1.0.0',
-        type: 'tool',
-        supportedTypes: ['tool', 'default'],
-        icon: 'mdi:brain',
-        color: '#9C27B0',
-        inputs: [
-          {
-            id: 'content',
-            name: 'Content to Analyze',
-            type: 'input',
-            dataType: 'mixed',
-            required: false,
-            description: 'Text content or array of content items for AI analysis'
-          },
-          {
-            id: 'tool',
-            name: 'Tool',
-            type: 'input',
-            dataType: 'tool',
-            required: false,
-            description: 'Available Tools'
-          },
-          {
-            id: 'trigger',
-            name: 'Trigger',
-            type: 'input',
-            dataType: 'trigger',
-            required: false,
-            description: ''
-          }
-        ],
-        outputs: [
-          {
-            id: 'tool',
-            name: 'Tool',
-            type: 'output',
-            dataType: 'tool',
-            required: false,
-            description: 'Available tools'
-          },
-          {
-            id: 'analyzed_content',
-            name: 'analyzed_content',
-            type: 'output',
-            dataType: 'array',
-            required: false,
-            description: 'Content items with AI analysis results'
-          },
-          {
-            id: 'total_analyzed',
-            name: 'total_analyzed',
-            type: 'output',
-            dataType: 'number',
-            required: false,
-            description: 'Total number of items analyzed'
-          },
-          {
-            id: 'analysis_mode',
-            name: 'analysis_mode',
-            type: 'output',
-            dataType: 'string',
-            required: false,
-            description: 'The analysis mode used'
-          }
-        ]
-      }
-    })}
-  />
-</Story>
+  const input = (id: string, name: string, dataType: string): NodePort => ({
+    id,
+    name,
+    type: 'input',
+    dataType
+  });
+  const output = (id: string, name: string, dataType: string): NodePort => ({
+    id,
+    name,
+    type: 'output',
+    dataType
+  });
 
-<Story name="Multiple Parameters">
-  <NodeDecorator
-    data={createSampleNodeData({
-      label: 'Content Classifier',
+  const classifier = () =>
+    createSampleNodeData({
+      label: 'Content classifier',
       metadata: {
-        id: 'content_classifier',
-        name: 'Content Classifier',
-        description:
-          'Classify content into categories (support, features, sales) for proper triage',
+        node_type_id: 'content_classifier',
+        name: 'Content classifier',
+        description: 'Sorts content into support, features or sales so it can be triaged.',
         category: 'ai',
-        version: '1.0.0',
         type: 'tool',
         supportedTypes: ['tool', 'default'],
         icon: 'mdi:tag-multiple',
-        color: '#9C27B0',
+        badge: 'TOOL',
         inputs: [
-          {
-            id: 'tool',
-            name: 'Tool',
-            type: 'input',
-            dataType: 'tool',
-            required: false,
-            description: 'Available Tools'
-          },
-          {
-            id: 'structured_data',
-            name: 'Structured Data',
-            type: 'input',
-            dataType: 'json',
-            required: false,
-            description: 'Processed form data for classification'
-          },
-          {
-            id: 'raw_data',
-            name: 'Raw Data',
-            type: 'input',
-            dataType: 'json',
-            required: false,
-            description: 'Original form data'
-          },
-          {
-            id: 'submission_id',
-            name: 'Submission ID',
-            type: 'input',
-            dataType: 'string',
-            required: false,
-            description: 'Unique submission identifier'
-          },
-          {
-            id: 'trigger',
-            name: 'Trigger',
-            type: 'input',
-            dataType: 'trigger',
-            required: false,
-            description: ''
-          }
+          input('trigger', 'Trigger', 'trigger'),
+          input('structured_data', 'Structured data', 'json'),
+          input('submission_id', 'Submission ID', 'string')
         ],
         outputs: [
-          {
-            id: 'tool',
-            name: 'Tool',
-            type: 'output',
-            dataType: 'tool',
-            required: false,
-            description: 'Available tools'
-          },
-          {
-            id: 'primary_category',
-            name: 'primary_category',
-            type: 'output',
-            dataType: 'string',
-            required: false,
-            description: 'Primary classification category'
-          },
-          {
-            id: 'confidence',
-            name: 'confidence',
-            type: 'output',
-            dataType: 'number',
-            required: false,
-            description: 'Classification confidence score (0-1)'
-          },
-          {
-            id: 'priority_level',
-            name: 'priority_level',
-            type: 'output',
-            dataType: 'string',
-            required: false,
-            description: 'Priority level (normal, medium, high)'
-          }
+          output('tool', 'Tool', 'tool'),
+          output('primary_category', 'Primary category', 'string'),
+          output('confidence', 'Confidence', 'number')
         ]
+      }
+    });
+</script>
+
+<Story
+  asChild
+  name="A tool"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A node an agent can call. Its tool port is one row; wire it to the agent that may use it.'
+      }
+    }
+  }}
+>
+  <NodeDecorator data={classifier()} />
+</Story>
+
+<Story asChild name="Selected">
+  <NodeDecorator data={classifier()} selected />
+</Story>
+
+<Story
+  asChild
+  name="Only a tool port"
+  parameters={{
+    docs: {
+      description: {
+        story: 'The smallest tool: no inputs, only the tool port.'
+      }
+    }
+  }}
+>
+  <NodeDecorator
+    data={createSampleNodeData({
+      label: 'Search the web',
+      metadata: {
+        node_type_id: 'web_search',
+        name: 'Search the web',
+        description: 'Lets an agent search the web.',
+        category: 'tools',
+        type: 'tool',
+        icon: 'mdi:magnify',
+        badge: 'TOOL',
+        inputs: [],
+        outputs: [output('tool', 'Tool', 'tool')]
       }
     })}
   />

@@ -1,7 +1,13 @@
 <!--
-  Node Sidebar Component
-  Displays available node types organized by category with accordion-style groups
-  Styled with BEM syntax
+  @component
+  The node palette: every node type the editor knows, grouped by category in accordions, with a search field.
+  Drag a node onto the canvas to add it. In Test mode the same list opens as a popover.
+
+  Nodes that do not fit the workflow's format are left out. The list keeps the order the backend sent. The look
+  (cards, flat or rows) follows the theme's `display.sidebarList`.
+
+  **Use it for** finding and adding nodes.
+  **Not for** changing a node that is already on the canvas (that is the config panel).
 -->
 
 <script lang="ts">
@@ -24,6 +30,17 @@
     activeFormat?: WorkflowFormat;
     /** Whether category <details> accordions start open (card mode). Default: false */
     categoriesDefaultOpen?: boolean;
+    /**
+     * Render as a popover body: always expanded, as wide as its container,
+     * whatever the persisted sidebar width or collapsed state say. Test mode
+     * shows the library this way (N).
+     */
+    popover?: boolean;
+    /**
+     * Sidebar list style from the theme's `display.sidebarList`. `rows` draws
+     * flat 32px category rows (no card, no border) with a filled search field.
+     */
+    listStyle?: 'cards' | 'flat' | 'rows';
   }
 
   let props: Props = $props();
@@ -44,7 +61,7 @@
   }
 
   /** Effective collapsed state — driven by persisted UI setting */
-  let isCollapsed = $derived(getUiSettings().sidebarCollapsed);
+  let isCollapsed = $derived(!props.popover && getUiSettings().sidebarCollapsed);
 
   /** Nodes filtered by format compatibility */
   let formatCompatibleNodes = $derived((props.nodes || []).filter(isNodeCompatibleWithFormat));
@@ -157,7 +174,9 @@
   class="flowdrop-sidebar flowdrop-sidebar--container"
   class:flowdrop-sidebar--collapsed={isCollapsed}
   class:flowdrop-sidebar--compact={getUiSettings().compactMode}
-  style:width="{isCollapsed ? 0 : getUiSettings().sidebarWidth}px"
+  class:flowdrop-sidebar--popover={props.popover}
+  class:flowdrop-sidebar--rows={props.listStyle === 'rows'}
+  style:width={isCollapsed && !props.popover ? '0' : '100%'}
   aria-label={m().layout.componentsSidebar}
 >
   <!-- Search Section — visibility controlled by --fd-sidebar-search-display -->
@@ -168,9 +187,15 @@
       aria-label={m().layout.searchComponents}
       value={searchInput}
       oninput={(e) => (searchInput = e.currentTarget.value)}
+      data-fd-library-search
     >
       {#snippet leading()}
         <Icon icon="mdi:magnify" />
+      {/snippet}
+      {#snippet trailing()}
+        {#if props.listStyle === 'rows' && !props.popover && !searchInput}
+          <kbd class="flowdrop-sidebar__kbd" aria-hidden="true">/</kbd>
+        {/if}
       {/snippet}
     </Input>
   </div>
@@ -213,7 +238,7 @@
     {:else if searchInput.trim()}
       <!-- Search Results -->
       <div class="flowdrop-p--4">
-        <div class="flowdrop-divider">
+        <div class="flowdrop-divider flowdrop-sidebar__results-head">
           <h3 class="flowdrop-divider__text">Search Results</h3>
         </div>
         {#if filteredNodes.length === 0}
@@ -253,6 +278,7 @@
                 ondragstart={(e) => handleNodeDragStart(e, nodeType)}
                 role="button"
                 tabindex="0"
+                title={nodeType.description}
               >
                 <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
                   <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
@@ -325,13 +351,18 @@
               >
                 <summary class="flowdrop-details__summary">
                   <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
+                    <span class="flowdrop-sidebar__chevron" aria-hidden="true">
+                      <Icon icon="heroicons:chevron-right" />
+                    </span>
                     <span
                       class="flowdrop-node-icon"
                       style="--_icon-color: {getCategoryColorToken(fd.categories, category)}"
                     >
                       <Icon icon={getCategoryIcon(fd.categories, category)} />
                     </span>
-                    <span>{getCategoryDisplayName(category)}</span>
+                    <span class="flowdrop-sidebar__category-name"
+                      >{getCategoryDisplayName(category)}</span
+                    >
                   </div>
                   <div class="flowdrop-badge flowdrop-badge--secondary">
                     {categoryNodes.length}
@@ -345,6 +376,7 @@
                         role="listitem"
                         draggable="true"
                         ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+                        title={nodeType.description}
                       >
                         <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
                           <div class="flowdrop-flex flowdrop-gap--2 flowdrop-items--center">
@@ -386,21 +418,14 @@
     {/if}
   </div>
 
-  <!-- Footer -->
-  <div class="flowdrop-sidebar__footer">
-    <div class="flowdrop-flex flowdrop-gap--4">
-      <div class="flowdrop-flex flowdrop-gap--4">
-        {#if props.loading && props.nodes?.length === 0}
-          <span class="flowdrop-text--xs flowdrop-text--gray">Loading components...</span>
-        {:else}
-          <span class="flowdrop-text--xs flowdrop-text--gray"
-            >Total: {props.nodes?.length || 0} components</span
-          >
-          <span class="flowdrop-text--xs flowdrop-text--gray">Showing: {filteredNodes.length}</span>
-        {/if}
-      </div>
+  <!-- "N of M", only while a search filters -->
+  {#if searchInput.trim() && props.nodes?.length}
+    <div class="flowdrop-sidebar__footer">
+      <span class="flowdrop-text--xs flowdrop-text--gray"
+        >{filteredNodes.length} of {formatCompatibleNodes.length}</span
+      >
     </div>
-  </div>
+  {/if}
 </aside>
 
 <style>
@@ -423,6 +448,14 @@
     height: 100%;
   }
 
+  /* Popover body (Test mode's node library): the popover owns the frame. */
+  .flowdrop-sidebar--popover {
+    border-right: none;
+    box-shadow: none;
+    background-color: transparent;
+    transition: none;
+  }
+
   /* Collapsed state — fully hidden */
   .flowdrop-sidebar--collapsed {
     overflow: hidden;
@@ -433,10 +466,6 @@
   /* Compact mode styles */
   .flowdrop-sidebar--compact .flowdrop-sidebar__search {
     padding: 0.5rem 0.75rem;
-  }
-
-  .flowdrop-sidebar--compact .flowdrop-sidebar__content {
-    padding-bottom: 2rem;
   }
 
   .flowdrop-sidebar--compact .flowdrop-sidebar__footer {
@@ -470,7 +499,7 @@
     overflow-y: scroll; /* Changed from auto to scroll to always show scrollbar */
     scrollbar-width: thin;
     scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
-    padding-bottom: 4rem; /* Add padding to ensure content is scrollable above footer */
+    padding-bottom: 1rem;
     min-height: 0; /* Allow flex item to shrink below content size */
   }
 
@@ -658,5 +687,238 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  /*
+   * Rows list style (Graphite): quiet flat rows. No card, no border, no shadow,
+   * no totals; separation by space and tone. Nodes of an open category are
+   * indented under it without a box.
+   */
+  .flowdrop-sidebar--rows {
+    box-shadow: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__search {
+    padding: var(--fd-space-sm) var(--fd-space-sm) var(--fd-space-3xs);
+    border-bottom: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__search :global(.flowdrop-input) {
+    height: var(--fd-control-lg);
+    padding-block: 0;
+    border-color: transparent;
+    border-radius: var(--fd-radius-md);
+    background-color: var(--fd-subtle);
+    box-shadow: none;
+    font-size: var(--fd-text-body);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__search :global(.flowdrop-input:hover:not(:focus)) {
+    border-color: transparent;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__search :global(.flowdrop-input:focus) {
+    border-color: var(--fd-ring);
+  }
+
+  .flowdrop-sidebar__kbd {
+    padding: 0 var(--fd-space-3xs);
+    border: 1px solid var(--fd-border-strong);
+    border-radius: var(--fd-radius-sm);
+    color: var(--fd-muted-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-2xs);
+    line-height: 1rem;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-p--4 {
+    padding: var(--fd-space-3xs) var(--fd-space-sm) var(--fd-space-sm);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-category-list,
+  .flowdrop-sidebar--rows .flowdrop-node-list {
+    gap: 1px;
+  }
+
+  .flowdrop-sidebar--rows .fd-sidebar-card-section,
+  .flowdrop-sidebar--rows .fd-sidebar-card-section:hover,
+  .flowdrop-sidebar--rows .fd-sidebar-card-section[open] {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary {
+    height: var(--fd-control-lg);
+    padding: 0 var(--fd-space-xs);
+    border-radius: var(--fd-radius-md);
+    background: transparent;
+    font-size: var(--fd-text-body);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary:hover,
+  .flowdrop-sidebar--rows .flowdrop-node-item:hover {
+    background: var(--fd-subtle);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary .flowdrop-flex {
+    gap: 10px;
+  }
+
+  /* Category glyph: a bare 16px monochrome glyph in a 20px column. No tile, no tint. */
+  .flowdrop-sidebar--rows .flowdrop-node-icon,
+  .flowdrop-sidebar--rows .flowdrop-details__summary:hover .flowdrop-node-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0;
+    background: transparent;
+    color: var(--fd-muted-foreground);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-icon :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__summary:hover .flowdrop-node-icon,
+  .flowdrop-sidebar--rows .flowdrop-node-item:hover .flowdrop-node-icon {
+    transform: none;
+  }
+
+  /* Count: always shown, quiet muted text, no chip */
+  .flowdrop-sidebar--rows .flowdrop-details__summary .flowdrop-badge {
+    padding: 0;
+    background: transparent;
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-meta);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Chevron: decorative, left of the category glyph, turns when the group opens */
+  .flowdrop-sidebar__chevron {
+    display: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__chevron {
+    display: flex;
+    flex-shrink: 0;
+    width: var(--fd-sidebar-chevron-size);
+    height: var(--fd-sidebar-chevron-size);
+    margin-right: calc(var(--fd-space-3xs) * -1);
+    color: var(--fd-muted-foreground);
+    transition: transform var(--fd-transition-fast);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__chevron :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .flowdrop-sidebar--rows details[open] > .flowdrop-details__summary .flowdrop-sidebar__chevron {
+    transform: rotate(90deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flowdrop-sidebar--rows .flowdrop-sidebar__chevron {
+      transition: none;
+    }
+  }
+
+  /* The open signal is a heavier label, not a tint */
+  .flowdrop-sidebar--rows
+    details[open]
+    > .flowdrop-details__summary
+    .flowdrop-sidebar__category-name {
+    font-weight: 600;
+  }
+
+  /* Children sit indented on a one-pixel guide line */
+  .flowdrop-sidebar--rows .flowdrop-details__content {
+    margin: var(--fd-space-3xs) 0 var(--fd-space-sm) var(--fd-sidebar-child-indent);
+    padding: 0 0 0 var(--fd-space-2xs);
+    border-left: 1px solid var(--fd-border);
+    background: transparent;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item,
+  .flowdrop-sidebar--rows .flowdrop-node-item:hover,
+  .flowdrop-sidebar--rows .flowdrop-node-item:active {
+    padding: 0;
+    border: none;
+    border-radius: var(--fd-radius-md);
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item:hover {
+    background: var(--fd-subtle);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item :global(.flowdrop-card__body) {
+    display: flex;
+    align-items: center;
+    min-height: var(--fd-control-md);
+    padding: 0 var(--fd-space-xs);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item h4 {
+    font-size: var(--fd-sidebar-child-text);
+    font-weight: 400;
+    line-height: var(--fd-leading-tight);
+  }
+
+  /* The description lives in the tooltip, not on the row. */
+  .flowdrop-sidebar--rows .flowdrop-node-item :global(p) {
+    display: none;
+  }
+
+  /*
+   * Nodes of an open category: a bare 16px glyph in the category tint, centred
+   * in the 20px column the category tile uses, so the names line up with the
+   * category label (tile 20px + 10px gap in). No tile, no box.
+   */
+  .flowdrop-sidebar--rows
+    .flowdrop-details__content
+    .flowdrop-node-item
+    :global(.flowdrop-card__body > .flowdrop-flex) {
+    gap: 10px;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-icon,
+  .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-item:hover .flowdrop-node-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    background: transparent;
+    color: var(--fd-muted-foreground);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-details__content .flowdrop-node-icon :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item {
+    cursor: grab;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item:active {
+    cursor: grabbing;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-node-item h4 {
+    color: var(--fd-foreground);
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__results-head {
+    display: none;
+  }
+
+  .flowdrop-sidebar--rows .flowdrop-sidebar__footer {
+    height: auto;
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    border-top: none;
+    background: transparent;
   }
 </style>

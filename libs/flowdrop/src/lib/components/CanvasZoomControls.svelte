@@ -1,0 +1,123 @@
+<!--
+  @component
+  The corner control of the canvas: zoom in, zoom out, fit the view, lock, the "Tidy up" broom (when the canvas
+  offers it) and a read-only count of what is on the canvas ("6 nodes").
+
+  The full "6 nodes · 6 connections" is the count's title and accessible name. A cycle warning appears next to the
+  count when the graph loops. When the WebMCP desktop bridge is installed and offers tools, its button is the
+  group's last segment, behind a divider (`WebMCPBridgeMenu`).
+
+  Must render inside `<SvelteFlow>`: it reads xyflow's store.
+
+  **Use it for** moving around the canvas.
+  **Not for** switching Edit | Test (that is `CanvasToolbar`).
+-->
+
+<script lang="ts">
+  import { ControlButton, Controls, Panel, useStore } from '@xyflow/svelte';
+  import Icon from '@iconify/svelte';
+  import { CANVAS_FIT_PADDING } from '../utils/canvasFit.js';
+  import { getMessages } from '$lib/messages/index.js';
+  import WebMCPBridgeMenu from './WebMCPBridgeMenu.svelte';
+
+  interface Props {
+    /** Number of nodes on the canvas. */
+    nodeCount: number;
+    /** Number of connections (edges) on the canvas. */
+    edgeCount: number;
+    /** Whether the graph contains a cycle. */
+    hasCycles?: boolean;
+    /** Fit the view. Replaces xyflow's own fit, which would clip interface tags and ignore an open sheet. */
+    onfit?: () => void;
+    /** Tidy up the whole graph. No broom without it (read-only canvas). */
+    ontidy?: () => void;
+  }
+
+  let { nodeCount, edgeCount, hasCycles = false, onfit, ontidy }: Props = $props();
+
+  // Capture phase: take the fit button's click before xyflow's own handler runs.
+  function takeFitClick(event: MouseEvent): void {
+    if (!onfit || !(event.target as Element).closest?.('.svelte-flow__controls-fitview')) return;
+    event.stopPropagation();
+    onfit();
+  }
+
+  const getMsgs = getMessages();
+  const msg = $derived(getMsgs().canvasStatus);
+  const tidyLabel = $derived(getMsgs().tidy.button);
+  const tidyTitle = $derived(`${tidyLabel} (${getMsgs().contextMenu.shortcutTidyLayout})`);
+  const flowStore = useStore();
+  const zoomPercent = $derived(Math.round(flowStore.viewport.zoom * 100));
+  const summary = $derived(msg.summary({ nodes: nodeCount, edges: edgeCount }));
+</script>
+
+<Panel position="bottom-left" class="fd-canvas-floats">
+  <Controls
+    orientation="horizontal"
+    fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
+    onclickcapture={takeFitClick}
+  >
+    {#snippet after()}
+      {#if ontidy}
+        <ControlButton
+          class="fd-tidy-button"
+          title={tidyTitle}
+          aria-label={tidyLabel}
+          aria-keyshortcuts="Shift+Alt+T"
+          onclick={ontidy}
+        >
+          <Icon icon="mdi:broom" />
+        </ControlButton>
+      {/if}
+      <div class="fd-zoom-status">
+        <!-- Shown by themes that set --fd-zoom-percent-display; outside the live region so zooming is not announced -->
+        <span class="fd-zoom-status__zoom" aria-hidden="true">{zoomPercent}% ·</span>
+        <!-- aria-live announces count changes and cycle warnings -->
+        <span class="fd-zoom-status__live" aria-live="polite" aria-atomic="true">
+          <span class="fd-zoom-status__count" title={summary} aria-label={summary}>
+            {msg.nodeCount({ n: nodeCount })}
+          </span>
+          {#if hasCycles}
+            <span class="fd-zoom-status__cycles" title={msg.cyclesTitle}>{msg.cycles}</span>
+          {/if}
+        </span>
+      </div>
+      <WebMCPBridgeMenu />
+    {/snippet}
+  </Controls>
+</Panel>
+
+<style>
+  /* The outer panel carries the inset; the group's own panel sits flush inside it. */
+  :global(.svelte-flow .svelte-flow__panel.fd-canvas-floats > .svelte-flow__panel) {
+    position: static;
+    margin: 0;
+  }
+
+  .fd-zoom-status {
+    display: flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    padding: 0 var(--fd-space-sm);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+    white-space: nowrap;
+  }
+
+  .fd-zoom-status__zoom {
+    display: var(--fd-zoom-percent-display, none);
+    margin-right: calc(-1 * var(--fd-space-2xs));
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fd-zoom-status__live {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+  }
+
+  .fd-zoom-status__cycles {
+    font-weight: 500;
+    color: var(--fd-error);
+  }
+</style>

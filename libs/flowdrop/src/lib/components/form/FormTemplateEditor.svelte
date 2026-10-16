@@ -1,20 +1,12 @@
 <!--
-  FormTemplateEditor Component
-  CodeMirror-based template editor for Twig/Liquid-style templates
-  
-  Features:
-  - Custom syntax highlighting for {{ variable }} placeholders
-  - Inline autocomplete for template variables (triggered on {{ and .)
-  - Support for nested object drilling (user.address.city)
-  - Support for array index access (items[0].name)
-  - Dark/light theme support
-  - Consistent styling with other form components
-  - Line wrapping for better template readability
-  - Optional variable hints display (clickable buttons)
-  - Proper ARIA attributes for accessibility
-  
-  Usage:
-  Use with schema format: "template" to render this editor
+  @component
+  An editor for text with `{{ variable }}` placeholders, built on CodeMirror 6. Placeholders are coloured, typing `{{` or `.`
+  offers the variables from connected nodes, and nested values (`user.address.city`, `items[0].name`) can be drilled into.
+
+  Schema fields with `format: "template"` draw this. It is bundled only in `form/full` or when registered on the instance.
+
+  **Use it for** prompts and messages that take values from earlier nodes.
+  **Not for** plain text with no variables (use `FormTextarea`).
 -->
 
 <script lang="ts">
@@ -331,7 +323,7 @@
         '.cm-tooltip.cm-tooltip-autocomplete': {
           backgroundColor: 'var(--fd-background, #ffffff)',
           border: '1px solid var(--fd-border, #e5e7eb)',
-          borderRadius: 'var(--fd-radius-lg, 0.5rem)',
+          borderRadius: 'var(--fd-control-radius)',
           boxShadow: 'var(--fd-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1))',
           padding: '0.25rem',
           maxHeight: '200px',
@@ -627,7 +619,7 @@
 
   .form-template-editor__container {
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
     overflow: hidden;
     /* Match plain form fields: rest on the input surface, not --fd-muted. */
     background-color: var(--fd-background);
@@ -661,13 +653,13 @@
 
   /* CodeMirror styling overrides */
   .form-template-editor__container :global(.cm-editor) {
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius);
   }
 
   .form-template-editor__container :global(.cm-gutters) {
     background-color: var(--fd-subtle);
     border-right: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg) 0 0 var(--fd-radius-lg);
+    border-radius: var(--fd-control-radius) 0 0 var(--fd-control-radius);
   }
 
   .form-template-editor__container--dark :global(.cm-gutters) {
@@ -686,11 +678,9 @@
 
   .form-template-editor__hints-label {
     display: block;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     font-weight: 500;
     color: var(--fd-accent-hover);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     margin-bottom: 0.375rem;
   }
 
@@ -720,7 +710,7 @@
 
   .form-template-editor__hint-btn code {
     font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     color: var(--fd-accent-hover);
   }
 
@@ -735,11 +725,9 @@
 
   .form-template-editor__placeholder-label {
     display: block;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     font-weight: 500;
     color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     margin-bottom: 0.25rem;
   }
 
@@ -757,7 +745,7 @@
     align-items: flex-start;
     gap: 0.375rem;
     margin-top: 0.5rem;
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     color: var(--fd-muted-foreground);
   }
 
@@ -773,7 +761,7 @@
     background-color: var(--fd-subtle);
     border-radius: var(--fd-radius-sm);
     font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Menlo', monospace;
-    font-size: 0.625rem;
+    font-size: var(--fd-text-2xs);
   }
 
   /* Loading and error banners */
@@ -784,19 +772,19 @@
     margin-top: 0.625rem;
     padding: 0.625rem 0.75rem;
     border-radius: var(--fd-radius-md);
-    font-size: 0.75rem;
+    font-size: var(--fd-text-xs);
   }
 
   .form-template-editor__banner--loading {
-    background-color: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.3);
-    color: rgb(29, 78, 216);
+    background-color: color-mix(in srgb, var(--fd-info) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fd-info) 30%, transparent);
+    color: var(--fd-info);
   }
 
   .form-template-editor__banner--error {
-    background-color: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: rgb(185, 28, 28);
+    background-color: color-mix(in srgb, var(--fd-error) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fd-error) 30%, transparent);
+    color: var(--fd-error);
   }
 
   .form-template-editor__banner-icon {
@@ -821,19 +809,19 @@
   .form-template-editor__banner-btn {
     margin-left: auto;
     padding: 0.25rem 0.625rem;
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background-color: color-mix(in srgb, var(--fd-error) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fd-error) 30%, transparent);
     border-radius: var(--fd-radius-sm);
-    font-size: 0.6875rem;
+    font-size: var(--fd-text-2xs);
     font-weight: 500;
-    color: rgb(185, 28, 28);
+    color: var(--fd-error);
     cursor: pointer;
     transition: all var(--fd-transition-fast);
   }
 
   .form-template-editor__banner-btn:hover {
-    background-color: rgba(239, 68, 68, 0.25);
-    border-color: rgba(239, 68, 68, 0.5);
+    background-color: color-mix(in srgb, var(--fd-error) 25%, transparent);
+    border-color: color-mix(in srgb, var(--fd-error) 50%, transparent);
   }
 
   .form-template-editor__banner-btn:active {

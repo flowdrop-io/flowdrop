@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { Workflow } from '../../../src/lib/types/index.js';
-import { resolveRunAction } from '../../../src/lib/playground/runAction.js';
+import { resolveRunAction, performRun } from '../../../src/lib/playground/runAction.js';
 import { defaultEndpointConfig } from '../../../src/lib/config/endpoints.js';
 import { workflowLaunchService } from '../../../src/lib/services/workflowLaunchService.js';
 
@@ -142,5 +142,52 @@ describe('workflowLaunchService.launch input preflight', () => {
 
     expect(result).toMatchObject({ status: 'launched' });
     expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('performRun', () => {
+  const gate = (canRun = true) => ({
+    canRun,
+    lockRunUntilEnabled: vi.fn(),
+    releaseRunLock: vi.fn()
+  });
+  const base = (over: Partial<Parameters<typeof performRun>[0]> = {}) => ({
+    playground: gate(),
+    preparing: false,
+    setPreparing: vi.fn(),
+    awaitEnableRun: true,
+    defaultMessage: 'Run workflow',
+    ...over
+  });
+
+  it('does nothing while Run is gated or already preparing', async () => {
+    const onRunWorkflow = vi.fn();
+    await performRun(base({ playground: gate(false), onRunWorkflow }));
+    await performRun(base({ preparing: true, onRunWorkflow }));
+    expect(onRunWorkflow).not.toHaveBeenCalled();
+  });
+
+  it('holds back when beforeSend resolves false, and brackets it with setPreparing', async () => {
+    const onRunWorkflow = vi.fn();
+    const setPreparing = vi.fn();
+    await performRun(base({ beforeSend: async () => false, setPreparing, onRunWorkflow }));
+    expect(onRunWorkflow).not.toHaveBeenCalled();
+    expect(setPreparing.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it('locks Run and launches', async () => {
+    const onRunWorkflow = vi.fn();
+    const playground = gate();
+    await performRun(base({ playground, onRunWorkflow }));
+    expect(playground.lockRunUntilEnabled).toHaveBeenCalledOnce();
+    expect(onRunWorkflow).toHaveBeenCalledOnce();
+  });
+
+  it('sends the message when nothing can launch, releasing the lock for a command', async () => {
+    const onSendMessage = vi.fn();
+    const playground = gate();
+    await performRun(base({ playground, onSendMessage, predefinedMessage: '/help' }));
+    expect(onSendMessage).toHaveBeenCalledWith('/help');
+    expect(playground.releaseRunLock).toHaveBeenCalledOnce();
   });
 });

@@ -1,11 +1,9 @@
 <!--
-  FormTextField Component
-  Text input field for string values
-  
-  Features:
-  - Standard text input with focus and hover states
-  - Proper ARIA attributes for accessibility
-  - Placeholder support
+  @component
+  A one-line text input for string values.
+
+  **Use it for** short text in a config form. The factory picks it for `type: "string"`.
+  **Not for** long text (use `FormTextarea`) or a fixed list of values (use `FormSelect`).
 -->
 
 <script lang="ts">

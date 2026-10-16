@@ -7,7 +7,7 @@
  * @module commands/parser
  */
 
-import type { Command, ParseResult } from './types.js';
+import type { BeautifyNodeCommand, BeautifyNodeStrategy, Command, ParseResult } from './types.js';
 
 // ============================================================================
 // Parser Rules
@@ -17,6 +17,15 @@ type ParserRule = {
   pattern: RegExp;
   parse: (match: RegExpMatchArray) => Command;
 };
+
+/** The `--gap-x <n>` / `--gap-y <n>` flags of a matched flag run (the last of a repeated flag wins). */
+function gapFlags(flags: string): { gapX?: number; gapY?: number } {
+  const out: { gapX?: number; gapY?: number } = {};
+  for (const [, axis, value] of flags.matchAll(/--gap-([xy])\s+(-?\d+(?:\.\d+)?)/gi)) {
+    out[axis.toLowerCase() === 'x' ? 'gapX' : 'gapY'] = Number(value);
+  }
+  return out;
+}
 
 /**
  * Count the `"""` delimiters in a string, ignoring escaped ones.
@@ -228,10 +237,10 @@ const rules: ParserRule[] = [
     pattern: /^help$/i,
     parse: () => ({ type: 'help' })
   },
-  // clear
+  // clear [--all]
   {
-    pattern: /^clear$/i,
-    parse: () => ({ type: 'clear' })
+    pattern: /^clear(\s+--all)?$/i,
+    parse: (m) => (m[1] ? { type: 'clear', all: true } : { type: 'clear' })
   },
   // swap <nodeId> with <type> (Phase 2)
   {
@@ -251,6 +260,23 @@ const rules: ParserRule[] = [
       position: parseCoords(m[2], m[3])
     })
   },
+  // layout node inspect <nodeId> [--gap-x <n>] [--gap-y <n>]
+  {
+    pattern: /^layout\s+node\s+inspect\s+(\S+)((?:\s+--gap-[xy]\s+-?\d+(?:\.\d+)?)*)$/i,
+    parse: (m) => ({ type: 'inspect_node_layout', nodeId: m[1], ...gapFlags(m[2]) })
+  },
+  // layout node beautify <nodeId> [column|ports|align|clear|all] [--dry-run] [--gap-x <n>] [--gap-y <n>]
+  // The flags come in any order after the strategy.
+  {
+    pattern:
+      /^layout\s+node\s+beautify\s+(\S+)(?:\s+(column|ports|align|clear|all))?((?:\s+(?:--dry-run|--gap-[xy]\s+-?\d+(?:\.\d+)?))*)$/i,
+    parse: (m) => {
+      const command: BeautifyNodeCommand = { type: 'beautify_node', nodeId: m[1] };
+      if (m[2]) command.strategy = m[2].toLowerCase() as BeautifyNodeStrategy;
+      if (/--dry-run/i.test(m[3])) command.dryRun = true;
+      return { ...command, ...gapFlags(m[3]) };
+    }
+  },
   // layout auto [--direction horizontal|vertical] (Phase 2)
   {
     pattern: /^layout\s+auto\s+--direction\s+(horizontal|vertical)$/i,
@@ -264,10 +290,15 @@ const rules: ParserRule[] = [
     pattern: /^layout\s+auto$/i,
     parse: () => ({ type: 'auto_layout' })
   },
-  // layout beautify — preserve relative positions, normalize spacing
+  // layout beautify [--dry-run] [--gap-x <n>] [--gap-y <n>] — the graph sweep; the flags come in
+  // any order. `--sweep` is accepted and changes nothing: the sweep is the default.
   {
-    pattern: /^layout\s+beautify$/i,
-    parse: () => ({ type: 'beautify_layout' })
+    pattern: /^layout\s+beautify((?:\s+(?:--sweep|--dry-run|--gap-[xy]\s+-?\d+(?:\.\d+)?))*)$/i,
+    parse: (m) => ({
+      type: 'beautify_layout',
+      ...(/--dry-run/i.test(m[1]) ? { dryRun: true } : {}),
+      ...gapFlags(m[1])
+    })
   },
   // canvas fitview | canvas fit
   {
@@ -330,6 +361,17 @@ export function parseCommand(input: string): ParseResult {
     return {
       ok: false,
       error: 'Unclosed """ block — no matching closing """',
+      input
+    };
+  }
+
+  // `session …` belongs to the editor Console, not the editing DSL. Say so, so
+  // an agent that reads this error knows the verb is not available to it.
+  if (/^session(\s|$)/i.test(trimmed)) {
+    return {
+      ok: false,
+      error:
+        '`session` commands run only in the editor Console; they are not part of the editing commands.',
       input
     };
   }

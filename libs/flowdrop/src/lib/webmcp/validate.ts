@@ -36,7 +36,8 @@ export const VALIDATOR_KEYWORDS: ReadonlySet<keyof ToolSchemaProperty> = new Set
   'items',
   'anyOf',
   'minimum',
-  'maximum'
+  'maximum',
+  'multipleOf'
 ]);
 
 function typeOf(value: unknown): string {
@@ -83,6 +84,9 @@ function validateProperty(path: string, value: unknown, schema: ToolSchemaProper
   }
   if (schema.maximum !== undefined && (value as number) > schema.maximum) {
     throw new ToolArgumentError(`${path}: must be <= ${schema.maximum}`);
+  }
+  if (schema.multipleOf !== undefined && (value as number) % schema.multipleOf !== 0) {
+    throw new ToolArgumentError(`${path}: must be a multiple of ${schema.multipleOf}`);
   }
   if (schema.type === 'object' && schema.properties) {
     validateObject(path, value as Record<string, unknown>, schema);

@@ -1,11 +1,13 @@
 <!--
-  Caption Node Component
+  @component
+  A short, high-contrast line of text that names or marks nearby nodes.
 
-  A short, high-contrast line of text (one or two lines) that names or marks
-  nearby nodes. Text lives in `data.label`. It has no ports, no config panel
-  and no status overlay; it is edited in place (double-click, Enter on the
-  focused node, or the context menu) and the editor owns the write through
-  `data.onInlineCommit`.
+  The text is `data.label`. A caption has no ports, no config panel and no status
+  overlay. It is edited in place (double-click, Enter on the focused node, or the context
+  menu) and the editor owns the write through `data.onInlineCommit`.
+
+  **Use it for** section labels and short reminders on the canvas.
+  **Not for** longer text or markdown; use `NotesNode`.
 -->
 
 <script lang="ts">
@@ -15,11 +17,15 @@
   import { m } from '$lib/messages/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { getEditorSettings } from '../../stores/settingsStore.svelte.js';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { getNodeProblem } from '../../utils/nodeProblem.js';
   import { snapCaptionWidth } from '../../utils/captionText.js';
   import { focusWhenVisible } from '../../utils/focus.js';
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The caption: the text is `label`. */
     data: {
       label: string;
       /**
@@ -29,16 +35,20 @@
        */
       onInlineCommit?: (id: string, text: string | null) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
   }
 
   let props: Props = $props();
 
   const fd = getInstance();
+  const problem = getNodeProblem();
   const caption = $derived(m().nodes.caption);
 
   /** Horizontal padding on each side, mirrors the CSS. */
   const PADDING_X = 10;
+  /** The Doctor's mark after the text: its 16px plus a 6px gap, mirrors the CSS. */
+  const MARK_W = 22;
 
   let rootEl: HTMLDivElement | undefined = $state();
   let editorEl: HTMLDivElement | undefined = $state();
@@ -61,6 +71,8 @@
   const shownText = $derived(editing ? draft : label);
   const showPlaceholder = $derived(editing && draft === '');
 
+  const hasMark = $derived(problem?.severity != null);
+
   /**
    * Width in px, snapped to the grid; undefined until the text has been
    * measured, so the CSS minimum applies. While editing, the node is never
@@ -71,7 +83,7 @@
     textW === 0 && !editing
       ? undefined
       : snapCaptionWidth(
-          Math.max(textW, editing ? placeholderW : 0) + 2 * PADDING_X,
+          Math.max(textW, editing ? placeholderW : 0) + 2 * PADDING_X + (hasMark ? MARK_W : 0),
           getEditorSettings().gridSize
         )
   );
@@ -211,6 +223,7 @@
   class="flowdrop-caption-node"
   class:flowdrop-caption-node--selected={props.selected}
   class:flowdrop-caption-node--editing={editing}
+  class:flowdrop-caption-node--problem={hasMark}
   bind:this={rootEl}
   style:width={width === undefined ? undefined : `${width}px`}
   ondblclick={requestEdit}
@@ -246,6 +259,9 @@
       {label}
     </div>
   {/if}
+
+  <!-- The Doctor's mark, inline after the text. -->
+  <NodeProblemMark />
 </div>
 
 <style>
@@ -263,6 +279,33 @@
     font-size: 13px;
     font-weight: 600;
     line-height: 20px;
+  }
+
+  /* The text takes the room the mark leaves; the mark sits on the first line. */
+  .flowdrop-caption-node--problem {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .flowdrop-caption-node--problem .flowdrop-caption-node__text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .flowdrop-caption-node--problem :global(.fd-node-problem) {
+    margin-top: 2px;
+  }
+
+  /* Zoom tiers scale the mark up. The caption is one or two lines tall, so every tier
+     keeps the mark inline at the outline size (no corner mark over the text) and grows
+     it into the padding, not over the text. */
+  :global([data-fd-zoom='outline']) .flowdrop-caption-node--problem :global(.fd-node-problem),
+  :global([data-fd-zoom='glyph']) .flowdrop-caption-node--problem :global(.fd-node-problem),
+  :global([data-fd-zoom='map']) .flowdrop-caption-node--problem :global(.fd-node-problem) {
+    position: static;
+    scale: var(--fd-node-zoom-mark-scale-outline);
+    transform-origin: left center;
   }
 
   .flowdrop-caption-node--selected {
@@ -303,6 +346,13 @@
     cursor: text;
     white-space: pre-wrap;
     user-select: text;
+  }
+
+  /* Zoom tiers (editor.zoomTiers): the caption's box is sized to its 13px text,
+     so outline and glyph draw it unchanged (a label that stays a label); in the
+     map tier the text gives way and the caption is a quiet block. */
+  :global([data-fd-zoom='map']) .flowdrop-caption-node__text {
+    visibility: hidden;
   }
 
   .flowdrop-caption-node__text--empty::before {

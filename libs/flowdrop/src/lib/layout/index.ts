@@ -1,0 +1,52 @@
+/**
+ * Node layout: the public API of the layout module (not yet in the package exports).
+ *
+ * @module layout
+ */
+
+export * from './types.js';
+export {
+  measure,
+  score,
+  better,
+  conflictCards,
+  passCards,
+  portClearance,
+  formatMetrics,
+  formatChange
+} from './measure.js';
+export type {
+  LayoutMetrics,
+  LayoutScore,
+  LayoutConflict,
+  LayoutCrossing,
+  LayoutPortPass
+} from './measure.js';
+export { fromWorkflow } from './fromWorkflow.js';
+export type { FromWorkflowOptions, MeasuredCard } from './fromWorkflow.js';
+export {
+  propose,
+  beautify,
+  columnRanks,
+  columnGrid,
+  formatProposal,
+  formatBeautify,
+  STRATEGY_ORDER
+} from './primitives.js';
+export type {
+  LayoutPrimitive,
+  LayoutStrategy,
+  LayoutProposal,
+  LayoutChanges,
+  BeautifyResult,
+  PortOrderChange
+} from './primitives.js';
+export { inspect } from './inspect.js';
+export { sweep, formatSweep } from './sweep.js';
+export type { SweepPhase, SweepResult } from './sweep.js';
+export { applyProposalToNodes, applySweepToNodes, portsConfigForOrder } from './toWorkflow.js';
+export type { NodeLayoutUpdate } from './toWorkflow.js';
+export { loopbackLanes } from './geometry.js';
+export type { LoopbackLane } from './geometry.js';
+export { lanePath } from './lanePath.js';
+export type { LanePath } from './lanePath.js';

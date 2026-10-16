@@ -1,0 +1,52 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Start here/Welcome" />
+
+# FlowDrop design system
+
+This Storybook shows the pieces the FlowDrop workflow editor is made of: the design tokens, the
+building blocks, and the editor's own panels, nodes and wires. Everything here is rendered by the
+library's real code, so what you see is what the editor draws.
+
+## How the sidebar is organised
+
+| Section         | What you find there                                                        | Open it when you want to…                          |
+| --------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
+| **Start here**  | This page, how theming works, how to write a story.                        | …understand the system before touching it.         |
+| **Foundations** | Colour, type, spacing, radius, shadow, run status.                         | …pick a colour or a size for new UI.               |
+| **Components**  | Buttons, menus, tabs, notices and the other building blocks.               | …build a panel or a control.                       |
+| **Editor**      | The editor itself, by area: canvas, nodes, edges, runs, playground, forms. | …change how a part of the editor looks or behaves. |
+| **Legacy**      | Components kept only so older code keeps working.                          | …replace them. Do not use them in new code.        |
+
+Each entry has a **Docs** page first: what the component is, when to use it, and its props.
+The stories under it show one state each.
+
+## The toolbar
+
+Two buttons at the top change every page:
+
+- **Skin** picks the theme. **Graphite** is the default, because it is what the editor opens in.
+  The other three (Classic, Minimal, Drafter) show how far a theme can take the same editor.
+- **Light / dark** switches the colour scheme.
+
+If something looks wrong only in one skin or one mode, this is the quickest way to see it.
+
+## Where to start
+
+- **Restyling the editor for a product?** Read [How theming works](?path=/docs/start-here-how-theming-works--docs)
+  and try a theme there, live.
+- **Building new UI inside the editor?** Start from [Colour](?path=/docs/foundations-colour--docs) and
+  [Spacing and sizes](?path=/docs/foundations-spacing-and-sizes--docs), then use the
+  building blocks under **Components** instead of raw HTML.
+- **Adding or fixing a story?** Read [Writing stories](?path=/docs/start-here-writing-stories--docs) first.
+
+## Three ground rules
+
+1. **Tokens, not values.** Write `var(--fd-border)`, never `#e4e7eb`. `pnpm run lint:styles` checks
+   this for colours, font sizes, radii and shadows.
+2. **Building blocks, not raw elements.** Use the `Button` and `IconButton` components instead of a
+   bare `<button>`, so focus, sizes and themes stay the same everywhere.
+3. **Stories show the real thing.** A story renders the editor's own component with real data,
+   never a hand-made look-alike. That is what keeps this Storybook true as the editor changes.
+
+Run it locally with `pnpm storybook` in `libs/flowdrop`.

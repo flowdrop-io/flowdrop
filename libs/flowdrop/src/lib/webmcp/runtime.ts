@@ -242,7 +242,10 @@ export function buildHostToolDescriptors(hooks: HostHooks): HostToolDescriptor[]
  */
 export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
   const { instance } = options;
-  const hooks: HostHooks = options.hooks ?? {};
+  // `run` and `run_status` go through the instance's run controller, so a run
+  // an agent starts is the run the editor's run bar shows. The wrapped hooks
+  // answer exactly as the host's do.
+  const hooks: HostHooks = instance.runs.wrapHostHooks(options.hooks ?? {});
   let disposed = false;
 
   const nodeTypes = (): NodeMetadata[] => {

@@ -40,7 +40,7 @@
  *
  * Dark mode support
  * -----------------
- * FlowDrop respects `data-theme="dark"` on the <html> element. Override the
+ * The resolved scheme is `data-theme` on each editor scope element (the source); `<html data-theme>` is a deprecated mirror (removed in 3.0). Override the
  * same @public tokens inside `[data-theme="dark"]` to customise dark mode:
  *
  *   [data-theme="dark"] {
@@ -186,6 +186,29 @@
   --fd-note-border: var(--fd-node-border); /* @public  notes-node outline */
   --fd-note-border-hover: var(--fd-node-border-hover); /* @public  notes-node outline (hover) */
 
+  /* ----- NOTES (annotations: paper surface, tinted inset edge, capped markdown scale) ----- */
+  --fd-note-radius: 4px; /* @internal  notes are not nodes: a tighter corner */
+  --fd-note-padding: 20px; /* @internal  keep a multiple of the 20px grid */
+  --fd-note-bg: var(--fd-muted); /* @internal  plain "note" paper */
+  --fd-note-edge: var(--fd-node-border); /* @internal  plain "note" inset edge */
+  --fd-note-info-bg: var(--fd-info-muted); /* @internal  info paper */
+  --fd-note-warning-bg: var(--fd-warning-muted); /* @internal */
+  --fd-note-success-bg: var(--fd-success-muted); /* @internal */
+  --fd-note-error-bg: var(--fd-error-muted); /* @internal */
+  --fd-note-edge-mix: 22%; /* @internal  share of the type accent in the inset edge of tinted notes */
+  --fd-note-shadow: none; /* @internal  resting lift; the edge is an inset shadow */
+  --fd-note-fg: var(--fd-foreground); /* @internal  note text */
+  --fd-note-meta: var(--fd-muted-foreground); /* @internal  footer word */
+  --fd-note-h1-size: 15px; /* @internal  markdown h1, capped for the canvas */
+  --fd-note-h2-size: 13px; /* @internal  markdown h2 and smaller headings */
+  --fd-note-heading-weight: 600; /* @internal */
+  --fd-note-body-size: 12.5px; /* @internal */
+  --fd-note-line: 20px; /* @internal  line height; every text line is one grid row */
+  --fd-note-meta-size: 11px; /* @internal  footer word */
+  --fd-note-zoom-outline-size: 20px; /* @internal  first heading in the outline tier, flow px */
+  --fd-note-zoom-size: 30px; /* @internal  first heading in the glyph tier, flow px */
+  --fd-note-zoom-map-mix: 60%; /* @internal  map: how much of the note's edge tint fills it */
+
   /* ----- CANVAS GRID (pattern color for the editor background grid; any theme
      can recolor whichever grid variant it picks via config.canvas.grid).
      Default matches xyflow's dot-grid color so the default theme is unchanged. */
@@ -232,14 +255,29 @@
   --fd-info-foreground: #ffffff; /* @public */
   --fd-info-muted: var(--_blue-1); /* @public */
 
-  /* ----- SPACING SCALE (Named sizes) ----- */
+  /* ----- RUN STATUS ROLES -----
+     What a node or run is doing, named by status rather than by hue, so a theme
+     can recolour "running" without touching "info". `-soft` is the tinted
+     background behind the status colour. */
+  --fd-status-running: var(--fd-info); /* @public */
+  --fd-status-running-soft: var(--fd-info-muted); /* @public */
+  --fd-status-completed: var(--fd-success); /* @public */
+  --fd-status-completed-soft: var(--fd-success-muted); /* @public */
+  --fd-status-waiting: var(--fd-warning); /* @public */
+  --fd-status-waiting-soft: var(--fd-warning-muted); /* @public */
+  --fd-status-failed: var(--fd-error); /* @public */
+  --fd-status-failed-soft: var(--fd-error-muted); /* @public */
+  --fd-status-skipped: var(--fd-muted-foreground); /* @public */
+  --fd-status-skipped-soft: var(--fd-muted); /* @public */
+
+  /* ----- SPACING SCALE (4px grid; 2xs/sm/lg collapsed onto it) ----- */
   --fd-space-0: 0; /* @public */
   --fd-space-3xs: 0.25rem; /* @public  4px */
-  --fd-space-2xs: 0.375rem; /* @public  6px */
+  --fd-space-2xs: 0.25rem; /* @public  4px (was 6px) */
   --fd-space-xs: 0.5rem; /* @public  8px */
-  --fd-space-sm: 0.625rem; /* @public  10px */
+  --fd-space-sm: 0.5rem; /* @public  8px (was 10px) */
   --fd-space-md: 0.75rem; /* @public  12px */
-  --fd-space-lg: 0.875rem; /* @public  14px */
+  --fd-space-lg: 0.75rem; /* @public  12px (was 14px) */
   --fd-space-xl: 1rem; /* @public  16px */
   --fd-space-2xl: 1.25rem; /* @public  20px */
   --fd-space-3xl: 1.5rem; /* @public  24px */
@@ -251,7 +289,7 @@
   /* ----- BORDER RADIUS ----- */
   --fd-radius-none: 0; /* @public */
   --fd-radius-sm: 0.25rem; /* @public  4px */
-  --fd-radius-md: 0.375rem; /* @public  6px */
+  --fd-radius-md: 0.25rem; /* @public  4px (was 6px) */
   --fd-radius-lg: 0.5rem; /* @public  8px */
   --fd-radius-xl: 0.75rem; /* @public  12px */
   --fd-radius-2xl: 1rem; /* @public  16px */
@@ -269,14 +307,16 @@
   --fd-shadow-lg: 0 10px 20px rgb(0 0 0 / 0.08), 0 4px 8px rgb(0 0 0 / 0.04); /* @public */
   --fd-shadow-xl: 0 20px 30px rgb(0 0 0 / 0.1), 0 8px 16px rgb(0 0 0 / 0.06); /* @public */
 
-  /* ----- FONT SIZES ----- */
+  /* ----- FONT SIZES -----
+     Six steps: 11 meta, 12 small, 13 body, 15 title, 20 heading, 24 display.
+     Names are kept; sm/base/lg moved onto the steps (xsm=sm, md=base, lg=xl). */
   --fd-text-2xs: 0.6875rem; /* @public  11px */
   --fd-text-xs: 0.75rem; /* @public  12px */
   --fd-text-xsm: 0.8125rem; /* @public  13px */
-  --fd-text-sm: 0.875rem; /* @public  14px */
+  --fd-text-sm: 0.8125rem; /* @public  13px (was 14px) */
   --fd-text-md: 0.9375rem; /* @public  15px */
-  --fd-text-base: 1rem; /* @public  16px */
-  --fd-text-lg: 1.125rem; /* @public  18px */
+  --fd-text-base: 0.9375rem; /* @public  15px (was 16px) */
+  --fd-text-lg: 1.25rem; /* @public  20px (was 18px) */
   --fd-text-xl: 1.25rem; /* @public  20px */
   --fd-text-2xl: 1.5rem; /* @public  24px */
 
@@ -286,7 +326,8 @@
   --fd-leading-relaxed: 1.6; /* @public */
 
   /* ----- FONT FAMILIES ----- */
-  /* The editor inherits the host page's font. This stack is for UI the
+  /* A skin may name a font (FlowDropSkin.font): the scoped skin rule then sets this token and
+     font-family on the editor root. Without one, the editor inherits the host page's font. This stack is for UI the
      library mounts outside the editor's subtree (the WebMCP confirm dialog
      on document.body), where "inherit" means whatever the host's body has —
      on Drupal admin themes, the browser's serif fallback. */
@@ -294,6 +335,210 @@
     system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* @public */
   --fd-font-mono:
     ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; /* @public */
+
+  /* ----- CONTROL AND PANEL HEIGHTS ----- */
+  --fd-control-sm: 1.5rem; /* @public  24px */
+  --fd-control-md: 1.75rem; /* @public  28px */
+  --fd-control-lg: 2rem; /* @public  32px */
+  --fd-panel-header: 2.5rem; /* @public  40px */
+
+  /* ----- ROLE TOKENS (shape, elevation, text) -----
+     What a piece of UI is, not which step of a scale it uses, so a theme can
+     move one role without moving the scale. Defaults keep the look each
+     component had before the roles existed. */
+  --fd-radius-surface: var(--fd-radius-lg); /* @internal  cards, nodes, floating controls, sheets */
+  --fd-radius-bubble: var(--fd-radius-xl); /* @internal  message bubbles and the composer */
+  --fd-elevation-float: var(--fd-shadow-md); /* @internal  anything floating over the canvas */
+  --fd-float-border: var(--fd-border); /* @internal  rule around floating controls */
+  --fd-text-body: var(--fd-text-base); /* @internal  running text in panels and messages */
+  --fd-text-meta: var(--fd-text-xs); /* @internal  timestamps, origins, help text */
+  --fd-scrollbar-size: 10px; /* @internal  scrollbar width in the editor */
+
+  /* ----- FORM CONTROL, BUTTON, MENU, SHEET AND MODAL KNOBS -----
+     Defaults reproduce the Classic theme; Graphite sets its own (skins/graphite.ts). */
+  --fd-field-height: auto; /* @internal  input/select height; auto = padding + line */
+  --fd-field-height-sm: auto; /* @internal  small input/select height */
+  --fd-field-padding: 0.625rem 0.875rem; /* @internal  input/select padding */
+  --fd-field-padding-multiline: 0.625rem 0.875rem; /* @internal  textarea padding */
+  --fd-field-min-height-multiline: 5rem; /* @internal  textarea min height */
+  --fd-field-border-color: var(--fd-border); /* @internal  resting control rule */
+  --fd-field-shadow: var(--fd-shadow-sm); /* @internal  resting control shadow */
+  --fd-field-focus-shadow: var(
+    --fd-shadow-sm
+  ); /* @internal  control shadow while focused (accent ring) */
+  --fd-field-focus-outline: var(--fd-ring-width) solid var(--fd-ring); /* @internal  focus-visible outline on text controls */
+  --fd-field-label-size: 0.8125rem; /* @internal  label above a form control */
+  --fd-field-label-weight: 600; /* @internal  label above a form control */
+  --fd-field-help-size: var(--fd-text-meta); /* @internal  help text under a form control (12px) */
+  --fd-switch-width: 1.75rem; /* @internal  switch track width (28px) */
+  --fd-switch-height: 1rem; /* @internal  switch track height (16px) */
+  --fd-switch-inset: 0.125rem; /* @internal  gap between switch track and thumb */
+  --fd-switch-off-bg: var(--fd-border-strong); /* @internal  switch track, off */
+  --fd-switch-on-bg: var(--fd-primary); /* @internal  switch track, on */
+  --fd-switch-thumb-bg: var(--fd-background); /* @internal  switch thumb */
+  --fd-checkbox-size: 1rem; /* @internal  checkbox box (16px) */
+  --fd-checkbox-radius: 0.25rem; /* @internal  checkbox corner (4px) */
+  --fd-checkbox-on-bg: var(--fd-primary); /* @internal  checkbox fill when checked */
+  --fd-checkbox-on-fg: var(--fd-primary-foreground); /* @internal  check mark */
+  --fd-button-secondary-border: var(--fd-border); /* @internal  secondary button rule */
+  --fd-button-ghost-hover: var(--fd-muted); /* @internal  ghost button/icon hover fill */
+  --fd-button-danger-bg: var(--fd-error); /* @internal  danger button fill */
+  --fd-button-danger-fg: var(--fd-error-foreground); /* @internal  danger button text */
+  --fd-button-danger-border: var(--fd-error); /* @internal  danger button rule */
+  --fd-button-danger-hover-bg: var(--fd-error-hover); /* @internal  danger button hover fill */
+  --fd-button-danger-hover-fg: var(--fd-error-foreground); /* @internal  danger button hover text */
+  --fd-button-font-weight: 500; /* @internal  button label weight */
+  --fd-menu-radius: var(--fd-radius-lg); /* @internal  context menu and dropdown radius */
+  --fd-menu-shadow: var(--fd-shadow-lg); /* @internal  context menu and dropdown shadow */
+  --fd-menu-item-radius: var(--fd-radius-sm); /* @internal  menu item radius */
+  --fd-menu-item-height: auto; /* @internal  menu item min height */
+  --fd-toast-top: calc(
+    var(--fd-navbar-height) + 12px
+  ); /* @internal  toast stack offset from the viewport top: just under the navbar */
+  --fd-toast-width: 380px; /* @internal  width of an error or warning toast */
+  --fd-sheet-inset: 0px; /* @internal  gap between the Test-mode inspector sheet and the canvas edge */
+  --fd-sheet-radius: 0; /* @internal  inspector sheet corners */
+  --fd-sheet-border-width: 0 0 0 1px; /* @internal  inspector sheet rule widths (top right bottom left) */
+  --fd-sheet-border: var(--fd-border); /* @internal  inspector sheet rule */
+  --fd-inspector-details-bg: var(--fd-card); /* @internal  inspector meta band fill */
+  --fd-inspector-details-rule: var(
+    --fd-border-muted
+  ); /* @internal  rule under the inspector meta */
+  --fd-inspector-link-color: var(--fd-primary); /* @internal  workflow link in the inspector meta */
+  --fd-inspector-title-size: var(--fd-text-sm); /* @internal  inspector header title */
+  --fd-inspector-meta-size: 0.8125rem; /* @internal  value text in the inspector meta list */
+  --fd-code-block-bg: var(--fd-muted); /* @internal  fill of a code/payload block */
+  --fd-code-block-border: 1px solid var(--fd-border); /* @internal  rule around a code/payload block */
+  --fd-code-block-radius: var(--fd-radius-md); /* @internal  code/payload block corners */
+  --fd-id-chip-bg: var(--fd-subtle); /* @internal  fill behind a mono id */
+  --fd-id-chip-padding: 0.125rem 0.375rem; /* @internal  padding of a mono id */
+  --fd-modal-radius: var(--fd-radius-lg); /* @internal  settings modal radius */
+  --fd-modal-header-height: var(--fd-panel-header); /* @internal  settings modal header */
+  --fd-modal-title-size: var(--fd-text-sm); /* @internal  settings modal title */
+
+  /* ----- CANVAS CONTROLS (toolbar, zoom, minimap) ----- */
+  --fd-tab-underline-off: inset 0 -2px 0 transparent; /* @internal  unselected view tab: the underline's room, so selecting never shifts layout */
+  --fd-tab-underline: inset 0 -2px 0 var(--fd-foreground); /* @internal  selected view tab underline */
+  --fd-canvas-inset: 0.75rem; /* @internal  distance of every floating canvas control from the canvas edge (12px) */
+  --fd-canvas-control: var(
+    --fd-control-lg
+  ); /* @internal  height of every floating canvas control (32px) */
+  --fd-minimap-attribution-clearance: 1rem; /* @internal  lift of the minimap above the attribution label, which stays */
+  --fd-toolbar-segmented-bg: var(
+    --fd-muted
+  ); /* @internal  track of the floating Edit | Test switch */
+  --fd-toolbar-segmented-border: var(--fd-border-muted); /* @internal */
+  --fd-toolbar-segmented-selected-bg: var(--fd-background); /* @internal  selected segment fill */
+  --fd-toolbar-segmented-selected-fg: var(--fd-foreground); /* @internal */
+  --fd-toolbar-segmented-selected-shadow: var(--fd-shadow-sm); /* @internal */
+  --fd-toolbar-segmented-radius: var(--fd-control-radius); /* @internal  radius of the switch */
+  --fd-toolbar-segment-radius: var(--fd-radius-md); /* @internal  radius of one segment */
+  --fd-console-strip-height: 2rem; /* @internal  the Console's bottom strip / panel header */
+  /* Command Console terminal surface: dark ink in every app theme and colour scheme, so the
+     console reads apart from the chat and the Playground. Output stays quiet: one accent for
+     ids, green strings, amber numbers, everything else greys. */
+  --fd-console-bg: #17191e; /* @internal  panel body */
+  --fd-console-fg: #d9dce1; /* @internal  plain output text */
+  --fd-console-prompt: #5d6470; /* @internal  the > prompt */
+  --fd-console-verb: #ffffff; /* @internal  command verb (bold) */
+  --fd-console-arg: #c4c9d1; /* @internal  command arguments */
+  --fd-console-id: #8fb0ff; /* @internal  node and type ids */
+  --fd-console-header: #8a919c; /* @internal  table header and section headings */
+  --fd-console-rule: #3a3f48; /* @internal  the dashes under a table header */
+  --fd-console-key: #8a919c; /* @internal  config keys, field names */
+  --fd-console-eq: #5d6470; /* @internal  the = between key and value */
+  --fd-console-string: #8fd6a8; /* @internal  string values */
+  --fd-console-number: #f0b46a; /* @internal  number values */
+  --fd-console-punct: #5d6470; /* @internal  brackets, commas, colons, arrows */
+  --fd-console-error: #ff8a8a; /* @internal  error lines */
+  --fd-console-muted: #8a919c; /* @internal  last table column, hints, placeholder */
+  --fd-console-line: #2e323a; /* @internal  input frame and popover border */
+  --fd-console-focus: #8fb0ff; /* @internal  input frame while focused */
+  --fd-console-raised: #20232a; /* @internal  autocomplete popover */
+  --fd-console-hover: #292d36; /* @internal  hovered row (popover, example buttons) */
+  --fd-console-selected: #2b3550; /* @internal  highlighted suggestion */
+  --fd-console-selection: #34416b; /* @internal  text selection */
+  --fd-console-caret: #ffffff; /* @internal  text caret */
+  --fd-console-scroll-thumb: #3a3f48; /* @internal  scrollbar thumb */
+  --fd-console-scroll-thumb-hover: #4b515c; /* @internal */
+  --fd-console-entry-gap: 8px; /* @internal  space before each input entry after the first */
+  --fd-zoom-group-bg: var(--fd-card); /* @internal  zoom controls group */
+  --fd-zoom-group-border: none; /* @internal  shorthand */
+  --fd-zoom-group-radius: var(--fd-radius-md); /* @internal */
+  --fd-zoom-group-padding: 0px; /* @internal */
+  --fd-zoom-button-size: 32px; /* @internal  Default: borderless group, so the button is the control height */
+  --fd-zoom-button-radius: 0px; /* @internal */
+  --fd-zoom-icon-size: 12px; /* @internal */
+  --fd-zoom-group-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.08); /* @internal */
+  --fd-zoom-button-border: 1px solid var(--fd-border); /* @internal  rule between zoom buttons */
+  --fd-minimap-radius: var(--fd-radius-md); /* @internal */
+  --fd-minimap-shadow: var(--fd-shadow-md); /* @internal */
+  --fd-minimap-border: var(--fd-border-strong); /* @internal */
+
+  /* ----- RUN STATUS PILL (node status, canvas toolbar) ----- */
+  --fd-status-pill-height: var(--fd-control-md); /* @internal */
+  --fd-status-pill-size: var(--fd-text-xs); /* @internal */
+  --fd-status-pill-weight: 500; /* @internal */
+  --fd-status-pill-padding: 0 var(--fd-space-xs); /* @internal */
+  --fd-status-pill-border-width: 1px; /* @internal */
+  --fd-status-pill-icon-size: var(--fd-text-sm); /* @internal */
+  --fd-status-pill-icon-display: inline-flex; /* @internal  icon-set glyph (circled) */
+  --fd-status-pill-glyph-display: none; /* @internal  plain inline glyph, no circle */
+  /* The count after the label: left at `initial` it is a filled chip; a theme may set
+     bg / fg / font / opacity / rule / pad / min / radius / prefix to make it a "×3" suffix. */
+  --fd-status-pill-count-bg: initial; /* @internal */
+  --fd-status-pill-count-fg: initial; /* @internal */
+  --fd-status-pill-count-font: initial; /* @internal */
+  --fd-status-pill-count-opacity: initial; /* @internal */
+  --fd-status-pill-count-rule: initial; /* @internal */
+  --fd-status-pill-count-pad: initial; /* @internal */
+  --fd-status-pill-count-min: initial; /* @internal */
+  --fd-status-pill-count-radius: initial; /* @internal */
+  --fd-status-pill-count-prefix: initial; /* @internal */
+  /* Terminal (start / end / exit) circle. Left at `initial`, the border takes the variant colour and the
+     variant glows apply; a theme sets them to match the other nodes. */
+  --fd-node-terminal-bg: var(--fd-background); /* @internal */
+  --fd-node-terminal-border-width: 3px; /* @internal */
+  --fd-node-terminal-border-color: initial; /* @internal */
+  --fd-node-terminal-shadow: initial; /* @internal */
+  --fd-node-terminal-shadow-hover: initial; /* @internal */
+  --fd-node-terminal-ring: color-mix(
+    in srgb,
+    var(--fd-node-selected-border) 50%,
+    transparent
+  ); /* @internal */
+  --fd-node-terminal-ring-width: 3px; /* @internal */
+  --fd-node-terminal-icon-bg: initial; /* @internal  tinted squircle unless set */
+  --fd-node-terminal-icon-color: initial; /* @internal */
+  --fd-node-terminal-icon-size: 24px; /* @internal */
+  --fd-node-terminal-label-bg: var(--fd-backdrop); /* @internal */
+  --fd-node-terminal-label-shadow: var(--fd-shadow-sm); /* @internal */
+  --fd-node-terminal-label-weight: 500; /* @internal */
+  --fd-node-dim-opacity: 1; /* @internal  Test mode: nodes without a status in the shown run */
+  --fd-node-status-edge: 0px; /* @internal  extra thickness of a status-coloured node border */
+  --fd-node-problem-size: 16px; /* @internal  the Doctor's status glyph on a node */
+  --fd-node-status-ring: 0px; /* @internal  soft halo of a node that waits for you */
+
+  /* ----- CONVERSATION TOKENS (@internal) -----
+     Deliberately NOT declared here. The Playground and the AI Assistant read each of
+     these as var(--fd-msg-*, <the look the component always had>), so an unset token is
+     today's bubbles. `FlowDropDisplayConfig.messages: 'document'` (themes/scopedSkinCss.ts,
+     DOCUMENT_MESSAGE_TOKENS) sets them: avatar/header/meta display, reply and user
+     bubble shape, gutters, the interrupt card (--fd-interrupt-card-*), the composer
+     (--fd-composer-*) and quiet markdown. The Graphite skin sets the colours
+     (--fd-msg-user-bg/fg) and the form-first field look (--fd-inputs-frame-*,
+     --fd-field-*). */
+
+  /* ----- ASSISTANT ACTIVITY ROWS (tool calls, notices, retries, "Thinking…") ----- */
+  --fd-activity-running: var(
+    --fd-status-running
+  ); /* @internal  the breathing dot of a running row */
+  --fd-activity-text: var(--fd-text-meta); /* @internal  row text size */
+  --fd-activity-slot: 0.875rem; /* @internal  width of the status slot (check, dot, mark) */
+  --fd-activity-dot-size: 0.4375rem; /* @internal  the running dot */
+  --fd-activity-row-gap: 2px; /* @internal  space between rows */
+  --fd-activity-pulse-duration: 1.2s; /* @internal  one breath of the dot */
+  --fd-activity-shimmer-duration: 1.8s; /* @internal  one pass of light over a running label */
 
   /* ----- COMPONENT SIZES ----- */
   --fd-size-icon-btn: 1.75rem; /* @internal  28px — may change with component redesigns */
@@ -315,8 +560,29 @@
 
   /* ----- LAYOUT ----- */
   --fd-sidebar-width: 320px; /* @internal — controlled programmatically */
-  --fd-navbar-height: 60px; /* @internal — controlled programmatically */
+  --fd-navbar-height: 48px; /* @internal — controlled programmatically */
   --fd-toolbar-height: 40px; /* @internal — controlled programmatically */
+
+  /* ----- NAVBAR (defaults reproduce the Classic look; Graphite sets quiet values) ----- */
+  --fd-navbar-start-width: 240px; /* @internal  width of the logo column */
+  --fd-navbar-logo-height: 24px; /* @internal  wordmark lockup height */
+  --fd-navbar-rule-display: none; /* @internal  1px x 16px rule between logo and workflow name */
+  --fd-navbar-title-size: 1rem; /* @internal  workflow name */
+  --fd-navbar-status-bg: var(--fd-success-muted); /* @internal  connection chip fill */
+  --fd-navbar-status-fg: var(--fd-success-hover); /* @internal  connection chip text */
+  --fd-navbar-action-height: var(--fd-size-btn-min); /* @internal  Save split button height */
+  --fd-navbar-action-bg: var(--fd-background); /* @internal  Save button fill */
+  --fd-navbar-action-fg: var(--fd-foreground); /* @internal  Save button text */
+  --fd-navbar-action-hover-bg: var(--fd-muted); /* @internal  Save button hover fill */
+  --fd-navbar-action-border: var(--fd-border-strong); /* @internal  Save button outline */
+  --fd-navbar-action-divider: transparent; /* @internal  inner divider of the split button */
+  --fd-navbar-chevron-width: 2rem; /* @internal  chevron half of the split button */
+  --fd-navbar-icon-bg: var(--fd-background); /* @internal  settings button fill */
+  --fd-navbar-icon-border: var(--fd-border); /* @internal  settings button outline */
+  --fd-navbar-icon-border-hover: var(
+    --fd-border-strong
+  ); /* @internal  settings button outline on hover */
+  --fd-navbar-status-order: 0; /* @internal  flex order of the connection chip next to the title */
 
   /* ----- NODE COLORS (for workflow editor) ----- */
   --fd-node-emerald: #10b981; /* @public */
@@ -398,6 +664,18 @@
     -1 * var(--fd-handle-size) / 2
   ); /* @internal — half handle size for edge positioning */
 
+  /* ----- INTERFACE TAG (the `[id · Type>` drawn beside a published port) ----- */
+  --fd-iface-tag-height: 18px; /* @internal */
+  --fd-iface-tag-gap: 20px; /* @internal  free space between a port and its tag */
+  --fd-iface-tag-bg: var(--fd-node-bg); /* @internal */
+  --fd-iface-tag-border: color-mix(
+    in srgb,
+    var(--fd-foreground) 45%,
+    transparent
+  ); /* @internal  ink outline; amber on a type mismatch, the ring colour while naming */
+  --fd-iface-tag-id-size: 10px; /* @internal  the id, mono */
+  --fd-iface-tag-type-size: 9px; /* @internal  the type, muted */
+
   /* ----- NODE LAYOUT (Dimensions and port alignment; multiples of 10 for grid) ----- */
   --fd-node-grid-step: 10; /* @internal — layout algorithm detail */
   --fd-node-default-width: 280px; /* @public */
@@ -412,6 +690,160 @@
     --fd-border-muted
   ); /* @public — header bottom divider color */
   --fd-node-port-row-height: 20px; /* @internal */
+  /* Node anatomy knobs (defaults = the card look with a header band). */
+  --fd-node-header-min-height: calc(
+    var(--fd-node-header-gap) * 4 + var(--fd-node-header-title-height) +
+      var(--fd-node-header-desc-line) - var(--fd-node-border-width)
+  ); /* @internal  60px-grid header; compact nodes drop it */
+  --fd-node-header-padding-x: 20px; /* @internal */
+  --fd-node-header-row-gap: 20px; /* @internal  title row to description */
+  --fd-node-title-line: 20px; /* @internal */
+  --fd-node-title-size: var(--fd-text-sm); /* @internal */
+  --fd-node-title-weight: 500; /* @internal */
+  --fd-node-title-clamp: 2; /* @internal  title lines before an ellipsis */
+
+  /* ----- NODE CARD (category wash header, icon tile, half-pill ports) -----
+     Geometry (60px header, 20/40px grid, 280/320 width) is fixed in utils/nodeGeometry.ts and is
+     not a token: only the look is. Defaults are the Classic theme's look; Graphite sets its own. */
+  --fd-node-header-wash: 8%; /* @internal  how much of the category colour the header surface takes */
+  --fd-node-header-pad-x: 16px; /* @internal  header and description-band side padding */
+  --fd-node-tile-size: 32px; /* @internal  solid icon tile edge */
+  --fd-node-tile-radius: 8px; /* @internal */
+  --fd-node-tile-glyph: 16px; /* @internal  glyph inside the tile */
+  --fd-node-tile-fg: #ffffff; /* @internal  glyph colour on the solid tile */
+  --fd-node-tile-shadow: 0 1px 2px rgb(16 24 40 / 0.12); /* @internal */
+  --fd-node-kind-size: 11px; /* @internal  the "kind · id" line */
+  --fd-node-kind-fg: var(--fd-muted-foreground); /* @internal */
+  --fd-node-desc-rule: var(--fd-border-muted); /* @internal  hairline under the description band */
+  --fd-node-pill-height: 24px; /* @internal  port pill */
+  --fd-node-pill-max-width: 128px; /* @internal  longer names end in an ellipsis (mirrors NODE_PILL_MAX_WIDTH) */
+  --fd-node-pill-size: var(--fd-text-xs); /* @internal */
+  --fd-node-pill-weight: 500; /* @internal */
+  --fd-node-pill-radius: 12px; /* @internal  the free end of the half-pill */
+  --fd-node-pill-pad-edge: 14px; /* @internal  padding on the card-edge side (clears the handle) */
+  --fd-node-pill-pad-inner: 12px; /* @internal  padding on the free side */
+  --fd-node-pill-wired-mix: 13%; /* @internal  type colour in a wired pill's tint */
+  --fd-node-pill-open-fg: var(
+    --fd-muted-foreground
+  ); /* @internal  open port text, at least 4.5:1 on the card */
+  --fd-node-pill-open-border: var(--fd-border); /* @internal  open port outline */
+  --fd-node-pill-open-ring-input:
+    inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border),
+    inset -1px 0 0 var(--fd-node-pill-open-border); /* @internal  open input outline: top, bottom and free end (not the card edge) */
+  --fd-node-pill-open-ring-output:
+    inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border),
+    inset 1px 0 0 var(--fd-node-pill-open-border); /* @internal  open output outline */
+  --fd-node-pill-target-mix: 10%; /* @internal  type colour in an open pill's tint while a dragged wire can land on it */
+  --fd-node-pill-sym-size: 10px; /* @internal  port shape glyph */
+  --fd-node-pill-sym-weight: 600; /* @internal */
+  --fd-node-pill-sym-min: 11px; /* @internal  so S and {} take the same room */
+  --fd-node-pill-sym-gap: 6px; /* @internal  glyph to name */
+  --fd-node-pill-sym-mix: 82%; /* @internal  type colour in a wired glyph, the rest foreground */
+  --fd-node-pill-required: var(--fd-error-hover); /* @internal  the "*" on a required open input */
+  --fd-node-pill-hover-filter: brightness(0.97); /* @internal */
+  --fd-node-pin-size: 11px; /* @internal  the exec pin (a blank interface tag) height */
+  --fd-node-pin-width: 16px; /* @internal  the exec pin length, tip included */
+  --fd-node-halo-size: 22px; /* @internal  the halo behind a round handle ready to receive */
+  --fd-node-halo-pad: 8px; /* @internal  how much larger than the pin its tag-shaped halo is */
+  --fd-node-halo-mix: 28%; /* @internal  port colour in the halo, the rest transparent */
+  --fd-node-halo-breath: 1.8s; /* @internal  one breath in (or out) of a port ready to receive */
+  --fd-node-drag-dull-opacity: 0.35; /* @internal  a port that does not take the dragged type */
+  --fd-node-config-btn-size: 24px; /* @internal  the gear's width and height */
+  --fd-node-config-btn-slot: calc(
+    var(--fd-space-xs) + var(--fd-node-config-btn-size) + 4px
+  ); /* @internal  room a node keeps for the gear at its top-right: offset, gear and a gap */
+  --fd-node-config-btn-bg: var(--fd-backdrop); /* @internal  the gear on a hovered card */
+  --fd-node-config-btn-border: var(--fd-border); /* @internal */
+  --fd-node-config-btn-radius: var(--fd-radius-sm); /* @internal */
+  --fd-node-config-btn-blur: var(--fd-backdrop-blur); /* @internal */
+  --fd-node-config-btn-hover-bg: var(--fd-muted); /* @internal */
+  --fd-node-config-btn-hover-border: var(--fd-border-strong); /* @internal */
+  --fd-node-config-btn-hover-scale: 1.05; /* @internal */
+  /* Zoom tiers (editor.zoomTiers): fixed sizes in flow px, never divided by the zoom.
+     Svelte Flow scales them; the drawing changes only at a tier boundary. */
+  --fd-node-zoom-outline-title-size: 20px; /* @internal  outline: one-line title */
+  --fd-node-zoom-outline-title-line: 24px; /* @internal */
+  --fd-node-zoom-outline-gap: 12px; /* @internal  outline: tile to title */
+  --fd-node-zoom-outline-pad-end: 16px; /* @internal  outline: header right padding (no config button) */
+  --fd-node-zoom-bar-height: 12px; /* @internal  outline: an unlabelled port bar */
+  --fd-node-zoom-bar-radius: 6px; /* @internal */
+  --fd-node-zoom-bar-wired-width: 72px; /* @internal */
+  --fd-node-zoom-bar-open-width: 48px; /* @internal */
+  --fd-node-zoom-bar-wired-mix: 24%; /* @internal  type tint of a wired bar */
+  --fd-node-zoom-bar-open-bg: color-mix(
+    in srgb,
+    var(--fd-foreground) 8%,
+    var(--fd-node-bg)
+  ); /* @internal  an open bar, neutral grey */
+  --fd-node-zoom-stub-width: 6px; /* @internal  outline and glyph: a wired port as a stub on the card edge */
+  --fd-node-zoom-stub-height: 18px; /* @internal */
+  --fd-node-zoom-stub-radius: 3px; /* @internal */
+  --fd-node-zoom-tile-size: 56px; /* @internal  glyph: solid category tile */
+  --fd-node-zoom-tile-radius: 14px; /* @internal */
+  --fd-node-zoom-tile-glyph: 34px; /* @internal  glyph: white glyph in the tile */
+  --fd-node-zoom-tile-gap: 14px; /* @internal  glyph: tile to title */
+  --fd-node-zoom-tile-pad: 20px; /* @internal  glyph: card side padding */
+  --fd-node-zoom-title-size: 30px; /* @internal  glyph: title, two lines at most */
+  --fd-node-zoom-title-leading: 1.15; /* @internal */
+  --fd-node-zoom-title-tracking: -0.01em; /* @internal */
+  --fd-node-zoom-title-max: 170px; /* @internal */
+  --fd-node-zoom-map-mix: 86%; /* @internal  map: how much of the category colour fills the card */
+  --fd-node-zoom-map-glyph: 72px; /* @internal  map: white glyph on the solid block */
+  --fd-node-zoom-map-shadow: none; /* @internal  map: card shadow (Default draws flat blocks) */
+  --fd-node-zoom-map-tile-mix: 0%; /* @internal  map: how much of the category colour fills the tile */
+  --fd-node-zoom-map-tile-size: 72px; /* @internal  map: the tile that holds the glyph */
+  --fd-node-zoom-map-tile-radius: 0px; /* @internal  map: tile corner radius */
+  --fd-node-zoom-edge-width-glyph: 2.5px; /* @internal  glyph: wire thickness */
+  --fd-node-zoom-edge-width-map: 5px; /* @internal  map: wire thickness */
+  --fd-node-zoom-edge-map: var(--fd-edge-data); /* @internal  map: wire colour */
+  --fd-node-zoom-mark-scale-outline: 1.5; /* @internal  the Doctor's mark, per tier (a pure multiplier, no zoom maths) */
+  --fd-node-zoom-mark-scale-glyph: 2.5; /* @internal */
+  --fd-node-zoom-mark-scale-map: 4; /* @internal */
+  --fd-node-zoom-status-scale-outline: 1.5; /* @internal  the run-status pill, per tier */
+  --fd-node-zoom-status-scale-glyph: 2.4; /* @internal */
+  --fd-node-zoom-status-stroke-map: 6px; /* @internal  map: status outline thickness */
+  --fd-node-zoom-badge-scale-map: 3.5; /* @internal  map: status badge */
+  --fd-node-pin-wired: var(--fd-node-ink); /* @internal  wired exec pin fill */
+  --fd-node-pin-open: #8a919c; /* @internal  open exec pin outline and chevron, at least 3:1 on the card */
+  --fd-node-icon-size: 36px; /* @internal  squircle edge */
+  --fd-node-icon-glyph-size: 20px; /* @internal */
+  --fd-node-icon-radius: 8px; /* @internal */
+  --fd-node-desc-display: -webkit-box; /* @internal  description under the title ('none' = compact) */
+  --fd-node-desc-block-display: block; /* @internal  same for nodes that draw it as a block */
+  --fd-node-port-help-display: block; /* @internal  per-port help line ('none' = compact) */
+  --fd-node-port-height: 60px; /* @internal  one port block */
+  --fd-node-port-handle-top: 20px; /* @internal  handle y inside a port block */
+  --fd-node-port-pad: 10px 20px 0; /* @internal  padding of a port's label block */
+  --fd-node-port-align: flex-start; /* @internal */
+  --fd-node-ports-first-pad: 20px; /* @internal  clearance under the header rule */
+  --fd-node-ports-end-pad: 0px; /* @internal  clearance under the last port */
+  --fd-node-group-rule: var(
+    --fd-border-muted
+  ); /* @internal  hairline between the input and output port groups ('transparent' = none) */
+  --fd-node-group-rule-inset: 20px; /* @internal  its inset from each node edge */
+  --fd-node-port-name-weight: 500; /* @internal */
+  --fd-node-port-chip-font: inherit; /* @internal  type tag font */
+  --fd-node-port-chip-size: 10px; /* @internal */
+  --fd-node-port-chip-border: var(--fd-border); /* @internal */
+  --fd-node-port-chip-pad: 0 4px; /* @internal */
+  /* "Required" on an input port: the badge by default; a theme may show an asterisk after the
+     name instead and visually hide the word (it stays for screen readers). The word-* tokens
+     are left at `initial` unless hidden. */
+  --fd-node-port-required-mark-display: none; /* @internal */
+  --fd-node-port-required-mark-size: 11px; /* @internal */
+  --fd-node-port-required-word-position: initial; /* @internal */
+  --fd-node-port-required-word-size: initial; /* @internal */
+  --fd-node-port-required-word-overflow: initial; /* @internal */
+  --fd-node-port-required-word-clip: initial; /* @internal */
+  --fd-node-port-symbol-display: inline-flex; /* @internal  shape glyph beside the name */
+  --fd-node-port-out-name-order: 0; /* @internal  output row: name, type tag, glyph order */
+  --fd-node-port-out-chip-order: 0; /* @internal */
+  --fd-node-port-out-symbol-order: 0; /* @internal */
+  --fd-node-port-out-name-align: right; /* @internal */
+  --fd-node-selected-border: var(--fd-primary); /* @internal  border of a selected node */
+  --fd-node-selected-ring: var(--fd-primary-muted); /* @internal  halo of a selected node */
+  --fd-node-selected-edge: 0px; /* @internal  extra border thickness, drawn as a shadow */
+  --fd-node-selected-ring-width: 2px; /* @internal */
   --fd-node-terminal-size: 80px; /* @public */
   --fd-node-square-size: 80px; /* @public */
   --fd-node-simple-height: 80px; /* @public */
@@ -426,11 +858,16 @@
   ); /* @public */
 
   /* ----- SKIN DISPLAY CONTROL TOKENS ----- */
-  /* @public — override these in a skin's tokens dict to toggle visual variants */
+  /* @public @deprecated — set FlowDropThemeConfig.display (nodeIcon, sidebarList, sidebarSearch,
+     sidebarHeader, navbarActions) instead. These tokens remain a fallback until 3.0: the theme
+     config wins when it sets a value, a token set in CSS or in a skin's tokens applies otherwise. */
   --fd-node-icon-display: flex; /* @public  show squircle icon wrapper */
   --fd-node-circle-display: none; /* @public  hide circle dot */
   --fd-sidebar-search-display: flex; /* @public  show sidebar search input */
   --fd-sidebar-header-display: flex; /* @public  show sidebar "Components" header */
+  --fd-sidebar-chevron-size: 0.875rem; /* @internal  rows sidebar: group chevron, 14px */
+  --fd-sidebar-child-indent: 1.5625rem; /* @internal  rows sidebar: children indent from the group edge, 25px */
+  --fd-sidebar-child-text: 0.84375rem; /* @internal  rows sidebar: child label size, 13.5px */
   --fd-sidebar-card-display: block; /* @public  show accordion card node list */
   --fd-sidebar-flat-display: none; /* @public  hide flat dot-name node list */
   --fd-sidebar-category-color: var(--fd-muted-foreground); /* @public  category header text color */
@@ -441,7 +878,7 @@
 
 /* =========================================================================
    DARK MODE
-   Users enable with: <html data-theme="dark">
+   Applied by the editor scope element: data-theme="dark" (a host ancestor also works)
    Designed for softer contrast and reduced eye strain
    ========================================================================= */
 
@@ -480,6 +917,11 @@
   /* ----- NODE BORDERS (Higher contrast for visibility when zoomed out) ----- */
   --fd-node-border: #4a4a52;
   --fd-node-border-hover: #5a5a62;
+
+  /* ----- NODE CARD (dark) ----- */
+  --fd-node-header-wash: 16%;
+  --fd-node-tile-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --fd-node-pin-open: #7d8594;
 
   /* ----- CANVAS GRID (matches xyflow's dark dot-grid color) ----- */
   --fd-grid-pattern-color: #777;
@@ -580,3 +1022,137 @@
   /* ----- LAYOUT BACKGROUND (darker gradient for dark mode) ----- */
   --fd-layout-background: linear-gradient(135deg, #141418 0%, #1a1a2e 50%, #16162a 100%);
 }
+
+/* BEGIN GENERATED dark aliases (pnpm run generate:token-aliases) */
+/* The aliases the dark palette changes underneath, declared again on the themed
+   element (see scripts/parse-token-aliases.mjs renderDarkAliasBlock). Generated
+   text, so Prettier leaves it as written. */
+/* prettier-ignore */
+[data-theme='dark'] {
+  --fd-activity-running: var(--fd-status-running);
+  --fd-button-danger-bg: var(--fd-error);
+  --fd-button-danger-border: var(--fd-error);
+  --fd-button-danger-fg: var(--fd-error-foreground);
+  --fd-button-danger-hover-bg: var(--fd-error-hover);
+  --fd-button-danger-hover-fg: var(--fd-error-foreground);
+  --fd-button-ghost-hover: var(--fd-muted);
+  --fd-button-secondary-border: var(--fd-border);
+  --fd-canvas-bg: var(--fd-background);
+  --fd-checkbox-on-bg: var(--fd-primary);
+  --fd-checkbox-on-fg: var(--fd-primary-foreground);
+  --fd-code-block-bg: var(--fd-muted);
+  --fd-code-block-border: 1px solid var(--fd-border);
+  --fd-elevation-float: var(--fd-shadow-md);
+  --fd-field-border-color: var(--fd-border);
+  --fd-field-focus-outline: var(--fd-ring-width) solid var(--fd-ring);
+  --fd-field-focus-shadow: var(--fd-shadow-sm);
+  --fd-field-shadow: var(--fd-shadow-sm);
+  --fd-float-border: var(--fd-border);
+  --fd-id-chip-bg: var(--fd-subtle);
+  --fd-iface-tag-bg: var(--fd-node-bg);
+  --fd-iface-tag-border: color-mix(in srgb, var(--fd-foreground) 45%, transparent);
+  --fd-inspector-details-bg: var(--fd-card);
+  --fd-inspector-details-rule: var(--fd-border-muted);
+  --fd-inspector-link-color: var(--fd-primary);
+  --fd-interrupt-btn-primary-bg: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
+  --fd-interrupt-btn-primary-bg-hover: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
+  --fd-interrupt-cancelled-avatar: var(--fd-muted-foreground);
+  --fd-interrupt-cancelled-bg: linear-gradient(135deg, var(--fd-muted) 0%, var(--fd-subtle) 100%);
+  --fd-interrupt-cancelled-border: var(--fd-muted-foreground);
+  --fd-interrupt-cancelled-text: var(--fd-muted-foreground);
+  --fd-interrupt-cancelled-text-light: var(--fd-muted-foreground);
+  --fd-interrupt-completed-avatar: var(--fd-primary);
+  --fd-interrupt-completed-bg: linear-gradient(135deg, var(--fd-info-muted) 0%, var(--fd-primary-muted) 100%);
+  --fd-interrupt-completed-border: var(--fd-primary);
+  --fd-interrupt-completed-text: var(--fd-primary-hover);
+  --fd-interrupt-completed-text-light: var(--fd-primary);
+  --fd-interrupt-error-avatar: var(--fd-error);
+  --fd-interrupt-error-bg: linear-gradient(135deg, var(--fd-error-muted) 0%, var(--fd-error-muted) 100%);
+  --fd-interrupt-error-border: var(--fd-error);
+  --fd-interrupt-error-text: var(--fd-error-hover);
+  --fd-interrupt-error-text-light: var(--fd-error);
+  --fd-interrupt-pending-avatar: var(--fd-warning);
+  --fd-interrupt-pending-bg: linear-gradient(135deg, var(--fd-warning-muted) 0%, var(--fd-warning-muted) 100%);
+  --fd-interrupt-pending-border: var(--fd-warning);
+  --fd-interrupt-pending-text: var(--fd-warning-hover);
+  --fd-interrupt-pending-text-light: var(--fd-warning-hover);
+  --fd-interrupt-selected-confirm-bg: var(--fd-interrupt-btn-primary-bg);
+  --fd-interrupt-selected-confirm-border: var(--fd-primary-hover);
+  --fd-interrupt-selected-decline-border: var(--fd-error);
+  --fd-interrupt-selected-decline-text: var(--fd-error);
+  --fd-menu-shadow: var(--fd-shadow-lg);
+  --fd-minimap-border: var(--fd-border-strong);
+  --fd-minimap-shadow: var(--fd-shadow-md);
+  --fd-navbar-action-bg: var(--fd-background);
+  --fd-navbar-action-border: var(--fd-border-strong);
+  --fd-navbar-action-fg: var(--fd-foreground);
+  --fd-navbar-action-hover-bg: var(--fd-muted);
+  --fd-navbar-icon-bg: var(--fd-background);
+  --fd-navbar-icon-border: var(--fd-border);
+  --fd-navbar-icon-border-hover: var(--fd-border-strong);
+  --fd-navbar-status-bg: var(--fd-success-muted);
+  --fd-navbar-status-fg: var(--fd-success-hover);
+  --fd-node-bg: var(--fd-card);
+  --fd-node-config-btn-bg: var(--fd-backdrop);
+  --fd-node-config-btn-border: var(--fd-border);
+  --fd-node-config-btn-hover-bg: var(--fd-muted);
+  --fd-node-config-btn-hover-border: var(--fd-border-strong);
+  --fd-node-desc-rule: var(--fd-border-muted);
+  --fd-node-group-rule: var(--fd-border-muted);
+  --fd-node-header-bg: var(--fd-header);
+  --fd-node-header-divider-color: var(--fd-border-muted);
+  --fd-node-kind-fg: var(--fd-muted-foreground);
+  --fd-node-pill-open-border: var(--fd-border);
+  --fd-node-pill-open-fg: var(--fd-muted-foreground);
+  --fd-node-pill-open-ring-input: inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border), inset -1px 0 0 var(--fd-node-pill-open-border);
+  --fd-node-pill-open-ring-output: inset 0 1px 0 var(--fd-node-pill-open-border), inset 0 -1px 0 var(--fd-node-pill-open-border), inset 1px 0 0 var(--fd-node-pill-open-border);
+  --fd-node-pill-required: var(--fd-error-hover);
+  --fd-node-pin-wired: var(--fd-node-ink);
+  --fd-node-port-chip-border: var(--fd-border);
+  --fd-node-selected-border: var(--fd-primary);
+  --fd-node-selected-ring: var(--fd-primary-muted);
+  --fd-node-shadow: var(--fd-shadow-md);
+  --fd-node-shadow-hover: var(--fd-shadow-lg);
+  --fd-node-terminal-bg: var(--fd-background);
+  --fd-node-terminal-label-bg: var(--fd-backdrop);
+  --fd-node-terminal-label-shadow: var(--fd-shadow-sm);
+  --fd-node-terminal-ring: color-mix(in srgb, var(--fd-node-selected-border) 50%, transparent);
+  --fd-node-zoom-bar-open-bg: color-mix(in srgb, var(--fd-foreground) 8%, var(--fd-node-bg));
+  --fd-node-zoom-edge-map: var(--fd-edge-data);
+  --fd-note-bg: var(--fd-muted);
+  --fd-note-border: var(--fd-node-border);
+  --fd-note-border-hover: var(--fd-node-border-hover);
+  --fd-note-edge: var(--fd-node-border);
+  --fd-note-error-bg: var(--fd-error-muted);
+  --fd-note-fg: var(--fd-foreground);
+  --fd-note-info-bg: var(--fd-info-muted);
+  --fd-note-meta: var(--fd-muted-foreground);
+  --fd-note-success-bg: var(--fd-success-muted);
+  --fd-note-warning-bg: var(--fd-warning-muted);
+  --fd-panel-bg: var(--fd-background);
+  --fd-sheet-border: var(--fd-border);
+  --fd-sidebar-category-color: var(--fd-muted-foreground);
+  --fd-sidebar-flat-item-color: var(--fd-foreground);
+  --fd-status-completed: var(--fd-success);
+  --fd-status-completed-soft: var(--fd-success-muted);
+  --fd-status-failed: var(--fd-error);
+  --fd-status-failed-soft: var(--fd-error-muted);
+  --fd-status-running: var(--fd-info);
+  --fd-status-running-soft: var(--fd-info-muted);
+  --fd-status-skipped: var(--fd-muted-foreground);
+  --fd-status-skipped-soft: var(--fd-muted);
+  --fd-status-waiting: var(--fd-warning);
+  --fd-status-waiting-soft: var(--fd-warning-muted);
+  --fd-switch-off-bg: var(--fd-border-strong);
+  --fd-switch-on-bg: var(--fd-primary);
+  --fd-switch-thumb-bg: var(--fd-background);
+  --fd-tab-underline: inset 0 -2px 0 var(--fd-foreground);
+  --fd-toolbar-segmented-bg: var(--fd-muted);
+  --fd-toolbar-segmented-border: var(--fd-border-muted);
+  --fd-toolbar-segmented-selected-bg: var(--fd-background);
+  --fd-toolbar-segmented-selected-fg: var(--fd-foreground);
+  --fd-toolbar-segmented-selected-shadow: var(--fd-shadow-sm);
+  --fd-zoom-button-border: 1px solid var(--fd-border);
+  --fd-zoom-group-bg: var(--fd-card);
+}
+/* END GENERATED dark aliases */

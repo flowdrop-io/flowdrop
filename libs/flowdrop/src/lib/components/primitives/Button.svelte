@@ -1,0 +1,234 @@
+<!--
+  @component
+  Button: the editor's text button, with a variant, a size and optional icons.
+
+  Sizes are the control heights: `sm` is 24px, `md` is 28px, `lg` is 32px. The editor
+  uses `sm` almost everywhere. `loading` shows a spinner and blocks clicks but keeps focus.
+  The focus ring comes from base.css, never from this file.
+
+  **Use it for** any labelled action: Save, Run, Retry, Cancel.
+  **Not for** icon-only actions; use `IconButton`. For a list of actions behind one
+  trigger use `Menu`.
+
+  Not exported from the package; internal to the editor. The wrapper `components/Button.svelte`
+  is the old API on top of this.
+-->
+
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  import type { HTMLButtonAttributes } from 'svelte/elements';
+
+  interface Props extends Omit<HTMLButtonAttributes, 'children' | 'class' | 'type' | 'title'> {
+    /**
+     * Visual style. `danger` follows the theme. `destructive` is always the red fill (a final
+     * confirm). `danger-ghost` is red text with no fill, for a quiet delete.
+     */
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'destructive' | 'danger-ghost';
+    /** Height: `sm` = --fd-control-sm (24), `md` = --fd-control-md (28), `lg` = --fd-control-lg (32) */
+    size?: 'sm' | 'md' | 'lg';
+    /** Native button type */
+    type?: 'button' | 'submit' | 'reset';
+    /** Disabled state */
+    disabled?: boolean;
+    /** Shows a spinner, sets `aria-busy` and blocks activation (stays focusable) */
+    loading?: boolean;
+    /** Tooltip text */
+    title?: string;
+    /** Accessible label (needed when the content is only an icon) */
+    ariaLabel?: string;
+    /** Extra classes appended to the root button */
+    class?: string;
+    /** Click handler */
+    onclick?: (event: MouseEvent) => void;
+    /** Icon rendered before the label */
+    leadingIcon?: Snippet;
+    /** Icon rendered after the label */
+    trailingIcon?: Snippet;
+    /** Button label */
+    children?: Snippet;
+  }
+
+  let {
+    variant = 'secondary',
+    size = 'md',
+    type = 'button',
+    disabled = false,
+    loading = false,
+    title,
+    ariaLabel,
+    class: className = '',
+    onclick,
+    leadingIcon,
+    trailingIcon,
+    children,
+    ...rest
+  }: Props = $props();
+
+  function handleClick(event: MouseEvent): void {
+    if (loading) {
+      event.preventDefault();
+      return;
+    }
+    onclick?.(event);
+  }
+</script>
+
+<button
+  {...rest}
+  class="flowdrop-ui-button flowdrop-ui-button--{variant} flowdrop-ui-button--{size} {className}"
+  class:flowdrop-ui-button--loading={loading}
+  {type}
+  {title}
+  {disabled}
+  aria-label={ariaLabel}
+  aria-busy={loading || undefined}
+  onclick={handleClick}
+>
+  {#if loading}
+    <span class="flowdrop-ui-button__spinner" aria-hidden="true"></span>
+  {:else if leadingIcon}
+    <span class="flowdrop-ui-button__icon" aria-hidden="true">{@render leadingIcon()}</span>
+  {/if}
+  {#if children}
+    <span class="flowdrop-ui-button__label">{@render children()}</span>
+  {/if}
+  {#if trailingIcon}
+    <span class="flowdrop-ui-button__icon" aria-hidden="true">{@render trailingIcon()}</span>
+  {/if}
+</button>
+
+<style>
+  .flowdrop-ui-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fd-space-2xs);
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: var(--fd-control-radius);
+    font-family: inherit;
+    font-weight: var(--fd-button-font-weight);
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color var(--fd-transition-fast),
+      border-color var(--fd-transition-fast),
+      color var(--fd-transition-fast);
+  }
+
+  .flowdrop-ui-button--sm {
+    height: var(--fd-control-sm);
+    padding: 0 var(--fd-space-xs);
+    font-size: var(--fd-text-xs);
+  }
+
+  .flowdrop-ui-button--md {
+    height: var(--fd-control-md);
+    padding: 0 var(--fd-space-md);
+    font-size: var(--fd-text-sm);
+  }
+
+  .flowdrop-ui-button--lg {
+    height: var(--fd-control-lg);
+    padding: 0 var(--fd-space-lg, 0.75rem);
+    font-size: var(--fd-text-sm);
+  }
+
+  .flowdrop-ui-button--primary {
+    background-color: var(--fd-primary);
+    border-color: var(--fd-primary);
+    color: var(--fd-primary-foreground);
+  }
+  .flowdrop-ui-button--primary:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+    background-color: var(--fd-primary-hover);
+    border-color: var(--fd-primary-hover);
+  }
+
+  .flowdrop-ui-button--secondary {
+    background-color: var(--fd-background);
+    border-color: var(--fd-button-secondary-border);
+    color: var(--fd-foreground);
+  }
+  .flowdrop-ui-button--secondary:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+    background-color: var(--fd-muted);
+    border-color: var(--fd-border-strong);
+  }
+
+  .flowdrop-ui-button--ghost {
+    background-color: transparent;
+    color: var(--fd-foreground);
+  }
+  .flowdrop-ui-button--ghost:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+    background-color: var(--fd-button-ghost-hover);
+  }
+
+  .flowdrop-ui-button--danger {
+    background-color: var(--fd-button-danger-bg);
+    border-color: var(--fd-button-danger-border);
+    color: var(--fd-button-danger-fg);
+  }
+  .flowdrop-ui-button--danger:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+    background-color: var(--fd-button-danger-hover-bg);
+    border-color: var(--fd-button-danger-hover-bg);
+    color: var(--fd-button-danger-hover-fg);
+  }
+
+  /* A destructive confirm: always the red fill, in every theme. */
+  .flowdrop-ui-button--destructive {
+    background-color: var(--fd-error);
+    border-color: var(--fd-error);
+    color: var(--fd-error-foreground);
+  }
+  .flowdrop-ui-button--destructive:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+    background-color: var(--fd-error-hover);
+    border-color: var(--fd-error-hover);
+  }
+
+  /* Destructive without the weight: error-coloured text on a ghost button. */
+  .flowdrop-ui-button--danger-ghost {
+    background-color: transparent;
+    color: var(--fd-error);
+  }
+  .flowdrop-ui-button--danger-ghost:hover:not(:disabled):not(.flowdrop-ui-button--loading) {
+    background-color: var(--fd-error-muted);
+  }
+
+  .flowdrop-ui-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .flowdrop-ui-button--loading {
+    cursor: progress;
+  }
+
+  .flowdrop-ui-button__icon {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .flowdrop-ui-button__spinner {
+    flex: none;
+    width: var(--fd-text-xs);
+    height: var(--fd-text-xs);
+    box-sizing: border-box;
+    border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+    border-top-color: currentColor;
+    border-radius: var(--fd-radius-full);
+    animation: flowdrop-ui-button-spin 0.8s linear infinite;
+  }
+
+  @keyframes flowdrop-ui-button-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flowdrop-ui-button__spinner {
+      animation-duration: 2s;
+    }
+  }
+</style>

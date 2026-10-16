@@ -1,11 +1,24 @@
+<!--
+  @component
+  **Exported for host apps; the editor does not render it.** A plain list of the runs of one session; no surface in the editor renders it any more.
+  Each row shows the run id, a status mark (a pulsing dot while running, a tick or alert when done) and a "latest" badge on the newest run. Clicking or pressing Enter on a row selects it.
+
+  **Use it for** picking one run out of many in a host app's own layout. The editor uses the history menu in `PlaygroundHeader` instead.
+  **Not for** showing a run's steps; use `StepsSummary` or `PipelinePanel` instead.
+-->
+
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { PlaygroundExecution } from '$lib/types/playground.js';
 
   interface Props {
+    /** The runs to list, in the order to show them. */
     executions: PlaygroundExecution[];
+    /** Id of the selected run, or null for none. */
     activeExecutionId: string | null;
+    /** Id of the newest run, which gets the "latest" badge, or null. */
     latestExecutionId: string | null;
+    /** Called with the run id when the user picks a row. */
     onSelect: (executionId: string) => void;
   }
 

@@ -109,6 +109,50 @@
       '404':
         $ref: '../components/responses.yaml#/NotFound'
 
+/sessions/{sessionId}/runs:
+  get:
+    operationId: listSessionRuns
+    summary: List the runs a session started
+    description: |
+      The session's runs, oldest first, each stamped with the workflow version
+      it ran and its named inputs, bounded. `data.workflowVersion` is the
+      session's workflow as it is now (null when the workflow is gone); a run's
+      `workflowVersion` is null for a run the server did not stamp. A client
+      compares the two to tell a run that is stale: an unknown version is never
+      stale. Versions are opaque strings, compared for equality only.
+      Optional: a server without it answers 404 and the editor shows no version
+      dividers (`sessions.runs` in the endpoint config).
+    tags:
+      - Sessions
+    parameters:
+      - name: sessionId
+        in: path
+        description: Session UUID
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: limit
+        in: query
+        description: The newest this many runs (still returned oldest first)
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+    responses:
+      '200':
+        description: The session's runs
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/playground.yaml#/SessionRunsResponse'
+      '403':
+        description: Access denied
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
 /sessions/{sessionId}/turn:
   post:
     operationId: takeSessionTurn

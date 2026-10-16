@@ -1,15 +1,21 @@
 <!--
-  ConfigPanel Component
-  A generic panel for displaying details and configuration
-  Can be used for node config, workflow settings, or any entity with an ID
-  Accepts a slot for custom form content
-  Styled with BEM syntax
+  @component
+  The right-hand panel of the editor: a header with the title, id and close button, a few read-only details,
+  and the content you pass in as children.
+
+  For a node, the children are the `NodeInspector` with the node's config form. The same panel also hosts
+  workflow settings and any other entity that has an id.
+
+  **Use it for** showing one thing the person selected and letting them edit it.
+  **Not for** the form itself (use `ConfigForm` for a node, `SchemaForm` for a plain schema).
 -->
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import Icon from '@iconify/svelte';
   import ReadOnlyDetails from './ReadOnlyDetails.svelte';
+  import PanelHeader from './primitives/PanelHeader.svelte';
+  import IconButton from './primitives/IconButton.svelte';
   import { getUiSettings } from '../stores/settingsStore.svelte.js';
   import { m } from '$lib/messages/index.js';
   import { portal } from '$lib/utils/portal.js';
@@ -38,8 +44,8 @@
     details?: DetailItem[];
     /** Title for the configuration section */
     configTitle?: string;
-    /** Callback function when the panel is closed */
-    onClose: () => void;
+    /** Callback function when the panel is closed. Without it the panel has no close control. */
+    onClose?: () => void;
     /** Optional callback to initiate node swap — when provided, shows swap button */
     onSwap?: () => void;
     /**
@@ -57,7 +63,7 @@
     id,
     description,
     details = [],
-    configTitle = 'Configuration',
+    configTitle,
     onClose,
     onSwap,
     expandable = true,
@@ -103,65 +109,71 @@
   rendered once).
 -->
 {#snippet panelContent()}
-  {#if hasDetails && id}
-    <div class="config-panel__details">
-      <ReadOnlyDetails {id} {description} {details} />
-    </div>
-  {/if}
-
-  <div class="config-panel__content">
-    {#if children}
-      <div class="config-panel__section">
-        <h3 class="config-panel__section-title">{configTitle}</h3>
-        {@render children()}
+  <!-- One scroll area for meta + form, so scrolled fields never slide under the meta block. -->
+  <div class="config-panel__scroll">
+    {#if hasDetails && id}
+      <div class="config-panel__details">
+        <ReadOnlyDetails {id} {description} {details} />
       </div>
     {/if}
+
+    <div class="config-panel__content">
+      {#if children}
+        <div class="config-panel__section">
+          {#if configTitle}
+            <h3 class="config-panel__section-title">{configTitle}</h3>
+          {/if}
+          {@render children()}
+        </div>
+      {/if}
+    </div>
   </div>
 {/snippet}
 
-<div class="config-panel" class:config-panel--compact={getUiSettings().compactMode}>
-  <!-- Header -->
-  <div class="config-panel__header">
-    <h2 class="config-panel__title">{title}</h2>
-    <div class="config-panel__actions">
-      {#if onSwap}
-        <button
-          class="config-panel__action-btn"
-          onclick={onSwap}
-          aria-label={m().layout.swapNode}
-          title="Swap node type"
-        >
-          <Icon icon="heroicons:arrows-right-left" />
-        </button>
-      {/if}
-      {#if expandable && !expanded}
-        <button
-          class="config-panel__action-btn"
-          onclick={() => (expanded = true)}
-          aria-label="Pop out configuration"
-          title="Pop out to a larger window"
-        >
-          <Icon icon="heroicons:arrows-pointing-out" />
-        </button>
-      {/if}
-      <button
-        class="config-panel__close"
-        onclick={onClose}
-        aria-label={m().layout.closeConfigPanel}
-      >
-        ×
-      </button>
-    </div>
-  </div>
-
-  {#if expanded}
-    <!-- Content is popped out into the modal; show a lightweight placeholder. -->
-    <div class="config-panel__popped">
-      <Icon icon="heroicons:window" class="config-panel__popped-icon" />
-      <p class="config-panel__popped-text">Configuration is open in a larger window.</p>
-      <button class="config-panel__popped-btn" onclick={dock}> Dock back to sidebar </button>
-    </div>
+<!-- Header controls, shared by the docked panel and the popped-out modal. -->
+{#snippet headerActions(popped: boolean)}
+  {#if popped}
+    <IconButton ariaLabel={m().layout.dockConfig} title={m().layout.dockConfigTitle} onclick={dock}>
+      <Icon icon="mdi:arrow-collapse" />
+    </IconButton>
   {:else}
+    {#if onSwap}
+      <IconButton ariaLabel={m().layout.swapNode} title={m().layout.swapNodeTitle} onclick={onSwap}>
+        <Icon icon="mdi:swap-horizontal" />
+      </IconButton>
+    {/if}
+    {#if expandable && !expanded}
+      <IconButton
+        ariaLabel={m().layout.popOutConfig}
+        title={m().layout.popOutConfigTitle}
+        onclick={() => (expanded = true)}
+      >
+        <Icon icon="mdi:arrow-expand" />
+      </IconButton>
+    {/if}
+  {/if}
+  {#if onClose}
+    <IconButton ariaLabel={m().layout.closeConfigPanel} onclick={onClose}>
+      <Icon icon="mdi:close" />
+    </IconButton>
+  {/if}
+{/snippet}
+
+<!--
+  While the content is popped out the docked panel is empty and its sidebar
+  collapses (see the :global rules below) instead of showing a placeholder.
+-->
+<div
+  class="config-panel"
+  class:config-panel--compact={getUiSettings().compactMode}
+  class:config-panel--popped={expanded}
+>
+  {#if !expanded}
+    <PanelHeader {title}>
+      {#snippet actions()}
+        {@render headerActions(false)}
+      {/snippet}
+    </PanelHeader>
     {@render panelContent()}
   {/if}
 </div>
@@ -181,26 +193,11 @@
       aria-labelledby={titleId}
       tabindex="-1"
     >
-      <div class="config-panel-modal__header">
-        <h2 id={titleId} class="config-panel-modal__title">{title}</h2>
-        <div class="config-panel__actions">
-          <button
-            class="config-panel__action-btn"
-            onclick={dock}
-            aria-label="Dock configuration back to sidebar"
-            title="Dock back to sidebar"
-          >
-            <Icon icon="heroicons:arrows-pointing-in" />
-          </button>
-          <button
-            class="config-panel__close"
-            onclick={onClose}
-            aria-label={m().layout.closeConfigPanel}
-          >
-            ×
-          </button>
-        </div>
-      </div>
+      <PanelHeader {title} {titleId}>
+        {#snippet actions()}
+          {@render headerActions(true)}
+        {/snippet}
+      </PanelHeader>
 
       <div class="config-panel-modal__body">
         {@render panelContent()}
@@ -218,81 +215,28 @@
     backdrop-filter: var(--fd-panel-backdrop-filter);
   }
 
-  .config-panel__header {
+  .config-panel__scroll {
+    --fd-inspector-pad-x: var(--fd-space-xl);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-card);
-    flex-shrink: 0;
+    flex-direction: column;
   }
 
-  .config-panel__title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--fd-foreground);
-  }
-
-  .config-panel__actions {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-
-  .config-panel__action-btn {
-    background: none;
-    border: none;
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--fd-muted-foreground);
-    padding: 0.25rem;
-    border-radius: var(--fd-radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-  }
-
-  .config-panel__action-btn:hover {
-    color: var(--fd-primary);
-    background-color: var(--fd-subtle);
-  }
-
-  .config-panel__close {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--fd-muted-foreground);
-    padding: 0.25rem;
-    border-radius: var(--fd-radius-sm);
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-  }
-
-  .config-panel__close:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
-  }
-
+  /* The meta lines scroll with the content: no band, no rule, no overlap. */
   .config-panel__details {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--fd-border-muted);
-    background-color: var(--fd-card);
+    padding: var(--fd-space-md) var(--fd-inspector-pad-x) 0;
     flex-shrink: 0;
+  }
+
+  .config-panel :global(.flowdrop-ui-panel-header__title) {
+    font-size: var(--fd-inspector-title-size);
   }
 
   .config-panel__content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
+    flex: 1 0 auto;
+    padding: var(--fd-space-md) var(--fd-inspector-pad-x) var(--fd-space-xl);
   }
 
   .config-panel__section {
@@ -306,83 +250,25 @@
     font-size: var(--fd-text-xs);
     font-weight: 600;
     color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   /* Compact Mode Styles */
-  .config-panel--compact .config-panel__header {
-    padding: 0.5rem 0.75rem;
-  }
-
-  .config-panel--compact .config-panel__title {
-    font-size: 0.875rem;
-  }
-
-  .config-panel--compact .config-panel__close {
-    font-size: 1rem;
-    padding: 0.125rem;
-  }
-
-  .config-panel--compact .config-panel__action-btn {
-    font-size: 0.875rem;
-    padding: 0.125rem;
-  }
-
-  .config-panel--compact .config-panel__details {
-    padding: 0.5rem 0.75rem;
-  }
-
-  .config-panel--compact .config-panel__content {
-    padding: 0.75rem;
+  .config-panel--compact .config-panel__scroll {
+    --fd-inspector-pad-x: var(--fd-space-md);
   }
 
   .config-panel--compact .config-panel__section {
     gap: 0.5rem;
   }
 
-  /* Popped-out placeholder (shown in the rail while the modal is open) */
-  .config-panel__popped {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 2rem 1rem;
-    text-align: center;
-    color: var(--fd-muted-foreground);
-  }
-
-  .config-panel__popped :global(.config-panel__popped-icon) {
-    width: 2rem;
-    height: 2rem;
-    opacity: 0.6;
-  }
-
-  .config-panel__popped-text {
-    margin: 0;
-    font-size: var(--fd-text-sm);
-  }
-
-  .config-panel__popped-btn {
-    border: 1px solid var(--fd-border);
-    background-color: var(--fd-card);
-    color: var(--fd-foreground);
-    padding: 0.375rem 0.75rem;
-    border-radius: var(--fd-radius-sm);
-    font-size: var(--fd-text-sm);
-    cursor: pointer;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast),
-      border-color var(--fd-transition-fast);
-  }
-
-  .config-panel__popped-btn:hover {
-    color: var(--fd-primary);
-    border-color: var(--fd-primary);
-    background-color: var(--fd-subtle);
+  /* Popped out: the rail it sat in collapses (and its resize handle with it). */
+  :global(.flowdrop-main-layout__sidebar--right:has(.config-panel--popped)),
+  :global(
+    .flowdrop-main-layout__divider--right:has(
+      + .flowdrop-main-layout__sidebar--right .config-panel--popped
+    )
+  ) {
+    display: none;
   }
 
   /* Pop-out modal */
@@ -417,34 +303,22 @@
     overflow: hidden;
   }
 
-  .config-panel-modal__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.875rem 1rem;
-    border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-card);
-    flex-shrink: 0;
-  }
-
-  .config-panel-modal__title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--fd-foreground);
-  }
-
   .config-panel-modal__body {
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
 
   /* Inside the modal the content area should breathe on a wider canvas. */
+  .config-panel-modal__body .config-panel__scroll {
+    --fd-inspector-pad-x: var(--fd-space-3xl);
+  }
+
   .config-panel-modal__body .config-panel__content {
-    padding: 1.25rem 1.5rem;
+    padding-top: var(--fd-space-xl);
+    padding-bottom: var(--fd-space-3xl);
   }
 
   @media (max-width: 640px) {

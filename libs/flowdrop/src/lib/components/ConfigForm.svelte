@@ -1,21 +1,13 @@
 <!--
-  ConfigForm Component
-  Handles dynamic form rendering for node or entity configuration
-  Supports both node-based config and direct schema/values
-  Uses reactive $state for proper Svelte 5 reactivity
-  
-  Features:
-  - Dynamic form generation from JSON Schema using modular form components
-  - Node-level settings the editor contributes for every node (port order +
-    exposure), rendered even when the node type declares no config schema
-  - Extensible architecture for complex schema types (array, object)
-  - Admin/Edit support for external configuration links and dynamic schema fetching
-  
-  Accessibility features:
-  - Proper label associations with for/id attributes
-  - ARIA describedby for field descriptions
-  - Focus-visible states for keyboard navigation
-  - Required field indicators
+  @component
+  The form for one node's configuration. It draws the fields from the node type's `configSchema` (or a fetched schema),
+  adds the settings every node has (port order and exposure), splits them into the inspector's Config, Ports and Execution tabs,
+  and reports edits through `onChange`.
+
+  It can also run on its own with a direct `schema` and `values`. It shows an external edit link, or fetches its schema, when the node type asks for it.
+
+  **Use it for** editing a node, inside `NodeInspector`.
+  **Not for** a plain schema with no node (use `SchemaForm`).
 -->
 
 <script lang="ts">
@@ -26,12 +18,14 @@
     WorkflowNode,
     WorkflowEdge,
     ConfigEditOptions,
+    ExternalEditLink,
     AuthProvider
   } from '$lib/types/index.js';
   import type { UISchemaElement } from '$lib/types/uischema.js';
   // Import the light, registry-based field factory and light fields directly
   // (not via the form barrel, which aggregates the heavy CodeMirror editors).
   import FormField from '$lib/components/form/FormFieldLight.svelte';
+  import { buildItemRef, isFieldWired, parseItemRef } from '$lib/utils/itemRef.js';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/types.js';
   import {
@@ -48,7 +42,20 @@
   import { logger } from '../utils/logger.js';
   import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
   import { applyFetchedSchema } from '$lib/utils/schemaMerge.js';
-  import { PORTS_CONFIG_KEY, withPortsControl, withPortsField } from '$lib/utils/nodeFormSchema.js';
+  import {
+    PORTS_CONFIG_KEY,
+    hasConfigurablePorts,
+    withPortsControl,
+    withPortsField
+  } from '$lib/utils/nodeFormSchema.js';
+  import {
+    FORM_SECTION_ORDER,
+    nonEmptySections,
+    splitInspectorSections,
+    type SectionElements
+  } from '$lib/utils/inspectorSections.js';
+  import { getInspectorContext, type ExternalLinkInfo } from '$lib/utils/inspectorContext.js';
+  import ExternalLinkRow from './ExternalLinkRow.svelte';
 
   interface Props {
     /** Optional workflow node (if provided, schema and values are derived from it) */
@@ -101,6 +108,15 @@
       config: Record<string, unknown>,
       meta?: { fieldKey?: string; commit?: boolean }
     ) => void;
+    /**
+     * Called instead of opening the node's external edit link, when set, with
+     * copies of the node and the link, after committing field edits still
+     * pending (as a blur would). The host opens its own form; ConfigForm awaits
+     * the call (a second click while one is pending is ignored) and logs a
+     * rejection. Writing the config the
+     * handler resolves with is the caller's job: ConfigForm passes it on as is.
+     */
+    onExternalEdit?: (node: WorkflowNode, link: ExternalEditLink) => unknown;
     /** Callback when form is saved */
     onSave?: (config: Record<string, unknown>) => void;
     /** Callback when form is cancelled */
@@ -119,6 +135,7 @@
     authProvider,
     commitMode = 'blur',
     onChange,
+    onExternalEdit,
     onSave,
     onCancel
   }: Props = $props();
@@ -137,6 +154,10 @@
   // Use getter functions to ensure child components always get the current prop value,
   // even if the prop changes after initial mount
   setContext<() => AuthProvider | undefined>('flowdrop:getAuthProvider', () => authProvider);
+  // API base for autocomplete URLs written relative to it (`secrets/options`,
+  // no leading slash); see resolveAutocompleteUrl. Not `flowdrop:getBaseUrl`:
+  // that is SchemaForm's prefix, which also lands on `/path` URLs.
+  setContext<() => string>('flowdrop:getApiBaseUrl', () => fd.api.config?.baseUrl ?? '');
 
   /**
    * State for dynamic schema loading
@@ -355,6 +376,53 @@
     await loadDynamicSchema();
   }
 
+  // Inside the node inspector the form is split across its tabs and the external
+  // link becomes a row in the inspector's meta area; standalone it renders whole.
+  const inspector = getInspectorContext();
+
+  /** The form's tabs: Config / Ports / Execution. */
+  const sections = $derived.by<SectionElements>(() => {
+    const out = configUISchema
+      ? splitInspectorSections(configUISchema)
+      : splitInspectorSections({
+          type: 'VerticalLayout',
+          elements: Object.keys(configSchema?.properties ?? {}).map((key) => ({
+            type: 'Control' as const,
+            scope: `#/properties/${key}`
+          }))
+        });
+    // A node with no ports has nothing to put on the Ports tab.
+    if (node && !hasConfigurablePorts(node, configSchema)) out.ports = [];
+    return out;
+  });
+
+  /**
+   * The row naming the workflow a node runs ("Runs Calculator ↗"). The name is
+   * the link's `targetName` when the backend sends one; fddo does not (it sends
+   * only the editor URL, "Edit Workflow" and a filler description), so the
+   * node's own "Run workflow: <name>" label is the fallback, and a node with
+   * neither shows the link's label as a plain link.
+   */
+  const externalInfo = $derived.by<ExternalLinkInfo | null>(() => {
+    const link = configEditOptions?.externalEditLink;
+    if (!showExternalEditLink || !link || !node) return null;
+    const target =
+      link.targetName ?? /^run workflow:\s*(.+)$/i.exec(node.data.label ?? '')?.[1]?.trim();
+    return {
+      ...(target
+        ? { prefix: 'Runs', name: target }
+        : { name: link.label ?? 'Configure externally' }),
+      title: link.description,
+      href: getExternalEditUrl(),
+      newTab: link.openInNewTab !== false,
+      ...(onExternalEdit ? { onActivate: handleExternalEditClick } : {})
+    };
+  });
+
+  $effect(() => {
+    inspector?.report(nonEmptySections(sections), externalInfo);
+  });
+
   /**
    * Get the resolved external edit URL
    */
@@ -366,8 +434,37 @@
   /**
    * Handle opening external edit link
    */
+  const externalEditPending = new Set<string>();
+
+  /** A plain copy of reactive state. Typed as `T`: `Snapshot<WorkflowNode>` is too deep for tsc. */
+  const copyOf = <T,>(value: T): T => $state.snapshot(value) as T;
+
   function handleExternalEditClick(): void {
     if (!node || !configEditOptions?.externalEditLink) return;
+
+    if (onExternalEdit) {
+      const link = configEditOptions.externalEditLink;
+      const nodeId = node.id;
+      // One host form per node at a time.
+      if (externalEditPending.has(nodeId)) return;
+      externalEditPending.add(nodeId);
+      // Commit what is still in the edit buffer first: the host then sees it,
+      // and a stale buffered value cannot shadow, and later overwrite, the
+      // config the host writes back. A click on a link does not always blur the
+      // field (Safari does not focus links).
+      if (Object.keys(edits).length > 0) handleFormBlur();
+      void (async () => {
+        try {
+          // Copies: the host must not write into the live workflow behind the editor's back.
+          await onExternalEdit(copyOf(node), copyOf(link));
+        } catch (error) {
+          logger.warn('onExternalEdit failed:', error);
+        } finally {
+          externalEditPending.delete(nodeId);
+        }
+      })();
+      return;
+    }
 
     const url = getExternalEditUrl();
     const openInNewTab = configEditOptions.externalEditLink.openInNewTab !== false;
@@ -606,29 +703,10 @@
   }
 </script>
 
-<!-- External Edit Link Section (shown when configured and preferred) -->
-{#if showExternalEditLink && configEditOptions?.externalEditLink}
-  <div class="flowdrop-scope config-form__admin-edit">
-    <div class="config-form__admin-edit-header">
-      <Icon icon="heroicons:arrow-top-right-on-square" />
-      <span>External Configuration</span>
-    </div>
-    <div class="config-form__admin-edit-content">
-      <p class="config-form__admin-edit-description">
-        {configEditOptions.externalEditLink.description ??
-          'This node requires external configuration. Click the button below to open the configuration panel.'}
-      </p>
-      <button
-        type="button"
-        class="config-form__button config-form__button--external"
-        onclick={handleExternalEditClick}
-      >
-        <Icon
-          icon={configEditOptions.externalEditLink.icon ?? 'heroicons:arrow-top-right-on-square'}
-        />
-        <span>{configEditOptions.externalEditLink.label ?? 'Configure Externally'}</span>
-      </button>
-    </div>
+<!-- External workflow link: a row, shown here only when no inspector hosts it -->
+{#if externalInfo && !inspector}
+  <div class="flowdrop-scope config-form__external">
+    <ExternalLinkRow {...externalInfo} />
   </div>
 {/if}
 
@@ -712,7 +790,34 @@
 
     {#if configSchema.properties}
       <div class="config-form__fields">
-        {#if configUISchema}
+        {#if inspector}
+          {#each FORM_SECTION_ORDER as key (key)}
+            {#if sections[key].length > 0}
+              <div
+                class="config-form__section"
+                data-section={key}
+                role="tabpanel"
+                id={`node-inspector-panel-${key}`}
+                aria-labelledby={`node-inspector-tab-${key}`}
+                style:display={inspector.section === key ? 'flex' : 'none'}
+              >
+                <FormUISchemaRenderer
+                  element={{ type: 'VerticalLayout', elements: sections[key] }}
+                  schema={configSchema}
+                  values={configValues}
+                  requiredFields={configSchema.required ?? []}
+                  onFieldChange={handleFieldChange}
+                  {toFieldSchema}
+                  {node}
+                  nodes={workflowNodes}
+                  edges={workflowEdges}
+                  {workflowId}
+                  {authProvider}
+                />
+              </div>
+            {/if}
+          {/each}
+        {:else if configUISchema}
           <FormUISchemaRenderer
             element={configUISchema}
             schema={configSchema}
@@ -730,20 +835,33 @@
           {#each Object.entries(configSchema.properties) as [key, field], index (key)}
             {@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
             {@const required = isFieldRequired(key)}
+            {@const itemRef =
+              fieldSchema.type === 'array'
+                ? buildItemRef(
+                    configSchema.properties,
+                    key,
+                    configValues,
+                    (f) => isFieldWired(node?.id, workflowEdges, f),
+                    handleFieldChange
+                  )
+                : undefined}
 
-            <FormField
-              fieldKey={key}
-              schema={fieldSchema}
-              value={configValues[key]}
-              {required}
-              animationIndex={index}
-              {node}
-              nodes={workflowNodes}
-              edges={workflowEdges}
-              {workflowId}
-              {authProvider}
-              onChange={(val) => handleFieldChange(key, val)}
-            />
+            {#if !parseItemRef(field)}
+              <FormField
+                fieldKey={key}
+                {itemRef}
+                schema={fieldSchema}
+                value={configValues[key]}
+                {required}
+                animationIndex={index}
+                {node}
+                nodes={workflowNodes}
+                edges={workflowEdges}
+                {workflowId}
+                {authProvider}
+                onChange={(val) => handleFieldChange(key, val)}
+              />
+            {/if}
           {/each}
         {/if}
       </div>
@@ -824,7 +942,12 @@
   .config-form__fields {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-2xl);
+    gap: var(--fd-space-xl);
+  }
+
+  .config-form__section {
+    flex-direction: column;
+    gap: var(--fd-space-xl);
   }
 
   /* ============================================
@@ -845,8 +968,8 @@
   .config-form__button-spinner {
     width: 1rem;
     height: 1rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #ffffff;
+    border: 2px solid color-mix(in srgb, var(--fd-primary-foreground) 30%, transparent);
+    border-top-color: var(--fd-primary-foreground);
     border-radius: 50%;
     animation: config-form-spin 0.6s linear infinite;
   }
@@ -892,18 +1015,18 @@
   }
 
   .config-form__button--primary {
-    background: linear-gradient(135deg, var(--fd-primary) 0%, var(--fd-primary-hover) 100%);
+    background: var(--fd-primary);
     color: var(--fd-primary-foreground);
     box-shadow:
-      0 1px 3px rgba(59, 130, 246, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 1px 3px color-mix(in srgb, var(--fd-primary) 30%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
   }
 
   .config-form__button--primary:hover {
-    background: linear-gradient(135deg, var(--fd-primary-hover) 0%, var(--fd-primary-hover) 100%);
+    background: var(--fd-primary-hover);
     box-shadow:
-      0 4px 12px rgba(59, 130, 246, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 4px 12px color-mix(in srgb, var(--fd-primary) 35%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
     transform: translateY(-1px);
   }
 
@@ -929,7 +1052,7 @@
     padding: var(--fd-space-md) var(--fd-space-xl);
     background-color: var(--fd-warning-muted);
     border-bottom: 1px solid var(--fd-warning);
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     font-weight: 600;
     color: var(--fd-warning-hover);
   }
@@ -988,47 +1111,12 @@
   }
 
   /* ============================================
-	   ADMIN/EDIT SECTION - External Configuration
+	   EXTERNAL WORKFLOW ROW (standalone form only; the inspector hosts it
+	   in its meta area otherwise)
 	   ============================================ */
 
-  .config-form__admin-edit {
-    background: linear-gradient(135deg, var(--fd-info-muted) 0%, var(--fd-primary-muted) 100%);
-    border: 1px solid var(--fd-primary);
-    border-radius: 0.625rem;
-    overflow: hidden;
+  .config-form__external {
     margin-bottom: var(--fd-space-xl);
-  }
-
-  .config-form__admin-edit-header {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-md) var(--fd-space-xl);
-    background: linear-gradient(135deg, var(--fd-primary-muted) 0%, var(--fd-primary-muted) 100%);
-    border-bottom: 1px solid var(--fd-primary);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--fd-primary-hover);
-  }
-
-  .config-form__admin-edit-header :global(svg) {
-    width: 1rem;
-    height: 1rem;
-    color: var(--fd-primary);
-  }
-
-  .config-form__admin-edit-content {
-    padding: var(--fd-space-xl);
-    display: flex;
-    flex-direction: column;
-    gap: var(--fd-space-md);
-  }
-
-  .config-form__admin-edit-description {
-    margin: 0;
-    font-size: 0.8125rem;
-    color: var(--fd-primary-hover);
-    line-height: 1.5;
   }
 
   /* ============================================
@@ -1083,7 +1171,7 @@
     padding: var(--fd-space-md) var(--fd-space-xl);
     background-color: var(--fd-error-muted);
     border-bottom: 1px solid var(--fd-error);
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     font-weight: 600;
     color: var(--fd-error-hover);
   }
@@ -1103,7 +1191,7 @@
 
   .config-form__error-message {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-error);
     line-height: 1.5;
   }
@@ -1120,10 +1208,8 @@
 
   .config-form__schema-actions {
     display: flex;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-space-md);
     margin-bottom: var(--fd-space-xl);
-    padding-bottom: var(--fd-space-md);
-    border-bottom: 1px solid var(--fd-border-muted);
   }
 
   .config-form__schema-refresh,
@@ -1131,26 +1217,27 @@
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-3xs);
-    padding: var(--fd-space-3xs) var(--fd-space-xs);
+    padding: 0;
+    border: 0;
+    background: none;
     font-size: var(--fd-text-xs);
     font-weight: 500;
     font-family: inherit;
-    border-radius: var(--fd-radius-md);
+    color: var(--fd-muted-foreground);
     cursor: pointer;
-    transition: all var(--fd-transition-fast);
-    border: 1px solid transparent;
+    transition: color var(--fd-transition-fast);
   }
 
-  .config-form__schema-refresh {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border);
-    color: var(--fd-muted-foreground);
+  .config-form__schema-external {
+    color: var(--fd-primary);
   }
 
   .config-form__schema-refresh:hover {
-    background-color: var(--fd-subtle);
-    border-color: var(--fd-border-strong);
     color: var(--fd-foreground);
+  }
+
+  .config-form__schema-external:hover {
+    color: var(--fd-primary-hover);
   }
 
   .config-form__schema-refresh :global(svg),
@@ -1159,35 +1246,23 @@
     height: 0.875rem;
   }
 
-  .config-form__schema-external {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-primary);
-    color: var(--fd-primary-hover);
-  }
-
-  .config-form__schema-external:hover {
-    background-color: var(--fd-primary-muted);
-    border-color: var(--fd-primary-hover);
-    color: var(--fd-primary-hover);
-  }
-
   /* ============================================
 	   EXTERNAL BUTTON STYLE
 	   ============================================ */
 
   .config-form__button--external {
-    background: linear-gradient(135deg, var(--fd-accent) 0%, var(--fd-primary) 100%);
-    color: var(--fd-accent-foreground);
+    background: var(--fd-primary);
+    color: var(--fd-primary-foreground);
     box-shadow:
-      0 1px 3px rgba(99, 102, 241, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 1px 3px color-mix(in srgb, var(--fd-primary) 30%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
   }
 
   .config-form__button--external:hover {
-    background: linear-gradient(135deg, var(--fd-accent-hover) 0%, var(--fd-primary-hover) 100%);
+    background: var(--fd-primary-hover);
     box-shadow:
-      0 4px 12px rgba(99, 102, 241, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      0 4px 12px color-mix(in srgb, var(--fd-primary) 35%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--fd-primary-foreground) 10%, transparent);
     transform: translateY(-1px);
   }
 

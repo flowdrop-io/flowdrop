@@ -13,6 +13,7 @@
  * @module utils/workflowInterface
  */
 
+import { isTriggerEventInput } from './reservedPorts.js';
 import type {
   ConfigProperty,
   ConfigSchema,
@@ -551,9 +552,21 @@ export function pullEntryFieldsFromPort(port: NodePort): Partial<WorkflowInterfa
  * a composition the runtime supports through the interface (a workflow is
  * made a tool by a different mechanism), so it stays excluded.
  */
-function isControlFlowPort(port: NodePort, direction: 'input' | 'output'): boolean {
+export function isControlFlowPort(port: NodePort, direction: 'input' | 'output'): boolean {
   if (port.dataType === 'trigger' || port.id === LOOPBACK_PORT_NAME) return true;
   return port.dataType === 'tool' && direction === 'output';
+}
+
+/**
+ * The name a node shows on the canvas: the instance title the author gave it
+ * ("Final Chat Output"), else the node type's label, else its id.
+ */
+export function nodeCanvasLabel(node: {
+  id: string;
+  data?: { label?: string; config?: Record<string, unknown> };
+}): string {
+  const title = node.data?.config?.instanceTitle;
+  return (typeof title === 'string' && title) || node.data?.label || node.id;
 }
 
 /** One inner port a `WorkflowInterfaceEntry` could bind to, plus its owning node. */
@@ -601,8 +614,10 @@ export function listBindablePorts(
 
     for (const port of [...staticPorts, ...dynamicPorts]) {
       if (isControlFlowPort(port, direction)) continue;
+      // A trigger's event input is never part of the contract (MAN-27).
+      if (direction === 'input' && isTriggerEventInput(node, port.id)) continue;
       if (isPortExposed(port, entries)) {
-        result.push({ nodeId: node.id, nodeLabel: node.data?.label ?? node.id, port });
+        result.push({ nodeId: node.id, nodeLabel: nodeCanvasLabel(node), port });
       }
     }
   }
@@ -1032,7 +1047,7 @@ export function findReplyPort(
 ): { nodeLabel: string; port: NodePort } | null {
   const node = workflow.nodes.find((candidate) => candidate.id === reply.node_id);
   const port = node && nodeOutputPorts(node)?.find((candidate) => candidate.id === reply.port);
-  return node && port ? { nodeLabel: node.data?.label ?? node.id, port } : null;
+  return node && port ? { nodeLabel: nodeCanvasLabel(node), port } : null;
 }
 
 /** JSON Schema `type` for an interface entry's lane, when its schema states none. */
@@ -1055,6 +1070,34 @@ const FORM_FIELD_TYPES: readonly string[] = [
   'integer'
 ];
 
+/** The field type an entry renders as: its schema's own type, else its lane's. */
+function formEntryType(entry: WorkflowInterfaceEntry): ConfigProperty['type'] {
+  const fragmentType = (entry.schema as Record<string, unknown> | undefined)?.type;
+  return typeof fragmentType === 'string' && FORM_FIELD_TYPES.includes(fragmentType)
+    ? (fragmentType as ConfigProperty['type'])
+    : formFieldType(entry.dataType);
+}
+
+/**
+ * An array or object entry's value as the server wants it. A form may hold
+ * one as typed text (`[2, 3]`, a field with no item schema renders as a text
+ * box): text that parses to the entry's shape is sent parsed. `undefined`
+ * when it does not parse to that shape; any other value is sent as is.
+ */
+function structuredFormValue(entry: WorkflowInterfaceEntry, value: unknown): unknown {
+  const type = formEntryType(entry);
+  if ((type !== 'array' && type !== 'object') || typeof value !== 'string') return value;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    const isArray = Array.isArray(parsed);
+    const fits =
+      type === 'array' ? isArray : parsed !== null && typeof parsed === 'object' && !isArray;
+    return fits ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * The object schema a form renders for the given entries: one property per
  * entry, keyed by its `id` (the name the server matches inputs on). The
@@ -1066,11 +1109,7 @@ export function interfaceFormSchema(entries: readonly WorkflowInterfaceEntry[]):
   const required: string[] = [];
   for (const entry of entries) {
     const fragment = (entry.schema ?? {}) as Record<string, unknown>;
-    const fragmentType = typeof fragment.type === 'string' ? fragment.type : undefined;
-    const type =
-      fragmentType && FORM_FIELD_TYPES.includes(fragmentType)
-        ? (fragmentType as ConfigProperty['type'])
-        : formFieldType(entry.dataType);
+    const type = formEntryType(entry);
     const property: ConfigProperty = { ...fragment, type, title: entry.name ?? entry.id };
     if (entry.description !== undefined) property.description = entry.description;
     if (entry.defaultValue !== undefined) property.default = entry.defaultValue;
@@ -1085,7 +1124,9 @@ export function interfaceFormSchema(entries: readonly WorkflowInterfaceEntry[]):
 /**
  * The inputs a form turn sends: the values of the given entries, without
  * blank optional values (an empty string or `undefined` is "not given", so
- * the server's default applies). Keys outside the entries are dropped.
+ * the server's default applies). Keys outside the entries are dropped. An
+ * array or object entry typed as JSON text is sent parsed; text that is not
+ * JSON of that shape is left out (see {@link collectInterfaceInputs}).
  */
 export function interfaceFormInputs(
   entries: readonly WorkflowInterfaceEntry[],
@@ -1095,30 +1136,46 @@ export function interfaceFormInputs(
   for (const entry of entries) {
     const value = values[entry.id];
     if (value === undefined || value === '') continue;
-    inputs[entry.id] = value;
+    const sent = structuredFormValue(entry, value);
+    if (sent !== undefined) inputs[entry.id] = sent;
   }
   return inputs;
 }
 
-/** What {@link collectInterfaceInputs} found. */
+/**
+ * What {@link collectInterfaceInputs} found. On failure, `missing` lists the
+ * blank required entries and `invalid` the array or object entries whose
+ * text is not JSON of their shape; either may be empty, not both.
+ */
 export type InterfaceInputsResult =
   | { ok: true; inputs: Record<string, unknown> }
-  | { ok: false; missing: WorkflowInterfaceEntry[] };
+  | { ok: false; missing: WorkflowInterfaceEntry[]; invalid: WorkflowInterfaceEntry[] };
 
 /**
- * The inputs a form turn would send, or the required entries that are still
- * blank. An entry is missing when it is required, has no default for the
- * server to fall back on, and has no value (see {@link interfaceFormInputs}
- * for what counts as blank). Missing inputs are data, not an exception, so
- * a Run control can open the form instead of failing.
+ * The inputs a form turn would send, or the entries that stop it. An entry is
+ * missing when it is required, has no default for the server to fall back on,
+ * and has no value (see {@link interfaceFormInputs} for what counts as
+ * blank); it is invalid when it is an array or object entry holding text that
+ * does not parse to that shape. Both are data, not an exception, so a Run
+ * control can point at the field instead of failing.
  */
 export function collectInterfaceInputs(
   entries: readonly WorkflowInterfaceEntry[],
   values: Record<string, unknown>
 ): InterfaceInputsResult {
   const inputs = interfaceFormInputs(entries, values);
+  const invalid = entries.filter((entry) => {
+    const value = values[entry.id];
+    return value !== undefined && value !== '' && structuredFormValue(entry, value) === undefined;
+  });
   const missing = entries.filter(
-    (entry) => entry.required && entry.defaultValue === undefined && !(entry.id in inputs)
+    (entry) =>
+      entry.required &&
+      entry.defaultValue === undefined &&
+      !(entry.id in inputs) &&
+      !invalid.includes(entry)
   );
-  return missing.length > 0 ? { ok: false, missing } : { ok: true, inputs };
+  return missing.length > 0 || invalid.length > 0
+    ? { ok: false, missing, invalid }
+    : { ok: true, inputs };
 }

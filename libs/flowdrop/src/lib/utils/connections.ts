@@ -2,6 +2,7 @@
  * Connection validation utilities for FlowDrop
  */
 
+import { isTriggerEventInput } from './reservedPorts.js';
 import type {
   NodeMetadata,
   NodePort,
@@ -238,6 +239,14 @@ export function validateConnection(
   // Check for self-connection
   if (sourceNodeId === targetNodeId) {
     return { valid: false, error: 'Cannot connect node to itself' };
+  }
+
+  // A trigger's event comes only from what starts the run (R16).
+  if (isTriggerEventInput(targetNode, targetPortId)) {
+    return {
+      valid: false,
+      error: "A trigger's event input cannot be connected: it is filled when the trigger fires"
+    };
   }
 
   // Get node metadata

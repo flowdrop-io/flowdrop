@@ -167,6 +167,11 @@ export type { DynamicSchemaResult } from '../services/dynamicSchemaService.js';
 // Playground types
 export type {
   PlaygroundSession,
+  SessionRun,
+  SessionRunsResult,
+  SessionThirdPartySettings,
+  VersionDivider,
+  VersionDividerAnchor,
   PlaygroundMessage,
   PlaygroundInputField,
   PlaygroundMessageRequest,
@@ -192,11 +197,26 @@ export type {
 export { isChatInputNode, CHAT_INPUT_PATTERNS } from '../types/playground.js';
 export type { PlaygroundInputMode } from '../utils/workflowInterface.js';
 
+// The per-instance run controller (`fd.runs`) that Test mode builds on. Types
+// only: the class itself ships from `@flowdrop/flowdrop/playground`, so core
+// stays free of the playground services.
+export type { NodeStatusScope } from '../stores/playgroundStore.svelte.js';
+export type { RunController, RunControllerOptions } from '../stores/runController.svelte.js';
+
+// The Edit | Test axis of an editor (`fd.editorMode`, the `editorMode` prop).
+export type { EditorMode, EditorModeStore } from '../stores/editorModeStore.svelte.js';
+
 // Endpoint config types
 export type { EndpointConfig } from '../config/endpoints.js';
 
 // Svelte app types
-export type { FlowDropMountOptions, MountedFlowDropApp, NavbarAction } from '../svelte-app.js';
+export type {
+  FlowDropMountOptions,
+  MountedFlowDropApp,
+  RunCommandOptions,
+  NavbarAction,
+  NavbarBranding
+} from '../svelte-app.js';
 
 // ============================================================================
 // Authentication Providers (no dependencies)
@@ -226,6 +246,7 @@ export {
   updateExecutionComplete,
   updateExecutionFailed,
   resetExecutionInfo,
+  stripExecutionInfo,
   formatExecutionDuration,
   formatLastExecuted
 } from '../utils/nodeStatus.js';
@@ -536,8 +557,19 @@ export { workflowSchema, WORKFLOW_SCHEMA_VERSION } from '../schemas/index.js';
 // Theme System (FlowDrop UI themes — skin + config bundles)
 // ============================================================================
 
-export type { FlowDropTheme, FlowDropThemeName, FlowDropThemeConfig } from '../types/theme.js';
-export { defaultTheme, minimalTheme, resolveTheme } from '../themes/index.js';
+export type {
+  FlowDropTheme,
+  FlowDropThemeName,
+  FlowDropThemeConfig,
+  FlowDropDisplayConfig
+} from '../types/theme.js';
+export {
+  classicTheme,
+  defaultTheme,
+  minimalTheme,
+  normalizeThemeName,
+  resolveTheme
+} from '../themes/index.js';
 
 // Skin primitives — for custom theme authors who need to compose skins
 export type { FlowDropSkin, FlowDropSkinName, FlowDropSkinTokens } from '../types/skin.js';
@@ -547,7 +579,12 @@ export { slateSkin, defaultSkin } from '../skins/index.js';
 // Color Theme System (light/dark preference)
 // ============================================================================
 
-export type { ThemePreference, ResolvedTheme } from '../stores/settingsStore.svelte.js';
+export type {
+  ThemePreference,
+  ResolvedTheme,
+  ColorSchemeOption,
+  HostColorSchemeValue
+} from '../stores/settingsStore.svelte.js';
 export {
   getTheme as theme,
   getResolvedTheme as resolvedTheme,

@@ -1,15 +1,13 @@
 <!--
-  FormSelect Component
-  Dropdown select for single value selection
-  
-  Features:
-  - Custom styled dropdown with chevron icon
-  - Supports both string[] and FieldOption[] for options
-  - Proper ARIA attributes for accessibility
+  @component
+  A dropdown for choosing one value from a list. Options are plain strings or `{ value, label }` pairs.
+
+  **Use it for** a fixed list of choices. The factory picks it for `enum` and for `oneOf` with `const` and `title`.
+  **Not for** several choices at once (use `FormCheckboxGroup`) or choices fetched from a server (use `FormAutocomplete`).
 -->
 
 <script lang="ts">
-  import Select from '../Select.svelte';
+  import Select from '../primitives/Select.svelte';
   import { normalizeOptions, type FieldOption } from './types.js';
 
   interface Props {
