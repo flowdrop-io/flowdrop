@@ -1,16 +1,23 @@
 <!--
-  WebMCPFakeAgent
+  @component
+  A harness for the WebMCP adapter: the editor beside a fake browser agent.
 
-  Storybook harness for the WebMCP adapter. Mounts a full editor, attaches the
-  editor tools to a fake `modelContext`, and shows a side panel that plays the
-  browser agent: pick a tool, type its JSON arguments, invoke it, read the
-  result. The approval dialog appears exactly as it would for a real agent, so
-  the gate and the results are visible to a human without Chrome's origin trial.
+  It mounts the full editor, registers the editor's tools on a fake `modelContext`, and shows a side panel
+  that plays the browser agent: pick a tool, type its JSON arguments, invoke it, read the result. The
+  approval dialog opens exactly as it would for a real agent, so the gate and the results can be seen
+  without a browser that has WebMCP.
+
+  The editor is given an endpoint configuration without the Doctor, so it makes no request to a backend.
+
+  **Use it for** trying the WebMCP tools and the approval gate.
+  **Not for** the editor itself (it is the whole editor in a story) or for testing a real agent.
 -->
 
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import App from '../components/App.svelte';
+  import Button from '../components/primitives/Button.svelte';
+  import { defaultEndpointConfig, type EndpointConfig } from '../config/endpoints.js';
   import { createFlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import { attachWebMCP } from '../webmcp/register.js';
   import { createFakeModelContext } from '../webmcp/fake.js';
@@ -18,12 +25,29 @@
   import type { NodeMetadata, Workflow } from '../types/index.js';
 
   interface Props {
+    /** The node types the editor and the tools know. */
     nodes: NodeMetadata[];
+    /** The workflow open in the editor. */
     workflow: Workflow;
+    /** `confirm` asks before every change; `auto` lets the agent change things at once. @default 'confirm' */
     approval?: WebMCPApproval;
   }
 
   let { nodes, workflow, approval = 'confirm' }: Props = $props();
+
+  // The default endpoints include the Doctor, which would POST a diagnosis to the page's own server
+  // (a 404 that never answers). Without it the editor stays quiet.
+  const endpointConfig: EndpointConfig = {
+    ...defaultEndpointConfig,
+    endpoints: {
+      ...defaultEndpointConfig.endpoints,
+      workflows: {
+        ...defaultEndpointConfig.endpoints.workflows,
+        diagnose: undefined,
+        remedy: undefined
+      }
+    }
+  };
 
   const fd = createFlowDropInstance({ id: 'webmcp-story' });
   // Seed once; later prop changes are the story's business, not the editor's.
@@ -87,7 +111,7 @@
 
 <div class="webmcp-story">
   <div class="webmcp-story__editor">
-    <App instance={fd} {nodes} {workflow} height="100%" />
+    <App instance={fd} {nodes} {workflow} {endpointConfig} height="100%" />
   </div>
 
   <aside class="webmcp-story__agent">
@@ -117,15 +141,17 @@
       ></textarea>
     </label>
 
-    <button
-      type="button"
-      class="webmcp-story__invoke"
-      data-testid="webmcp-invoke"
-      disabled={running || !handle}
-      onclick={invoke}
-    >
-      {running ? 'Waiting…' : 'Invoke'}
-    </button>
+    <div class="webmcp-story__actions">
+      <Button
+        variant="primary"
+        size="md"
+        data-testid="webmcp-invoke"
+        disabled={running || !handle}
+        onclick={invoke}
+      >
+        {running ? 'Waiting…' : 'Invoke'}
+      </Button>
+    </div>
 
     <ol class="webmcp-story__log" data-testid="webmcp-log">
       {#each log as entry, i (log.length - i)}
@@ -143,7 +169,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) 22rem;
     height: 100vh;
-    font-family: system-ui, sans-serif;
+    font-family: var(--fd-font-sans);
   }
   .webmcp-story__editor {
     min-width: 0;
@@ -152,50 +178,39 @@
   .webmcp-story__agent {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    border-left: 1px solid #e4e4e7;
-    background: #fafafa;
+    gap: var(--fd-space-sm);
+    padding: var(--fd-space-lg);
+    border-left: 1px solid var(--fd-border);
+    background: var(--fd-card);
     overflow: auto;
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
   }
   .webmcp-story__title {
     margin: 0;
-    font-size: 0.9375rem;
+    font-size: var(--fd-text-sm);
   }
   .webmcp-story__hint {
     margin: 0;
-    color: #71717a;
+    color: var(--fd-muted-foreground);
   }
   .webmcp-story__label {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: var(--fd-space-2xs);
     font-weight: 600;
   }
   .webmcp-story__select,
   .webmcp-story__args {
     font: inherit;
-    font-family: ui-monospace, monospace;
+    font-family: var(--fd-font-mono);
     font-weight: 400;
-    padding: 0.375rem;
-    border: 1px solid #d4d4d8;
-    border-radius: 0.375rem;
-    background: #fff;
+    padding: var(--fd-space-xs);
+    border: 1px solid var(--fd-border-strong);
+    border-radius: var(--fd-radius-md);
+    background: var(--fd-background);
   }
-  .webmcp-story__invoke {
+  .webmcp-story__actions {
     align-self: flex-start;
-    padding: 0.375rem 0.75rem;
-    border: 1px solid #2563eb;
-    border-radius: 0.375rem;
-    background: #2563eb;
-    color: #fff;
-    font: inherit;
-    cursor: pointer;
-  }
-  .webmcp-story__invoke:disabled {
-    opacity: 0.6;
-    cursor: default;
   }
   .webmcp-story__log {
     margin: 0;
@@ -203,26 +218,26 @@
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--fd-space-sm);
   }
   .webmcp-story__entry {
-    padding: 0.5rem;
-    border: 1px solid #e4e4e7;
-    border-radius: 0.375rem;
-    background: #fff;
+    padding: var(--fd-space-sm);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md);
+    background: var(--fd-background);
   }
   .webmcp-story__entry--error {
-    border-color: #fca5a5;
+    border-color: var(--fd-error);
   }
   .webmcp-story__call {
-    font-family: ui-monospace, monospace;
+    font-family: var(--fd-font-mono);
     font-weight: 600;
-    margin-bottom: 0.25rem;
+    margin-bottom: var(--fd-space-2xs);
     overflow-wrap: anywhere;
   }
   .webmcp-story__result {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: var(--fd-text-xs);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }

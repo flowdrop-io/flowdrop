@@ -19,7 +19,13 @@ import { WORKFLOW_SCHEMA_VERSION } from '$lib/schemas/index.js';
 import type { PortMapping } from '../utils/nodeSwap.js';
 import type { WorkflowInterfaceEntry } from '$lib/types/index.js';
 import { interfaceBoundHandles, rewriteInterfaceBindings } from '../utils/workflowInterface.js';
-import { rewritePlaygroundReplies } from '../utils/playgroundChat.js';
+import {
+  followInterfaceInputEdit,
+  rewritePlaygroundReplies,
+  withoutInterfaceTurns,
+  withoutRepliesOnNodes,
+  type InterfaceInputEdit
+} from '../utils/playgroundChat.js';
 
 type WorkflowMetadata = Workflow['metadata'];
 
@@ -164,6 +170,7 @@ export interface WorkflowStoreActions {
     /** The workflow's Playground settings. Omit to leave them untouched. */
     playground?: Workflow['playground'];
   }) => void;
+  editInterface: (next: Workflow['interface'], edit?: InterfaceInputEdit) => void;
   swapNode: (updates: {
     nodes: WorkflowNode[];
     edges: WorkflowEdge[];
@@ -216,6 +223,9 @@ export class WorkflowStore {
   /** Callback for workflow changes — set by the App component. */
   #onWorkflowChange: ((workflow: Workflow, changeType: WorkflowChangeType) => void) | null = null;
 
+  /** While above 0 the two callbacks above are not called (see {@link muteCallbacks}). */
+  #muted = 0;
+
   /**
    * Whether we're currently restoring from history (undo/redo).
    * When true, prevents pushing to history to avoid recursive loops.
@@ -264,6 +274,7 @@ export class WorkflowStore {
       clear: this.clear.bind(this),
       updateMetadata: this.updateMetadata.bind(this),
       batchUpdate: this.batchUpdate.bind(this),
+      editInterface: this.editInterface.bind(this),
       swapNode: this.swapNode.bind(this),
       pushHistory: this.pushHistory.bind(this)
     });
@@ -447,9 +458,7 @@ export class WorkflowStore {
   markAsSaved(): void {
     const wasDirty = this.#editVersion !== this.#savedVersion;
     this.#savedVersion = this.#editVersion;
-    if (wasDirty && this.#onDirtyStateChange) {
-      this.#onDirtyStateChange(false);
-    }
+    if (wasDirty) this.#emitDirty(false);
   }
 
   /**
@@ -464,6 +473,31 @@ export class WorkflowStore {
       ...this.#workflow,
       ...(state.revision !== undefined && { revision: state.revision }),
       ...(state.can !== undefined && { can: state.can })
+    };
+  }
+
+  /**
+   * Stop calling the dirty-state and workflow-change callbacks until the
+   * returned release is called, e.g. while a change is made and then taken as
+   * the workflow's new clean state, which the host should not hear about.
+   *
+   * On release the host hears only what is still true: the dirty state when it
+   * differs from the one at muting, and one `'metadata'` change when the
+   * workflow is dirty and was replaced meanwhile. Release is idempotent.
+   */
+  muteCallbacks(): () => void {
+    const dirtyBefore = this.isDirty;
+    const workflowBefore = this.#workflow;
+    this.#muted++;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.#muted--;
+      if (this.#muted > 0) return;
+      const dirty = this.isDirty;
+      if (dirty !== dirtyBefore) this.#emitDirty(dirty);
+      if (dirty && this.#workflow !== workflowBefore) this.#notifyWorkflowChange('metadata');
     };
   }
 
@@ -488,10 +522,13 @@ export class WorkflowStore {
     this.#editVersion++;
     // Dirty state just flipped from clean → dirty
     if (this.#editVersion - 1 === this.#savedVersion) {
-      if (this.#onDirtyStateChange) {
-        this.#onDirtyStateChange(true);
-      }
+      this.#emitDirty(true);
     }
+  }
+
+  /** Tell the host the dirty state changed, unless the callbacks are muted. */
+  #emitDirty(isDirty: boolean): void {
+    if (this.#muted === 0) this.#onDirtyStateChange?.(isDirty);
   }
 
   /**
@@ -499,7 +536,7 @@ export class WorkflowStore {
    * Does NOT bump the version — callers that mutate must call #bumpVersion() explicitly.
    */
   #notifyWorkflowChange(changeType: WorkflowChangeType): void {
-    if (this.#workflow && this.#onWorkflowChange) {
+    if (this.#workflow && this.#onWorkflowChange && this.#muted === 0) {
       this.#onWorkflowChange(this.#workflow, changeType);
     }
   }
@@ -526,6 +563,21 @@ export class WorkflowStore {
     }
   }
 
+  /**
+   * The workflow with Playground replies on nodes it lost since the current one
+   * dropped, so every way of removing a node (canvas, console, clear) keeps the
+   * replies pointing at live nodes. Cheap when nothing is stored: node moves
+   * call this on every drag.
+   */
+  #withoutRepliesOnRemovedNodes(next: Workflow): Workflow {
+    const previous = this.#workflow;
+    if (!previous || previous.nodes === next.nodes) return next;
+    if (!next.playground?.chat?.replies?.length) return next;
+    const kept = new Set(next.nodes.map((node) => node.id));
+    const removed = new Set(previous.nodes.map((node) => node.id).filter((id) => !kept.has(id)));
+    return withoutRepliesOnNodes(next, removed);
+  }
+
   // -----------------------------------------------------------------------
   // Mutation actions
   // -----------------------------------------------------------------------
@@ -542,9 +594,7 @@ export class WorkflowStore {
     // Reset version counters — workflow is "clean" after initialization
     this.#editVersion = 0;
     this.#savedVersion = 0;
-    if (this.#onDirtyStateChange) {
-      this.#onDirtyStateChange(false);
-    }
+    this.#emitDirty(false);
     // Initialize history with the loaded workflow
     this.#history.initialize(workflow);
   }
@@ -556,7 +606,7 @@ export class WorkflowStore {
    * for every small change. History is pushed by specific actions or drag handlers.
    */
   updateWorkflow(workflow: Workflow): void {
-    this.#workflow = workflow;
+    this.#workflow = this.#withoutRepliesOnRemovedNodes(workflow);
     this.#bumpVersion();
     this.#notifyWorkflowChange('metadata');
   }
@@ -590,14 +640,14 @@ export class WorkflowStore {
     // Generate unique version identifier
     const versionId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    this.#workflow = {
+    this.#workflow = this.#withoutRepliesOnRemovedNodes({
       ...this.#workflow,
       nodes,
       metadata: buildMetadata(this.#workflow.metadata, {
         versionId,
         updateNumber: (this.#workflow.metadata?.updateNumber ?? 0) + 1
       })
-    };
+    });
     this.#bumpVersion();
     this.#notifyWorkflowChange('node_move');
   }
@@ -659,14 +709,14 @@ export class WorkflowStore {
    */
   removeNode(nodeId: string): void {
     if (!this.#workflow) return;
-    this.#workflow = {
+    this.#workflow = this.#withoutRepliesOnRemovedNodes({
       ...this.#workflow,
       nodes: this.#workflow.nodes.filter((node) => node.id !== nodeId),
       edges: this.#workflow.edges.filter(
         (edge) => edge.source !== nodeId && edge.target !== nodeId
       ),
       metadata: buildMetadata(this.#workflow.metadata)
-    };
+    });
     this.#pushToHistory('Delete node');
     this.#bumpVersion();
     this.#notifyWorkflowChange('node_remove');
@@ -804,9 +854,7 @@ export class WorkflowStore {
     this.#editVersion = 0;
     this.#savedVersion = 0;
     this.#history.clear();
-    if (this.#onDirtyStateChange) {
-      this.#onDirtyStateChange(false);
-    }
+    this.#emitDirty(false);
   }
 
   /** Update workflow metadata. */
@@ -837,7 +885,7 @@ export class WorkflowStore {
     playground?: Workflow['playground'];
   }): void {
     if (!this.#workflow) return;
-    this.#workflow = {
+    const next: Workflow = {
       ...this.#workflow,
       ...(updates.nodes && { nodes: updates.nodes }),
       ...(updates.edges && { edges: updates.edges }),
@@ -854,9 +902,31 @@ export class WorkflowStore {
       ...('playground' in updates && { playground: updates.playground }),
       metadata: buildMetadata(this.#workflow.metadata, updates.metadata ?? undefined)
     };
+    this.#workflow = updates.nodes ? this.#withoutRepliesOnRemovedNodes(next) : next;
     this.#pushToHistory('Batch update');
     this.#bumpVersion();
     this.#notifyWorkflowChange('metadata');
+  }
+
+  /**
+   * Replace the workflow's public contract after an edit: the one path every
+   * interface edit takes (the Interface tab, the canvas tags, the Ports tab),
+   * so each is one undo step and marks the workflow dirty.
+   *
+   * `edit` says an input id was renamed or removed. The chat binding in the
+   * Playground settings names inputs by id, so it follows in the same update
+   * and never names an input the interface no longer has. Settings that bind
+   * nothing any more must not fall back to `turn` marks left on the
+   * interface, which go in the same update.
+   */
+  editInterface(next: Workflow['interface'], edit?: InterfaceInputEdit): void {
+    const playground = this.#workflow?.playground;
+    const followed = edit ? followInterfaceInputEdit(playground, edit) : playground;
+    const cleared = followed !== playground && followed?.chat === null;
+    this.batchUpdate({
+      interface: cleared ? withoutInterfaceTurns(next) : next,
+      ...(followed !== playground && { playground: followed })
+    });
   }
 
   /**

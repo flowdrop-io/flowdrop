@@ -1,15 +1,12 @@
 <!--
-  MessageMarkdown Component
+  @component
+  The text of a message, as formatted Markdown or plain text.
+  The user sees it inside every message in the conversation. It parses the Markdown, cleans the result, and applies one set of text styles so `ChatBubble` and `MessageCard` look the same. With `enableMarkdown` off, or for log rows, it shows plain text.
 
-  Renders message content. Wraps marked + sanitizeHtml and applies the
-  shared markdown typography. Used by ChatBubble (assistant/system/user)
-  and MessageCard so they share one set of typography rules.
+  Parents can adjust the look with `:global(.message-markdown ...)` rules in their own CSS (see the user-bubble rules in `ChatBubble`).
 
-  Consumers scope overrides via :global(.message-markdown ...) from their
-  own component CSS — see ChatBubble's user-bubble rules.
-
-  When `enableMarkdown` is false (or the role is 'log'), the content is
-  rendered as plain text.
+  **Use it for** the body text of any message.
+  **Not for** the message frame, name or tags; use `MessageCard` or `ChatBubble` instead.
 -->
 
 <script lang="ts">
@@ -17,7 +14,9 @@
   import { sanitizeHtml } from '../../utils/sanitize.js';
 
   interface Props {
+    /** The message text to show. */
     content: string;
+    /** Render the text as Markdown; when false, show plain text. Default: true. */
     enableMarkdown?: boolean;
   }
 
@@ -40,12 +39,12 @@
 
 <style>
   .message-markdown {
-    line-height: var(--fd-leading-relaxed);
+    line-height: var(--fd-msg-text-leading, var(--fd-leading-relaxed));
     word-break: break-word;
   }
 
   .message-markdown :global(p) {
-    margin: 0 0 var(--fd-space-md) 0;
+    margin: 0 0 var(--fd-msg-p-gap, var(--fd-space-md)) 0;
   }
 
   .message-markdown :global(p:last-child) {
@@ -73,13 +72,13 @@
   }
 
   .message-markdown :global(h1) {
-    font-size: var(--fd-text-xl);
+    font-size: var(--fd-msg-h1-size, var(--fd-text-xl));
   }
   .message-markdown :global(h2) {
-    font-size: var(--fd-text-lg);
+    font-size: var(--fd-msg-h2-size, var(--fd-text-lg));
   }
   .message-markdown :global(h3) {
-    font-size: var(--fd-text-base);
+    font-size: var(--fd-msg-h3-size, var(--fd-text-base));
   }
 
   .message-markdown :global(ul),
@@ -93,7 +92,7 @@
   }
 
   .message-markdown :global(code) {
-    background-color: var(--fd-secondary);
+    background-color: var(--fd-msg-code-bg, var(--fd-secondary));
     padding: 0.125rem var(--fd-space-3xs);
     border-radius: var(--fd-radius-sm);
     font-family: var(--fd-font-mono);
@@ -101,13 +100,13 @@
   }
 
   .message-markdown :global(pre) {
-    background-color: var(--fd-foreground);
-    color: var(--fd-background);
+    background-color: var(--fd-msg-pre-bg, var(--fd-foreground));
+    color: var(--fd-msg-pre-fg, var(--fd-background));
     padding: var(--fd-space-md) var(--fd-space-xl);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-msg-pre-radius, var(--fd-radius-lg));
     overflow-x: auto;
     margin: var(--fd-space-md) 0;
-    font-size: var(--fd-text-sm);
+    font-size: var(--fd-msg-pre-size, var(--fd-text-sm));
     line-height: var(--fd-leading-normal);
   }
 
@@ -124,7 +123,7 @@
     padding-left: var(--fd-space-xl);
     margin: var(--fd-space-md) 0;
     color: var(--fd-muted-foreground);
-    font-style: italic;
+    font-style: var(--fd-msg-quote-style, italic);
   }
 
   .message-markdown :global(a) {

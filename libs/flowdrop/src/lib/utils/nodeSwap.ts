@@ -458,7 +458,14 @@ export function getVersionUpgrade(
   const available = allNodeTypes.find((n) => n.node_type_id === currentMetadata.node_type_id);
   if (!available) return null;
 
-  if (compareSemver(available.version, currentMetadata.version) > 0) {
+  // Backends may omit the version (FlowDrop for Drupal sends none); without
+  // both there is nothing to compare, so no upgrade is offered.
+  const availableVersion: unknown = available.version;
+  const currentVersion: unknown = currentMetadata.version;
+  if (typeof availableVersion !== 'string' || typeof currentVersion !== 'string') return null;
+  if (availableVersion === '' || currentVersion === '') return null;
+
+  if (compareSemver(availableVersion, currentVersion) > 0) {
     return available;
   }
 

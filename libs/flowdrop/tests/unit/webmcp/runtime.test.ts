@@ -127,6 +127,13 @@ describe('createToolRuntime', () => {
     expect(skipped?.mutating).toBe(false);
     expect(skipped?.asks).toBe(false);
 
+    // The per-node tidy is a layout change too: the same opt-out covers it.
+    const node = runtime.preview('beautify_node', { nodeId: 'a.1' });
+    expect(node?.commands).toEqual([]);
+    expect(node?.skipped.map((c) => c.type)).toEqual(['beautify_node']);
+    // Reading the layout is not a change, so the opt-out leaves it alone.
+    expect(runtime.preview('inspect_node_layout', { nodeId: 'a.1' })?.mutating).toBe(false);
+
     const mixed = runtime.preview('batch', {
       commands: [{ type: 'beautify_layout' }, { type: 'add_node', nodeTypeId: 'text_input' }]
     });

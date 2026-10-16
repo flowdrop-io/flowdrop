@@ -70,3 +70,10 @@ export type {
   ToolRuntime,
   ToolRuntimeOptions
 } from './types.js';
+export { getBridgeController, createBridgeController } from './bridgeController.svelte.js';
+export type {
+  WebMCPBridgeController,
+  BridgeStatus,
+  BridgeTool,
+  BridgeSnapshot
+} from './bridgeController.svelte.js';

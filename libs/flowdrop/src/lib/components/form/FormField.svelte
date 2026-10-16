@@ -1,14 +1,13 @@
 <!--
-  FormField Component (exported as `FormFieldFull` from "@flowdrop/flowdrop/form/full")
+  @component
+  The field factory with every editor built in. Give it a field schema and a value and it draws the right control
+  inside a `FormFieldWrapper`: text, number, switch, select, range, checkboxes, code, markdown or template.
 
-  The field factory with every heavy editor statically bundled, so code,
-  markdown and template fields work without registering anything. All field
-  resolution lives in FieldFactory; this file only hands it the editors. A component
-  registered on the instance's field registry still wins over these.
+  It is exported as `FormFieldFull` from `@flowdrop/flowdrop/form/full`. The editor itself uses the lighter `FormFieldLight`.
+  A component registered on the instance's field registry wins over the built-in ones.
 
-  It used to be a second, parallel factory. The two drifted: the light one lost
-  the built-in autocomplete and readOnly handling, and since the config panel
-  renders the light one, those bugs were the ones users saw.
+  **Use it for** rendering one field from a schema when you want code, markdown and template editors without registering anything.
+  **Not for** a whole form (use `SchemaForm` or `ConfigForm`).
 -->
 
 <script lang="ts">

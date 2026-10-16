@@ -58,6 +58,8 @@ const ALL_COMMAND_TYPES: Record<Command['type'], true> = {
   move_node: true,
   auto_layout: true,
   beautify_layout: true,
+  inspect_node_layout: true,
+  beautify_node: true,
   canvas_fit_view: true,
   canvas_zoom_in: true,
   canvas_zoom_out: true,
@@ -108,6 +110,7 @@ describe('D8 coverage', () => {
       'describe_type',
       'get_config',
       'info',
+      'inspect_node_layout',
       'list_edges',
       'list_nodes',
       'list_types',
@@ -184,6 +187,13 @@ describe('validateToolArgs', () => {
     expect(() => run('auto_layout', { direction: 'diagonal' })).toThrow(
       /direction: expected one of/
     );
+  });
+
+  it('rejects a layout gap off the 20 px grid before anything asks for approval', () => {
+    expect(() => run('beautify_node', { nodeId: 'a.1', gapX: 30 })).toThrow(
+      /gapX: must be a multiple of 20/
+    );
+    expect(() => run('beautify_layout', { gapY: 60 })).not.toThrow();
   });
 
   it('validates nested position objects', () => {
@@ -407,6 +417,32 @@ const PAIRS: Array<{ dsl: string; verb: string; args: Record<string, unknown> }>
   },
   { dsl: 'layout auto --direction vertical', verb: 'auto_layout', args: { direction: 'vertical' } },
   { dsl: 'layout beautify', verb: 'beautify_layout', args: {} },
+  {
+    dsl: 'layout beautify --dry-run --gap-x 160 --gap-y 60',
+    verb: 'beautify_layout',
+    args: { dryRun: true, gapX: 160, gapY: 60 }
+  },
+  {
+    dsl: 'layout node inspect compose.1',
+    verb: 'inspect_node_layout',
+    args: { nodeId: 'compose.1' }
+  },
+  {
+    dsl: 'layout node inspect compose.1 --gap-x 160 --gap-y 60',
+    verb: 'inspect_node_layout',
+    args: { nodeId: 'compose.1', gapX: 160, gapY: 60 }
+  },
+  { dsl: 'layout node beautify compose.1', verb: 'beautify_node', args: { nodeId: 'compose.1' } },
+  {
+    dsl: 'layout node beautify compose.1 clear --gap-y 0',
+    verb: 'beautify_node',
+    args: { nodeId: 'compose.1', strategy: 'clear', gapY: 0 }
+  },
+  {
+    dsl: 'layout node beautify compose.1 ports --dry-run',
+    verb: 'beautify_node',
+    args: { nodeId: 'compose.1', strategy: 'ports', dryRun: true }
+  },
   { dsl: 'select llm_node.1', verb: 'view', args: { action: 'select_node', nodeId: 'llm_node.1' } },
   { dsl: 'config llm_node.1', verb: 'view', args: { action: 'open_config', nodeId: 'llm_node.1' } },
   { dsl: 'canvas fitview', verb: 'view', args: { action: 'fit_view' } },
@@ -453,6 +489,8 @@ describe('describeCommand', () => {
         describe_type: { nodeTypeId: 'a' },
         search_types: { query: 'a' },
         auto_layout: {},
+        inspect_node_layout: { nodeId: 'a.1' },
+        beautify_node: { nodeId: 'a.1', strategy: 'ports', dryRun: true, gapX: 120, gapY: 40 },
         view: { action: 'fit_view' }
       };
       const [cmd] = d.toCommands(validateToolArgs(d.inputSchema, sample[d.verb] ?? {}));

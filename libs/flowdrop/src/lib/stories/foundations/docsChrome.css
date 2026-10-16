@@ -1,0 +1,25 @@
+/*
+ * Colours for the chrome of documentation helpers (token lists, scales, the
+ * key-colour and run-status tables). These are docs, not editor UI: they keep
+ * the docs page's light colours in either scheme, and only their swatches and
+ * values show the scheme picked in the toolbar. Sizes and type still come from
+ * tokens, which do not change between schemes.
+ *
+ * Put `docs-chrome` on a helper's root element and use the `--docs-*` names for
+ * every colour of its own surface. Never use them for a swatch or a sample.
+ */
+.docs-chrome {
+  --docs-bg: #ffffff;
+  --docs-fg: #2e3438;
+  --docs-muted-fg: #5c6870;
+  --docs-subtle: #f6f9fc;
+  --docs-border: hsl(203deg 50% 30% / 15%);
+  --docs-border-muted: hsl(203deg 50% 30% / 8%);
+  --docs-border-strong: hsl(203deg 50% 30% / 30%);
+  --docs-accent: #027ac5;
+  --docs-accent-muted: #e3f3ff;
+  --docs-success: #427c27;
+  --docs-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+
+  color: var(--docs-fg);
+}

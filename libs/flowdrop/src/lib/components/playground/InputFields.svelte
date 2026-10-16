@@ -1,0 +1,242 @@
+<!--
+  @component
+  The form fields for an object schema.
+  The user sees them in the Playground's inputs card and in a form question the flow asks mid-run. A string, number, boolean or enum property gets its native control. An array or object property gets a JSON text box with example chips, because a list editor does not fit a narrow panel. The text stays as typed; whoever sends the values parses it.
+
+  Values are keyed by property name, and every change reports all values.
+
+  **Use it for** the controls inside `InterfaceInputForm` and form interrupts.
+  **Not for** the whole inputs card with its Run button; use `InterfaceInputForm` instead.
+-->
+
+<script lang="ts">
+  import Field from '../primitives/Field.svelte';
+  import Checkbox from '../primitives/Checkbox.svelte';
+  import Select from '../primitives/Select.svelte';
+  import type { SelectOption } from '../../utils/selectOptions.js';
+  import type { ConfigProperty, ConfigSchema } from '../../types/index.js';
+  import { m } from '$lib/messages/index.js';
+
+  interface Props {
+    /** The object schema to render. */
+    schema: ConfigSchema;
+    /** Current values, keyed by property name. */
+    values: Record<string, unknown>;
+    /** Called with the complete values on every change. */
+    onChange: (values: Record<string, unknown>) => void;
+    /** Example values per property name, offered as chips (besides `default`). */
+    examples?: Record<string, unknown[]>;
+    /** Disable every control. */
+    disabled?: boolean;
+  }
+
+  let { schema, values, onChange, examples = {}, disabled = false }: Props = $props();
+
+  const labels = $derived(m().playground.inputForm);
+  const MAX_EXAMPLES = 5;
+
+  const keys = $derived(
+    Object.entries(schema.properties ?? {})
+      .filter(([, property]) => property.format !== 'hidden')
+      .map(([key]) => key)
+  );
+
+  function isJson(property: ConfigProperty): boolean {
+    return property.type === 'array' || property.type === 'object';
+  }
+
+  function isMultiline(property: ConfigProperty): boolean {
+    return (
+      property.type === 'string' &&
+      (property.format === 'multiline' ||
+        (typeof property.maxLength === 'number' && property.maxLength > 200))
+    );
+  }
+
+  /** A value as the text a person would type for this property. */
+  function asText(property: ConfigProperty, value: unknown): string {
+    if (value === undefined || value === null) return '';
+    if (typeof value === 'string') return value;
+    return isJson(property) ? JSON.stringify(value, null, 2) : String(value);
+  }
+
+  /** An example as the compact text its chip shows and fills. */
+  function exampleText(property: ConfigProperty, value: unknown): string {
+    return typeof value === 'string' && !isJson(property) ? value : JSON.stringify(value);
+  }
+
+  function exampleTexts(key: string, property: ConfigProperty): string[] {
+    if (property.enum || property.type === 'boolean') return [];
+    const fromSchema = Array.isArray(property.examples) ? (property.examples as unknown[]) : [];
+    const candidates = [...(examples[key] ?? fromSchema), property.default];
+    const texts = candidates
+      .filter((value) => value !== undefined && value !== null && value !== '')
+      .map((value) => exampleText(property, value));
+    return [...new Set(texts)].slice(0, MAX_EXAMPLES);
+  }
+
+  /** The hint inside an empty control: the default, else a JSON cue. */
+  function placeholder(property: ConfigProperty): string | undefined {
+    if (property.default !== undefined) return asText(property, property.default);
+    return undefined;
+  }
+
+  function set(key: string, value: unknown): void {
+    const next = { ...values };
+    if (value === undefined) delete next[key];
+    else next[key] = value;
+    onChange(next);
+  }
+
+  function setNumber(key: string, event: Event): void {
+    const input = event.currentTarget as HTMLInputElement;
+    set(
+      key,
+      input.value === '' || Number.isNaN(input.valueAsNumber) ? undefined : input.valueAsNumber
+    );
+  }
+
+  function enumIndex(property: ConfigProperty, value: unknown): number {
+    return (property.enum ?? []).findIndex((option) => option === value);
+  }
+
+  /** The enum as select options, valued by index (enum members need not be strings); '-1' is "unset". */
+  function enumOptions(property: ConfigProperty): SelectOption[] {
+    return [
+      { value: '-1', label: '—' },
+      ...(property.enum ?? []).map((option, index) => ({
+        value: String(index),
+        label: String(option)
+      }))
+    ];
+  }
+
+  function setEnum(key: string, property: ConfigProperty, chosen: string): void {
+    const index = Number(chosen);
+    set(key, Number.isNaN(index) || index < 0 ? undefined : property.enum?.[index]);
+  }
+</script>
+
+<div class="input-fields">
+  {#each keys as key (key)}
+    {@const property = schema.properties[key]}
+    {@const chips = exampleTexts(key, property)}
+    <Field
+      label={property.title ?? key}
+      typeTag={property.type === 'string' ? undefined : property.enum ? undefined : property.type}
+      help={property.description}
+      required={schema.required?.includes(key)}
+      examples={chips}
+      onexample={(text) =>
+        set(key, isJson(property) || property.type === 'string' ? text : JSON.parse(text))}
+    >
+      {#snippet children(ctx)}
+        {#if property.enum && !property.multiple}
+          <Select
+            id={ctx.id}
+            aria-describedby={ctx.describedBy}
+            {disabled}
+            options={enumOptions(property)}
+            value={String(enumIndex(property, values[key]))}
+            onValueChange={(index) => setEnum(key, property, index)}
+          />
+        {:else if property.type === 'boolean'}
+          <Checkbox
+            id={ctx.id}
+            aria-describedby={ctx.describedBy}
+            {disabled}
+            checked={values[key] === true ||
+              (values[key] === undefined && property.default === true)}
+            onchange={(on) => set(key, on)}
+          />
+        {:else if property.type === 'number' || property.type === 'integer'}
+          <input
+            id={ctx.id}
+            class="input-fields__control"
+            type="number"
+            step={property.type === 'integer' ? 1 : 'any'}
+            min={property.minimum}
+            max={property.maximum}
+            placeholder={placeholder(property)}
+            aria-describedby={ctx.describedBy}
+            {disabled}
+            value={asText(property, values[key])}
+            oninput={(event) => setNumber(key, event)}
+          />
+        {:else if isJson(property) || isMultiline(property)}
+          <textarea
+            id={ctx.id}
+            class="input-fields__control input-fields__control--text"
+            class:input-fields__control--json={isJson(property)}
+            rows={isJson(property) ? 3 : 2}
+            spellcheck="false"
+            placeholder={placeholder(property) ?? (isJson(property) ? labels.jsonHint : undefined)}
+            aria-describedby={ctx.describedBy}
+            {disabled}
+            value={asText(property, values[key])}
+            oninput={(event) => set(key, (event.currentTarget as HTMLTextAreaElement).value)}
+          ></textarea>
+        {:else}
+          <input
+            id={ctx.id}
+            class="input-fields__control"
+            type="text"
+            placeholder={placeholder(property)}
+            aria-describedby={ctx.describedBy}
+            {disabled}
+            value={asText(property, values[key])}
+            oninput={(event) => set(key, (event.currentTarget as HTMLInputElement).value)}
+          />
+        {/if}
+      {/snippet}
+    </Field>
+  {/each}
+</div>
+
+<style>
+  .input-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fd-space-md);
+    min-width: 0;
+  }
+
+  .input-fields__control {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--fd-field-control-height, var(--fd-control-md));
+    padding: 0 var(--fd-space-sm);
+    border: 1px solid var(--fd-field-control-border, var(--fd-border));
+    border-radius: var(--fd-field-control-radius, var(--fd-radius-md));
+    background-color: var(--fd-background);
+    color: var(--fd-foreground);
+    font: inherit;
+    font-size: var(--fd-text-sm);
+  }
+
+  .input-fields__control:focus-visible {
+    border-color: var(--fd-field-focus-border, var(--fd-ring));
+    box-shadow: var(--fd-field-focus-ring, none);
+  }
+
+  .input-fields__control--text {
+    padding: var(--fd-space-xs) var(--fd-space-sm);
+    resize: vertical;
+    min-height: var(--fd-field-textarea-min, 0);
+    line-height: 1.5;
+  }
+
+  .input-fields__control--json {
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+  }
+
+  .input-fields__control::placeholder {
+    color: var(--fd-muted-foreground);
+  }
+
+  .input-fields__control:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+</style>

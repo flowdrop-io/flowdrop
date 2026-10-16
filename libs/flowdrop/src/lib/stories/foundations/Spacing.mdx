@@ -1,0 +1,28 @@
+import { Meta, Story } from '@storybook/addon-docs/blocks';
+import * as Spacing from './Spacing.stories.svelte';
+
+<Meta of={Spacing} />
+
+# Spacing and sizes
+
+Everything sits on a **4px grid**. Pick the nearest step; never invent a value in between.
+
+## Spacing
+
+<Story of={Spacing.SpacingScale} />
+
+Some names share a value because the scale was tightened onto the grid: `--fd-space-2xs` equals
+`--fd-space-3xs`, `--fd-space-sm` equals `--fd-space-xs`, and `--fd-space-lg` equals
+`--fd-space-md`. They still work, but use the names shown above in new code.
+
+## Control heights
+
+Buttons, inputs, selects and segmented switches come in three heights. The editor mostly uses
+**sm**: its panels are dense. Every panel header is the same height, so panels line up side by
+side.
+
+<Story of={Spacing.ControlHeights} />
+
+## All spacing and size tokens
+
+<Story of={Spacing.AllSpacingTokens} />

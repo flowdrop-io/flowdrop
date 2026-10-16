@@ -26,6 +26,8 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import SettingsPanel from './SettingsPanel.svelte';
+  import PanelHeader from './primitives/PanelHeader.svelte';
+  import IconButton from './primitives/IconButton.svelte';
   import type { SettingsCategory } from '$lib/types/settings.js';
   import { m } from '$lib/messages/index.js';
 
@@ -134,20 +136,17 @@
 >
   <div class="flowdrop-settings-modal__container">
     <!-- Header -->
-    <div class="flowdrop-settings-modal__header">
-      <h2 id={titleId} class="flowdrop-settings-modal__title">
-        <Icon icon="mdi:cog" class="flowdrop-settings-modal__title-icon" />
-        {m().navigation.settingsTitle}
-      </h2>
-      <button
-        class="flowdrop-settings-modal__close"
-        onclick={closeModal}
-        aria-label={m().navigation.closeSettings}
-        title={m().common.close}
-      >
-        <Icon icon="mdi:close" />
-      </button>
-    </div>
+    <PanelHeader title={m().navigation.settingsTitle} {titleId}>
+      {#snippet actions()}
+        <IconButton
+          ariaLabel={m().navigation.closeSettings}
+          title={m().common.close}
+          onclick={closeModal}
+        >
+          <Icon icon="mdi:close" />
+        </IconButton>
+      {/snippet}
+    </PanelHeader>
 
     <!-- Content -->
     <div class="flowdrop-settings-modal__content">
@@ -193,11 +192,10 @@
     flex-direction: column;
     width: 90vw;
     max-width: 640px;
-    height: 80vh;
-    max-height: 700px;
+    max-height: min(80vh, 700px);
     background-color: var(--fd-background);
     border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-lg);
+    border-radius: var(--fd-modal-radius);
     box-shadow: var(--fd-shadow-lg, 0 25px 50px -12px rgba(0, 0, 0, 0.25));
     overflow: hidden;
     animation: flowdrop-modal-enter 0.2s ease-out;
@@ -214,57 +212,27 @@
     }
   }
 
-  /* Header */
-  .flowdrop-settings-modal__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--fd-space-xl);
-    border-bottom: 1px solid var(--fd-border);
-    flex-shrink: 0;
+  .flowdrop-settings-modal__container :global(.flowdrop-ui-panel-header) {
+    height: var(--fd-modal-header-height);
   }
 
-  .flowdrop-settings-modal__title {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    margin: 0;
-    font-size: var(--fd-text-lg);
-    font-weight: 600;
-    color: var(--fd-foreground);
-  }
-
-  :global(.flowdrop-settings-modal__title-icon) {
-    font-size: var(--fd-text-xl);
-    color: var(--fd-muted-foreground);
-  }
-
-  .flowdrop-settings-modal__close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: var(--fd-radius-md);
-    background-color: transparent;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-lg);
-    cursor: pointer;
-    transition: all var(--fd-transition-fast);
-  }
-
-  .flowdrop-settings-modal__close:hover {
-    background-color: var(--fd-muted);
-    color: var(--fd-foreground);
+  .flowdrop-settings-modal__container :global(.flowdrop-ui-panel-header__title) {
+    font-size: var(--fd-modal-title-size);
   }
 
   /* Content */
   .flowdrop-settings-modal__content {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+
+  .flowdrop-settings-modal__content :global(.flowdrop-settings-panel) {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
   }
 
   /* Responsive adjustments */

@@ -157,7 +157,7 @@
             </div>
           </div>
 
-          <!-- Card style: icon + name + desc rows (shown in default skin) -->
+          <!-- Card style: icon + name + desc rows (shown in the Classic theme) -->
           <div class="swap-picker__card-section">
             <div class="swap-picker__category-header">
               <span

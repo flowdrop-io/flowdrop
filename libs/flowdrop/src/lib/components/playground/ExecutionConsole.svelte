@@ -1,29 +1,48 @@
 <!--
-  ExecutionConsole Component
+  @component
+  The running workflow's own output surface.
+  The user sees it in the Playground above the input area. It lists the messages the flow sends during a run and shows any question the flow asks (an interrupt) right in the feed. It is not a chat box: what the user types goes through `ControlPanel`.
 
-  The running workflow's runtime surface. Renders the message feed via
-  MessageStream and surfaces the flow's own UI (interrupts) inline during
-  execution. This is *not* a chat — it's the console where the flow speaks
-  to the user during a run. User-initiated commands live in ControlPanel.
+  **Use it for** reading what a run says and answering its questions.
+  **Not for** typing messages or starting runs; use `ControlPanel` instead.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import MessageStream from './MessageStream.svelte';
+  import Button from '../primitives/Button.svelte';
+  import Notice from '../primitives/Notice.svelte';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
+    /** Show a time on each message. Default: true. */
     showTimestamps?: boolean;
+    /** Keep the feed scrolled to the newest message. Default: true. */
     autoScroll?: boolean;
+    /** Render message text as Markdown. Default: true. */
     enableMarkdown?: boolean;
     /** Whether log messages can appear when the user toggle is on. Defaults to true for the execution console. */
     allowLogs?: boolean;
+    /** Show system messages in a smaller, quieter style. Default: true. */
     compactSystemMessages?: boolean;
+    /** Called after the user answers a question the flow asked mid-run. */
     onInterruptResolved?: () => void;
     /** Optional callback that, when provided, shows a "New session" CTA in the welcome state */
     onCreateSession?: () => void;
     /** Called when the user scrolls near the top to load older messages */
     onLoadOlder?: () => void | Promise<void>;
+    /**
+     * The first send creates the session, so "no session yet" is the ready
+     * state, not a prompt to create one.
+     */
+    sessionOptional?: boolean;
+    /**
+     * One line shown in the empty conversation (the chat cannot reply yet) and
+     * gone once any message exists. Absent renders nothing.
+     */
+    notice?: string;
+    /** Adds a "Playground settings" action to the notice. */
+    onOpenSettings?: () => void;
   }
 
   let {
@@ -34,18 +53,17 @@
     compactSystemMessages = true,
     onInterruptResolved,
     onCreateSession,
-    onLoadOlder
+    onLoadOlder,
+    sessionOptional = false,
+    notice,
+    onOpenSettings
   }: Props = $props();
 
   const ec = $derived(m().playground.executionConsole);
+  const settingsLabel = $derived(m().playground.header.playgroundSettings);
 </script>
 
 <section class="execution-console">
-  <header class="execution-console__header">
-    <Icon icon="mdi:console-line" class="execution-console__icon" />
-    <span class="execution-console__title">{ec.header}</span>
-  </header>
-
   <MessageStream
     {showTimestamps}
     {autoScroll}
@@ -54,8 +72,8 @@
     {compactSystemMessages}
     {onInterruptResolved}
     {onLoadOlder}
-    welcome={welcomeState}
-    emptySession={readyState}
+    welcome={sessionOptional ? (notice ? noticeState : undefined) : welcomeState}
+    emptySession={notice ? noticeState : undefined}
   />
 </section>
 
@@ -64,6 +82,9 @@
     <Icon icon="mdi:play-circle-outline" class="execution-console__placeholder-icon" />
     <h2 class="execution-console__placeholder-title">{ec.noExecutionTitle}</h2>
     <p class="execution-console__placeholder-text">{ec.noExecutionText}</p>
+    {#if notice}
+      {@render noticeBlock()}
+    {/if}
     {#if onCreateSession}
       <button type="button" class="execution-console__cta" onclick={onCreateSession}>
         <Icon icon="mdi:plus" />
@@ -73,15 +94,40 @@
   </div>
 {/snippet}
 
-{#snippet readyState()}
-  <div class="execution-console__placeholder">
-    <Icon icon="mdi:play-circle-outline" class="execution-console__placeholder-icon" />
-    <h2 class="execution-console__placeholder-title">{ec.readyTitle}</h2>
-    <p class="execution-console__placeholder-text">{ec.readyText}</p>
+{#snippet noticeBlock()}
+  <div class="execution-console__notice" data-testid="playground-notice">
+    <Notice tone="info" role="note">
+      {notice}
+      {#snippet actions()}
+        {#if onOpenSettings}
+          <Button size="sm" onclick={onOpenSettings}>{settingsLabel}</Button>
+        {/if}
+      {/snippet}
+    </Notice>
+  </div>
+{/snippet}
+
+{#snippet noticeState()}
+  <div class="execution-console__empty">
+    {@render noticeBlock()}
   </div>
 {/snippet}
 
 <style>
+  .execution-console__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: var(--fd-space-md);
+  }
+
+  .execution-console__notice {
+    max-width: 420px;
+    margin-top: var(--fd-space-xl);
+    text-align: left;
+  }
+
   .execution-console {
     flex: 1;
     min-height: 0;
@@ -89,29 +135,6 @@
     flex-direction: column;
     overflow: hidden;
     background-color: var(--fd-background);
-  }
-
-  .execution-console__header {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    padding: 0 var(--fd-space-xl);
-    height: var(--fd-playground-header-height);
-    min-height: var(--fd-playground-header-height);
-    border-bottom: 1px solid var(--fd-border);
-    flex-shrink: 0;
-  }
-
-  :global(.execution-console__icon) {
-    font-size: var(--fd-text-base);
-    color: var(--fd-muted-foreground);
-    flex-shrink: 0;
-  }
-
-  .execution-console__title {
-    font-size: var(--fd-text-sm);
-    font-weight: 600;
-    color: var(--fd-foreground);
   }
 
   .execution-console__placeholder {

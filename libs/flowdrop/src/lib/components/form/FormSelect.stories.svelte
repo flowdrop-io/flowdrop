@@ -1,50 +1,59 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import FormSelect from './FormSelect.svelte';
   import { fn } from 'storybook/test';
+  import FormSelect from './FormSelect.svelte';
+  import FieldInEditor from '../../stories/FieldInEditor.svelte';
+  import { fieldSchemas } from '../../stories/formFixtures.js';
 
   const { Story } = defineMeta({
-    title: 'Form/FormSelect',
+    title: 'Editor/Forms/Select',
     component: FormSelect,
     tags: ['autodocs'],
-    argTypes: {
-      value: { control: 'text' },
-      required: { control: 'boolean' },
-      disabled: { control: 'boolean' }
-    },
-    args: {
-      id: 'demo-select',
-      value: '',
-      onChange: fn()
-    }
+    parameters: { layout: 'padded' },
+    args: { id: 'model', value: 'gpt-4o', onChange: fn() }
   });
 </script>
 
 <Story
-  name="String Options"
-  args={{
-    options: ['Option A', 'Option B', 'Option C'],
-    value: 'Option A'
+  name="In the editor"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A field with `oneOf` (a value and a title for each choice). The person sees the titles and the node stores the values.'
+      }
+    }
   }}
-/>
+>
+  <FieldInEditor schema={fieldSchemas.select} value="gpt-4o" />
+</Story>
 
 <Story
-  name="FieldOption Objects"
-  args={{
-    options: [
-      { value: 'gpt-4', label: 'GPT-4' },
-      { value: 'gpt-3.5', label: 'GPT-3.5 Turbo' },
-      { value: 'claude-3', label: 'Claude 3 Opus' }
-    ],
-    value: 'gpt-4'
+  name="Plain values"
+  asChild
+  parameters={{
+    docs: { description: { story: 'A field with `enum`: the values are also the labels.' } }
   }}
-/>
+>
+  <FieldInEditor
+    schema={{ type: 'string', title: 'Method', enum: ['GET', 'POST', 'PUT', 'DELETE'] }}
+    value="GET"
+  />
+</Story>
+
+<Story name="Read only" asChild>
+  <FieldInEditor schema={{ ...fieldSchemas.select, readOnly: true }} value="claude-sonnet" />
+</Story>
 
 <Story
-  name="Disabled"
-  args={{
-    options: ['Read', 'Write', 'Admin'],
-    value: 'Read',
-    disabled: true
+  name="Bare select"
+  args={{ options: ['Option A', 'Option B', 'Option C'], value: 'Option A' }}
+  parameters={{
+    docs: {
+      description: {
+        story: 'The dropdown alone. Options can be strings or `{ value, label }` pairs.'
+      }
+    }
   }}
 />

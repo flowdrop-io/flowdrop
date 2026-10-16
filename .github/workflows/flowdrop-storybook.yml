@@ -1,0 +1,62 @@
+name: Storybook
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'libs/flowdrop/src/**'
+      - 'libs/flowdrop/.storybook/**'
+      - 'libs/flowdrop/package.json'
+      - 'libs/flowdrop/vite.config.ts'
+      - '.github/workflows/flowdrop-storybook.yml'
+  pull_request:
+    paths:
+      - 'libs/flowdrop/src/**'
+      - 'libs/flowdrop/.storybook/**'
+      - 'libs/flowdrop/package.json'
+      - 'libs/flowdrop/vite.config.ts'
+      - '.github/workflows/flowdrop-storybook.yml'
+
+jobs:
+  storybook:
+    name: Stories pass as tests, Storybook builds
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: libs/flowdrop
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: libs/flowdrop/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run stories as tests
+        run: pnpm run test:stories
+
+      - name: Build Storybook
+        run: pnpm run storybook:build
+
+      # No deploy step: where the build is hosted is decided separately.
+      - name: Upload Storybook build
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: libs/flowdrop/storybook-static
+          retention-days: 14

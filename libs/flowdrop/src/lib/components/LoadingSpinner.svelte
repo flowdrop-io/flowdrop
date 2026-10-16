@@ -1,12 +1,18 @@
 <!--
-  Loading Spinner Component
-  Reusable loading indicator with customizable size and text
+  @component
+  LoadingSpinner: a spinner with a short text under it.
+
+  **Use it for** a block of the page that is still loading, such as the node sidebar.
+  **Not for** a button that is busy; use `Button` with `loading`.
 -->
 
 <script lang="ts">
   interface Props {
+    /** Spinner size. */
     size?: 'xs' | 'sm' | 'md' | 'lg';
+    /** Text under the spinner. Defaults to "Loading...". */
     text?: string;
+    /** Set to false to show the spinner alone. */
     showText?: boolean;
   }
 

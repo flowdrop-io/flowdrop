@@ -47,6 +47,20 @@ export interface EndpointConfig {
        * `/run` command is not offered.
        */
       run?: string;
+      /**
+       * Diagnose the editor's draft (`POST`, body = the workflow as the editor
+       * would save it, `{id}` = the saved workflow's id). Answers
+       * `{ success, data: { problems } }`. The Problems indicator in the
+       * navbar, the node badges and the remedies exist only while this and
+       * `remedy` are set; a backend without a Doctor omits them.
+       */
+      diagnose?: string;
+      /**
+       * Build the fix for one problem (`POST`, body `{ draft, code, target,
+       * remedy, params? }`). Answers `{ success, data: { operations } }`, which
+       * the editor applies as one undoable edit. Needs `diagnose`.
+       */
+      remedy?: string;
     };
 
     // Execution endpoints
@@ -69,6 +83,18 @@ export interface EndpointConfig {
       logs: string;
       execute: string;
       stop: string;
+      /**
+       * Re-run a finished pipeline (`POST`, answers
+       * `{ success, data: { pipeline_id, status } }`). The Runs list in Test
+       * mode offers Re-run only when this is set.
+       */
+      rerun?: string;
+      /**
+       * Cancel a pipeline that has not finished (`POST`, no body). The Runs
+       * list offers Cancel only when this or `signals` is set; this key wins
+       * when both are.
+       */
+      cancel?: string;
     };
 
     /**
@@ -138,6 +164,14 @@ export interface EndpointConfig {
       stop: string;
       /** Reset a stuck session to idle (`POST`). Optional, as `playground.resetSession`. */
       reset?: string;
+      /**
+       * The runs a session started, each stamped with the workflow version it
+       * ran (`GET`, `limit` query parameter). Optional: a server without it
+       * answers 404 and the editor shows no version dividers. When the group
+       * is configured and this key is left out, the editor still tries
+       * {@link sessionsEndpoints}'s path and stops after the first 404.
+       */
+      runs?: string;
     };
 
     /**
@@ -295,7 +329,9 @@ export const defaultEndpointConfig: EndpointConfig = {
       export: '/workflows/{id}/export',
       import: '/workflows/import',
       // Singular `workflow` here is the reference backend's spelling, not a typo.
-      run: '/workflow/{workflowId}/run'
+      run: '/workflow/{workflowId}/run',
+      diagnose: '/workflow/{id}/diagnose',
+      remedy: '/workflow/{id}/remedy'
     },
     executions: {
       execute: '/workflows/{id}/execute',
@@ -313,7 +349,9 @@ export const defaultEndpointConfig: EndpointConfig = {
       status: '/pipeline/{id}/status',
       logs: '/pipeline/{id}/logs',
       execute: '/pipeline/{id}/execute',
-      stop: '/pipeline/{id}/stop'
+      stop: '/pipeline/{id}/stop',
+      rerun: '/pipeline/{id}/rerun',
+      cancel: '/pipeline/{id}/cancel'
     },
     playground: {
       listSessions: '/workflows/{id}/playground/sessions',
@@ -383,11 +421,15 @@ export const sessionsEndpoints: NonNullable<EndpointConfig['endpoints']['session
   messages: '/sessions/{sessionId}/messages',
   turn: '/sessions/{sessionId}/turn',
   stop: '/sessions/{sessionId}/stop',
-  reset: '/sessions/{sessionId}/reset'
+  reset: '/sessions/{sessionId}/reset',
+  runs: '/sessions/{sessionId}/runs'
 };
 
 /** One per-session call, named as the `sessions` group names it. */
-export type SessionEndpointKey = keyof NonNullable<EndpointConfig['endpoints']['sessions']>;
+export type SessionEndpointKey = Exclude<
+  keyof NonNullable<EndpointConfig['endpoints']['sessions']>,
+  'runs'
+>;
 
 /** Which `playground` key served each per-session call before the `sessions` group. */
 const LEGACY_SESSION_ENDPOINT_KEYS = {
@@ -424,6 +466,19 @@ export function resolveSessionEndpoint(
   }
   const path = config.endpoints.playground?.[LEGACY_SESSION_ENDPOINT_KEYS[key]];
   return path ? { path, group: 'playground' } : undefined;
+}
+
+/**
+ * The path of a session's runs, or `undefined` when the backend has no
+ * `sessions` group (servers that predate the session surface have no runs
+ * endpoint either). Unlike the other per-session calls there is no legacy
+ * `playground` key, and a `sessions` group without a `runs` key falls back to
+ * the reference path: the call is optional and a 404 switches it off.
+ */
+export function resolveSessionRunsEndpoint(config: EndpointConfig): string | undefined {
+  const sessions = config.endpoints.sessions;
+  if (!sessions) return undefined;
+  return sessions.runs ?? sessionsEndpoints.runs;
 }
 
 /**

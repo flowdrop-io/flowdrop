@@ -68,6 +68,31 @@ function makeWorkflow(nodes: WorkflowNode[], workflowInterface?: Workflow['inter
 const checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG);
 
 describe('WorkflowInterfaceEditor', () => {
+  it("lists each trigger's derived event:<node-id> input read-only (MAN-26)", () => {
+    const trigger = makeNode(
+      'on_update',
+      [makePort('event', 'json')],
+      [makePort('data', 'json', { type: 'output' })]
+    );
+    const workflow = makeWorkflow([trigger, makeNode('node-1', [makePort('in-1')], [])]);
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).toContain('data-testid="interface-reserved-inputs"');
+    expect(body).toContain('event:on_update');
+    expect(workflow.interface).toBeUndefined();
+  });
+
+  it('shows no reserved inputs for a workflow without triggers', () => {
+    const workflow = makeWorkflow([makeNode('node-1', [makePort('in-1')], [])]);
+    const body = render(WorkflowInterfaceEditor, {
+      props: { workflow, onChange: () => {} }
+    }).body;
+
+    expect(body).not.toContain('interface-reserved-inputs');
+  });
+
   it('renders an empty side as just its insertion slot — the add action, no placeholder text', () => {
     const workflow = makeWorkflow([makeNode('node-1', [makePort('in-1')], [])]);
     const body = render(WorkflowInterfaceEditor, {
@@ -248,7 +273,7 @@ describe('WorkflowInterfaceEditor', () => {
     expect(body.split('Add example').length - 1).toBe(1);
   });
 
-  it('keeps identity + binding primary and tucks the rest behind a More options disclosure', () => {
+  it('keeps identity + binding on the row and tucks the rest into the hidden More options block', () => {
     const port = makePort('in-a', 'string', { type: 'input' });
     const node = makeNode('node-1', [port], []);
     const workflow = makeWorkflow([node], {
@@ -260,9 +285,9 @@ describe('WorkflowInterfaceEditor', () => {
       props: { workflow, onChange: () => {} }
     }).body;
 
-    expect(body).toContain('More options');
-    // The secondary fields live inside the disclosure, after its summary.
-    const summaryAt = body.indexOf('More options');
+    // The row is closed at rest: the secondary fields sit in a hidden block after it.
+    expect(body).toMatch(/class="wf-interface__more[^"]*"[^>]*hidden/);
+    const summaryAt = body.indexOf('wf-interface__more');
     expect(body.indexOf('Data type')).toBeGreaterThan(summaryAt);
     expect(body.indexOf('Description')).toBeGreaterThan(summaryAt);
     // A resolved binding offers the pull-from-port affordance, inside the disclosure.
@@ -294,7 +319,7 @@ describe('WorkflowInterfaceEditor', () => {
       props: { workflow, onChange: () => {} }
     }).body;
 
-    expect(body).toMatch(/<details[^>]*class="wf-interface__more[^"]*"[^>]*open/);
+    expect(body).toMatch(/<div class="wf-interface__more[^"]*"(?![^>]*hidden)/);
   });
 
   it('offers the configured data-type vocabulary as select options', () => {

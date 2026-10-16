@@ -9,6 +9,7 @@
 
 import type { NodeMetadata, Workflow, WorkflowNode, WorkflowEdge } from '../types/index.js';
 import type { PortMapping } from '../utils/nodeSwap.js';
+import type { MeasuredCard } from '../layout/fromWorkflow.js';
 
 // ============================================================================
 // Command Types (Discriminated Union)
@@ -122,6 +123,8 @@ export interface HelpCommand {
 
 export interface ClearCommand {
   type: 'clear';
+  /** Also remove the interface and the Playground chat settings. */
+  all?: boolean;
 }
 
 /** Phase 2 commands */
@@ -145,6 +148,37 @@ export interface AutoLayoutCommand {
 
 export interface BeautifyLayoutCommand {
   type: 'beautify_layout';
+  /** Report the steps and the score without applying them. */
+  dryRun?: boolean;
+  /** Gap between cards side by side, px. Default: the editor setting. */
+  gapX?: number;
+  /** Gap between stacked cards, px. Default: the editor setting. */
+  gapY?: number;
+}
+
+export interface InspectNodeLayoutCommand {
+  type: 'inspect_node_layout';
+  nodeId: string;
+  /** Gap between cards side by side, px. Default: the editor setting. */
+  gapX?: number;
+  /** Gap between stacked cards, px. Default: the editor setting. */
+  gapY?: number;
+}
+
+/** What `beautify_node` may run; `all` is column, ports, align, clear in turn. */
+export type BeautifyNodeStrategy = 'column' | 'ports' | 'align' | 'clear' | 'all';
+
+export interface BeautifyNodeCommand {
+  type: 'beautify_node';
+  nodeId: string;
+  /** Default `all`. */
+  strategy?: BeautifyNodeStrategy;
+  /** Report the proposal and its score without applying it. */
+  dryRun?: boolean;
+  /** Gap between cards side by side, px. Default: the editor setting. */
+  gapX?: number;
+  /** Gap between stacked cards, px. Default: the editor setting. */
+  gapY?: number;
 }
 
 /** Canvas viewport commands */
@@ -201,6 +235,8 @@ export type Command =
   | MoveNodeCommand
   | AutoLayoutCommand
   | BeautifyLayoutCommand
+  | InspectNodeLayoutCommand
+  | BeautifyNodeCommand
   | CanvasFitViewCommand
   | CanvasZoomInCommand
   | CanvasZoomOutCommand
@@ -228,14 +264,26 @@ export type CommandErrorCode =
   | 'INVALID_CONNECTION'
   | 'CYCLE_DETECTED'
   | 'NO_WORKFLOW'
+  /** `runCommand({ baseline: true })` on a workflow with unsaved changes: nothing was run. */
+  | 'DIRTY'
   | 'PARSE_ERROR'
+  /** An argument is out of range, e.g. a layout gap that is not a multiple of the grid. */
+  | 'INVALID_ARGUMENT'
+  /** The graph is past what the command takes on, e.g. too many nodes to tidy at once. */
+  | 'TOO_LARGE'
   | 'UNKNOWN_COMMAND'
+  /** The command threw instead of returning a result (a bug, not bad input): see the console. */
+  | 'INTERNAL_ERROR'
   | 'CONFIG_KEY_NOT_FOUND'
   /** search_types with a blank query — use list_types for the whole catalog. */
   | 'EMPTY_QUERY'
   | 'CONFIG_VALIDATION_ERROR'
   | 'UNDO_UNAVAILABLE'
-  | 'REDO_UNAVAILABLE';
+  | 'REDO_UNAVAILABLE'
+  /** A Console `session` command refused: busy, wrong input mode, nothing to act on. */
+  | 'SESSION_REFUSED'
+  /** A Console `session` command reached the backend and it failed. */
+  | 'SESSION_FAILED';
 
 // ============================================================================
 // Command Result Types
@@ -372,6 +420,26 @@ export interface HelpResultData {
   }>;
 }
 
+/** The layout score as counts: what a UI says about a tidy. */
+export interface LayoutCounts {
+  straight: number;
+  backward: number;
+  crossings: number;
+  overlaps: number;
+  /** Pairs of cards too close. */
+  spacing: number;
+  /** Wires running through a port that is not one of their ends. */
+  passes: number;
+}
+
+/** Result data for `beautify_layout` and `beautify_node` (dry runs too). */
+export interface LayoutResultData {
+  /** True when the command changed the workflow, or (dry run) would. */
+  changed: boolean;
+  before: LayoutCounts;
+  after: LayoutCounts;
+}
+
 /** Result data for set_config command — includes validation warnings */
 export interface SetConfigResultData {
   nodeId: string;
@@ -415,7 +483,8 @@ export type CommandResultData =
   | GetConfigResultData
   | SetConfigResultData
   | HelpResultData
-  | SwapNodeResultData;
+  | SwapNodeResultData
+  | LayoutResultData;
 
 /** Successful command result */
 export interface CommandResultOk {
@@ -503,6 +572,20 @@ export interface CommandContext {
   typeMap: Map<string, NodeMetadata>;
   /** Dispatch interface for mutating workflow state */
   dispatch: CommandDispatch;
+  /**
+   * How the canvas measured a node (size, handle centres). Optional: without it
+   * node layout commands use computed geometry.
+   */
+  measureNode?(nodeId: string): MeasuredCard | undefined;
+  /** The visual type a node renders as (`note`, `caption`, `gateway`, …). */
+  visualType?(node: WorkflowNode): string;
+  /** The *Show descriptions* setting, which changes card heights. */
+  showDescriptions?: boolean;
+  /**
+   * The layout gaps of the editor settings and the grid they are multiples of.
+   * Optional: without it node layout commands use the library defaults on a 20 px grid.
+   */
+  layoutGaps?: { gapX: number; gapY: number; gridSize: number };
 }
 
 // ============================================================================

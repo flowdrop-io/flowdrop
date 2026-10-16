@@ -23,6 +23,7 @@
   import { flowdropToastOptions, FLOWDROP_TOASTER_CLASS } from '$lib/services/toastService.js';
   import { initializeSettings, getUiSettings } from '$lib/stores/settingsStore.svelte.js';
   import { resolveTheme } from '$lib/themes/index.js';
+  import { effectiveSkinTokens } from '$lib/themes/scopedSkinCss.js';
   import type { FlowDropSkinTokens } from '$lib/types/skin.js';
 
   let { data, children } = $props();
@@ -98,8 +99,10 @@
   // theme prop while this base layer stays active when App is not mounted.
   $effect(() => {
     if (typeof document === 'undefined') return;
-    const skin = resolveTheme(getUiSettings().theme).skin;
-    const tokens = skin?.tokens;
+    const resolved = resolveTheme(getUiSettings().theme);
+    const skin = resolved.skin;
+    const merged = effectiveSkinTokens(skin, resolved.config?.display);
+    const tokens = Object.keys(merged).length > 0 ? merged : undefined;
     const darkTokens = skin?.darkTokens;
 
     let style = document.getElementById('fd-skin-tokens-base') as HTMLStyleElement | null;
@@ -487,7 +490,7 @@
     showLeftSidebar={false}
     showRightSidebar={false}
     showFooter={false}
-    headerHeight={60}
+    headerHeight={48}
     enableLeftSplitPane={false}
     enableRightSplitPane={false}
   >
@@ -509,13 +512,16 @@
 
   <!-- Toast Notifications (outside MainLayout for proper z-index stacking) -->
   <!-- aria-live="polite" ensures screen readers announce toast messages without interrupting -->
-  <div aria-live="polite" aria-atomic="true">
-    <Toaster
-      position="bottom-center"
-      containerClassName={FLOWDROP_TOASTER_CLASS}
-      toastOptions={flowdropToastOptions}
-    />
-  </div>
+  <!-- The toast fixture page mounts its own, inside the theme scope under test. -->
+  {#if !$page.url.pathname.startsWith('/test/toasts')}
+    <div aria-live="polite" aria-atomic="true">
+      <Toaster
+        position="top-center"
+        containerClassName={FLOWDROP_TOASTER_CLASS}
+        toastOptions={flowdropToastOptions}
+      />
+    </div>
+  {/if}
 </div>
 
 <style>

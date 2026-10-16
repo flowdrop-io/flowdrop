@@ -1,28 +1,44 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import FormCheckboxGroup from './FormCheckboxGroup.svelte';
   import { fn } from 'storybook/test';
+  import FormCheckboxGroup from './FormCheckboxGroup.svelte';
+  import FieldInEditor from '../../stories/FieldInEditor.svelte';
+  import { fieldSchemas } from '../../stories/formFixtures.js';
 
   const { Story } = defineMeta({
-    title: 'Form/FormCheckboxGroup',
+    title: 'Editor/Forms/Checkbox group',
     component: FormCheckboxGroup,
     tags: ['autodocs'],
-    argTypes: {
-      disabled: { control: 'boolean' }
-    },
+    parameters: { layout: 'padded' },
     args: {
-      id: 'demo-checkbox-group',
-      options: ['Email', 'SMS', 'Push Notification', 'Webhook'],
-      value: [],
+      id: 'tools',
+      options: ['search', 'calculator', 'calendar'],
+      value: ['search'],
       onChange: fn()
     }
   });
 </script>
 
-<Story name="No Selection" args={{ value: [] }} />
+<Story
+  name="In the editor"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story: 'An `enum` field with `multiple: true`. The value is the list of ticked options.'
+      }
+    }
+  }}
+>
+  <FieldInEditor schema={fieldSchemas.checkboxes} value={['search', 'calendar']} />
+</Story>
 
-<Story name="Pre-selected" args={{ value: ['Email', 'Push Notification'] }} />
+<Story name="Nothing ticked" asChild>
+  <FieldInEditor schema={fieldSchemas.checkboxes} value={[]} />
+</Story>
 
-<Story name="All Selected" args={{ value: ['Email', 'SMS', 'Push Notification', 'Webhook'] }} />
+<Story name="Read only" asChild>
+  <FieldInEditor schema={{ ...fieldSchemas.checkboxes, readOnly: true }} value={['search']} />
+</Story>
 
-<Story name="Disabled" args={{ value: ['Email'], disabled: true }} />
+<Story name="Bare group" />

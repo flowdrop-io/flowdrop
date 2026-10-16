@@ -7,6 +7,10 @@
  * @module types/settings
  */
 
+import { DEFAULT_ZOOM_TIERS, type ZoomTierConfig } from '../utils/zoomTier.js';
+import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y, LAYOUT_GRID } from '../layout/types.js';
+import type { FlowDropThemeName } from './theme.js';
+
 // =========================================================================
 // Theme Settings
 // =========================================================================
@@ -16,8 +20,47 @@
  * - 'light': Force light theme
  * - 'dark': Force dark theme
  * - 'auto': Follow system preference
+ * - 'host': Follow the colour scheme the embedding page reports through the
+ *   `colorScheme.host` mount option. Only exists when that option is given;
+ *   without it a stored `'host'` behaves as `'auto'`.
  */
-export type ThemePreference = 'light' | 'dark' | 'auto';
+export type ThemePreference = 'light' | 'dark' | 'auto' | 'host';
+
+/**
+ * What an embedding page reports as its own colour scheme. `'auto'` means
+ * "follow the operating system" and is resolved by FlowDrop itself.
+ */
+export type HostColorSchemeValue = 'light' | 'dark' | 'auto';
+
+/**
+ * Mount option: lets the embedding page supply a fourth colour-scheme choice
+ * ("follow the host"). FlowDrop knows nothing about the host: it shows `label`
+ * verbatim and resolves `value`.
+ *
+ * ```ts
+ * colorScheme: {
+ *   host: {
+ *     value: 'dark',            // what the host resolves to right now
+ *     label: 'Match host',      // shown verbatim in the Appearance menu / settings
+ *     subscribe: (cb) => { ...; return () => {...}; } // optional, live changes
+ *   }
+ * }
+ * ```
+ *
+ * When given, `'host'` becomes the default preference (a saved preference that
+ * the user never changed is migrated to it; an explicit Light or Dark is kept).
+ * Without it nothing changes: Auto / Light / Dark only.
+ */
+export interface ColorSchemeOption {
+  host: {
+    /** The host's colour scheme right now. */
+    value: HostColorSchemeValue;
+    /** Name of the choice, shown verbatim (translate it in the host). */
+    label: string;
+    /** Optional live updates; returns the unsubscribe function. */
+    subscribe?: (callback: (value: HostColorSchemeValue) => void) => () => void;
+  };
+}
 
 /**
  * Resolved theme (actual applied theme, never 'auto')
@@ -30,6 +73,12 @@ export type ResolvedTheme = 'light' | 'dark';
 export interface ThemeSettings {
   /** User's theme preference */
   preference: ThemePreference;
+  /**
+   * Set once the user has picked a colour scheme (navbar menu or settings).
+   * Lets FlowDrop tell a saved `'auto'` that was only ever the default (migrated
+   * to `'host'` when a host scheme is given) from one the user chose.
+   */
+  explicit?: boolean;
 }
 
 // =========================================================================
@@ -46,6 +95,16 @@ export interface EditorSettings {
   snapToGrid: boolean;
   /** Grid cell size in pixels */
   gridSize: number;
+  /**
+   * Layout gap between cards side by side, in pixels (Tidy up and the `layout`
+   * commands). A multiple of the 20 px layout grid; default {@link DEFAULT_LAYOUT_GAP_X}.
+   */
+  layoutGapX: number;
+  /**
+   * Layout gap between stacked cards, in pixels (Tidy up and the `layout`
+   * commands). A multiple of the 20 px layout grid; default {@link DEFAULT_LAYOUT_GAP_Y}.
+   */
+  layoutGapY: number;
   /** Show minimap for navigation */
   showMinimap: boolean;
   /** Default zoom level (1 = 100%) */
@@ -56,6 +115,23 @@ export interface EditorSettings {
   proximityConnect: boolean;
   /** Distance threshold in pixels for proximity connect */
   proximityConnectDistance: number;
+  /**
+   * Show each node's description as a band under its header. Off by default:
+   * the description lives in the title popover and the inspector, and port help
+   * in the port tooltip. On, the band is 60px and reserved on every node, so
+   * ports keep their relative positions and wires stay straight.
+   */
+  showNodeDescriptions: boolean;
+  /**
+   * The zoom tiers of the canvas: for each tier that is on, the zoom at which it
+   * starts (1 = 100%). A tier left out is off. `full` is required and
+   * `{ full: 0 }` means no tiers, the whole card at every zoom. Values must
+   * decrease in the order full, outline, glyph, map; the lowest tier that is on
+   * extends down to any zoom. An invalid value falls back to the library
+   * default with one console warning. The setting is replaced as a whole, never
+   * merged key by key.
+   */
+  zoomTiers: ZoomTierConfig;
 }
 
 // =========================================================================
@@ -79,23 +155,45 @@ export type SurfacePlacement = 'sidebar' | 'modal' | 'below';
  * UI layout and display settings
  */
 export interface UISettings {
-  /** Width of the node sidebar in pixels */
+  /**
+   * Width of the node sidebar in pixels.
+   * @deprecated Superseded by `sidebarWidths.nodes`; still read as its fallback.
+   */
   sidebarWidth: number;
+  /**
+   * Width of the left column per tab, in pixels. Saved when a drag or an
+   * arrow-key resize ends. Read it through `resolveSidebarWidths`, which
+   * clamps and fills in a missing tab.
+   */
+  sidebarWidths: { nodes: number; assistant: number };
+  /**
+   * Width of the floating sheets, in pixels. Only the workflow-settings sheet
+   * is resizable; saved when a drag or an arrow-key resize ends. Read it
+   * through `resolveWorkflowSheetWidth`, which clamps it.
+   */
+  sheetWidths: { workflow: number };
   /** Whether the sidebar is collapsed */
   sidebarCollapsed: boolean;
   /** Enable compact mode for denser UI */
   compactMode: boolean;
-  /** Active theme name — overridden by the theme prop when explicitly provided */
-  theme: 'default' | 'minimal' | 'drafter';
+  /**
+   * Active theme name — overridden by the theme prop when explicitly provided.
+   * A saved `'default'` (the old name of `'classic'`) is read as `'classic'`.
+   */
+  theme: FlowDropThemeName;
   /** Whether the command console panel is open */
   consoleOpen: boolean;
-  /** Height of the command console panel in pixels */
+  /** Height of the command console panel in pixels (opens at 220, saved on resize) */
   consoleHeight: number;
-  /** Active tab in the bottom panel */
+  /**
+   * Active tab in the console group. `chat` is kept for stored settings: the
+   * Assistant is a tab beside Nodes in Edit mode's left slot now, and only
+   * stays in this group on a host that disabled the sidebar.
+   */
   bottomPanelTab: 'console' | 'chat';
   /** Where the node/workflow configuration panel is hosted. Default `sidebar`. */
   configPlacement: SurfacePlacement;
-  /** Where the console / AI Assistant group is hosted. Default `below`. */
+  /** Where the Command Console is hosted. Default `below`. (The Assistant lives in the left slot.) */
   consolePlacement: SurfacePlacement;
 }
 
@@ -149,7 +247,7 @@ export interface BehaviorSettings {
   chatAutoRetry: boolean;
   /**
    * Allow the AI assistant's commands to reposition nodes
-   * (`layout auto`, `layout beautify`).
+   * (`layout auto`, `layout beautify`, `layout node beautify`).
    *
    * Turn off to protect a hand-crafted layout: those commands are then skipped
    * (not failed) when a batch is applied, so the rest of the change set still
@@ -242,17 +340,47 @@ export const DEFAULT_THEME_SETTINGS: ThemeSettings = {
 };
 
 /**
+ * The grid sizes the editor offers (px). Both divide 20, the unit every node
+ * card's handle offsets are a multiple of, so wires can always be made straight.
+ * @see Graphite G8, decision D3
+ */
+export const GRID_SIZES = [10, 20] as const;
+
+/**
+ * Any stored grid size that is not one of {@link GRID_SIZES} becomes 20.
+ * Applied wherever settings are merged (saved snapshot, host defaults, API).
+ */
+export function normalizeGridSize(value: unknown): number {
+  return (GRID_SIZES as readonly unknown[]).includes(value) ? (value as number) : 20;
+}
+
+/**
+ * A layout gap as the editor stores it: a number of at least 0, rounded to a
+ * multiple of the 20 px layout grid (layout always snaps to it, whatever the
+ * editor's grid size), the same rule the `--gap-x` / `--gap-y` flags enforce.
+ * Anything that is not a finite number becomes `fallback`.
+ */
+export function normalizeLayoutGap(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.max(0, Math.round(value / LAYOUT_GRID) * LAYOUT_GRID);
+}
+
+/**
  * Default editor settings
  */
 export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
   showGrid: true,
   snapToGrid: true,
   gridSize: 20,
+  layoutGapX: DEFAULT_LAYOUT_GAP_X,
+  layoutGapY: DEFAULT_LAYOUT_GAP_Y,
   showMinimap: true,
   defaultZoom: 1,
   fitViewOnLoad: true,
   proximityConnect: false,
-  proximityConnectDistance: 150
+  proximityConnectDistance: 150,
+  showNodeDescriptions: false,
+  zoomTiers: { ...DEFAULT_ZOOM_TIERS }
 };
 
 /**
@@ -260,11 +388,13 @@ export const DEFAULT_EDITOR_SETTINGS: EditorSettings = {
  */
 export const DEFAULT_UI_SETTINGS: UISettings = {
   sidebarWidth: 280,
+  sidebarWidths: { nodes: 280, assistant: 380 },
+  sheetWidths: { workflow: 420 },
   sidebarCollapsed: false,
   compactMode: false,
-  theme: 'default',
+  theme: 'graphite',
   consoleOpen: false,
-  consoleHeight: 300,
+  consoleHeight: 220,
   bottomPanelTab: 'console',
   configPlacement: 'sidebar',
   consolePlacement: 'below'

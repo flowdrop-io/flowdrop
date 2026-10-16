@@ -115,9 +115,25 @@
 // Playground Components
 // ============================================================================
 
+/**
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export { default as Playground } from '../components/playground/Playground.svelte';
+/**
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export { default as PlaygroundStudio } from '../components/playground/PlaygroundStudio.svelte';
+/**
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export { default as PlaygroundApp } from '../components/playground/PlaygroundApp.svelte';
+/**
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export { default as PlaygroundModal } from '../components/playground/PlaygroundModal.svelte';
 export { default as ChatPanel } from '../components/playground/ChatPanel.svelte';
 export { default as MessageStream } from '../components/playground/MessageStream.svelte';
@@ -128,6 +144,10 @@ export { default as PipelinePanel } from '../components/playground/PipelinePanel
 export { default as ExecutionList } from '../components/playground/ExecutionList.svelte';
 export { default as SessionManager } from '../components/playground/SessionManager.svelte';
 export { default as InputCollector } from '../components/playground/InputCollector.svelte';
+/**
+ * @deprecated Not rendered by any surface; the Playground's execution console and the run
+ * pages replace it. Removed in 3.0.
+ */
 export { default as ExecutionLogs } from '../components/playground/ExecutionLogs.svelte';
 export { default as MessageBubble } from '../components/playground/MessageBubble.svelte';
 
@@ -192,6 +212,21 @@ export {
 // ============================================================================
 
 export { PlaygroundStore } from '../stores/playgroundStore.svelte.js';
+export type { NodeStatusScope } from '../stores/playgroundStore.svelte.js';
+
+// ============================================================================
+// Run Controller
+// ============================================================================
+
+/**
+ * The per-instance session/run executors (`fd.runs`): the controller Test
+ * mode builds on.
+ */
+export {
+  RunController,
+  type RunControllerOptions,
+  type RunControllerDeps
+} from '../stores/runController.svelte.js';
 
 // ============================================================================
 // Playground Types
@@ -206,6 +241,7 @@ export type {
   PlaygroundTurnResponse,
   PlaygroundMessagesResult,
   PlaygroundConfig,
+  EditorPlaygroundConfig,
   PlaygroundMode,
   PlaygroundSessionStatus,
   PlaygroundMessageRole,
@@ -219,7 +255,13 @@ export type {
   PlaygroundSessionResponse,
   PlaygroundMessageResponse,
   PlaygroundMessagesApiResponse,
-  PlaygroundExecution
+  PlaygroundExecution,
+  SessionRun,
+  SessionRunsResult,
+  SessionRunsResponse,
+  SessionThirdPartySettings,
+  VersionDivider,
+  VersionDividerAnchor
 } from '../types/playground.js';
 
 export {
@@ -235,6 +277,14 @@ export {
 } from '../utils/workflowInterface.js';
 
 export { resolvePlaygroundChat, type ResolvedPlaygroundChat } from '../utils/playgroundChat.js';
+
+export {
+  PLAYGROUND_SESSION_MARK,
+  isPlaygroundSession,
+  playgroundSessionsOf,
+  isRunStale,
+  versionDividersFromRuns
+} from '../utils/sessionRuns.js';
 
 export type {
   WorkflowPlayground,

@@ -10,6 +10,7 @@
  * @module stores/settingsStore
  */
 
+import { untrack } from 'svelte';
 import type {
   FlowDropSettings,
   ThemeSettings,
@@ -22,13 +23,28 @@ import type {
   SyncStatus,
   ResolvedTheme,
   ThemePreference,
+  ColorSchemeOption,
+  HostColorSchemeValue,
   SettingsChangeCallback,
   SettingsChangeEvent,
   SettingsCategory
 } from '$lib/types/settings.js';
-export type { ThemePreference, ResolvedTheme } from '$lib/types/settings.js';
-import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY } from '$lib/types/settings.js';
+export type {
+  ThemePreference,
+  ResolvedTheme,
+  ColorSchemeOption,
+  HostColorSchemeValue
+} from '$lib/types/settings.js';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_STORAGE_KEY,
+  normalizeGridSize,
+  normalizeLayoutGap
+} from '$lib/types/settings.js';
+import { DEFAULT_LAYOUT_GAP_X, DEFAULT_LAYOUT_GAP_Y } from '$lib/layout/types.js';
 import { logger } from '../utils/logger.js';
+import { normalizeThemeName } from '../themes/index.js';
+import type { FlowDropThemeName } from '../types/theme.js';
 
 // =========================================================================
 // Internal State
@@ -40,7 +56,7 @@ import { logger } from '../utils/logger.js';
  */
 let settingsService: {
   savePreferences: (settings: FlowDropSettings) => Promise<void>;
-  getPreferences: () => Promise<FlowDropSettings>;
+  getPreferences: () => Promise<FlowDropSettings | PartialSettings>;
 } | null = null;
 
 /**
@@ -141,7 +157,17 @@ function deepMergeSettings(
   // Merge UI settings
   if (source.ui) {
     result.ui = { ...result.ui, ...source.ui };
+    // Per-tab widths merge key by key, so saving one tab keeps the other
+    if (source.ui.sidebarWidths) {
+      result.ui.sidebarWidths = { ...target.ui.sidebarWidths, ...source.ui.sidebarWidths };
+    }
+    if (source.ui.sheetWidths) {
+      result.ui.sheetWidths = { ...target.ui.sheetWidths, ...source.ui.sheetWidths };
+    }
   }
+
+  // A theme saved under its old name ('default', until 2.14) loads as 'classic'.
+  result.ui.theme = normalizeThemeName(result.ui.theme) as FlowDropThemeName;
 
   // Merge behavior settings
   if (source.behavior) {
@@ -152,6 +178,19 @@ function deepMergeSettings(
   if (source.api) {
     result.api = { ...result.api, ...source.api };
   }
+
+  // Grid size is 10 or 20 (D3): migrates any other stored value to 20.
+  if (result.editor.gridSize !== normalizeGridSize(result.editor.gridSize)) {
+    result.editor.gridSize = normalizeGridSize(result.editor.gridSize);
+  }
+
+  // Layout gaps: at least 0, a multiple of the grid.
+  result.editor.layoutGapX = normalizeLayoutGap(result.editor.layoutGapX, DEFAULT_LAYOUT_GAP_X);
+  result.editor.layoutGapY = normalizeLayoutGap(result.editor.layoutGapY, DEFAULT_LAYOUT_GAP_Y);
+
+  // `loopbackLanes` was a setting in pre-release builds; loopbacks are always return lanes now,
+  // so drop the stale key from saved settings.
+  delete (result.editor as unknown as Record<string, unknown>).loopbackLanes;
 
   return result;
 }
@@ -183,6 +222,16 @@ let storeState = $state<SettingsStoreState>({
 let systemThemeState = $state<ResolvedTheme>(
   typeof window !== 'undefined' ? getSystemTheme() : 'light'
 );
+
+/**
+ * The host's colour scheme (mount option `colorScheme.host`), or null.
+ * Its presence is what makes the 'host' preference exist.
+ */
+let hostScheme = $state<{ label: string; value: HostColorSchemeValue } | null>(null);
+let hostUnsubscribe: (() => void) | null = null;
+// Which setHostColorScheme() call owns the registration; lets a mount release
+// its own without clearing one a later mount registered.
+let hostRegistration = 0;
 
 // =========================================================================
 // Getter Functions (replacing derived stores)
@@ -246,22 +295,103 @@ export function getApiSettings(): ApiSettings {
 }
 
 /**
- * Get theme preference (replaces theme derived store)
+ * Get the theme preference in effect.
+ *
+ * `'host'` is only returned while a host colour scheme is registered
+ * ({@link setHostColorScheme}); a stored `'host'` without one is reported as
+ * `'auto'` so older or different hosts never see a choice that does not exist.
  */
 export function getTheme(): ThemePreference {
-  return storeState.settings.theme.preference;
+  const preference = storeState.settings.theme.preference;
+  return preference === 'host' && !hostScheme ? 'auto' : preference;
 }
 
 /**
- * Get resolved theme - the actual theme applied ('light' or 'dark')
- * When preference is 'auto', resolves based on system preference
- * (replaces resolvedTheme derived store)
+ * Get resolved theme - the actual theme applied ('light' or 'dark').
+ * 'auto' follows the operating system; 'host' follows the host's reported
+ * scheme, and when that is itself 'auto' the operating system as well
+ * (replaces resolvedTheme derived store).
  */
 export function getResolvedTheme(): ResolvedTheme {
-  if (storeState.settings.theme.preference === 'auto') {
-    return systemThemeState;
+  return resolveColorScheme(getTheme(), hostScheme?.value ?? null, systemThemeState);
+}
+
+/**
+ * Pure resolution of a preference to the applied scheme.
+ *
+ * @param preference - The effective preference (a 'host' with no host value counts as 'auto')
+ * @param hostValue - What the host reports, or null when no host scheme is given
+ * @param system - The operating system's scheme
+ */
+export function resolveColorScheme(
+  preference: ThemePreference,
+  hostValue: HostColorSchemeValue | null,
+  system: ResolvedTheme
+): ResolvedTheme {
+  const value: HostColorSchemeValue | 'host' = preference;
+  const scheme = value === 'host' ? (hostValue ?? 'auto') : value;
+  return scheme === 'auto' ? system : scheme;
+}
+
+/**
+ * What the host's colour scheme resolves to right now, for the "currently …"
+ * hint. Null when no host scheme is registered.
+ */
+export function getHostColorScheme(): {
+  label: string;
+  value: HostColorSchemeValue;
+  resolved: ResolvedTheme;
+} | null {
+  if (!hostScheme) return null;
+  return {
+    label: hostScheme.label,
+    value: hostScheme.value,
+    resolved: hostScheme.value === 'auto' ? systemThemeState : hostScheme.value
+  };
+}
+
+/**
+ * Register (or clear) the host colour scheme given through the `colorScheme`
+ * mount option. The scheme is page-wide like the rest of the settings, so the
+ * last registration wins. With `subscribe`, live host changes re-resolve.
+ *
+ * @param option - The mount option, or null/undefined to clear it
+ */
+export function setHostColorScheme(option: ColorSchemeOption | null | undefined): void {
+  hostRegistration++;
+  hostUnsubscribe?.();
+  hostUnsubscribe = null;
+  const host = option?.host;
+  if (!host) {
+    hostScheme = null;
+    return;
   }
-  return storeState.settings.theme.preference;
+  hostScheme = { label: host.label, value: host.value };
+  if (host.subscribe) {
+    try {
+      hostUnsubscribe = host.subscribe((value) => {
+        if (hostScheme) hostScheme = { ...hostScheme, value };
+      });
+    } catch (error) {
+      logger.warn('colorScheme.host.subscribe failed:', error);
+    }
+  }
+}
+
+/**
+ * The id of the current host colour scheme registration, for a mount to hand
+ * back to {@link releaseHostColorScheme} when it is destroyed.
+ */
+export function getHostColorSchemeRegistration(): number {
+  return hostRegistration;
+}
+
+/**
+ * Release the host colour scheme (and its `subscribe`) if `registration` is
+ * still the current one. A no-op when a later mount has registered its own.
+ */
+export function releaseHostColorScheme(registration: number): void {
+  if (registration === hostRegistration) setHostColorScheme(null);
 }
 
 /**
@@ -385,8 +515,23 @@ export function seedUiDefaults(partial: Partial<UISettings>): void {
  * @param partial - Partial settings to merge
  */
 export function updateSettings(partial: PartialSettings): void {
+  // A write never subscribes its caller: an effect that calls this must not
+  // track the settings it reads to merge, or every update re-runs the effect.
+  untrack(() => applySettingsUpdate(partial));
+}
+
+function applySettingsUpdate(partial: PartialSettings): void {
   const previousSettings = storeState.settings;
   const newSettings = deepMergeSettings(storeState.settings, partial as Partial<FlowDropSettings>);
+
+  // A colour scheme the user picked is remembered as such, so a later default
+  // (the host scheme) never replaces it. See migrateSavedTheme().
+  if (
+    partial.theme?.preference !== undefined &&
+    partial.theme.preference !== previousSettings.theme.preference
+  ) {
+    newSettings.theme = { ...newSettings.theme, explicit: true };
+  }
 
   // Persist to localStorage immediately
   saveToStorage(newSettings);
@@ -412,6 +557,38 @@ export function updateSettings(partial: PartialSettings): void {
 }
 
 /**
+ * The library defaults, with the host colour scheme as the default preference
+ * when one is registered.
+ */
+function defaultSettings(): FlowDropSettings {
+  return hostScheme
+    ? { ...DEFAULT_SETTINGS, theme: { ...DEFAULT_SETTINGS.theme, preference: 'host' } }
+    : DEFAULT_SETTINGS;
+}
+
+/**
+ * Migration of a saved theme when a host colour scheme is given: a saved
+ * `'auto'` the user never chose (no `explicit` marker) becomes `'host'`; an
+ * explicit choice, and any saved Light or Dark, is kept.
+ *
+ * Heuristic, and why: the whole snapshot is persisted on every settings change,
+ * so a stored `'auto'` may only be the old default riding along with some other
+ * setting. The marker is set when the user changes the preference. Snapshots
+ * from before the marker existed carry none, so an `'auto'` the user did pick
+ * once moves to the host scheme a single time; picking Auto again sticks.
+ *
+ * @param raw - The persisted snapshot
+ * @param hasHost - Whether a host colour scheme is registered
+ */
+export function migrateSavedTheme(
+  raw: Partial<FlowDropSettings>,
+  hasHost: boolean
+): Partial<FlowDropSettings> {
+  if (!hasHost || raw.theme?.preference !== 'auto' || raw.theme.explicit) return raw;
+  return { ...raw, theme: { ...raw.theme, preference: 'host' } };
+}
+
+/**
  * Reset settings to defaults
  *
  * @param categories - Optional categories to reset (all if not specified)
@@ -420,14 +597,15 @@ export function resetSettings(categories?: SettingsCategory[]): void {
   if (categories && categories.length > 0) {
     const partial: PartialSettings = {};
     for (const category of categories) {
-      (partial as Record<string, unknown>)[category] = DEFAULT_SETTINGS[category];
+      (partial as Record<string, unknown>)[category] = defaultSettings()[category];
     }
     updateSettings(partial);
   } else {
-    saveToStorage(DEFAULT_SETTINGS);
+    const defaults = defaultSettings();
+    saveToStorage(defaults);
     storeState = {
       ...storeState,
-      settings: DEFAULT_SETTINGS
+      settings: defaults
     };
   }
 }
@@ -442,7 +620,7 @@ export function resetSettings(categories?: SettingsCategory[]): void {
  * @param newTheme - The new theme preference ('light', 'dark', or 'auto')
  */
 export function setTheme(newTheme: ThemePreference): void {
-  updateSettings({ theme: { preference: newTheme } });
+  updateSettings({ theme: { preference: newTheme, explicit: true } });
 }
 
 /**
@@ -453,7 +631,7 @@ export function toggleTheme(): void {
   const currentTheme = getTheme();
   const currentResolved = getResolvedTheme();
 
-  if (currentTheme === 'auto') {
+  if (currentTheme === 'auto' || currentTheme === 'host') {
     setTheme(currentResolved === 'dark' ? 'light' : 'dark');
   } else {
     setTheme(currentTheme === 'dark' ? 'light' : 'dark');
@@ -461,7 +639,8 @@ export function toggleTheme(): void {
 }
 
 /**
- * Cycle through theme options: light -> dark -> auto -> light
+ * Cycle through theme options: light -> dark -> host (or auto without a host
+ * scheme) -> light
  */
 export function cycleTheme(): void {
   const currentTheme = getTheme();
@@ -471,24 +650,13 @@ export function cycleTheme(): void {
       setTheme('dark');
       break;
     case 'dark':
-      setTheme('auto');
+      setTheme(hostScheme ? 'host' : 'auto');
       break;
     case 'auto':
+    case 'host':
       setTheme('light');
       break;
   }
-}
-
-/**
- * Apply theme to the document
- *
- * @param resolved - The resolved theme to apply
- */
-function applyTheme(resolved: ResolvedTheme): void {
-  if (typeof document === 'undefined') {
-    return;
-  }
-  document.documentElement.setAttribute('data-theme', resolved);
 }
 
 /**
@@ -513,56 +681,32 @@ export function cleanupThemeSubscription(): void {
  * Initialize the theme system
  * Called on app startup; safe to call more than once (idempotent) — the
  * mount functions call it before mounting and <App> calls it on mount so
- * direct component embeds get the persisted theme applied too.
+ * direct component embeds track the system scheme too.
  *
- * This function:
- * 1. Applies the current resolved theme to the document
- * 2. Sets up reactivity to apply theme changes
- * 3. Subscribes to the system color-scheme so 'auto' tracks it live
- *
- * Note: In Svelte 5, we use $effect for reactivity. Since $effect can only
- * be used in component context or $effect.root, we use $effect.root here
- * to create a standalone reactive scope.
+ * It subscribes to the system color-scheme so 'auto' tracks it live. It does
+ * not touch the document: the resolved scheme is `data-theme` on each editor's
+ * scope element (see utils/themeScope.ts), which is the source. Mounted editors
+ * also mirror it onto `<html data-theme>` as a deprecated 2.11.0 compatibility
+ * behaviour (removed in 3.0).
  */
 export function initializeTheme(): void {
-  const resolved = getResolvedTheme();
-  applyTheme(resolved);
-
-  // Already wired (theme is page-global) — don't stack effect roots or
-  // media-query listeners on repeated mounts.
+  // Already wired (the system scheme is page-global) — don't stack media-query
+  // listeners on repeated mounts.
   if (themeEffectCleanup) {
     return;
   }
 
-  // Track the system preference so 'auto' reacts to OS theme changes.
-  const stopThemeListener = initThemeListener();
-
-  // Create a standalone reactive root to watch for theme changes.
-  // $effect.root returns a cleanup function.
-  const stopEffectRoot = $effect.root(() => {
-    $effect(() => {
-      const currentResolved = getResolvedTheme();
-      applyTheme(currentResolved);
-    });
-  });
-
-  themeEffectCleanup = () => {
-    stopThemeListener();
-    stopEffectRoot();
-  };
+  themeEffectCleanup = initThemeListener();
 }
 
 /**
  * Check if theme system is initialized
  * Useful for SSR scenarios
  *
- * @returns true if running in browser and theme is applied
+ * @returns true once initializeTheme() has wired the system-scheme listener
  */
 export function isThemeInitialized(): boolean {
-  if (typeof document === 'undefined') {
-    return false;
-  }
-  return document.documentElement.hasAttribute('data-theme');
+  return themeEffectCleanup !== null;
 }
 
 // =========================================================================
@@ -577,7 +721,11 @@ export function isThemeInitialized(): boolean {
 export function setSettingsService(
   service: {
     savePreferences: (settings: FlowDropSettings) => Promise<void>;
-    getPreferences: () => Promise<FlowDropSettings>;
+    /**
+     * Returns the saved settings. A partial object is enough: anything missing (including
+     * settings added after 2.11.0) falls back to the defaults.
+     */
+    getPreferences: () => Promise<FlowDropSettings | PartialSettings>;
   } | null
 ): void {
   settingsService = service;
@@ -642,7 +790,10 @@ export async function loadSettingsFromApi(): Promise<void> {
 
   try {
     const apiSettingsData = await settingsService.getPreferences();
-    const mergedSettings = deepMergeSettings(DEFAULT_SETTINGS, apiSettingsData);
+    const mergedSettings = deepMergeSettings(
+      DEFAULT_SETTINGS,
+      apiSettingsData as Partial<FlowDropSettings>
+    );
 
     storeState = {
       ...storeState,
@@ -699,6 +850,11 @@ export async function initializeSettings(options?: {
   defaults?: PartialSettings;
   /** Enable API sync on initialization */
   apiSync?: boolean;
+  /**
+   * The host's colour scheme (mount option `colorScheme`). Makes `'host'` a
+   * preference and its default; see {@link ColorSchemeOption}.
+   */
+  colorScheme?: ColorSchemeOption;
 }): Promise<void> {
   // Apply custom defaults if provided.
   //
@@ -711,13 +867,23 @@ export async function initializeSettings(options?: {
   // snapshot and re-saved it, which reset e.g. the user's dark-mode
   // preference on every page load for hosts passing a `settings` mount
   // option.
-  if (options?.defaults) {
+  if (options && 'colorScheme' in options && options.colorScheme !== undefined) {
+    setHostColorScheme(options.colorScheme);
+  }
+
+  if (options?.defaults || options?.colorScheme) {
+    const hostDefaults: PartialSettings | undefined =
+      hostScheme && options.defaults?.theme?.preference === undefined
+        ? { ...options.defaults, theme: { ...options.defaults?.theme, preference: 'host' } }
+        : options.defaults;
     const seeded = deepMergeSettings(
       DEFAULT_SETTINGS,
-      options.defaults as Partial<FlowDropSettings>
+      (hostDefaults ?? {}) as Partial<FlowDropSettings>
     );
     const raw = loadRawFromStorage();
-    const withDefaults = raw ? deepMergeSettings(seeded, raw) : seeded;
+    const withDefaults = raw
+      ? deepMergeSettings(seeded, migrateSavedTheme(raw, hostScheme !== null))
+      : seeded;
     storeState = {
       ...storeState,
       settings: withDefaults

@@ -885,6 +885,14 @@ describe('getVersionUpgrade', () => {
     const result = getVersionUpgrade(calculatorNode, [textFormatterNode]);
     expect(result).toBeNull();
   });
+
+  it('should return null, not throw, when a version is missing', () => {
+    // FlowDrop for Drupal sends no `version` on node metadata.
+    const unversioned = { ...calculatorNode, version: undefined } as unknown as NodeMetadata;
+    expect(getVersionUpgrade(unversioned, [unversioned])).toBeNull();
+    expect(getVersionUpgrade(unversioned, [calculatorNodeV2])).toBeNull();
+    expect(getVersionUpgrade(calculatorNode, [unversioned])).toBeNull();
+  });
 });
 
 // =========================================================================

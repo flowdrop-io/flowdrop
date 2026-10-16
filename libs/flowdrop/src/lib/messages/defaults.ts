@@ -30,6 +30,23 @@ export const defaultMessages = {
   },
 
   form: {
+    // The Ports tab: Show/Hide per port.
+    ports: {
+      hide: ({ port }: { port: string }) => `Hide port ${port}`,
+      show: ({ port }: { port: string }) => `Show port ${port}`,
+      shown: 'Shown on the canvas',
+      hidden: 'Hidden from the canvas',
+      locked: ({ port }: { port: string }) => `${port} is always shown`,
+      lockedHint: 'Always shown. The node type decides this port.',
+      wired: ({ port }: { port: string }) => `${port} is connected and can't be hidden`,
+      wiredHint: ({ n }: { n: number }) =>
+        n === 1
+          ? 'Connected (1). Remove its connection on the canvas to hide it.'
+          : `Connected (${n}). Remove its connections on the canvas to hide it.`,
+      published: ({ port }: { port: string }) =>
+        `${port} is on the workflow interface and can't be hidden`,
+      publishedHint: 'On the workflow interface. Remove it from the interface to hide it.'
+    },
     array: {
       // Item-level controls — `n` is the 1-based item position the user sees.
       itemLabel: ({ n }: { n: number }) => `Item ${n}`,
@@ -40,7 +57,18 @@ export const defaultMessages = {
       deleteItem: ({ n }: { n: number }) => `Delete item ${n}`,
       moveUp: 'Move up',
       moveDown: 'Move down',
+      // Live announcement after an Alt+Arrow reorder (array rows and interface ports).
+      movedTo: ({ name, n, total }: { name: string; n: number; total: number }) =>
+        `${name} moved to position ${n} of ${total}`,
       delete: 'Delete item',
+      rowActions: ({ n }: { n: number }) => `Actions for item ${n}`,
+      // An array a sibling field names an item of (`x-item-ref`), e.g. a default branch.
+      makeDefault: 'Make default',
+      defaultBadge: 'default',
+      noDefault: 'No default: the node fails when nothing matches',
+      defaultFromInput: 'Default: set by input',
+      defaultDangling: ({ name }: { name: string }) =>
+        `The default "${name}" matches no item. Make one of the items the default.`,
       // Boolean rendering inside array items.
       yes: 'Yes',
       no: 'No',
@@ -203,6 +231,15 @@ export const defaultMessages = {
         default: 'Response Submitted'
       },
       cancelled: 'Cancelled',
+      // The one line an answered prompt folds to.
+      resolved: {
+        confirmed: ({ value }: { value: string }) => `Confirmed · ${value}`,
+        declined: ({ value }: { value: string }) => `Declined · ${value}`,
+        chose: ({ value }: { value: string }) => `Chose · ${value}`,
+        submitted: 'Submitted',
+        submittedValue: ({ value }: { value: string }) => `Submitted · ${value}`,
+        by: ({ name }: { name: string }) => `by ${name}`
+      },
       errorRetry: 'Error - Click to Retry',
       retry: 'Retry',
       cancel: 'Cancel',
@@ -212,23 +249,47 @@ export const defaultMessages = {
   },
 
   navigation: {
-    // Navbar branding (rendered when no consumer overrides via title prop).
+    // Product name: the navbar logo's accessible name and title, the fallback alt
+    // text of a branded logo, and the page <title>.
     appName: 'FlowDrop',
     tagline: 'Visual Workflow Manager',
     breadcrumbAriaLabel: 'Breadcrumb',
     connected: 'Connected',
     settingsTitle: 'Settings',
     settingsAriaLabel: 'Open settings',
+    // The gear menu: an Appearance switch, then the full settings dialog.
+    appearance: {
+      label: 'Appearance',
+      light: 'Light',
+      dark: 'Dark',
+      // Follow the operating system (no host colour scheme given).
+      system: 'System',
+      // Hint under the switch when the host's scheme is offered: its name comes
+      // from the host (`colorScheme.host.label`), `scheme` is Light or Dark.
+      hostHint: ({ label, scheme }: { label: string; scheme: string }) =>
+        `${label} · currently ${scheme}`,
+      systemHint: ({ scheme }: { scheme: string }) => `Following your system · currently ${scheme}`,
+      allSettings: 'All settings…'
+    },
     // Default primary action labels rendered when no `navbarActions` prop is supplied.
     save: 'Save',
     export: 'Export',
     import: 'Import',
     workflowSettings: 'Workflow Settings',
+    // The ghost button in the navbar that opens the workflow-settings panel.
+    workflowButton: 'Workflow',
+    workflowButtonTitle: 'Workflow settings',
+    // Accessible name of the chevron that opens the Save menu.
+    moreActions: 'More actions',
     // Right-sidebar workflow settings panel (distinct from the navbar action label above).
     workflowSettingsPanelTitle: 'Workflow Settings',
     workflowSettingsPanelSubtitle: 'Settings',
+    workflowSettingsGeneralTab: 'General',
     workflowSettingsInterfaceTab: 'Interface',
     workflowSettingsPlaygroundTab: 'Playground',
+    // The one muted line under the tabs: "6 nodes · 6 connections".
+    workflowCounts: ({ nodes, connections }: { nodes: number; connections: number }) =>
+      `${nodes} ${nodes === 1 ? 'node' : 'nodes'} · ${connections} ${connections === 1 ? 'connection' : 'connections'}`,
     nodeConfigDescription: 'Node configuration',
     closeSettings: 'Close settings',
     closeConfigModal: 'Close configuration modal',
@@ -237,7 +298,67 @@ export const defaultMessages = {
     bottomPanel: {
       console: 'Console',
       chat: 'AI Assistant'
+    },
+    // The Edit | Test switch in the canvas toolbar.
+    editorMode: {
+      label: 'Editor mode',
+      edit: 'Edit',
+      test: 'Test',
+      // Tooltips: the shortcut toggles the mode.
+      editTitle: 'Edit the workflow (T)',
+      testTitle: 'Test the workflow (T)',
+      // Accessible name of the canvas toolbar that holds the switch.
+      toolbarLabel: 'Canvas',
+      // Title of the dot on Test while a run is going or waiting. Unused since
+      // the run pill replaced the dot; kept so existing overrides still type-check.
+      runActive: 'A test run is going or waiting'
     }
+  },
+
+  // The node count (and cycle warning) beside the canvas zoom controls.
+  canvasStatus: {
+    nodeCount: ({ n }: { n: number }) => `${n} node${n !== 1 ? 's' : ''}`,
+    // Title / accessible name of the count: the full tally.
+    summary: ({ nodes, edges }: { nodes: number; edges: number }) =>
+      `${nodes} node${nodes !== 1 ? 's' : ''} · ${edges} connection${edges !== 1 ? 's' : ''}`,
+    cycles: 'Cycles detected',
+    cyclesTitle: 'The workflow contains a cycle'
+  },
+
+  // "Tidy up": the layout sweep from the canvas button, the canvas menu and the node menu.
+  tidy: {
+    // The canvas button's accessible name, tooltip and the canvas menu entry.
+    button: 'Tidy up',
+    // Toast after a tidy that changed something. The body lists what improved, joined with " · ".
+    done: 'Tidied up',
+    straightened: ({ n }: { n: number }) => `${n} wire${n !== 1 ? 's' : ''} straightened`,
+    uncrossed: ({ n }: { n: number }) => `${n} crossing${n !== 1 ? 's' : ''} removed`,
+    unbackward: ({ n }: { n: number }) =>
+      `${n} wire${n !== 1 ? 's' : ''} turned to flow left to right`,
+    // `left` is what is still overlapping or too close afterwards (0 or absent: nothing).
+    unoverlapped: ({ n, left }: { n: number; left?: number }) =>
+      `${n} overlap${n !== 1 ? 's' : ''} fixed${left ? `, ${left} left` : ''}`,
+    spaced: ({ n, left }: { n: number; left?: number }) =>
+      `${n} pair${n !== 1 ? 's' : ''} of cards spaced out${left ? `, ${left} still too close` : ''}`,
+    // When something got worse: what it cost, one phrase each, joined with ", " into `tradeOff`.
+    moreOverlaps: ({ n }: { n: number }) => `${n} more overlap${n !== 1 ? 's' : ''}`,
+    moreSpacing: ({ n }: { n: number }) => `${n} more pair${n !== 1 ? 's' : ''} too close`,
+    morePassed: ({ n }: { n: number }) => `${n} more wire${n !== 1 ? 's' : ''} through a port`,
+    fewerStraight: ({ n }: { n: number }) => `${n} fewer straight wire${n !== 1 ? 's' : ''}`,
+    moreBackward: ({ n }: { n: number }) =>
+      `${n} more wire${n !== 1 ? 's' : ''} running right to left`,
+    moreCrossings: ({ n }: { n: number }) => `${n} more crossing${n !== 1 ? 's' : ''}`,
+    tradeOff: ({ what }: { what: string }) => `but ${what}`,
+    // Toast title when Tidy up refuses the graph (too many nodes).
+    tooLarge: 'Too many nodes to tidy at once',
+    unpassed: ({ n }: { n: number }) =>
+      `${n} wire${n !== 1 ? 's' : ''} no longer run${n !== 1 ? '' : 's'} through a port`,
+    undo: 'Undo',
+    // Toast when nothing would improve: nothing moved.
+    alreadyTidy: 'Layout is already tidy',
+    alreadyTidyBody: 'Nothing would improve, so nothing moved.',
+    nodeAlreadyTidy: 'Node is already tidy',
+    nodesAlreadyTidy: 'Nodes are already tidy'
   },
 
   contextMenu: {
@@ -248,31 +369,230 @@ export const defaultMessages = {
     deleteNodes: ({ n }: { n: number }) => `Delete ${n} node${n !== 1 ? 's' : ''}`,
     addCaption: 'Add caption',
     editText: 'Edit text',
-    // Key hints shown beside an entry; plain words so they read on any platform.
-    shortcutEnter: 'Enter',
-    shortcutDelete: 'Delete'
+    duplicate: 'Duplicate',
+    swap: 'Swap node',
+    // Tidies the node(s): column, port order, straight wires, free space (`layout node beautify`).
+    tidyNode: 'Tidy node',
+    tidyNodes: ({ n }: { n: number }) => `Tidy ${n} nodes`,
+    // The pane menu's "Tidy up" (the whole graph).
+    tidyLayout: 'Tidy up',
+    // Hide / show ports of the node(s). These change which ports are exposed (as the Ports
+    // form's eye does), they do not just fold the card. The counted form is used when n > 0.
+    hideUnconnectedPorts: 'Hide unconnected ports',
+    hideUnconnectedPortsCount: ({ n }: { n: number }) => `Hide unconnected ports (${n})`,
+    showHiddenPorts: 'Show hidden ports',
+    showHiddenPortsCount: ({ n }: { n: number }) => `Show hidden ports (${n})`,
+    // A port's menu: wire it to a port on another node, from a picker.
+    connectTo: 'Connect to…',
+    // A port's menu: publish it in the workflow interface, rename or unpublish it.
+    exposeInput: 'Expose as workflow input…',
+    exposeOutput: 'Expose as workflow output…',
+    renameInterfaceEntry: 'Rename…',
+    removeInterfaceEntry: 'Remove from interface',
+    // Key hints shown beside an entry, as key glyphs.
+    shortcutEnter: '↵',
+    shortcutDelete: '⌫',
+    shortcutTidyNode: '⇧S',
+    shortcutTidyLayout: '⇧⌥T'
+  },
+
+  // The "Connect to…" picker opened from a port's menu.
+  connectTo: {
+    title: ({ port }: { port: string }) => `Connect ${port} to…`,
+    searchLabel: 'Search ports',
+    searchPlaceholder: 'Search by node, port or type…',
+    listLabelInput: 'Input ports to connect to',
+    listLabelOutput: 'Output ports to connect from',
+    groupCompatible: 'Compatible',
+    groupOther: 'Other types',
+    // A pair that already has a wire between exactly these two ports.
+    connected: 'Connected',
+    // An input that already receives a wire; connecting adds another.
+    wired: 'Wired',
+    noPorts: 'No other node has a port to connect to.',
+    noMatches: 'No ports match your search.',
+    popoverLabel: 'Connect to a port',
+    // Screen-reader text for rows that are only marked visually.
+    optionCurrent: 'current',
+    optionTaken: 'already taken'
+  },
+
+  // The run bar on the Edit canvas: shown only while a run exists.
+  runBar: {
+    label: 'Run',
+    running: 'Running',
+    waiting: 'Waiting',
+    failed: 'Failed',
+    done: 'Done',
+    stopped: 'Stopped',
+    stop: 'Stop',
+    stopLabel: 'Stop the run',
+    open: 'Open',
+    openLabel: 'Open the run in Test mode',
+    askAssistant: 'Ask the Assistant',
+    askAssistantLabel: 'Ask the Assistant about this run',
+    // Read out politely when the status changes.
+    announce: {
+      running: 'Run started.',
+      waiting: 'Run is waiting for you.',
+      failed: 'Run failed.',
+      done: 'Run finished.',
+      stopped: 'Run stopped.'
+    }
+  },
+
+  // The Doctor: the Problems indicator in the navbar, its popover and the badges on nodes.
+  doctor: {
+    trigger: ({ count }: { count: number }) => (count === 1 ? '1 problem' : `${count} problems`),
+    triggerTitle: 'Problems found in this workflow',
+    title: 'Problems',
+    listLabel: 'Problems in this workflow',
+    severity: { error: 'Error', warning: 'Warning', info: 'Note' },
+    // A node name in a problem row: it selects the node on the canvas.
+    selectNode: ({ name }: { name: string }) => `Select ${name} on the canvas`,
+    // The node badge's hover text and accessible name.
+    badge: ({ severity, count }: { severity: string; count: number }) =>
+      count === 1 ? `${severity}: 1 problem` : `${severity}: ${count} problems`,
+    port: ({ port }: { port: string }) => `port ${port}`,
+    workflowWide: 'Whole workflow',
+    chooseLabel: 'Choose',
+    choosePlaceholder: 'Choose\u2026',
+    applying: 'Applying\u2026',
+    // Destructive remedies ask first, inline.
+    confirm: 'This removes something. Apply it?',
+    confirmApply: 'Apply',
+    confirmCancel: 'Cancel',
+    applyLabel: ({ remedy, problem }: { remedy: string; problem: string }) =>
+      `${remedy}: ${problem}`,
+    notice: {
+      gone: 'That problem is already gone.',
+      changed: 'The workflow changed in the meantime. It was checked again.',
+      empty: 'That fix would change nothing.',
+      failed: ({ message }: { message: string }) => `The fix could not be applied. ${message}`
+    },
+    dismissNotice: 'Dismiss'
+  },
+
+  // The Runs list in Test mode: a popover from the canvas toolbar.
+  runsList: {
+    trigger: 'Runs',
+    triggerTitle: 'Past runs of this workflow',
+    // The trigger while a past run is shown: "Run · Failed · Yesterday 15:54".
+    shown: ({ status, time }: { status: string; time: string }) =>
+      `Run · ${status}${time ? ` · ${time}` : ''}`,
+    shownTitle: 'Run shown on the canvas',
+    clearShown: 'Stop showing this run',
+    title: 'Runs',
+    listLabel: 'Runs of this workflow',
+    loading: 'Loading runs…',
+    loadError: 'Could not load the runs.',
+    retry: 'Try again',
+    empty: 'No runs yet',
+    emptyHint: 'Runs of this workflow show up here.',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    loadMore: 'Load more',
+    loadingMore: 'Loading…',
+    openAdmin: 'Open in admin',
+    openAdminRun: 'Open this run in admin',
+    // A row is a button: its name says what it opens.
+    openRun: ({ id, status, time }: { id: string; status: string; time: string }) =>
+      `Show run ${id} (${status}${time ? `, ${time}` : ''}) on the canvas`,
+    rerun: 'Re-run',
+    rerunLabel: ({ id }: { id: string }) => `Re-run run ${id}`,
+    cancel: 'Cancel',
+    cancelLabel: ({ id }: { id: string }) => `Cancel run ${id}`,
+    actionFailed: 'The action failed.',
+    status: {
+      pending: 'Queued',
+      running: 'Running',
+      paused: 'Paused',
+      interrupted: 'Waiting',
+      completed: 'Done',
+      failed: 'Failed',
+      cancelled: 'Cancelled'
+    },
+    jobsFailed: ({ n }: { n: number }) => `${n} failed`
+  },
+
+  // The inspector tabs of a node in Test mode, and the Last run tab.
+  nodeInspector: {
+    tabsLabel: 'Node tabs',
+    config: 'Config',
+    ports: 'Ports',
+    execution: 'Execution',
+    lastRun: 'Last run',
+    notRun: 'This node has not run in the run you are viewing.',
+    running: 'Running now…',
+    waiting: 'Waiting for a decision in the conversation.',
+    noRunShown: 'No run to show yet. Send a message or run the workflow.',
+    status: 'Status',
+    duration: 'Duration',
+    started: 'Started',
+    finished: 'Finished',
+    tokens: 'Tokens',
+    input: 'Input',
+    output: 'Output',
+    error: 'Error',
+    executions: ({ n }: { n: number }) => `Ran ${n} times in this run. Showing the last.`,
+    expand: 'Show all',
+    collapse: 'Show less',
+    askAssistant: 'Ask the Assistant about this run',
+    statuses: {
+      idle: 'Idle',
+      pending: 'Pending',
+      running: 'Running',
+      completed: 'Completed',
+      failed: 'Failed',
+      cancelled: 'Cancelled',
+      skipped: 'Skipped',
+      paused: 'Paused',
+      interrupted: 'Waiting'
+    }
   },
 
   layout: {
     // Sidebar/main-region landmarks.
     componentsSidebar: 'Components sidebar',
+    // Edit mode's left slot: Nodes | Assistant.
+    nodesTab: 'Nodes',
     workflowCanvas: 'Workflow canvas',
     executionLogs: 'Execution logs sidebar',
     settingsCategories: 'Settings categories',
+    zoomLevelsTitle: 'Zoom levels',
+    zoomLevelsHelp:
+      'Draw simpler nodes as you zoom out. The full node shows above the first level that is on.',
     searchComponents: 'Search components',
     commandConsole: 'Command Console (`)',
+    // The slim strip along the canvas's bottom edge that opens the Console.
+    consoleStrip: 'Console',
+    consoleStripHint: 'Press ` to toggle the Console',
+    consoleExamplesLabel: 'Try',
     backToConfiguration: 'Back to configuration',
     // Resize handle labels — keyboard users tab to these.
     resizeLeftSidebar: 'Resize left sidebar',
     resizeRightSidebar: 'Resize right sidebar',
+    resizeWorkflowSheet: 'Resize workflow settings',
     resizeBottomPanel: 'Resize bottom panel',
     expandSidebar: 'Expand sidebar',
     collapseSidebar: 'Collapse sidebar',
+    // Test mode on a narrow screen: the Playground is a drawer over the canvas.
+    showPlayground: 'Show Playground',
+    hidePlayground: 'Hide Playground',
+    // Test mode: the node library as a popover (N).
+    nodeLibrary: 'Node library',
     closePlaygroundModal: 'Close playground modal',
     closeLogsSidebar: 'Close logs sidebar',
     closeConfigPanel: 'Close panel',
     closeConsole: 'Close console',
     swapNode: 'Swap node',
+    swapNodeTitle: 'Swap node type',
+    popOutConfig: 'Pop out configuration',
+    popOutConfigTitle: 'Pop out to a larger window',
+    dockConfig: 'Dock configuration back to sidebar',
+    dockConfigTitle: 'Dock back to sidebar',
+    dockConfigButton: 'Dock back to sidebar',
+    configPoppedOut: 'Configuration is open in a larger window.',
     backToNodeSelection: 'Back to node selection',
     loadSession: ({ name }: { name: string }) => `Load session: ${name}`
   },
@@ -283,25 +603,119 @@ export const defaultMessages = {
     requiresBackend: 'AI Assistant requires backend configuration',
     loadWorkflow: 'Load a workflow to start chatting',
     helpBuild: 'Ask the AI to help build your workflow',
-    placeholder: 'Describe what you want to build...',
+    // Empty-state shortcuts: the chip label is also the prompt sent.
+    suggestionsLabel: 'Suggestions',
+    suggestions: ['Explain this workflow', 'Add error handling', 'Summarise what this does'],
+    placeholder: 'Describe a change…',
     send: 'Send message',
+    // The run attached to the Assistant, above the composer.
+    attach: {
+      add: 'Attach a run',
+      chipLabel: 'Attached run',
+      detach: 'Remove the attached run',
+      listLabel: 'Runs of this test session',
+      empty: 'No runs yet. Run the workflow in Test mode first.',
+      unavailable: 'This server does not list runs.',
+      run: ({ id }: { id: string }) => `Run #${id}`,
+      failed: 'failed',
+      stale: 'older version',
+      staleTitle: 'The workflow has changed since this run.',
+      statuses: {
+        pending: 'running',
+        running: 'running',
+        waiting: 'waiting',
+        interrupted: 'waiting',
+        done: 'done',
+        completed: 'done',
+        failed: 'failed',
+        stopped: 'stopped',
+        cancelled: 'stopped',
+        unknown: 'unknown'
+      }
+    },
     autoRetry: ({ attempt, max }: { attempt: number; max: number }) =>
       `Auto-retrying (attempt ${attempt}/${max})…`,
     // Tool-calling turns (tools mode).
     tools: {
-      /** Status line while a read tool runs: `Reading: describe_type http_request`. */
+      /** A tool's label while it runs and once it is done, by tool id. */
+      verbs: {
+        list_nodes: { running: 'Reading workflow', done: 'Read workflow' },
+        list_edges: { running: 'Reading connections', done: 'Read connections' },
+        list_types: { running: 'Listing node types', done: 'Listed node types' },
+        describe_type: { running: 'Reading node type', done: 'Read node type' },
+        search_types: { running: 'Searching node types', done: 'Searched node types' },
+        get_config: { running: 'Reading config', done: 'Read config' },
+        info: { running: 'Reading workflow info', done: 'Read workflow info' },
+        view: { running: 'Viewing', done: 'Viewed' },
+        add_node: { running: 'Adding node', done: 'Added node' },
+        delete_node: { running: 'Deleting node', done: 'Deleted node' },
+        rename_node: { running: 'Renaming node', done: 'Renamed node' },
+        move_node: { running: 'Moving node', done: 'Moved node' },
+        swap_node: { running: 'Swapping node', done: 'Swapped node' },
+        set_config: { running: 'Setting config', done: 'Set config' },
+        connect: { running: 'Connecting', done: 'Connected' },
+        disconnect_ports: { running: 'Disconnecting', done: 'Disconnected' },
+        disconnect_node: { running: 'Disconnecting', done: 'Disconnected' },
+        undo: { running: 'Undoing', done: 'Undid' },
+        redo: { running: 'Redoing', done: 'Redid' },
+        auto_layout: { running: 'Arranging layout', done: 'Arranged layout' },
+        beautify_layout: { running: 'Tidying layout', done: 'Tidied layout' },
+        inspect_node_layout: { running: 'Inspecting layout', done: 'Inspected layout' },
+        beautify_node: { running: 'Tidying node', done: 'Tidied node' },
+        batch: { running: 'Applying changes', done: 'Applied changes' },
+        save: { running: 'Saving', done: 'Saved' },
+        run: { running: 'Starting run', done: 'Started run' },
+        run_status: { running: 'Checking run', done: 'Checked run' }
+      } as Record<string, { running: string; done: string }>,
+      /** A tool with no label of its own. */
+      verbFallback: ({ tool, phase }: { tool: string; phase: 'running' | 'done' }) =>
+        phase === 'running' ? `Running ${tool}` : `Ran ${tool}`,
+      /**
+       * @deprecated Not used since the step rows (`verbs`, `used`); kept so 2.11.0 overrides
+       * keep type-checking. Removed in 3.0.
+       */
       reading: ({ tool, detail }: { tool: string; detail: string }) =>
         detail ? `Reading: ${tool} ${detail}` : `Reading: ${tool}`,
-      awaitingApproval: ({ tool }: { tool: string }) => `Waiting for your approval: ${tool}`,
-      /** Title of the approval dialog when the assistant, not a browser agent, asks. */
-      confirmTitle: ({ name }: { name: string }) => `The assistant wants to change “${name}”`,
-      /** A read that completed: `Read: describe_type http_request`. */
+      /** @deprecated Not used (see `reading`). Removed in 3.0. */
       read: ({ tool, detail }: { tool: string; detail: string }) =>
         detail ? `Read: ${tool} ${detail}` : `Read: ${tool}`,
+      /** @deprecated Not used (see `reading`). Removed in 3.0. */
       applied: ({ tool, detail }: { tool: string; detail: string }) =>
         detail ? `Applied: ${detail}` : `Done: ${tool}`,
-      rejected: ({ tool }: { tool: string }) => `You rejected: ${tool}`,
-      failed: ({ tool, error }: { tool: string; error: string }) => `${tool} failed: ${error}`,
+      /** The row while the reply is still coming. */
+      thinking: 'Thinking…',
+      /**
+       * The row of a call that waits on the person; the call's own label follows it.
+       * A 2.11.0 override written as `({ tool }) => string` is still honoured (deprecated; 3.0
+       * takes strings only).
+       */
+      awaitingApproval: 'Waiting for your approval',
+      /** Title of the approval dialog when the assistant, not a browser agent, asks. */
+      confirmTitle: ({ name }: { name: string }) => `The assistant wants to change “${name}”`,
+      /**
+       * A call the person turned down; its action follows. A 2.11.0 override written as
+       * `({ tool }) => string` is still honoured (deprecated; 3.0 takes strings only).
+       */
+      rejected: 'Rejected',
+      /** A call that failed: `Adding node failed`, the error follows. */
+      failed: ({ action }: { action: string }) => `${action} failed`,
+      /** The fold of a finished turn: `Used 4 tools · 1.6 s`, `Used 4 tools · 1 failed · 1.6 s`. */
+      used: ({
+        count,
+        problems,
+        duration
+      }: {
+        count: number;
+        problems: number;
+        duration: string;
+      }) =>
+        [
+          `Used ${count} ${count === 1 ? 'tool' : 'tools'}`,
+          problems > 0 ? `${problems} failed` : '',
+          duration
+        ]
+          .filter(Boolean)
+          .join(' · '),
       rounds: ({ count }: { count: number }) =>
         `${count} ${count === 1 ? 'tool round' : 'tool rounds'}`,
       legacyFallback:
@@ -340,8 +754,20 @@ export const defaultMessages = {
     // The form a workflow's interface inputs render as (inputs without a chat
     // turn; the session fills the others).
     inputForm: {
-      title: 'Workflow inputs',
-      missingRequired: ({ names }: { names: string }) => `Fill in the required inputs: ${names}`
+      title: 'Inputs',
+      fillFromLast: 'Fill from last run',
+      fillFromLastTitle: 'Fill the inputs with what the last run was started with',
+      runsTitle: 'Earlier runs',
+      runsLabel: 'Earlier runs of this session',
+      useRun: ({ summary }: { summary: string }) => `Fill the inputs with: ${summary}`,
+      folded: 'Inputs',
+      foldedCount: ({ filled, total }: { filled: number; total: number }) =>
+        `${filled} of ${total} filled`,
+      foldedShow: 'Show the inputs',
+      foldedHide: 'Hide the inputs',
+      jsonHint: 'JSON',
+      missingRequired: ({ names }: { names: string }) => `Fill in the required inputs: ${names}`,
+      invalidJson: ({ names }: { names: string }) => `Not valid JSON for its type: ${names}`
     },
     states: {
       newSessionTitle: 'New session',
@@ -418,8 +844,25 @@ export const defaultMessages = {
       send: 'Send',
       runTitle: 'Run workflow',
       runWaitingTitle: 'Waiting for workflow to be ready...',
-      run: 'Run'
+      run: 'Run',
+      // The editor's Playground while the workflow has unsaved edits: the
+      // action saves first, then goes.
+      saveAndSend: 'Save & send',
+      saveAndSendTitle: 'Save the workflow, then send the message',
+      // Under the composer while the workflow has unsaved edits.
+      saveFirstHint: 'Unsaved edits: sending saves the workflow first.',
+      saveAndRun: 'Save & run',
+      saveAndRunTitle: 'Save the workflow, then run it',
+      saving: 'Saving…'
     },
+    // Shown in the conversation where the workflow was saved (a new version).
+    versionDivider: 'Saved — new version',
+    // Save & send, when the save did not happen: nothing is sent.
+    saveFailed: ({ message }: { message: string }) =>
+      `Not sent: the workflow was not saved. ${message}`,
+    saveNotDone: 'Not sent: the workflow was not saved.',
+    // A run or test session needs a saved workflow and there is none yet.
+    saveFirst: 'Save the workflow first: a test session needs a saved workflow.',
     // Message author labels.
     roles: {
       you: 'You',
@@ -438,13 +881,42 @@ export const defaultMessages = {
       interrupt: 'Interrupt',
       postedBy: ({ origin }: { origin: string }) => `Posted by: ${origin}`
     },
-    // Collapsible run of adjacent log lines.
+    /** @deprecated Unused since the steps row; log lines fold into `steps`. */
     logGroup: {
       summary: ({ count }: { count: number }) => `${count} log lines`
     },
+    // One row per turn that folds the node steps: "4 steps · 46 ms · 1 waiting".
+    steps: {
+      summary: ({ count }: { count: number }) => `${count} ${count === 1 ? 'step' : 'steps'}`,
+      waiting: ({ count }: { count: number }) => `${count} waiting`,
+      failed: ({ count }: { count: number }) => `${count} failed`,
+      tableLabel: 'Steps of this turn',
+      columnNode: 'Node',
+      columnStatus: 'Status',
+      columnCount: 'Runs',
+      columnDuration: 'Time',
+      repeated: ({ count }: { count: number }) => `Ran ${count} times`,
+      pendingNode: 'Waiting for input',
+      // Short names for the table's status column (the pill's own are long).
+      status: {
+        running: 'Running',
+        completed: 'Done',
+        waiting: 'Waiting',
+        failed: 'Failed',
+        skipped: 'Skipped'
+      }
+    },
+    // A turn the person started without typing (Run on a form or run-only
+    // workflow): what its otherwise empty bubble says instead.
+    emptyTurn: {
+      run: 'Started a run',
+      withInputs: ({ names }: { names: string }) => `Ran with ${names}`
+    },
     messageTooltips: {
       nodeId: ({ id }: { id: string }) => `Node ID: ${id}`,
-      executionDuration: 'Execution duration'
+      executionDuration: 'Execution duration',
+      // The node link above a reply: jumps to the node on request.
+      showNodeLastRun: ({ label }: { label: string }) => `Show ${label} and its last run`
     },
     // ARIA labels for message annotations. The hierarchy trail names the
     // actual path so AT users hear "From: ForEach Loop / Greeter" rather
@@ -466,14 +938,48 @@ export const defaultMessages = {
       daysAgo: ({ n }: { n: number }) => `${n}d ago`
     },
     executionConsole: {
+      /** @deprecated The console no longer draws a header row. */
       header: 'Execution',
       noExecutionTitle: 'No execution yet',
       noExecutionText:
         'Create or select a session below, then run your workflow to see execution output here.',
+      /** @deprecated The "Ready to run" state is gone; an empty session shows nothing. */
       readyTitle: 'Ready to run',
+      /** @deprecated See `readyTitle`. */
       readyText:
         'Use the controls below to start the workflow. Output and interactive prompts will appear here.',
       newSession: 'New session'
+    },
+    // The docked Playground's header (Test mode): the history chip and the
+    // overflow menu. One line under each action says when it is needed.
+    header: {
+      history: 'Conversation and run history',
+      noConversation: 'New conversation',
+      conversations: 'Conversations',
+      runs: 'Runs',
+      newConversation: 'New conversation',
+      newConversationHint: 'The current one stays on the sessions page',
+      noRuns: 'No runs yet',
+      noRunsHint: 'Send a message or press Run to make one',
+      run: ({ number }: { number: number }) => `Run ${number}`,
+      staleRun: 'older version',
+      currentRun: 'shown',
+      moreActions: 'More actions',
+      showSteps: 'Expand steps by default',
+      showStepsHint: 'Each turn shows its steps open instead of one folded row',
+      jsonView: 'JSON view',
+      jsonViewHint: 'Edit the inputs as JSON',
+      refresh: 'Refresh',
+      refreshHint: 'If a run looks stuck. It also refreshes on focus.',
+      reset: 'Reset stuck session',
+      resetHint: "Clears the session's state when a run cannot continue",
+      playgroundSettings: 'Playground settings',
+      playgroundSettingsHint: 'What the chat fills and what it prints'
+    },
+    jsonInput: {
+      label: 'Inputs as JSON',
+      invalid: 'Not valid JSON: the form keeps its last good values.',
+      notObject: 'The inputs must be a JSON object.'
     },
     controlPanel: {
       sessionsLabel: 'Session',
@@ -485,6 +991,8 @@ export const defaultMessages = {
       hidePipeline: 'Hide pipeline',
       refresh: 'Refresh',
       refreshTitle: 'Refresh status',
+      // No longer shown (the docked header's menu has `header.playgroundSettings`); kept so host overrides still type-check.
+      openPlaygroundSettings: 'Playground settings',
       logs: 'Logs',
       showLogs: 'Show log messages',
       hideLogs: 'Hide log messages',
@@ -494,6 +1002,10 @@ export const defaultMessages = {
   },
 
   nodes: {
+    // Tooltip and accessible name of the gear on a node card.
+    configure: 'Configure node',
+    configureTool: 'Configure tool',
+    configureIdea: 'Configure idea',
     notes: {
       placeholder: 'Add your notes here...',
       types: {
@@ -524,7 +1036,13 @@ export const defaultMessages = {
       ideaNode: ({ title }: { title: string }) => `Idea node: ${title}`,
       connectInputPort: ({ name }: { name: string }) => `Connect to ${name} input port`,
       connectOutputPort: ({ name }: { name: string }) => `Connect from ${name} output port`,
-      connectBranch: ({ name }: { name: string }) => `Connect from ${name} branch`
+      connectBranch: ({ name }: { name: string }) => `Connect from ${name} branch`,
+      // Node card tooltips: the title popover and the port tooltips.
+      portRequired: 'Required',
+      execIn: 'Runs when the previous node completes',
+      execOut: 'Fires when this node completes',
+      configureHint: 'Double-click to configure',
+      publishedAs: ({ name }: { name: string }) => `Published as: ${name}`
     }
   },
 
@@ -545,22 +1063,61 @@ export const defaultMessages = {
     // resolved status label (typically from `getStatusLabel()` so it stays
     // consistent with status icons elsewhere); the wrapper text is localized.
     overlay: {
-      tooltip: ({ status, count }: { status: string; count: number }) =>
-        `${status} - Executed ${count} times`,
+      tooltip: ({ status }: { status: string }) => status,
       ariaLabel: ({ status }: { status: string }) => `Node execution status: ${status}`,
-      statusLabel: 'Status:',
-      executionsLabel: 'Executions:',
-      lastRunLabel: 'Last Run:',
-      durationLabel: 'Duration:',
-      errorLabel: 'Error:',
-      historyLabel: 'Runs:'
+      // Hover detail on the status pill: how many runs sit behind it.
+      runs: ({ count }: { count: number }) => `${count} runs`,
+      edited: 'edited',
+      editedTooltip: 'Changed since this run started. The result may be out of date.'
     }
   },
 
   // WorkflowInterfaceEditor — the canonical panel for authoring a workflow's
   // public contract (`Workflow.interface`). See `.claude/plans/workflow-interface.md`.
   workflowInterface: {
+    // The tag drawn beside a published port, on the canvas and in the Ports tab.
+    tagAria: ({
+      id,
+      type,
+      direction
+    }: {
+      id: string;
+      type: string;
+      direction: 'input' | 'output';
+    }) => `Workflow ${direction} ${id}, ${type}`,
+    tagTitle: ({ id, type }: { id: string; type: string }) => `${id} · ${type}`,
+    // The popover on a hovered tag: what the name means and where it goes.
+    tagTipInput: 'Workflow input',
+    tagTipOutput: 'Workflow output',
+    tagTipReserved: 'Trigger event',
+    tagTipInputBody: ({ port, node }: { port: string; node: string }) =>
+      `Whoever runs this workflow (the API, a Run workflow node, an agent or the Playground) passes a value under this name. It fills ${port} on ${node}.`,
+    tagTipOutputBody: ({ port, node }: { port: string; node: string }) =>
+      `Whoever runs this workflow gets ${port} from ${node} back under this name.`,
+    tagTipReservedBody:
+      'Holds what happened when this trigger fires: the event fills this input and the run starts here. Callers cannot see or supply it.',
+    tagTipRequired: 'Required',
+    tagTipMismatch: ({ declared, port }: { declared: string; port: string }) =>
+      `Declared ${declared}, but the port is ${port}`,
+    tagTipEditHint: 'Double-click to rename · right-click for more',
+    tagTipReservedHint: 'Derived from the trigger node · read-only',
+    // The read-only tag beside a trigger's event input (derived, MAN-26).
+    reservedTagAria: ({ id, type }: { id: string; type: string }) =>
+      `Trigger event input ${id}, ${type}, read-only`,
+    tagNameLabel: 'Interface name',
+    tagNameHint: 'Enter saves · Esc cancels',
+    tagIdEmpty: 'Give it a name.',
+    tagIdDuplicate: ({ id, direction }: { id: string; direction: 'input' | 'output' }) =>
+      `A workflow ${direction} named "${id}" already exists.`,
+    exposeInputPort: ({ port }: { port: string }) => `Expose ${port} as workflow input…`,
+    exposeOutputPort: ({ port }: { port: string }) => `Expose ${port} as workflow output…`,
+    renameTag: ({ id }: { id: string }) => `Rename interface entry "${id}"`,
+    removeTag: ({ id }: { id: string }) => `Remove "${id}" from the interface`,
+    portActions: ({ port }: { port: string }) => `Interface actions for ${port}`,
     inputsHeading: 'Inputs',
+    reservedInputsHeading: 'Trigger events',
+    reservedInputsHint:
+      'Each trigger fills its own event input when it fires. Derived from the trigger nodes; callers cannot supply them.',
     outputsHeading: 'Outputs',
     addInput: 'Add input',
     addOutput: 'Add output',
@@ -593,6 +1150,11 @@ export const defaultMessages = {
     pullFromPortTitle:
       "Fill name, data type, description, required and default from the bound port's own declaration",
     removeEntry: ({ id }: { id: string }) => `Remove interface entry "${id}"`,
+    // The row's overflow menu: its accessible name and the short item labels.
+    entryActions: ({ id }: { id: string }) => `Actions for "${id}"`,
+    menuMoveUp: 'Move up',
+    menuMoveDown: 'Move down',
+    menuRemove: 'Remove',
     moveUp: ({ id }: { id: string }) => `Move "${id}" up`,
     moveDown: ({ id }: { id: string }) => `Move "${id}" down`,
     metaDisclosure: 'Server metadata (read-only)',
@@ -695,6 +1257,28 @@ export const defaultMessages = {
 
   // The confirm dialog the WebMCP adapter shows before a browser agent's change runs.
   webmcp: {
+    // The desktop bridge: a button beside the canvas zoom controls and its popover, for a
+    // browser without WebMCP of its own. Offered only when the site turned the bridge on.
+    bridge: {
+      trigger: 'Desktop bridge',
+      // Hover text of the button: the name and where the connection stands.
+      triggerTitle: ({ status }: { status: string }) => `Desktop bridge: ${status}`,
+      title: 'Desktop bridge',
+      explainer: 'Lets an AI app on this computer see and edit this workflow.',
+      status: {
+        disconnected: 'Not connected',
+        connecting: 'Connecting\u2026',
+        connected: 'Connected',
+        error: 'Connection failed'
+      },
+      tokenLabel: 'Connection token',
+      tokenPlaceholder: 'Paste the token from the bridge',
+      connect: 'Connect',
+      disconnect: 'Disconnect',
+      toolsOffered: ({ count }: { count: number }) =>
+        count === 1 ? '1 tool offered' : `${count} tools offered`,
+      toolsLabel: 'Tools offered to the connected app'
+    },
     confirmTitle: ({ name }: { name: string }) => `A browser agent wants to change “${name}”`,
     confirmCount: ({ count }: { count: number }) =>
       `${count === 1 ? '1 change' : `${count} changes`} — applied together, undone together.`,
@@ -722,5 +1306,46 @@ export const defaultMessages = {
       `${count} changes — ${parts}. Applied together, undone together.`,
     rememberEdits:
       'Apply further edits from any agent on this page without asking, until this page is closed'
+  },
+
+  // Design-system primitives (components/primitives). Defaults only; every
+  // primitive also accepts the visible text as a prop.
+  statusPill: {
+    running: 'Running',
+    completed: 'Completed',
+    waiting: 'Waiting for you',
+    failed: 'Failed',
+    skipped: 'Skipped'
+  },
+
+  composer: {
+    placeholder: 'Type a message',
+    send: 'Send',
+    stop: 'Stop',
+    attach: 'Attach'
+  },
+
+  notice: {
+    dismiss: 'Dismiss'
+  },
+
+  field: {
+    required: 'required',
+    examples: 'Examples'
+  },
+
+  menu: {
+    moreActions: 'More actions'
+  },
+
+  // The searchable rendering of the Select primitive (long or grouped lists).
+  select: {
+    searchPlaceholder: 'Search…',
+    noMatches: 'No matches',
+    // "3 of 42" — what the filter leaves, out of everything listed.
+    count: ({ shown, total }: { shown: number; total: number }) => `${shown} of ${total}`,
+    hintMove: 'move',
+    hintChoose: 'choose',
+    hintClose: 'close'
   }
 } as const;

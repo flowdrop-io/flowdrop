@@ -22,14 +22,23 @@ import { WorkflowStore } from './workflowStore.svelte.js';
 import { HistoryStore } from './historyStore.svelte.js';
 import { PlaygroundStore } from './playgroundStore.svelte.js';
 import { InterruptStore } from './interruptStore.svelte.js';
+import { RunController } from './runController.svelte.js';
 import { CategoriesStore } from './categoriesStore.svelte.js';
 import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
 import { InlineEditStore } from './inlineEditStore.svelte.js';
+import { EditorModeStore } from './editorModeStore.svelte.js';
+import { AttachedRunStore } from './attachedRunStore.svelte.js';
+import { NodeHighlightStore } from './nodeHighlightStore.svelte.js';
+import { ConnectDragStore } from './connectDragStore.svelte.js';
+import { LoopbackLanesStore } from './loopbackLanesStore.svelte.js';
+import { EditedNodesStore } from './editedNodesStore.svelte.js';
+import { DoctorStore } from './doctorStore.svelte.js';
 import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from '../config/defaultPortConfig.js';
+import type { MeasuredCard } from '../layout/fromWorkflow.js';
 import { NodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
 import { FieldComponentRegistry } from '../form/fieldRegistry.js';
 import { WorkflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
@@ -68,6 +77,13 @@ export interface FlowDropInstance {
    * instance owns a separate service, so sessions poll independently.
    */
   readonly playgroundService: PlaygroundService;
+  /**
+   * The session and run executors of this instance: load, create and select
+   * sessions, take a turn, launch a run, signal, stop, poll. The Playground
+   * and the editor Console both drive them from here, so there is one code
+   * path; the controller Test mode builds on.
+   */
+  readonly runs: RunController;
   /** Pending interrupt/confirmation dialogs. */
   readonly interrupts: InterruptStore;
   /** Endpoint configuration, auth provider, and API client for this instance. */
@@ -100,6 +116,36 @@ export interface FlowDropInstance {
    */
   readonly inlineEdit: InlineEditStore;
   /**
+   * The Edit | Test mode of this editor. `fd.editorMode.set('test')` is how a
+   * host (or a run bar) takes the editor into Test mode; the navbar switch
+   * writes the same store.
+   */
+  readonly editorMode: EditorModeStore;
+  /**
+   * The run attached to the Assistant (`fd.attachedRun.attach(id)`): the chat
+   * request carries it as `attachedRunId`, and the Assistant's run tools read it.
+   */
+  readonly attachedRun: AttachedRunStore;
+  /**
+   * Hover and selection shared by Playground messages and canvas nodes, and
+   * the "show this node's last run" request a message link makes.
+   */
+  readonly highlight: NodeHighlightStore;
+  /** The wire being dragged out of a port: cards light the ports that take its type. */
+  readonly connectDrag: ConnectDragStore;
+  /** The return lanes loopback edges are drawn along. */
+  readonly loopbackLanes: LoopbackLanesStore;
+  /**
+   * Which nodes changed since the shown run started (the `edited` mark in Test
+   * mode). `App` feeds it the shown run and the effective mode.
+   */
+  readonly editedNodes: EditedNodesStore;
+  /**
+   * The problems the backend's Doctor finds in the draft, and the remedies it
+   * offers (the Problems indicator and the node badges read it).
+   */
+  readonly doctor: DoctorStore;
+  /**
    * The node types this editor currently knows: what `App` fetched (or was
    * given), merged with the format-provided nodes. Written by the editor as
    * its fetch lands; read by anything that needs the list without fetching
@@ -130,6 +176,13 @@ export interface FlowDropInstance {
    * `null` when no editor is mounted.
    */
   skinScope: string | null;
+  /**
+   * How the mounted canvas measured a node (size and handle centres from its
+   * top-left), registered by the editor while its canvas is mounted. Node
+   * layout commands read it so they work from the geometry on screen; without
+   * a canvas they fall back to computed geometry.
+   */
+  measureNode: ((nodeId: string) => MeasuredCard | undefined) | null;
   /**
    * Run `fn` when this instance is destroyed. Returns an unsubscribe; calling
    * it before `destroy()` means `fn` never runs. Adapters that bind to an
@@ -237,14 +290,30 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
 
   const playground = new PlaygroundStore();
   const instancePlaygroundService = isDefault ? playgroundService : new PlaygroundService();
+  const api = new ApiContext();
+  const doctor = new DoctorStore(workflow, api);
+  const runs = new RunController({
+    playground,
+    service: instancePlaygroundService,
+    api,
+    workflow
+  });
+
+  // Reactive, so the loopback lanes recompute once the canvas registers its measurement.
+  let measureNodeFn = $state.raw<((nodeId: string) => MeasuredCard | undefined) | null>(null);
 
   const cleanups: Array<() => void> = [
     () => historyBindings.cleanup(),
     () => historyBindings.setOnRestoreCallback(null),
     () => historyBindings.setBeforeNavigateCallback(null),
+    () => doctor.dispose(),
     () => workflow.setOnDirtyStateChange(null),
     () => workflow.setOnWorkflowChange(null),
     () => playground.dispose(),
+    // Drop the surface's options (callbacks into a mounted component).
+    () => runs.configure({}),
+    // Its host-run poll and session-status subscription.
+    () => runs.dispose(),
     // An owned service stops with its instance. The default one is the shared
     // singleton and keeps the legacy behavior (outlives its mounts).
     () => {
@@ -261,8 +330,9 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     historyBindings,
     playground,
     playgroundService: instancePlaygroundService,
+    runs,
     interrupts: new InterruptStore(),
-    api: new ApiContext(),
+    api,
     nodes: new NodeComponentRegistry({
       registrations: BUILTIN_NODE_COMPONENTS,
       defaultType: 'workflowNode'
@@ -275,10 +345,23 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     // The default instance keeps the legacy bare localStorage key.
     pipelinePanel: new PipelinePanelStore(id),
     inlineEdit: new InlineEditStore(),
+    editorMode: new EditorModeStore(),
+    attachedRun: new AttachedRunStore(),
+    highlight: new NodeHighlightStore(),
+    connectDrag: new ConnectDragStore(),
+    loopbackLanes: new LoopbackLanesStore(),
+    editedNodes: new EditedNodesStore(() => workflow.current),
+    doctor,
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
     approvalGate: null,
     skinScope: null,
+    get measureNode() {
+      return measureNodeFn;
+    },
+    set measureNode(fn) {
+      measureNodeFn = fn;
+    },
     onDestroy(fn) {
       cleanups.push(fn);
       return () => {

@@ -1,16 +1,24 @@
 <!--
-  Theme Toggle Component
-  A button that cycles through light, dark, and auto theme modes.
-  Displays the icon for the current theme state.
+  @component
+  ThemeToggle: a button that cycles the theme: light, dark, auto (and host, when the host app
+  sets a colour scheme). The icon shows the current choice and the tooltip says what a click does.
 
-  Built on the shared Button primitive so it stays visually and dimensionally
-  aligned with every other control (height, focus ring, hover) for free.
+  Exported for host apps; the editor sets the theme in its settings panel instead. It is built on the primitive
+  Button, so height and focus ring match other controls. The choice is stored in the settings store.
+
+  **Use it for** a theme switch in your own toolbar.
+  **Not for** the editor's own settings; those have their own theme picker.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import Button from './Button.svelte';
-  import { getTheme, getResolvedTheme, cycleTheme } from '../stores/settingsStore.svelte.js';
+  import {
+    getTheme,
+    getResolvedTheme,
+    getHostColorScheme,
+    cycleTheme
+  } from '../stores/settingsStore.svelte.js';
   import type { ThemePreference } from '../types/settings.js';
 
   /**
@@ -46,6 +54,8 @@
         return 'mdi:moon-waning-crescent';
       case 'auto':
         return 'mdi:desktop-mac';
+      case 'host':
+        return 'mdi:link-variant';
     }
   }
 
@@ -65,6 +75,8 @@
         return 'Dark';
       case 'auto':
         return 'Auto';
+      case 'host':
+        return getHostColorScheme()?.label ?? 'Auto';
     }
   }
 
@@ -77,10 +89,11 @@
    * Get tooltip text based on theme preference
    */
   function getTooltipText(currentTheme: ThemePreference, resolved: 'light' | 'dark'): string {
-    if (currentTheme === 'auto') {
-      return `Theme: Auto (${resolved}). Click to switch to Light`;
+    if (currentTheme === 'auto' || currentTheme === 'host') {
+      return `Theme: ${getThemeLabel(currentTheme)} (${resolved}). Click to switch to Light`;
     }
-    const next = currentTheme === 'light' ? 'Dark' : 'Auto';
+    const next =
+      currentTheme === 'light' ? 'Dark' : getThemeLabel(getHostColorScheme() ? 'host' : 'auto');
     return `Theme: ${currentTheme === 'light' ? 'Light' : 'Dark'}. Click to switch to ${next}`;
   }
 </script>

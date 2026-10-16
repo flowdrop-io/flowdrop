@@ -1,7 +1,13 @@
 <!--
-  CommandConsole Component
-  Bottom-panel REPL shell for the FlowDrop Command DSL
-  Styled with BEM syntax matching ConfigPanel pattern
+  @component
+  The editor's Console: a terminal-style panel for the FlowDrop command language (`list nodes`, `add ...`,
+  `help`) and for `session` commands that drive runs.
+
+  Commands act on the workflow open in the instance (`getInstance()`). With no workflow loaded they answer
+  "No workflow loaded". An empty Console offers a few read-only example commands to click.
+
+  **Use it for** inspecting and editing the workflow by typing, and for scripted batches.
+  **Not for** the open/close toggle (that is `ConsoleStrip`).
 -->
 
 <script lang="ts">
@@ -10,6 +16,10 @@
     parseCommand,
     executeCommand,
     executeBatch,
+    parseSessionCommand,
+    executeSessionCommand,
+    isSessionLine,
+    SESSION_HELP,
     type UIAction,
     type CommandContext,
     type CommandResultOk,
@@ -24,6 +34,7 @@
   import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
   import { updateSettings, getUiSettings } from '../../stores/settingsStore.svelte.js';
+  import Button from '../primitives/Button.svelte';
   import ConsoleInput from './ConsoleInput.svelte';
   import ConsoleOutput, { type ConsoleEntry } from './ConsoleOutput.svelte';
   import { m } from '$lib/messages/index.js';
@@ -37,14 +48,24 @@
     formatHelp
   } from './formatters.js';
 
+  const SESSION_HEADING = 'Session (editor Console only):';
+
   interface Props {
     /** Available node types for command execution */
     nodeTypes: NodeMetadata[];
     /** Callback for UI actions (open config, select node) */
     onUIAction?: (action: UIAction) => void;
+    /** Id of the panel element, so the toggle strip can point `aria-controls` at it */
+    id?: string;
   }
 
-  let { nodeTypes, onUIAction }: Props = $props();
+  let { nodeTypes, onUIAction, id }: Props = $props();
+
+  /**
+   * Commands the empty state offers. Read-only on purpose: a click runs them,
+   * and none of them can change the workflow.
+   */
+  const EXAMPLE_COMMANDS = ['list nodes', 'list types', 'help'] as const;
 
   const fd = getInstance();
 
@@ -86,6 +107,23 @@
     updateSettings({ ui: { consoleOpen: false } });
   }
 
+  /**
+   * Run a `session …` line. These are asynchronous and talk to the backend, so
+   * they have their own lane: the input stays usable while one is in flight and
+   * its result is added when it lands.
+   */
+  async function handleSessionSubmit(line: string) {
+    const parsed = parseSessionCommand(line);
+    if (!parsed.ok) {
+      outputEntries.push({ type: 'error', text: parsed.error });
+      return;
+    }
+    const result = await executeSessionCommand(parsed.command, fd.runs);
+    outputEntries.push(
+      result.ok ? { type: 'success', text: result.message } : { type: 'error', text: result.error }
+    );
+  }
+
   function handleCommandSubmit(value: string) {
     const trimmed = value.trim();
     if (!trimmed) return;
@@ -96,6 +134,18 @@
     // Handle cls command (clear console output; use 'clear' to clear the canvas)
     if (trimmed.toLowerCase() === 'cls') {
       outputEntries = [];
+      return;
+    }
+
+    // `help session` is answered here: the editing DSL does not know the verb.
+    if (/^help\s+session$/i.test(trimmed)) {
+      outputEntries.push({ type: 'formatted', text: formatHelp({ commands: SESSION_HELP }) });
+      return;
+    }
+
+    // Session commands run in their own, asynchronous lane.
+    if (isSessionLine(trimmed)) {
+      void handleSessionSubmit(trimmed);
       return;
     }
 
@@ -121,12 +171,30 @@
       } else {
         outputEntries.push({ type: 'success', text: result.message });
       }
+      // The Console also knows the session commands; `help` lists them too.
+      if (parseResult.command.type === 'help' && !parseResult.command.command) {
+        outputEntries.push({
+          type: 'formatted',
+          text: `${SESSION_HEADING}\n${formatHelp({ commands: SESSION_HELP })}`
+        });
+      }
     } else {
       outputEntries.push({ type: 'error', text: result.error });
     }
   }
 
   function handleBatchSubmit(lines: string[]) {
+    // A batch is all-or-nothing and synchronous; a run is neither. Refuse
+    // before anything executes.
+    if (lines.some(isSessionLine)) {
+      for (const line of lines) outputEntries.push({ type: 'input', text: line });
+      outputEntries.push({
+        type: 'error',
+        text: 'session commands cannot be part of a batch. Nothing was run; send them one at a time.'
+      });
+      return;
+    }
+
     if (!commandContext) {
       outputEntries.push({ type: 'error', text: 'No workflow loaded' });
       return;
@@ -197,19 +265,24 @@
   }
 </script>
 
-<div class="command-console" role="region" aria-label={m().layout.commandConsole}>
-  <div class="command-console__header">
-    <h2 class="command-console__title">{m().navigation.bottomPanel.console}</h2>
-    <button
-      class="command-console__close"
-      onclick={closeConsole}
-      aria-label={m().layout.closeConsole}
-      type="button"
-    >
-      &times;
-    </button>
-  </div>
+<div class="command-console" {id} role="region" aria-label={m().layout.commandConsole}>
   <div class="command-console__content">
+    {#if outputEntries.length === 0}
+      <div class="command-console__examples" data-testid="console-examples">
+        <span class="command-console__examples-label">{m().layout.consoleExamplesLabel}</span>
+        {#each EXAMPLE_COMMANDS as example (example)}
+          <Button
+            variant="ghost"
+            size="sm"
+            class="command-console__example"
+            onclick={() => handleCommandSubmit(example)}
+          >
+            <span aria-hidden="true">›</span>
+            {example}
+          </Button>
+        {/each}
+      </div>
+    {/if}
     <ConsoleOutput entries={outputEntries} />
   </div>
   <ConsoleInput
@@ -226,43 +299,41 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: var(--fd-background);
+    /* Terminal surface: ink in every app theme and colour scheme. The strip above stays chrome. */
+    background-color: var(--fd-console-bg);
+    color: var(--fd-console-fg);
+    color-scheme: dark;
+    font-family: var(--fd-font-mono);
   }
 
-  .command-console__header {
+  .command-console__examples {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid var(--fd-border);
-    background-color: var(--fd-muted);
-    flex-shrink: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--fd-space-3xs);
+    padding: var(--fd-space-xs) var(--fd-space-md) 0;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-sm);
+    color: var(--fd-console-muted);
   }
 
-  .command-console__title {
-    margin: 0;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--fd-foreground);
+  .command-console__examples-label {
+    font-family: var(--fd-font-sans);
+    font-size: var(--fd-text-meta);
   }
 
-  .command-console__close {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--fd-muted-foreground);
-    padding: 0.25rem;
-    border-radius: var(--fd-radius-sm);
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
+  .command-console__examples :global(.command-console__example) {
+    height: auto;
+    padding: 0 var(--fd-space-3xs);
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: normal;
+    color: var(--fd-console-arg);
   }
 
-  .command-console__close:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
+  .command-console__examples :global(.command-console__example:hover) {
+    background-color: var(--fd-console-hover);
+    color: var(--fd-console-verb);
   }
 
   .command-console__content {

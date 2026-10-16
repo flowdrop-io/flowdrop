@@ -1,13 +1,12 @@
 <!--
-  MessageTagChip Component
+  @component
+  One small label on a message.
+  The user sees it under or beside a message when the server attached a tag to it. The colour comes from `tag.color` and the look (filled or outlined) from `tag.variant`.
 
-  Renders a single server-emitted MessageTag as a compact chip. Semantic
-  color comes from tag.color, visual emphasis from tag.variant. Used by
-  MessageBubble and InterruptBubble.
+  Styling: one base rule reads CSS custom properties. One rule per colour sets `--chip-c`, and one rule per variant sets background, text and border from it. Adding a colour is one line.
 
-  Styling: a single base rule reads from CSS custom properties; one rule
-  per color sets --chip-c, one rule per variant sets bg/fg/border in terms
-  of --chip-c. Adding a color is one line.
+  **Use it for** a single server tag.
+  **Not for** a row of tags; use `MessageTagStrip` instead.
 -->
 
 <script lang="ts">
@@ -15,6 +14,7 @@
   import type { MessageTag } from '../../types/playground.js';
 
   interface Props {
+    /** The server-sent tag to show. */
     tag: MessageTag;
   }
 

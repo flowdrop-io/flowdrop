@@ -24,10 +24,19 @@
   // itself (dialog included) stays behind a dynamic import in ensureRuntime.
   import { describeCommand, summarizeCommands } from '../../webmcp/descriptors.js';
   import CommandPreview from './CommandPreview.svelte';
+  import Composer from '../primitives/Composer.svelte';
+  import Button from '../primitives/Button.svelte';
+  import IconButton from '../primitives/IconButton.svelte';
   import MarkdownDisplay from '../MarkdownDisplay.svelte';
+  import { chipTitles } from '../../utils/chipTitles.js';
   import { onDestroy, tick } from 'svelte';
   import Icon from '@iconify/svelte';
   import { getMessages, m } from '$lib/messages/index.js';
+  import { isRunStale } from '../../utils/sessionRuns.js';
+  import { formatClock, formatTimestamp } from '../playground/messageDisplay.js';
+  import { describeArgs, toolVerb, type ActivityRow as ToolLine } from '../../chat/activity.js';
+  import ActivityList from './ActivityList.svelte';
+  import ActivityRow from './ActivityRow.svelte';
 
   // =========================================================================
   // Internal Display Message Type
@@ -52,18 +61,16 @@
     commandsDismissed?: boolean;
     /** Tools mode: one compact status line per tool call of this turn */
     toolLines?: ToolLine[];
+    /** How long the turn took, wall-clock, for the fold of its activity rows. */
+    elapsedMs?: number;
+    /** When the message was made (ISO), for the meta line under it. */
+    at?: string;
     /** Set on the assistant placeholder while its reply is still coming */
     inProgress?: boolean;
     /** Tools mode: a muted notice (legacy fallback, abort) rather than a reply */
     notice?: boolean;
     /** Tools mode: a deterministic warning under the reply, e.g. tool calls failed this turn */
     warning?: string;
-  }
-
-  /** One tool call as the transcript shows it: what ran and how it ended. */
-  interface ToolLine {
-    status: 'running' | 'ok' | 'rejected' | 'failed' | 'note';
-    text: string;
   }
 
   interface Props {
@@ -151,11 +158,60 @@
   // Derived State
   // =========================================================================
 
+  // ---- the attached run -----------------------------------------------------
+
+  const attachedId = $derived(fd.attachedRun.id);
+  const sessionRuns = $derived(fd.playground.sessionRuns);
+  /** The attached run as the session's runs list knows it (absent: a run it does not list). */
+  const attachedRun = $derived(
+    attachedId ? (sessionRuns?.runs.find((r) => r.id === attachedId) ?? null) : null
+  );
+  const attachedStatus = $derived(attachedRun?.status ?? fd.attachedRun.hint.status ?? null);
+  const attachedStale = $derived(
+    attachedRun
+      ? isRunStale(attachedRun.workflowVersion, sessionRuns?.workflowVersion ?? null)
+      : false
+  );
+
+  /** The list of attachable runs is open. */
+  let attachOpen = $state(false);
+  /** Set once the runs request answered, so the list can tell "none" from "not loaded yet". */
+  let attachLoaded = $state(false);
+
+  function statusLabel(status: string | null): string {
+    if (!status) return '';
+    const known = t.attach.statuses as Record<string, string>;
+    return known[status] ?? status;
+  }
+
+  function runTime(run: { startedAt: string | null }): string {
+    return run.startedAt ? formatTimestamp(run.startedAt) : '';
+  }
+
+  async function toggleAttachList(): Promise<void> {
+    attachOpen = !attachOpen;
+    if (!attachOpen) return;
+    // The list is not refreshed per turn: load it when it opens.
+    attachLoaded = false;
+    await fd.runs.loadSessionRuns();
+    attachLoaded = true;
+  }
+
+  function attachRun(id: string, status: string): void {
+    fd.attachedRun.attach(id, { status });
+    attachOpen = false;
+  }
+
+  // A run belongs to its workflow: another workflow's chat starts without one.
+  let attachedFor: string | undefined;
+  $effect(() => {
+    const id = workflowId;
+    if (attachedFor !== undefined && attachedFor !== id) fd.attachedRun.detach();
+    attachedFor = id;
+  });
+
   const isDisabled = $derived(!workflowId);
   const isChatConfigured = $derived(endpointConfig?.endpoints?.chat !== undefined);
-  const canSend = $derived(
-    inputValue.trim().length > 0 && !isLoading && !isDisabled && isChatConfigured
-  );
 
   // =========================================================================
   // Auto-scroll
@@ -246,18 +302,6 @@
     return runtime;
   }
 
-  /** Primitive argument values of a call, for a status line: `describe_type http_request`. */
-  function argsDetail(args: Record<string, unknown>): string {
-    const parts: string[] = [];
-    for (const value of Object.values(args)) {
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        parts.push(String(value));
-      }
-    }
-    const text = parts.join(' ');
-    return text.length > 60 ? `${text.slice(0, 57)}…` : text;
-  }
-
   /**
    * What a call changed, for the transcript, in the dialog's own words: the
    * batch summary for several commands, the one-line description for one,
@@ -275,57 +319,86 @@
     return msg.toolLines?.[msg.toolLines.length - 1];
   }
 
+  /** When the running call of each line started, and which lines waited on the person (no honest duration). */
+  const lineStart = new WeakMap<ToolLine, number>();
+  const lineAsked = new WeakSet<ToolLine>();
+
+  /** Close a running line: how long it took, unless it waited on the person. */
+  function finishLine(line: ToolLine): void {
+    const started = lineStart.get(line);
+    if (started !== undefined && !lineAsked.has(line)) {
+      line.ms = Math.round(performance.now() - started);
+    }
+  }
+
+  /** A tool label that 2.11.0 hosts may still supply as `({ tool }) => string`. */
+  function toolLabel(label: string | ((params: { tool: string }) => string), tool: string): string {
+    return typeof label === 'function' ? label({ tool }) : label;
+  }
+
   /**
    * Render a driver event onto the in-progress assistant message. Synchronous
    * on purpose: events arrive in order and land in order.
    */
   function renderEvent(msg: DisplayMessage, event: TurnEvent): void {
     const tt = t.tools;
+    const verb = (tool: string, phase: 'running' | 'done') =>
+      toolVerb(tool, phase, tt.verbs, (name, p) => tt.verbFallback({ tool: name, phase: p }));
     switch (event.type) {
       case 'note':
-        msg.toolLines?.push({ status: 'note', text: event.content });
+        msg.toolLines?.push({ status: 'note', verb: event.content, detail: '' });
         break;
       case 'reading':
+      case 'awaiting-approval': {
         msg.toolLines?.push({
           status: 'running',
-          text: tt.reading({ tool: event.call.name, detail: argsDetail(event.call.args) })
+          verb:
+            event.type === 'awaiting-approval'
+              ? toolLabel(tt.awaitingApproval, event.call.name)
+              : verb(event.call.name, 'running'),
+          detail:
+            event.type === 'awaiting-approval'
+              ? verb(event.call.name, 'running')
+              : describeArgs(event.call.name, event.call.args)
         });
+        // The pushed object is proxied by the state array; track the proxy.
+        const line = lastLine(msg);
+        if (line) {
+          lineStart.set(line, performance.now());
+          if (event.type === 'awaiting-approval') lineAsked.add(line);
+        }
         break;
-      case 'awaiting-approval':
-        msg.toolLines?.push({
-          status: 'running',
-          text: tt.awaitingApproval({ tool: event.call.name })
-        });
-        break;
+      }
       case 'applied': {
         const line = lastLine(msg);
         if (line) {
+          finishLine(line);
           line.status = 'ok';
-          line.text = event.preview?.mutating
-            ? tt.applied({
-                tool: event.call.name,
-                detail: appliedDetail(event.preview, event.outcome)
-              })
-            : tt.read({ tool: event.call.name, detail: argsDetail(event.call.args) });
+          line.verb = verb(event.call.name, 'done');
+          line.detail =
+            event.call.name === 'batch' && event.preview?.mutating
+              ? appliedDetail(event.preview, event.outcome)
+              : describeArgs(event.call.name, event.call.args);
         }
         break;
       }
       case 'rejected': {
         const line = lastLine(msg);
         if (line) {
+          finishLine(line);
           line.status = 'rejected';
-          line.text = tt.rejected({ tool: event.call.name });
+          line.verb = toolLabel(tt.rejected, event.call.name);
+          line.detail = verb(event.call.name, 'running');
         }
         break;
       }
       case 'failed': {
         const line = lastLine(msg);
         if (line) {
+          finishLine(line);
           line.status = 'failed';
-          line.text = tt.failed({
-            tool: event.call.name,
-            error: event.outcome.error ?? event.outcome.code ?? 'error'
-          });
+          line.verb = tt.failed({ action: verb(event.call.name, 'running') });
+          line.detail = event.outcome.error ?? event.outcome.code ?? 'error';
         }
         break;
       }
@@ -337,14 +410,16 @@
 
   /** One user message as a tool-calling turn. */
   async function sendToolTurn(text: string): Promise<void> {
-    displayMessages.push({ role: 'user', content: text });
+    displayMessages.push({ role: 'user', content: text, at: new Date().toISOString() });
     isLoading = true;
 
+    const turnStart = performance.now();
     const progress: DisplayMessage = {
       role: 'assistant',
       content: '',
       toolLines: [],
-      inProgress: true
+      inProgress: true,
+      at: new Date().toISOString()
     };
     displayMessages.push(progress);
     // The pushed object is proxied by the state array; mutate the proxy.
@@ -358,7 +433,9 @@
           message: text,
           workflowState: getWorkflowState(),
           history: history.slice(0, -2), // all except this message and the placeholder
-          tools: toToolDefinitions(rt)
+          tools: toToolDefinitions(rt),
+          // The run the person attached, only while one is attached.
+          ...(attachedId ? { attachedRunId: attachedId } : {})
         },
         {
           send: (request) =>
@@ -397,6 +474,7 @@
     } catch (err) {
       msg.content = `Error: ${err instanceof Error ? err.message : 'Failed to send message'}`;
     } finally {
+      msg.elapsedMs = Math.round(performance.now() - turnStart);
       msg.inProgress = false;
       isLoading = false;
       if (destroyed) releaseRuntime();
@@ -417,7 +495,11 @@
 
     // No commands — pure chat message
     if (commands.length === 0) {
-      return { role: 'assistant', content: explanation || responseContent };
+      return {
+        role: 'assistant',
+        content: explanation || responseContent,
+        at: new Date().toISOString()
+      };
     }
 
     const context = getCommandContext();
@@ -452,7 +534,8 @@
     const msg: DisplayMessage = {
       role: 'assistant',
       content: explanation || responseContent,
-      rawContent: responseContent
+      rawContent: responseContent,
+      at: new Date().toISOString()
     };
 
     if (readOnlyResults.length > 0) {
@@ -650,7 +733,8 @@
   function appendErrorToHistory(errorMessage: string) {
     displayMessages.push({
       role: 'assistant',
-      content: `Error: ${errorMessage}`
+      content: `Error: ${errorMessage}`,
+      at: new Date().toISOString()
     });
   }
 
@@ -662,7 +746,12 @@
   async function sendMessageInternal(text: string, retryAttempt?: number) {
     if (!text || isLoading || !workflowId) return;
 
-    displayMessages.push({ role: 'user', content: text, retryAttempt });
+    displayMessages.push({
+      role: 'user',
+      content: text,
+      retryAttempt,
+      at: new Date().toISOString()
+    });
     isLoading = true;
 
     // The reply's place in the log, shown as thinking until it arrives — the
@@ -671,7 +760,8 @@
       displayMessages.push({
         role: 'assistant',
         content: '',
-        inProgress: true
+        inProgress: true,
+        at: new Date().toISOString()
       }) - 1;
 
     try {
@@ -693,7 +783,8 @@
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       displayMessages[placeholderIndex] = {
         role: 'assistant',
-        content: `Error: ${errorMessage}`
+        content: `Error: ${errorMessage}`,
+        at: new Date().toISOString()
       };
     } finally {
       isLoading = false;
@@ -710,13 +801,6 @@
       await sendToolTurn(text);
     } else {
       await sendMessageInternal(text);
-    }
-  }
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
     }
   }
 </script>
@@ -739,19 +823,34 @@
     <div class="ai-chat-panel__messages" bind:this={messagesElement} role="log" aria-live="polite">
       {#if displayMessages.length === 0}
         <div class="ai-chat-panel__empty">
-          <Icon icon="mdi:chat-outline" />
-          <span>{t.helpBuild}</span>
+          <p class="ai-chat-panel__empty-title">{t.helpBuild}</p>
+          <div class="ai-chat-panel__suggestions" role="group" aria-label={t.suggestionsLabel}>
+            {#each t.suggestions as suggestion (suggestion)}
+              <Button
+                size="md"
+                variant="secondary"
+                class="ai-chat-panel__suggestion"
+                disabled={isLoading}
+                onclick={() => {
+                  inputValue = suggestion;
+                  void sendMessage();
+                }}
+              >
+                {suggestion}
+              </Button>
+            {/each}
+          </div>
         </div>
       {/if}
       <!-- Append-only chat log without stable IDs — index is the identity -->
       {#each displayMessages as message, msgIndex (msgIndex)}
         {#if message.retryAttempt !== undefined}
-          <div
-            class="ai-chat-panel__retry-notice"
-            class:ai-chat-panel__retry-notice--active={displayMessages[msgIndex + 1]?.inProgress}
-          >
-            <Icon icon="mdi:autorenew" />
-            <span>{t.autoRetry({ attempt: message.retryAttempt, max: MAX_AUTO_RETRIES })}</span>
+          <div class="ai-chat-panel__retry-notice">
+            <ActivityRow
+              status="retry"
+              active={displayMessages[msgIndex + 1]?.inProgress === true}
+              label={t.autoRetry({ attempt: message.retryAttempt, max: MAX_AUTO_RETRIES })}
+            />
           </div>
         {:else}
           <div
@@ -759,43 +858,38 @@
             class:ai-chat-panel__bubble--notice={message.notice}
           >
             {#if message.toolLines && message.toolLines.length > 0}
-              <ul
-                class="ai-chat-panel__tool-lines"
-                aria-label={t.tools.rounds({ count: message.toolLines.length })}
-              >
-                {#each message.toolLines as line (line)}
-                  <li class="ai-chat-panel__tool-line ai-chat-panel__tool-line--{line.status}">
-                    {#if line.status === 'running'}
-                      <Icon icon="mdi:loading" class="ai-chat-panel__tool-line-spin" />
-                    {:else if line.status === 'ok'}
-                      <Icon icon="mdi:check" />
-                    {:else if line.status === 'rejected'}
-                      <Icon icon="mdi:cancel" />
-                    {:else if line.status === 'note'}
-                      <Icon icon="mdi:comment-text-outline" />
-                    {:else}
-                      <Icon icon="mdi:alert-circle-outline" />
-                    {/if}
-                    <span>{line.text}</span>
-                  </li>
-                {/each}
-              </ul>
+              <div class="ai-chat-panel__activity">
+                <ActivityList
+                  rows={message.toolLines}
+                  live={message.inProgress === true}
+                  elapsedMs={message.elapsedMs}
+                />
+              </div>
             {/if}
             {#if message.role === 'user'}
               <div class="ai-chat-panel__bubble-content">{message.content}</div>
             {:else if message.inProgress && !message.content}
-              <div class="ai-chat-panel__thinking">
-                <span class="ai-chat-panel__dot"></span>
-                <span class="ai-chat-panel__dot"></span>
-                <span class="ai-chat-panel__dot"></span>
-              </div>
+              {#if message.toolLines?.[message.toolLines.length - 1]?.status !== 'running'}
+                <div class="ai-chat-panel__activity">
+                  <ActivityRow status="running" label={t.tools.thinking} />
+                </div>
+              {/if}
             {:else if message.notice}
-              <div class="ai-chat-panel__bubble-content ai-chat-panel__notice-text">
-                {message.content}
+              <div class="ai-chat-panel__activity">
+                <ActivityRow status="note" label={message.content} />
               </div>
             {:else}
-              <div class="ai-chat-panel__bubble-content">
+              <div
+                class="ai-chat-panel__bubble-content"
+                title={message.at ? formatTimestamp(message.at) : undefined}
+                use:chipTitles={message.content}
+              >
                 <MarkdownDisplay content={message.content} />
+              </div>
+            {/if}
+            {#if message.role === 'user' && message.at}
+              <div class="ai-chat-panel__meta">
+                <time datetime={message.at}>{formatClock(message.at)}</time>
               </div>
             {/if}
             {#if message.warning}
@@ -825,30 +919,210 @@
       {/each}
     </div>
 
-    <!-- Input area -->
-    <div class="ai-chat-panel__input-area">
-      <textarea
-        bind:this={inputElement}
+    <!-- The composer, with the attached run as a chip above it and the way to attach one inside it -->
+    <div class="ai-chat-panel__attach" data-testid="assistant-attach">
+      {#if attachedId}
+        <span
+          class="ai-chat-panel__run-chip"
+          class:ai-chat-panel__run-chip--failed={attachedStatus === 'failed'}
+          data-testid="assistant-run-chip"
+          data-run-id={attachedId}
+          role="group"
+          aria-label={t.attach.chipLabel}
+        >
+          <span class="ai-chat-panel__run-chip-text">
+            {t.attach.run({ id: attachedId })}
+            {#if attachedStatus}
+              <span class="ai-chat-panel__run-chip-status" data-testid="assistant-run-chip-status">
+                · {statusLabel(attachedStatus)}
+              </span>
+            {/if}
+            {#if attachedRun && runTime(attachedRun)}
+              <span class="ai-chat-panel__run-chip-time">· {runTime(attachedRun)}</span>
+            {/if}
+          </span>
+          {#if attachedStale}
+            <span
+              class="ai-chat-panel__run-chip-stale"
+              data-testid="assistant-run-chip-stale"
+              title={t.attach.staleTitle}
+            >
+              {t.attach.stale}
+            </span>
+          {/if}
+          <button
+            type="button"
+            class="ai-chat-panel__run-chip-remove"
+            aria-label={t.attach.detach}
+            data-testid="assistant-run-detach"
+            onclick={() => fd.attachedRun.detach()}
+          >
+            <Icon icon="mdi:close" />
+          </button>
+        </span>
+      {/if}
+      {#if attachOpen && !attachedId}
+        <ul
+          class="ai-chat-panel__attach-list"
+          aria-label={t.attach.listLabel}
+          data-testid="assistant-attach-list"
+        >
+          {#each sessionRuns ? [...sessionRuns.runs].reverse() : [] as run (run.id)}
+            <li>
+              <button
+                type="button"
+                class="ai-chat-panel__attach-item"
+                onclick={() => attachRun(run.id, run.status)}
+              >
+                <span>
+                  {t.attach.run({ id: run.id })} · {statusLabel(run.status)}
+                  {#if isRunStale(run.workflowVersion, sessionRuns?.workflowVersion ?? null)}
+                    · {t.attach.stale}
+                  {/if}
+                </span>
+                <small>{runTime(run)}{run.message ? ` · ${run.message}` : ''}</small>
+              </button>
+            </li>
+          {:else}
+            {#if attachLoaded}
+              <li class="ai-chat-panel__attach-empty" data-testid="assistant-attach-empty">
+                {sessionRuns ? t.attach.empty : t.attach.unavailable}
+              </li>
+            {/if}
+          {/each}
+        </ul>
+      {/if}
+      <Composer
         bind:value={inputValue}
-        onkeydown={handleKeydown}
-        class="ai-chat-panel__input"
+        bind:element={inputElement}
         placeholder={t.placeholder}
-        rows="1"
         disabled={isLoading}
-      ></textarea>
-      <button
-        class="ai-chat-panel__send"
-        onclick={sendMessage}
-        disabled={!canSend}
-        aria-label={t.send}
+        onsubmit={sendMessage}
       >
-        <Icon icon="mdi:send" />
-      </button>
+        {#snippet attach()}
+          {#if !attachedId}
+            <IconButton
+              ariaLabel={t.attach.add}
+              title={t.attach.add}
+              active={attachOpen}
+              aria-expanded={attachOpen}
+              data-testid="assistant-attach-add"
+              onclick={toggleAttachList}
+            >
+              <Icon icon="heroicons:paper-clip" />
+            </IconButton>
+          {/if}
+        {/snippet}
+      </Composer>
     </div>
   {/if}
 </div>
 
 <style>
+  /* The composer's frame: the attached-run chip above it, the run list popping up over it. */
+  .ai-chat-panel__attach {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--fd-space-xs);
+    padding: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-sm);
+    background: var(--fd-background);
+    font-size: var(--fd-text-xs);
+  }
+
+  .ai-chat-panel__run-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    max-width: 100%;
+    padding: 0.125rem 0.25rem 0.125rem 0.625rem;
+    border: 1px solid var(--fd-border);
+    border-radius: 999px;
+    background: var(--fd-muted);
+    font-family: var(--fd-font-mono, monospace);
+  }
+
+  .ai-chat-panel__run-chip--failed {
+    border-color: var(--fd-error, #b03a2e);
+  }
+
+  .ai-chat-panel__run-chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ai-chat-panel__run-chip-stale {
+    flex-shrink: 0;
+    padding: 0 0.375rem;
+    border-radius: 999px;
+    background: var(--fd-warning-muted, var(--fd-background));
+    color: var(--fd-warning, #a8650c);
+  }
+
+  .ai-chat-panel__run-chip-remove {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--fd-muted-foreground);
+    cursor: pointer;
+  }
+
+  .ai-chat-panel__run-chip-remove:hover {
+    color: var(--fd-foreground);
+    background: var(--fd-background);
+  }
+
+  .ai-chat-panel__attach-list {
+    position: absolute;
+    left: var(--fd-space-sm);
+    right: var(--fd-space-sm);
+    bottom: 100%;
+    z-index: 5;
+    margin: 0;
+    padding: 0.25rem;
+    list-style: none;
+    max-height: 14rem;
+    overflow-y: auto;
+    background: var(--fd-background);
+    border: 1px solid var(--fd-border);
+    border-radius: var(--fd-radius-md, 0.5rem);
+    box-shadow: var(--fd-shadow-md);
+  }
+
+  .ai-chat-panel__attach-item {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: none;
+    color: var(--fd-foreground);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .ai-chat-panel__attach-item:hover {
+    background: var(--fd-muted);
+  }
+
+  .ai-chat-panel__attach-item small,
+  .ai-chat-panel__attach-empty {
+    color: var(--fd-muted-foreground);
+  }
+
+  .ai-chat-panel__attach-empty {
+    padding: 0.25rem 0.5rem;
+  }
+
   .ai-chat-panel {
     display: flex;
     flex-direction: column;
@@ -882,10 +1156,10 @@
   .ai-chat-panel__messages {
     flex: 1;
     overflow-y: auto;
-    padding: var(--fd-space-sm);
+    padding: var(--fd-msg-stream-pad, var(--fd-space-sm));
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-xs);
+    gap: var(--fd-msg-gap, var(--fd-space-xs));
     scrollbar-width: thin;
     scrollbar-color: var(--fd-scrollbar-thumb) var(--fd-scrollbar-track);
   }
@@ -911,44 +1185,54 @@
   .ai-chat-panel__empty {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--fd-space-xs);
-    height: 100%;
+    align-items: flex-start;
+    gap: var(--fd-space-sm);
+    padding: var(--fd-space-md) var(--fd-space-xs);
+  }
+
+  .ai-chat-panel__empty-title {
+    margin: 0;
     color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-sm);
-    opacity: 0.6;
+    font-size: var(--fd-text-body);
   }
 
-  .ai-chat-panel__empty :global(svg) {
-    font-size: 1.5rem;
-  }
-
-  /* Auto-retry notice */
-  .ai-chat-panel__retry-notice {
+  .ai-chat-panel__suggestions {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-wrap: wrap;
     gap: var(--fd-space-xs);
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
-    opacity: 0.7;
+  }
+
+  /* A suggestion: a quiet pill that sends its own label. */
+  .ai-chat-panel__suggestions :global(.ai-chat-panel__suggestion) {
+    border-radius: var(--fd-radius-full);
+    font-size: var(--fd-text-meta);
+  }
+
+  /* Activity: tool rows, notices, retries and "Thinking…" share one row (ActivityRow). */
+  .ai-chat-panel__activity {
+    padding: var(--fd-space-3xs) 0;
+  }
+
+  /* One step of room between the activity and the reply under it. */
+  .ai-chat-panel__activity + .ai-chat-panel__bubble-content {
+    margin-top: var(--fd-space-xs);
+  }
+
+  .ai-chat-panel__retry-notice {
     padding: var(--fd-space-3xs) 0;
     animation: fadeIn 0.15s ease-out;
   }
 
-  .ai-chat-panel__retry-notice--active :global(svg) {
-    animation: spin 1s linear infinite;
-  }
-
   /* Message bubbles */
+  /* The same anatomy as the Playground (`--fd-msg-*`, see ChatBubble); the fallbacks are this panel's own look. */
   .ai-chat-panel__bubble {
-    max-width: 80%;
+    max-width: var(--fd-msg-reply-max, 80%);
     animation: fadeIn 0.15s ease-out;
   }
 
   .ai-chat-panel__bubble--user {
     align-self: flex-end;
+    max-width: var(--fd-msg-user-max, 80%);
   }
 
   .ai-chat-panel__bubble--assistant {
@@ -956,24 +1240,47 @@
   }
 
   .ai-chat-panel__bubble-content {
-    padding: var(--fd-space-xs) var(--fd-space-sm);
+    padding: var(--fd-msg-reply-pad, var(--fd-space-xs) var(--fd-space-sm));
     border-radius: var(--fd-radius-md);
-    font-size: var(--fd-text-sm);
-    line-height: 1.5;
+    font-size: var(--fd-msg-text-size, var(--fd-text-sm));
+    line-height: var(--fd-msg-text-leading, 1.5);
     word-break: break-word;
   }
 
   .ai-chat-panel__bubble--user .ai-chat-panel__bubble-content {
-    background: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-    border-bottom-right-radius: var(--fd-radius-xs);
+    padding: var(--fd-msg-user-pad, var(--fd-space-xs) var(--fd-space-sm));
+    background: var(--fd-msg-user-bg, var(--fd-primary));
+    color: var(--fd-msg-user-fg, var(--fd-primary-foreground));
+    border-radius: var(--fd-msg-user-radius, var(--fd-radius-md));
+    border-bottom-right-radius: var(--fd-msg-tail-radius, var(--fd-radius-xs));
     white-space: pre-wrap;
   }
 
   .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content {
-    background: var(--fd-muted);
+    background: var(--fd-msg-reply-bg, var(--fd-muted));
     color: var(--fd-foreground);
-    border-bottom-left-radius: var(--fd-radius-xs);
+    border-radius: var(--fd-msg-reply-radius, var(--fd-radius-md));
+    border-bottom-left-radius: var(--fd-msg-reply-tail-radius, var(--fd-radius-xs));
+  }
+
+  /* The time under your own message, shown on hover; a reply carries its time as a tooltip. */
+  .ai-chat-panel__meta {
+    display: var(--fd-msg-meta-display, none);
+    gap: var(--fd-space-3xs);
+    margin-top: var(--fd-space-3xs);
+    font-size: var(--fd-text-meta);
+    color: var(--fd-muted-foreground);
+  }
+
+  .ai-chat-panel__bubble--user .ai-chat-panel__meta {
+    justify-content: flex-end;
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+  }
+
+  .ai-chat-panel__bubble--user:hover .ai-chat-panel__meta,
+  .ai-chat-panel__bubble--user:focus-within .ai-chat-panel__meta {
+    opacity: 1;
   }
 
   /* Markdown typography inside assistant bubbles */
@@ -1006,15 +1313,26 @@
   .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(code) {
     font-family: var(--fd-font-mono);
     font-size: 0.875em;
-    background: var(--fd-background);
+    background: var(--fd-msg-code-bg, var(--fd-background));
     padding: 0.1em 0.3em;
     border-radius: var(--fd-radius-xs);
   }
 
+  /* Node references are inline code, drawn as chips: a long id ends in an
+     ellipsis (the full text is the title) instead of widening the panel. */
+  .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(:not(pre) > code) {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+
   .ai-chat-panel__bubble--assistant .ai-chat-panel__bubble-content :global(pre) {
-    background: var(--fd-background);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
+    background: var(--fd-msg-pre-bg, var(--fd-background));
+    border: var(--fd-msg-pre-border-width, 1px) solid var(--fd-border);
+    border-radius: var(--fd-msg-pre-radius, var(--fd-radius-sm));
     padding: var(--fd-space-xs) var(--fd-space-sm);
     overflow-x: auto;
     margin: 0.5em 0;
@@ -1034,54 +1352,6 @@
     font-style: italic;
   }
 
-  /* Tools mode: one status line per tool call */
-  .ai-chat-panel__tool-lines {
-    list-style: none;
-    margin: 0 0 var(--fd-space-3xs);
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .ai-chat-panel__tool-line {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--fd-space-3xs);
-    font-size: var(--fd-text-xs);
-    color: var(--fd-muted-foreground);
-    line-height: 1.4;
-  }
-
-  .ai-chat-panel__tool-line :global(svg) {
-    flex-shrink: 0;
-    font-size: 0.9rem;
-    margin-top: 0.1em;
-  }
-
-  .ai-chat-panel__tool-line--ok :global(svg) {
-    color: var(--fd-success, var(--fd-primary));
-  }
-
-  .ai-chat-panel__tool-line--rejected,
-  .ai-chat-panel__tool-line--failed {
-    color: var(--fd-destructive, var(--fd-foreground));
-  }
-
-  .ai-chat-panel__tool-line :global(.ai-chat-panel__tool-line-spin) {
-    animation: spin 1s linear infinite;
-  }
-
-  .ai-chat-panel__tool-line--note {
-    color: var(--fd-foreground);
-    font-style: italic;
-    white-space: pre-wrap;
-  }
-
-  .ai-chat-panel__tool-line--note :global(svg) {
-    color: var(--fd-muted-foreground);
-  }
-
   /* Deterministic warning under the reply (e.g. tool calls failed this turn) */
   .ai-chat-panel__turn-warning {
     display: flex;
@@ -1089,25 +1359,17 @@
     gap: var(--fd-space-3xs);
     margin-top: var(--fd-space-3xs);
     font-size: var(--fd-text-xs);
-    color: var(--fd-destructive, var(--fd-foreground));
+    color: var(--fd-error);
   }
 
   .ai-chat-panel__turn-warning :global(svg) {
     flex-shrink: 0;
   }
 
-  /* Notices (legacy fallback, aborted turn) */
+  /* Notices (legacy fallback, aborted turn) are activity rows, centred in the log. */
   .ai-chat-panel__bubble--notice {
     max-width: 100%;
-    align-self: center;
-  }
-
-  .ai-chat-panel__bubble--notice .ai-chat-panel__notice-text {
-    background: none;
-    color: var(--fd-muted-foreground);
-    font-size: var(--fd-text-xs);
-    text-align: center;
-    opacity: 0.8;
+    align-self: stretch;
   }
 
   /* Read-only command results */
@@ -1147,116 +1409,5 @@
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  /* Thinking indicator */
-  .ai-chat-panel__thinking {
-    display: flex;
-    gap: 4px;
-    padding: var(--fd-space-xs) var(--fd-space-sm);
-    background: var(--fd-muted);
-    border-radius: var(--fd-radius-md);
-    border-bottom-left-radius: var(--fd-radius-xs);
-  }
-
-  .ai-chat-panel__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--fd-muted-foreground);
-    animation: bounce 1.4s ease-in-out infinite;
-  }
-
-  .ai-chat-panel__dot:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-
-  .ai-chat-panel__dot:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes bounce {
-    0%,
-    60%,
-    100% {
-      transform: translateY(0);
-    }
-    30% {
-      transform: translateY(-4px);
-    }
-  }
-
-  /* Input area */
-  .ai-chat-panel__input-area {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-xs) var(--fd-space-sm);
-    border-top: 1px solid var(--fd-border);
-    background: var(--fd-background);
-  }
-
-  .ai-chat-panel__input {
-    flex: 1;
-    resize: none;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    padding: var(--fd-space-xs) var(--fd-space-sm);
-    font-family: var(--fd-font-sans, inherit);
-    font-size: var(--fd-text-sm);
-    line-height: 1.4;
-    color: var(--fd-foreground);
-    background: var(--fd-card);
-    outline: none;
-    max-height: 80px;
-    overflow-y: auto;
-  }
-
-  .ai-chat-panel__input:focus {
-    border-color: var(--fd-primary);
-  }
-
-  .ai-chat-panel__input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .ai-chat-panel__input::placeholder {
-    color: var(--fd-muted-foreground);
-  }
-
-  .ai-chat-panel__send {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: var(--fd-radius-md);
-    background: var(--fd-primary);
-    color: var(--fd-primary-foreground);
-    cursor: pointer;
-    flex-shrink: 0;
-    transition:
-      background-color var(--fd-transition-fast),
-      opacity var(--fd-transition-fast);
-  }
-
-  .ai-chat-panel__send:hover:not(:disabled) {
-    background: var(--fd-primary-hover);
-  }
-
-  .ai-chat-panel__send:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
   }
 </style>

@@ -8,6 +8,11 @@
  * 2. Assign layers based on longest path from StartNode
  * 3. Position nodes with configurable spacing
  * 4. Fan out branches vertically from BranchingNode
+ * 5. Align tops along chains: a node's top sits at its first predecessor's top
+ *    (pushed down only to clear its column neighbours), and every y is on the
+ *    grid. Node cards keep their handle centres a multiple of 20 from the top,
+ *    so row-1-to-row-1 wiring, trigger wire and data wire alike, comes out
+ *    straight.
  */
 
 import type { AgentSpecFlow } from '../../types/agentspec.js';
@@ -16,6 +21,30 @@ import type { AgentSpecFlow } from '../../types/agentspec.js';
 export interface NodeDimensions {
   width: number;
   height: number;
+}
+
+/**
+ * Room a node needs beside it for its workflow-interface tags, in px: `left`
+ * for tags of its inputs, `right` for tags of its outputs (see
+ * `utils/interfaceTags.ts#interfaceTagReserve`). Keyed like the dimensions.
+ */
+export type TagReserve = Map<string, { left: number; right: number }>;
+
+/** Free space kept between a column's output tags and the next column's input tags (px). */
+const TAG_BREATHING_ROOM = 40;
+
+/** Gap between two adjacent columns: the configured gap, or more when their tags need it. */
+function columnGap(
+  horizontalGap: number,
+  left: string[],
+  right: string[] | undefined,
+  reserve: TagReserve | undefined
+): number {
+  if (!reserve || !right) return horizontalGap;
+  const out = Math.max(0, ...left.map((id) => reserve.get(id)?.right ?? 0));
+  const into = Math.max(0, ...right.map((id) => reserve.get(id)?.left ?? 0));
+  if (out === 0 && into === 0) return horizontalGap;
+  return Math.max(horizontalGap, out + into + TAG_BREATHING_ROOM);
 }
 
 /** Layout configuration */
@@ -32,6 +61,8 @@ export interface AutoLayoutConfig {
   defaultNodeWidth: number;
   /** Fallback node height when measured dimensions are unavailable */
   defaultNodeHeight: number;
+  /** Every y lands on a multiple of this (px); the node cards' handle offsets are multiples of 20 */
+  grid: number;
 }
 
 const DEFAULT_CONFIG: AutoLayoutConfig = {
@@ -40,7 +71,8 @@ const DEFAULT_CONFIG: AutoLayoutConfig = {
   startX: 100,
   startY: 100,
   defaultNodeWidth: 220,
-  defaultNodeHeight: 150
+  defaultNodeHeight: 150,
+  grid: 20
 };
 
 /**
@@ -50,12 +82,14 @@ const DEFAULT_CONFIG: AutoLayoutConfig = {
  * @param flow - The Agent Spec flow to layout
  * @param config - Optional layout configuration
  * @param nodeDimensions - Optional map of node name to measured {width, height}
+ * @param tagReserve - Optional room each node needs beside it for interface tags
  * @returns Map of node name to {x, y} position
  */
 export function computeAutoLayout(
   flow: AgentSpecFlow,
   config: Partial<AutoLayoutConfig> = {},
-  nodeDimensions?: Map<string, NodeDimensions>
+  nodeDimensions?: Map<string, NodeDimensions>,
+  tagReserve?: TagReserve
 ): Map<string, { x: number; y: number }> {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const positions = new Map<string, { x: number; y: number }>();
@@ -125,158 +159,83 @@ export function computeAutoLayout(
   const layerXPositions = new Map<number, number>();
   let currentX = cfg.startX;
 
-  for (const layerIndex of sortedLayers) {
+  for (const [i, layerIndex] of sortedLayers.entries()) {
     layerXPositions.set(layerIndex, currentX);
 
-    // Advance X by the widest node in this layer + horizontal gap
+    // Advance X by the widest node in this layer + the gap (wider when interface tags need it)
     const nodesInLayer = layerGroups.get(layerIndex)!;
     const maxWidth = Math.max(...nodesInLayer.map((name) => getDims(name).width));
-    currentX += maxWidth + cfg.horizontalGap;
+    const next = sortedLayers[i + 1];
+    currentX +=
+      maxWidth +
+      columnGap(
+        cfg.horizontalGap,
+        nodesInLayer,
+        next === undefined ? undefined : layerGroups.get(next),
+        tagReserve
+      );
   }
+
+  // Predecessors in edge order (control flow first), for aligning tops.
+  const predecessors = new Map<string, string[]>();
+  const addPredecessor = (from: string, to: string): void => {
+    const list = predecessors.get(to) ?? [];
+    if (!list.includes(from)) list.push(from);
+    predecessors.set(to, list);
+  };
+  for (const edge of flow.control_flow_connections) addPredecessor(edge.from_node, edge.to_node);
+  for (const edge of flow.data_flow_connections ?? []) {
+    addPredecessor(edge.source_node, edge.destination_node);
+  }
+
+  const grid = cfg.grid > 0 ? cfg.grid : 1;
+  const roundToGrid = (v: number): number => Math.round(v / grid) * grid;
+  const ceilToGrid = (v: number): number => Math.ceil(v / grid) * grid;
 
   // Compute Y positions within each layer, using actual node heights
   for (const layerIndex of sortedLayers) {
     const nodesInLayer = layerGroups.get(layerIndex)!;
     const x = layerXPositions.get(layerIndex)!;
+    const heights = new Map(nodesInLayer.map((name) => [name, getDims(name).height]));
 
-    // Calculate total height of this column (sum of node heights + gaps)
-    const heights = nodesInLayer.map((name) => getDims(name).height);
-    const totalHeight =
-      heights.reduce((sum, h) => sum + h, 0) + (nodesInLayer.length - 1) * cfg.verticalGap;
+    // The top a node wants: its first earlier-layer predecessor's top.
+    const wanted = new Map<string, number>();
+    for (const name of nodesInLayer) {
+      const from = (predecessors.get(name) ?? []).find((p) => {
+        const layer = layers.get(p);
+        return layer !== undefined && layer < layerIndex && positions.has(p);
+      });
+      if (from !== undefined) wanted.set(name, positions.get(from)!.y);
+    }
 
-    // Center the column vertically around startY
-    let y = cfg.startY - totalHeight / 2;
+    if (wanted.size === 0) {
+      // Nothing to align to (the first layer, or loose nodes): a column centred on startY.
+      const total =
+        nodesInLayer.reduce((sum, name) => sum + heights.get(name)!, 0) +
+        (nodesInLayer.length - 1) * cfg.verticalGap;
+      let y = roundToGrid(cfg.startY - total / 2);
+      for (const name of nodesInLayer) {
+        positions.set(name, { x, y });
+        y = ceilToGrid(y + heights.get(name)! + cfg.verticalGap);
+      }
+      continue;
+    }
 
-    for (let i = 0; i < nodesInLayer.length; i++) {
-      positions.set(nodesInLayer[i], { x, y });
-      y += heights[i] + cfg.verticalGap;
+    // Aligned nodes keep their wanted top in order, pushed down only to clear the node above;
+    // nodes with nothing to align to go below them.
+    const aligned = nodesInLayer
+      .filter((name) => wanted.has(name))
+      .sort((a, b) => wanted.get(a)! - wanted.get(b)!);
+    const loose = nodesInLayer.filter((name) => !wanted.has(name));
+    let cursor = -Infinity;
+    for (const name of [...aligned, ...loose]) {
+      const y = Math.max(wanted.get(name) ?? cursor, cursor);
+      positions.set(name, { x, y });
+      cursor = ceilToGrid(y + heights.get(name)! + cfg.verticalGap);
     }
   }
 
   return positions;
-}
-
-// ============================================================================
-// Beautify Layout
-// ============================================================================
-
-/** Input position for beautify: existing node placement */
-export interface NodePosition {
-  x: number;
-  y: number;
-}
-
-/** Beautify configuration */
-export interface BeautifyLayoutConfig {
-  /** Minimum horizontal gap between the right edge of one column and the left edge of the next (px) */
-  horizontalGap: number;
-  /** Minimum vertical gap between the bottom edge of one node and the top edge of the next in the same column (px) */
-  verticalGap: number;
-  /** Fallback node width when measured dimensions are unavailable */
-  defaultNodeWidth: number;
-  /** Fallback node height when measured dimensions are unavailable */
-  defaultNodeHeight: number;
-}
-
-const DEFAULT_BEAUTIFY_CONFIG: BeautifyLayoutConfig = {
-  horizontalGap: 120,
-  verticalGap: 40,
-  defaultNodeWidth: 220,
-  defaultNodeHeight: 150
-};
-
-/**
- * Beautify existing node positions: preserve relative column/row ordering
- * but apply uniform spacing based on actual node dimensions.
- *
- * Algorithm:
- * 1. Cluster nodes into columns by X proximity (gap threshold = median width)
- * 2. Sort columns left-to-right by their median X
- * 3. Within each column, sort nodes top-to-bottom by their original Y
- * 4. Re-position with uniform horizontal and vertical gaps
- *
- * @param positions - Current node positions (keyed by node id)
- * @param config - Optional spacing configuration
- * @param nodeDimensions - Optional map of node id to measured {width, height}
- * @returns Map of node id to new {x, y} position
- */
-export function computeBeautifyLayout(
-  positions: Map<string, NodePosition>,
-  config: Partial<BeautifyLayoutConfig> = {},
-  nodeDimensions?: Map<string, NodeDimensions>
-): Map<string, { x: number; y: number }> {
-  const cfg = { ...DEFAULT_BEAUTIFY_CONFIG, ...config };
-  const result = new Map<string, { x: number; y: number }>();
-
-  if (positions.size === 0) return result;
-
-  const getDims = (id: string): NodeDimensions =>
-    nodeDimensions?.get(id) ?? {
-      width: cfg.defaultNodeWidth,
-      height: cfg.defaultNodeHeight
-    };
-
-  // Collect all nodes sorted by X
-  const entries = Array.from(positions.entries()).map(([id, pos]) => ({
-    id,
-    x: pos.x,
-    y: pos.y
-  }));
-  entries.sort((a, b) => a.x - b.x);
-
-  // Determine clustering threshold: half the median node width
-  const widths = entries.map((e) => getDims(e.id).width);
-  const sortedWidths = [...widths].sort((a, b) => a - b);
-  const medianWidth = sortedWidths[Math.floor(sortedWidths.length / 2)];
-  const clusterThreshold = medianWidth * 0.75;
-
-  // Cluster into columns by X proximity
-  const columns: Array<typeof entries> = [];
-  let currentColumn: typeof entries = [entries[0]];
-
-  for (let i = 1; i < entries.length; i++) {
-    const prevX = currentColumn[currentColumn.length - 1].x;
-    if (entries[i].x - prevX > clusterThreshold) {
-      columns.push(currentColumn);
-      currentColumn = [entries[i]];
-    } else {
-      currentColumn.push(entries[i]);
-    }
-  }
-  columns.push(currentColumn);
-
-  // Sort each column's nodes top-to-bottom by original Y
-  for (const col of columns) {
-    col.sort((a, b) => a.y - b.y);
-  }
-
-  // Compute the global vertical center from the original positions
-  const allYs = entries.map((e) => e.y);
-  const globalCenterY = (Math.min(...allYs) + Math.max(...allYs)) / 2;
-
-  // Assign new positions column by column
-  let currentX = entries[0].x; // Start from the leftmost original X
-
-  for (const col of columns) {
-    // Find the widest node in this column
-    const maxWidth = Math.max(...col.map((e) => getDims(e.id).width));
-
-    // Calculate total height of this column
-    const heights = col.map((e) => getDims(e.id).height);
-    const totalHeight = heights.reduce((sum, h) => sum + h, 0) + (col.length - 1) * cfg.verticalGap;
-
-    // Center column vertically around the global center
-    let y = globalCenterY - totalHeight / 2;
-
-    for (let i = 0; i < col.length; i++) {
-      result.set(col[i].id, { x: currentX, y });
-      y += heights[i] + cfg.verticalGap;
-    }
-
-    currentX += maxWidth + cfg.horizontalGap;
-  }
-
-  return result;
 }
 
 // ============================================================================

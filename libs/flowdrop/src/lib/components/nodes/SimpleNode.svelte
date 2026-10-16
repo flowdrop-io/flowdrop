@@ -1,16 +1,19 @@
 <!--
-  Simple Node Component
-  A simple node with optional input and output ports
-  Styled with BEM syntax
+  @component
+  A compact node: a header with an icon and a description, and the ports on its edges.
 
   Port rendering:
-  - Exposure (data.config.ports, falling back to each port's exposedByDefault)
-    decides which ports render — a not-exposed port is hidden.
-  - Order: data.config.ports order overrides the metadata default (displayOrder);
-    unlisted ports follow in default order.
+  - Exposure (`data.config.ports`, falling back to each port's `exposedByDefault`) decides
+    which ports render. A port that is not exposed is hidden.
+  - Order: `data.config.ports` overrides the metadata default (`displayOrder`); ports it does
+    not list follow in the default order.
+
+  **Use it for** a node type that declares `type: "simple"`.
+  **Not for** the node the editor draws by default; that is `WorkflowNode`.
 -->
 
 <script lang="ts">
+  import { m } from '$lib/messages/index.js';
   import { Position, Handle } from '@xyflow/svelte';
   import type {
     ConfigValues,
@@ -24,14 +27,20 @@
   import Icon from '@iconify/svelte';
   import { getPortColorToken, getCategoryColorToken } from '$lib/utils/colors.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { orderPortsFor, getPortTop, isPortVisible } from '../../utils/portUtils.js';
+  import { orderPortsFor, isPortVisible } from '../../utils/portUtils.js';
+  import { computeShapeGeometry } from '../../utils/nodeGeometry.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
   import { interfaceBoundTooltip } from '$lib/utils/workflowInterface.js';
   import NodeConfigButton from './NodeConfigButton.svelte';
+  import NodeProblemMark from './NodeProblemMark.svelte';
+  import { getNodeProblem } from '../../utils/nodeProblem.js';
+  import { wiredHandleIds } from '../../utils/wiredHandles.js';
   import AlertCircleIcon from '../icons/AlertCircleIcon.svelte';
 
   interface Props {
+    /** The node's id on the canvas. */
     id: string;
+    /** The node: label, config (`ports`, dynamic ports) and node type. */
     data: {
       label: string;
       config: ConfigValues;
@@ -43,14 +52,18 @@
         data: { label: string; config: ConfigValues; metadata: NodeMetadata };
       }) => void;
     };
+    /** Whether the node is selected. A selected node draws its selection border and keeps the config gear visible. */
     selected?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isProcessing?: boolean;
+    /** Not passed by the editor: run state is drawn by `NodeStatusOverlay`. */
     isError?: boolean;
   }
 
   let props: Props = $props();
 
   const fd = getInstance();
+  const problem = getNodeProblem();
   const checker = fd.portCompatibility;
 
   /** Handle ids bound to a `workflow.interface` entry — see workflowStore. */
@@ -68,7 +81,9 @@
     (props.data.metadata?.icon as string) || (props.data.config?.icon as string) || 'mdi:square'
   );
   let nodeColor = $derived(
-    (props.data.metadata?.color as string) || (props.data.config?.color as string) || '#6366f1'
+    (props.data.metadata?.color as string) ||
+      (props.data.config?.color as string) ||
+      'var(--fd-accent)'
   );
 
   /**
@@ -138,32 +153,33 @@
   );
 
   /**
-   * Dynamic node min-height so handles never render outside the node body.
+   * The box and the handles, from the shared geometry: 280 wide, a multiple of
+   * 40 tall, every handle centre a multiple of 20 from the top. The description
+   * is clamped to what fits, so the box never grows with it.
    */
-  const nodeMinHeight = $derived(
-    (() => {
-      const maxPorts = Math.max(visibleInputPorts.length, visibleOutputPorts.length, 1);
-      return maxPorts <= 1 ? 80 : maxPorts * 40;
-    })()
+  const geometry = $derived(
+    computeShapeGeometry({ inputs: visibleInputPorts, outputs: visibleOutputPorts })
   );
+  const inputHandles = $derived(geometry.handles.filter((h) => h.direction === 'input'));
+  /** Handle ids with an edge on them: the zoom tiers hide the open ones. */
+  const wired = $derived(wiredHandleIds(fd.workflow.edges, props.id));
+  const outputHandles = $derived(geometry.handles.filter((h) => h.direction === 'output'));
 </script>
 
 <!-- Input Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
-{#each visibleInputPorts as port, index (port.id)}
+{#each inputHandles as h (h.portId)}
+  {@const port = h.port}
   {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'input', port.id))}
   <Handle
     type="target"
     position={Position.Left}
-    class={boundEntry ? 'flowdrop-handle--bound' : undefined}
     title={interfaceBoundTooltip(boundEntry)}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
       port
-    )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
-      index,
-      visibleInputPorts.length
-    )}px; transform: translateY(-50%); z-index: 30;"
+    )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-input-${port.id}`}
+    class={wired.has(`${props.id}-input-${port.id}`) ? undefined : 'fd-handle--open'}
   />
 {/each}
 
@@ -176,13 +192,22 @@
   class:flowdrop-simple-node--selected={props.selected}
   class:flowdrop-simple-node--processing={props.isProcessing}
   class:flowdrop-simple-node--error={props.isError}
-  style="min-height: {nodeMinHeight}px"
+  style="--_cat: {nodeColor}; width: {geometry.width}px; height: {geometry.height}px; --_desc-lines: {geometry.height /
+    20 -
+    3};"
   ondblclick={handleDoubleClick}
 >
   <div class="flowdrop-simple-node__header">
-    <div class="flowdrop-simple-node__header-content">
+    <div
+      class="flowdrop-simple-node__header-content"
+      class:flowdrop-simple-node__header-content--problem={problem?.severity != null}
+    >
       <!-- Node Icon (squircle) — visibility controlled by --fd-node-icon-display -->
-      <div class="flowdrop-simple-node__icon-wrapper" style="--_icon-color: {nodeColor}">
+      <div
+        class="flowdrop-simple-node__icon-wrapper"
+        style="--_icon-color: {nodeColor}"
+        data-fd-glyph
+      >
         <Icon icon={nodeIcon} class="flowdrop-simple-node__icon" />
       </div>
       <!-- Node Icon (circle dot) — visibility controlled by --fd-node-circle-display -->
@@ -192,9 +217,10 @@
       ></span>
 
       <!-- Node Title -->
-      <h3 class="flowdrop-simple-node__title">
+      <h3 class="flowdrop-simple-node__title" title={displayDescription || undefined} data-fd-title>
         {displayTitle}
       </h3>
+      <NodeProblemMark />
     </div>
 
     <!-- Node Description -->
@@ -220,34 +246,35 @@
   {/if}
 
   <!-- Config button -->
-  <NodeConfigButton onclick={openConfigSidebar} title="Configure node" />
+  <NodeConfigButton onclick={openConfigSidebar} title={m().nodes.configure} />
 </div>
 
 <!-- Output Handles: 1 port centered at 40px; N ports at 20px start, 40px gap -->
-{#each visibleOutputPorts as port, index (port.id)}
+{#each outputHandles as h (h.portId)}
+  {@const port = h.port}
   {@const boundEntry = boundHandles.get(buildHandleId(props.id, 'output', port.id))}
   <Handle
     type="source"
     position={Position.Right}
-    class={boundEntry ? 'flowdrop-handle--bound' : undefined}
     title={interfaceBoundTooltip(boundEntry)}
     style="--fd-handle-fill: var(--fd-port-skin-color, {getPortColorToken(
       checker,
       port
-    )}); --fd-handle-border-color: var(--fd-handle-border); top: {getPortTop(
-      index,
-      visibleOutputPorts.length
-    )}px; transform: translateY(-50%); z-index: 30;"
+    )}); --fd-handle-border-color: var(--fd-handle-border); top: {h.y}px; transform: translateY(-50%); z-index: 30;"
     id={`${props.id}-output-${port.id}`}
+    class={wired.has(`${props.id}-output-${port.id}`) ? undefined : 'fd-handle--open'}
   />
 {/each}
 
 <style>
+  /* The box is sized inline from the geometry (280 × a multiple of 40) and the
+     border is an inset ring on ::after, so it never adds to the box. */
   .flowdrop-simple-node {
+    --_border: var(--fd-node-border);
     position: relative;
+    box-sizing: border-box;
     background-color: var(--fd-node-bg);
     backdrop-filter: var(--fd-node-backdrop-filter);
-    border: var(--fd-node-border-width) solid var(--fd-node-border);
     border-radius: var(--fd-node-radius);
     display: flex;
     flex-direction: column;
@@ -259,29 +286,28 @@
     color: var(--fd-foreground);
   }
 
-  /* Normal layout (default): min-height allows variable height for longer descriptions */
-  .flowdrop-simple-node--normal {
-    width: var(--fd-node-default-width);
-    min-height: var(--fd-node-simple-height);
+  .flowdrop-simple-node::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--fd-node-border-width) var(--_border);
+    pointer-events: none;
   }
 
   .flowdrop-simple-node:hover {
+    --_border: var(--fd-node-border-hover);
     box-shadow: var(--fd-node-shadow-hover);
-    border-color: var(--fd-node-border-hover);
   }
 
-  .flowdrop-simple-node--selected {
-    box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
-      var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
-  }
-
+  .flowdrop-simple-node--selected,
   .flowdrop-simple-node--selected:hover {
+    --_border: var(--fd-node-selected-border);
     box-shadow:
-      0 0 0 2px var(--fd-primary-muted),
+      0 0 0 var(--fd-node-selected-edge) var(--fd-node-selected-border),
+      0 0 0 calc(var(--fd-node-selected-edge) + var(--fd-node-selected-ring-width))
+        var(--fd-node-selected-ring),
       var(--fd-node-shadow-hover);
-    border-color: var(--fd-primary);
   }
 
   /* Focus ring is centralized in base.css (drawn on the .svelte-flow__node
@@ -292,21 +318,41 @@
   }
 
   .flowdrop-simple-node--error {
-    border-color: var(--fd-error) !important;
+    --_border: var(--fd-error);
     background-color: var(--fd-error-muted) !important;
   }
 
   .flowdrop-simple-node__header {
-    /* px (not rem) on the 20px grid: 10px vertical, 20px horizontal. */
+    /* px (not rem) on the 20px grid: 10px vertical, 20px horizontal. The box is
+       fixed, so the title takes one 20px line and the description the rest. */
+    box-sizing: border-box;
     padding: 10px 20px;
     background: var(--fd-node-header-bg);
     flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .flowdrop-simple-node__header-content {
+    min-height: 40px;
     display: flex;
     align-items: center;
     gap: var(--fd-space-md);
+  }
+
+  /* The gear sits over the header's top-right: end the mark left of it, and keep
+     it there whether or not the gear is showing. (The header already pads 20px.) */
+  .flowdrop-simple-node__header-content--problem {
+    padding-right: calc(var(--fd-node-config-btn-slot) - 20px);
+  }
+
+  /* Level with the gear, as on the default card: centred on its middle, not the row's. */
+  .flowdrop-simple-node__header-content--problem > :global(.fd-node-problem) {
+    align-self: flex-start;
+    margin-top: calc(
+      var(--fd-space-xs) + var(--fd-node-config-btn-size) / 2 - 10px - var(--fd-node-problem-size) /
+        2
+    );
   }
 
   /* Squircle icon wrapper - Apple-style rounded square background */
@@ -339,14 +385,21 @@
     margin: 0;
     flex: 1;
     min-width: 0;
-    line-height: 1.4;
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .flowdrop-simple-node__description {
     font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
-    margin: var(--fd-space-3xs) 0 0 0;
-    line-height: 1.3;
+    margin: 0;
+    line-height: 20px;
+    /* whole lines only: what is left under the 40px icon row */
+    max-height: calc(var(--_desc-lines) * 20px);
+    overflow: hidden;
+    display: var(--fd-node-desc-block-display);
   }
 
   .flowdrop-simple-node__icon-wrapper :global(.flowdrop-simple-node__icon) {
@@ -380,6 +433,112 @@
   .flowdrop-simple-node__error :global(svg) {
     width: 12px;
     height: 12px;
+  }
+
+  /* ----- Zoom tiers (editor.zoomTiers): see NodeCard. Same box, fixed flow px.
+     outline: a one-line title; glyph: a solid tile and a two-line title;
+     map: a solid category block with a white glyph. ----- */
+  :global([data-fd-zoom='outline']) .flowdrop-simple-node__header-content {
+    gap: var(--fd-node-zoom-outline-gap);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-simple-node__title {
+    font-size: var(--fd-node-zoom-outline-title-size);
+    line-height: var(--fd-node-zoom-outline-title-line);
+  }
+
+  :global([data-fd-zoom='outline']) .flowdrop-simple-node__description,
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__description,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__description,
+  :global([data-fd-zoom='outline']) .flowdrop-simple-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node :global(.flowdrop-node-config-btn),
+  :global([data-fd-zoom='map']) .flowdrop-simple-node :global(.flowdrop-node-config-btn) {
+    visibility: hidden;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__header-content,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__header-content {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    justify-content: center;
+    gap: var(--fd-node-zoom-tile-gap);
+    padding: 0 var(--fd-node-zoom-tile-pad);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__icon-wrapper,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__icon-wrapper {
+    display: flex;
+    width: var(--fd-node-zoom-tile-size);
+    height: var(--fd-node-zoom-tile-size);
+    border-radius: var(--fd-node-zoom-tile-radius);
+    background: var(--_cat);
+    transform: none;
+  }
+
+  :global([data-fd-zoom='glyph'])
+    .flowdrop-simple-node__icon-wrapper
+    :global(.flowdrop-simple-node__icon),
+  :global([data-fd-zoom='map'])
+    .flowdrop-simple-node__icon-wrapper
+    :global(.flowdrop-simple-node__icon) {
+    width: var(--fd-node-zoom-tile-glyph);
+    height: var(--fd-node-zoom-tile-glyph);
+    color: var(--fd-node-tile-fg);
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__color-dot,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__color-dot,
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__title {
+    display: none;
+  }
+
+  :global([data-fd-zoom='glyph']) .flowdrop-simple-node__title {
+    flex: 0 1 auto;
+    max-width: var(--fd-node-zoom-title-max);
+    font-size: var(--fd-node-zoom-title-size);
+    line-height: var(--fd-node-zoom-title-leading);
+    letter-spacing: var(--fd-node-zoom-title-tracking);
+    white-space: normal;
+    overflow-wrap: break-word;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-simple-node:not(.flowdrop-simple-node--selected) {
+    box-shadow: var(--fd-node-zoom-map-shadow);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-simple-node {
+    background-color: color-mix(
+      in srgb,
+      var(--_cat) var(--fd-node-zoom-map-mix),
+      var(--fd-node-bg)
+    );
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-simple-node--error {
+    --_cat: var(--fd-error);
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__header {
+    background: transparent;
+  }
+
+  :global([data-fd-zoom='map']) .flowdrop-simple-node__icon-wrapper {
+    width: var(--fd-node-zoom-map-tile-size);
+    height: var(--fd-node-zoom-map-tile-size);
+    border-radius: var(--fd-node-zoom-map-tile-radius);
+    background: color-mix(in srgb, var(--_cat) var(--fd-node-zoom-map-tile-mix), transparent);
+  }
+
+  :global([data-fd-zoom='map'])
+    .flowdrop-simple-node__icon-wrapper
+    :global(.flowdrop-simple-node__icon) {
+    width: var(--fd-node-zoom-map-glyph);
+    height: var(--fd-node-zoom-map-glyph);
   }
 
   /* Reveal the NodeConfigButton (gear) when the node is hovered. */

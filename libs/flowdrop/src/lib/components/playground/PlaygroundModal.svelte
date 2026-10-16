@@ -1,12 +1,14 @@
 <!--
-  PlaygroundModal Component
-  
-  Modal wrapper for the Playground component.
-  Provides a centered modal dialog with backdrop, similar to Langflow's implementation.
-  Supports closing via backdrop click, Escape key, or close button.
+  @component
+  **Legacy.** The Playground in a centred modal. It is deprecated in favour of the editor's Test mode and removed in 3.0. It warns once per page when mounted.
+  The user sees a dialog over a dimmed page that holds the `Playground`. It closes on a backdrop click, the Escape key or the close button.
+
+  **Use it for** existing apps that open the Playground as a pop-up.
+  **Not for** new work; use the editor's Test mode (`DockedPlayground`) instead.
 -->
 
 <script lang="ts">
+  import { warnStandalonePlaygroundDeprecated } from '../../utils/deprecation.js';
   import Icon from '@iconify/svelte';
   import Playground from './Playground.svelte';
   import type { Workflow } from '../../types/index.js';
@@ -15,6 +17,8 @@
   import type { AuthProvider } from '../../types/auth.js';
   import type { PlaygroundConfig } from '../../types/playground.js';
   import { m } from '$lib/messages/index.js';
+
+  warnStandalonePlaygroundDeprecated();
 
   /**
    * Component props

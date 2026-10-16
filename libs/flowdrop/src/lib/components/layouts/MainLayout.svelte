@@ -45,6 +45,13 @@
     leftSidebarMinWidth?: number;
     /** Maximum width for left sidebar in pixels */
     leftSidebarMaxWidth?: number;
+    /**
+     * Largest share of the layout width the left sidebar may take (0–1). The
+     * effective maximum is the smaller of this and `leftSidebarMaxWidth`.
+     */
+    leftSidebarMaxRatio?: number;
+    /** Called with the final left sidebar width when a drag or an arrow-key resize ends */
+    onLeftSidebarResize?: (width: number) => void;
     /** Minimum width for right sidebar in pixels */
     rightSidebarMinWidth?: number;
     /** Maximum width for right sidebar in pixels */
@@ -71,6 +78,16 @@
     rightSidebar?: import('svelte').Snippet;
     /** Slot for bottom panel content */
     bottomPanel?: import('svelte').Snippet;
+    /**
+     * A slim strip along the bottom edge of the main area. With a bottom panel
+     * open and `bottomStripIsHeader`, it sits on top of the panel as its header
+     * (the divider above it resizes the pair); otherwise it is the last row.
+     */
+    bottomStrip?: import('svelte').Snippet;
+    /** The strip is the open bottom panel's header */
+    bottomStripIsHeader?: boolean;
+    /** Called with the final bottom panel height when a drag or an arrow-key resize ends */
+    onBottomPanelResize?: (height: number) => void;
     /** Slot for footer content */
     footer?: import('svelte').Snippet;
     /** Slot for main content (default slot) */
@@ -80,7 +97,7 @@
   let {
     height = '100vh',
     width = '100%',
-    headerHeight = 60,
+    headerHeight = 48,
     footerHeight = 48,
     showHeader = true,
     showFooter = false,
@@ -92,6 +109,8 @@
     bottomPanelHeight: initialBottomHeight = 300,
     leftSidebarMinWidth = 200,
     leftSidebarMaxWidth = 500,
+    leftSidebarMaxRatio,
+    onLeftSidebarResize,
     rightSidebarMinWidth = 200,
     rightSidebarMaxWidth = 500,
     bottomPanelMinHeight = 150,
@@ -105,6 +124,9 @@
     leftSidebar,
     rightSidebar,
     bottomPanel,
+    bottomStrip,
+    bottomStripIsHeader = false,
+    onBottomPanelResize,
     footer,
     children
   }: Props = $props();
@@ -114,7 +136,23 @@
    * Writable derived: recomputes when the prop changes (external control,
    * e.g. collapsed state), while drag/keyboard resizing assigns over it.
    */
-  let leftSidebarWidth = $derived(initialLeftWidth);
+  let leftSidebarWidthRaw = $derived(initialLeftWidth);
+
+  /** Measured width of the whole layout, for the ratio cap on the left sidebar */
+  let layoutWidth = $state(0);
+
+  /** Left sidebar maximum: the fixed cap, or the layout share when that is smaller */
+  const leftMax = $derived(
+    leftSidebarMaxRatio && layoutWidth > 0
+      ? Math.max(
+          leftSidebarMinWidth,
+          Math.min(leftSidebarMaxWidth, Math.floor(layoutWidth * leftSidebarMaxRatio))
+        )
+      : leftSidebarMaxWidth
+  );
+
+  /** Left sidebar width as drawn: never past the maximum, even after the window shrank */
+  const leftSidebarWidth = $derived(Math.min(leftSidebarWidthRaw, leftMax));
 
   /** Current width of the right sidebar */
   // svelte-ignore state_referenced_locally
@@ -183,7 +221,7 @@
       // Calculate new width from the left edge of the layout
       const newWidth = event.clientX - layoutRect.left;
       // Clamp the width between min and max values
-      leftSidebarWidth = Math.min(Math.max(newWidth, leftSidebarMinWidth), leftSidebarMaxWidth);
+      leftSidebarWidthRaw = Math.min(Math.max(newWidth, leftSidebarMinWidth), leftMax);
     }
 
     if (isDraggingRight) {
@@ -210,6 +248,8 @@
    * Resets dragging state for all dividers
    */
   function handleMouseUp(): void {
+    if (isDraggingBottom) onBottomPanelResize?.(bottomPanelHeightState);
+    if (isDraggingLeft) onLeftSidebarResize?.(leftSidebarWidth);
     isDraggingLeft = false;
     isDraggingRight = false;
     isDraggingBottom = false;
@@ -232,10 +272,12 @@
     if (side === 'left') {
       if (event.key === 'ArrowRight') {
         event.preventDefault();
-        leftSidebarWidth = Math.min(leftSidebarWidth + step, leftSidebarMaxWidth);
+        leftSidebarWidthRaw = Math.min(leftSidebarWidth + step, leftMax);
+        onLeftSidebarResize?.(leftSidebarWidthRaw);
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        leftSidebarWidth = Math.max(leftSidebarWidth - step, leftSidebarMinWidth);
+        leftSidebarWidthRaw = Math.max(leftSidebarWidth - step, leftSidebarMinWidth);
+        onLeftSidebarResize?.(leftSidebarWidthRaw);
       }
     } else if (side === 'right') {
       if (event.key === 'ArrowLeft') {
@@ -249,9 +291,11 @@
       if (event.key === 'ArrowUp') {
         event.preventDefault();
         bottomPanelHeightState = Math.min(bottomPanelHeightState + step, bottomPanelMaxHeight);
+        onBottomPanelResize?.(bottomPanelHeightState);
       } else if (event.key === 'ArrowDown') {
         event.preventDefault();
         bottomPanelHeightState = Math.max(bottomPanelHeightState - step, bottomPanelMinHeight);
+        onBottomPanelResize?.(bottomPanelHeightState);
       }
     }
   }
@@ -307,6 +351,7 @@
 
 <div
   bind:this={layoutRef}
+  bind:clientWidth={layoutWidth}
   class="flowdrop-main-layout {customClass}"
   class:flowdrop-main-layout--dragging={isDraggingLeft || isDraggingRight || isDraggingBottom}
   class:flowdrop-main-layout--dragging-vertical={isDraggingBottom}
@@ -349,12 +394,10 @@
           aria-orientation="vertical"
           aria-valuenow={leftSidebarWidth}
           aria-valuemin={leftSidebarMinWidth}
-          aria-valuemax={leftSidebarMaxWidth}
+          aria-valuemax={leftMax}
           aria-label={m().layout.resizeLeftSidebar}
           tabindex="0"
-        >
-          <div class="flowdrop-main-layout__divider-handle"></div>
-        </div>
+        ></div>
       {/if}
     {/if}
 
@@ -387,11 +430,12 @@
           aria-valuemax={bottomPanelMaxHeight}
           aria-label={m().layout.resizeBottomPanel}
           tabindex="0"
-        >
-          <div
-            class="flowdrop-main-layout__divider-handle flowdrop-main-layout__divider-handle--horizontal"
-          ></div>
-        </div>
+        ></div>
+      {/if}
+
+      <!-- Bottom strip as the open panel's header -->
+      {#if bottomStrip && bottomStripIsHeader && showBottomPanel && bottomPanel}
+        <div class="flowdrop-main-layout__strip">{@render bottomStrip()}</div>
       {/if}
 
       <!-- Bottom Panel -->
@@ -399,6 +443,11 @@
         <aside class="flowdrop-main-layout__panel flowdrop-main-layout__panel--bottom">
           {@render bottomPanel()}
         </aside>
+      {/if}
+
+      <!-- Bottom strip as the last row -->
+      {#if bottomStrip && !(bottomStripIsHeader && showBottomPanel && bottomPanel)}
+        <div class="flowdrop-main-layout__strip">{@render bottomStrip()}</div>
       {/if}
     </div>
 
@@ -418,9 +467,7 @@
         aria-valuemax={rightSidebarMaxWidth}
         aria-label={m().layout.resizeRightSidebar}
         tabindex="0"
-      >
-        <div class="flowdrop-main-layout__divider-handle"></div>
-      </div>
+      ></div>
     {/if}
 
     <!-- Right Sidebar -->
@@ -527,13 +574,15 @@
     width: var(--layout-left-sidebar-width);
     min-width: var(--layout-left-sidebar-width);
     border-right: 1px solid var(--fd-border);
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
   }
 
   /* Right Sidebar */
   .flowdrop-main-layout__sidebar--right {
     width: var(--layout-right-sidebar-width);
     min-width: var(--layout-right-sidebar-width);
+    /* The rule on the canvas side, like the left sidebar's: the resize divider
+       takes no space and the bottom strip's top rule ends against this one. */
+    border-left: 1px solid var(--fd-border);
   }
 
   /* Main Content Wrapper - Contains main content and optional bottom panel */
@@ -559,87 +608,59 @@
 
   /* When bottom panel is shown, main area should shrink */
   .flowdrop-main-layout__main-wrapper--with-bottom .flowdrop-main-layout__main {
-    height: calc(100% - var(--layout-bottom-panel-height) - 8px);
+    height: calc(100% - var(--layout-bottom-panel-height));
   }
 
-  /* Divider (Resize Handle) Base Styles */
+  /*
+   * Divider (resize handle). The visible 1px rule is the neighbouring panel's
+   * own border; the divider itself takes no space. It carries an 8px invisible
+   * hit area and draws a 2px accent line on hover, drag and keyboard focus.
+   */
   .flowdrop-main-layout__divider {
-    width: 8px;
+    width: 0;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     cursor: col-resize;
-    background-color: var(--fd-background);
     position: relative;
     z-index: 20;
     flex-shrink: 0;
-    transition: background-color 0.2s ease;
-    border-right: 1px solid var(--fd-border);
-    border-left: 1px solid var(--fd-border);
+    outline: none;
   }
 
-  .flowdrop-main-layout__divider:hover,
-  .flowdrop-main-layout__divider:focus {
-    background-color: var(--fd-primary-muted);
+  .flowdrop-main-layout__divider::before {
+    content: '';
+    position: absolute;
+    inset: 0 -4px;
   }
 
-  .flowdrop-main-layout__divider:focus {
-    background-color: var(--fd-primary-muted);
+  .flowdrop-main-layout__divider::after {
+    content: '';
+    position: absolute;
+    inset: 0 -1px;
+    background: var(--fd-ring);
+    opacity: 0;
+    transition: opacity var(--fd-transition-fast);
+    pointer-events: none;
   }
 
-  .flowdrop-main-layout__divider--active {
-    background-color: var(--fd-primary-muted);
-  }
-
-  /* Divider Handle (Visual Indicator) */
-  .flowdrop-main-layout__divider-handle {
-    width: 4px;
-    height: 48px;
-    background-color: var(--fd-border-strong);
-    border-radius: 4px;
-    transition:
-      background-color 0.2s ease,
-      transform 0.2s ease;
-  }
-
-  .flowdrop-main-layout__divider:hover .flowdrop-main-layout__divider-handle,
-  .flowdrop-main-layout__divider:focus .flowdrop-main-layout__divider-handle {
-    background-color: var(--fd-primary);
-    transform: scaleY(1.2);
-  }
-
-  .flowdrop-main-layout__divider--active .flowdrop-main-layout__divider-handle {
-    background-color: var(--fd-primary-hover);
-    transform: scaleY(1.4);
+  .flowdrop-main-layout__divider:hover::after,
+  .flowdrop-main-layout__divider:focus-visible::after,
+  .flowdrop-main-layout__divider--active::after {
+    opacity: 1;
   }
 
   /* Bottom Divider (Horizontal) */
   .flowdrop-main-layout__divider--bottom {
     width: 100%;
-    height: 8px;
+    height: 0;
     cursor: row-resize;
-    flex-shrink: 0;
-    border-top: 1px solid var(--fd-border);
-    border-bottom: 1px solid var(--fd-border);
-    border-left: none;
-    border-right: none;
   }
 
-  /* Horizontal Divider Handle */
-  .flowdrop-main-layout__divider-handle--horizontal {
-    width: 48px;
-    height: 4px;
+  .flowdrop-main-layout__divider--bottom::before {
+    inset: -4px 0;
   }
 
-  .flowdrop-main-layout__divider--bottom:hover .flowdrop-main-layout__divider-handle--horizontal,
-  .flowdrop-main-layout__divider--bottom:focus .flowdrop-main-layout__divider-handle--horizontal {
-    transform: scaleX(1.2);
-  }
-
-  .flowdrop-main-layout__divider--bottom.flowdrop-main-layout__divider--active
-    .flowdrop-main-layout__divider-handle--horizontal {
-    transform: scaleX(1.4);
+  .flowdrop-main-layout__divider--bottom::after {
+    inset: -1px 0;
   }
 
   /* Bottom Panel Styles */
@@ -678,6 +699,20 @@
 
   .flowdrop-main-layout__panel--bottom::-webkit-scrollbar-thumb:hover {
     background: var(--fd-scrollbar-thumb-hover);
+  }
+
+  /* Bottom strip row */
+  .flowdrop-main-layout__strip {
+    flex-shrink: 0;
+    width: 100%;
+    background-color: var(--fd-background);
+    border-top: 1px solid var(--fd-border);
+  }
+
+  /* The strip heads the panel: the panel's own top rule would double it */
+  .flowdrop-main-layout__strip + .flowdrop-main-layout__panel--bottom {
+    border-top: none;
+    box-shadow: none;
   }
 
   /* Vertical dragging cursor override */

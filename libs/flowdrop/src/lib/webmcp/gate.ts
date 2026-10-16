@@ -28,6 +28,7 @@ import type { WebMCPApproval, WebMCPApprovalRequest } from './types.js';
 import { describeCommand, summarizeCommands } from './descriptors.js';
 import WebMCPConfirm from './WebMCPConfirm.svelte';
 import { SCOPE_ATTR } from '../utils/portal.js';
+import { themeScope } from '../utils/themeScope.svelte.js';
 
 /** What the gate needs to know about the call it is asking approval for. */
 export interface GateRequest extends WebMCPApprovalRequest {
@@ -163,6 +164,8 @@ export function createApprovalGate(
       host.className = 'fd-webmcp-confirm-host';
       const scope = options.skinScope?.();
       if (scope) host.setAttribute(SCOPE_ATTR, scope);
+      // The colour scheme is data-theme on the editor scope, not on <html>.
+      const theme = themeScope(host);
       target.appendChild(host);
 
       const finish = (approved: boolean, remember = false): void => {
@@ -170,6 +173,7 @@ export function createApprovalGate(
         settled = true;
         dismiss = null;
         void unmount(component);
+        theme.destroy();
         host.remove();
         if (approved && remember) editsPreApproved = true;
         resolve(approved);

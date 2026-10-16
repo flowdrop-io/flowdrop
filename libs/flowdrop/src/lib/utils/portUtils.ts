@@ -74,9 +74,11 @@ export function orderPortsFor(
 /**
  * Effective exposure for a port: the instance's explicit `exposed` override if
  * present, else the port's metadata `exposedByDefault` (which itself defaults to
- * exposed).
+ * exposed). A locked port ({@link NodePort.exposureLocked}) is always exposed:
+ * it ignores both.
  */
 export function isPortExposed(port: NodePort, entries: PortConfigEntry[] | undefined): boolean {
+  if (port.exposureLocked) return true;
   const entry = entries?.find((candidate) => candidate.id === port.id);
   if (entry && entry.exposed !== undefined) return entry.exposed;
   return port.exposedByDefault ?? true;
@@ -107,4 +109,60 @@ export function isPortVisible(
 ): boolean {
   const entries = direction === 'input' ? ports?.inputs : ports?.outputs;
   return isPortExposed(port, entries);
+}
+
+/** A direction key of a {@link PortsConfig}. */
+export type PortsDirection = 'inputs' | 'outputs';
+
+/**
+ * The minimal `PortsConfig` after one direction's desired ordered list (each
+ * port carrying its effective exposure) is written. An entry's `exposed` flag
+ * is dropped when it equals the port's default, the whole direction is dropped
+ * when it carries neither a reorder nor an exposure override, and the result
+ * collapses to `undefined` when empty, so an untouched node stores nothing.
+ * Entries for ports the node doesn't have (a port of a newer node type, say)
+ * are kept as stored, after the others. The one writer of `config.ports`: the
+ * Ports tab, bulk Show/Hide and the layout reorder all go through it.
+ *
+ * @param current - the stored value; the other direction is carried over from it
+ * @param direction - the direction being written
+ * @param ordered - that direction's ports in the order to store
+ * @param allPorts - that direction's ports, for the metadata default order
+ * @param exposureOf - the exposure each port should have
+ */
+export function buildPortsConfig(
+  current: PortsConfig | undefined,
+  direction: PortsDirection,
+  ordered: NodePort[],
+  allPorts: NodePort[],
+  exposureOf: (port: NodePort) => boolean
+): PortsConfig | undefined {
+  const entries: PortConfigEntry[] = ordered.map((port) => {
+    const entry: PortConfigEntry = { id: port.id };
+    const exposed = exposureOf(port);
+    // A locked port has no override to store: it is always exposed.
+    if (!port.exposureLocked && exposed !== (port.exposedByDefault ?? true)) {
+      entry.exposed = exposed;
+    }
+    return entry;
+  });
+
+  const known = new Set(allPorts.map((p) => p.id));
+  const unknown = (current?.[direction] ?? []).filter((e) => !known.has(e.id));
+
+  const defaultOrder = byDefaultOrder(allPorts).map((p) => p.id);
+  const orderChanged = entries.some((e, i) => e.id !== defaultOrder[i]);
+  const hasExposureOverride = entries.some((e) => e.exposed !== undefined);
+
+  const next: PortsConfig = { ...current };
+  if (orderChanged || hasExposureOverride || unknown.length > 0) {
+    next[direction] = [...entries, ...unknown.map((e) => ({ ...e }))];
+  } else delete next[direction];
+
+  // The untouched direction is carried over verbatim, but an earlier edit may
+  // have left an empty array; prune it so an all-default node collapses to
+  // `undefined` rather than persisting `{inputs: []}`.
+  const other: PortsDirection = direction === 'inputs' ? 'outputs' : 'inputs';
+  if (!next[other] || next[other]?.length === 0) delete next[other];
+  return Object.keys(next).length === 0 ? undefined : next;
 }

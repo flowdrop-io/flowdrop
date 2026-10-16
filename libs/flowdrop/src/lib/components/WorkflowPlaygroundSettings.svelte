@@ -25,7 +25,9 @@
   import Icon from '@iconify/svelte';
   import Button from '$lib/components/Button.svelte';
   import Input from '$lib/components/Input.svelte';
-  import Select from '$lib/components/Select.svelte';
+  import Select from '$lib/components/primitives/Select.svelte';
+  import Checkbox from '$lib/components/primitives/Checkbox.svelte';
+  import Notice from '$lib/components/primitives/Notice.svelte';
   import { m } from '$lib/messages/index.js';
   import type {
     PlaygroundChatBinding,
@@ -248,31 +250,38 @@
 <div class="wf-playground" data-testid="workflow-playground-settings">
   {#if stored === null}
     {#if turnChat}
-      <div class="wf-playground__note" role="note">
-        <p>{m().playgroundSettings.turnSource}</p>
-        {#if onMoveTurns && isPlaygroundChatSet(turnChat)}
-          <Button variant="secondary" size="sm" onclick={() => turnChat && onMoveTurns?.(turnChat)}>
-            {m().playgroundSettings.moveTurns}
-          </Button>
-        {/if}
-      </div>
+      <Notice tone="warning" role="note">
+        {m().playgroundSettings.turnSource}
+        {#snippet actions()}
+          {#if onMoveTurns && isPlaygroundChatSet(turnChat)}
+            <Button
+              variant="secondary"
+              size="sm"
+              onclick={() => turnChat && onMoveTurns?.(turnChat)}
+            >
+              {m().playgroundSettings.moveTurns}
+            </Button>
+          {/if}
+        {/snippet}
+      </Notice>
     {:else}
-      <div class="wf-playground__note" role="note">
-        <p class="wf-playground__note-title">{m().playgroundSettings.notSetUpTitle}</p>
-        <p>{m().playgroundSettings.notSetUp}</p>
-      </div>
+      <Notice tone="info" role="note" title={m().playgroundSettings.notSetUpTitle}>
+        {m().playgroundSettings.notSetUp}
+      </Notice>
     {/if}
   {/if}
 
   {#if leftoverTurns}
-    <div class="wf-playground__note" role="note">
-      <p>{m().playgroundSettings.leftoverTurns}</p>
-      {#if onMoveTurns}
-        <Button variant="secondary" size="sm" onclick={() => stored && onMoveTurns?.(stored)}>
-          {m().playgroundSettings.removeTurns}
-        </Button>
-      {/if}
-    </div>
+    <Notice tone="warning" role="note">
+      {m().playgroundSettings.leftoverTurns}
+      {#snippet actions()}
+        {#if onMoveTurns}
+          <Button variant="secondary" size="sm" onclick={() => stored && onMoveTurns?.(stored)}>
+            {m().playgroundSettings.removeTurns}
+          </Button>
+        {/if}
+      {/snippet}
+    </Notice>
   {/if}
 
   {#if inputs.length === 0}
@@ -368,33 +377,27 @@
     {#each replyOptions as option (`${option.reply.node_id}::${option.reply.port}`)}
       {@const checked = chat.replies.some((reply) => sameReply(reply, option.reply))}
       {@const error = replyError(option.reply)}
-      <label class="wf-playground__check" class:wf-playground__check--missing={option.missing}>
-        <input
-          type="checkbox"
-          {checked}
-          onchange={(e) => toggleReply(option.reply, e.currentTarget.checked)}
-        />
-        <span>{option.label}</span>
-      </label>
+      <Checkbox
+        class="wf-playground__check{option.missing ? ' wf-playground__check--missing' : ''}"
+        {checked}
+        label={option.label}
+        onchange={(on) => toggleReply(option.reply, on)}
+      />
       {#if error}
         <span class="wf-playground__inline wf-playground__inline--error">{error}</span>
       {/if}
     {/each}
   </fieldset>
 
-  <label class="wf-playground__check">
-    <input
-      type="checkbox"
-      checked={chat.sub_workflow_replies}
-      onchange={(e) => update({ sub_workflow_replies: e.currentTarget.checked })}
-    />
-    <span>{m().playgroundSettings.subWorkflowReplies}</span>
-  </label>
+  <Checkbox
+    class="wf-playground__check"
+    checked={chat.sub_workflow_replies}
+    label={m().playgroundSettings.subWorkflowReplies}
+    onchange={(on) => update({ sub_workflow_replies: on })}
+  />
 
   {#if halfSet}
-    <p class="wf-playground__inline wf-playground__inline--error" role="alert">
-      {m().playgroundSettings.halfSet}
-    </p>
+    <Notice tone="warning">{m().playgroundSettings.halfSet}</Notice>
   {/if}
   {#each errors.filter((issue) => issue.key !== undefined) as issue (issue.code + issue.key)}
     <p class="wf-playground__inline wf-playground__inline--error">{issueText(issue)}</p>
@@ -404,32 +407,11 @@
 </div>
 
 <style>
+  /* No padding of its own: the panel gives all three tabs the same one. */
   .wf-playground {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-md);
-    padding: var(--fd-space-md);
-  }
-
-  .wf-playground__note {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--fd-space-xs);
-    padding: var(--fd-space-sm) var(--fd-space-md);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-md);
-    background-color: var(--fd-muted);
-    font-size: var(--fd-text-sm);
-    line-height: 1.5;
-  }
-
-  .wf-playground__note p {
-    margin: 0;
-  }
-
-  .wf-playground__note-title {
-    font-weight: 600;
+    gap: var(--fd-space-xl);
   }
 
   .wf-playground__row {
@@ -441,7 +423,7 @@
   .wf-playground__field {
     display: flex;
     flex-direction: column;
-    gap: var(--fd-space-2xs);
+    gap: var(--fd-space-3xs);
     min-width: 0;
   }
 
@@ -456,7 +438,7 @@
   /* Same voice as the interface editor's `.wf-interface__label`. */
   .wf-playground__label {
     padding: 0;
-    font-size: 0.8125rem;
+    font-size: var(--fd-field-label-size);
     font-weight: 600;
     line-height: 1.4;
     letter-spacing: -0.01em;
@@ -515,26 +497,7 @@
     margin-bottom: var(--fd-space-xs);
   }
 
-  .wf-playground__check {
-    display: flex;
-    align-items: center;
-    gap: var(--fd-space-xs);
-    font-size: var(--fd-text-sm);
-    cursor: pointer;
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .wf-playground__check input[type='checkbox'] {
-    flex: none;
-    width: 1rem;
-    height: 1rem;
-    margin: 0;
-    accent-color: var(--fd-primary);
-    cursor: pointer;
-  }
-
-  .wf-playground__check--missing span {
+  .wf-playground__replies :global(.wf-playground__check--missing) {
     color: var(--fd-error);
     font-family: var(--fd-font-mono);
   }

@@ -20,6 +20,321 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same rule now applies to dynamic-schema and variables URLs, which no longer
   get the base prefixed twice.
 
+## [2.15.0] - 2026-10-16
+
+### Added
+
+- **`runCommand` on the object `mountFlowDropApp` and `mountWorkflowEditor` return** (#53).
+  `await app.runCommand('layout auto')` runs one Command Console command (a line, or a parsed
+  `Command`) against the mount's workflow and resolves with its `CommandResult`. It waits for the
+  workflow to load, so it can be called right after mounting, and it is one undo step like the
+  console. `{ baseline: true }` makes the result the workflow's clean starting point (not dirty,
+  undo history cleared) and is refused with `code: 'DIRTY'` when there are unsaved changes; it does not
+  call `onDirtyStateChange` or `onWorkflowChange`, and `undo`/`redo` cannot run as a baseline. A `Command`
+  object is checked before it runs: an unknown type or a missing or mistyped field resolves with
+  `code: 'INVALID_ARGUMENT'`. The promise never rejects (a command that throws resolves with
+  `code: 'INTERNAL_ERROR'`). Works on read-only mounts. A command's UI actions (select, open config, fit/zoom/pan) are applied by the
+  `mountFlowDropApp` shell and dropped by `mountWorkflowEditor`.
+- **`onExternalEdit` event handler** (#55). A node's `externalEditLink` can now be handled by the host
+  instead of navigating away: the handler receives copies of `(node, link)` and resolves with the node's new config
+  (it replaces the config, as one undo step, and is copied) or with nothing to leave the node as it is.
+  Field edits still pending in the form are committed before the handler is called. It covers every
+  place the link opens: the inspector row ("Runs … ↗"), the form buttons and the empty state. The link
+  keeps its `href`, so middle-click and "copy link" still work. `ConfigForm` takes the same `onExternalEdit`
+  prop. While the editor is read-only or locked the handler is still called but its result is not written.
+  Without the handler nothing changes.
+- **`Command`, `CommandResult`, `CommandErrorCode`, `ConfigValues` and `ExternalEditLink` types** are
+  exported from the main entry and `./editor` too, so hosts can type `runCommand` and `onExternalEdit`
+  without importing `./core`.
+
+### Deprecated
+
+- **`ExternalEditLink.callbackUrlParam`.** It never had any effect, because nothing passes a callback URL.
+  Use `onExternalEdit` to get the config back from the host's form.
+
+### Fixed
+
+- **`mountFlowDropApp` passes `workflowSettingsSchema` on to the editor** (#54). The option existed on
+  `App` but the mount function dropped it, so hosts mounting through the public API (the IIFE build
+  included) could not add their own Workflow Settings fields. Their values are stored in `workflow.config`.
+
+## [2.14.0] - 2026-10-16
+
+### Added
+
+- **Console `clear --all`.** Removes everything `clear` does and also the workflow's interface and the
+  Playground chat settings.
+- **`NodePort.exposureLocked`.** Port metadata for a node type that always shows a port: the instance
+  `ports` config can't hide it, and `exposedByDefault` is ignored for it. The Ports tab shows the port's
+  "on" eye with a lock badge and no toggle.
+
+### Changed
+
+- **The "Default" theme is now called "Classic".** It was never the default: the editor opens in
+  Graphite. Its id is `'classic'` (`classicTheme`), and Settings → Theme lists Graphite first. A
+  settings snapshot or Drupal config that says `'default'` loads as `'classic'`, and
+  `resolveTheme('default')` still returns it.
+- **Console `clear` keeps the interface.** Its entries stay, with their bindings dropped, and the Playground
+  replies are removed, all in one undo step.
+- **A wired port can't be hidden in the Ports tab.** A shown port that still has connections keeps its eye,
+  with a link badge; activating it says to remove the connections on the canvas first. Locked ports use the
+  same eye with a lock badge. A port on the workflow interface can't be hidden either: its eye gets a tag
+  badge and says to remove it from the interface first.
+
+### Deprecated
+
+- The theme name `'default'` and the `defaultTheme` export. Use `'classic'` and `classicTheme`;
+  the old names are removed in 3.0.
+
+### Removed
+
+- **The `.flowdrop-btn--icon*` classes in `base.css`.** Every icon button in the library uses the
+  `IconButton` primitive, which has its own styles.
+
+### Fixed
+
+- **Deleting a node drops the Playground replies that named it.** A workflow with such a reply was refused
+  when saved. The replies are dropped whichever way the node is removed (canvas, console, `clear`), and when
+  that empties the chat settings, the interface's old `turn` marks no longer take over as the chat.
+- **"Hide unconnected ports" no longer counts a locked port.** A port the node type always shows is left
+  alone, as in the Ports tab.
+- **Editing ports keeps entries for ports the node doesn't have.** The Ports tab and bulk Show/Hide used to
+  drop a stored `ports` entry whose port the node type no longer lists; they now keep it, as Tidy up already
+  did. All three write `ports` the same way.
+
+## [2.13.0] - 2026-10-14
+
+### Added
+
+- **`playground` mount option.** `mountFlowDropApp` (and the `App` component) take
+  `playground: { pollingInterval?, shouldStopPolling? }`, which configures the editor's docked Playground
+  (Test mode); it had no way to set them. A backend that leaves a session `completed` or `failed` after a
+  turn can now stop polling there; unset, the defaults are unchanged (1500 ms, stop on `idle` only). Type:
+  `EditorPlaygroundConfig`, exported from `@flowdrop/flowdrop/editor` and `/playground`. fdnpm#46.
+
+## [2.12.0] - 2026-10-14
+
+### Added
+
+- **Test mode.** An **Edit | Test** switch in a toolbar at the canvas's top-left. Test docks the Playground in
+  the left slot (below 1200 px a drawer over the canvas), targets the editor's current workflow including its
+  unsaved edits, and creates the test session on the first send. The session and a running run survive
+  switching back to Edit. With nothing selected there is no right column; clicking a node opens its inspector
+  as a 360 px sheet over the canvas, on a **Last run** tab (status, duration, timestamps, tokens, input,
+  output, error). `N` opens the node library as a popover, `T` toggles the mode.
+  - The mode is held per instance: `fd.editorMode` (`EditorModeStore`: `current`, `isTest`,
+    `set('edit' | 'test')`, `toggle()`, `onChange(listener)`; type `EditorMode` from `core`). Start in Test with
+    the `editorMode` prop of `App` or the `editorMode` mount option, follow changes with `onEditorModeChange`.
+    Test only takes effect for a saved workflow on an editable canvas (`mode: 'edit'`, no `pipelineId`);
+    `features.testMode: false` removes the switch. `WorkflowEditor` takes `editorMode`, `onEditorModeChange`,
+    `showRunBar` and `onOpenTest`.
+  - The docked Playground's header is a **history chip** (Conversations the Playground created, plus **New
+    conversation**, and the Runs of the open one; picking a run calls `fd.playground.pinExecution`) and a **⋯
+    menu** (**Expand steps by default**, **JSON view**, **Playground settings**, **Refresh**, **Reset stuck
+    session**).
+  - **Save & send**: Send (and Run) read "Save & send" while the workflow has unsaved edits; the editor saves
+    first and nothing is sent when the save fails. `fd.runs.needsSave` and `fd.runs.saveFirst()`.
+  - A **"Saved: new version" divider** marks where the workflow changed between runs. Needs
+    `GET /sessions/{id}/runs` (FlowDrop for Drupal 2.7.0; in the OpenAPI spec, optional endpoint
+    `sessions.runs`, `PlaygroundService.getSessionRuns()`): a server without it answers 404 and the editor shows
+    no dividers and no error. `fd.playground.sessionRuns`, `fd.runs.loadSessionRuns()`; `isRunStale()` and
+    `versionDividersFromRuns()` from `playground`. Sessions carry `thirdPartySettings`; the Playground's own are
+    marked `flowdrop_playground.created` (`PLAYGROUND_SESSION_MARK`, `isPlaygroundSession()`,
+    `playgroundSessionsOf()`), and the history lists only those.
+  - A **Runs list** in the toolbar (`features.runsList`, default on; Test mode only) lists the workflow's past
+    runs from `endpoints.pipelines.list`; opening one shows its node statuses on the canvas. Optional
+    endpoints `pipelines.rerun` and `pipelines.cancel` add Re-run and Cancel; `features.adminLinks`
+    (`{ runs?, run? }` URL templates) adds "Open in admin" links.
+  - **Message-to-node links**: a reply's "via <node>" label selects the node, opens its Last run tab and brings
+    it into view, and hovering lights the node on the canvas (`fd.highlight`). `NodeJobExecution` gains `input`
+    and `output`; `canvasFocusNode(id)` on `WorkflowEditor`.
+  - A **form-first Playground**: a workflow with inputs and no chat opens on an **Inputs** card (one field per
+    input, JSON fields for array and object inputs with example chips, **Run** also on ⌘↵ / Ctrl+↵, **Fill from
+    last run**); chat plus inputs folds the inputs into one row above the composer.
+- **Run state per instance.** `fd.runs` (`RunController`, from `playground`; types from `core`) holds the
+  session and run executors that used to live inside the Playground component, shared by the Playground, Test
+  mode and the Console. `fd.runs.activeRun` (`ActiveRun`), `stopRun()`, `dismissRun()`, `isLive`,
+  `requestNodeStatuses()`, `loadNodeStatuses(pipelineId?, workflow?)`, and `wrapHostHooks(hooks)`, which routes
+  a host's `onRun` / `onRunStatus` through the controller (the hooks answer as before; a host run is followed
+  only when `onRunStatus` is supplied). `fd.runs.stopHostPolling()` ends a host run's status poll; `app.destroy()`
+  and `fd.runs.dispose()` call it. `fd.playground.onSessionStatusChange(listener)` is a synchronous listener
+  (unlike `subscribeToSessionStatus`, which batches). `stripExecutionInfo(nodes)` from `core`.
+- **Run status on the canvas.** Run status of the nodes lives in `fd.playground.nodeStatuses`
+  (`nodeStatusFor(id)`, `setNodeStatuses`, `clearNodeStatuses`), so an edit no longer wipes the badges and two
+  editors on one page never share statuses. Nodes show a labelled pill (Running, Completed, Waiting for you,
+  Failed, Skipped, with ×N for repeats), centred on the node's top edge at screen size; in Test mode the node
+  border takes the status colour and a node whose configuration changed since the shown run gets an `edited`
+  mark. Edges between a completed node and a reached node draw as hot (class `flowdrop-edge--hot`; never
+  written into saved edges). A run pill in the toolbar shows the live run (running, waiting, failed, done,
+  stopped) with **Stop**, **Open** (needs `onOpenTest`) and **Ask the Assistant**, and fades when the run
+  ends; changes are announced politely.
+- **Console `session` commands**: `session send "…"` (triple-quoted for several lines), `session run
+[key=value …]`, `session stop`, `session new`, `session status`. Console only: not part of the editing
+  commands, the Assistant or WebMCP. A batch containing a `session` line is refused before anything runs.
+- **Run context for the Assistant.** A run can be attached to the AI Assistant (a run chip, **+ Attach a
+  run**, **Ask the Assistant** on a failed node or run); the tool-calling chat request then carries
+  `attachedRunId` (`ChatRequest.attachedRunId`; a server without run tools ignores it). `fd.attachedRun`
+  (`attach(id, hint?)`, `detach()`, per instance). Needs fddo 2.7.0 (`site_get_run`, `site_get_node_run`).
+- **Problems indicator.** With the optional endpoints `workflows.diagnose` and `workflows.remedy` set, the
+  navbar lists the draft's problems, nodes carry a badge, and a remedy applies as one undoable edit. A backend
+  without them shows nothing.
+- **Graphite theme** (`theme: 'graphite'`, light and dark), the new default (see Changed): near-black primary
+  action, one blue accent for selection, focus and running, separate green / amber / red for run status, 4 px
+  radius, 1 px rules; every text pair passes WCAG AA. Its font is Inter, shipped as the opt-in stylesheet
+  `@flowdrop/flowdrop/styles/fonts/inter.css` (variable, Latin, 47 KB, OFL); without it the editor uses the
+  system font. Graphite carries a redesigned node card (header, category tile, port rows on a fixed grid, exec
+  pin), calmer notes (20 px height snap), top-centre toasts, a terminal-style Console and flat form rows; the
+  card structure, notes and toasts apply to every theme.
+- **`colorScheme` mount option** (`ColorSchemeOption`, `HostColorSchemeValue`; `mountFlowDropApp` and
+  `mountPlaygroundApp`): `colorScheme: { host: { value: 'light' | 'dark' | 'auto', label, subscribe? } }` adds a
+  fourth choice, `'host'` (`ThemePreference` gains it), shown verbatim as `label` in the navbar's Appearance menu
+  and Settings. With it `'host'` is the default; a stored preference the user never chose moves to it, an
+  explicit Light or Dark is kept. `host.subscribe` re-resolves on live changes and is released by
+  `app.destroy()`. Without the option nothing changes.
+- **`branding`** option on `mountFlowDropApp`, `mountPlaygroundApp` and `App`:
+  `{ logo?: string | Component; name?: string; logoAlt?: string; href?: string }` (type `NavbarBranding`). `logo`
+  replaces the wordmark (image URL or component, max 24 px high), `name` replaces "FlowDrop" in the page title
+  and the logo's label, `logoAlt` overrides the alt text, `href` links the logo. The default wordmark is
+  labelled with the `navigation.appName` message, which also drives the page title.
+- `FlowDropThemeConfig.display` (`nodeIcon`, `sidebarList`, `sidebarSearch`, `sidebarHeader`, `navbarActions`;
+  type `FlowDropDisplayConfig`): typed layout switches, used by the `minimal` theme. A skin can name a `font`
+  (a CSS font-family; the host loads the face).
+- New `@public` design tokens: run-status roles `--fd-status-{running,completed,waiting,failed,skipped}` and
+  `-soft`, control heights `--fd-control-sm` / `-md` / `-lg` (24 / 28 / 32 px) and `--fd-panel-header` (40 px).
+- **Zoom tiers.** The canvas draws a node at up to four levels of detail by zoom (full, outline, glyph, map),
+  published as `data-fd-zoom` on `.flowdrop-root`. The `editor.zoomTiers` setting (`ZoomTierConfig`,
+  `ZoomTierName` from `settings`) gives the zoom each tier starts at; default
+  `{ full: 0.75, outline: 0.45, glyph: 0.25, map: 0 }`, `{ full: 0 }` turns tiers off, an invalid value falls
+  back to the default with one console warning. Settings > Editor > Zoom levels edits it.
+- **Node layout.** Commands `layout node inspect <nodeId>` and `layout node beautify <nodeId>
+[column|ports|align|clear|all] [--dry-run]`, both with `--gap-x` / `--gap-y`, and the WebMCP tools
+  `inspect_node_layout` and `beautify_node` (`gapX` / `gapY`). Settings `editor.layoutGapX` / `layoutGapY`
+  (defaults 120 / 40 px) set the spacing the layout keeps. Loopbacks (`loop_back` edges) are drawn as return lanes
+  (out of the source, under the loop body, back along a lane) instead of a curve through the cards, and layout
+  keeps those lanes free. A card's interface tags count as part of the card.
+- **Tidy up.** A broom in the canvas controls and **Tidy up** (⇧⌥T) in the pane menu run the graph layout; **Tidy
+  node** (⇧S) in the node menu tidies one node. One undo step each. The toast says what changed, how many
+  overlaps are left and anything that got worse; a layout that would not improve is left alone. Graphs over
+  120 nodes are refused (`TOO_LARGE`; tidy single nodes instead). See Changed for `layout beautify`.
+- **Ports.** **Hide unconnected ports** / **Show hidden ports** in the node menu (data ports only), **Connect
+  to…** in a port's menu (a searchable picker of compatible ports on other nodes), and ports ready to receive
+  light up while a wire is dragged. Nothing is ever blocked by type: compatible ports are highlighted, the rest
+  dulled. A wire being dragged aligns magnetically with a port on the target.
+- **Interface tags on the canvas**: a published port shows a tag beside it (rename, remove, or expose a port
+  from its menu), and a trigger shows a read-only `event:<node-id>` tag beside its event input, with a hover
+  explanation. A trigger's event input cannot be wired, hidden or published. `EVENT_PORT_ID`,
+  `RESERVED_INPUT_EVENT_PREFIX`, `isTriggerNode`, `isTriggerEventInput`, `isEventInputConnection`,
+  `reservedInputs`, `isReservedInputName` and `ReservedInput` are exported from `editor`.
+- New settings: `editor.showNodeDescriptions` (default off; a 60 px band under every node's header when on),
+  `ui.sidebarWidths` (`{ nodes: 280, assistant: 380 }`, the resizable left column per tab) and
+  `ui.sheetWidths` (`{ workflow: 420 }`, the resizable workflow-settings sheet).
+- WebMCP: `getBridgeController()` and `createBridgeController()` (`WebMCPBridgeController`, `BridgeStatus`,
+  `BridgeTool`, `BridgeSnapshot`) from `webmcp`, a typed controller over the desktop bridge widget; the editor
+  shows a bridge button as the last segment of the zoom controls.
+- A flat row list for small array fields (inline-edit cells, a default mark for `x-item-ref` arrays).
+- Messages: `connectTo.*` (including `optionCurrent`, `optionTaken`), `form.array.movedTo` and the other
+  `form.array` row messages, `layout.zoomLevelsTitle`, `layout.zoomLevelsHelp`, `nodes.configure`,
+  `nodes.configureTool`, `nodes.configureIdea`, `notice.dismiss`, plus new groups for the features above:
+  `tidy`, `runBar`, `runsList`, `doctor`, `nodeInspector`, `playground.header`, `playground.steps`,
+  `playground.inputForm`, `statusPill`, `select`, `webmcp.bridge`, `workflowInterface` (tags) and `chat.tools.verbs`.
+
+### Changed
+
+- **Graphite is the default theme.** `DEFAULT_UI_SETTINGS.theme` is `'graphite'` (was `'default'`). An editor
+  with no `theme` prop and no saved choice starts in Graphite; a browser that saved its settings keeps its
+  theme. To keep the old look, pass `theme: 'default'`.
+- **`<html data-theme>`.** The resolved colour scheme now lives on each editor's scope element, so two editors
+  on one page can differ. `<html data-theme>` is still mirrored for compatibility (see Deprecated).
+- **`getStatusColor` / `getStatusBackgroundColor` / `getStatusTextColor`** return `var(--fd-status-*)` instead
+  of hex. They are valid in CSS only: host code that parses the hex value breaks.
+- **`layout beautify`** (Console, WebMCP `beautify_layout`) now runs the same sweep as Tidy up instead of a
+  spacing-only pass: it puts every card in its column, clears overlaps and tight spacing, reorders ports and
+  straightens wires, keeps cards on the 20 px grid, and says so when nothing improved. `layout auto` aligns
+  tops along chains and places y on the grid. `--gap-x` / `--gap-y` are validated against the 20 px layout grid:
+  `INVALID_ARGUMENT` "a gap must be a non-negative multiple of the 20 px layout grid".
+- **Settings.** A custom settings service's `getPreferences` may return partial settings. Grid size is 10 or
+  20; any other stored value migrates to 20. `ui.consoleHeight` defaults to 220 (was 300).
+- **Token scales collapsed** (values move, names stay). Type is 11 / 12 / 13 / 15 / 20 / 24 px (`--fd-text-sm`
+  14 → 13, `--fd-text-base` 16 → 15, `--fd-text-lg` 18 → 20); spacing sits on a 4 px grid (`--fd-space-2xs` 6 →
+  4, `--fd-space-sm` 10 → 8, `--fd-space-lg` 14 → 12); `--fd-radius-md` 6 → 4 px. Sites that override these
+  tokens are unaffected.
+- **Lighter frame.** The navbar is 48 px (`--fd-navbar-height`, was 60). The status bar under the canvas is
+  gone: the node count sits in the zoom control, with the cycle warning. The minimap is 120×72 and hides when
+  the canvas is under 800 px wide (`showMinimap` still wins). The Console is a strip along the canvas's bottom
+  edge (opens at 220 px, height saved). One panel header and one composer are shared by the Playground, the
+  Assistant, the inspector, settings, overlays and the Console.
+- **The AI Assistant** is a tab beside Nodes in the left slot, in Edit mode only; it keeps its conversation
+  across tab switches and Test mode. `consolePlacement` places the Command Console alone and the console
+  toggle opens only the Console; `consolePlacement: 'sidebar'` stays valid and `features.assistant: false`
+  still hides the Assistant. A host that set `disableSidebar` keeps the Assistant as a tab of the console group
+  (until 3.0). `bottomPanelTab: 'chat'` in stored settings is accepted and ignored.
+- **Playground steps fold into one row per turn** ("8 steps · 82 ms · 1 waiting"), opening a compact table; a
+  failed step's error stays visible; the turn's run notices fold in. **Expand steps by default**
+  (`playground.expandSteps`, off) keeps them open. The status badge's hover details panel is gone: those facts
+  are in the inspector's Last run tab, and `status.overlay.tooltip` takes only `{ status }`.
+- A workflow's settings open as a resizable sheet over the canvas. Toasts appear top-centre under the navbar
+  (at most three, one success at a time); a toast with an action stays until closed and every toast is
+  closable (the label comes from `notice.dismiss`).
+- The Playground's "Nothing will reply here" notice sits in the empty conversation with a **Playground
+  settings** button. A refused Run (missing input, or the server's 400) is shown under the Run button, not in
+  the banner (`fd.playground.launchError`). A turn started by Run without a typed message reads "Started a run"
+  instead of an empty bubble. A form input of array or object type is sent as parsed JSON; invalid JSON stops
+  the run with "Not valid JSON for its type" (`InterfaceInputsResult`'s failure branch gains `invalid`).
+- A saved or exported workflow no longer contains a node's `executionInfo`. The standalone Playground sends a
+  `predefinedMessage` starting with `/` as typed instead of reading it as a slash command.
+  `nodeExecutionService.fetchMultipleNodeExecutionInfo` rejects on a failed read (`getMultipleNodeExecutionInfo`
+  still never rejects).
+- `ConfigPanel`'s `onClose` is optional; `NodeSidebar` takes a `popover` prop.
+- `flowdrop:refresh-status` dispatched on one editor's mount container refreshes only that editor; dispatched
+  on `document` it still reaches all.
+- Internal class names changed with the shared panel header, composer and steps rows (override CSS that targets
+  them): `.flowdrop-status-bar*`, `.flowdrop-text--error`, `.flowdrop-console-toggle`,
+  `.execution-console__header|__icon|__title`, `.message-stream__log-group*`, `.playground__vertical-resizer*`,
+  `.form-prompt__form-wrapper`, `.chat-input__textarea|__send-btn|__stop-btn|__run-btn|__command-feedback-dismiss`,
+  `.ai-chat-panel__input-area|__input|__send`, the `__header|__title|__close` families of `.config-panel`,
+  `.config-panel-modal`, `.config-modal`, `.flowdrop-settings-modal`, `.surface-overlay` and `.command-console`,
+  and `.node-status-overlay__icon`. The `.node-status-overlay--{status}` modifiers are now
+  `--{running,completed,waiting,failed,skipped}`, with the raw status in `data-execution-status`. New:
+  `.steps-summary*`, `.fd-zoom-status__count`, `.node-status-overlay__pill|__outline|--compact`.
+
+### Deprecated
+
+- The `<html data-theme>` mirror: read the scheme from the editor's scope element instead. Removed in 3.0.
+- `FormToggle.hideLabel`, `WorkflowEditor`'s `consoleOpen` / `onToggleConsole` / `consoleToggleLabel` (the
+  console is driven by the instance's UI state, `ui.consoleOpen`), `ControlPanel.notice` and
+  `NodeStatusOverlay`'s `size`, `position` and `showDetails` (and `NodeStatusConfig.showDetails`): accepted, no
+  effect. Removed in 3.0.
+- `ui.sidebarWidth`: use `ui.sidebarWidths.nodes`; still read as its fallback.
+- Messages `chat.tools.reading` / `read` / `applied` (unused), `playground.logGroup`,
+  `playground.executionConsole.header`, `readyTitle` and `readyText`; and the function form of
+  `chat.tools.awaitingApproval` / `rejected` (now strings; both are accepted).
+- `ExecutionLogs` in the `playground` barrel (not rendered by any surface).
+- The `--fd-*-display` skin tokens (`node-icon-display`, `node-circle-display`,
+  `sidebar-{search,header,card,flat}-display`, `navbar-{split,dropdown}-display`): use
+  `FlowDropThemeConfig.display`, which wins over them. They keep working and go in 3.0.
+- The standalone Playground, in favour of the editor's **Test mode**: `Playground`, `PlaygroundStudio`,
+  `PlaygroundApp`, `PlaygroundModal` and the `mountPlayground`, `mountPlaygroundStudio`, `mountPlaygroundApp`
+  and `unmountPlayground` entries. They keep working and warn once per page on the console when mounted. They
+  are removed in 3.0. To migrate, embed the editor (`WorkflowEditor` / `mountFlowDropApp`) and use its Test mode.
+- `data.executionInfo` on a node: read run status from `fd.playground.nodeStatusFor(id)`. Hosts that still
+  write it keep working (the overlay falls back to it), but it is no longer saved, exported or kept across
+  edits. `NodeOperationsHelper.applyExecutionInfo` is deprecated with it. Both go in 3.0.
+
+### Removed
+
+- The status bar under the canvas, the floating Console button, the Playground's "Ready to run" empty state and
+  the resize splitter between its conversation and form, and the status badge's hover details panel.
+- Messages `status.overlay.statusLabel`, `executionsLabel`, `lastRunLabel`, `durationLabel`, `errorLabel` and
+  `historyLabel` (with the details panel). Overrides of them no longer type-check.
+
+### Fixed
+
+- An inline `theme.skin` on a named theme no longer drops that theme's dark palette (`resolveTheme`).
+- A form field without a title shows a readable label instead of its raw schema key.
+- Canvas nodes are named on the focusable wrapper (the inner `aria-label` was invalid ARIA), and the node
+  configure gear is visible on selected and focused nodes and on touch, not on hover only. Its label is
+  localisable (`nodes.configure`, `nodes.configureTool`, `nodes.configureIdea`).
+
 ## [2.11.0] - 2026-10-07
 
 ### Added

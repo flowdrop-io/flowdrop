@@ -58,12 +58,15 @@ export type {
   WorkflowNode,
   WorkflowEdge,
   NodeMetadata,
-  ConfigSchema
+  ConfigSchema,
+  ConfigValues,
+  ExternalEditLink
 } from './types/index.js';
+export type { Command, CommandResult, CommandErrorCode } from './commands/types.js';
 
 export type { EndpointConfig } from './config/endpoints.js';
 export type { AuthProvider } from './types/auth.js';
 export type { FlowDropInstance } from './stores/instanceContainer.svelte.js';
-export type { FlowDropMountOptions, MountedFlowDropApp } from './svelte-app.js';
+export type { FlowDropMountOptions, MountedFlowDropApp, RunCommandOptions } from './svelte-app.js';
 export type { FlowDropEventHandlers } from './types/events.js';
 export type { Messages, MessagesOverride } from './messages/index.js';

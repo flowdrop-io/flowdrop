@@ -1,0 +1,169 @@
+import { describe, it, expect } from 'vitest';
+import { resolveTheme, graphiteTheme } from '../../../src/lib/themes/index.js';
+import { resolveSkin, graphiteSkin } from '../../../src/lib/skins/index.js';
+import { defaultSkin } from '../../../src/lib/skins/index.js';
+import { buildScopedSkinCss, displayTokens } from '../../../src/lib/themes/scopedSkinCss.js';
+
+describe('graphite theme', () => {
+  it('is registered by name as a theme and a skin', () => {
+    expect(resolveTheme('graphite')).toBe(graphiteTheme);
+    expect(resolveSkin('graphite')).toBe(graphiteSkin);
+    expect(graphiteTheme.skin).toBe(graphiteSkin);
+  });
+
+  it('is opt-in: the default theme does not change', () => {
+    expect(resolveTheme(undefined).skin).toBeUndefined();
+    expect(resolveTheme('classic').skin).toBeUndefined();
+    expect(defaultSkin.tokens).toBeUndefined();
+  });
+
+  it('names Inter with a system-ui fallback', () => {
+    expect(graphiteSkin.font).toMatch(/^'Inter Variable', Inter, system-ui/);
+  });
+
+  it('sets every colour role in both modes, so nothing falls back to the default blue', () => {
+    const roles = [
+      'background',
+      'foreground',
+      'muted',
+      'muted-foreground',
+      'card',
+      'header',
+      'canvas-bg',
+      'border',
+      'border-strong',
+      'ring',
+      'primary',
+      'primary-foreground',
+      'secondary',
+      'accent',
+      'info',
+      'success',
+      'warning',
+      'error',
+      'node-border',
+      'edge-data-selected'
+    ];
+    for (const role of roles) {
+      expect(graphiteSkin.tokens, role).toHaveProperty(role);
+      expect(graphiteSkin.darkTokens, role).toHaveProperty(role);
+    }
+  });
+
+  it('every light colour token has a dark counterpart', () => {
+    const shared = new Set([
+      'radius-sm',
+      'radius-md',
+      'radius-lg',
+      'radius-xl',
+      'control-radius',
+      'radius-surface',
+      'radius-bubble',
+      'text-body',
+      'text-meta',
+      'scrollbar-size',
+      // Mode-independent control, button, menu, sheet and modal knobs (G4).
+      'field-height',
+      'field-height-sm',
+      'field-padding',
+      'field-padding-multiline',
+      'field-min-height-multiline',
+      'field-border-color',
+      'field-shadow',
+      'field-focus-shadow',
+      'field-focus-outline',
+      'field-label-size',
+      'field-help-size',
+      'size-btn-min',
+      'button-secondary-border',
+      'button-ghost-hover',
+      'button-danger-bg',
+      'button-danger-fg',
+      'button-danger-border',
+      'button-danger-hover-bg',
+      'button-danger-hover-fg',
+      'menu-radius',
+      'menu-shadow',
+      'menu-item-radius',
+      'menu-item-height',
+      'sheet-inset',
+      'sheet-radius',
+      'sheet-border-width',
+      'sheet-border',
+      'inspector-details-bg',
+      'inspector-details-rule',
+      'inspector-title-size',
+      'inspector-meta-size',
+      'id-chip-bg',
+      'id-chip-padding',
+      'code-block-bg',
+      'code-block-border',
+      'code-block-radius',
+      'modal-radius',
+      'modal-header-height',
+      'modal-title-size'
+    ]);
+    const structural = (k: string) =>
+      shared.has(k) ||
+      /^(node-radius|node-border-width|node-shadow|node-shadow-hover|scrollbar-radius)$/.test(k) ||
+      // Canvas anatomy: sizes, and colours written as var() references, which resolve per mode.
+      /^(node-(header-(gap|title-height|min-height|padding-x|row-gap)|title-|terminal-|dim-|icon-(size|glyph-size|radius)|port|selected-|status-)|handle-visual-size|status-pill-|toolbar-segment|zoom-|controls-button|minimap-(radius|shadow|border|bg|mask-stroke|node))/.test(
+        k
+      ) ||
+      // Form-first inputs: shape and structure, the same in both modes (the colours have dark values).
+      /^(inputs-frame-(border|bg|pad)|switch-on-bg|inspector-link-color|field-(control-height|control-radius|textarea-min|help-size|label-weight|tag-bg|tag-pad|example-border-style|example-bg))$/.test(
+        k
+      );
+    const missing = Object.keys(graphiteSkin.tokens ?? {}).filter(
+      (k) => !structural(k) && !(k in (graphiteSkin.darkTokens ?? {}))
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it('writes a dark rule and the font to the scoped css', () => {
+    const css = buildScopedSkinCss('g1', graphiteSkin);
+    expect(css).toContain('--fd-font-sans: ');
+    expect(css).toContain('font-family: var(--fd-font-sans)');
+    expect(css).toContain(`[data-fd-scope="g1"][data-theme='dark'] {`);
+  });
+});
+
+describe('resolveTheme with an inline skin on a named base', () => {
+  it('keeps the base skin dark tokens when the inline skin sets only light tokens', () => {
+    const t = resolveTheme({ name: 'graphite', skin: { tokens: { primary: '#e11d48' } } });
+    expect(t.skin?.tokens?.primary).toBe('#e11d48');
+    expect(t.skin?.darkTokens?.primary).toBe(graphiteSkin.darkTokens?.primary);
+    expect(t.skin?.darkTokens?.background).toBe(graphiteSkin.darkTokens?.background);
+  });
+
+  it('lets inline dark tokens win over the base', () => {
+    const t = resolveTheme({
+      name: 'graphite',
+      skin: { darkTokens: { primary: '#fff000' } }
+    });
+    expect(t.skin?.darkTokens?.primary).toBe('#fff000');
+    expect(t.skin?.darkTokens?.background).toBe(graphiteSkin.darkTokens?.background);
+    // light tokens of the base survive too
+    expect(t.skin?.tokens?.background).toBe(graphiteSkin.tokens?.background);
+  });
+
+  it('keeps the base font unless the inline skin names one', () => {
+    expect(resolveTheme({ name: 'graphite', skin: { tokens: {} } }).skin?.font).toBe(
+      graphiteSkin.font
+    );
+    expect(resolveTheme({ name: 'graphite', skin: { font: 'serif' } }).skin?.font).toBe('serif');
+  });
+
+  it('keeps node descriptions; compact hides them and keeps the header on the grid', () => {
+    expect(graphiteTheme.config?.display?.nodeDetails).toBeUndefined();
+    const compact = displayTokens({ nodeDetails: 'compact' });
+    expect(compact).toMatchObject({
+      'node-desc-display': 'none',
+      'node-desc-block-display': 'none'
+    });
+    expect(compact['node-port-help-display']).toBeUndefined();
+    expect(compact['node-header-min-height']).toContain('* 2');
+    expect(displayTokens({ nodeDetails: 'full' })['node-header-min-height']).toBeUndefined();
+    expect(displayTokens({})).toEqual({});
+  });
+});

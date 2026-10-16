@@ -1,13 +1,14 @@
 <!--
-  LogRow — dense terminal-style entry for log messages.
-  Width-based reshaping is driven by `@container fd-message-stream` rules
-  declared in MessageStream.svelte (the file that also sets the container).
+  @component
+  A dense, terminal-style line for one log message. The conversation folds a turn's log rows into one steps row
+  (`StepsSummary`), so this stays for hosts that render a single message through `MessageBubble`.
+
+  **Use it for** nothing on its own. Render a message with `MessageBubble`.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import type { PlaygroundMessage } from '../../types/playground.js';
-  import HierarchyTrail from './HierarchyTrail.svelte';
   import MessageTagStrip from './MessageTagStrip.svelte';
   import OriginBadge from './OriginBadge.svelte';
   import { formatTimestamp, getLogLevelIcon } from './messageDisplay.js';
@@ -20,7 +21,6 @@
   let { message, showTimestamp = true }: Props = $props();
 
   const level = $derived(message.metadata?.level);
-  const hierarchy = $derived(message.hierarchy ?? []);
   const tags = $derived(message.tags ?? []);
 </script>
 
@@ -41,7 +41,6 @@
       <span class="log-row__source">{message.metadata.source}</span>
     {/if}
     <OriginBadge {message} />
-    <HierarchyTrail items={hierarchy} />
     {#if message.metadata?.nodeLabel ?? message.nodeId}
       <span class="log-row__node">{message.metadata?.nodeLabel ?? message.nodeId}</span>
     {/if}
@@ -145,9 +144,12 @@
     letter-spacing: 0.04em;
   }
 
+  /* A basis, not flex: 1: with a zero basis the text never wraps below the
+     badges and trail, and in a narrow stream (the docked Playground) it is
+     squeezed to a few characters, one per line. */
   .log-row__text {
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 10rem;
+    min-width: min(10rem, 100%);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
@@ -159,10 +161,7 @@
     opacity: 0.8;
   }
 
-  /* Wrapper around the tag strip. Owns its grid-area in the @container
-     queries (see MessageStream.svelte) without those rules reaching into
-     MessageTagStrip's scope. inline-flex so the strip lays out naturally
-     in the default wide layout. */
+  /* Wrapper around the tag strip. */
   .log-row__tags {
     display: inline-flex;
     min-width: 0;

@@ -41,16 +41,19 @@ test.describe('Node Configuration', () => {
     await expect(panelTitle).toContainText('Text Input', { timeout: 5000 });
   });
 
-  test('config panel shows node details (type, category)', async ({ page }) => {
+  test('config panel shows the category and id on one meta line (no Type row)', async ({
+    page
+  }) => {
     await gotoEditor(page, 'simple');
 
     await openNodeConfig(page, 0);
 
     const configPanel = page.locator('.config-panel').first();
 
-    // Should show type and category in the details section
-    await expect(configPanel).toContainText('default', { timeout: 5000 });
-    await expect(configPanel).toContainText('inputs', { timeout: 5000 });
+    // One muted line: "<category label> · <id>"
+    await expect(configPanel).toContainText('Inputs · node-input', { timeout: 5000 });
+    await expect(configPanel.locator('.readonly-details__id')).toBeVisible();
+    await expect(configPanel.getByText('Type', { exact: true })).toHaveCount(0);
   });
 
   test('config panel contains form fields from configSchema', async ({ page }) => {
@@ -133,13 +136,13 @@ test.describe('Node Configuration', () => {
     // The Text Input node (index 0) has a boolean "Required" toggle.
     await openNodeConfig(page, 0);
 
-    // The checkbox is a visually-hidden input inside a styled toggle label, so
-    // click the label. `toBeChecked()` reads the input's state without needing
-    // it to be visible.
+    // The switch is a visually-hidden input inside a styled track, so click the
+    // switch root. `toBeChecked()` reads the input's state without needing it
+    // to be visible.
     // Scope the label to the `required` field's own toggle — the form also
     // carries the node-level port settings, whose rows are toggles too.
     const toggleInput = page.locator('.config-form input#required[type="checkbox"]');
-    const toggleLabel = page.locator('.config-form label.form-toggle', {
+    const toggleLabel = page.locator('.config-form .flowdrop-ui-switch', {
       has: page.locator('input#required')
     });
     await expect(toggleLabel).toBeVisible({ timeout: 5000 });

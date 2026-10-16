@@ -7,7 +7,13 @@
  * @module types/events
  */
 
-import type { Workflow, NodeExecutionInfo, WorkflowNode } from './index.js';
+import type {
+  Workflow,
+  NodeExecutionInfo,
+  WorkflowNode,
+  ConfigValues,
+  ExternalEditLink
+} from './index.js';
 import type { SwapEventContext, SwapResult } from '../utils/nodeSwap.js';
 
 /**
@@ -49,6 +55,27 @@ export type WorkflowChangeType =
  * ```
  */
 export interface FlowDropEventHandlers {
+  /**
+   * Called instead of opening a node's externalEditLink. Resolve with the new
+   * config to write it into the node (one undo step), or with nothing to leave
+   * the node as it is.
+   *
+   * `node` and `link` are copies: changing them does not change the workflow;
+   * return the config instead. The returned config replaces the node's
+   * config; it is not merged, and it is copied, so changing the object later
+   * does not change the workflow either. Anything but a plain object is
+   * ignored. A rejection is logged and leaves the node unchanged. While the
+   * editor is read-only or locked the handler is still called but its result
+   * is not written (a console warning says so).
+   *
+   * @param node - The node whose external edit link was activated
+   * @param link - That node's resolved external edit link
+   */
+  onExternalEdit?(
+    node: WorkflowNode,
+    link: ExternalEditLink
+  ): ConfigValues | void | Promise<ConfigValues | void>;
+
   /**
    * Called when workflow changes (any modification)
    *
@@ -285,6 +312,41 @@ export interface FlowDropFeatures {
    * @default true
    */
   assistant?: boolean;
+
+  /**
+   * Offer Test mode: the Edit | Test switch in the canvas toolbar. Test mode docks the
+   * Playground beside the canvas and keeps the inspector open, for testing a
+   * workflow while you edit it.
+   *
+   * The switch is only shown for a saved workflow on an editable canvas
+   * (`mode: 'edit'`, no `pipelineId`). A host that wants to drive the mode
+   * itself uses `instance.editorMode` (and the
+   * `editorMode` option to start in Test). Turn this off for a backend that
+   * has no Playground endpoints.
+   *
+   * @default true
+   */
+  testMode?: boolean;
+
+  /**
+   * Offer the Runs list in Test mode: a "Runs" control in the canvas toolbar
+   * listing the workflow's past runs (from `endpoints.pipelines.list`), where
+   * opening one shows its node statuses on the canvas. Turn this off for a
+   * backend that has no pipelines list.
+   *
+   * @default true
+   */
+  runsList?: boolean;
+
+  /**
+   * Where the host's admin pages for runs live, as URL templates (`{workflowId}`
+   * and `{pipelineId}` are filled in). `runs` is the Runs list's "Open in admin"
+   * link, `run` the link on each row. A link without a template is not drawn:
+   * FlowDrop hard-codes no host paths.
+   *
+   * @example { runs: '/admin/flowdrop/pipelines?workflow={workflowId}' }
+   */
+  adminLinks?: { runs?: string; run?: string };
 }
 
 /**
@@ -299,7 +361,10 @@ export const DEFAULT_FEATURES: Required<FlowDropFeatures> = {
   enableNodeSwap: true,
   builtinEditors: true,
   console: true,
-  assistant: true
+  assistant: true,
+  testMode: true,
+  runsList: true,
+  adminLinks: {}
 };
 
 /**

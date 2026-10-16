@@ -1,11 +1,10 @@
 <!--
-  HierarchyTrail Component
+  @component
+  A small trail such as "Support chat › Order lookup" that shows where a message came from, for example a
+  sub-workflow or a loop pass. It is a display, not navigation. Screen readers read the whole path once.
 
-  Renders a chevron-separated path of MessageHierarchyItem entries. The
-  path is a *display*, not a list users navigate, so the SR announcement
-  comes entirely from the wrapper's aria-label (built from the labels of
-  the items themselves) and the visible chips are hidden from AT to avoid
-  the path being announced twice.
+  **Use it for** the footer of a message or an interrupt card.
+  **Not for** page breadcrumbs (the `Navbar` has those).
 -->
 
 <script lang="ts">
@@ -14,6 +13,7 @@
   import { m } from '$lib/messages/index.js';
 
   interface Props {
+    /** The path, outermost first. */
     items: MessageHierarchyItem[];
   }
 

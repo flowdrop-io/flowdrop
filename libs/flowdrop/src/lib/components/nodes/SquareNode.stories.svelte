@@ -1,124 +1,82 @@
-<script module>
+<script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import NodeDecorator from '../../stories/NodeDecorator.svelte';
   import { createSampleNodeData } from '../../stories/utils.js';
+  import type { NodePort } from '../../types/index.js';
+  // The component is imported last: a node component imported first would load the instance
+  // container before its own module has finished, and fail on the import cycle.
+  import SquareNode from './SquareNode.svelte';
 
   const { Story } = defineMeta({
-    title: 'Nodes/SquareNode',
+    title: 'Editor/Nodes/Square node',
+    component: SquareNode,
     tags: ['autodocs'],
-    parameters: {
-      layout: 'centered'
-    }
+    parameters: { layout: 'centered' }
   });
-</script>
 
-<Story name="Default">
-  <NodeDecorator
-    data={createSampleNodeData({
-      label: 'Text Input',
+  const textOutput = () =>
+    createSampleNodeData({
+      label: 'Text output',
       metadata: {
-        id: 'text_input',
-        name: 'Text Input',
-        description: 'Simple text input for user data',
-        category: 'inputs',
-        version: '1.0.0',
-        type: 'square',
-        supportedTypes: ['square'],
-        icon: 'mdi:text',
-        color: '#22c55e',
-        inputs: [],
-        outputs: [
-          {
-            id: 'text',
-            name: 'text',
-            type: 'output',
-            dataType: 'string',
-            required: false,
-            description: 'The input text value'
-          }
-        ]
-      }
-    })}
-  />
-</Story>
-
-<Story name="Selected">
-  <NodeDecorator
-    data={createSampleNodeData({
-      label: 'Text Output',
-      metadata: {
-        id: 'text_output',
-        name: 'Text Output',
-        description: 'Simple text output for displaying data',
+        node_type_id: 'text_output',
+        name: 'Text output',
+        description: 'Shows a text to the user.',
         category: 'outputs',
-        version: '1.0.0',
         type: 'square',
-        supportedTypes: ['square'],
         icon: 'mdi:text-box',
-        color: '#ef4444',
-        inputs: [
-          {
-            id: 'text',
-            name: 'Text Input',
-            type: 'input',
-            dataType: 'string',
-            required: false,
-            description: 'The text to output'
-          },
-          {
-            id: 'trigger',
-            name: 'Trigger',
-            type: 'input',
-            dataType: 'trigger',
-            required: false,
-            description: ''
-          }
-        ],
+        inputs: [{ id: 'text', name: 'Text', type: 'input', dataType: 'string' } as NodePort],
         outputs: []
       }
-    })}
-    selected={true}
-  />
+    });
+</script>
+
+<Story
+  asChild
+  name="A square node"
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A node that shows only its icon. The editor draws it for a node type that declares `type: "square"`.'
+      }
+    }
+  }}
+>
+  <NodeDecorator data={textOutput()} />
 </Story>
 
-<Story name="Dynamic Ports">
+<Story asChild name="Selected">
+  <NodeDecorator data={textOutput()} selected />
+</Story>
+
+<Story
+  asChild
+  name="Dynamic ports"
+  parameters={{
+    docs: {
+      description: {
+        story: 'Ports the user added in the node config. They sit on the square the same way.'
+      }
+    }
+  }}
+>
   <NodeDecorator
     data={createSampleNodeData({
-      label: 'Data Mapper',
+      label: 'Data mapper',
       config: {
-        dynamicInputs: [
-          {
-            name: 'source',
-            label: 'Source Data',
-            dataType: 'json',
-            required: true
-          }
-        ],
+        dynamicInputs: [{ name: 'source', label: 'Source data', dataType: 'json', required: true }],
         dynamicOutputs: [
-          {
-            name: 'mapped',
-            label: 'Mapped Output',
-            dataType: 'json',
-            required: false
-          },
-          {
-            name: 'errors',
-            label: 'Errors',
-            dataType: 'string',
-            required: false
-          }
+          { name: 'mapped', label: 'Mapped output', dataType: 'json' },
+          { name: 'errors', label: 'Errors', dataType: 'string' }
         ]
       },
       metadata: {
-        id: 'data_mapper',
-        name: 'Data Mapper',
-        description: 'Map data between formats',
+        node_type_id: 'data_mapper',
+        name: 'Data mapper',
+        description: 'Maps data between formats.',
         category: 'processing',
-        version: '1.0.0',
         type: 'square',
-        supportedTypes: ['square'],
         icon: 'mdi:swap-horizontal',
-        color: '#0ea5e9',
         inputs: [],
         outputs: []
       }

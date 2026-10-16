@@ -29,7 +29,7 @@ async function addCaptionFromMenu(page: Page): Promise<void> {
   const box = await page.locator('.svelte-flow__pane').boundingBox();
   if (!box) throw new Error('Canvas pane not found');
   await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.8, { button: 'right' });
-  await expect(menu(page).getByRole('menuitem')).toHaveText([/Add caption/]);
+  await expect(menu(page).getByRole('menuitem')).toHaveText([/Add caption/, /Tidy up/]);
   await menu(page)
     .getByRole('menuitem', { name: /Add caption/ })
     .click();
@@ -38,7 +38,11 @@ async function addCaptionFromMenu(page: Page): Promise<void> {
 }
 
 function captionNode(page: Page, text: string): Locator {
-  return page.locator('.svelte-flow__node').filter({ hasText: text });
+  // Caption nodes only: a workflow node's "kind · id" line can say the same word.
+  return page
+    .locator('.svelte-flow__node')
+    .filter({ has: page.locator('.flowdrop-caption-node') })
+    .filter({ hasText: text });
 }
 
 test.describe('Caption node', () => {
@@ -99,14 +103,11 @@ test.describe('Caption node', () => {
 
   test('the pane menu has no Add caption when the node types have no caption', async ({ page }) => {
     await gotoCaptionEditor(page, '');
-    const prevented = await page.evaluate(() => {
-      const el = document.querySelector('.svelte-flow__pane');
-      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
-      el?.dispatchEvent(ev);
-      return ev.defaultPrevented;
-    });
-    expect(prevented).toBe(false);
-    await expect(menu(page)).toHaveCount(0);
+    const box = await page.locator('.svelte-flow__pane').boundingBox();
+    if (!box) throw new Error('Canvas pane not found');
+    await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.8, { button: 'right' });
+    // The pane menu still opens for Tidy up, without Add caption.
+    await expect(menu(page).getByRole('menuitem')).toHaveText([/Tidy up/]);
   });
 
   test('double-click edits an existing caption; Escape restores it', async ({ page }) => {
@@ -165,7 +166,12 @@ test.describe('Caption node', () => {
     await gotoCaptionEditor(page, 'workflow=caption');
 
     await captionNode(page, 'Inputs').click({ button: 'right' });
-    await expect(menu(page).getByRole('menuitem')).toHaveText([/Edit text/, /Delete/]);
+    await expect(menu(page).getByRole('menuitem')).toHaveText([
+      /Edit text/,
+      /Duplicate/,
+      /Swap node/,
+      /Delete/
+    ]);
     await menu(page)
       .getByRole('menuitem', { name: /Edit text/ })
       .click();

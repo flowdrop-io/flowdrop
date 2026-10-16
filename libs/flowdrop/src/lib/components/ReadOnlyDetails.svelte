@@ -1,10 +1,15 @@
 <!--
   ReadOnlyDetails Component
-  Displays readonly information with an ID (with copy button), title, description, and label-value pairs
-  Compact inline layout with BEM syntax
+  The meta of an inspected thing: one muted 12px line, "Category · id ⧉" (the id
+  truncates with a tooltip, the copy button sits at its end), then the
+  description in 13px muted. No key/value table: a "Type" detail is dropped (for
+  most nodes it only ever said "default"); a "Category" detail shows as its bare
+  value and any other detail as "<value> <label>" ("3 nodes").
 -->
 
 <script lang="ts">
+  import Icon from '@iconify/svelte';
+  import IconButton from './primitives/IconButton.svelte';
   import { m } from '$lib/messages/index.js';
 
   /**
@@ -33,6 +38,15 @@
 
   const { id, title, description, details }: Props = $props();
 
+  /** The details that read as a phrase in the meta line. */
+  const facts = $derived(
+    details
+      .filter((d) => d.label.toLowerCase() !== 'type' && d.value !== '')
+      .map((d) =>
+        d.label.toLowerCase() === 'category' ? d.value : `${d.value} ${d.label.toLowerCase()}`
+      )
+  );
+
   /**
    * Copy the ID to clipboard
    */
@@ -46,43 +60,23 @@
     <h3 class="readonly-details__title">{title}</h3>
   {/if}
 
-  <div class="readonly-details__grid">
-    <!-- ID row -->
-    <span class="readonly-details__label">ID</span>
-    <div class="readonly-details__id-row">
-      <code class="readonly-details__id">{id}</code>
-      <button
-        class="readonly-details__copy-btn"
-        onclick={copyId}
-        title={m().navigation.copyId}
-        aria-label={m().navigation.copyId}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          stroke-width="2"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"
-          />
-        </svg>
-      </button>
-    </div>
-
-    <!-- Dynamic label-value pairs -->
-    {#each details as detail (detail.label)}
-      <span class="readonly-details__label">{detail.label}</span>
-      <span class="readonly-details__value">{detail.value}</span>
+  <div class="readonly-details__meta">
+    {#each facts as fact (fact)}
+      <span class="readonly-details__fact">{fact}</span>
+      <span class="readonly-details__sep" aria-hidden="true">·</span>
     {/each}
+    <code class="readonly-details__id" {id} title={id}>{id}</code>
+    <IconButton
+      size="sm"
+      class="readonly-details__copy-btn"
+      title={m().navigation.copyId}
+      ariaLabel={m().navigation.copyId}
+      onclick={copyId}
+    >
+      <Icon icon="heroicons:clipboard-document" />
+    </IconButton>
   </div>
 
-  <!-- Description (if provided) -->
   {#if description}
     <p class="readonly-details__description">{description}</p>
   {/if}
@@ -92,80 +86,49 @@
   .readonly-details {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--fd-space-xs);
+    min-width: 0;
   }
 
   .readonly-details__title {
     margin: 0;
-    font-size: 0.75rem;
+    font-size: var(--fd-text-sm);
     font-weight: 600;
-    color: var(--fd-muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .readonly-details__grid {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0.25rem 0.75rem;
-    align-items: center;
-  }
-
-  .readonly-details__label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--fd-muted-foreground);
-  }
-
-  .readonly-details__value {
-    font-size: 0.8125rem;
     color: var(--fd-foreground);
-    font-weight: 500;
   }
 
-  .readonly-details__id-row {
+  .readonly-details__meta {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: var(--fd-space-2xs);
+    min-width: 0;
+    font-size: var(--fd-text-xs);
+    color: var(--fd-muted-foreground);
+  }
+
+  .readonly-details__fact,
+  .readonly-details__sep {
+    flex: none;
   }
 
   .readonly-details__id {
-    font-size: 0.75rem;
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
     color: var(--fd-muted-foreground);
-    background-color: var(--fd-subtle);
-    padding: 0.125rem 0.375rem;
-    border-radius: var(--fd-radius-sm);
-    word-break: break-all;
   }
 
-  .readonly-details__copy-btn {
-    background: transparent;
-    border: none;
-    padding: 0.25rem;
-    cursor: pointer;
-    color: var(--fd-muted-foreground);
-    border-radius: var(--fd-radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition:
-      color var(--fd-transition-fast),
-      background-color var(--fd-transition-fast);
-  }
-
-  .readonly-details__copy-btn:hover {
-    color: var(--fd-foreground);
-    background-color: var(--fd-subtle);
-  }
-
-  .readonly-details__copy-btn:active {
-    color: var(--fd-foreground);
+  .readonly-details__meta :global(.readonly-details__copy-btn) {
+    flex: none;
+    margin-left: calc(-1 * var(--fd-space-3xs));
   }
 
   .readonly-details__description {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: var(--fd-text-sm);
     color: var(--fd-muted-foreground);
     line-height: 1.5;
   }

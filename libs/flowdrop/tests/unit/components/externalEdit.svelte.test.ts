@@ -1,0 +1,350 @@
+/**
+ * Host-handled external editing (#55): `onExternalEdit` on ConfigForm and
+ * ExternalLinkRow, and the write-back helper.
+ */
+
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
+import { mount, unmount, flushSync } from 'svelte';
+import ConfigForm from '$lib/components/ConfigForm.svelte';
+import ExternalLinkRow from '$lib/components/ExternalLinkRow.svelte';
+import { runExternalEdit } from '$lib/utils/externalEdit.svelte.js';
+import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
+import { createTestWorkflow, createTestNode } from '../../utils/index.js';
+import type { ExternalEditLink, WorkflowNode } from '$lib/types/index.js';
+
+const link: ExternalEditLink = {
+  url: 'https://admin.example.com/nodes/{instanceId}',
+  parameterMapping: { instanceId: 'id' },
+  label: 'Edit in Drupal'
+};
+
+function nodeWithLink(): WorkflowNode {
+  const node = createTestNode({ id: 'n1' });
+  node.data.config = { a: 1, b: 2 };
+  node.data.metadata.configEdit = { externalEditLink: link };
+  return node;
+}
+
+let app: ReturnType<typeof mount> | null = null;
+afterEach(() => {
+  if (app) unmount(app);
+  app = null;
+  document.body.innerHTML = '';
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
+
+function mountForm(props: Record<string, unknown>): HTMLElement {
+  const target = document.createElement('div');
+  document.body.appendChild(target);
+  app = mount(ConfigForm, { target, props: { node: nodeWithLink(), ...props } });
+  flushSync();
+  return target;
+}
+
+describe('ConfigForm external edit link', () => {
+  let openSpy: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+  });
+
+  it('calls onExternalEdit with (node, link) and does not open a window', async () => {
+    const handler = vi.fn(async () => {});
+    const target = mountForm({ onExternalEdit: handler });
+    const anchor = target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]')!;
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    anchor.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(handler).toHaveBeenCalledTimes(1);
+    const [node, passedLink] = handler.mock.calls[0] as unknown as [WorkflowNode, ExternalEditLink];
+    expect(node.id).toBe('n1');
+    expect(passedLink.url).toBe(link.url);
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
+  it('hands the host copies, not the live node', async () => {
+    const live = $state(nodeWithLink());
+    const handler = vi.fn(async (n: WorkflowNode) => {
+      n.data.config.a = 99; // a host writing into what it was given
+    });
+    const target = mountForm({ node: live, onExternalEdit: handler });
+    target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]')!.click();
+    await Promise.resolve();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(live.data.config.a).toBe(1);
+  });
+
+  it('ignores a second click while the handler is pending', async () => {
+    let release!: () => void;
+    const handler = vi.fn(() => new Promise<void>((r) => (release = r)));
+    const target = mountForm({ onExternalEdit: handler });
+    const anchor = target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]')!;
+    anchor.click();
+    anchor.click();
+    expect(handler).toHaveBeenCalledTimes(1);
+    release();
+    await Promise.resolve();
+    await Promise.resolve();
+    anchor.click();
+    expect(handler).toHaveBeenCalledTimes(2);
+  });
+
+  it('swallows a rejected handler', async () => {
+    const handler = vi.fn(async () => {
+      throw new Error('nope');
+    });
+    const target = mountForm({ onExternalEdit: handler });
+    target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]')!.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('without a handler the link is left alone (not prevented)', () => {
+    const target = mountForm({});
+    const anchor = target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]')!;
+    expect(anchor.getAttribute('href')).toContain('admin.example.com');
+    let preventedByRow = true;
+    // Bubbles after the row's own handler; then stop the navigation itself.
+    target.addEventListener('click', (e) => {
+      preventedByRow = e.defaultPrevented;
+      e.preventDefault();
+    });
+    anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    expect(preventedByRow).toBe(false);
+  });
+
+  it('without a handler the button still opens a window', async () => {
+    const node = nodeWithLink();
+    node.data.metadata.configEdit = {
+      externalEditLink: link,
+      dynamicSchema: { url: '/unreachable-schema' },
+      preferDynamicSchema: true
+    };
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    app = mount(ConfigForm, { target, props: { node } });
+    for (let i = 0; i < 50 && !target.querySelector('.config-form__button--external'); i++) {
+      await new Promise((r) => setTimeout(r, 10));
+      flushSync();
+    }
+    const button = target.querySelector<HTMLButtonElement>('.config-form__button--external');
+    expect(button).not.toBeNull();
+    button!.click();
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://admin.example.com/nodes/n1',
+      '_blank',
+      'noopener,noreferrer'
+    );
+  });
+});
+
+describe('ConfigForm external edit with a pending field edit', () => {
+  it('commits the pending live edit before calling the host handler', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    const node = nodeWithLink();
+    node.data.metadata.configSchema = {
+      type: 'object',
+      properties: { title: { type: 'string', title: 'Title' } }
+    };
+    const order: string[] = [];
+    const onChange = vi.fn((_config: Record<string, unknown>, meta?: { commit?: boolean }) => {
+      order.push(meta?.commit ? 'commit' : 'change');
+    });
+    const handler = vi.fn(async () => {
+      order.push('host');
+    });
+    const target = mountForm({ node, commitMode: 'live', onChange, onExternalEdit: handler });
+
+    const input = target.querySelector<HTMLInputElement>('input[type="text"], input:not([type])')!;
+    input.value = 'typed';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    flushSync();
+    expect(order).toEqual(['change']);
+
+    target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]')!.click();
+    expect(order).toEqual(['change', 'commit', 'host']);
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'typed' }), {
+      commit: true
+    });
+  });
+});
+
+describe('ExternalLinkRow', () => {
+  /** `prevented` records whether the row itself cancelled the click. */
+  const seen = { prevented: false };
+  function mountRow(onActivate?: () => void): HTMLAnchorElement {
+    seen.prevented = false;
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    app = mount(ExternalLinkRow, { target, props: { name: 'Calc', href: '/x', onActivate } });
+    flushSync();
+    // Runs after the row's handler; stops the test navigating.
+    target.addEventListener('click', (e) => {
+      seen.prevented = e.defaultPrevented;
+      e.preventDefault();
+    });
+    return target.querySelector('a')!;
+  }
+
+  it('plain click: prevented and callback called', () => {
+    const cb = vi.fn();
+    const a = mountRow(cb);
+    const e = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    a.dispatchEvent(e);
+    expect(seen.prevented).toBe(true);
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('modified click follows the link', () => {
+    const cb = vi.fn();
+    const a = mountRow(cb);
+    const e = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      ctrlKey: true
+    });
+    a.dispatchEvent(e);
+    expect(seen.prevented).toBe(false);
+    expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('without a callback nothing is prevented', () => {
+    const a = mountRow();
+    const e = new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 });
+    a.dispatchEvent(e);
+    expect(seen.prevented).toBe(false);
+  });
+});
+
+describe('runExternalEdit', () => {
+  function setup() {
+    const fd = createFlowDropInstance({ id: `ext-${Math.random().toString(36).slice(2)}` });
+    const node = nodeWithLink();
+    fd.workflow.initialize(createTestWorkflow({ nodes: [node], edges: [] }));
+    return { fd, node };
+  }
+  const cfg = (fd: ReturnType<typeof setup>['fd']) => fd.workflow.current!.nodes[0].data.config;
+
+  it('replaces the config as one undo step and marks dirty', async () => {
+    const { fd, node } = setup();
+    await runExternalEdit({
+      node,
+      link,
+      handler: async () => ({ c: 3 }),
+      store: fd.workflow
+    });
+    expect(cfg(fd)).toEqual({ c: 3 });
+    expect(fd.workflow.isDirty).toBe(true);
+    fd.historyBindings.undo();
+    expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+  });
+
+  it('leaves the node alone when the handler resolves with nothing', async () => {
+    const { fd, node } = setup();
+    await runExternalEdit({ node, link, handler: async () => {}, store: fd.workflow });
+    expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+    expect(fd.workflow.isDirty).toBe(false);
+  });
+
+  it('leaves the node alone and does not throw when the handler rejects', async () => {
+    const { fd, node } = setup();
+    await expect(
+      runExternalEdit({
+        node,
+        link,
+        handler: () => Promise.reject(new Error('x')),
+        store: fd.workflow
+      })
+    ).resolves.toBeUndefined();
+    expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+    expect(fd.workflow.isDirty).toBe(false);
+  });
+
+  it('copies the result, so the host cannot change the node afterwards', async () => {
+    const { fd, node } = setup();
+    const result = { c: 3, nested: { d: 4 } };
+    await runExternalEdit({ node, link, handler: async () => result, store: fd.workflow });
+
+    result.c = 99;
+    result.nested.d = 99;
+    expect(cfg(fd)).toEqual({ c: 3, nested: { d: 4 } });
+  });
+
+  it('ignores an array result', async () => {
+    const { fd, node } = setup();
+    await runExternalEdit({
+      node,
+      link,
+      handler: async () => [1, 2] as never,
+      store: fd.workflow
+    });
+    expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+    expect(fd.workflow.isDirty).toBe(false);
+  });
+
+  it('hands onWritten the node as written', async () => {
+    const { fd, node } = setup();
+    const onWritten = vi.fn();
+    await runExternalEdit({
+      node,
+      link,
+      handler: async () => ({ c: 3 }),
+      store: fd.workflow,
+      onWritten
+    });
+    expect(onWritten).toHaveBeenCalledTimes(1);
+    expect(onWritten.mock.calls[0][0].id).toBe('n1');
+    expect(onWritten.mock.calls[0][0].data.config).toEqual({ c: 3 });
+  });
+
+  it('drops the result when the node was deleted meanwhile', async () => {
+    const { fd, node } = setup();
+    await runExternalEdit({
+      node,
+      link,
+      handler: async () => {
+        fd.workflow.initialize(createTestWorkflow({ nodes: [], edges: [] }));
+        return { c: 3 };
+      },
+      store: fd.workflow
+    });
+    expect(fd.workflow.current!.nodes).toHaveLength(0);
+    expect(fd.workflow.isDirty).toBe(false);
+  });
+
+  it('does not write when the editor is not in edit mode', async () => {
+    const { fd, node } = setup();
+    const handler = vi.fn(async () => ({ c: 3 }));
+    await runExternalEdit({ node, link, handler, store: fd.workflow, canWrite: () => false });
+    expect(handler).toHaveBeenCalled();
+    expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+  });
+
+  it('asks whether it may write when the host resolves, not when it was called', async () => {
+    const { fd, node } = setup();
+    let editable = true;
+    const handler = vi.fn(async () => {
+      editable = false; // the editor was locked while the host form was open
+      return { c: 3 };
+    });
+    await runExternalEdit({ node, link, handler, store: fd.workflow, canWrite: () => editable });
+    expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+  });
+
+  it('does not call the host again for a node whose form is open', async () => {
+    const { fd, node } = setup();
+    const pending = new Set<string>();
+    let release!: (v: { c: number }) => void;
+    const handler = vi.fn(() => new Promise<{ c: number }>((r) => (release = r)));
+    const first = runExternalEdit({ node, link, handler, store: fd.workflow, pending });
+    await runExternalEdit({ node, link, handler, store: fd.workflow, pending });
+    expect(handler).toHaveBeenCalledTimes(1);
+    release({ c: 3 });
+    await first;
+    expect(pending.size).toBe(0);
+    expect(cfg(fd)).toEqual({ c: 3 });
+  });
+});

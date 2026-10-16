@@ -1,3 +1,16 @@
+<!--
+  @component
+  The gear that opens a node's config.
+
+  It is out of the Tab order (`tabindex="-1"`): the node itself is keyboard-focusable and
+  opens its config on Enter or Space, so Tab moves from node to node. The gear stays
+  clickable. It shows on node hover (through `--fd-config-btn-opacity`, which the node
+  sets), on a selected or focused node, and on touch.
+
+  **Use it for** a node component that opens the config sidebar.
+  **Not for** other buttons; use `IconButton`.
+-->
+
 <script lang="ts">
   import CogIcon from '../icons/CogIcon.svelte';
 
@@ -22,7 +35,7 @@
   keyboard-focusable and opens config on Enter/Space, so tabbing moves straight
   from node to node instead of stopping on the gear. The button stays clickable
   and is revealed on node hover via the --fd-config-btn-opacity custom property
-  the parent sets.
+  the parent sets, and on a selected or focused node and on touch (see the styles).
 -->
 <button
   class="flowdrop-node-config-btn"
@@ -39,11 +52,11 @@
     position: absolute;
     top: var(--fd-space-xs);
     right: var(--fd-space-xs);
-    width: 24px;
-    height: 24px;
-    background-color: var(--fd-backdrop);
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
+    width: var(--fd-node-config-btn-size);
+    height: var(--fd-node-config-btn-size);
+    background-color: var(--fd-node-config-btn-bg);
+    border: 1px solid var(--fd-node-config-btn-border);
+    border-radius: var(--fd-node-config-btn-radius);
     color: var(--fd-muted-foreground);
     cursor: pointer;
     display: flex;
@@ -51,8 +64,10 @@
     justify-content: center;
     opacity: var(--fd-config-btn-opacity, 0);
     transition: all var(--fd-transition-normal);
-    backdrop-filter: var(--fd-backdrop-blur);
+    backdrop-filter: var(--fd-node-config-btn-blur);
     z-index: 15;
+    /* Buttons do not inherit the font by default (Arial otherwise). */
+    font: inherit;
     font-size: var(--fd-text-sm);
   }
 
@@ -62,10 +77,27 @@
   }
 
   .flowdrop-node-config-btn:hover {
-    background-color: var(--fd-muted);
-    border-color: var(--fd-border-strong);
+    background-color: var(--fd-node-config-btn-hover-bg);
+    border-color: var(--fd-node-config-btn-hover-border);
     color: var(--fd-foreground);
-    transform: scale(1.05);
+    transform: scale(var(--fd-node-config-btn-hover-scale));
+  }
+
+  /* Hover alone hides the gear from keyboard and touch users: show it on the
+     selected node, while the focusable xyflow wrapper (or anything in it) has
+     focus, and always where there is no hover. The nodes' own :hover rules keep
+     setting --fd-config-btn-opacity for the pointer case. */
+  :global(.svelte-flow__node.selected) .flowdrop-node-config-btn,
+  :global(.svelte-flow__node:focus-visible) .flowdrop-node-config-btn,
+  :global(.svelte-flow__node:focus-within) .flowdrop-node-config-btn,
+  .flowdrop-node-config-btn:focus-visible {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .flowdrop-node-config-btn {
+      opacity: 1;
+    }
   }
 
   /* TerminalNode: circular badge centered above the node. */
@@ -81,6 +113,6 @@
 
   /* Keep the centering translate while scaling on hover. */
   .flowdrop-node-config-btn--top-center:hover {
-    transform: translateX(-50%) scale(1.1);
+    transform: translateX(-50%) scale(var(--fd-node-config-btn-hover-scale));
   }
 </style>

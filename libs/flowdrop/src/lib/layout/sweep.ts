@@ -1,0 +1,315 @@
+/**
+ * Node layout: the graph sweep.
+ *
+ * A graph layout is an order plus the primitives, run the usual layered-graph way: every card
+ * into its column, the hard rules fixed, then forward and backward passes of `ports` and `align`
+ * until a pass changes nothing. Each step is one accepted proposal, so the log reads like the
+ * `layout node beautify` output. Pure: the input graph is never mutated.
+ *
+ * The result is kept only when it beats the starting layout (pixels moved left out): a sweep that
+ * ends level or worse changes nothing, so the user's layout stays.
+ *
+ * The graph goes back to its original top-left, snapped to the 20px grid.
+ *
+ * Annotations are fixed obstacles (D8): never in the node order, never the one that yields, and
+ * the final translation leaves them where they are.
+ *
+ * @module layout/sweep
+ */
+
+import {
+  better,
+  conflictCards,
+  formatChange,
+  formatMetrics,
+  measure,
+  score,
+  type LayoutMetrics
+} from './measure.js';
+import { columnGrid, columnRanks, propose, type LayoutProposal } from './primitives.js';
+import { LAYOUT_GRID, type LayoutCard, type LayoutGraph, type LayoutOptions } from './types.js';
+
+/** `ports` + `align` passes at most. */
+const MAX_PASSES = 4;
+/** Rounds of phase 1: a card refused in one round is tried again in the next if anything moved. */
+const MAX_CLEAR_ROUNDS = 3;
+
+export interface SweepPhase {
+  /** 0 column, 1 hard rules, 2 ports and align, 3 translate back. */
+  phase: 0 | 1 | 2 | 3;
+  title: string;
+  /** The accepted proposals of the phase, in order. */
+  steps: LayoutProposal[];
+  /** Other lines worth printing: why a phase stopped, or why the translation was skipped. */
+  notes: string[];
+}
+
+export interface SweepResult {
+  /** Accepted proposals only, in order (the translation of phase 3 is `translation`). */
+  steps: LayoutProposal[];
+  /** Only the phases where something happened. */
+  phases: SweepPhase[];
+  /** Phase 3: every card moved by this much, back to the original top-left (on the grid). */
+  translation?: { dx: number; dy: number };
+  /** True when anything moved or was reordered. */
+  accepted: boolean;
+  /**
+   * Set when the sweep found a different layout but it scored no better than the start, so
+   * nothing was applied: the score of what it found.
+   */
+  noBetter?: LayoutMetrics;
+  before: LayoutMetrics;
+  after: LayoutMetrics;
+  /** The graph after every step and the translation. */
+  graph: LayoutGraph;
+}
+
+const PHASE_TITLES = [
+  'phase 0: flow left to right (column, in column order)',
+  'phase 1: hard rules (the lower card of each pair yields)',
+  'phase 2: ports and align, alternating sweeps',
+  'phase 3: back to the original top-left'
+] as const;
+
+/** The top-left corner of the cards (annotations do not count). */
+function topLeft(graph: LayoutGraph): { x: number; y: number } {
+  const cards = graph.cards.filter((c) => c.kind === 'card');
+  return {
+    x: Math.min(...cards.map((c) => c.x)),
+    y: Math.min(...cards.map((c) => c.y))
+  };
+}
+
+const snapToGrid = (value: number): number => Math.round(value / LAYOUT_GRID) * LAYOUT_GRID;
+
+/** The graph with every card (not annotation) moved by the same amount. */
+function translate(graph: LayoutGraph, dx: number, dy: number): LayoutGraph {
+  return {
+    ...graph,
+    cards: graph.cards.map((c) => (c.kind === 'card' ? { ...c, x: c.x + dx, y: c.y + dy } : c))
+  };
+}
+
+/** The card of a conflicting pair that yields: the lower one, never an annotation. */
+function yielding(graph: LayoutGraph, ids: string[]): LayoutCard | undefined {
+  const byId = new Map(graph.cards.map((c) => [c.id, c]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((c): c is LayoutCard => c?.kind === 'card')
+    .sort((a, b) => b.y - a.y || b.x - a.x)[0];
+}
+
+/** Run the sweep over a graph. */
+export function sweep(graph: LayoutGraph, options: LayoutOptions): SweepResult {
+  const before = measure(graph, options);
+  const cards = graph.cards.filter((c) => c.kind === 'card');
+  const phases: SweepPhase[] = [0, 1, 2, 3].map((phase) => ({
+    phase: phase as SweepPhase['phase'],
+    title: PHASE_TITLES[phase],
+    steps: [],
+    notes: []
+  }));
+  let current = graph;
+  // The measure of `current`: every accepted step brings its own, so nothing is measured twice.
+  let metrics = before;
+
+  const run = (
+    phase: SweepPhase,
+    id: string,
+    primitive: 'column' | 'ports' | 'align' | 'clear',
+    with_: LayoutOptions = options,
+    force = false
+  ) => {
+    const step = propose(current, id, primitive, with_, { force, before: metrics });
+    if (step.accepted) {
+      current = step.graph;
+      metrics = step.after;
+      phase.steps.push(step);
+    }
+    return step;
+  };
+
+  // Phase 0: every card into its column, in column order.
+  const ranks = columnRanks(graph);
+  const byColumn = [...cards].sort(
+    (a, b) => (ranks.get(a.id) ?? 0) - (ranks.get(b.id) ?? 0) || a.y - b.y || a.x - b.x
+  );
+  // Columns count from the leftmost card here, not the start node: every card is about to move,
+  // and phase 3 puts the graph back where it was.
+  const columnOptions: LayoutOptions = { ...options, columnOrigin: 'left' };
+  // Interface tags widen the columns they sit between. Every card first moves right by the room
+  // the tags take left of its column, rows unchanged: a card going to its wider column would
+  // otherwise run into the next column's cards, not moved yet, and dodge off its row.
+  const grid = columnGrid(current, columnOptions);
+  const room = (id: string) => {
+    const rank = ranks.get(id) ?? 0;
+    return grid.columnX(rank) - (grid.origin + rank * grid.stride);
+  };
+  if (cards.some((c) => room(c.id) > 0)) {
+    current = {
+      ...current,
+      cards: current.cards.map((c) => (c.kind === 'card' ? { ...c, x: c.x + room(c.id) } : c))
+    };
+    metrics = measure(current, options);
+    phases[0].notes.push('columns moved apart to make room for interface tags');
+  }
+  for (const card of byColumn) run(phases[0], card.id, 'column', columnOptions, true);
+
+  // Phase 1: in each overlapping or too-close pair the lower card yields. A card `clear` refuses
+  // is skipped for the conflicts after it (and the other card of its pair gets a go); it is tried
+  // again once anything else has moved, since that can open a spot. Overlaps come before spacing
+  // breaks. Every accepted step strictly improves the score and the guard bounds the rest, so the
+  // loop ends.
+  const refused = new Map<string, string>();
+  const guard = 4 * cards.length + 8;
+  for (let round = 0; round < MAX_CLEAR_ROUNDS; round++) {
+    let progress = false;
+    for (let attempts = 0; attempts < guard; attempts++) {
+      let moved = false;
+      const conflicts = [...metrics.conflicts].sort(
+        (a, b) => Number(b.kind === 'overlap') - Number(a.kind === 'overlap')
+      );
+      for (const conflict of conflicts) {
+        // A lane conflict names the card only (`with` is a wire id).
+        const ids = conflict.kind === 'lane' ? [conflict.card] : [conflict.card, conflict.with];
+        const lower = yielding(current, ids);
+        const others = ids
+          .filter((id) => id !== lower?.id)
+          .map((id) => current.cards.find((c) => c.id === id))
+          .filter((c): c is LayoutCard => c?.kind === 'card');
+        for (const card of lower ? [lower, ...others] : others) {
+          if (refused.has(card.id)) continue;
+          const step = run(phases[1], card.id, 'clear');
+          if (step.accepted) {
+            moved = true;
+            break;
+          }
+          refused.set(card.id, step.reason ?? 'no change');
+        }
+        if (moved) break;
+      }
+      if (!moved) break;
+      progress = true;
+    }
+    // Something moved since the refusals: a refused card may find room now.
+    if (!progress || refused.size === 0 || round === MAX_CLEAR_ROUNDS - 1) break;
+    refused.clear();
+  }
+  // What is left: the cards still in a conflict that nothing could move.
+  const stuck = conflictCards(metrics);
+  for (const [id, reason] of refused) {
+    if (stuck.has(id)) phases[1].notes.push(`${id}: clear: no change; ${reason}`);
+  }
+
+  // Phase 2: soft rules. Forward by x, then backward; the score keeps phase 1 intact.
+  for (let pass = 0; pass < MAX_PASSES; pass++) {
+    const ids = current.cards
+      .filter((c) => c.kind === 'card')
+      .sort((a, b) => a.x - b.x || a.y - b.y)
+      .map((c) => c.id);
+    if (pass % 2) ids.reverse();
+    let changed = false;
+    for (const id of ids) {
+      for (const primitive of ['ports', 'align'] as const) {
+        if (run(phases[2], id, primitive).accepted) changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+
+  // Phase 3: moving every card by the same amount keeps wires and crossings, so put the graph
+  // back at its original top-left. Annotations stay, so skip it when that would score worse.
+  let translation: SweepResult['translation'];
+  if (cards.length > 0) {
+    const was = topLeft(graph);
+    const now = topLeft(current);
+    // The original corner snapped to the grid: a graph whose top-left is off it (7, 7) comes back
+    // to the nearest grid point, not to the exact corner, so the cards end up on the grid (H0).
+    const dx = snapToGrid(was.x) - now.x;
+    const dy = snapToGrid(was.y) - now.y;
+    if (dx || dy) {
+      const moved = translate(current, dx, dy);
+      const stay = score(metrics);
+      const movedMetrics = measure(moved, options);
+      if (better(stay, score(movedMetrics))) {
+        phases[3].notes.push(
+          `not moved back to the original top-left (${dx >= 0 ? '+' : ''}${dx}, ${dy >= 0 ? '+' : ''}${dy}): it would score worse against the notes`
+        );
+      } else {
+        current = moved;
+        metrics = movedMetrics;
+        translation = { dx, dy };
+      }
+    }
+  }
+
+  const steps = phases.flatMap((p) => p.steps);
+  const changed = steps.length > 0 || translation !== undefined;
+  // Keep the user's layout unless the result is strictly better; pixels moved do not count, a
+  // sweep always moves a lot.
+  const found = metrics;
+  if (changed && !better(score(found), score(before))) {
+    return {
+      steps: [],
+      phases: [],
+      accepted: false,
+      noBetter: found,
+      before,
+      after: before,
+      graph
+    };
+  }
+  const accepted = changed;
+  return {
+    steps,
+    phases: phases.filter(
+      (p) => p.steps.length || p.notes.length || (p.phase === 3 && translation)
+    ),
+    ...(translation ? { translation } : {}),
+    accepted,
+    before,
+    after: found,
+    graph: current
+  };
+}
+
+/**
+ * Console lines: a header per phase where something happened, one line per accepted step, then
+ * the score before and after. A dry run says what would happen.
+ */
+export function formatSweep(result: SweepResult, dryRun = false): string[] {
+  if (result.noBetter) {
+    return [
+      `sweep: no change; the best layout found is no better than the current one`,
+      `  current: ${formatMetrics(result.before)}`,
+      `  found:   ${formatMetrics(result.noBetter)}`
+    ];
+  }
+  if (!result.accepted) {
+    return [
+      `sweep: no change; the layout is as good as the primitives can make it`,
+      `  ${formatChange(result.before, result.after)}`
+    ];
+  }
+  const lines: string[] = [];
+  for (const phase of result.phases) {
+    lines.push(`# ${phase.title}`);
+    for (const step of phase.steps) {
+      const text = dryRun
+        ? step.message.startsWith('moved ')
+          ? `would move ${step.message.slice('moved '.length)}`
+          : `would change: ${step.message}`
+        : step.message;
+      lines.push(`${step.nodeId}: ${text}`);
+    }
+    if (phase.phase === 3 && result.translation) {
+      const { dx, dy } = result.translation;
+      lines.push(
+        `  ${dryRun ? 'would move' : 'moved'} every card by ${dx >= 0 ? '+' : ''}${dx}, ${dy >= 0 ? '+' : ''}${dy}`
+      );
+    }
+    for (const note of phase.notes) lines.push(`  ${note}`);
+  }
+  lines.push(`${dryRun ? 'would give' : 'sweep'}: ${formatChange(result.before, result.after)}`);
+  return lines;
+}

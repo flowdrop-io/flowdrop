@@ -6,6 +6,8 @@
 
 <script lang="ts">
   import type { NodePort } from '../types/index.js';
+  import Select from './primitives/Select.svelte';
+  import type { SelectOption } from '../utils/selectOptions.js';
   import type { EditablePortMapping, MatchQuality } from '../utils/nodeSwap.js';
 
   interface Props {
@@ -34,11 +36,19 @@
     unmapped: 'port-mapping-row__badge--unmapped'
   };
 
-  function handleChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const value = select.value;
-    onUpdate(value === '__drop__' ? null : value);
-  }
+  const DROP = '__drop__';
+
+  const options = $derived<SelectOption[]>([
+    { value: DROP, label: '(Drop connection)' },
+    ...availablePorts.map((port) => {
+      const inUse = usedPortIds.has(port.id) && port.id !== mapping.selectedNewPortId;
+      return {
+        value: port.id,
+        label: `${port.name} (${port.dataType})${inUse ? ' (in use)' : ''}`,
+        disabled: inUse
+      };
+    })
+  ]);
 </script>
 
 <div class="port-mapping-row">
@@ -49,26 +59,17 @@
 
   <div class="port-mapping-row__arrow">&rarr;</div>
 
-  <div class="port-mapping-row__select-wrapper">
-    <select
-      class="port-mapping-row__select"
-      class:port-mapping-row__select--dropped={!mapping.selectedNewPortId}
-      value={mapping.selectedNewPortId ?? '__drop__'}
-      onchange={handleChange}
-    >
-      <option value="__drop__">(Drop connection)</option>
-      {#each availablePorts as port (port.id)}
-        <option
-          value={port.id}
-          disabled={usedPortIds.has(port.id) && port.id !== mapping.selectedNewPortId}
-        >
-          {port.name} ({port.dataType}){usedPortIds.has(port.id) &&
-          port.id !== mapping.selectedNewPortId
-            ? ' (in use)'
-            : ''}
-        </option>
-      {/each}
-    </select>
+  <div
+    class="port-mapping-row__select-wrapper"
+    class:port-mapping-row__select-wrapper--dropped={!mapping.selectedNewPortId}
+  >
+    <Select
+      size="sm"
+      aria-label={`New port for ${mapping.oldPort.name}`}
+      {options}
+      value={mapping.selectedNewPortId ?? DROP}
+      onValueChange={(value) => onUpdate(value === DROP ? null : value)}
+    />
   </div>
 
   <div class="port-mapping-row__meta">
@@ -121,25 +122,8 @@
     min-width: 0;
   }
 
-  .port-mapping-row__select {
-    width: 100%;
-    padding: 0.25rem 0.375rem;
-    border: 1px solid var(--fd-border);
-    border-radius: var(--fd-radius-sm);
-    background-color: var(--fd-background);
-    color: var(--fd-foreground);
-    font-size: var(--fd-text-xs);
-    cursor: pointer;
-    transition:
-      border-color var(--fd-transition-normal),
-      box-shadow var(--fd-transition-normal);
-  }
-
-  .port-mapping-row__select:focus {
-    border-color: var(--fd-ring);
-  }
-
-  .port-mapping-row__select--dropped {
+  /* An unmapped port reads as a warning: the field takes the warning colour. */
+  .port-mapping-row__select-wrapper--dropped :global(.flowdrop-input) {
     border-color: var(--fd-warning);
     color: var(--fd-warning);
   }

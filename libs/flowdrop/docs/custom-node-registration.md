@@ -137,6 +137,7 @@ interface NodeComponentProps {
     config: Record<string, unknown>;
     metadata: NodeMetadata;
     nodeId?: string;
+    /** @deprecated Read the run status from `fd.playground.nodeStatusFor(id)` instead. */
     executionInfo?: NodeExecutionInfo;
     extensions?: NodeExtensions;
     onConfigOpen?: (node: { id: string; type: string; data: WorkflowNode['data'] }) => void;

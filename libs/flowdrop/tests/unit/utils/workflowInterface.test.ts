@@ -6,6 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  nodeCanvasLabel,
   resolveBinding,
   resolveInterface,
   validateWorkflowInterface,
@@ -1235,8 +1236,43 @@ describe('Playground input mode', () => {
     const topic = entry('topic', { required: true });
     expect(collectInterfaceInputs([topic, entry('note')], { topic: '' })).toEqual({
       ok: false,
-      missing: [topic]
+      missing: [topic],
+      invalid: []
     });
+  });
+
+  it('sends array and object entries typed as JSON text parsed', () => {
+    const values = entry('values', { dataType: 'array' });
+    const options = entry('options', { dataType: 'json' });
+    const tags = entry('tags', { schema: { type: 'array' }, dataType: 'mixed' });
+    expect(
+      collectInterfaceInputs([values, options, tags], {
+        values: '[2, 3, 4]',
+        options: '{"mode": "sum"}',
+        tags: ['a']
+      })
+    ).toEqual({
+      ok: true,
+      inputs: { values: [2, 3, 4], options: { mode: 'sum' }, tags: ['a'] }
+    });
+  });
+
+  it('reports array or object text that is not JSON of that shape as invalid', () => {
+    const values = entry('values', { dataType: 'array', required: true });
+    const options = entry('options', { dataType: 'object' });
+    const topic = entry('topic', { required: true });
+    expect(
+      collectInterfaceInputs([values, options, topic], {
+        values: '2, 3',
+        options: '[1]',
+        topic: ''
+      })
+    ).toEqual({ ok: false, missing: [topic], invalid: [values, options] });
+    expect(interfaceFormInputs([values, options], { values: '2, 3', options: '[1]' })).toEqual({});
+  });
+
+  it('leaves text in a string entry as text, even when it looks like JSON', () => {
+    expect(interfaceFormInputs([entry('topic')], { topic: '[1]' })).toEqual({ topic: '[1]' });
   });
 
   it('does not report a required entry that has a default', () => {
@@ -1541,5 +1577,20 @@ describe('validateWorkflowInterface: deprecated turn marks', () => {
       playground: { chat: { ...noChat(), message: 'x' } }
     };
     expect(validateWorkflowInterface(wf).map((i) => i.code)).toContain('interface-duplicate-id');
+  });
+});
+
+describe('nodeCanvasLabel', () => {
+  it('prefers the instance title, then the type label, then the id', () => {
+    expect(
+      nodeCanvasLabel({
+        id: 'n1',
+        data: { label: 'Chat Output', config: { instanceTitle: 'Final Chat Output' } }
+      })
+    ).toBe('Final Chat Output');
+    expect(nodeCanvasLabel({ id: 'n1', data: { label: 'Chat Output', config: {} } })).toBe(
+      'Chat Output'
+    );
+    expect(nodeCanvasLabel({ id: 'n1' })).toBe('n1');
   });
 });

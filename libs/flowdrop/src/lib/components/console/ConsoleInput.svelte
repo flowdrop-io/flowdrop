@@ -1,8 +1,10 @@
 <!--
-  ConsoleInput Component
-  Single-line command input with prompt prefix, Enter-to-submit, Escape-to-close
-  Includes autocomplete for command verbs and node type IDs
-  Styled with BEM syntax matching CommandConsole pattern
+  @component
+  The one-line command input of the Console: a prompt, Enter to run, Escape to close, history, multi-line paste
+  as a batch, and autocomplete for command verbs and node type ids.
+
+  **Use it for** typing a command inside `CommandConsole`.
+  **Not for** general text entry (use the `Input` primitive).
 -->
 
 <script lang="ts">
@@ -74,7 +76,8 @@
     'swap',
     'move',
     'layout',
-    'canvas'
+    'canvas',
+    'session'
   ];
 
   /** Verbs that take a nodeId as their first argument */
@@ -288,12 +291,19 @@
   const SUBCOMMAND_MAP: Record<string, Array<{ value: string; detail?: string }>> = {
     layout: [
       { value: 'auto', detail: 'Re-arrange all nodes from scratch' },
-      { value: 'beautify', detail: 'Normalize spacing, preserve arrangement' }
+      { value: 'beautify', detail: 'Tidy: columns, no overlaps, straight wires' }
     ],
     list: [
       { value: 'nodes', detail: 'List all workflow nodes' },
       { value: 'edges', detail: 'List all connections' },
       { value: 'types', detail: 'List available node types' }
+    ],
+    session: [
+      { value: 'send', detail: 'Send a chat turn to the test session' },
+      { value: 'run', detail: 'Run the workflow (session run key=value …)' },
+      { value: 'stop', detail: 'Stop the running test session' },
+      { value: 'new', detail: 'Start a fresh test session' },
+      { value: 'status', detail: 'Show the session, its status and latest reply' }
     ],
     canvas: [
       { value: 'fitview', detail: 'Fit all nodes into the viewport' },
@@ -517,7 +527,7 @@
     if (!text || !text.includes('\n')) return;
 
     // If already typing a set command, treat multiline paste as the value
-    const setMatch = inputValue.match(/^(set\s+\S+?:\S+)\s*(.*)$/i);
+    const setMatch = inputValue.match(/^(set\s+\S+?:\S+|session\s+send\b)\s*(.*)$/i);
     if (setMatch) {
       event.preventDefault();
       enterMultilineMode(setMatch[1], (setMatch[2] ? setMatch[2] + '\n' : '') + text);
@@ -587,7 +597,7 @@
 
     if (event.key === 'Enter' && event.shiftKey) {
       // Shift+Enter on a set command → expand to multiline textarea
-      const setMatch = inputValue.match(/^(set\s+\S+?:\S+)\s*(.*)$/i);
+      const setMatch = inputValue.match(/^(set\s+\S+?:\S+|session\s+send\b)\s*(.*)$/i);
       if (setMatch) {
         event.preventDefault();
         enterMultilineMode(setMatch[1], setMatch[2]);
@@ -691,25 +701,40 @@
 </div>
 
 <style>
+  /*
+    Same frame as primitives/Composer (40px row, border, large radius, focus
+    ring). The console keeps its own input rather than hosting Composer: it is
+    a command line (history on Up/Down, Tab-accepted autocomplete, a multiline
+    mode behind Shift+Enter, paste handling) and has no send button.
+  */
   .console-input {
     display: flex;
     align-items: center;
-    padding: 0.5rem 1rem;
-    border-top: 1px solid var(--fd-border-muted);
-    background-color: var(--fd-background);
+    box-sizing: border-box;
+    margin: var(--fd-space-xs) var(--fd-space-sm) var(--fd-space-sm);
+    padding: calc(var(--fd-space-3xs) - 1px) var(--fd-space-sm);
+    border: 1px solid var(--fd-console-line);
+    border-radius: var(--fd-radius-lg);
+    background-color: transparent;
     flex-shrink: 0;
   }
 
+  .console-input:focus-within {
+    border-color: var(--fd-console-focus);
+  }
+
   .console-input__prompt {
-    font-family: monospace;
-    font-size: 0.875rem;
-    color: var(--fd-muted-foreground);
-    margin-right: 0.5rem;
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-sm);
+    color: var(--fd-console-prompt);
+    margin-right: var(--fd-space-xs);
     user-select: none;
   }
 
   .console-input__wrapper {
     flex: 1;
+    /* A flex child will not shrink below its content: let a long placeholder clip. */
+    min-width: 0;
     position: relative;
   }
 
@@ -718,16 +743,20 @@
     background: none;
     border: none;
     outline: none;
-    font-family: monospace;
-    font-size: 0.875rem;
-    color: var(--fd-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-sm);
+    color: var(--fd-console-verb);
+    caret-color: var(--fd-console-caret);
     padding: 0;
     line-height: 1.5;
+    min-width: 0;
+    min-height: var(--fd-control-lg);
+    text-overflow: ellipsis;
   }
 
   .console-input__field::placeholder {
-    color: var(--fd-muted-foreground);
-    opacity: 0.6;
+    color: var(--fd-console-muted);
+    opacity: 0.8;
   }
 
   .console-input--multiline {
@@ -746,28 +775,29 @@
   }
 
   .console-input__multiline-label {
-    font-family: monospace;
-    font-size: 0.875rem;
-    color: var(--fd-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-sm);
+    color: var(--fd-console-arg);
     font-weight: 500;
   }
 
   .console-input__multiline-hint {
-    font-family: monospace;
-    font-size: 0.75rem;
-    color: var(--fd-muted-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-xs);
+    color: var(--fd-console-muted);
     opacity: 0.7;
   }
 
   .console-input__textarea {
     width: 100%;
     background: none;
-    border: 1px solid var(--fd-border-muted);
+    border: 1px solid var(--fd-console-line);
     border-radius: var(--fd-radius-sm);
     outline: none;
-    font-family: monospace;
-    font-size: 0.875rem;
-    color: var(--fd-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-text-sm);
+    color: var(--fd-console-verb);
+    caret-color: var(--fd-console-caret);
     padding: 0.375rem 0.5rem;
     line-height: 1.5;
     resize: vertical;
@@ -775,6 +805,11 @@
   }
 
   .console-input__textarea:focus {
-    border-color: var(--fd-border);
+    border-color: var(--fd-console-focus);
+  }
+
+  .console-input ::selection {
+    background: var(--fd-console-selection);
+    color: inherit;
   }
 </style>

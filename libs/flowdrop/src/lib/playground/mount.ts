@@ -59,9 +59,13 @@ import type {
   PlaygroundMessagesApiResponse,
   PlaygroundSessionStatus
 } from '../types/playground.js';
-import type { PartialSettings, SettingsCategory } from '../types/settings.js';
-import { initializeSettings } from '../stores/settingsStore.svelte.js';
-import type { NavbarAction } from '../types/navbar.js';
+import type { ColorSchemeOption, PartialSettings, SettingsCategory } from '../types/settings.js';
+import {
+  initializeSettings,
+  getHostColorSchemeRegistration,
+  releaseHostColorScheme
+} from '../stores/settingsStore.svelte.js';
+import type { NavbarAction, NavbarBranding } from '../types/navbar.js';
 import type { PipelineViewDef } from '../types/index.js';
 import {
   createFlowDropInstance,
@@ -159,6 +163,16 @@ export interface PlaygroundMountOptions {
   settings?: PartialSettings;
 
   /**
+   * Lets the embedding page supply a fourth colour-scheme choice, "follow the
+   * host". Generic: FlowDrop shows `host.label` verbatim and resolves
+   * `host.value` (`'auto'` = the operating system). With it, `'host'` is the
+   * default preference; a saved preference the user never chose moves to it, an
+   * explicit Light or Dark is kept. `host.subscribe` re-resolves on live changes.
+   * Without it: Auto / Light / Dark only. See {@link ColorSchemeOption}.
+   */
+  colorScheme?: ColorSchemeOption;
+
+  /**
    * Identifier for this playground's FlowDrop instance.
    *
    * When omitted, the first playground on the page uses the page-default
@@ -254,10 +268,16 @@ async function resolveEndpointConfig(
 async function prepareMount(options: {
   endpointConfig?: EndpointConfig;
   settings?: PartialSettings;
-}): Promise<EndpointConfig | undefined> {
-  const finalEndpointConfig = await resolveEndpointConfig(options.endpointConfig);
-  await initializeSettings({ defaults: options.settings });
-  return finalEndpointConfig;
+  colorScheme?: ColorSchemeOption;
+}): Promise<{ endpointConfig: EndpointConfig | undefined; releaseColorScheme: () => void }> {
+  const endpointConfig = await resolveEndpointConfig(options.endpointConfig);
+  await initializeSettings({ defaults: options.settings, colorScheme: options.colorScheme });
+  // The host colour scheme this mount registered, released again on destroy.
+  const registration = options.colorScheme?.host ? getHostColorSchemeRegistration() : null;
+  const releaseColorScheme = () => {
+    if (registration !== null) releaseHostColorScheme(registration);
+  };
+  return { endpointConfig, releaseColorScheme };
 }
 
 /**
@@ -310,6 +330,7 @@ function buildMountedPlayground(
   config: PlaygroundConfig,
   fd: FlowDropInstance,
   isDefault: boolean,
+  releaseColorScheme: () => void,
   onSessionStatusChange?: (
     status: PlaygroundSessionStatus,
     previousStatus: PlaygroundSessionStatus
@@ -328,6 +349,7 @@ function buildMountedPlayground(
       if (destroyed) return;
       destroyed = true;
       unsubscribeStatus?.();
+      releaseColorScheme();
       // Stops this instance's own polling and clears its session state. On the
       // page-default instance that is the legacy singleton service, so a mount
       // that owns the default keeps the old behavior; any other mount runs on
@@ -397,6 +419,9 @@ function buildMountedPlayground(
  *   }
  * );
  * ```
+ *
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
  */
 export async function mountPlayground(
   container: HTMLElement,
@@ -432,9 +457,10 @@ export async function mountPlayground(
     throw new Error('onClose callback is required for modal mode');
   }
 
-  const finalEndpointConfig = await prepareMount({
+  const { endpointConfig: finalEndpointConfig, releaseColorScheme } = await prepareMount({
     endpointConfig,
-    settings: initialSettings
+    settings: initialSettings,
+    colorScheme: options.colorScheme
   });
 
   const { fd, isDefault } = acquirePlaygroundInstance(instanceId);
@@ -490,6 +516,7 @@ export async function mountPlayground(
     config,
     fd,
     isDefault,
+    releaseColorScheme,
     onSessionStatusChange
   );
 }
@@ -508,6 +535,9 @@ export async function mountPlayground(
  * // ... later
  * unmountPlayground(app);
  * ```
+ *
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
  */
 export function unmountPlayground(app: MountedPlayground): void {
   if (app && typeof app.destroy === 'function') {
@@ -524,6 +554,12 @@ export interface PlaygroundStudioMountOptions extends PlaygroundMountOptions {
   pipelineViews?: PipelineViewDef[];
 }
 
+/**
+ * Mount the standalone PlaygroundStudio (chat plus pipeline panel) into a container.
+ *
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
+ */
 export async function mountPlaygroundStudio(
   container: HTMLElement,
   options: PlaygroundStudioMountOptions
@@ -561,9 +597,10 @@ export async function mountPlaygroundStudio(
     );
   }
 
-  const finalEndpointConfig = await prepareMount({
+  const { endpointConfig: finalEndpointConfig, releaseColorScheme } = await prepareMount({
     endpointConfig,
-    settings: initialSettings
+    settings: initialSettings,
+    colorScheme: options.colorScheme
   });
 
   const { fd, isDefault } = acquirePlaygroundInstance(instanceId);
@@ -596,6 +633,7 @@ export async function mountPlaygroundStudio(
     config,
     fd,
     isDefault,
+    releaseColorScheme,
     onSessionStatusChange
   );
 }
@@ -612,6 +650,8 @@ export interface PlaygroundAppMountOptions extends Omit<PlaygroundStudioMountOpt
   navbarTitle?: string;
   /** Action buttons rendered in the navbar. Passed straight through to <Navbar primaryActions>. */
   primaryActions?: NavbarAction[];
+  /** White-label logo for the navbar (replaces the FlowDrop wordmark). */
+  branding?: NavbarBranding;
   /** Show the settings gear icon in the navbar (default: true). */
   showSettings?: boolean;
   /** Restrict which settings categories are exposed in the settings modal. */
@@ -645,6 +685,9 @@ export interface PlaygroundAppMountOptions extends Omit<PlaygroundStudioMountOpt
  *   ]
  * });
  * ```
+ *
+ * @deprecated The standalone Playground is deprecated and removed in 3.0. Use the editor's
+ * Test mode (the Playground docked beside the canvas) instead. Warns once per page.
  */
 export async function mountPlaygroundApp(
   container: HTMLElement,
@@ -663,6 +706,7 @@ export async function mountPlaygroundApp(
     showNavbar = false,
     navbarTitle,
     primaryActions,
+    branding,
     showSettings = true,
     settingsCategories,
     showSettingsSyncButton,
@@ -692,9 +736,10 @@ export async function mountPlaygroundApp(
     );
   }
 
-  const finalEndpointConfig = await prepareMount({
+  const { endpointConfig: finalEndpointConfig, releaseColorScheme } = await prepareMount({
     endpointConfig,
-    settings: initialSettings
+    settings: initialSettings,
+    colorScheme: options.colorScheme
   });
 
   const { fd, isDefault } = acquirePlaygroundInstance(instanceId);
@@ -715,6 +760,7 @@ export async function mountPlaygroundApp(
       showNavbar,
       navbarTitle,
       primaryActions,
+      branding,
       showSettings,
       settingsCategories,
       showSettingsSyncButton,
@@ -733,6 +779,7 @@ export async function mountPlaygroundApp(
     config,
     fd,
     isDefault,
+    releaseColorScheme,
     onSessionStatusChange
   );
 }

@@ -37,7 +37,10 @@ const DYNAMIC_PORT_KEYS = ['dynamicInputs', 'dynamicOutputs'] as const;
  * changes identity, so a decision that moved with config values would discard a
  * user's half-typed edit the moment it flipped.
  */
-function hasConfigurablePorts(node: WorkflowNode, schema: ConfigSchema | undefined): boolean {
+export function hasConfigurablePorts(
+  node: WorkflowNode,
+  schema: ConfigSchema | undefined
+): boolean {
   const meta = node.data.metadata;
   if ((meta?.inputs?.length ?? 0) > 0 || (meta?.outputs?.length ?? 0) > 0) return true;
   const properties = schema?.properties;
@@ -74,7 +77,7 @@ export function withPortsField(
         // The signal FormField/FormFieldLight match to render <FormPorts>.
         format: 'ports',
         title: 'Ports',
-        description: 'Order the node’s ports and choose which ones are exposed.'
+        description: 'Hidden ports are off the canvas and cannot be wired. Drag to reorder.'
       }
     }
   };

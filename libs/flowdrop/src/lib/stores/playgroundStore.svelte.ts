@@ -18,10 +18,17 @@ import type {
   PlaygroundInputField,
   PlaygroundSessionStatus,
   PlaygroundMessagesApiResponse,
-  PlaygroundExecution
+  PlaygroundExecution,
+  SessionRunsResult,
+  VersionDivider
 } from '../types/playground.js';
 import { hasEnableRunFlag, isChatInputNode } from '../types/playground.js';
-import type { Workflow, WorkflowInterfaceEntry, WorkflowNode } from '../types/index.js';
+import type {
+  NodeExecutionInfo,
+  Workflow,
+  WorkflowInterfaceEntry,
+  WorkflowNode
+} from '../types/index.js';
 import {
   collectInterfaceInputs,
   interfaceFormEntriesFor,
@@ -31,6 +38,12 @@ import {
 } from '../utils/workflowInterface.js';
 import { resolvePlaygroundChat, type ResolvedPlaygroundChat } from '../utils/playgroundChat.js';
 import { logger } from '../utils/logger.js';
+
+/** Which workflow and run a set of node statuses was loaded for. */
+export interface NodeStatusScope {
+  workflowId: string;
+  pipelineId: string;
+}
 
 // =========================================================================
 // Helper Functions (pure, instance-independent)
@@ -97,14 +110,20 @@ export interface PlaygroundStoreActions {
   addMessage: (message: PlaygroundMessage) => void;
   addMessages: (newMessages: PlaygroundMessage[]) => void;
   clearMessages: () => void;
+  setSessionRuns: (sessionId: string, result: SessionRunsResult | null) => void;
+  setVersionDividers: (sessionId: string, items: VersionDivider[]) => void;
+  addVersionDivider: (sessionId: string, divider: VersionDivider) => void;
   setLoading: (loading: boolean) => void;
   setError: (errorMessage: string | null) => void;
+  setLaunchError: (errorMessage: string | null) => void;
   updateLastPollSequenceNumber: (seq: number) => void;
   reset: () => void;
   switchSession: (sessionId: string) => void;
   pinExecution: (executionId: string | null) => void;
   setShowLogs: (value: boolean) => void;
   toggleShowLogs: () => void;
+  setExpandSteps: (value: boolean) => void;
+  toggleExpandSteps: () => void;
   setTurnPending: (value: boolean) => void;
   lockRunUntilEnabled: () => void;
   releaseRunLock: () => void;
@@ -122,7 +141,31 @@ export interface PlaygroundStoreActions {
  */
 export class PlaygroundStore {
   /** Currently active playground session */
-  #currentSession = $state<PlaygroundSession | null>(null);
+  #sessionState = $state<PlaygroundSession | null>(null);
+
+  /** The current session. Every write goes through the setter below. */
+  get #currentSession(): PlaygroundSession | null {
+    return this.#sessionState;
+  }
+
+  /**
+   * Every write to the current session lands here, so the synchronous
+   * status listeners hear each real change of `sessionStatus`, once, at the
+   * moment it happens.
+   */
+  set #currentSession(session: PlaygroundSession | null) {
+    const previous = this.sessionStatus;
+    this.#sessionState = session;
+    const status = this.sessionStatus;
+    if (status === previous) return;
+    for (const listener of [...this.#statusListeners]) {
+      try {
+        listener(status, previous);
+      } catch (err) {
+        logger.error('[Playground] Session status listener failed:', err);
+      }
+    }
+  }
 
   /** List of all sessions for the current workflow */
   #sessions = $state<PlaygroundSession[]>([]);
@@ -137,11 +180,28 @@ export class PlaygroundStore {
    */
   #hasOlder = $state<boolean>(false);
 
+  /**
+   * The runs of one session as the runs endpoint last reported them, with the
+   * session they belong to. Read through {@link sessionRuns}, which answers
+   * only for the current session.
+   */
+  #runsOf = $state.raw<{ sessionId: string; result: SessionRunsResult } | null>(null);
+
+  /** The version dividers of one session — see {@link versionDividers}. */
+  #dividersOf = $state.raw<{ sessionId: string; items: VersionDivider[] } | null>(null);
+
   /** Whether we are currently loading data */
   #isLoading = $state<boolean>(false);
 
   /** Current error message, if any */
   #error = $state<string | null>(null);
+
+  /**
+   * Why the last Run click did not start a run — shown under the Run button,
+   * where the click happened, not in the banner. Cleared when a run starts or
+   * the inputs change.
+   */
+  #launchError = $state<string | null>(null);
 
   /** Current workflow being tested */
   #currentWorkflow = $state<Workflow | null>(null);
@@ -179,8 +239,21 @@ export class PlaygroundStore {
   /** Incremented on every message batch that should trigger a pipeline re-fetch */
   #pipelineRefreshTrigger = $state(0);
 
+  /**
+   * Run status of the nodes of the workflow on the canvas, keyed by node id.
+   * `$state.raw`: replaced as a whole on each load, never mutated, so the
+   * canvas nodes (which read single entries) are not deep-proxied.
+   */
+  #nodeStatuses = $state.raw<Record<string, NodeExecutionInfo>>({});
+
+  /** Which workflow and run {@link #nodeStatuses} belongs to; null when empty. */
+  #nodeStatusScope = $state.raw<NodeStatusScope | null>(null);
+
   /** Whether log messages are visible in the execution console */
   #showLogs = $state<boolean>(true);
+
+  /** Whether each turn's steps start expanded (default: folded to one row). */
+  #expandSteps = $state<boolean>(false);
 
   /**
    * The main pipeline runs — the single source of truth for "what's selectable".
@@ -231,6 +304,11 @@ export class PlaygroundStore {
   /** Cleanups for active subscribeToSessionStatus effect roots. */
   readonly #statusSubscriptions = new Set<() => void>();
 
+  /** Synchronous listeners, see {@link onSessionStatusChange}. */
+  readonly #statusListeners = new Set<
+    (status: PlaygroundSessionStatus, previous: PlaygroundSessionStatus) => void
+  >();
+
   /** Bound mutation facade — see {@link PlaygroundStoreActions}. */
   readonly actions: PlaygroundStoreActions;
 
@@ -246,6 +324,9 @@ export class PlaygroundStore {
       addMessage: this.addMessage.bind(this),
       addMessages: this.addMessages.bind(this),
       clearMessages: this.clearMessages.bind(this),
+      setSessionRuns: this.setSessionRuns.bind(this),
+      setVersionDividers: this.setVersionDividers.bind(this),
+      addVersionDivider: this.addVersionDivider.bind(this),
       setLoading: this.setLoading.bind(this),
       setError: this.setError.bind(this),
       updateLastPollSequenceNumber: this.updateLastPollSequenceNumber.bind(this),
@@ -254,9 +335,12 @@ export class PlaygroundStore {
       pinExecution: this.pinExecution.bind(this),
       setShowLogs: this.setShowLogs.bind(this),
       toggleShowLogs: this.toggleShowLogs.bind(this),
+      setExpandSteps: this.setExpandSteps.bind(this),
+      toggleExpandSteps: this.toggleExpandSteps.bind(this),
       setTurnPending: this.setTurnPending.bind(this),
       lockRunUntilEnabled: this.lockRunUntilEnabled.bind(this),
       releaseRunLock: this.releaseRunLock.bind(this),
+      setLaunchError: this.setLaunchError.bind(this),
       setFormValues: this.setFormValues.bind(this),
       setLastTurn: this.setLastTurn.bind(this)
     });
@@ -314,6 +398,11 @@ export class PlaygroundStore {
   /** Error state. */
   get error(): string | null {
     return this.#error;
+  }
+
+  /** The refusal of the last Run click, for the message under Run. */
+  get launchError(): string | null {
+    return this.#launchError;
   }
 
   /** The current workflow. */
@@ -527,14 +616,89 @@ export class PlaygroundStore {
     return this.#pipelineRefreshTrigger;
   }
 
+  /**
+   * Per-node run status for the workflow on the canvas, keyed by node id.
+   *
+   * This is the single source the node status overlay draws from. It is kept
+   * here, off the node data, so an edit to the graph can neither wipe it nor
+   * carry it into the saved workflow.
+   */
+  get nodeStatuses(): Readonly<Record<string, NodeExecutionInfo>> {
+    return this.#nodeStatuses;
+  }
+
+  /** The workflow and run the statuses belong to, or null when there are none. */
+  get nodeStatusScope(): NodeStatusScope | null {
+    return this.#nodeStatusScope;
+  }
+
+  /** One node's run status, or undefined when the shown run has none for it. */
+  nodeStatusFor(nodeId: string): NodeExecutionInfo | undefined {
+    return this.#nodeStatuses[nodeId];
+  }
+
+  /** Replace all node statuses with those of one run. */
+  setNodeStatuses(statuses: Record<string, NodeExecutionInfo>, scope: NodeStatusScope): void {
+    this.#nodeStatuses = statuses;
+    this.#nodeStatusScope = scope;
+  }
+
+  /** Forget the node statuses (a different workflow or run is shown, or none). */
+  clearNodeStatuses(): void {
+    if (this.#nodeStatusScope === null && Object.keys(this.#nodeStatuses).length === 0) return;
+    this.#nodeStatuses = {};
+    this.#nodeStatusScope = null;
+  }
+
   /** Whether log messages should be shown in the execution console. */
   get showLogs(): boolean {
     return this.#showLogs;
   }
 
+  /** Whether each turn's steps start expanded in the conversation. */
+  get expandSteps(): boolean {
+    return this.#expandSteps;
+  }
+
   /** The current session ID, or null. */
   get currentSessionId(): string | null {
     return this.#currentSession?.id ?? null;
+  }
+
+  /**
+   * The current session's runs from the runs endpoint (oldest first, each
+   * stamped with the workflow version it ran), or `null` before the first load
+   * and on a server without the endpoint. The one place the list of a
+   * session's runs lives: the dividers are derived from it, and "attach a
+   * run" lists it.
+   */
+  get sessionRuns(): SessionRunsResult | null {
+    const held = this.#runsOf;
+    return held && held.sessionId === this.#currentSession?.id ? held.result : null;
+  }
+
+  /** The "Saved, new version" dividers of the current session's feed. */
+  get versionDividers(): VersionDivider[] {
+    const held = this.#dividersOf;
+    return held && held.sessionId === this.#currentSession?.id ? held.items : [];
+  }
+
+  /** Keep the runs of a session (`null` forgets them). */
+  setSessionRuns(sessionId: string, result: SessionRunsResult | null): void {
+    this.#runsOf = result ? { sessionId, result } : null;
+  }
+
+  /** Replace a session's dividers. */
+  setVersionDividers(sessionId: string, items: VersionDivider[]): void {
+    this.#dividersOf = { sessionId, items };
+  }
+
+  /** Add a divider to a session's feed; one with the same id is not added twice. */
+  addVersionDivider(sessionId: string, divider: VersionDivider): void {
+    const held = this.#dividersOf;
+    const items = held && held.sessionId === sessionId ? held.items : [];
+    if (items.some((d) => d.id === divider.id)) return;
+    this.#dividersOf = { sessionId, items: [...items, divider] };
   }
 
   /** Whether older messages exist before the oldest one currently loaded. */
@@ -621,7 +785,10 @@ export class PlaygroundStore {
   /** Set the current workflow. */
   setWorkflow(workflow: Workflow | null): void {
     // Values typed for one workflow's inputs mean nothing for another's.
-    if (workflow?.id !== this.#currentWorkflow?.id) this.#formValues = {};
+    if (workflow?.id !== this.#currentWorkflow?.id) {
+      this.#formValues = {};
+      this.#launchError = null;
+    }
     this.#currentWorkflow = workflow;
   }
 
@@ -765,6 +932,11 @@ export class PlaygroundStore {
     this.#error = errorMessage;
   }
 
+  /** Set the Run click's refusal (or null to clear). */
+  setLaunchError(errorMessage: string | null): void {
+    this.#launchError = errorMessage;
+  }
+
   /** Update the last poll cursor. */
   updateLastPollSequenceNumber(seq: number): void {
     this.#lastPollSequenceNumber = seq;
@@ -775,11 +947,15 @@ export class PlaygroundStore {
     this.#currentSession = null;
     this.#sessions = [];
     this.#messages = [];
+    this.#runsOf = null;
+    this.#dividersOf = null;
     this.#isLoading = false;
     this.#error = null;
+    this.#launchError = null;
     this.#currentWorkflow = null;
     this.#lastPollSequenceNumber = null;
     this.#pipelineRefreshTrigger = 0;
+    this.clearNodeStatuses();
     this.#turnPending = false;
     this.#runLockedAt = null;
     this.#formValues = {};
@@ -816,6 +992,16 @@ export class PlaygroundStore {
     this.#showLogs = !this.#showLogs;
   }
 
+  /** Set whether turns' steps start expanded. */
+  setExpandSteps(value: boolean): void {
+    this.#expandSteps = value;
+  }
+
+  /** Toggle whether turns' steps start expanded. */
+  toggleExpandSteps(): void {
+    this.#expandSteps = !this.#expandSteps;
+  }
+
   /** Mark a turn request as in flight (or finished). */
   setTurnPending(value: boolean): void {
     this.#turnPending = value;
@@ -833,6 +1019,7 @@ export class PlaygroundStore {
   /** Replace the interface input form's values. */
   setFormValues(values: Record<string, unknown>): void {
     this.#formValues = values;
+    this.#launchError = null;
   }
 
   /** Record the sessions door's answer for the turn just taken (`null` clears it). */
@@ -889,6 +1076,25 @@ export class PlaygroundStore {
   }
 
   /**
+   * Listen for session status changes, synchronously.
+   *
+   * Unlike {@link subscribeToSessionStatus}, which rides an effect and so
+   * batches (two changes inside one flush read as one, or as none), the
+   * listener runs inside the write that changed the status: once per real
+   * change, in order, at the moment it happened. Cleared by {@link dispose}.
+   *
+   * @returns Function that removes the listener
+   */
+  onSessionStatusChange(
+    listener: (status: PlaygroundSessionStatus, previous: PlaygroundSessionStatus) => void
+  ): () => void {
+    this.#statusListeners.add(listener);
+    return () => {
+      this.#statusListeners.delete(listener);
+    };
+  }
+
+  /**
    * Subscribe to session status changes using $effect.root.
    * This is designed for use in non-component contexts (e.g., mount.ts).
    *
@@ -928,6 +1134,7 @@ export class PlaygroundStore {
     for (const cleanup of [...this.#statusSubscriptions]) {
       cleanup();
     }
+    this.#statusListeners.clear();
   }
 
   /**

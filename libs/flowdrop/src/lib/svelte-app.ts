@@ -10,9 +10,16 @@
 import { mount, unmount } from 'svelte';
 import WorkflowEditor from './components/WorkflowEditor.svelte';
 import App from './components/App.svelte';
-import type { Workflow, NodeMetadata, PortConfig, CategoryDefinition } from './types/index.js';
+import type {
+  Workflow,
+  NodeMetadata,
+  PortConfig,
+  CategoryDefinition,
+  ConfigSchema
+} from './types/index.js';
 import type { EndpointConfig } from './config/endpoints.js';
 import type { AuthProvider } from './types/auth.js';
+import type { EditorPlaygroundConfig } from './types/playground.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
 import type { FlowDropTheme, FlowDropThemeName } from './types/theme.js';
 import type { WorkflowFormatAdapter } from './registry/workflowFormatRegistry.js';
@@ -36,19 +43,33 @@ import {
   type DraftStorageOption
 } from './services/draftStorage.js';
 import { mergeFeatures } from './types/events.js';
-import type { PartialSettings, SettingsCategory, SurfacePlacement } from './types/settings.js';
+import type {
+  ColorSchemeOption,
+  PartialSettings,
+  SettingsCategory,
+  SurfacePlacement
+} from './types/settings.js';
 import {
   initializeSettings,
+  getHostColorSchemeRegistration,
+  releaseHostColorScheme,
   getBehaviorSettings,
   onSettingsChange
 } from './stores/settingsStore.svelte.js';
 import { logger } from './utils/logger.js';
 import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
 
-import type { NavbarAction } from './types/navbar.js';
+import type { NavbarAction, NavbarBranding } from './types/navbar.js';
 import type { HostHooks, WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
 import { whenWorkflowLoaded } from './utils/whenWorkflowLoaded.svelte.js';
-export type { NavbarAction };
+import { parseCommand } from './commands/parser.js';
+import { executeCommand } from './commands/executor.js';
+import { isSessionLine } from './commands/session.js';
+import { createStoreCommandContext } from './commands/storeIntegration.svelte.js';
+import { dispatchUIAction } from './commands/uiActionTarget.js';
+import { validateCommand } from './commands/validate.js';
+import type { Command, CommandResult } from './commands/types.js';
+export type { NavbarAction, NavbarBranding };
 import type { ContextMenuOptions } from './editor/contextMenu.js';
 export type { HostHooks, WebMCPHandle, WebMCPMountOptions };
 export type {
@@ -90,8 +111,10 @@ export interface FlowDropMountOptions {
    */
   configPlacement?: SurfacePlacement;
   /**
-   * Default host for the console / AI Assistant group: `below` (default),
-   * `sidebar`, or `modal`. Seeds the user setting on first load; a later user
+   * Default host for the Command Console: `below` (default), `sidebar`, or
+   * `modal`. The AI Assistant is not placed by this: it is a tab beside Nodes
+   * in Edit mode's left slot (it stays with the Console only when the sidebar
+   * is disabled). Seeds the user setting on first load; a later user
    * change wins.
    */
   consolePlacement?: SurfacePlacement;
@@ -104,6 +127,30 @@ export interface FlowDropMountOptions {
    * @default 'edit'
    */
   mode?: 'edit' | 'readonly' | 'locked';
+  /**
+   * Start in Test mode (`'test'`): the Playground docked beside the canvas,
+   * the inspector always open. Edit | Test is a second axis beside `mode`: it
+   * only takes effect on an editable canvas with a saved workflow and no
+   * `pipelineId`, and `features.testMode` not off.
+   *
+   * Seeds `app.instance.editorMode`, the store that holds the mode from then
+   * on; change it later with `app.instance.editorMode.set('edit' | 'test')`.
+   * @default 'edit'
+   */
+  editorMode?: 'edit' | 'test';
+  /**
+   * Called when the Edit | Test mode changes after mount, so a host can keep
+   * its URL in step. Not called for the initial value.
+   */
+  onEditorModeChange?: (mode: 'edit' | 'test') => void;
+  /**
+   * How Test mode's Playground follows a run: `pollingInterval` (ms, default
+   * 1500) and `shouldStopPolling` (default: stop on `idle` only, on purpose,
+   * since an async server may still emit messages). A backend that leaves a
+   * session `completed` or `failed` after a turn passes its own
+   * `shouldStopPolling` here. Unset, nothing changes.
+   */
+  playground?: EditorPlaygroundConfig;
 
   // Pipeline mode
   /** Pipeline ID for status display */
@@ -114,6 +161,12 @@ export interface FlowDropMountOptions {
   navbarTitle?: string;
   /** Custom navbar actions */
   navbarActions?: NavbarAction[];
+  /**
+   * White-label logo for the navbar. Replaces the FlowDrop wordmark; `logo` is an
+   * image URL or a Svelte component, `name` replaces the product name in the page title and the
+   * logo's accessible name, `logoAlt` overrides the logo's accessible name, `href` an optional link around it.
+   */
+  branding?: NavbarBranding;
   /** Show settings gear icon in navbar */
   showSettings?: boolean;
   /** Show the "Connected" status indicator in the navbar (default: true) */
@@ -134,6 +187,16 @@ export interface FlowDropMountOptions {
   // NEW: Default settings overrides
   /** Initial settings overrides (theme, behavior, editor, ui, api) */
   settings?: PartialSettings;
+
+  /**
+   * Lets the embedding page supply a fourth colour-scheme choice, "follow the
+   * host". Generic: FlowDrop shows `host.label` verbatim and resolves
+   * `host.value` (`'auto'` = the operating system). With it, `'host'` is the
+   * default preference; a saved preference the user never chose moves to it, an
+   * explicit Light or Dark is kept. `host.subscribe` re-resolves on live changes.
+   * Without it: Auto / Light / Dark only. See {@link ColorSchemeOption}.
+   */
+  colorScheme?: ColorSchemeOption;
 
   // NEW: Draft storage key
   /** Custom storage key for workflow drafts */
@@ -171,9 +234,17 @@ export interface FlowDropMountOptions {
    * is left untouched. Omit to offer every registered format.
    */
   workflowFormats?: string[];
+  /**
+   * Extra JSON Schema properties for the Workflow Settings panel. Their values
+   * are stored in `workflow.config`: loaded from the workflow passed in,
+   * returned by `getWorkflow()` and saved with it. The built-in keys (`name`,
+   * `description`, `format`, `interface`, `playground`) are reserved: a
+   * property using one is ignored with a console warning.
+   */
+  workflowSettingsSchema?: ConfigSchema;
 
   // NEW: Visual theme
-  /** Visual theme — named built-in ('default' | 'minimal') or custom theme object */
+  /** Visual theme — named built-in ('graphite' | 'classic' | 'minimal' | 'drafter') or custom theme object */
   theme?: FlowDropTheme | FlowDropThemeName;
 
   // Settings modal customization
@@ -232,6 +303,16 @@ export interface FlowDropMountOptions {
    * {@link host} (agent surfaces), this is purely editor UI.
    */
   contextMenu?: ContextMenuOptions;
+}
+
+/** Options for {@link MountedFlowDropApp.runCommand}. */
+export interface RunCommandOptions {
+  /**
+   * Make the command's result the workflow's clean starting point: no undo
+   * step and not dirty. Refused with `code: 'DIRTY'` when the workflow already
+   * has unsaved changes.
+   */
+  baseline?: boolean;
 }
 
 /**
@@ -293,6 +374,50 @@ export interface MountedFlowDropApp {
   clearAllDrafts: () => number;
 
   /**
+   * Run one Command Console command against this mount's workflow, as if it
+   * had been typed into the console: `await app.runCommand('layout auto')`.
+   *
+   * `command` is a console line (parsed with the editing DSL) or an already
+   * parsed `Command` object. An object is checked first: an unknown `type`, or
+   * a field that is missing or of the wrong kind, resolves with
+   * `code: 'INVALID_ARGUMENT'` and runs nothing. Never rejects: failures (a
+   * line that does not parse, an unknown node, ...) resolve to
+   * `{ ok: false, error, code }`.
+   *
+   * - **Waits for the workflow.** The mount resolves before the editor has
+   *   loaded its workflow, so a call made right after mounting waits for it.
+   *   If the mount is destroyed first, or was already destroyed, the call
+   *   resolves with `{ ok: false, code: 'NO_WORKFLOW' }`.
+   * - **One undo step per call**, the same as typing the command in the
+   *   console; the workflow becomes dirty.
+   * - **Sizes before first paint.** `layout auto` reads node sizes the canvas
+   *   has measured and `layout beautify` asks the mounted canvas to measure
+   *   them. A call made before the canvas has rendered falls back to computed
+   *   geometry, so the result can differ slightly from the same command run
+   *   later.
+   * - **`options.baseline`** makes the command's result the workflow's clean
+   *   starting point: `isDirty()` is `false` afterwards and the undo history
+   *   starts over from it (earlier undo steps are cleared too). Useful to
+   *   tidy a loaded model before the user sees it. It needs a workflow with no
+   *   unsaved changes: when the workflow is dirty the command is not run and
+   *   the call resolves with `{ ok: false, code: 'DIRTY' }`. `undo` and `redo`
+   *   are refused with `code: 'INVALID_ARGUMENT'`. `onDirtyStateChange` and
+   *   `onWorkflowChange` are not called for a baseline run; a failed command
+   *   that still left changes is reported once it returns. A failed command,
+   *   or one that changes nothing (`info`, `list nodes`), keeps the undo
+   *   history. A draft saved earlier is not overwritten by the re-baselined
+   *   workflow.
+   * - **Read-only mounts** (`mode: 'readonly' | 'locked'`) accept it too, so a
+   *   host can lay out a model it only displays.
+   * - **UI actions** (select a node, open its config panel, fit/zoom/pan) are
+   *   applied by `mountFlowDropApp`'s editor shell. `mountWorkflowEditor` has
+   *   no shell, so they are dropped there.
+   * - **Session commands** (`session ...`) belong to the console and are not
+   *   available: they resolve with `{ ok: false, code: 'SESSION_REFUSED' }`.
+   */
+  runCommand: (command: string | Command, options?: RunCommandOptions) => Promise<CommandResult>;
+
+  /**
    * The WebMCP registration when the `webmcp` mount option was set and the
    * browser has the API; `undefined` otherwise. The adapter attaches in the
    * background once the workflow is loaded, so this is `undefined` for a
@@ -347,6 +472,8 @@ function releaseInstance(fd: FlowDropInstance, isDefault: boolean): void {
   if (isDefault) {
     fd.workflow.setOnDirtyStateChange(null);
     fd.workflow.setOnWorkflowChange(null);
+    // A host run's status poll must not outlive the mount.
+    fd.runs.stopHostPolling();
     defaultInstanceClaimed = false;
   } else {
     fd.destroy();
@@ -444,6 +571,129 @@ function attachWebMCPToMount(
 }
 
 /**
+ * Build `runCommand` for a mount (shared by `mountFlowDropApp` and
+ * `mountWorkflowEditor`).
+ *
+ * @param isDestroyed - Whether the mount is gone.
+ * @param registerCancel - Registers a callback the mount calls on destroy to
+ *   settle a call still waiting for the workflow; returns its unregister.
+ * @param onBaseline - Runs after a successful baseline run, e.g. to tell a
+ *   draft manager the re-baselined workflow is not an unsaved draft.
+ */
+function createRunCommand(
+  fd: FlowDropInstance,
+  isDestroyed: () => boolean,
+  registerCancel: (cancel: () => void) => () => void,
+  onBaseline?: () => void
+): MountedFlowDropApp['runCommand'] {
+  const gone = (): CommandResult => ({
+    ok: false,
+    code: 'NO_WORKFLOW',
+    error: 'The editor was destroyed before a workflow was available.'
+  });
+
+  const run = (command: string | Command, options?: RunCommandOptions): CommandResult => {
+    if (isDestroyed() || !fd.workflow.current) return gone();
+
+    let parsed: Command;
+    if (typeof command === 'string') {
+      if (isSessionLine(command)) {
+        return {
+          ok: false,
+          code: 'SESSION_REFUSED',
+          error: '`session` commands run only in the editor Console; they are not available here.'
+        };
+      }
+      const result = parseCommand(command);
+      if (!result.ok) return { ok: false, code: 'PARSE_ERROR', error: result.error };
+      parsed = result.command;
+    } else {
+      // Not from the parser: a host may have built it by hand, in plain JS.
+      const problem = validateCommand(command);
+      if (problem) return { ok: false, code: 'INVALID_ARGUMENT', error: problem };
+      parsed = command;
+    }
+
+    const baseline = options?.baseline === true;
+    if (baseline && fd.workflow.isDirty) {
+      return {
+        ok: false,
+        code: 'DIRTY',
+        error:
+          'baseline needs a workflow with no unsaved changes; save or discard them first. Nothing was run.'
+      };
+    }
+    // Undo/redo would step past the saved state and then call it clean.
+    if (baseline && (parsed.type === 'undo' || parsed.type === 'redo')) {
+      return {
+        ok: false,
+        code: 'INVALID_ARGUMENT',
+        error: `${parsed.type} cannot be run as a baseline. Nothing was run.`
+      };
+    }
+
+    const context = createStoreCommandContext(
+      fd.nodeTypes.current ?? [],
+      (action) => dispatchUIAction(fd, action),
+      fd
+    );
+    if (!context) return gone();
+
+    // A baseline run is not a change the host should hear about: on release
+    // it is told only what is still true (a failed command that left changes).
+    const release = baseline ? fd.workflow.muteCallbacks() : null;
+    try {
+      const result = executeCommand(parsed, context);
+      // A command that changed nothing (`info`, `list nodes`, ...) leaves the
+      // workflow clean: keep its undo history.
+      if (baseline && result.ok && fd.workflow.isDirty) {
+        const current = fd.workflow.current;
+        if (current) fd.workflow.initialize(current);
+        onBaseline?.();
+      }
+      return result;
+    } finally {
+      release?.();
+    }
+  };
+
+  // The promise never rejects, whatever the executor does.
+  const settle = (command: string | Command, options?: RunCommandOptions): CommandResult => {
+    try {
+      return run(command, options);
+    } catch (error) {
+      logger.error('runCommand failed:', error);
+      return {
+        ok: false,
+        code: 'INTERNAL_ERROR',
+        error: `The command failed: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  };
+
+  return (command, options) =>
+    new Promise<CommandResult>((resolve) => {
+      if (isDestroyed()) return resolve(gone());
+      let settled = false;
+      let unregister: (() => void) | null = null;
+      const finish = (result: CommandResult) => {
+        if (settled) return;
+        settled = true;
+        unregister?.();
+        resolve(result);
+      };
+      // Fires at once when the workflow is already loaded.
+      const stopWaiting = whenWorkflowLoaded(fd, () => finish(settle(command, options)));
+      if (!settled) {
+        unregister = registerCancel(() => {
+          stopWaiting();
+          finish(gone());
+        });
+      }
+    });
+}
+
+/**
  * Mount the full FlowDrop App with navbar, sidebars, and workflow editor
  *
  * Use this for a complete workflow editing experience with all UI components.
@@ -484,19 +734,25 @@ export async function mountFlowDropApp(
     configPlacement,
     consolePlacement,
     mode,
+    editorMode,
+    onEditorModeChange,
+    playground,
     pipelineId,
     navbarTitle,
     navbarActions,
+    branding,
     showSettings,
     showStatus,
     authProvider,
     eventHandlers,
     features: userFeatures,
     settings: initialSettings,
+    colorScheme,
     draftStorageKey: customDraftKey,
     draftStorage,
     formatAdapters,
     workflowFormats,
+    workflowSettingsSchema,
     theme,
     settingsCategories,
     showSettingsSyncButton,
@@ -531,8 +787,11 @@ export async function mountFlowDropApp(
 
   // Apply initial settings overrides and initialize theme
   await initializeSettings({
-    defaults: initialSettings
+    defaults: initialSettings,
+    colorScheme
   });
+  // The registration this mount made, if any, released again on destroy.
+  const hostColorSchemeRegistration = colorScheme?.host ? getHostColorSchemeRegistration() : null;
 
   // Resolve and apply endpoint config, port config and categories to this
   // instance (see configureInstance).
@@ -572,9 +831,13 @@ export async function mountFlowDropApp(
       configPlacement,
       consolePlacement,
       mode,
+      editorMode,
+      onEditorModeChange,
+      playground,
       pipelineId,
       navbarTitle,
       navbarActions,
+      branding,
       showSettings,
       showStatus,
       endpointConfig: config,
@@ -588,6 +851,9 @@ export async function mountFlowDropApp(
       onSaveError: eventHandlers?.onSaveError,
       onApiError: eventHandlers?.onApiError,
       onWorkflowLoad: eventHandlers?.onWorkflowLoad,
+      onExternalEdit: eventHandlers?.onExternalEdit
+        ? (node, link) => eventHandlers.onExternalEdit!(node, link)
+        : undefined,
       onBeforeSwap: eventHandlers?.onBeforeSwap,
       onAfterSwap: eventHandlers?.onAfterSwap,
       features,
@@ -596,6 +862,7 @@ export async function mountFlowDropApp(
       showSettingsSyncButton,
       showSettingsResetButton,
       workflowFormats,
+      workflowSettingsSchema,
       contextMenu
     }
   });
@@ -658,6 +925,8 @@ export async function mountFlowDropApp(
   // its default `onSave` is `mountedApp.save()`.
   let webmcpHandle: WebMCPHandle | undefined;
   let destroyed = false;
+  // Calls to runCommand still waiting for the workflow; settled on destroy.
+  const pendingRuns = new Set<() => void>();
 
   // Create the mounted app interface
   const mountedApp: MountedFlowDropApp = {
@@ -670,6 +939,7 @@ export async function mountFlowDropApp(
       // Remove the agent-facing tools before anything else goes away.
       destroyed = true;
       webmcpHandle?.detach();
+      for (const cancel of [...pendingRuns]) cancel();
 
       // Call onBeforeUnmount if provided
       if (state.eventHandlers?.onBeforeUnmount) {
@@ -692,6 +962,10 @@ export async function mountFlowDropApp(
       if (state.unsubscribeDraftSettings) {
         state.unsubscribeDraftSettings();
         state.unsubscribeDraftSettings = null;
+      }
+
+      if (hostColorSchemeRegistration !== null) {
+        releaseHostColorScheme(hostColorSchemeRegistration);
       }
 
       // Release this mount's instance: clears its callbacks (and, for
@@ -727,6 +1001,17 @@ export async function mountFlowDropApp(
     },
 
     getWorkflow: () => fd.workflow.current,
+
+    runCommand: createRunCommand(
+      fd,
+      () => destroyed,
+      (cancel) => {
+        pendingRuns.add(cancel);
+        return () => pendingRuns.delete(cancel);
+      },
+      // The re-baselined workflow is clean, so it is not a draft to restore.
+      () => state.draftManager?.markAsSaved()
+    ),
 
     save: async () => {
       return globalSaveWorkflow({
@@ -875,11 +1160,16 @@ export async function mountWorkflowEditor(
     }
   });
 
+  let destroyed = false;
+  const pendingRuns = new Set<() => void>();
+
   // Create the mounted app interface (simpler version)
   const mountedApp: MountedFlowDropApp = {
     instance: fd,
 
     destroy: () => {
+      destroyed = true;
+      for (const cancel of [...pendingRuns]) cancel();
       releaseInstance(fd, isDefault);
       unmount(svelteApp);
     },
@@ -889,6 +1179,15 @@ export async function mountWorkflowEditor(
     markAsSaved: () => fd.workflow.markAsSaved(),
 
     getWorkflow: () => fd.workflow.current,
+
+    runCommand: createRunCommand(
+      fd,
+      () => destroyed,
+      (cancel) => {
+        pendingRuns.add(cancel);
+        return () => pendingRuns.delete(cancel);
+      }
+    ),
 
     save: async () => {
       return globalSaveWorkflow({ instance: fd });

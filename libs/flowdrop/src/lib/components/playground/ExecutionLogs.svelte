@@ -1,9 +1,10 @@
 <!--
-  ExecutionLogs Component
-  
-  Collapsible panel for displaying execution logs in the playground.
-  Shows real-time log entries with filtering and export capabilities.
-  Styled with BEM syntax.
+  @component
+  **Legacy.** A collapsible log panel that no Playground surface renders any more; `StepsSummary` replaced it.
+  It shows log lines with a level filter and an export button. It stays exported for existing consumers and is removed in 3.0.
+
+  **Use it for** nothing new. The conversation now folds each turn's steps into one row.
+  **Not for** current Playground work; use `StepsSummary` (inside `MessageStream`) instead.
 -->
 
 <script lang="ts">
