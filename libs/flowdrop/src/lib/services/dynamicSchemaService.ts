@@ -16,7 +16,6 @@ import type {
 } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
-import { resolveApiUrl } from '../utils/apiUrl.js';
 
 /**
  * Context object containing all available data for resolving template variables
@@ -292,8 +291,12 @@ export async function fetchDynamicSchema(
   // Resolve the URL with template variables
   let url = resolveTemplate(endpoint.url, endpoint.parameterMapping, context);
 
-  // Resolve a relative URL against the endpoint base (see resolveApiUrl)
-  url = resolveApiUrl(url, endpointConfig?.baseUrl);
+  // If URL is relative, try to prepend base URL from endpoint config
+  if (url.startsWith('/') && endpointConfig?.baseUrl) {
+    // Remove trailing slash from base URL and leading slash from relative URL
+    const baseUrl = endpointConfig.baseUrl.replace(/\/$/, '');
+    url = `${baseUrl}${url}`;
+  }
 
   // Prepare request options
   const method = endpoint.method ?? 'GET';

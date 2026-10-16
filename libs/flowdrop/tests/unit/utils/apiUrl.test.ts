@@ -1,34 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { resolveApiUrl } from '$lib/utils/apiUrl.js';
+import { resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
 
-describe('resolveApiUrl', () => {
-  it('keeps absolute URLs', () => {
-    expect(resolveApiUrl('https://x.test/a', '/api/flowdrop')).toBe('https://x.test/a');
+describe('resolveAutocompleteUrl', () => {
+  it('keeps URLs that name their own origin', () => {
+    expect(resolveAutocompleteUrl('https://x.test/a', '/api/flowdrop')).toBe('https://x.test/a');
+    expect(resolveAutocompleteUrl('HTTP://x.test/a', '/api/flowdrop')).toBe('HTTP://x.test/a');
+    expect(resolveAutocompleteUrl('//cdn.test/a', '/api/flowdrop', '/prefix')).toBe('//cdn.test/a');
   });
 
-  it('resolves base-relative paths against the base', () => {
-    expect(resolveApiUrl('/secrets/options', '/api/flowdrop')).toBe(
+  it('keeps site-relative paths, whatever the base', () => {
+    expect(resolveAutocompleteUrl('/api/users/search', '/api/flowdrop')).toBe('/api/users/search');
+    expect(
+      resolveAutocompleteUrl('/api/flowdrop/secrets/options', 'https://site/api/flowdrop')
+    ).toBe('/api/flowdrop/secrets/options');
+  });
+
+  it('puts the prefix in front of site-relative paths', () => {
+    expect(resolveAutocompleteUrl('/users', '/api', '/api')).toBe('/api/users');
+    expect(resolveAutocompleteUrl('/users', 'https://h/api', 'https://h/api')).toBe(
+      'https://h/api/users'
+    );
+  });
+
+  it('resolves paths without a leading slash against the base', () => {
+    expect(resolveAutocompleteUrl('secrets/options', '/api/flowdrop')).toBe(
       '/api/flowdrop/secrets/options'
     );
-    expect(resolveApiUrl('/secrets/options?type=env', '/api/flowdrop/remotes/r1/')).toBe(
+    expect(resolveAutocompleteUrl('./secrets/options?type=env', '/api/flowdrop/remotes/r1/')).toBe(
       '/api/flowdrop/remotes/r1/secrets/options?type=env'
     );
-  });
-
-  it('keeps paths that already include the base', () => {
-    expect(resolveApiUrl('/api/flowdrop/secrets/options', '/api/flowdrop')).toBe(
-      '/api/flowdrop/secrets/options'
+    expect(resolveAutocompleteUrl('workflows/options', 'https://site/api/flowdrop')).toBe(
+      'https://site/api/flowdrop/workflows/options'
     );
   });
 
-  it('does not treat a shared prefix as the base', () => {
-    expect(resolveApiUrl('/api/flowdropx/a', '/api/flowdrop')).toBe(
-      '/api/flowdrop/api/flowdropx/a'
-    );
-  });
-
-  it('leaves the URL alone without a base', () => {
-    expect(resolveApiUrl('/secrets/options', '')).toBe('/secrets/options');
-    expect(resolveApiUrl('/secrets/options', undefined)).toBe('/secrets/options');
+  it('leaves a relative path alone without a base', () => {
+    expect(resolveAutocompleteUrl('secrets/options', '')).toBe('secrets/options');
+    expect(resolveAutocompleteUrl('secrets/options', undefined)).toBe('secrets/options');
   });
 });

@@ -7,18 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
-- Autocomplete URLs in node metadata resolve against the editor's endpoint
-  base, as dynamic-schema and variables URLs already do. `ConfigForm` provides
-  the instance's `endpointConfig.baseUrl` to its autocomplete fields, so a
-  backend can emit base-relative URLs (`/secrets/options`) and they work behind
-  any API base, including a proxy mount such as
-  `/api/flowdrop/remotes/{id}`. A URL that already starts with the base
-  (`/api/flowdrop/secrets/options` under `/api/flowdrop`) and an absolute
-  `http(s)` URL are used as given, so existing backends keep working. The
-  same rule now applies to dynamic-schema and variables URLs, which no longer
-  get the base prefixed twice.
+- **Autocomplete URLs relative to the API base** (#49). An `autocomplete.url` without a leading
+  slash (`secrets/options`, or `./secrets/options`) resolves against the editor's
+  `endpointConfig.baseUrl`, so a backend can name its own option endpoints and they work behind any
+  API base, including a hub's proxy mount such as `/api/flowdrop/remotes/{id}`. `ConfigForm`
+  provides the base to its fields. Nothing else changes: `https://…` and `//host/…` URLs are used as
+  given, a `/path` URL stays relative to the site (as in the docs' `/api/users/search` example), and
+  `SchemaForm`'s `baseUrl` prop still goes in front of a `/path` URL.
 
 ## [2.15.0] - 2026-10-16
 

@@ -10,7 +10,6 @@ import type { VariableSchema, ApiVariablesConfig, AuthProvider } from '../types/
 import type { EndpointConfig } from '../config/endpoints.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
-import { resolveApiUrl } from '../utils/apiUrl.js';
 
 /**
  * Context for variable API requests
@@ -203,8 +202,11 @@ export async function fetchVariableSchema(
   // Resolve the URL with template variables
   let url = resolveEndpointUrl(endpoint.url, context);
 
-  // Resolve a relative URL against the endpoint base (see resolveApiUrl)
-  url = resolveApiUrl(url, endpointConfig?.baseUrl);
+  // If URL is relative, prepend base URL from endpoint config
+  if (url.startsWith('/') && endpointConfig?.baseUrl) {
+    const baseUrl = endpointConfig.baseUrl.replace(/\/$/, '');
+    url = `${baseUrl}${url}`;
+  }
 
   // Prepare request options
   const method = endpoint.method ?? 'GET';

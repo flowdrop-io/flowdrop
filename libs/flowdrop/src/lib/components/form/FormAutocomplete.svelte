@@ -24,7 +24,7 @@
 -->
 
 <script lang="ts">
-  import { resolveApiUrl } from '$lib/utils/apiUrl.js';
+  import { resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
   import { getContext, onMount } from 'svelte';
   import Icon from '@iconify/svelte';
   import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
@@ -72,6 +72,7 @@
     'flowdrop:getAuthProvider'
   );
   const getBaseUrl = getContext<(() => string) | undefined>('flowdrop:getBaseUrl');
+  const getApiBaseUrl = getContext<(() => string) | undefined>('flowdrop:getApiBaseUrl');
   const getFormValues = getContext<(() => Record<string, unknown>) | undefined>(
     'flowdrop:getFormValues'
   );
@@ -191,7 +192,10 @@
    * @returns Full URL with query parameter
    */
   function buildUrl(query: string): string {
-    const url = resolveApiUrl(autocomplete.url, getBaseUrl?.());
+    // SchemaForm's `baseUrl` stays a prefix for `/path` URLs, as it always was;
+    // a URL without a leading slash resolves against it or the API base.
+    const prefix = getBaseUrl?.() ?? '';
+    const url = resolveAutocompleteUrl(autocomplete.url, prefix || getApiBaseUrl?.(), prefix);
 
     const separator = url.includes('?') ? '&' : '?';
     let fullUrl = `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
