@@ -90,6 +90,7 @@
   } from '../stores/settingsStore.svelte.js';
   import { logger } from '../utils/logger.js';
   import { runExternalEdit } from '../utils/externalEdit.js';
+  import { provideUIActionTarget } from '../commands/uiActionTarget.js';
   import { themeScope } from '../utils/themeScope.svelte.js';
   import {
     resolveInspectorSurface,
@@ -1143,6 +1144,9 @@
    * the config it resolves with. Undefined when the host set no handler, so the
    * link opens as before.
    */
+  // Nodes whose host form is open, kept here so reopening the inspector does
+  // not open a second one.
+  const externalEditPending = new Set<string>();
   const externalEditForConfig = $derived(
     onExternalEdit
       ? (node: WorkflowNode, link: ExternalEditLink) =>
@@ -1151,7 +1155,9 @@
             link,
             handler: (n, l) => onExternalEdit(n, l),
             store: fd.workflow,
-            canWrite: canvasEditable,
+            // Read when the host resolves: the editor may have been locked meanwhile.
+            canWrite: () => canvasEditable,
+            pending: externalEditPending,
             onWritten: (written) => {
               const updated = fd.workflow.current?.nodes.find((n) => n.id === written.id);
               if (updated) workflowEditorRef?.updateNodeData(updated.id, updated.data);
@@ -1694,12 +1700,7 @@
   }
 
   // Let the mount API's `runCommand` reach this handler for UI actions.
-  $effect(() => {
-    fd.uiActions = handleConsoleUIAction;
-    return () => {
-      if (fd.uiActions === handleConsoleUIAction) fd.uiActions = null;
-    };
-  });
+  $effect(() => provideUIActionTarget(fd, handleConsoleUIAction));
 
   /** Show the Assistant: its tab beside Nodes, or the console group where there is no left slot. */
   function openAssistant(): void {

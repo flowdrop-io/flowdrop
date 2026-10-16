@@ -109,8 +109,8 @@
       meta?: { fieldKey?: string; commit?: boolean }
     ) => void;
     /**
-     * Called instead of opening the node's external edit link, when set. The
-     * host opens its own form; ConfigForm awaits the call (a second click while
+     * Called instead of opening the node's external edit link, when set, with
+     * copies of the node and the link. The host opens its own form; ConfigForm awaits the call (a second click while
      * one is pending is ignored) and logs a rejection. Writing the config the
      * handler resolves with is the caller's job: ConfigForm passes it on as is.
      */
@@ -430,6 +430,9 @@
    */
   const externalEditPending = new Set<string>();
 
+  /** A plain copy of reactive state. Typed as `T`: `Snapshot<WorkflowNode>` is too deep for tsc. */
+  const copyOf = <T,>(value: T): T => $state.snapshot(value) as T;
+
   function handleExternalEditClick(): void {
     if (!node || !configEditOptions?.externalEditLink) return;
 
@@ -441,7 +444,8 @@
       externalEditPending.add(nodeId);
       void (async () => {
         try {
-          await onExternalEdit(node, link);
+          // Copies: the host must not write into the live workflow behind the editor's back.
+          await onExternalEdit(copyOf(node), copyOf(link));
         } catch (error) {
           logger.warn('onExternalEdit failed:', error);
         } finally {

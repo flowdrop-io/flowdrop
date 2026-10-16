@@ -8,6 +8,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mountFlowDropApp, mountWorkflowEditor } from '../../../src/lib/svelte-app.js';
 import type { NodeMetadata, Workflow, WorkflowNode } from '../../../src/lib/types/index.js';
 import { DEFAULT_PORT_CONFIG } from '../../../src/lib/config/defaultPortConfig.js';
+import {
+  hasUIActionTarget,
+  provideUIActionTarget
+} from '../../../src/lib/commands/uiActionTarget.js';
 
 const textType = {
   node_type_id: 'text_input',
@@ -162,6 +166,19 @@ describe('runCommand({ baseline: true })', () => {
     app.destroy();
   });
 
+  it('keeps the undo history when the command changes nothing', async () => {
+    const app = await mountApp();
+    await app.runCommand('layout auto');
+    app.instance.workflow.markAsSaved(); // clean, with one undo step behind it
+    expect(app.isDirty()).toBe(false);
+    expect(app.instance.history.canUndo()).toBe(true);
+
+    const result = await app.runCommand('list nodes', { baseline: true });
+    expect(result.ok).toBe(true);
+    expect(app.instance.history.canUndo()).toBe(true);
+    app.destroy();
+  });
+
   it('does nothing extra when the command fails', async () => {
     const app = await mountApp();
     const result = await app.runCommand('delete nope.1', { baseline: true });
@@ -197,14 +214,28 @@ describe('runCommand UI actions', () => {
     const app = await mountApp();
     await app.runCommand('layout auto'); // make sure the workflow has loaded
     const handler = vi.fn();
-    const original = app.instance.uiActions;
-    expect(original).toBeTypeOf('function'); // App registered its handler
-    app.instance.uiActions = handler;
+    expect(hasUIActionTarget(app.instance)).toBe(true); // App registered its handler
+    provideUIActionTarget(app.instance, handler);
 
     const result = await app.runCommand('select a.1');
     expect(result.ok).toBe(true);
     expect(handler).toHaveBeenCalledWith({ type: 'select_node', nodeId: 'a.1' });
     app.destroy();
+  });
+
+  it('is not on the public instance', async () => {
+    const app = await mountApp();
+    await app.runCommand('list nodes');
+    expect('uiActions' in app.instance).toBe(false);
+    app.destroy();
+  });
+
+  it('a released target does not clear a newer one', () => {
+    const instance = {} as Parameters<typeof provideUIActionTarget>[0];
+    const releaseFirst = provideUIActionTarget(instance, vi.fn());
+    provideUIActionTarget(instance, vi.fn());
+    releaseFirst();
+    expect(hasUIActionTarget(instance)).toBe(true);
   });
 });
 

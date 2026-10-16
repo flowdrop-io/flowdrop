@@ -60,7 +60,9 @@ export interface FlowDropEventHandlers {
    * config to write it into the node (one undo step), or with nothing to leave
    * the node as it is.
    *
-   * The returned config replaces the node's config; it is not merged. A
+   * `node` and `link` are copies: changing them does not change the workflow;
+   * return the config instead. The returned config replaces the node's
+   * config; it is not merged. A
    * rejection is logged and leaves the node unchanged. While the editor is
    * read-only or locked the handler is still called but its result is not written.
    *

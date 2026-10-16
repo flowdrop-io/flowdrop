@@ -24,10 +24,17 @@ export interface RunExternalEditOptions {
   handler: (node: WorkflowNode, link: ExternalEditLink) => Promise<ConfigValues | void>;
   store: ExternalEditStore;
   /**
-   * False when the editor is read-only or locked: the handler is still called
-   * (the link is shown there), but its result is not written.
+   * Whether the editor accepts the result, asked when the handler resolves
+   * (the editor may have been locked while the host form was open). False
+   * when read-only or locked: the handler is still called (the link is shown
+   * there), but its result is not written. Defaults to writable.
    */
-  canWrite?: boolean;
+  canWrite?: () => boolean;
+  /**
+   * Ids of nodes whose host form is open. A node already in it is skipped
+   * (the handler is not called again); the caller keeps the set alive.
+   */
+  pending?: Set<string>;
   /** Called after a config was written, e.g. to refresh the canvas. */
   onWritten?: (node: WorkflowNode) => void;
 }
@@ -39,20 +46,25 @@ export interface RunExternalEditOptions {
  * - Nothing resolved: the node is left as it is.
  * - A rejection is logged and swallowed.
  * - A node deleted while the host form was open: the result is dropped.
+ * - A node whose host form is already open (`pending`): nothing happens.
  */
 export async function runExternalEdit(options: RunExternalEditOptions): Promise<void> {
-  const { node, link, handler, store, canWrite = true, onWritten } = options;
+  const { node, link, handler, store, canWrite, pending, onWritten } = options;
 
+  if (pending?.has(node.id)) return;
+  pending?.add(node.id);
   let result: ConfigValues | void;
   try {
     result = await handler(node, link);
   } catch (error) {
     logger.warn('onExternalEdit rejected; node left unchanged:', error);
     return;
+  } finally {
+    pending?.delete(node.id);
   }
   if (!result || typeof result !== 'object') return;
 
-  if (!canWrite) {
+  if (canWrite && !canWrite()) {
     logger.debug('onExternalEdit result ignored: the editor is not in edit mode');
     return;
   }

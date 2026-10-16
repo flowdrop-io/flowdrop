@@ -63,6 +63,18 @@ describe('ConfigForm external edit link', () => {
     expect(openSpy).not.toHaveBeenCalled();
   });
 
+  it('hands the host copies, not the live node', async () => {
+    const live = $state(nodeWithLink());
+    const handler = vi.fn(async (n: WorkflowNode) => {
+      n.data.config.a = 99; // a host writing into what it was given
+    });
+    const target = mountForm({ node: live, onExternalEdit: handler });
+    target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]')!.click();
+    await Promise.resolve();
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(live.data.config.a).toBe(1);
+  });
+
   it('ignores a second click while the handler is pending', async () => {
     let release!: () => void;
     const handler = vi.fn(() => new Promise<void>((r) => (release = r)));
@@ -238,8 +250,33 @@ describe('runExternalEdit', () => {
   it('does not write when the editor is not in edit mode', async () => {
     const { fd, node } = setup();
     const handler = vi.fn(async () => ({ c: 3 }));
-    await runExternalEdit({ node, link, handler, store: fd.workflow, canWrite: false });
+    await runExternalEdit({ node, link, handler, store: fd.workflow, canWrite: () => false });
     expect(handler).toHaveBeenCalled();
     expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+  });
+
+  it('asks whether it may write when the host resolves, not when it was called', async () => {
+    const { fd, node } = setup();
+    let editable = true;
+    const handler = vi.fn(async () => {
+      editable = false; // the editor was locked while the host form was open
+      return { c: 3 };
+    });
+    await runExternalEdit({ node, link, handler, store: fd.workflow, canWrite: () => editable });
+    expect(cfg(fd)).toEqual({ a: 1, b: 2 });
+  });
+
+  it('does not call the host again for a node whose form is open', async () => {
+    const { fd, node } = setup();
+    const pending = new Set<string>();
+    let release!: (v: { c: number }) => void;
+    const handler = vi.fn(() => new Promise<{ c: number }>((r) => (release = r)));
+    const first = runExternalEdit({ node, link, handler, store: fd.workflow, pending });
+    await runExternalEdit({ node, link, handler, store: fd.workflow, pending });
+    expect(handler).toHaveBeenCalledTimes(1);
+    release({ c: 3 });
+    await first;
+    expect(pending.size).toBe(0);
+    expect(cfg(fd)).toEqual({ c: 3 });
   });
 });

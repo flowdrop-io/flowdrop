@@ -66,6 +66,7 @@ import { parseCommand } from './commands/parser.js';
 import { executeCommand } from './commands/executor.js';
 import { isSessionLine } from './commands/session.js';
 import { createStoreCommandContext } from './commands/storeIntegration.svelte.js';
+import { dispatchUIAction } from './commands/uiActionTarget.js';
 import type { Command, CommandResult } from './commands/types.js';
 export type { NavbarAction, NavbarBranding };
 import type { ContextMenuOptions } from './editor/contextMenu.js';
@@ -392,11 +393,13 @@ export interface MountedFlowDropApp {
    *   later.
    * - **`options.baseline`** makes the command's result the workflow's clean
    *   starting point: `isDirty()` is `false` afterwards and the undo history
-   *   starts over from it (earlier undo steps are cleared too). Useful to tidy a loaded model before the user sees it. It
-   *   needs a workflow with no unsaved changes: when the workflow is dirty the
-   *   command is not run and the call resolves with `{ ok: false, code:
-   *   'DIRTY' }`. A failed command changes nothing. A draft saved earlier is
-   *   not overwritten by the re-baselined workflow.
+   *   starts over from it (earlier undo steps are cleared too). Useful to
+   *   tidy a loaded model before the user sees it. It needs a workflow with no
+   *   unsaved changes: when the workflow is dirty the command is not run and
+   *   the call resolves with `{ ok: false, code: 'DIRTY' }`. A failed command,
+   *   or one that changes nothing (`info`, `list nodes`), keeps the undo
+   *   history. A draft saved earlier is not overwritten by the re-baselined
+   *   workflow.
    * - **Read-only mounts** (`mode: 'readonly' | 'locked'`) accept it too, so a
    *   host can lay out a model it only displays.
    * - **UI actions** (select a node, open its config panel, fit/zoom/pan) are
@@ -613,13 +616,15 @@ function createRunCommand(
 
     const context = createStoreCommandContext(
       fd.nodeTypes.current ?? [],
-      (action) => fd.uiActions?.(action),
+      (action) => dispatchUIAction(fd, action),
       fd
     );
     if (!context) return gone();
 
     const result = executeCommand(parsed, context);
-    if (baseline && result.ok) {
+    // A command that changed nothing (`info`, `list nodes`, ...) leaves the
+    // workflow clean: keep its undo history.
+    if (baseline && result.ok && fd.workflow.isDirty) {
       const current = fd.workflow.current;
       if (current) fd.workflow.initialize(current);
       onBaseline?.();
