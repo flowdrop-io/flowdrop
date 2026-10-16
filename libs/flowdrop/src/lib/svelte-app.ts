@@ -10,7 +10,13 @@
 import { mount, unmount } from 'svelte';
 import WorkflowEditor from './components/WorkflowEditor.svelte';
 import App from './components/App.svelte';
-import type { Workflow, NodeMetadata, PortConfig, CategoryDefinition } from './types/index.js';
+import type {
+  Workflow,
+  NodeMetadata,
+  PortConfig,
+  CategoryDefinition,
+  ConfigSchema
+} from './types/index.js';
 import type { EndpointConfig } from './config/endpoints.js';
 import type { AuthProvider } from './types/auth.js';
 import type { EditorPlaygroundConfig } from './types/playground.js';
@@ -221,6 +227,14 @@ export interface FlowDropMountOptions {
    * is left untouched. Omit to offer every registered format.
    */
   workflowFormats?: string[];
+  /**
+   * Extra JSON Schema properties for the Workflow Settings panel. Their values
+   * are stored in `workflow.config`: loaded from the workflow passed in,
+   * returned by `getWorkflow()` and saved with it. The built-in keys (`name`,
+   * `description`, `format`, `interface`, `playground`) are reserved: a
+   * property using one is ignored with a console warning.
+   */
+  workflowSettingsSchema?: ConfigSchema;
 
   // NEW: Visual theme
   /** Visual theme — named built-in ('graphite' | 'classic' | 'minimal' | 'drafter') or custom theme object */
@@ -554,6 +568,7 @@ export async function mountFlowDropApp(
     draftStorage,
     formatAdapters,
     workflowFormats,
+    workflowSettingsSchema,
     theme,
     settingsCategories,
     showSettingsSyncButton,
@@ -660,6 +675,7 @@ export async function mountFlowDropApp(
       showSettingsSyncButton,
       showSettingsResetButton,
       workflowFormats,
+      workflowSettingsSchema,
       contextMenu
     }
   });
