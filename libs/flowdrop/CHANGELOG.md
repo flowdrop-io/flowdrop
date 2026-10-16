@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **An autocomplete dropdown that opens above its field stays next to the field.** When there was too
+  little room below, the list was meant to open above the field but stuck to the top of the window
+  instead, which is where the third field of a cascade usually ended up.
+
 ## [2.15.0] - 2026-10-16
 
 ### Added

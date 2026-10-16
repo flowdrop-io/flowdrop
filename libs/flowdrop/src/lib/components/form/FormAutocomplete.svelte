@@ -979,6 +979,10 @@
   /* Popover container - renders in top layer via Popover API */
   .form-autocomplete__popover {
     position: fixed;
+    /* UA [popover] sets inset: 0; without this reset the inline `bottom`
+       of the flip-above placement loses to top: 0 and the list sticks to
+       the top of the viewport. */
+    inset: auto;
     margin: 0;
     padding: 0;
     border: none;
