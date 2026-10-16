@@ -24,7 +24,7 @@
 -->
 
 <script lang="ts">
-  import { getContext, onMount } from 'svelte';
+  import { getContext, onMount, untrack } from 'svelte';
   import Icon from '@iconify/svelte';
   import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
   import type { FieldOption } from './types.js';
@@ -615,6 +615,24 @@
     abortController?.abort();
     suggestions = [];
     labelCache = new Map();
+  });
+
+  // Labels are only learned from fetched suggestions, so a preloaded value
+  // (form open, undo, external edit) would show its raw value until the user
+  // focuses the field. When the config already allows an empty-query fetch,
+  // run that fetch once for the current values to resolve their labels.
+  // Must stay after the dependency effect above, which resets labelCache.
+  let labelLookupKey = '';
+  $effect(() => {
+    if (!fetchOnFocus || minChars > 0) return;
+    const missing = selectedValues.filter((val) => !labelCache.has(val));
+    if (missing.length === 0) return;
+    const key = `${depFingerprint}|${missing.join('\u0000')}`;
+    if (key === labelLookupKey) return;
+    labelLookupKey = key;
+    untrack(() => {
+      if (!isLoading) fetchSuggestions('');
+    });
   });
 
   /**

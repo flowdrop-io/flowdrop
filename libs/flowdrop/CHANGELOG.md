@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **An autocomplete dropdown that opens above its field stays next to the field.** When there was too
   little room below, the list was meant to open above the field but stuck to the top of the window
   instead, which is where the third field of a cascade usually ended up.
+- **A filled autocomplete field shows its label when the form opens.** It used to show the stored value
+  (`org-acme` instead of "Acme Corp") until the field was focused, because labels were only learned from
+  suggestions. When the field's config allows an empty query (`fetchOnFocus: true` and `minChars: 0`), it
+  now sends that request once on open to look up the labels: one request per filled field, the same one
+  focusing it already sent. Other configs still show the stored value until a search returns it.
 
 ## [2.15.0] - 2026-10-16
 
