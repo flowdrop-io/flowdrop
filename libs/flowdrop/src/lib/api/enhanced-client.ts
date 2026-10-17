@@ -21,6 +21,7 @@ import type { AuthProvider } from '../types/auth.js';
 import { NoAuthProvider } from '../types/auth.js';
 import { getApiSettings } from '../stores/settingsStore.svelte.js';
 import { logger } from '../utils/logger.js';
+import { refreshAuth } from '../utils/fetchWithAuth.js';
 import { DEFAULT_API_TIMEOUT_MS } from '../config/constants.js';
 
 /**
@@ -253,7 +254,7 @@ export class EnhancedFlowDropApiClient {
         // Handle 401 Unauthorized
         if (response.status === 401) {
           if (this.authProvider.onUnauthorized) {
-            const refreshed = await this.authProvider.onUnauthorized();
+            const refreshed = await refreshAuth(this.authProvider);
             if (refreshed && attempt < maxAttempts) {
               // Rebuild headers via the shared path to pick up the fresh token.
               fetchConfig.headers = {

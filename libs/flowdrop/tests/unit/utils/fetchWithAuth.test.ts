@@ -89,6 +89,47 @@ describe('authenticatedFetch', () => {
     expect(response.status).toBe(200);
   });
 
+  it('shares one onUnauthorized call between concurrent 401s', async () => {
+    fetchMock.mockImplementation(async (_url, init: RequestInit) =>
+      (init.headers as Record<string, string>).Authorization === 'Bearer fresh'
+        ? ok()
+        : unauthorized()
+    );
+    let token = 'stale';
+    let finishRefresh!: (refreshed: boolean) => void;
+    const onUnauthorized = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          finishRefresh = (refreshed) => {
+            token = 'fresh';
+            resolve(refreshed);
+          };
+        })
+    );
+    const authProvider: AuthProvider = {
+      getAuthHeaders: async () => ({ Authorization: `Bearer ${token}` }),
+      onUnauthorized
+    };
+
+    const requests = [1, 2, 3].map((n) =>
+      authenticatedFetch(`https://api.example.com/${n}`, {}, { authProvider })
+    );
+    await vi.waitFor(() => expect(onUnauthorized).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 0));
+    finishRefresh(true);
+    const responses = await Promise.all(requests);
+
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(responses.map((r) => r.status)).toEqual([200, 200, 200]);
+
+    // Once settled, the next 401 asks the provider again.
+    token = 'stale';
+    const again = authenticatedFetch('https://api.example.com/4', {}, { authProvider });
+    await vi.waitFor(() => expect(onUnauthorized).toHaveBeenCalledTimes(2));
+    finishRefresh(true);
+    await again;
+  });
+
   it('does not retry on 401 when onUnauthorized reports no refresh', async () => {
     fetchMock.mockResolvedValue(unauthorized());
     const onUnauthorized = vi.fn().mockResolvedValue(false);

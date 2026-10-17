@@ -69,6 +69,29 @@ async function buildHeaders(
   return headers;
 }
 
+const pendingRefreshes = new WeakMap<AuthProvider, Promise<boolean>>();
+
+/**
+ * Call the provider's `onUnauthorized()`, sharing one call between every
+ * request that gets a `401` while it is pending. A form whose autocomplete
+ * fields all look up their labels at once would otherwise refresh the token
+ * (or prompt for a login) once per field.
+ *
+ * @param authProvider - The provider whose session expired
+ * @returns Whether the provider refreshed its credentials
+ */
+export function refreshAuth(authProvider: AuthProvider): Promise<boolean> {
+  if (!authProvider.onUnauthorized) return Promise.resolve(false);
+  let pending = pendingRefreshes.get(authProvider);
+  if (!pending) {
+    pending = authProvider.onUnauthorized().finally(() => {
+      pendingRefreshes.delete(authProvider);
+    });
+    pendingRefreshes.set(authProvider, pending);
+  }
+  return pending;
+}
+
 /**
  * Perform an authenticated fetch with consistent 401/403 handling.
  *
@@ -87,7 +110,7 @@ export async function authenticatedFetch(
 
   // 401 → let the provider refresh, then retry once with fresh headers.
   if (response.status === 401 && opts.authProvider?.onUnauthorized) {
-    const refreshed = await opts.authProvider.onUnauthorized();
+    const refreshed = await refreshAuth(opts.authProvider);
     if (refreshed) {
       const retryHeaders = await buildHeaders(init, opts);
       response = await fetch(url, { ...init, headers: retryHeaders });
