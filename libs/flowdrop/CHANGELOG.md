@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **An autocomplete field keeps its loading state while a newer search is in flight.** A cancelled
   request used to clear the spinner of the search that replaced it, and left that search impossible to
   cancel, so results for old dependency values could still land after a dependency field changed.
+- **An autocomplete search that times out says so.** After 5 seconds the request was cancelled like a
+  superseded one, leaving an empty list with no error and no retry. It now shows "Request timed out"
+  with the retry button.
+- **Requests that get a `401` at the same time share one `onUnauthorized()` call.** Each used to call it,
+  so a form whose autocomplete fields looked up their labels with an expired token refreshed it (or
+  asked for a login) once per field. They now wait for the one call and retry with its result; the next
+  `401` after it settles calls it again.
 
 ## [2.15.0] - 2026-10-16
 

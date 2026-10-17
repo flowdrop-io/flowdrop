@@ -135,7 +135,7 @@ describe('FormAutocomplete requests in flight', () => {
           new Promise<Response>((resolve, reject) => {
             const signal = init!.signal!;
             signal.addEventListener('abort', () =>
-              reject(new DOMException('aborted', 'AbortError'))
+              reject(signal.reason ?? new DOMException('aborted', 'AbortError'))
             );
             pending.push({
               url: String(input),
@@ -187,6 +187,92 @@ describe('FormAutocomplete requests in flight', () => {
     live()[0].resolve([{ label: 'User Two', value: 'u2' }]);
     await settle();
     expect(tags(target)).toEqual(['User Two']);
+  });
+
+  function mountDependent(value: string, form: Record<string, unknown>) {
+    const props = $state({
+      id: 'f',
+      value,
+      autocomplete: { url: '/suggest', fetchOnFocus: true, params: { org: 'org' } },
+      onChange: vi.fn()
+    });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    mounted = mount(FormAutocomplete, {
+      target,
+      props,
+      context: new Map([['flowdrop:getFormValues', () => form]])
+    });
+    return { props, target };
+  }
+
+  it('looks the label up again when an undo returns to values looked up before', async () => {
+    const form = $state<Record<string, unknown>>({ org: 'acme' });
+    const { props, target } = mountDependent('u1', form);
+    await settle();
+    live()[0].resolve([{ label: 'User One', value: 'u1' }]);
+    await settle();
+    expect(tags(target)).toEqual(['User One']);
+
+    // The user changes the parent field, and the form clears this one.
+    form.org = 'globex';
+    props.value = '';
+    await settle();
+    // Undo brings both back; the labels were dropped with the dependency change.
+    form.org = 'acme';
+    props.value = 'u1';
+    await settle();
+
+    expect(pending).toHaveLength(2);
+    pending[1].resolve([{ label: 'User One', value: 'u1' }]);
+    await settle();
+    expect(tags(target)).toEqual(['User One']);
+  });
+
+  it('a dependency change cancels the lookup', async () => {
+    const form = $state<Record<string, unknown>>({ org: 'acme' });
+    const { props } = mountDependent('u1', form);
+    await settle();
+    form.org = 'globex';
+    props.value = '';
+    await settle();
+    expect(pending).toHaveLength(1);
+    expect(pending[0].signal.aborted).toBe(true);
+  });
+
+  it('a typed free-text value does not send a lookup', async () => {
+    const props = $state({
+      id: 'f',
+      value: '' as string,
+      autocomplete: { url: '/suggest', fetchOnFocus: true, allowFreeText: true, debounceMs: 0 },
+      onChange: vi.fn((v: string) => (props.value = v))
+    });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    mounted = mount(FormAutocomplete, { target, props });
+    const input = target.querySelector('input')!;
+    input.value = 'custom';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await settle();
+    expect(tags(target)).toEqual(['custom']);
+    // Only the search the typing sent; no lookup for the committed value.
+    expect(pending.map((p) => p.url)).toEqual(['/suggest?q=custom']);
+  });
+
+  it('a search that times out shows an error instead of nothing', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      const target = render('');
+      const input = target.querySelector('input')!;
+      input.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
+      await vi.advanceTimersByTimeAsync(5000);
+      flushSync();
+      expect(target.querySelector('.form-autocomplete__spinner')).toBeNull();
+      expect(target.textContent).toContain('Request timed out');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('a search typed during the lookup does not cancel it', async () => {

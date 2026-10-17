@@ -103,6 +103,10 @@
   let highlightedIndex = $state(-1);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let abortController: AbortController | null = null;
+  // The label lookup's own request, and the key of the last one sent (see
+  // lookupLabels and the effect that calls it).
+  let labelController: AbortController | null = null;
+  let labelLookupKey = '';
 
   // Popover positioning style
   let popoverStyle = $state('');
@@ -171,9 +175,8 @@
    * Get display label for a selected value
    */
   function getDisplayLabel(val: string): string {
-    // Runs during render, so it only reads; the effect below caches labels
-    // found in suggestions.
-    return labelCache.get(val) ?? suggestions.find((s) => s.value === val)?.label ?? val;
+    // Every fetched suggestion and every pick lands in the cache.
+    return labelCache.get(val) ?? val;
   }
 
   /**
@@ -215,6 +218,14 @@
   }
 
   /**
+   * Abort reason for a request that ran out of time. Unlike a plain abort
+   * (superseded or unmounted), it is a failure the field reports.
+   */
+  function timeoutError(): DOMException {
+    return new DOMException('Request timed out', 'TimeoutError');
+  }
+
+  /**
    * Fetch suggestions from the callback URL
    * @param query - The search query
    */
@@ -240,7 +251,7 @@
 
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     try {
-      timeoutId = setTimeout(() => controller.abort(), 5000);
+      timeoutId = setTimeout(() => controller.abort(timeoutError()), 5000);
 
       // authenticatedFetch merges auth headers (call getter for current value)
       // and applies the 401/403 lifecycle consistently with the rest of the lib.
@@ -363,6 +374,7 @@
       if (allowFreeText && !multiple && inputValue !== '') {
         const currentSingle = selectedValues[0] ?? '';
         if (inputValue !== currentSingle) {
+          labelCache.set(inputValue, inputValue);
           onChange(inputValue);
         }
       }
@@ -465,10 +477,12 @@
           if (multiple) {
             const current = selectedValues;
             if (!current.includes(inputValue)) {
+              labelCache.set(inputValue, inputValue);
               onChange([...current, inputValue]);
             }
             inputValue = '';
           } else {
+            labelCache.set(inputValue, inputValue);
             onChange(inputValue);
             hideDropdown();
           }
@@ -505,22 +519,6 @@
     suggestions = [];
     inputElement?.focus();
   }
-
-  /**
-   * Sync label cache when value prop changes externally
-   */
-  $effect(() => {
-    // When value changes, try to find labels from suggestions
-    const vals = selectedValues;
-    vals.forEach((val) => {
-      if (!labelCache.has(val)) {
-        const match = suggestions.find((s) => s.value === val);
-        if (match) {
-          labelCache.set(val, match.label);
-        }
-      }
-    });
-  });
 
   /**
    * Calculate popover position relative to viewport
@@ -611,8 +609,11 @@
     // parent form's handleFieldChange so it only fires on user-driven changes,
     // not on undo/redo, programmatic resets, or collaborative edits (#33).
     abortController?.abort();
+    labelController?.abort();
     suggestions = [];
     labelCache.clear();
+    // The cleared labels need a new lookup, even for a key looked up before.
+    labelLookupKey = '';
   });
 
   /**
@@ -621,13 +622,12 @@
    * suggestions, the loading state or the error, so it cannot disturb a
    * search the user is running, and a search cannot cancel it.
    */
-  let labelController: AbortController | null = null;
   async function lookupLabels(): Promise<void> {
     labelController?.abort();
     const controller = new AbortController();
     labelController = controller;
     const fingerprint = depFingerprint;
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(timeoutError()), 5000);
     try {
       const response = await authenticatedFetch(
         buildUrl(''),
@@ -655,7 +655,6 @@
   // focuses the field. When the config allows an empty query, look the labels
   // up once per set of unknown values and dependency values, so a value the
   // endpoint does not return is not retried in a loop.
-  let labelLookupKey = '';
   $effect(() => {
     if (!fetchOnFocus || minChars > 0) return;
     const missing = selectedValues.filter((val) => !labelCache.has(val));
