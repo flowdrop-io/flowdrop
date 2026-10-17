@@ -107,6 +107,9 @@
   // lookupLabels and the effect that calls it).
   let labelController: AbortController | null = null;
   let labelLookupKey = '';
+  // Values typed into this field rather than loaded from outside; no endpoint
+  // has a label for them, so the label lookup skips them.
+  const typed = new Set<string>();
 
   // Popover positioning style
   let popoverStyle = $state('');
@@ -283,7 +286,12 @@
         return;
       }
       logger.error('[FormAutocomplete] Fetch error:', err);
-      error = err instanceof Error ? err.message : 'Failed to fetch suggestions';
+      error =
+        err instanceof Error
+          ? err.name === 'TimeoutError'
+            ? t.timedOut
+            : err.message
+          : 'Failed to fetch suggestions';
       suggestions = [];
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId);
@@ -372,13 +380,24 @@
       // Backspace-on-empty. Replaces the per-keystroke commit dropped from
       // handleInput; see issue #32.
       if (allowFreeText && !multiple && inputValue !== '') {
-        const currentSingle = selectedValues[0] ?? '';
-        if (inputValue !== currentSingle) {
-          labelCache.set(inputValue, inputValue);
-          onChange(inputValue);
-        }
+        commitFreeText(inputValue);
       }
     }, 200);
+  }
+
+  /**
+   * Commit text the user typed as a value (free-text mode). Adds it in
+   * multiple mode unless already selected; replaces the value in single mode
+   * unless unchanged.
+   * @param text - The typed text
+   */
+  function commitFreeText(text: string): void {
+    typed.add(text);
+    if (multiple) {
+      if (!selectedValues.includes(text)) onChange([...selectedValues, text]);
+    } else if (text !== (selectedValues[0] ?? '')) {
+      onChange(text);
+    }
   }
 
   /**
@@ -474,16 +493,10 @@
         if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
           selectOption(suggestions[highlightedIndex]);
         } else if (allowFreeText && inputValue !== '') {
+          commitFreeText(inputValue);
           if (multiple) {
-            const current = selectedValues;
-            if (!current.includes(inputValue)) {
-              labelCache.set(inputValue, inputValue);
-              onChange([...current, inputValue]);
-            }
             inputValue = '';
           } else {
-            labelCache.set(inputValue, inputValue);
-            onChange(inputValue);
             hideDropdown();
           }
         }
@@ -657,7 +670,7 @@
   // endpoint does not return is not retried in a loop.
   $effect(() => {
     if (!fetchOnFocus || minChars > 0) return;
-    const missing = selectedValues.filter((val) => !labelCache.has(val));
+    const missing = selectedValues.filter((val) => !labelCache.has(val) && !typed.has(val));
     if (missing.length === 0) return;
     const key = `${depFingerprint}|${missing.join('\u0000')}`;
     if (key === labelLookupKey) return;

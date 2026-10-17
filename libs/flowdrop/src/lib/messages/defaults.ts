@@ -114,6 +114,7 @@ export const defaultMessages = {
       clearAll: 'Clear all selections',
       suggestions: 'Suggestions',
       retry: 'Retry',
+      timedOut: 'The request timed out',
       noResults: 'No results found'
     },
 

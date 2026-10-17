@@ -260,6 +260,29 @@ describe('FormAutocomplete requests in flight', () => {
     expect(pending.map((p) => p.url)).toEqual(['/suggest?q=custom']);
   });
 
+  it('a typed value that is a known option keeps its label', async () => {
+    const props = $state({
+      id: 'f',
+      value: [] as string[],
+      autocomplete: { url: '/suggest', allowFreeText: true, multiple: true, debounceMs: 0 },
+      onChange: vi.fn((v: string[]) => (props.value = v))
+    });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    mounted = mount(FormAutocomplete, { target, props });
+    const input = target.querySelector('input')!;
+    input.value = 'org-acme';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await settle();
+    pending[0].resolve(OPTIONS);
+    await settle();
+    // Enter without picking the suggestion commits the typed text.
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await settle();
+    expect(props.value).toEqual(['org-acme']);
+    expect(tags(target)).toEqual(['Acme Corp']);
+  });
+
   it('a search that times out shows an error instead of nothing', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     try {
@@ -269,7 +292,7 @@ describe('FormAutocomplete requests in flight', () => {
       await vi.advanceTimersByTimeAsync(5000);
       flushSync();
       expect(target.querySelector('.form-autocomplete__spinner')).toBeNull();
-      expect(target.textContent).toContain('Request timed out');
+      expect(target.textContent).toContain('The request timed out');
     } finally {
       vi.useRealTimers();
     }
