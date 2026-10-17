@@ -65,9 +65,12 @@ test.describe('Autocomplete placement', () => {
       timeout: 10000
     });
 
+    // Focusing the field can scroll the panel, so measure the field again now
+    // that the list is open, not the box from before the click.
+    const field2 = (await field.boundingBox())!;
     const pop = (await popover.boundingBox())!;
     // Opened above, with its bottom edge just over the field's top edge.
-    const gap = box.y - (pop.y + pop.height);
+    const gap = field2.y - (pop.y + pop.height);
     expect(gap).toBeGreaterThanOrEqual(0);
     expect(gap).toBeLessThan(12);
   });
