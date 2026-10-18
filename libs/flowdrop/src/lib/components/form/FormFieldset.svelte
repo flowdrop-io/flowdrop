@@ -8,7 +8,7 @@
 -->
 
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import { untrack, type Snippet } from 'svelte';
   import type { UISchemaGroup } from '$lib/types/uischema.js';
   import Icon from '@iconify/svelte';
 
@@ -22,11 +22,13 @@
   let { group, children }: Props = $props();
 
   const isCollapsible = $derived(group.collapsible !== false);
-  const isDefaultOpen = $derived(group.defaultOpen !== false);
+  // `defaultOpen` seeds the fold once; after that the user's toggle owns it. The host rebuilds the
+  // UI schema on every value change, so a reactive `open` would snap the group shut on each keystroke.
+  let isOpen = $state(untrack(() => group.defaultOpen !== false));
 </script>
 
 {#if isCollapsible}
-  <details class="flowdrop-details form-fieldset" open={isDefaultOpen}>
+  <details class="flowdrop-details form-fieldset" bind:open={isOpen}>
     <summary class="flowdrop-details__summary form-fieldset__summary">
       <span class="form-fieldset__label">
         <span class="form-fieldset__title">{group.label}</span>

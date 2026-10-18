@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **A config section you opened stays open while you type in it.** A collapsed group such as General
+  folded shut again on every keystroke, because the form rebuilds its UI schema on each change and the
+  group kept re-applying its `defaultOpen`. `defaultOpen` now only sets where a group starts; after that
+  the user's toggle decides.
+
 ## [2.15.1] - 2026-10-17
 
 ### Fixed
