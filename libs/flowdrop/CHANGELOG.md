@@ -11,11 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Autocomplete URLs relative to the API base** (#49). An `autocomplete.url` without a leading
   slash (`secrets/options`, or `./secrets/options`) resolves against the editor's
-  `endpointConfig.baseUrl`, so a backend can name its own option endpoints and they work behind any
-  API base, including a hub's proxy mount such as `/api/flowdrop/remotes/{id}`. `ConfigForm`
-  provides the base to its fields. Nothing else changes: `https://…` and `//host/…` URLs are used as
-  given, a `/path` URL stays relative to the site (as in the docs' `/api/users/search` example), and
-  `SchemaForm`'s `baseUrl` prop still goes in front of a `/path` URL.
+  `endpointConfig.baseUrl` in every form (config panel, `SchemaForm`, interrupt forms), so a backend
+  can name its own option endpoints and they work behind any API base, including a hub's proxy mount
+  such as `/api/flowdrop/remotes/{id}`. `https://…` and `//host/…` URLs are used as given, and a
+  `/path` URL stays relative to the site (as in the docs' `/api/users/search` example);
+  `SchemaForm`'s `baseUrl` prop still goes in front of it. A URL without a leading slash and no
+  `baseUrl` is used as given, with a logged warning.
 
 ## [2.15.2] - 2026-10-18
 

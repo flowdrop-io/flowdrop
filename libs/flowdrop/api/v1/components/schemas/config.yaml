@@ -337,8 +337,13 @@ AutocompleteConfig:
       type: string
       description: |
         The callback URL to fetch autocomplete suggestions from.
-        Can be relative (resolved against API base URL) or absolute.
-      example: /api/users/search
+
+        - `https://host/…` or `//host/…`: used as given.
+        - `/path`: relative to the site, used as given.
+        - `path` without a leading slash: relative to the API base
+          (`endpointConfig.baseUrl`), so `secrets/options` reaches
+          `{baseUrl}/secrets/options`.
+      example: secrets/options
     queryParam:
       type: string
       default: q
