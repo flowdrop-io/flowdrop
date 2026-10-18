@@ -400,7 +400,7 @@ export interface AutocompleteConfig {
    * - `/path`: relative to the site, used as given (SchemaForm puts its
    *   `baseUrl` prop in front of it).
    * - `path` without a leading slash: relative to the API base
-   *   (`endpointConfig.baseUrl`), so `secrets/options` reaches
+   *   (`endpointConfig.baseUrl`) in every form, so `secrets/options` reaches
    *   `{baseUrl}/secrets/options` wherever the editor mounts the API.
    */
   url: string;

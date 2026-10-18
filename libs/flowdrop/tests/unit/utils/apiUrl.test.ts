@@ -38,4 +38,14 @@ describe('resolveAutocompleteUrl', () => {
     expect(resolveAutocompleteUrl('secrets/options', '')).toBe('secrets/options');
     expect(resolveAutocompleteUrl('secrets/options', undefined)).toBe('secrets/options');
   });
+
+  it('treats the base as a folder, unlike new URL()', () => {
+    expect(resolveAutocompleteUrl('secrets/options', 'https://site/api/flowdrop')).not.toBe(
+      new URL('secrets/options', 'https://site/api/flowdrop').href
+    );
+  });
+
+  it('does not use the base for site-relative paths', () => {
+    expect(resolveAutocompleteUrl('/users', '/api/flowdrop', '/prefix')).toBe('/prefix/users');
+  });
 });

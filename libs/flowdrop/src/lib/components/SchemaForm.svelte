@@ -138,7 +138,8 @@
     authProvider?: AuthProvider;
 
     /**
-     * Base URL for resolving relative autocomplete callback URLs.
+     * Put in front of `/path` autocomplete callback URLs (those with a leading slash).
+     * URLs without a leading slash resolve against the API base instead.
      * @default ""
      */
     baseUrl?: string;

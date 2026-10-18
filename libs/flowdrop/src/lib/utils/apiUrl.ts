@@ -1,7 +1,7 @@
 /**
  * Resolve an autocomplete callback URL from node metadata.
  *
- * The URL's own form says what it is relative to, as in HTML:
+ * The URL's own form says what it is relative to:
  *
  * - `https://host/…` or `//host/…` names its own origin and is used as given.
  * - `/path` is relative to the site and is used as given. A `prefix` (the
@@ -13,9 +13,14 @@
  *   `/api/flowdrop/remotes/r1/secrets/options`). Without a base it is used as
  *   given.
  *
+ * The API base is treated as a folder: its last segment is kept, so
+ * `secrets/options` under `https://site/api/flowdrop` is
+ * `https://site/api/flowdrop/secrets/options`. This differs on purpose from
+ * `new URL()` and HTML resolution, which would drop `flowdrop`.
+ *
  * @param url - The URL from the schema's `autocomplete.url`
  * @param base - The API base (`endpointConfig.baseUrl`), relative or absolute
- * @param prefix - Put in front of `/path` URLs (SchemaForm's `baseUrl`)
+ * @param prefix - Put in front of `/path` URLs (SchemaForm's `baseUrl` prop)
  */
 export function resolveAutocompleteUrl(url: string, base?: string, prefix = ''): string {
   if (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('//')) return url;

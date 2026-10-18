@@ -24,9 +24,10 @@
 -->
 
 <script lang="ts">
-  import { resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
   import { getContext, onMount, untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
+  import { resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
+  import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import Icon from '@iconify/svelte';
   import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
   import type { FieldOption } from './types.js';
@@ -73,10 +74,13 @@
     'flowdrop:getAuthProvider'
   );
   const getBaseUrl = getContext<(() => string) | undefined>('flowdrop:getBaseUrl');
-  const getApiBaseUrl = getContext<(() => string) | undefined>('flowdrop:getApiBaseUrl');
   const getFormValues = getContext<(() => Record<string, unknown>) | undefined>(
     'flowdrop:getFormValues'
   );
+  // The API base comes from the instance, so it is the same in every form
+  // (config panel, SchemaForm, interrupt prompts).
+  const fd = getInstance();
+  let warnedNoApiBase = false;
 
   // Hoist the autocomplete branch — seven reads in the template, one inside
   // an {#each tag} loop. One getter walk per render.
@@ -190,10 +194,18 @@
    * @returns Full URL with query parameter
    */
   function buildUrl(query: string): string {
-    // SchemaForm's `baseUrl` stays a prefix for `/path` URLs, as it always was;
-    // a URL without a leading slash resolves against it or the API base.
+    // A URL without a leading slash resolves against the API base, in every
+    // form. SchemaForm's `baseUrl` prop is only a prefix for `/path` URLs.
+    const apiBase = fd.api.config?.baseUrl ?? '';
     const prefix = getBaseUrl?.() ?? '';
-    const url = resolveAutocompleteUrl(autocomplete.url, prefix || getApiBaseUrl?.(), prefix);
+    const raw = autocomplete.url;
+    if (!apiBase && !warnedNoApiBase && !raw.startsWith('/') && !/^[a-z][a-z\d+.-]*:/i.test(raw)) {
+      warnedNoApiBase = true;
+      logger.warn(
+        `[FormAutocomplete] "${raw}" is relative to the API base, but no endpointConfig.baseUrl is set; using it as given.`
+      );
+    }
+    const url = resolveAutocompleteUrl(raw, apiBase, prefix);
 
     const separator = url.includes('?') ? '&' : '?';
     let fullUrl = `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
