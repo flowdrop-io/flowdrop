@@ -18,19 +18,25 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 const API_BASE = 'https://site/api/flowdrop';
 
-/** Mount with an instance whose API base is `apiBase` (none: not configured). */
+/**
+ * Mount with an instance whose API base is `apiBase` (null: not configured;
+ * undefined: no instance in context at all, as when the field is used alone).
+ */
 function mountField(
   props: { value: string; autocomplete: Record<string, unknown> },
-  apiBase: string | null,
+  apiBase: string | null | undefined,
   context: Record<string, string> = {}
 ): HTMLDivElement {
-  const fd = createFlowDropInstance();
-  if (apiBase !== null) {
-    fd.api.configure({ baseUrl: apiBase, endpoints: {} } as unknown as EndpointConfig);
-  }
   const target = document.createElement('div');
   document.body.appendChild(target);
-  const entries: [unknown, unknown][] = [[FLOWDROP_INSTANCE_KEY, fd]];
+  const entries: [unknown, unknown][] = [];
+  if (apiBase !== undefined) {
+    const fd = createFlowDropInstance();
+    if (apiBase !== null) {
+      fd.api.configure({ baseUrl: apiBase, endpoints: {} } as unknown as EndpointConfig);
+    }
+    entries.push([FLOWDROP_INSTANCE_KEY, fd]);
+  }
   for (const [key, value] of Object.entries(context)) entries.push([key, () => value]);
   mounted = mount(FormAutocomplete, {
     target,
@@ -43,7 +49,7 @@ function mountField(
 /** Mount with `url`, type one letter, and return the URL that was fetched. */
 async function fetchedUrl(
   url: string,
-  apiBase: string | null,
+  apiBase: string | null | undefined,
   context: Record<string, string> = {}
 ): Promise<string> {
   const target = mountField({ value: '', autocomplete: { url, minChars: 0 } }, apiBase, context);
@@ -141,6 +147,10 @@ describe('FormAutocomplete URL resolution', () => {
       expect(fetchMock.mock.calls.length).toBeGreaterThan(1);
       const warnings = warn.mock.calls.filter((c) => String(c[0]).includes('secrets/options'));
       expect(warnings).toHaveLength(1);
+    });
+
+    it('uses the URL as given with no instance in context (the field used alone)', async () => {
+      expect(await fetchedUrl('secrets/options', undefined)).toBe('secrets/options?q=a');
     });
 
     it('does not warn for site-relative or absolute URLs', async () => {

@@ -25,6 +25,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'svelte/server';
 import SchemaForm from '$lib/components/SchemaForm.svelte';
 import FormField from '$lib/components/form/FormField.svelte';
+import FormAutocomplete from '$lib/components/form/FormAutocomplete.svelte';
 import type { ConfigSchema } from '$lib/types/index.js';
 
 const schema: ConfigSchema = {
@@ -97,5 +98,19 @@ describe('SchemaForm SSR (standalone, no <App> ancestor)', () => {
           }
         }).body
     ).toThrow(/No FlowDrop instance/);
+  });
+});
+
+describe('FormAutocomplete SSR (exported on its own, no instance in context)', () => {
+  it('renders without throwing', () => {
+    const { body } = render(FormAutocomplete, {
+      props: {
+        id: 'f',
+        value: '',
+        autocomplete: { url: 'secrets/options' },
+        onChange: () => {}
+      }
+    });
+    expect(body).toContain('id="f"');
   });
 });

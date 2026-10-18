@@ -26,8 +26,9 @@
 <script lang="ts">
   import { getContext, onMount, untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
-  import { resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
-  import { getInstance } from '$lib/stores/getInstance.svelte.js';
+  import { isBaseRelative, resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
+  import { FLOWDROP_INSTANCE_KEY } from '$lib/stores/getInstance.svelte.js';
+  import type { FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
   import Icon from '@iconify/svelte';
   import type { AutocompleteConfig, AuthProvider } from '$lib/types/index.js';
   import type { FieldOption } from './types.js';
@@ -78,8 +79,10 @@
     'flowdrop:getFormValues'
   );
   // The API base comes from the instance, so it is the same in every form
-  // (config panel, SchemaForm, interrupt prompts).
-  const fd = getInstance();
+  // (config panel, SchemaForm, interrupt prompts). Read the context directly,
+  // not via getInstance(): this field is also exported on its own, and without
+  // an instance it should just have no base, not throw during SSR.
+  const fd = getContext<FlowDropInstance | undefined>(FLOWDROP_INSTANCE_KEY);
   let warnedNoApiBase = false;
 
   // Hoist the autocomplete branch — seven reads in the template, one inside
@@ -196,10 +199,10 @@
   function buildUrl(query: string): string {
     // A URL without a leading slash resolves against the API base, in every
     // form. SchemaForm's `baseUrl` prop is only a prefix for `/path` URLs.
-    const apiBase = fd.api.config?.baseUrl ?? '';
+    const apiBase = fd?.api.config?.baseUrl ?? '';
     const prefix = getBaseUrl?.() ?? '';
     const raw = autocomplete.url;
-    if (!apiBase && !warnedNoApiBase && !raw.startsWith('/') && !/^[a-z][a-z\d+.-]*:/i.test(raw)) {
+    if (!apiBase && !warnedNoApiBase && isBaseRelative(raw)) {
       warnedNoApiBase = true;
       logger.warn(
         `[FormAutocomplete] "${raw}" is relative to the API base, but no endpointConfig.baseUrl is set; using it as given.`

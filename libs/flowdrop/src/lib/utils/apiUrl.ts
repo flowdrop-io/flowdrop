@@ -1,3 +1,5 @@
+const HAS_SCHEME = /^[a-z][a-z\d+.-]*:/i;
+
 /**
  * Resolve an autocomplete callback URL from node metadata.
  *
@@ -23,9 +25,17 @@
  * @param prefix - Put in front of `/path` URLs (SchemaForm's `baseUrl` prop)
  */
 export function resolveAutocompleteUrl(url: string, base?: string, prefix = ''): string {
-  if (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('//')) return url;
+  if (HAS_SCHEME.test(url) || url.startsWith('//')) return url;
   if (url.startsWith('/')) return `${prefix}${url}`;
   const root = (base ?? '').replace(/\/+$/, '');
   if (!root) return url;
   return `${root}/${url.replace(/^\.\//, '')}`;
+}
+
+/**
+ * Whether `url` is written relative to the API base: no scheme, no `//host`,
+ * no leading slash (`secrets/options`, `./secrets/options`).
+ */
+export function isBaseRelative(url: string): boolean {
+  return !HAS_SCHEME.test(url) && !url.startsWith('/');
 }
