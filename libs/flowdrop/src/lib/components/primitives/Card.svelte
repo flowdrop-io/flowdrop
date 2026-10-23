@@ -8,7 +8,7 @@
   **Use it for** a bordered group of content, such as an input form or a prompt that waits for an answer.
   **Not for** a whole panel; use `PanelHeader` for the top strip of a panel.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

@@ -11,7 +11,7 @@
 
   `float` draws the switch as its own floating control, as in the canvas toolbar.
 
-  Not exported from the package; not public API yet.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

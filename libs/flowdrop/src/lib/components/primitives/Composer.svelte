@@ -17,7 +17,7 @@
   **Use it for** the Playground chat, the AI assistant and the Console prompt.
   **Not for** a short single-line field; use a plain input inside `Field`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

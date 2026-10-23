@@ -17,7 +17,7 @@
   **Use it for** a list of actions behind one control.
   **Not for** choosing a value for a field; use `Select`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts" module>

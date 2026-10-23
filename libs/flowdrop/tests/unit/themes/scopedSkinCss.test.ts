@@ -3,6 +3,7 @@ import {
   aliasClosure,
   buildScopedSkinCss,
   scopeSelector,
+  skinCss,
   toScopeId
 } from '../../../src/lib/themes/scopedSkinCss.js';
 
@@ -102,5 +103,18 @@ describe('buildScopedSkinCss', () => {
     expect(id).toBe('x_____body__');
     expect(toScopeId(id)).toBe(id);
     expect(scopeSelector(id)).toBe(`[data-fd-scope="${id}"]`);
+  });
+});
+
+describe('skinCss', () => {
+  it('applies a skin to :root, with dark tokens under data-theme', () => {
+    const css = skinCss({ tokens: { primary: '#111' }, darkTokens: { primary: '#eee' } });
+    expect(css).toContain(':root:root {');
+    expect(css).toContain(`:root[data-theme='dark'] {`);
+    expect(css).toContain('--fd-primary: #eee;');
+  });
+
+  it('takes another selector', () => {
+    expect(skinCss({ tokens: { primary: '#111' } }, '.app')).toContain('.app.app {');
   });
 });

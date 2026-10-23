@@ -18,7 +18,7 @@
   Each tab has `id={tabId(idBase, value)}` and `aria-controls={tabPanelId(idBase, value)}`.
   Without `idBase` an id is generated that you cannot know, so pass `idBase` whenever panels exist.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts" module>

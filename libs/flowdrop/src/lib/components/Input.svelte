@@ -10,8 +10,8 @@
   Native attributes (type, value, placeholder, disabled, id, aria-*, oninput…)
   are forwarded verbatim to the underlying <input>.
 
-  Internal for now (not exported from any public entry) so the API isn't frozen
-  before GA. Existing hand-rolled inputs migrate onto it incrementally.
+  Exported from `@flowdrop/flowdrop/ui`. Existing hand-rolled inputs migrate onto it
+  incrementally.
 -->
 
 <script lang="ts">
