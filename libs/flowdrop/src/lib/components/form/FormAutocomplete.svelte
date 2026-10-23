@@ -194,15 +194,20 @@
 
   /**
    * Auth for a request: the form's provider, or, where the form has none
-   * (interrupt forms), the instance's for URLs that are not absolute, i.e.
-   * requests to the site or the API base.
+   * (interrupt forms), the instance's for requests to the site or under an
+   * absolute API base. Other hosts get no instance auth.
    */
-  function currentAuthProvider(): AuthProvider | undefined {
+  function currentAuthProvider(requestUrl: string): AuthProvider | undefined {
     const fromForm = getAuthProvider?.();
     if (fromForm) return fromForm;
-    const raw = autocomplete.url;
-    if (isAbsoluteUrl(raw)) return undefined;
-    return fd?.api.authProvider;
+    // Judge the URL that is actually fetched, not the configured one: a
+    // no-slash URL can resolve against an absolute baseUrl prop.
+    if (!isAbsoluteUrl(requestUrl)) return fd?.api.authProvider;
+    const apiBase = (fd?.api.config?.baseUrl ?? '').replace(/\/+$/, '');
+    if (apiBase && isAbsoluteUrl(apiBase) && requestUrl.startsWith(`${apiBase}/`)) {
+      return fd?.api.authProvider;
+    }
+    return undefined;
   }
 
   /**
@@ -289,7 +294,7 @@
     const requestUrl = buildUrl(query);
     if (requestUrl === null) {
       suggestions = [];
-      error = 'Failed to fetch suggestions';
+      error = t.invalidUrl;
       return;
     }
 
@@ -310,7 +315,7 @@
       const response = await authenticatedFetch(
         requestUrl,
         { method: 'GET', signal: controller.signal },
-        { authProvider: currentAuthProvider() }
+        { authProvider: currentAuthProvider(requestUrl) }
       );
 
       if (!response.ok) {
@@ -696,7 +701,7 @@
       const response = await authenticatedFetch(
         requestUrl,
         { method: 'GET', signal: controller.signal },
-        { authProvider: currentAuthProvider() }
+        { authProvider: currentAuthProvider(requestUrl) }
       );
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

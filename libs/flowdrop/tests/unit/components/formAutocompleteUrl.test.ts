@@ -217,6 +217,27 @@ describe('FormAutocomplete URL resolution', () => {
       expect(authOf()).toBeUndefined();
     });
 
+    it('a path resolved against a baseUrl prop on another host gets no instance auth', async () => {
+      const url = await fetchedUrl(
+        'users/search',
+        null,
+        { 'flowdrop:getBaseUrl': 'https://api.x' },
+        { instanceAuth: authWith('inst'), formAuth: null }
+      );
+      expect(url).toBe('https://api.x/users/search?q=a');
+      expect(authOf()).toBeUndefined();
+    });
+
+    it('an absolute URL under the absolute API base gets the instance auth', async () => {
+      await fetchedUrl(
+        `${API_BASE}/users`,
+        API_BASE,
+        {},
+        { instanceAuth: authWith('inst'), formAuth: null }
+      );
+      expect(authOf()).toBe('inst');
+    });
+
     it('absolute URLs still get the form provider', async () => {
       await fetchedUrl(
         'https://other.test/users',

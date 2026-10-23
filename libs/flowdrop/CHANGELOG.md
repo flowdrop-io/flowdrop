@@ -22,8 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   error is logged.
 - **Interrupt forms send the editor's auth with autocomplete requests.** `FormPrompt` has no
   `authProvider` of its own, so its autocomplete fields went out without auth. They now use the
-  instance's auth provider for URLs without a scheme or `//host` (requests to the site or the API
-  base). Absolute URLs still use only the form's provider.
+  instance's auth provider for requests to the site or under an absolute API base, judged by the
+  URL that is fetched. Requests to other hosts, including a `baseUrl` prop pointing elsewhere, still
+  use only the form's provider.
 
 ### Changed
 
