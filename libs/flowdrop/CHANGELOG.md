@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `data-theme="dark"`. Load `tokens.css` first and add the result as a stylesheet. Both are exported from
   `@flowdrop/flowdrop/ui`.
 
+### Changed
+
+- **`@flowdrop/flowdrop/webmcp` is labelled experimental in 2.x**, like the new `./ui` entry. WebMCP is
+  still behind a browser origin trial, and the adapter already changed shape in a minor (2.8.0). Its
+  names, options and tool shapes may change in a minor release; every change is listed here. This
+  covers the `webmcp` option of `mountFlowDropApp`. The README's entry table lists it now, with a note
+  on what experimental means.
+
 ## [2.15.2] - 2026-10-18
 
 ### Fixed

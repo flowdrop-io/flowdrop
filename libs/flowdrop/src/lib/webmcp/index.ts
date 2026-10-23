@@ -10,6 +10,11 @@
  * These are tools for *editing* a workflow in the browser. They are unrelated
  * to the tools a running workflow hands to an LLM node.
  *
+ * Experimental in 2.x: names, options and tool shapes may still change in a
+ * minor release while WebMCP itself settles (it is behind a browser origin
+ * trial). This covers the `webmcp` option of `mountFlowDropApp` too. Pin a
+ * minor version (`~2.16.0`) if you depend on it.
+ *
  * @module webmcp
  *
  * @example Svelte host
