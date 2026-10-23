@@ -34,9 +34,46 @@ describe('resolveAutocompleteUrl', () => {
     );
   });
 
-  it('leaves a relative path alone without a base', () => {
+  it('uses the prefix for a path without a leading slash when there is no base', () => {
+    expect(resolveAutocompleteUrl('users/search', '', 'https://api.x')).toBe(
+      'https://api.x/users/search'
+    );
+    expect(resolveAutocompleteUrl('./users/search', undefined, '/api/')).toBe('/api/users/search');
+  });
+
+  it('prefers the base over the prefix for a path without a leading slash', () => {
+    expect(resolveAutocompleteUrl('users/search', '/api/flowdrop', 'https://api.x')).toBe(
+      '/api/flowdrop/users/search'
+    );
+  });
+
+  it('leaves a relative path alone with neither base nor prefix', () => {
     expect(resolveAutocompleteUrl('secrets/options', '')).toBe('secrets/options');
     expect(resolveAutocompleteUrl('secrets/options', undefined)).toBe('secrets/options');
+  });
+
+  it.each(['', '   ', '?q=1', '#frag', '..', '../x', 'a/../b', './../x', 'a/..', 'a/../b?x=1'])(
+    'refuses the malformed form %j',
+    (url) => {
+      expect(resolveAutocompleteUrl(url, '/api/flowdrop', '/p')).toBeNull();
+      expect(resolveAutocompleteUrl(url)).toBeNull();
+    }
+  );
+
+  it.each([
+    ['./x', '/api/x'],
+    ['a/b', '/api/a/b'],
+    ['a..b', '/api/a..b'],
+    ['a/b..c/d', '/api/a/b..c/d'],
+    ['x?next=../y', '/api/x?next=../y']
+  ])('allows %j', (url, expected) => {
+    expect(resolveAutocompleteUrl(url, '/api')).toBe(expected);
+  });
+
+  it('does not refuse site-relative or absolute URLs', () => {
+    expect(resolveAutocompleteUrl('/a/../b', '/api')).toBe('/a/../b');
+    expect(resolveAutocompleteUrl('https://x.test/../a', '/api')).toBe('https://x.test/../a');
+    expect(resolveAutocompleteUrl('//x.test/a/..', '/api')).toBe('//x.test/a/..');
   });
 
   it('treats the base as a folder, unlike new URL()', () => {
