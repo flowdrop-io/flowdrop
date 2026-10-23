@@ -7,8 +7,7 @@
  * @module svelte-app
  */
 
-import { mount, unmount } from 'svelte';
-import type { Snippet } from 'svelte';
+import { mount, unmount, createRawSnippet } from 'svelte';
 import WorkflowEditor from './components/WorkflowEditor.svelte';
 import App from './components/App.svelte';
 import type {
@@ -170,10 +169,25 @@ export interface FlowDropMountOptions {
   branding?: NavbarBranding;
   /**
    * Host content at the navbar's trailing end, before the settings gear, e.g. a
-   * user menu. Only shown with the navbar. A Svelte host passes a snippet from its
-   * template; other hosts can build one with `createRawSnippet`.
+   * user menu. Only shown with the navbar.
+   *
+   * The library renders an empty host element there and calls this with it. The
+   * callback runs whenever the navbar renders that slot (so it may run again if the
+   * navbar is re-mounted); the function it returns, if any, is called when the slot
+   * goes away.
+   *
+   * @example
+   * // Svelte host
+   * navbarEnd: (target) => {
+   *   const c = mount(UserMenu, { target });
+   *   return () => unmount(c);
+   * }
+   *
+   * @example
+   * // Plain JS host
+   * navbarEnd: (target) => target.append(button)
    */
-  navbarEnd?: Snippet;
+  navbarEnd?: (target: HTMLElement) => void | (() => void);
   /** Show settings gear icon in navbar */
   showSettings?: boolean;
   /** Show the "Connected" status indicator in the navbar (default: true) */
@@ -771,6 +785,15 @@ export async function mountFlowDropApp(
     contextMenu
   } = options;
 
+  // The host's element callback becomes a snippet: one empty host element, handed
+  // to the callback in `setup`, whose return value is the cleanup.
+  const navbarEndSnippet = navbarEnd
+    ? createRawSnippet(() => ({
+        render: () => '<div class="flowdrop-navbar__host-end"></div>',
+        setup: (el) => navbarEnd(el as HTMLElement)
+      }))
+    : undefined;
+
   // Per-instance state container — this is what allows multiple FlowDrop
   // editors to coexist on one page without sharing workflow/history state.
   const { fd, isDefault } = acquireInstance(instanceId);
@@ -846,7 +869,7 @@ export async function mountFlowDropApp(
       navbarTitle,
       navbarActions,
       branding,
-      navbarEnd,
+      navbarEnd: navbarEndSnippet,
       showSettings,
       showStatus,
       endpointConfig: config,

@@ -69,6 +69,17 @@ test.describe('Navbar end content', () => {
     await gotoEditor(page, 'workflow=simple&navbarEnd=1');
     const end = navbar(page).locator('.flowdrop-navbar__end');
     await expect(end.getByTestId('navbar-end-test')).toHaveText('Ada Lovelace');
+    // DOM order: the host content comes before the settings gear.
+    const hostBeforeGear = await end.evaluate((el) => {
+      const host = el.querySelector('[data-testid="navbar-end-test"]');
+      const gear = el.querySelector('.flowdrop-navbar__settings-btn');
+      return (
+        !!host &&
+        !!gear &&
+        !!(host.compareDocumentPosition(gear) & Node.DOCUMENT_POSITION_FOLLOWING)
+      );
+    });
+    expect(hostBeforeGear).toBe(true);
   });
 
   test('renders nothing without the snippet', async ({ page }) => {

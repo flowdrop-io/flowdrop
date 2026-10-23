@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`App` takes a `navbarEnd` snippet.** It renders at the navbar's trailing end, before the settings
   gear, so a host can put its own controls there, such as a user menu. `Navbar` already had this as
-  its `end` slot; `App` now forwards it. It shows only when the navbar does. `mountFlowDropApp` takes
-  the same `navbarEnd` option.
+  its `end` slot; `App` now forwards it. It shows only when the navbar does. `mountFlowDropApp`
+  takes `navbarEnd` as an element callback, `(target: HTMLElement) => void | (() => void)`, so
+  hosts without Svelte snippets can fill the slot; the function it returns runs on cleanup.
 
 ## [2.15.2] - 2026-10-18
 
