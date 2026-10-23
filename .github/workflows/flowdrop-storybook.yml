@@ -21,7 +21,7 @@ on:
 jobs:
   storybook:
     name: Stories pass as tests, Storybook builds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # Playwright cannot install Chromium on 26.04
     defaults:
       run:
         working-directory: libs/flowdrop
@@ -37,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'pnpm'
           cache-dependency-path: libs/flowdrop/pnpm-lock.yaml
 

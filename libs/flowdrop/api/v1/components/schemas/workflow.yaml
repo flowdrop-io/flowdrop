@@ -365,6 +365,7 @@ PlaygroundChatBinding:
       nullable: true
       description: Interface input that receives the person's message.
     history:
+      type: object
       allOf:
         - $ref: '#/PlaygroundChatHistory'
       nullable: true
@@ -398,6 +399,7 @@ WorkflowPlayground:
     binding.
   properties:
     chat:
+      type: object
       allOf:
         - $ref: '#/PlaygroundChatBinding'
       nullable: true
