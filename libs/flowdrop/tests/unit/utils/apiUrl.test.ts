@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
+import { mayCarryInstanceAuth, resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
 
 describe('resolveAutocompleteUrl', () => {
   it('keeps URLs that name their own origin', () => {
@@ -60,6 +60,37 @@ describe('resolveAutocompleteUrl', () => {
     }
   );
 
+  it.each(['%2e%2e/x', '.%2E/x', '%2E./x', 'a/%2e%2e/%2e%2e/b'])(
+    'refuses the percent-encoded parent segment in %j',
+    (url) => {
+      expect(resolveAutocompleteUrl(url, '/api/flowdrop')).toBeNull();
+    }
+  );
+
+  // The browser reads each of these as another host or a climb out of the base.
+  it.each([
+    '/\\other.test/opts',
+    '/\t/other.test/opts',
+    ' //other.test/opts',
+    '\t//other.test/opts',
+    '//other.test/opts\n',
+    'a\\..\\..\\x',
+    'sec\nrets/options',
+    'https://x.test/a\\b'
+  ])('refuses %j in any form', (url) => {
+    expect(resolveAutocompleteUrl(url, '/api/flowdrop', '/p')).toBeNull();
+    expect(resolveAutocompleteUrl(url)).toBeNull();
+  });
+
+  it('keeps a backslash in the query string', () => {
+    expect(resolveAutocompleteUrl('x?q=a\\b', '/api')).toBe('/api/x?q=a\\b');
+  });
+
+  it('reads host:port without a scheme as a scheme, so the URL is used as given', () => {
+    // `localhost:` parses as a scheme; the fetch fails rather than going anywhere.
+    expect(resolveAutocompleteUrl('localhost:8080/opts', '/api')).toBe('localhost:8080/opts');
+  });
+
   it.each([
     ['./x', '/api/x'],
     ['a/b', '/api/a/b'],
@@ -84,5 +115,40 @@ describe('resolveAutocompleteUrl', () => {
 
   it('does not use the base for site-relative paths', () => {
     expect(resolveAutocompleteUrl('/users', '/api/flowdrop', '/prefix')).toBe('/prefix/users');
+  });
+});
+
+describe('mayCarryInstanceAuth', () => {
+  const page = 'https://site.test/admin/editor';
+
+  it.each([
+    ['/api/users', '/api/flowdrop'],
+    ['secrets/options', '/api/flowdrop'],
+    ['https://site.test/other', 'https://api.test/flowdrop'],
+    ['https://api.test/flowdrop/users', 'https://api.test/flowdrop/'],
+    ['//api.test/flowdrop/users', 'https://api.test/flowdrop']
+  ])('allows %j (API base %j)', (url, base) => {
+    expect(mayCarryInstanceAuth(url, base, page)).toBe(true);
+  });
+
+  it.each([
+    ['https://other.test/users', '/api/flowdrop'],
+    ['//other.test/users', '/api/flowdrop'],
+    ['/\\other.test/users', '/api/flowdrop'],
+    ['/\t/other.test/users', '/api/flowdrop'],
+    [' //other.test/users', ''],
+    ['https://api.test/flowdropX/users', 'https://api.test/flowdrop'],
+    ['https://api.test/flowdrop/../admin', 'https://api.test/flowdrop'],
+    ['https://api.test/flowdrop/%2e%2e/admin', 'https://api.test/flowdrop'],
+    ['data:text/plain,x', '/api']
+  ])('refuses %j (API base %j)', (url, base) => {
+    expect(mayCarryInstanceAuth(url, base, page)).toBe(false);
+  });
+
+  it('without a page, allows only an absolute URL under an absolute API base', () => {
+    expect(mayCarryInstanceAuth('/api/users', '/api', undefined)).toBe(false);
+    expect(mayCarryInstanceAuth('https://api.test/f/x', 'https://api.test/f', undefined)).toBe(
+      true
+    );
   });
 });

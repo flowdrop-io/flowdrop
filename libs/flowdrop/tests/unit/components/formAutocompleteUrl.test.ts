@@ -238,6 +238,16 @@ describe('FormAutocomplete URL resolution', () => {
       expect(authOf()).toBe('inst');
     });
 
+    it('an absolute URL on the page origin gets the instance auth', async () => {
+      await fetchedUrl(
+        `${location.origin}/api/users`,
+        API_BASE,
+        {},
+        { instanceAuth: authWith('inst'), formAuth: null }
+      );
+      expect(authOf()).toBe('inst');
+    });
+
     it('absolute URLs still get the form provider', async () => {
       await fetchedUrl(
         'https://other.test/users',
@@ -272,7 +282,7 @@ describe('FormAutocomplete URL resolution', () => {
       }
     }
 
-    it.each(['../secrets', '?x=1', '#a', 'a/../b'])(
+    it.each(['../secrets', '?x=1', '#a', 'a/../b', '%2e%2e/secrets', '/\\other.test/opts'])(
       'fetches nothing for %j and logs one error',
       async (url) => {
         const target = mountField({ value: '', autocomplete: { url, minChars: 0 } }, API_BASE);

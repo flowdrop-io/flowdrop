@@ -26,7 +26,11 @@
 <script lang="ts">
   import { getContext, onMount, untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
-  import { isAbsoluteUrl, isBaseRelative, resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
+  import {
+    isBaseRelative,
+    mayCarryInstanceAuth,
+    resolveAutocompleteUrl
+  } from '$lib/utils/apiUrl.js';
   import { FLOWDROP_INSTANCE_KEY } from '$lib/stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
   import Icon from '@iconify/svelte';
@@ -200,14 +204,13 @@
   function currentAuthProvider(requestUrl: string): AuthProvider | undefined {
     const fromForm = getAuthProvider?.();
     if (fromForm) return fromForm;
-    // Judge the URL that is actually fetched, not the configured one: a
-    // no-slash URL can resolve against an absolute baseUrl prop.
-    if (!isAbsoluteUrl(requestUrl)) return fd?.api.authProvider;
-    const apiBase = (fd?.api.config?.baseUrl ?? '').replace(/\/+$/, '');
-    if (apiBase && isAbsoluteUrl(apiBase) && requestUrl.startsWith(`${apiBase}/`)) {
-      return fd?.api.authProvider;
-    }
-    return undefined;
+    // Judge the URL that is actually fetched, resolved as the browser does, not
+    // the configured text: a no-slash URL can resolve against an absolute
+    // baseUrl prop.
+    const pageUrl = typeof location === 'undefined' ? undefined : location.href;
+    return mayCarryInstanceAuth(requestUrl, fd?.api.config?.baseUrl ?? '', pageUrl)
+      ? fd?.api.authProvider
+      : undefined;
   }
 
   /**
@@ -223,21 +226,21 @@
     const apiBase = fd?.api.config?.baseUrl ?? '';
     const prefix = getBaseUrl?.() ?? '';
     const raw = autocomplete.url;
-    if (!apiBase && !prefix && !warnedNoApiBase && isBaseRelative(raw)) {
-      warnedNoApiBase = true;
-      logger.warn(
-        `[FormAutocomplete] "${raw}" is relative to the API base, but no endpointConfig.baseUrl is set; using it as given.`
-      );
-    }
     const url = resolveAutocompleteUrl(raw, apiBase, prefix);
     if (url === null) {
       if (!loggedRefusedUrl) {
         loggedRefusedUrl = true;
         logger.error(
-          `[FormAutocomplete] Refusing autocomplete URL "${raw}": a URL without a leading slash must not be empty, start with ? or #, or contain a ".." segment. Nothing is fetched.`
+          `[FormAutocomplete] Refusing autocomplete URL "${raw}": it must not contain a tab or newline, a space at either end or a backslash in its path, and without a leading slash it must not be empty, start with ? or #, or contain a ".." segment. Nothing is fetched.`
         );
       }
       return null;
+    }
+    if (!apiBase && !prefix && !warnedNoApiBase && isBaseRelative(raw)) {
+      warnedNoApiBase = true;
+      logger.warn(
+        `[FormAutocomplete] "${raw}" is relative to the API base, but no endpointConfig.baseUrl is set; using it as given.`
+      );
     }
 
     const separator = url.includes('?') ? '&' : '?';

@@ -281,8 +281,10 @@ Autocomplete fields fetch suggestions from a remote API as the user types.
   backend name its own endpoints without knowing where the editor reaches it. Where no API base is
   configured, such as a standalone `SchemaForm`, its `baseUrl` prop is used instead. With neither,
   the URL is used as given and a warning is logged.
-- A URL without a leading slash that is empty, starts with `?` or `#`, or has a `..` path segment is
-  refused: nothing is fetched and one error is logged.
+- Refused, so nothing is fetched and one error is logged: any URL with a tab or newline, a space at
+  either end or a backslash in its path (the browser would fetch something other than the text
+  says), and a URL without a leading slash that is empty, starts with `?` or `#`, or has a `..` path
+  segment (`%2e%2e` included).
 
 This differs from `endpointConfig.endpoints`, where paths are always relative to `baseUrl`.
 

@@ -1,14 +1,36 @@
 const HAS_SCHEME = /^[a-z][a-z\d+.-]*:/i;
 
 /**
+ * Text the URL parser does not read as written: tab or newline anywhere (it
+ * drops them), a control character or space at either end (it trims them), or
+ * a backslash in the path (it reads `\` as `/`). With them, ` //host`, `/\host`
+ * and `/\t/host` are other hosts and `a\..\x` climbs out of the base.
+ */
+// eslint-disable-next-line no-control-regex -- matching control characters is the point
+const PARSER_REWRITES = /[\t\n\r]|^[\u0000-\u0020]|[\u0000-\u0020]$/;
+
+/** A path segment the URL parser treats as `..`, including `%2e` spellings. */
+function isDoubleDot(segment: string): boolean {
+  return segment.replace(/%2e/gi, '.') === '..';
+}
+
+/**
+ * Whether a URL is refused in any form: its text is not what the parser reads
+ * (see PARSER_REWRITES).
+ */
+function isAmbiguous(url: string): boolean {
+  return PARSER_REWRITES.test(url) || url.split(/[?#]/, 1)[0].includes('\\');
+}
+
+/**
  * Whether a no-slash URL is refused: empty, starting with `?` or `#`, or with
- * a `..` path segment (the part before any `?` or `#`). `./x`, `a/b` and
- * `a..b` are fine.
+ * a `..` path segment (the part before any `?` or `#`; `%2e%2e` counts). `./x`,
+ * `a/b` and `a..b` are fine.
  */
 function isMalformedBaseRelative(url: string): boolean {
-  if (url.trim() === '' || url.startsWith('?') || url.startsWith('#')) return true;
+  if (url === '' || url.startsWith('?') || url.startsWith('#')) return true;
   const path = url.split(/[?#]/, 1)[0];
-  return path.split('/').includes('..');
+  return path.split('/').some(isDoubleDot);
 }
 
 /**
@@ -32,8 +54,11 @@ function isMalformedBaseRelative(url: string): boolean {
  * `https://site/api/flowdrop/secrets/options`. This differs on purpose from
  * `new URL()` and HTML resolution, which would drop `flowdrop`.
  *
- * A no-slash URL that is empty, starts with `?` or `#`, or contains a `..`
- * path segment is refused: the result is `null`.
+ * Refused, the result is `null`: any URL with a tab or newline, a control
+ * character or space at either end, or a backslash in its path (the browser
+ * would fetch something other than its text says), and a no-slash URL that is
+ * empty, starts with `?` or `#`, or contains a `..` path segment (`%2e%2e`
+ * included).
  *
  * @param url - The URL from the schema's `autocomplete.url`
  * @param base - The API base (`endpointConfig.baseUrl`), relative or absolute
@@ -42,6 +67,7 @@ function isMalformedBaseRelative(url: string): boolean {
  * @returns The URL to fetch, or `null` when the URL is refused
  */
 export function resolveAutocompleteUrl(url: string, base?: string, prefix = ''): string | null {
+  if (isAmbiguous(url)) return null;
   if (isAbsoluteUrl(url)) return url;
   if (url.startsWith('/')) return `${prefix}${url}`;
   if (isMalformedBaseRelative(url)) return null;
@@ -64,4 +90,31 @@ export function isBaseRelative(url: string): boolean {
  */
 export function isAbsoluteUrl(url: string): boolean {
   return HAS_SCHEME.test(url) || url.startsWith('//');
+}
+
+/**
+ * Whether a request may carry the instance's auth: it goes to the page's own
+ * origin, or to the API base's origin under the base path. Decided on the URL
+ * the browser actually fetches, not on its text.
+ *
+ * @param requestUrl - The URL that is fetched
+ * @param apiBase - The API base (`endpointConfig.baseUrl`), relative or absolute
+ * @param pageUrl - The page's URL (`location.href`); without one (SSR) only an
+ *   absolute URL under an absolute API base qualifies
+ */
+export function mayCarryInstanceAuth(
+  requestUrl: string,
+  apiBase: string,
+  pageUrl: string | undefined
+): boolean {
+  try {
+    const target = new URL(requestUrl, pageUrl);
+    if (pageUrl && target.origin === new URL(pageUrl).origin) return true;
+    if (!apiBase) return false;
+    const root = new URL(`${apiBase.replace(/\/+$/, '')}/`, pageUrl);
+    return target.origin === root.origin && target.pathname.startsWith(root.pathname);
+  } catch {
+    // Not parseable against the page (or no page at all): no instance auth.
+    return false;
+  }
 }
