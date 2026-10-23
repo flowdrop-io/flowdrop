@@ -3254,9 +3254,13 @@ components:
 
             - `https://host/…` or `//host/…`: used as given.
             - `/path`: relative to the site, used as given.
-            - `path` without a leading slash: relative to the API base
+            - `path` or `./path` without a leading slash: relative to the API base
               (`endpointConfig.baseUrl`), so `secrets/options` reaches
-              `{baseUrl}/secrets/options`.
+              `{baseUrl}/secrets/options`. Where no API base is configured (a
+              standalone `SchemaForm`), the form's `baseUrl` prop is used instead;
+              with neither, the URL is used as given.
+            - Refused, nothing is fetched: a URL without a leading slash that is
+              empty, starts with `?` or `#`, or has a `..` path segment.
           example: secrets/options
         queryParam:
           type: string

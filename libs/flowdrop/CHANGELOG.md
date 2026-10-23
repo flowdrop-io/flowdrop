@@ -15,8 +15,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   can name its own option endpoints and they work behind any API base, including a hub's proxy mount
   such as `/api/flowdrop/remotes/{id}`. `https://…` and `//host/…` URLs are used as given, and a
   `/path` URL stays relative to the site (as in the docs' `/api/users/search` example);
-  `SchemaForm`'s `baseUrl` prop still goes in front of it. A URL without a leading slash and no
-  `baseUrl` is used as given, with a logged warning.
+  `SchemaForm`'s `baseUrl` prop still goes in front of it. Where no API base is configured, a
+  no-slash URL resolves against `SchemaForm`'s `baseUrl` prop instead (as a standalone `SchemaForm`
+  always did); with neither it is used as given, with a logged warning. A no-slash URL that is
+  empty, starts with `?` or `#`, or has a `..` path segment is refused: nothing is fetched and one
+  error is logged.
+- **Interrupt forms send the editor's auth with autocomplete requests.** `FormPrompt` has no
+  `authProvider` of its own, so its autocomplete fields went out without auth. They now use the
+  instance's auth provider for URLs without a scheme or `//host` (requests to the site or the API
+  base). Absolute URLs still use only the form's provider.
+
+### Changed
+
+- `SchemaForm`'s `baseUrl` prop now only applies to URLs without a leading slash when no API base is
+  configured; an API base on the instance takes precedence. It still goes in front of `/path` URLs.
 
 ## [2.15.2] - 2026-10-18
 

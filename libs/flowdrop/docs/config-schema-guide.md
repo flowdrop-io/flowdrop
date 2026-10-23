@@ -260,7 +260,7 @@ Autocomplete fields fetch suggestions from a remote API as the user types.
 
 | Option          | Type      | Default   | Description                          |
 | --------------- | --------- | --------- | ------------------------------------ |
-| `url`           | `string`  | —         | API endpoint for suggestions         |
+| `url`           | `string`  | —         | Endpoint for suggestions (see below) |
 | `queryParam`    | `string`  | `"q"`     | Query parameter name                 |
 | `minChars`      | `number`  | `0`       | Minimum characters before fetching   |
 | `debounceMs`    | `number`  | `300`     | Debounce delay in ms                 |
@@ -269,6 +269,22 @@ Autocomplete fields fetch suggestions from a remote API as the user types.
 | `allowFreeText` | `boolean` | `false`   | Allow values not in suggestions      |
 | `fetchOnFocus`  | `boolean` | `false`   | Fetch all options when field focused |
 | `multiple`      | `boolean` | `false`   | Allow multiple selections (tags)     |
+
+**How `url` is resolved**, by its form:
+
+- `https://host/path` or `//host/path` is used as given.
+- `/path` is relative to the site and used as given. In a `SchemaForm` with a `baseUrl` prop, that
+  prop is put in front of it.
+- `path` or `./path` (no leading slash) is relative to the API base, the `baseUrl` of the editor's
+  `endpointConfig`, and the base's last segment is kept: `secrets/options` under
+  `https://site/api/flowdrop` reaches `https://site/api/flowdrop/secrets/options`. This lets a
+  backend name its own endpoints without knowing where the editor reaches it. Where no API base is
+  configured, such as a standalone `SchemaForm`, its `baseUrl` prop is used instead. With neither,
+  the URL is used as given and a warning is logged.
+- A URL without a leading slash that is empty, starts with `?` or `#`, or has a `..` path segment is
+  refused: nothing is fetched and one error is logged.
+
+This differs from `endpointConfig.endpoints`, where paths are always relative to `baseUrl`.
 
 ---
 
