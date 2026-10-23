@@ -154,6 +154,10 @@
   // Use getter functions to ensure child components always get the current prop value,
   // even if the prop changes after initial mount
   setContext<() => AuthProvider | undefined>('flowdrop:getAuthProvider', () => authProvider);
+  // API base for autocomplete URLs written relative to it (`secrets/options`,
+  // no leading slash); see resolveAutocompleteUrl. Not `flowdrop:getBaseUrl`:
+  // that is SchemaForm's prefix, which also lands on `/path` URLs.
+  setContext<() => string>('flowdrop:getApiBaseUrl', () => fd.api.config?.baseUrl ?? '');
 
   /**
    * State for dynamic schema loading
