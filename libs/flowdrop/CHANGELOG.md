@@ -17,19 +17,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/path` URL stays relative to the site (as in the docs' `/api/users/search` example);
   `SchemaForm`'s `baseUrl` prop still goes in front of it. Where no API base is configured, a
   no-slash URL resolves against `SchemaForm`'s `baseUrl` prop instead (as a standalone `SchemaForm`
-  always did); with neither it is used as given, with a logged warning. A no-slash URL that is
-  empty, starts with `?` or `#`, or has a `..` path segment is refused: nothing is fetched and one
-  error is logged.
+  always did); with neither it is used as given, with a logged warning. Refused, so nothing is
+  fetched and one error is logged: any URL with a tab or newline, a space at either end or a
+  backslash in its path (the browser would fetch something other than the text says), and a
+  no-slash URL that is empty, starts with `?` or `#`, or has a `..` path segment (`%2e%2e`
+  included).
 - **Interrupt forms send the editor's auth with autocomplete requests.** `FormPrompt` has no
   `authProvider` of its own, so its autocomplete fields went out without auth. They now use the
-  instance's auth provider for requests to the site or under an absolute API base, judged by the
-  URL that is fetched. Requests to other hosts, including a `baseUrl` prop pointing elsewhere, still
-  use only the form's provider.
+  instance's auth provider for requests to the page's own origin or under the API base, judged by
+  the URL as the browser resolves it, not by its text. Requests to other hosts, including a
+  `baseUrl` prop pointing elsewhere, still use only the form's provider.
 - **`App` takes a `navbarEnd` snippet.** It renders at the navbar's trailing end, before the settings
   gear, so a host can put its own controls there, such as a user menu. `Navbar` already had this as
   its `end` slot; `App` now forwards it. It shows only when the navbar does. `mountFlowDropApp`
   takes `navbarEnd` as an element callback, `(target: HTMLElement) => void | (() => void)`, so
-  hosts without Svelte snippets can fill the slot; the function it returns runs on cleanup.
+  hosts without Svelte snippets can fill the slot; the function it returns runs on cleanup. A
+  callback that throws is logged and skipped, and `mountFlowDropApp` warns when `navbarEnd` is
+  given while `showNavbar` is off.
 - **`@flowdrop/flowdrop/ui` exports the editor's design-system components.** The primitives
   (`Button`, `Card`, `Checkbox`, `Chip`, `Combobox`, `Composer`, `EmptyState`, `Field`, `IconButton`,
   `Menu`, `Notice`, `PanelHeader`, `Segmented`, `Select`, `StatusPill`, `Switch`, `Tabs`, `Toolbar`,
@@ -41,16 +45,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the Graphite tokens as CSS for `:root` (or another selector, e.g. `.flowdrop-scope`), with the dark
   palette under `data-theme="dark"` on that same element. Load `tokens.css` first and add the result as a
   stylesheet. Both are exported from `@flowdrop/flowdrop/ui`. The components' base styles apply inside
-  `.flowdrop-root`, `.flowdrop-scope` or `.flowdrop-portal`, so wrap host content in one of them. The entry
+  `.flowdrop-root`, `.flowdrop-scope` or `.flowdrop-portal`, so wrap host content in one of them. A
+  `SurfaceOverlay` opened inside a `.flowdrop-scope` wrapper that sets `data-theme` keeps the wrapper's
+  skin and follows its `data-theme`, although it is moved to `<body>`. The entry
   also exports `tabId` and `tabPanelId` and the prop types `MenuItem`, `MenuEntry`, `MenuGroup`,
   `MenuSeparator`, `SegmentedOption`, `SelectOption`, `StatusPillStatus`, `SurfaceTab`, `TabItem` and
   `FlowDropSkin`.
 
 ### Changed
 
+- **An autocomplete `url` without a leading slash now resolves against the API base** (#49). Until
+  2.15 the config panel and interrupt forms fetched `secrets/options` relative to the page's URL, as
+  the browser resolves it. A backend that relied on that must send a `/path` or absolute URL
+  instead.
 - `SchemaForm`'s `baseUrl` prop now only applies to URLs without a leading slash when no API base is
   configured; an API base on the instance takes precedence. It still goes in front of `/path` URLs.
-- **`@flowdrop/flowdrop/webmcp` is labelled experimental in 2.x**, like the new `./ui` entry. WebMCP is
+- **`@flowdrop/flowdrop/webmcp` is labelled experimental from 2.16.0**, like the new `./ui` entry;
+  releases up to 2.15 keep their usual semver promise. WebMCP is
   still behind a browser origin trial, and the adapter already changed shape in a minor (2.8.0). Its
   names, options and tool shapes may change in a minor release; every change is listed here. This
   covers the `webmcp` option of `mountFlowDropApp`. The README's entry table lists it now, with a note
