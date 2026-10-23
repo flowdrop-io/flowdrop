@@ -154,11 +154,15 @@ FlowDrop provides tree-shakeable sub-module exports so you can import only what 
 | `@flowdrop/flowdrop/form/code`     | Code editor field (CodeMirror)                                                                                         |
 | `@flowdrop/flowdrop/form/markdown` | Markdown editor field                                                                                                  |
 | `@flowdrop/flowdrop/display`       | MarkdownDisplay component                                                                                              |
+| `@flowdrop/flowdrop/ui`            | Design-system components: primitives, surfaces, Input, Textarea (experimental in 2.x)                                  |
 | `@flowdrop/flowdrop/playground`    | Playground components and services                                                                                     |
 | `@flowdrop/flowdrop/settings`      | SettingsPanel, stores, services                                                                                        |
 | `@flowdrop/flowdrop/styles`        | Base CSS stylesheet                                                                                                    |
 | `@flowdrop/flowdrop/schema`        | Workflow JSON schema                                                                                                   |
 | `@flowdrop/flowdrop/openapi`       | OpenAPI spec (YAML) for the FlowDrop backend API                                                                       |
+| `@flowdrop/flowdrop/webmcp`        | WebMCP editor tools for browser agents: `attachWebMCP`, `createToolRuntime`, approval gate (experimental in 2.x)       |
+
+Entries marked **experimental** may change in a minor release while their API settles; every change is listed in the CHANGELOG. Pin a minor version (`~2.16.0`) if you depend on one. All other entries follow semantic versioning.
 
 ### OpenAPI spec
 

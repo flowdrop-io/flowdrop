@@ -11,13 +11,13 @@
 
   `float` draws the switch as its own floating control, as in the canvas toolbar.
 
-  Not exported from the package; not public API yet.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
 
-  interface SegmentedOption {
+  export interface SegmentedOption {
     /** Value written to `value` when chosen */
     value: string;
     /** Visible label */

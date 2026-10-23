@@ -10,7 +10,7 @@
   **Use it for** close, delete, move up/down, show/hide and other single-glyph actions.
   **Not for** an action that needs a text label; use `Button`.
 
-  Not exported from the package; internal to the editor.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

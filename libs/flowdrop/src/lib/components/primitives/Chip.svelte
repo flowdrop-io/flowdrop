@@ -8,7 +8,7 @@
   **Use it for** tags and short status words next to a title.
   **Not for** run status; use `StatusPill`. Not used in the editor yet.
 
-  Not exported from the package; not public API yet.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

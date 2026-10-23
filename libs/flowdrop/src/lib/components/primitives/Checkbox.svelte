@@ -8,7 +8,7 @@
   **Use it for** a yes/no option in a form or a list of choices.
   **Not for** an instant on/off setting; use `Switch`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

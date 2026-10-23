@@ -18,7 +18,7 @@
   **Use it** through `Select`, which picks this rendering for long, grouped or described lists.
   **Not for** a short flat list; use `Select`, which then renders the browser's own `<select>`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

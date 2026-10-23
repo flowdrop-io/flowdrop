@@ -15,7 +15,7 @@
   (Editor/Canvas).
   **Not for** drawing a bar; it has no surface of its own.
 
-  Not exported from the package; not public API yet.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

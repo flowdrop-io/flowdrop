@@ -10,7 +10,7 @@
   **Not for** icon-only actions; use `IconButton`. For a list of actions behind one
   trigger use `Menu`.
 
-  Not exported from the package; internal to the editor. The wrapper `components/Button.svelte`
+  Exported from `@flowdrop/flowdrop/ui`. The wrapper `components/Button.svelte`
   is the old API on top of this.
 -->
 

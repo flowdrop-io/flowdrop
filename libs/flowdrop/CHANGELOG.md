@@ -30,11 +30,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its `end` slot; `App` now forwards it. It shows only when the navbar does. `mountFlowDropApp`
   takes `navbarEnd` as an element callback, `(target: HTMLElement) => void | (() => void)`, so
   hosts without Svelte snippets can fill the slot; the function it returns runs on cleanup.
+- **`@flowdrop/flowdrop/ui` exports the editor's design-system components.** The primitives
+  (`Button`, `Card`, `Checkbox`, `Chip`, `Combobox`, `Composer`, `EmptyState`, `Field`, `IconButton`,
+  `Menu`, `Notice`, `PanelHeader`, `Segmented`, `Select`, `StatusPill`, `Switch`, `Tabs`, `Toolbar`,
+  `ToolbarSeparator`), the surfaces (`SurfaceOverlay`, `TabbedSurface`) and `Input` and `Textarea`, so a
+  host can build its own pages from the same components and `--fd-*` tokens as the editor. The entry is
+  **experimental** in 2.x: names and props may still change in a minor release while the design system
+  settles. It becomes semver-stable no later than 3.0, so pin a minor version (`~2.16.0`) if you use it.
+- **`skinCss` and `graphiteSkin` give a host's own pages the editor's look.** `skinCss(graphiteSkin)` returns
+  the Graphite tokens as CSS for `:root` (or another selector, e.g. `.flowdrop-scope`), with the dark
+  palette under `data-theme="dark"` on that same element. Load `tokens.css` first and add the result as a
+  stylesheet. Both are exported from `@flowdrop/flowdrop/ui`. The components' base styles apply inside
+  `.flowdrop-root`, `.flowdrop-scope` or `.flowdrop-portal`, so wrap host content in one of them. The entry
+  also exports `tabId` and `tabPanelId` and the prop types `MenuItem`, `MenuEntry`, `MenuGroup`,
+  `MenuSeparator`, `SegmentedOption`, `SelectOption`, `StatusPillStatus`, `SurfaceTab`, `TabItem` and
+  `FlowDropSkin`.
 
 ### Changed
 
 - `SchemaForm`'s `baseUrl` prop now only applies to URLs without a leading slash when no API base is
   configured; an API base on the instance takes precedence. It still goes in front of `/path` URLs.
+- **`@flowdrop/flowdrop/webmcp` is labelled experimental in 2.x**, like the new `./ui` entry. WebMCP is
+  still behind a browser origin trial, and the adapter already changed shape in a minor (2.8.0). Its
+  names, options and tool shapes may change in a minor release; every change is listed here. This
+  covers the `webmcp` option of `mountFlowDropApp`. The README's entry table lists it now, with a note
+  on what experimental means.
 
 ## [2.15.2] - 2026-10-18
 

@@ -8,7 +8,7 @@
   **Use it for** an empty list or panel, and say what the user can do next.
   **Not for** an error or a warning; use `Notice`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

@@ -12,7 +12,7 @@
   **Use it for** the run status of a node or a run on the canvas.
   **Not for** a free-form tag; use `Chip`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script module lang="ts">

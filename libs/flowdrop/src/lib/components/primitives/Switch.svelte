@@ -9,7 +9,7 @@
   **Use it for** a setting that takes effect right away.
   **Not for** an option that is saved later with a form; use `Checkbox`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

@@ -13,7 +13,7 @@
   **Use it for** every labelled input in a config form.
   **Not for** a checkbox or switch that carries its own label.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

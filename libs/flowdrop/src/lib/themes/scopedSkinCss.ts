@@ -214,13 +214,46 @@ export function buildScopedSkinCss(
   skin: Pick<FlowDropSkin, 'tokens' | 'darkTokens' | 'font'> | undefined,
   display?: FlowDropDisplayConfig
 ): string {
+  return buildSkinCss(scopeSelector(scopeId), skin, display);
+}
+
+/**
+ * CSS for a skin on any element a host chooses, e.g. a whole app on `:root`:
+ *
+ *   tokens     → {selector}{selector}               (light / base)
+ *   darkTokens → {selector}[data-theme='dark']      (dark)
+ *
+ * The doubled selector outranks tokens.css's own `:root` block, as the scoped
+ * rule does. Dark mode follows `data-theme="dark"` on that element, the same
+ * attribute tokens.css keys its dark palette on, so a host sets it there
+ * (`<html data-theme>` is a deprecated mirror, removed in 3.0). For the
+ * components' base styles use an element that is also `.flowdrop-scope`, e.g.
+ * `skinCss(graphiteSkin, '.flowdrop-scope')`.
+ * Load tokens.css first; this only overrides it.
+ *
+ * @param skin - The skin, e.g. `graphiteSkin`
+ * @param selector - Where the tokens apply (default `:root`): one trusted, static
+ *   compound selector such as `:root` or `.app`. It is doubled for specificity, so a
+ *   selector list (`a, b`) or a descendant selector (`.a .b`) does not work.
+ */
+export function skinCss(
+  skin: Pick<FlowDropSkin, 'tokens' | 'darkTokens' | 'font'>,
+  selector = ':root'
+): string {
+  return buildSkinCss(selector, skin);
+}
+
+function buildSkinCss(
+  scope: string,
+  skin: Pick<FlowDropSkin, 'tokens' | 'darkTokens' | 'font'> | undefined,
+  display?: FlowDropDisplayConfig
+): string {
   const tokens: FlowDropSkinTokens = effectiveSkinTokens(skin, display);
   const darkTokens: FlowDropSkinTokens = skin?.darkTokens ?? {};
   const lightKeys = Object.keys(tokens);
   const darkKeys = Object.keys(darkTokens);
   if (lightKeys.length === 0 && darkKeys.length === 0) return '';
 
-  const scope = scopeSelector(scopeId);
   // A skin's light tokens also apply in dark mode (as with the old :root rule),
   // so an alias a skin sets in either palette is never overridden here.
   const skinSet = new Set([...lightKeys, ...darkKeys]);
