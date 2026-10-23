@@ -35,7 +35,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
 
-  interface TabItem {
+  export interface TabItem {
     /** Value written to `value` when chosen */
     value: string;
     /** Visible label */

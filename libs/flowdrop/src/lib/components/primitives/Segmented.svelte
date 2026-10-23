@@ -17,7 +17,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
 
-  interface SegmentedOption {
+  export interface SegmentedOption {
     /** Value written to `value` when chosen */
     value: string;
     /** Visible label */

@@ -18,12 +18,21 @@
  *   import '@flowdrop/flowdrop/styles/base.css';
  * </script>
  *
- * <Card><Button variant="primary">Save</Button></Card>
+ * <div class="flowdrop-scope">
+ *   <Card><Button variant="primary">Save</Button></Card>
+ * </div>
  * ```
  *
- * To give the host's own pages the editor's Graphite look, load tokens.css and
- * add `skinCss(graphiteSkin)` as a stylesheet; dark mode follows
- * `data-theme="dark"` on `<html>`.
+ * The base styles (box-sizing, type, `color-scheme`) apply only inside
+ * `.flowdrop-root`, `.flowdrop-scope` or `.flowdrop-portal`, so wrap the host
+ * content that uses these components in one of them.
+ *
+ * To give that content the editor's Graphite look, load tokens.css and add
+ * `skinCss(graphiteSkin, '.flowdrop-scope')` as a stylesheet. Dark mode is
+ * `data-theme="dark"` on the element the selector targets (here the
+ * `.flowdrop-scope` div); `<html data-theme>` is a deprecated mirror, removed
+ * in 3.0. The selector is scoped so the skin stays inside the wrapper; the
+ * default `:root` restyles the whole page.
  */
 
 // ============================================================================
@@ -40,13 +49,23 @@ export { default as EmptyState } from '../components/primitives/EmptyState.svelt
 export { default as Field } from '../components/primitives/Field.svelte';
 export { default as IconButton } from '../components/primitives/IconButton.svelte';
 export { default as Menu } from '../components/primitives/Menu.svelte';
+export type {
+  MenuItem,
+  MenuEntry,
+  MenuGroup,
+  MenuSeparator
+} from '../components/primitives/Menu.svelte';
 export { default as Notice } from '../components/primitives/Notice.svelte';
 export { default as PanelHeader } from '../components/primitives/PanelHeader.svelte';
 export { default as Segmented } from '../components/primitives/Segmented.svelte';
+export type { SegmentedOption } from '../components/primitives/Segmented.svelte';
 export { default as Select } from '../components/primitives/Select.svelte';
+export type { SelectOption } from '../utils/selectOptions.js';
 export { default as StatusPill } from '../components/primitives/StatusPill.svelte';
+export type { StatusPillStatus } from '../components/primitives/StatusPill.svelte';
 export { default as Switch } from '../components/primitives/Switch.svelte';
-export { default as Tabs } from '../components/primitives/Tabs.svelte';
+export { default as Tabs, tabId, tabPanelId } from '../components/primitives/Tabs.svelte';
+export type { TabItem } from '../components/primitives/Tabs.svelte';
 export { default as Toolbar } from '../components/primitives/Toolbar.svelte';
 export { default as ToolbarSeparator } from '../components/primitives/ToolbarSeparator.svelte';
 
@@ -56,6 +75,7 @@ export { default as ToolbarSeparator } from '../components/primitives/ToolbarSep
 
 export { default as SurfaceOverlay } from '../components/surfaces/SurfaceOverlay.svelte';
 export { default as TabbedSurface } from '../components/surfaces/TabbedSurface.svelte';
+export type { SurfaceTab } from '../components/surfaces/TabbedSurface.svelte';
 
 // ============================================================================
 // Text controls
