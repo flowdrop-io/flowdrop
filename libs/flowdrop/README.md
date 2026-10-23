@@ -154,7 +154,7 @@ FlowDrop provides tree-shakeable sub-module exports so you can import only what 
 | `@flowdrop/flowdrop/form/code`     | Code editor field (CodeMirror)                                                                                         |
 | `@flowdrop/flowdrop/form/markdown` | Markdown editor field                                                                                                  |
 | `@flowdrop/flowdrop/display`       | MarkdownDisplay component                                                                                              |
-| `@flowdrop/flowdrop/ui`            | Design-system components: primitives, surfaces, Input, Textarea (semver-stable)                                        |
+| `@flowdrop/flowdrop/ui`            | Design-system components: primitives, surfaces, Input, Textarea (experimental in 2.x)                                  |
 | `@flowdrop/flowdrop/playground`    | Playground components and services                                                                                     |
 | `@flowdrop/flowdrop/settings`      | SettingsPanel, stores, services                                                                                        |
 | `@flowdrop/flowdrop/styles`        | Base CSS stylesheet                                                                                                    |

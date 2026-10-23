@@ -1,6 +1,6 @@
 /**
- * The `@flowdrop/flowdrop/ui` entry is semver-stable: every name listed here is
- * public API, and dropping one is a breaking change.
+ * The `@flowdrop/flowdrop/ui` entry's names. It is experimental in 2.x (see
+ * ui/index.ts), so a name may still go in a minor release, but never by accident.
  */
 
 import { describe, it, expect } from 'vitest';

@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Menu`, `Notice`, `PanelHeader`, `Segmented`, `Select`, `StatusPill`, `Switch`, `Tabs`, `Toolbar`,
   `ToolbarSeparator`), the surfaces (`SurfaceOverlay`, `TabbedSurface`) and `Input` and `Textarea`, so a
   host can build its own pages from the same components and `--fd-*` tokens as the editor. The entry is
-  semver-stable: a breaking change to these props is a major release.
+  **experimental** in 2.x: names and props may still change in a minor release while the design system
+  settles. It becomes semver-stable no later than 3.0, so pin a minor version (`~2.16.0`) if you use it.
 - **`skinCss` and `graphiteSkin` give a host's own pages the editor's look.** `skinCss(graphiteSkin)` returns
   the Graphite tokens as CSS for `:root` (or another selector), with the dark palette under
   `data-theme="dark"`. Load `tokens.css` first and add the result as a stylesheet. Both are exported from

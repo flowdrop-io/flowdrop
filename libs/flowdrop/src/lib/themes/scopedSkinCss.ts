@@ -229,7 +229,9 @@ export function buildScopedSkinCss(
  * Load tokens.css first; this only overrides it.
  *
  * @param skin - The skin, e.g. `graphiteSkin`
- * @param selector - Where the tokens apply (default `:root`); a trusted, static selector
+ * @param selector - Where the tokens apply (default `:root`): one trusted, static
+ *   compound selector such as `:root` or `.app`. It is doubled for specificity, so a
+ *   selector list (`a, b`) or a descendant selector (`.a .b`) does not work.
  */
 export function skinCss(
   skin: Pick<FlowDropSkin, 'tokens' | 'darkTokens' | 'font'>,

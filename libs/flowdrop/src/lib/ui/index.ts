@@ -7,8 +7,9 @@
  *
  * @module ui
  *
- * This entry is semver-stable: a breaking change to a component's props is a
- * major release.
+ * Experimental in 2.x: names and props may still change in a minor release
+ * while the design system settles. It becomes semver-stable no later than 3.0;
+ * pin a minor version (`~2.16.0`) if you depend on it.
  *
  * @example
  * ```svelte
