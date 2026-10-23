@@ -171,8 +171,8 @@ export interface FlowDropMountOptions {
    * Host content at the navbar's trailing end, before the settings gear, e.g. a
    * user menu. Only shown with the navbar.
    *
-   * The library renders an empty host element there and calls this with it. The
-   * callback runs whenever the navbar renders that slot (so it may run again if the
+   * The library renders an empty host element there and calls this with it, once
+   * the element is in the page. The callback runs whenever the navbar renders that slot (so it may run again if the
    * navbar is re-mounted); the function it returns, if any, is called when the slot
    * goes away.
    *
@@ -796,14 +796,27 @@ export async function mountFlowDropApp(
     ? createRawSnippet(() => ({
         render: () => '<div class="flowdrop-navbar__host-end"></div>',
         setup: (el) => {
-          // untrack: state the host reads must not re-run the navbar. A throwing
-          // callback is logged and skipped, so it cannot break the editor.
-          try {
-            const cleanup = untrack(() => navbarEnd(el as HTMLElement));
-            return typeof cleanup === 'function' ? cleanup : undefined;
-          } catch (error) {
-            logger.error('[FlowDrop] navbarEnd callback failed:', error);
-          }
+          let cleanup: (() => void) | undefined;
+          let gone = false;
+          const run = (): void => {
+            if (gone) return;
+            // untrack: state the host reads must not re-run the navbar. A throwing
+            // callback is logged and skipped, so it cannot break the editor.
+            try {
+              const result = untrack(() => navbarEnd(el as HTMLElement));
+              if (typeof result === 'function') cleanup = result;
+            } catch (error) {
+              logger.error('[FlowDrop] navbarEnd callback failed:', error);
+            }
+          };
+          // On the editor's first render the navbar is built before it is
+          // attached to the page; the host gets the element once it is in it.
+          if (el.isConnected) run();
+          else queueMicrotask(run);
+          return () => {
+            gone = true;
+            cleanup?.();
+          };
         }
       }))
     : undefined;

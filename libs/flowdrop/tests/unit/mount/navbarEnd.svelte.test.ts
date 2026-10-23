@@ -2,11 +2,13 @@
  * `mountFlowDropApp` turns the `navbarEnd` element callback into a snippet for
  * the editor. App itself is replaced by a stub that records its props and renders
  * the snippet into a container, so what is under test is the mount function's
- * conversion (the e2e test covers the real navbar).
+ * conversion. One test hands that snippet to the real Navbar (the e2e test
+ * covers App's own snippet prop).
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import type { Snippet } from 'svelte';
+import { mount, unmount, flushSync, type Snippet } from 'svelte';
+import Navbar from '../../../src/lib/components/Navbar.svelte';
 import type { Workflow } from '../../../src/lib/types/index.js';
 import { logger } from '../../../src/lib/utils/logger.js';
 import { DEFAULT_PORT_CONFIG } from '../../../src/lib/config/defaultPortConfig.js';
@@ -96,6 +98,55 @@ describe('mountFlowDropApp({ navbarEnd })', () => {
 
     stop();
     expect(cleanup).toHaveBeenCalledTimes(1);
+    app.destroy();
+  });
+
+  it('fills the real navbar end before the settings gear, and cleans up with it', async () => {
+    const cleanup = vi.fn();
+    let connected = false;
+    const app = await mountApp((target) => {
+      connected = target.isConnected;
+      const button = document.createElement('button');
+      button.textContent = 'Ada';
+      target.append(button);
+      return cleanup;
+    });
+
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    const navbar = mount(Navbar, {
+      target,
+      props: { end: received[0].navbarEnd as Snippet, showSettings: true, showStatus: false }
+    });
+    flushSync();
+
+    // The first render builds the navbar off-page; the callback waits for it.
+    await Promise.resolve();
+    expect(connected).toBe(true);
+    const end = target.querySelector('.flowdrop-navbar__end') as HTMLElement;
+    const host = end.querySelector('.flowdrop-navbar__host-end');
+    expect(host?.querySelector('button')?.textContent).toBe('Ada');
+    const gear = end.querySelector('.flowdrop-navbar__settings-btn');
+    expect(gear).not.toBeNull();
+    expect(host!.compareDocumentPosition(gear!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    unmount(navbar);
+    expect(cleanup).toHaveBeenCalledTimes(1);
+    app.destroy();
+  });
+
+  it('never calls the callback for a navbar removed before it reached the page', async () => {
+    const callback = vi.fn();
+    const app = await mountApp(callback);
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    const navbar = mount(Navbar, {
+      target,
+      props: { end: received[0].navbarEnd as Snippet, showSettings: false, showStatus: false }
+    });
+    unmount(navbar);
+    await Promise.resolve();
+    expect(callback).not.toHaveBeenCalled();
     app.destroy();
   });
 
