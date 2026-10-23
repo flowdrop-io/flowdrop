@@ -68,6 +68,18 @@ const CONTRACTS = [
     entry: 'editor/index.js',
     // @xyflow/svelte is expected here; CodeMirror must stay opt-in.
     forbid: [...HEAVY.codemirror]
+  },
+  {
+    name: 'ui',
+    entry: 'ui/index.js',
+    // Host-facing design-system components: no heavy dependency may ride along.
+    forbid: [
+      ...HEAVY.codemirror,
+      ...HEAVY.xyflow,
+      ...HEAVY.marked,
+      ...HEAVY.dompurify,
+      ...HEAVY.diff
+    ]
   }
 ];
 

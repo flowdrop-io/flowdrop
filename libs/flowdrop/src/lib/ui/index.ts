@@ -29,10 +29,15 @@
  *
  * To give that content the editor's Graphite look, load tokens.css and add
  * `skinCss(graphiteSkin, '.flowdrop-scope')` as a stylesheet. Dark mode is
- * `data-theme="dark"` on the element the selector targets (here the
- * `.flowdrop-scope` div); `<html data-theme>` is a deprecated mirror, removed
- * in 3.0. The selector is scoped so the skin stays inside the wrapper; the
- * default `:root` restyles the whole page.
+ * `data-theme="dark"` on the element the selector matches (here the
+ * `.flowdrop-scope` div); for the default `:root` the host sets it on `<html>`
+ * itself, which stays supported. Only the editor writing its theme to `<html>`
+ * (the mirror) is deprecated, removed in 3.0. The selector is scoped so the skin
+ * stays inside the wrapper; the default `:root` restyles the whole page.
+ *
+ * Built-in strings (labels, placeholders) are English by default and follow
+ * `setMessages` from `@flowdrop/flowdrop/core` when the host calls it in an
+ * ancestor component.
  */
 
 // ============================================================================

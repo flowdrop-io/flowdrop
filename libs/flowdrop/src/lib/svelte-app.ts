@@ -7,7 +7,7 @@
  * @module svelte-app
  */
 
-import { mount, unmount, createRawSnippet } from 'svelte';
+import { mount, unmount, createRawSnippet, untrack } from 'svelte';
 import WorkflowEditor from './components/WorkflowEditor.svelte';
 import App from './components/App.svelte';
 import type {
@@ -787,10 +787,24 @@ export async function mountFlowDropApp(
 
   // The host's element callback becomes a snippet: one empty host element, handed
   // to the callback in `setup`, whose return value is the cleanup.
+  if (navbarEnd && showNavbar !== true) {
+    logger.warn(
+      '[FlowDrop] navbarEnd was given but showNavbar is not true: the navbar is hidden, so navbarEnd will not render.'
+    );
+  }
   const navbarEndSnippet = navbarEnd
     ? createRawSnippet(() => ({
         render: () => '<div class="flowdrop-navbar__host-end"></div>',
-        setup: (el) => navbarEnd(el as HTMLElement)
+        setup: (el) => {
+          // untrack: state the host reads must not re-run the navbar. A throwing
+          // callback is logged and skipped, so it cannot break the editor.
+          try {
+            const cleanup = untrack(() => navbarEnd(el as HTMLElement));
+            return typeof cleanup === 'function' ? cleanup : undefined;
+          } catch (error) {
+            logger.error('[FlowDrop] navbarEnd callback failed:', error);
+          }
+        }
       }))
     : undefined;
 

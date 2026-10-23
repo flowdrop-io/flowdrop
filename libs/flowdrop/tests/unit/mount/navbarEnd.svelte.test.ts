@@ -8,6 +8,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { Snippet } from 'svelte';
 import type { Workflow } from '../../../src/lib/types/index.js';
+import { logger } from '../../../src/lib/utils/logger.js';
 import { DEFAULT_PORT_CONFIG } from '../../../src/lib/config/defaultPortConfig.js';
 
 const received: Record<string, unknown>[] = [];
@@ -50,7 +51,10 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function mountApp(navbarEnd?: (target: HTMLElement) => void | (() => void)) {
+async function mountApp(
+  navbarEnd?: (target: HTMLElement) => void | (() => void),
+  showNavbar = true
+) {
   const el = document.createElement('div');
   document.body.appendChild(el);
   return mountFlowDropApp(el, {
@@ -58,7 +62,7 @@ async function mountApp(navbarEnd?: (target: HTMLElement) => void | (() => void)
     portConfig: DEFAULT_PORT_CONFIG,
     categories: [],
     features: { showToasts: false, autoSaveDraft: false },
-    showNavbar: true,
+    showNavbar,
     navbarEnd
   });
 }
@@ -104,5 +108,37 @@ describe('mountFlowDropApp({ navbarEnd })', () => {
     const stop = renderSnippet(received[0].navbarEnd as Snippet, target);
     expect(() => stop()).not.toThrow();
     app.destroy();
+  });
+
+  it('logs and carries on when the callback throws', async () => {
+    const error = vi.spyOn(logger, 'error').mockImplementation(() => {});
+    const app = await mountApp(() => {
+      throw new Error('boom');
+    });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    let stop = () => {};
+    expect(() => {
+      stop = renderSnippet(received[0].navbarEnd as Snippet, target);
+    }).not.toThrow();
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(String(error.mock.calls[0][0])).toContain('[FlowDrop]');
+    expect(() => stop()).not.toThrow();
+    error.mockRestore();
+    app.destroy();
+  });
+
+  it('warns when showNavbar is not true, and stays quiet when it is', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const hidden = await mountApp(() => {}, false);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('navbar is hidden');
+    hidden.destroy();
+
+    warn.mockClear();
+    const shown = await mountApp(() => {});
+    expect(warn).not.toHaveBeenCalled();
+    shown.destroy();
+    warn.mockRestore();
   });
 });

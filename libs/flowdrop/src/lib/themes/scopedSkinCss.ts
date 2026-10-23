@@ -225,8 +225,10 @@ export function buildScopedSkinCss(
  *
  * The doubled selector outranks tokens.css's own `:root` block, as the scoped
  * rule does. Dark mode follows `data-theme="dark"` on that element, the same
- * attribute tokens.css keys its dark palette on, so a host sets it there
- * (`<html data-theme>` is a deprecated mirror, removed in 3.0). For the
+ * attribute tokens.css keys its dark palette on, so a host sets it there; for
+ * `:root` that is `<html data-theme>`, set by the host and still supported.
+ * (Only the editor *writing* its theme to `<html>`, the mirror, is deprecated
+ * and goes in 3.0.) For the
  * components' base styles use an element that is also `.flowdrop-scope`, e.g.
  * `skinCss(graphiteSkin, '.flowdrop-scope')`.
  * Load tokens.css first; this only overrides it.
