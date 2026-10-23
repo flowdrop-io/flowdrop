@@ -1079,6 +1079,12 @@
     margin-left: var(--fd-space-md);
   }
 
+  /* Host element built by mountFlowDropApp's navbarEnd callback; adds no box of
+     its own, so the host's content sits in the end row and an empty one leaves no gap. */
+  :global(.flowdrop-navbar__host-end) {
+    display: contents;
+  }
+
   :global(.flowdrop-navbar__settings-btn) {
     display: flex;
     align-items: center;

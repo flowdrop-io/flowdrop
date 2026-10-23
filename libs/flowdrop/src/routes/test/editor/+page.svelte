@@ -246,6 +246,9 @@
       : undefined
   );
 
+  // --- Host content at the navbar's end (?navbarEnd=1), e.g. a user menu ---
+  let showNavbarEnd = $derived($page.url.searchParams.get('navbarEnd') === '1');
+
   // --- White-label logo (?branding=1 name + image; =alt adds logoAlt; =name name only; =wide a logo far wider than the start column) ---
   const brandingSvg = (width: number) =>
     `data:image/svg+xml;utf8,${encodeURIComponent(
@@ -1653,8 +1656,12 @@
     {contextMenu}
     {branding}
     {navbarActions}
+    navbarEnd={showNavbarEnd ? navbarEndContent : undefined}
     {settingsCategories}
   />
+  {#snippet navbarEndContent()}
+    <span data-testid="navbar-end-test">Ada Lovelace</span>
+  {/snippet}
 </div>
 
 <style>
