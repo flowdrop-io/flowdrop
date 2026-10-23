@@ -17,9 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **experimental** in 2.x: names and props may still change in a minor release while the design system
   settles. It becomes semver-stable no later than 3.0, so pin a minor version (`~2.16.0`) if you use it.
 - **`skinCss` and `graphiteSkin` give a host's own pages the editor's look.** `skinCss(graphiteSkin)` returns
-  the Graphite tokens as CSS for `:root` (or another selector), with the dark palette under
-  `data-theme="dark"`. Load `tokens.css` first and add the result as a stylesheet. Both are exported from
-  `@flowdrop/flowdrop/ui`.
+  the Graphite tokens as CSS for `:root` (or another selector, e.g. `.flowdrop-scope`), with the dark
+  palette under `data-theme="dark"` on that same element. Load `tokens.css` first and add the result as a
+  stylesheet. Both are exported from `@flowdrop/flowdrop/ui`. The components' base styles apply inside
+  `.flowdrop-root`, `.flowdrop-scope` or `.flowdrop-portal`, so wrap host content in one of them. The entry
+  also exports `tabId` and `tabPanelId` and the prop types `MenuItem`, `MenuEntry`, `MenuGroup`,
+  `MenuSeparator`, `SegmentedOption`, `SelectOption`, `StatusPillStatus`, `SurfaceTab`, `TabItem` and
+  `FlowDropSkin`.
 
 ### Changed
 
