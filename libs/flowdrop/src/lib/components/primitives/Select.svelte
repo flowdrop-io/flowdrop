@@ -15,7 +15,7 @@
   **Use it for** choosing one value in a config form.
   **Not for** a list of actions; use `Menu`. Not for a two or three way mode; use `Segmented`.
 
-  Not exported from the package; internal for now.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

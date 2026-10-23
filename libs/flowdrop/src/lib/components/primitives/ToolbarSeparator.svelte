@@ -4,7 +4,7 @@
 
   Pass the same `orientation` as the toolbar. The line is drawn across that axis.
 
-  Not exported from the package; not public API yet.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

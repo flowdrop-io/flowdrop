@@ -10,7 +10,7 @@
   **Use it for** the top of a docked panel or a sheet.
   **Not for** a section title inside a form; use a heading or `Field`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">

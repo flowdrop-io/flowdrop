@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`@flowdrop/flowdrop/ui` exports the editor's design-system components.** The primitives
+  (`Button`, `Card`, `Checkbox`, `Chip`, `Combobox`, `Composer`, `EmptyState`, `Field`, `IconButton`,
+  `Menu`, `Notice`, `PanelHeader`, `Segmented`, `Select`, `StatusPill`, `Switch`, `Tabs`, `Toolbar`,
+  `ToolbarSeparator`), the surfaces (`SurfaceOverlay`, `TabbedSurface`) and `Input` and `Textarea`, so a
+  host can build its own pages from the same components and `--fd-*` tokens as the editor. The entry is
+  semver-stable: a breaking change to these props is a major release.
+- **`skinCss` and `graphiteSkin` give a host's own pages the editor's look.** `skinCss(graphiteSkin)` returns
+  the Graphite tokens as CSS for `:root` (or another selector), with the dark palette under
+  `data-theme="dark"`. Load `tokens.css` first and add the result as a stylesheet. Both are exported from
+  `@flowdrop/flowdrop/ui`.
+
 ## [2.15.2] - 2026-10-18
 
 ### Fixed

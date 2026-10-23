@@ -11,7 +11,7 @@
   **Use it for** a message that belongs to a part of the page: a failed save, a missing setting.
   **Not for** an empty list; use `EmptyState`. Not for run status; use `StatusPill`.
 
-  Not exported from the package; the API may still change.
+  Exported from `@flowdrop/flowdrop/ui`.
 -->
 
 <script lang="ts">
