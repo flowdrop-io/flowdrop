@@ -195,6 +195,11 @@
     navbarActions?: NavbarAction[];
     /** White-label logo for the navbar (replaces the FlowDrop wordmark) */
     branding?: NavbarBranding;
+    /**
+     * Host content at the navbar's trailing end, before the settings gear (the
+     * navbar's `end` slot), e.g. a user menu. Only shown with the navbar.
+     */
+    navbarEnd?: Snippet;
     /** Show settings gear icon in navbar */
     showSettings?: boolean;
     /** Show the "Connected" status indicator in the navbar (default: true) */
@@ -283,6 +288,7 @@
     navbarTitle,
     navbarActions = [],
     branding,
+    navbarEnd,
     showSettings = true,
     showStatus = true,
     apiBaseUrl,
@@ -2124,6 +2130,7 @@
         {showStatus}
         {showSettings}
         {branding}
+        end={navbarEnd}
         saveShortcut
         onWorkflowSettings={toggleWorkflowSettings}
         status={doctorStatus}

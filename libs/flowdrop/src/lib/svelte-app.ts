@@ -8,6 +8,7 @@
  */
 
 import { mount, unmount } from 'svelte';
+import type { Snippet } from 'svelte';
 import WorkflowEditor from './components/WorkflowEditor.svelte';
 import App from './components/App.svelte';
 import type {
@@ -167,6 +168,12 @@ export interface FlowDropMountOptions {
    * logo's accessible name, `logoAlt` overrides the logo's accessible name, `href` an optional link around it.
    */
   branding?: NavbarBranding;
+  /**
+   * Host content at the navbar's trailing end, before the settings gear, e.g. a
+   * user menu. Only shown with the navbar. A Svelte host passes a snippet from its
+   * template; other hosts can build one with `createRawSnippet`.
+   */
+  navbarEnd?: Snippet;
   /** Show settings gear icon in navbar */
   showSettings?: boolean;
   /** Show the "Connected" status indicator in the navbar (default: true) */
@@ -741,6 +748,7 @@ export async function mountFlowDropApp(
     navbarTitle,
     navbarActions,
     branding,
+    navbarEnd,
     showSettings,
     showStatus,
     authProvider,
@@ -838,6 +846,7 @@ export async function mountFlowDropApp(
       navbarTitle,
       navbarActions,
       branding,
+      navbarEnd,
       showSettings,
       showStatus,
       endpointConfig: config,

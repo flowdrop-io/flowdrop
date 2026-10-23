@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`App` takes a `navbarEnd` snippet.** It renders at the navbar's trailing end, before the settings
+  gear, so a host can put its own controls there, such as a user menu. `Navbar` already had this as
+  its `end` slot; `App` now forwards it. It shows only when the navbar does. `mountFlowDropApp` takes
+  the same `navbarEnd` option.
+
 ## [2.15.2] - 2026-10-18
 
 ### Fixed
