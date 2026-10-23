@@ -342,13 +342,10 @@ AutocompleteConfig:
         - `/path`: relative to the site, used as given.
         - `path` or `./path` without a leading slash: relative to the API base
           (`endpointConfig.baseUrl`), so `secrets/options` reaches
-          `{baseUrl}/secrets/options`. Where no API base is configured (a
-          standalone `SchemaForm`), the form's `baseUrl` prop is used instead;
-          with neither, the URL is used as given.
-        - Refused, nothing is fetched: any URL with a tab or newline, a space
-          at either end or a backslash in its path, and a URL without a
-          leading slash that is empty, starts with `?` or `#`, or has a `..`
-          path segment (`%2e%2e` included).
+          `{baseUrl}/secrets/options`. A `SchemaForm` given a `baseUrl` prop
+          uses the prop instead; with neither, the URL is used as given.
+        - Malformed URLs are refused and nothing is fetched; the full rule is
+          in the library's config schema guide ("How `url` is resolved").
       example: secrets/options
     queryParam:
       type: string

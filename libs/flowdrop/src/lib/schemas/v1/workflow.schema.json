@@ -117,7 +117,7 @@
       "properties": {
         "url": {
           "type": "string",
-          "description": "The callback URL to fetch autocomplete suggestions from.\n\n- `https://host/…` or `//host/…`: used as given.\n- `/path`: relative to the site, used as given.\n- `path` or `./path` without a leading slash: relative to the API base\n  (`endpointConfig.baseUrl`), so `secrets/options` reaches\n  `{baseUrl}/secrets/options`. Where no API base is configured (a\n  standalone `SchemaForm`), the form's `baseUrl` prop is used instead;\n  with neither, the URL is used as given.\n- Refused, nothing is fetched: any URL with a tab or newline, a space\n  at either end or a backslash in its path, and a URL without a\n  leading slash that is empty, starts with `?` or `#`, or has a `..`\n  path segment (`%2e%2e` included).\n"
+          "description": "The callback URL to fetch autocomplete suggestions from.\n\n- `https://host/…` or `//host/…`: used as given.\n- `/path`: relative to the site, used as given.\n- `path` or `./path` without a leading slash: relative to the API base\n  (`endpointConfig.baseUrl`), so `secrets/options` reaches\n  `{baseUrl}/secrets/options`. A `SchemaForm` given a `baseUrl` prop\n  uses the prop instead; with neither, the URL is used as given.\n- Malformed URLs are refused and nothing is fetched; the full rule is\n  in the library's config schema guide (\"How `url` is resolved\").\n"
         },
         "queryParam": {
           "type": "string",

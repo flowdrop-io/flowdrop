@@ -87,8 +87,10 @@
   // not via getInstance(): this field is also exported on its own, and without
   // an instance it should just have no base, not throw during SSR.
   const fd = getContext<FlowDropInstance | undefined>(FLOWDROP_INSTANCE_KEY);
-  let warnedNoApiBase = false;
-  let loggedRefusedUrl = false;
+  // The URL last logged as refused / as missing a base: a field whose
+  // `autocomplete.url` changes logs again for the new one.
+  let warnedNoApiBaseFor: string | null = null;
+  let loggedRefusedFor: string | null = null;
 
   // Hoist the autocomplete branch — seven reads in the template, one inside
   // an {#each tag} loop. One getter walk per render.
@@ -220,31 +222,34 @@
    *   is refused (logged once per field)
    */
   function buildUrl(query: string): string | null {
-    // A URL without a leading slash resolves against the instance's API base,
-    // or, with none, SchemaForm's `baseUrl` prop. The prop also goes in front
-    // of `/path` URLs.
+    // A URL without a leading slash resolves against SchemaForm's `baseUrl`
+    // prop when one is given, else the instance's API base. The prop also goes
+    // in front of `/path` URLs.
     const apiBase = fd?.api.config?.baseUrl ?? '';
     const prefix = getBaseUrl?.() ?? '';
     const raw = autocomplete.url;
     const url = resolveAutocompleteUrl(raw, apiBase, prefix);
     if (url === null) {
-      if (!loggedRefusedUrl) {
-        loggedRefusedUrl = true;
+      if (loggedRefusedFor !== raw) {
+        loggedRefusedFor = raw;
         logger.error(
-          `[FormAutocomplete] Refusing autocomplete URL "${raw}": it must not contain a tab or newline, a space at either end or a backslash in its path, and without a leading slash it must not be empty, start with ? or #, or contain a ".." segment. Nothing is fetched.`
+          `[FormAutocomplete] Refusing autocomplete URL "${raw}"; nothing is fetched. See "How url is resolved" in the config schema guide for the URL forms that are accepted.`
         );
       }
       return null;
     }
-    if (!apiBase && !prefix && !warnedNoApiBase && isBaseRelative(raw)) {
-      warnedNoApiBase = true;
+    if (!apiBase && !prefix && warnedNoApiBaseFor !== raw && isBaseRelative(raw)) {
+      warnedNoApiBaseFor = raw;
       logger.warn(
         `[FormAutocomplete] "${raw}" is relative to the API base, but no endpointConfig.baseUrl is set; using it as given.`
       );
     }
 
-    const separator = url.includes('?') ? '&' : '?';
-    let fullUrl = `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
+    // The parameters go before any `#fragment`, which the request never sends.
+    const hashAt = url.indexOf('#');
+    const path = hashAt === -1 ? url : url.slice(0, hashAt);
+    const separator = path.includes('?') ? '&' : '?';
+    let fullUrl = `${path}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
 
     for (const [paramName, val] of Object.entries(depParamValues)) {
       fullUrl += `&${encodeURIComponent(paramName)}=${encodeURIComponent(val)}`;

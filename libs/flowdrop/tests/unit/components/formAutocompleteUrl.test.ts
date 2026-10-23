@@ -1,8 +1,8 @@
 /**
  * Which URL FormAutocomplete fetches. The API base is the instance's
  * `api.config.baseUrl` (same in every form); SchemaForm's `baseUrl`
- * (`flowdrop:getBaseUrl`) prefixes `/path` URLs and, with no API base, stands
- * in for it on no-slash URLs. Auth falls back to the instance's provider.
+ * (`flowdrop:getBaseUrl`) prefixes `/path` URLs and, when given, is the base
+ * for no-slash URLs instead. Auth falls back to the instance's provider.
  * Mounted for real (client
  * build, happy-dom). See resolveAutocompleteUrl for the rule itself.
  */
@@ -122,10 +122,20 @@ describe('FormAutocomplete URL resolution', () => {
     );
   });
 
-  it('under SchemaForm: a path without a leading slash resolves against the API base, not the prefix', async () => {
+  it('under SchemaForm: a path without a leading slash resolves against the prop, not the API base', async () => {
     expect(
       await fetchedUrl('secrets/options', API_BASE, { 'flowdrop:getBaseUrl': '/prefix' })
-    ).toBe('https://site/api/flowdrop/secrets/options?q=a');
+    ).toBe('/prefix/secrets/options?q=a');
+  });
+
+  it('puts the query before a #fragment', async () => {
+    expect(await fetchedUrl('secrets/options?kind=a#top', API_BASE)).toBe(
+      'https://site/api/flowdrop/secrets/options?kind=a&q=a'
+    );
+    unmount(mounted!);
+    mounted = null;
+    fetchMock.mockClear();
+    expect(await fetchedUrl('/users#top', API_BASE)).toBe('/users?q=a');
   });
 
   it('the label lookup of a filled field uses the same resolution', async () => {
@@ -140,15 +150,13 @@ describe('FormAutocomplete URL resolution', () => {
     flushSync();
     await vi.runAllTimersAsync();
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0][0])).toMatch(
-      /^https:\/\/site\/api\/flowdrop\/secrets\/options\?/
-    );
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(/^\/prefix\/secrets\/options\?/);
   });
 
-  it('the instance API base wins over the baseUrl prop for a path without a leading slash', async () => {
+  it('the baseUrl prop wins over the instance API base for a path without a leading slash', async () => {
     expect(
       await fetchedUrl('users/search', API_BASE, { 'flowdrop:getBaseUrl': 'https://api.x' })
-    ).toBe('https://site/api/flowdrop/users/search?q=a');
+    ).toBe('https://api.x/users/search?q=a');
   });
 
   it('with no API base, the baseUrl prop is the base for a path without a leading slash', async () => {
@@ -214,6 +222,17 @@ describe('FormAutocomplete URL resolution', () => {
         {},
         { instanceAuth: authWith('inst'), formAuth: null }
       );
+      expect(authOf()).toBeUndefined();
+    });
+
+    it('with an API base too, a path the baseUrl prop sends to another host gets no instance auth', async () => {
+      const url = await fetchedUrl(
+        'users/search',
+        API_BASE,
+        { 'flowdrop:getBaseUrl': 'https://api.x' },
+        { instanceAuth: authWith('inst'), formAuth: null }
+      );
+      expect(url).toBe('https://api.x/users/search?q=a');
       expect(authOf()).toBeUndefined();
     });
 

@@ -45,9 +45,9 @@ function isMalformedBaseRelative(url: string): boolean {
  *   base, so a backend can name its own endpoints without knowing where the
  *   editor reaches it, e.g. behind a hub's proxy mount
  *   (`secrets/options` under `/api/flowdrop/remotes/r1` →
- *   `/api/flowdrop/remotes/r1/secrets/options`). Without an API base the
- *   `prefix` takes its place (a standalone `SchemaForm` with a `baseUrl`);
- *   with neither it is used as given.
+ *   `/api/flowdrop/remotes/r1/secrets/options`). A `prefix` (a `SchemaForm`
+ *   given a `baseUrl` prop) takes precedence: what the form was given beats
+ *   the editor's base. With neither it is used as given.
  *
  * The base is treated as a folder: its last segment is kept, so
  * `secrets/options` under `https://site/api/flowdrop` is
@@ -63,7 +63,7 @@ function isMalformedBaseRelative(url: string): boolean {
  * @param url - The URL from the schema's `autocomplete.url`
  * @param base - The API base (`endpointConfig.baseUrl`), relative or absolute
  * @param prefix - SchemaForm's `baseUrl` prop: goes in front of `/path` URLs,
- *   and stands in for `base` for no-slash URLs when there is no `base`
+ *   and, when set, is the base for no-slash URLs instead of `base`
  * @returns The URL to fetch, or `null` when the URL is refused
  */
 export function resolveAutocompleteUrl(url: string, base?: string, prefix = ''): string | null {
@@ -71,7 +71,7 @@ export function resolveAutocompleteUrl(url: string, base?: string, prefix = ''):
   if (isAbsoluteUrl(url)) return url;
   if (url.startsWith('/')) return `${prefix}${url}`;
   if (isMalformedBaseRelative(url)) return null;
-  const root = (base || prefix).replace(/\/+$/, '');
+  const root = (prefix || base || '').replace(/\/+$/, '');
   if (!root) return url;
   return `${root}/${url.replace(/^\.\//, '')}`;
 }

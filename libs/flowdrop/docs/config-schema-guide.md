@@ -278,13 +278,14 @@ Autocomplete fields fetch suggestions from a remote API as the user types.
 - `path` or `./path` (no leading slash) is relative to the API base, the `baseUrl` of the editor's
   `endpointConfig`, and the base's last segment is kept: `secrets/options` under
   `https://site/api/flowdrop` reaches `https://site/api/flowdrop/secrets/options`. This lets a
-  backend name its own endpoints without knowing where the editor reaches it. Where no API base is
-  configured, such as a standalone `SchemaForm`, its `baseUrl` prop is used instead. With neither,
-  the URL is used as given and a warning is logged.
-- Refused, so nothing is fetched and one error is logged: any URL with a tab or newline, a space at
-  either end or a backslash in its path (the browser would fetch something other than the text
-  says), and a URL without a leading slash that is empty, starts with `?` or `#`, or has a `..` path
-  segment (`%2e%2e` included).
+  backend name its own endpoints without knowing where the editor reaches it. A `SchemaForm` given a
+  `baseUrl` prop uses that prop as the base instead: what the form is given beats the editor's
+  base. With neither, the URL is used as given and a warning is logged.
+- A `#fragment` is never sent; the query parameters go in front of it.
+- Refused, so nothing is fetched and one error is logged: any URL with a tab or newline, a control
+  character or space at either end, or a backslash in its path (the browser would fetch something
+  other than the text says), and a URL without a leading slash that is empty, starts with `?` or
+  `#`, or has a `..` path segment (`%2e%2e` included).
 
 This differs from `endpointConfig.endpoints`, where paths are always relative to `baseUrl`.
 

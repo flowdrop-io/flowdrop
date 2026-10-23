@@ -41,9 +41,9 @@ describe('resolveAutocompleteUrl', () => {
     expect(resolveAutocompleteUrl('./users/search', undefined, '/api/')).toBe('/api/users/search');
   });
 
-  it('prefers the base over the prefix for a path without a leading slash', () => {
+  it('prefers the prefix over the base for a path without a leading slash', () => {
     expect(resolveAutocompleteUrl('users/search', '/api/flowdrop', 'https://api.x')).toBe(
-      '/api/flowdrop/users/search'
+      'https://api.x/users/search'
     );
   });
 

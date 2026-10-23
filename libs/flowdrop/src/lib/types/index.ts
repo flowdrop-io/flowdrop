@@ -400,14 +400,12 @@ export interface AutocompleteConfig {
    * - `/path`: relative to the site, used as given (SchemaForm puts its
    *   `baseUrl` prop in front of it).
    * - `path` or `./path` without a leading slash: relative to the API base
-   *   (`endpointConfig.baseUrl`) in every form, so `secrets/options` reaches
-   *   `{baseUrl}/secrets/options` wherever the editor mounts the API. Where no
-   *   API base is configured (a standalone SchemaForm), the `baseUrl` prop is
-   *   used instead; with neither, the URL is used as given.
-   * - Refused, nothing is fetched: any URL with a tab or newline, a space
-   *   at either end or a backslash in its path, and a URL without a
-   *   leading slash that is empty, starts with `?` or `#`, or has a `..`
-   *   path segment (`%2e%2e` included).
+   *   (`endpointConfig.baseUrl`), so `secrets/options` reaches
+   *   `{baseUrl}/secrets/options` wherever the editor mounts the API. A
+   *   SchemaForm given a `baseUrl` prop uses the prop instead; with neither,
+   *   the URL is used as given.
+   * - Malformed URLs are refused and nothing is fetched; the full rule is in
+   *   docs/config-schema-guide.md ("How `url` is resolved").
    */
   url: string;
 
