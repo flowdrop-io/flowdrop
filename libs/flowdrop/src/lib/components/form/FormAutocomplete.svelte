@@ -26,7 +26,7 @@
 <script lang="ts">
   import { getContext, onMount, untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
-  import { isBaseRelative, resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
+  import { isAbsoluteUrl, isBaseRelative, resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
   import { FLOWDROP_INSTANCE_KEY } from '$lib/stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
   import Icon from '@iconify/svelte';
@@ -84,6 +84,7 @@
   // an instance it should just have no base, not throw during SSR.
   const fd = getContext<FlowDropInstance | undefined>(FLOWDROP_INSTANCE_KEY);
   let warnedNoApiBase = false;
+  let loggedRefusedUrl = false;
 
   // Hoist the autocomplete branch — seven reads in the template, one inside
   // an {#each tag} loop. One getter walk per render.
@@ -192,23 +193,47 @@
   }
 
   /**
+   * Auth for a request: the form's provider, or, where the form has none
+   * (interrupt forms), the instance's for URLs that are not absolute, i.e.
+   * requests to the site or the API base.
+   */
+  function currentAuthProvider(): AuthProvider | undefined {
+    const fromForm = getAuthProvider?.();
+    if (fromForm) return fromForm;
+    const raw = autocomplete.url;
+    if (isAbsoluteUrl(raw)) return undefined;
+    return fd?.api.authProvider;
+  }
+
+  /**
    * Build the full URL for fetching suggestions
    * @param query - The search query
-   * @returns Full URL with query parameter
+   * @returns Full URL with query parameter, or null when the configured URL
+   *   is refused (logged once per field)
    */
-  function buildUrl(query: string): string {
-    // A URL without a leading slash resolves against the API base, in every
-    // form. SchemaForm's `baseUrl` prop is only a prefix for `/path` URLs.
+  function buildUrl(query: string): string | null {
+    // A URL without a leading slash resolves against the instance's API base,
+    // or, with none, SchemaForm's `baseUrl` prop. The prop also goes in front
+    // of `/path` URLs.
     const apiBase = fd?.api.config?.baseUrl ?? '';
     const prefix = getBaseUrl?.() ?? '';
     const raw = autocomplete.url;
-    if (!apiBase && !warnedNoApiBase && isBaseRelative(raw)) {
+    if (!apiBase && !prefix && !warnedNoApiBase && isBaseRelative(raw)) {
       warnedNoApiBase = true;
       logger.warn(
         `[FormAutocomplete] "${raw}" is relative to the API base, but no endpointConfig.baseUrl is set; using it as given.`
       );
     }
     const url = resolveAutocompleteUrl(raw, apiBase, prefix);
+    if (url === null) {
+      if (!loggedRefusedUrl) {
+        loggedRefusedUrl = true;
+        logger.error(
+          `[FormAutocomplete] Refusing autocomplete URL "${raw}": a URL without a leading slash must not be empty, start with ? or #, or contain a ".." segment. Nothing is fetched.`
+        );
+      }
+      return null;
+    }
 
     const separator = url.includes('?') ? '&' : '?';
     let fullUrl = `${url}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
@@ -261,6 +286,13 @@
       return;
     }
 
+    const requestUrl = buildUrl(query);
+    if (requestUrl === null) {
+      suggestions = [];
+      error = 'Failed to fetch suggestions';
+      return;
+    }
+
     isLoading = true;
     error = null;
     // Capture in a local const so the timeout closure and fetch signal
@@ -276,9 +308,9 @@
       // authenticatedFetch merges auth headers (call getter for current value)
       // and applies the 401/403 lifecycle consistently with the rest of the lib.
       const response = await authenticatedFetch(
-        buildUrl(query),
+        requestUrl,
         { method: 'GET', signal: controller.signal },
-        { authProvider: getAuthProvider?.() }
+        { authProvider: currentAuthProvider() }
       );
 
       if (!response.ok) {
@@ -654,15 +686,17 @@
    */
   async function lookupLabels(): Promise<void> {
     labelController?.abort();
+    const requestUrl = buildUrl('');
+    if (requestUrl === null) return;
     const controller = new AbortController();
     labelController = controller;
     const fingerprint = depFingerprint;
     const timeoutId = setTimeout(() => controller.abort(timeoutError()), 5000);
     try {
       const response = await authenticatedFetch(
-        buildUrl(''),
+        requestUrl,
         { method: 'GET', signal: controller.signal },
-        { authProvider: getAuthProvider?.() }
+        { authProvider: currentAuthProvider() }
       );
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
