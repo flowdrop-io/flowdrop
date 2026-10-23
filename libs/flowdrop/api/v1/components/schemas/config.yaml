@@ -337,8 +337,17 @@ AutocompleteConfig:
       type: string
       description: |
         The callback URL to fetch autocomplete suggestions from.
-        Can be relative (resolved against API base URL) or absolute.
-      example: /api/users/search
+
+        - `https://host/…` or `//host/…`: used as given.
+        - `/path`: relative to the site, used as given.
+        - `path` or `./path` without a leading slash: relative to the API base
+          (`endpointConfig.baseUrl`), so `secrets/options` reaches
+          `{baseUrl}/secrets/options`. Where no API base is configured (a
+          standalone `SchemaForm`), the form's `baseUrl` prop is used instead;
+          with neither, the URL is used as given.
+        - Refused, nothing is fetched: a URL without a leading slash that is
+          empty, starts with `?` or `#`, or has a `..` path segment.
+      example: secrets/options
     queryParam:
       type: string
       default: q

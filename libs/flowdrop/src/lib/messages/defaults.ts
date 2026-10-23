@@ -115,6 +115,7 @@ export const defaultMessages = {
       suggestions: 'Suggestions',
       retry: 'Retry',
       timedOut: 'The request timed out',
+      invalidUrl: 'Suggestions are not available: the field has an invalid URL',
       noResults: 'No results found'
     },
 

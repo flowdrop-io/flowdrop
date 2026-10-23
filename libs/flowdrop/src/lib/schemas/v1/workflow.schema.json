@@ -117,7 +117,7 @@
       "properties": {
         "url": {
           "type": "string",
-          "description": "The callback URL to fetch autocomplete suggestions from.\nCan be relative (resolved against API base URL) or absolute.\n"
+          "description": "The callback URL to fetch autocomplete suggestions from.\n\n- `https://host/…` or `//host/…`: used as given.\n- `/path`: relative to the site, used as given.\n- `path` or `./path` without a leading slash: relative to the API base\n  (`endpointConfig.baseUrl`), so `secrets/options` reaches\n  `{baseUrl}/secrets/options`. Where no API base is configured (a\n  standalone `SchemaForm`), the form's `baseUrl` prop is used instead;\n  with neither, the URL is used as given.\n- Refused, nothing is fetched: a URL without a leading slash that is\n  empty, starts with `?` or `#`, or has a `..` path segment.\n"
         },
         "queryParam": {
           "type": "string",

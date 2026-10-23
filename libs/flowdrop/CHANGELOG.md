@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Autocomplete URLs relative to the API base** (#49). An `autocomplete.url` without a leading
+  slash (`secrets/options`, or `./secrets/options`) resolves against the editor's
+  `endpointConfig.baseUrl` in every form (config panel, `SchemaForm`, interrupt forms), so a backend
+  can name its own option endpoints and they work behind any API base, including a hub's proxy mount
+  such as `/api/flowdrop/remotes/{id}`. `https://…` and `//host/…` URLs are used as given, and a
+  `/path` URL stays relative to the site (as in the docs' `/api/users/search` example);
+  `SchemaForm`'s `baseUrl` prop still goes in front of it. Where no API base is configured, a
+  no-slash URL resolves against `SchemaForm`'s `baseUrl` prop instead (as a standalone `SchemaForm`
+  always did); with neither it is used as given, with a logged warning. A no-slash URL that is
+  empty, starts with `?` or `#`, or has a `..` path segment is refused: nothing is fetched and one
+  error is logged.
+- **Interrupt forms send the editor's auth with autocomplete requests.** `FormPrompt` has no
+  `authProvider` of its own, so its autocomplete fields went out without auth. They now use the
+  instance's auth provider for requests to the site or under an absolute API base, judged by the
+  URL that is fetched. Requests to other hosts, including a `baseUrl` prop pointing elsewhere, still
+  use only the form's provider.
+
+### Changed
+
+- `SchemaForm`'s `baseUrl` prop now only applies to URLs without a leading slash when no API base is
+  configured; an API base on the instance takes precedence. It still goes in front of `/path` URLs.
+
 ## [2.15.2] - 2026-10-18
 
 ### Fixed

@@ -395,7 +395,17 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH';
 export interface AutocompleteConfig {
   /**
    * The callback URL to fetch autocomplete suggestions from.
-   * Can be relative (resolved against API base URL) or absolute.
+   *
+   * - `https://host/…` or `//host/…`: used as given.
+   * - `/path`: relative to the site, used as given (SchemaForm puts its
+   *   `baseUrl` prop in front of it).
+   * - `path` or `./path` without a leading slash: relative to the API base
+   *   (`endpointConfig.baseUrl`) in every form, so `secrets/options` reaches
+   *   `{baseUrl}/secrets/options` wherever the editor mounts the API. Where no
+   *   API base is configured (a standalone SchemaForm), the `baseUrl` prop is
+   *   used instead; with neither, the URL is used as given.
+   * - Refused, nothing is fetched: a URL without a leading slash that is
+   *   empty, starts with `?` or `#`, or has a `..` path segment.
    */
   url: string;
 
