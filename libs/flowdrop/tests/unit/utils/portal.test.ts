@@ -110,9 +110,10 @@ describe('portal in a host wrapper', () => {
     root.remove();
   });
 
-  it('a library scope without data-theme inside the wrapper still follows the store', () => {
-    // PlaygroundSurface inside PlaygroundApp, or a standalone SettingsPanel: the
-    // nearest .flowdrop-scope sets no data-theme, so the store decides.
+  it('a scope without data-theme gives the class but leaves the theme to the store', () => {
+    // A host wrapper as in the ui entry's example, or a standalone SettingsPanel:
+    // the skin rules on .flowdrop-scope still match the overlay, and with no
+    // data-theme anywhere the store decides the scheme.
     const panel = document.createElement('div');
     panel.className = 'flowdrop-scope';
     const node = document.createElement('div');
@@ -120,7 +121,7 @@ describe('portal in a host wrapper', () => {
     document.body.appendChild(panel);
 
     const action = portal(node);
-    expect(node.classList.contains('flowdrop-scope')).toBe(false);
+    expect(node.classList.contains('flowdrop-scope')).toBe(true);
     expect(node.getAttribute('data-theme')).toBe('light');
     action.destroy();
     panel.remove();

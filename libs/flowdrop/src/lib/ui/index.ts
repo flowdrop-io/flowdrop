@@ -18,14 +18,17 @@
  *   import '@flowdrop/flowdrop/styles/base.css';
  * </script>
  *
- * <div class="flowdrop-scope">
+ * <div class="flowdrop-scope" data-theme="light">
  *   <Card><Button variant="primary">Save</Button></Card>
  * </div>
  * ```
  *
  * The base styles (box-sizing, type, `color-scheme`) apply only inside
  * `.flowdrop-root`, `.flowdrop-scope` or `.flowdrop-portal`, so wrap the host
- * content that uses these components in one of them.
+ * content that uses these components in one of them. Set `data-theme`
+ * (`light` or `dark`) on that wrapper: an overlay such as `SurfaceOverlay` is
+ * moved to `<body>` and takes the scheme from it. Without one, the overlay
+ * follows the editor's stored theme setting, which may not match the page.
  *
  * To give that content the editor's Graphite look, load tokens.css and add
  * `skinCss(graphiteSkin, '.flowdrop-scope')` as a stylesheet. Dark mode is
