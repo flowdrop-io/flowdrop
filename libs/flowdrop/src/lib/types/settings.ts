@@ -436,6 +436,164 @@ export const DEFAULT_SETTINGS: FlowDropSettings = {
 };
 
 // =========================================================================
+// Field Schema
+// =========================================================================
+
+/**
+ * Describes one editor setting: its value type, a short label, and the
+ * values it allows. Lets a host build a settings form or validate input
+ * without reading the TypeScript types.
+ */
+export interface SettingsFieldSchema {
+  type: 'boolean' | 'number' | 'string' | 'object';
+  label: string;
+  description?: string;
+  /** Allowed values of a string setting */
+  enum?: readonly string[];
+  /** Lowest allowed value of a number setting */
+  minimum?: number;
+  /** Highest allowed value of a number setting */
+  maximum?: number;
+}
+
+const SURFACE_PLACEMENTS = [
+  'sidebar',
+  'modal',
+  'below'
+] as const satisfies readonly SurfacePlacement[];
+
+/**
+ * A field schema for every key of {@link DEFAULT_SETTINGS}, by category.
+ * The nested width and zoom-tier settings are replaced as a whole, so they are
+ * plain `object` fields.
+ */
+export const SETTINGS_FIELD_SCHEMA: Record<
+  SettingsCategory,
+  Record<string, SettingsFieldSchema>
+> = {
+  theme: {
+    preference: {
+      type: 'string',
+      label: 'Colour scheme',
+      description: 'Light, dark, follow the system, or follow the embedding page',
+      enum: ['light', 'dark', 'auto', 'host'] satisfies ThemePreference[]
+    }
+  },
+  editor: {
+    showGrid: { type: 'boolean', label: 'Show grid' },
+    snapToGrid: { type: 'boolean', label: 'Snap to grid' },
+    gridSize: {
+      type: 'number',
+      label: 'Grid size',
+      description: 'In pixels; 10 or 20',
+      minimum: 10,
+      maximum: 20
+    },
+    layoutGapX: {
+      type: 'number',
+      label: 'Layout gap across',
+      description: 'Pixels between cards side by side, a multiple of 20',
+      minimum: 0
+    },
+    layoutGapY: {
+      type: 'number',
+      label: 'Layout gap down',
+      description: 'Pixels between stacked cards, a multiple of 20',
+      minimum: 0
+    },
+    showMinimap: { type: 'boolean', label: 'Show minimap' },
+    defaultZoom: { type: 'number', label: 'Default zoom', description: '1 is 100%', minimum: 0 },
+    fitViewOnLoad: { type: 'boolean', label: 'Fit workflow to view on load' },
+    proximityConnect: { type: 'boolean', label: 'Connect nodes by proximity' },
+    proximityConnectDistance: {
+      type: 'number',
+      label: 'Proximity distance',
+      description: 'In pixels',
+      minimum: 0
+    },
+    showNodeDescriptions: { type: 'boolean', label: 'Show node descriptions' },
+    zoomTiers: {
+      type: 'object',
+      label: 'Zoom tiers',
+      description: 'The zoom at which each tier (full, outline, glyph, map) starts'
+    }
+  },
+  ui: {
+    sidebarWidth: {
+      type: 'number',
+      label: 'Sidebar width',
+      description: 'Deprecated; use sidebar widths',
+      minimum: 0
+    },
+    sidebarWidths: {
+      type: 'object',
+      label: 'Sidebar widths',
+      description: 'Width per tab, in pixels'
+    },
+    sheetWidths: {
+      type: 'object',
+      label: 'Sheet widths',
+      description: 'Width per sheet, in pixels'
+    },
+    sidebarCollapsed: { type: 'boolean', label: 'Collapse sidebar' },
+    compactMode: { type: 'boolean', label: 'Compact mode' },
+    theme: {
+      type: 'string',
+      label: 'Theme',
+      enum: ['classic', 'minimal', 'drafter', 'graphite'] satisfies FlowDropThemeName[]
+    },
+    consoleOpen: { type: 'boolean', label: 'Open the console' },
+    consoleHeight: {
+      type: 'number',
+      label: 'Console height',
+      description: 'In pixels',
+      minimum: 0
+    },
+    bottomPanelTab: {
+      type: 'string',
+      label: 'Bottom panel tab',
+      enum: ['console', 'chat'] satisfies UISettings['bottomPanelTab'][]
+    },
+    configPlacement: {
+      type: 'string',
+      label: 'Configuration panel placement',
+      enum: SURFACE_PLACEMENTS
+    },
+    consolePlacement: { type: 'string', label: 'Console placement', enum: SURFACE_PLACEMENTS }
+  },
+  behavior: {
+    autoSave: { type: 'boolean', label: 'Auto-save' },
+    autoSaveInterval: {
+      type: 'number',
+      label: 'Auto-save interval',
+      description: 'In milliseconds',
+      minimum: 0
+    },
+    storeDraftsInBrowser: { type: 'boolean', label: 'Keep drafts in the browser' },
+    undoHistoryLimit: { type: 'number', label: 'Undo history limit', minimum: 0 },
+    confirmDelete: { type: 'boolean', label: 'Confirm before deleting' },
+    chatMode: {
+      type: 'string',
+      label: 'Assistant mode',
+      enum: ['tools', 'dsl'] satisfies BehaviorSettings['chatMode'][]
+    },
+    chatAutoRetry: { type: 'boolean', label: 'Retry failed assistant changes' },
+    chatAllowLayoutChanges: { type: 'boolean', label: 'Let the assistant move nodes' }
+  },
+  api: {
+    timeout: {
+      type: 'number',
+      label: 'Request timeout',
+      description: 'In milliseconds',
+      minimum: 0
+    },
+    retryEnabled: { type: 'boolean', label: 'Retry failed requests' },
+    retryAttempts: { type: 'number', label: 'Retry attempts', minimum: 0 },
+    cacheEnabled: { type: 'boolean', label: 'Cache responses' }
+  }
+};
+
+// =========================================================================
 // Partial Settings Types (for updates)
 // =========================================================================
 

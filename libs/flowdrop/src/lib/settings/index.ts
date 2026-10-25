@@ -38,6 +38,7 @@ export type {
   ApiSettings,
   FlowDropSettings,
   SettingsCategory,
+  SettingsFieldSchema,
   PartialSettings,
   DeepPartial,
   SettingsChangeEvent,
@@ -57,6 +58,7 @@ export {
   DEFAULT_BEHAVIOR_SETTINGS,
   DEFAULT_API_SETTINGS,
   DEFAULT_SETTINGS,
+  SETTINGS_FIELD_SCHEMA,
   SETTINGS_STORAGE_KEY
 } from '../types/settings.js';
 

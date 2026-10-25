@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Field schema for every editor setting.** `SETTINGS_FIELD_SCHEMA` (and the `SettingsFieldSchema` type),
+  exported from `@flowdrop/flowdrop/settings`, describes each setting: its type, a short label and the
+  values it allows.
+
 ## [2.16.0] - 2026-10-24
 
 ### Added
