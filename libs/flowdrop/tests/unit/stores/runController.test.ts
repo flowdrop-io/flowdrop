@@ -501,7 +501,7 @@ describe('RunController', () => {
 
       await runs.loadNodeStatuses('p1', wf());
 
-      expect(spy).toHaveBeenCalledWith(expect.anything(), ['n1', 'n2'], 'p1');
+      expect(spy).toHaveBeenCalledWith(expect.anything(), ['n1', 'n2'], 'p1', expect.anything());
       expect(playground.nodeStatusFor('n1')).toEqual(done);
       expect(playground.nodeStatusScope).toEqual({ workflowId: 'wf', pipelineId: 'p1' });
     });

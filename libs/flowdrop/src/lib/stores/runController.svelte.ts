@@ -1067,7 +1067,8 @@ export class RunController {
       const statuses = await nodeExecutionService.fetchMultipleNodeExecutionInfo(
         this.#api.config,
         target.nodes.map((node) => node.id),
-        runId
+        runId,
+        this.#api.authProvider
       );
       if (token !== this.#statusToken) return;
       this.#playground.setNodeStatuses(statuses, { workflowId: target.id, pipelineId: runId });
