@@ -35,7 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'pnpm'
           cache-dependency-path: apps/api-docs/pnpm-lock.yaml
 
@@ -72,7 +72,7 @@ jobs:
       - name: Install oasdiff
         run: |
           curl -sSL https://raw.githubusercontent.com/Tufin/oasdiff/main/install.sh | sh
-          sudo mv oasdiff /usr/local/bin/
+          oasdiff --version
 
       - name: Check for breaking changes
         run: |

@@ -6692,6 +6692,7 @@ components:
           nullable: true
           description: Interface input that receives the person's message.
         history:
+          type: object
           allOf:
             - $ref: '#/components/schemas/PlaygroundChatHistory'
           nullable: true
@@ -6724,6 +6725,7 @@ components:
         binding.
       properties:
         chat:
+          type: object
           allOf:
             - $ref: '#/components/schemas/PlaygroundChatBinding'
           nullable: true
