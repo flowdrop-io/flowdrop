@@ -13,6 +13,7 @@ const mockBuildEndpointUrl = vi.fn();
 let endpointConfig: EndpointConfig | null = null;
 
 vi.mock('$lib/config/endpoints.js', () => ({
+  getEndpointHeaders: () => ({ 'Content-Type': 'application/json' }),
   buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args)
 }));
 
@@ -276,6 +277,30 @@ describe('NodeExecutionService', () => {
         'pipeline-1'
       );
       expect(idle['node-1'].status).toBe('idle');
+    });
+
+    it('sends the auth provider headers', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { jobs: [], node_statuses: {} } })
+      });
+      const authProvider = { getAuthHeaders: async () => ({ Authorization: 'Bearer t' }) };
+
+      await service.fetchMultipleNodeExecutionInfo(
+        endpointConfig,
+        ['node-1'],
+        'pipeline-1',
+        authProvider
+      );
+      await service.getNodeExecutionInfo(endpointConfig, 'node-1', 'pipeline-1', authProvider);
+      await service.getAllNodeExecutionCounts(endpointConfig, authProvider);
+
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls).toHaveLength(3);
+      for (const [, init] of calls) {
+        expect(init.headers.Authorization).toBe('Bearer t');
+      }
     });
 
     it('should mark API unavailable on 404', async () => {

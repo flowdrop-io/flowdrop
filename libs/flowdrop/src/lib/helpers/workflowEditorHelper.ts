@@ -156,7 +156,8 @@ export class NodeOperationsHelper {
       const executionInfo = await nodeExecutionService.getMultipleNodeExecutionInfo(
         api.config,
         nodeIds,
-        pipelineId
+        pipelineId,
+        api.authProvider
       );
 
       return executionInfo;

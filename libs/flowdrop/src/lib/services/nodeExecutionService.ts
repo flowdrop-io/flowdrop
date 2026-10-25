@@ -11,6 +11,8 @@ import {
   PIPELINE_API_UNAVAILABLE_DURATION_MS
 } from '../config/constants.js';
 import { logger } from '../utils/logger.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
+import type { AuthProvider } from '../types/auth.js';
 
 /**
  * Internal type for pipeline job data from the API response
@@ -76,7 +78,8 @@ export class NodeExecutionService {
   async getNodeExecutionInfo(
     endpointConfig: EndpointConfig | null,
     nodeId: string,
-    pipelineId?: string
+    pipelineId?: string,
+    authProvider?: AuthProvider
   ): Promise<NodeExecutionInfo | null> {
     if (!pipelineId) {
       return null;
@@ -87,7 +90,11 @@ export class NodeExecutionService {
       const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
         id: pipelineId
       });
-      const response = await fetch(url);
+      const response = await authenticatedFetch(
+        url,
+        { method: 'GET' },
+        { config: endpointConfig, endpointKey: 'pipelines.get', authProvider }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -118,7 +125,8 @@ export class NodeExecutionService {
   async getMultipleNodeExecutionInfo(
     endpointConfig: EndpointConfig | null,
     nodeIds: string[],
-    pipelineId?: string
+    pipelineId?: string,
+    authProvider?: AuthProvider
   ): Promise<Record<string, NodeExecutionInfo>> {
     if (!pipelineId) {
       return {};
@@ -128,7 +136,12 @@ export class NodeExecutionService {
       return this.idleExecutionInfo(nodeIds);
     }
     try {
-      return await this.fetchMultipleNodeExecutionInfo(endpointConfig, nodeIds, pipelineId);
+      return await this.fetchMultipleNodeExecutionInfo(
+        endpointConfig,
+        nodeIds,
+        pipelineId,
+        authProvider
+      );
     } catch (error) {
       logger.error('Failed to fetch multiple node execution info:', error);
       // Return default values instead of empty object to prevent repeated calls
@@ -144,7 +157,8 @@ export class NodeExecutionService {
   async fetchMultipleNodeExecutionInfo(
     endpointConfig: EndpointConfig | null,
     nodeIds: string[],
-    pipelineId: string
+    pipelineId: string,
+    authProvider?: AuthProvider
   ): Promise<Record<string, NodeExecutionInfo>> {
     // The pipeline API is temporarily unavailable: do not call it again yet.
     if (this.apiUnavailable && Date.now() < this.apiUnavailableUntil) {
@@ -154,7 +168,11 @@ export class NodeExecutionService {
     const url = buildEndpointUrl(endpointConfig, endpointConfig.endpoints.pipelines.get, {
       id: pipelineId
     });
-    const response = await fetch(url);
+    const response = await authenticatedFetch(
+      url,
+      { method: 'GET' },
+      { config: endpointConfig, endpointKey: 'pipelines.get', authProvider }
+    );
 
     if (!response.ok) {
       // A 404 means the pipeline API is not available: mark it unavailable for
@@ -196,13 +214,18 @@ export class NodeExecutionService {
    * Get all node execution counts
    */
   async getAllNodeExecutionCounts(
-    endpointConfig: EndpointConfig | null
+    endpointConfig: EndpointConfig | null,
+    authProvider?: AuthProvider
   ): Promise<Record<string, number>> {
     try {
       if (!endpointConfig) throw new Error('Endpoint config not available');
       const url = buildEndpointUrl(endpointConfig, '/node-execution-counts');
 
-      const response = await fetch(url);
+      const response = await authenticatedFetch(
+        url,
+        { method: 'GET' },
+        { config: endpointConfig, endpointKey: 'nodeExecution.counts', authProvider }
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

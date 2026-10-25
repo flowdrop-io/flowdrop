@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Run status badges against authenticated backends.** `nodeExecutionService` fetched the pipeline
+  and `/node-execution-counts` with a bare `fetch`, so no `Authorization` header was sent and the
+  per-node status badges never appeared in Test mode. It now uses `authenticatedFetch` with the
+  editor's `AuthProvider`.
+
 ## [2.16.0] - 2026-10-24
 
 ### Added
