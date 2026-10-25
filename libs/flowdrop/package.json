@@ -313,7 +313,8 @@
     "dag",
     "agent",
     "ai-workflow",
-    "embeddable"
+    "embeddable",
+    "workflow-specification"
   ],
   "dependencies": {
     "diff": "^8.0.3",

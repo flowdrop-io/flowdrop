@@ -283,12 +283,17 @@ FLOWDROP_API_BASE_URL=http://your-backend/api node build
 
 Runtime configuration means you build once and deploy to staging, production, or anywhere else with just environment variables.
 
+## Specification
+
+The editor implements the [FlowDrop Workflow Specification](https://flowdrop.io/spec/), version 1.0: the rules a FlowDrop workflow obeys, stated independently of any one implementation. The specification has 386 numbered rules (217 core, 167 extended, 2 optional) covering how a workflow is written, stored, validated and executed, with rulings for the hard cases and conformance fixtures you can run against your own backend. Rules are also published as [machine-readable JSON](https://flowdrop.io/spec/rules.json), and the source is on [GitHub](https://github.com/flowdrop-io/flowdrop-spec).
+
 ## Documentation
 
 | Resource                                                                                     | Description              |
 | -------------------------------------------------------------------------------------------- | ------------------------ |
 | [QUICK_START.md](https://flowdrop.mintlify.app/docs/quickstart)                              | Get running in 5 minutes |
-| [API Documentation](https://flowdrop.mintlify.app/api-reference/introduction)                | REST API specification   |
+| [API Documentation](https://flowdrop.io/docs/api/)                                           | REST API specification   |
+| [Workflow Specification](https://flowdrop.io/spec/)                                          | Rules for workflows      |
 | [CHANGELOG.md](https://github.com/flowdrop-io/flowdrop/blob/main/libs/flowdrop/CHANGELOG.md) | Version history          |
 
 ## Development
