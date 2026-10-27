@@ -21,6 +21,7 @@
   import ConfigForm from '$lib/components/ConfigForm.svelte';
   import NodeInspector from '$lib/components/NodeInspector.svelte';
   import WorkflowSettingsPanel from '$lib/components/WorkflowSettingsPanel.svelte';
+  import WorkflowCompareDialog from '$lib/components/WorkflowCompareDialog.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
   import WorkflowPlaygroundSettings from '$lib/components/WorkflowPlaygroundSettings.svelte';
@@ -2472,6 +2473,15 @@
   >
     {@render consoleChatTabs()}
   </SurfaceOverlay>
+{/if}
+
+{#if fd.saveConflict.comparing && fd.saveConflict.comparison}
+  <WorkflowCompareDialog
+    comparison={fd.saveConflict.comparison}
+    onKeepMine={() => void fd.saveConflict.keepMine()}
+    onLoadTheirs={() => fd.saveConflict.acceptTheirs()}
+    onClose={() => fd.saveConflict.closeComparison()}
+  />
 {/if}
 
 <style>

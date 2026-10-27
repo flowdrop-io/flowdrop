@@ -34,6 +34,7 @@ import { ConnectDragStore } from './connectDragStore.svelte.js';
 import { LoopbackLanesStore } from './loopbackLanesStore.svelte.js';
 import { EditedNodesStore } from './editedNodesStore.svelte.js';
 import { DoctorStore } from './doctorStore.svelte.js';
+import { SaveConflictStore } from './saveConflictStore.svelte.js';
 import { PlaygroundService, playgroundService } from '../services/playgroundService.js';
 import { ApiContext } from './apiContext.js';
 import { PortCompatibilityChecker } from '../utils/connections.js';
@@ -161,6 +162,11 @@ export interface FlowDropInstance {
    * clicking Save does.
    */
   readonly host: HostHooksStore;
+  /**
+   * A save the server refused because someone else saved first: the toast's
+   * Keep mine / Load theirs / Compare choices and the compare dialog's state.
+   */
+  readonly saveConflict: SaveConflictStore;
   /**
    * The approval gate every agent surface on this editor asks — the WebMCP
    * registration and the chat panel's tool loop. Whichever surface comes
@@ -321,7 +327,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     }
   ];
 
-  return {
+  const instance: FlowDropInstance = {
     id,
     storagePrefix,
     isDefault,
@@ -354,6 +360,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     doctor,
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
+    saveConflict: new SaveConflictStore(() => instance),
     approvalGate: null,
     skinScope: null,
     get measureNode() {
@@ -375,6 +382,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
       }
     }
   };
+  return instance;
 }
 
 // =========================================================================

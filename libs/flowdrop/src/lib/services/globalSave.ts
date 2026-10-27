@@ -17,6 +17,7 @@ import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
 import { stripExecutionInfo } from '$lib/utils/nodeStatus.js';
 import { playgroundForSave } from '$lib/utils/playgroundChat.js';
 import { buildSaveBody } from '$lib/utils/workflowDraft.js';
+import type { ApiError } from '$lib/api/enhanced-client.js';
 import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 import { DEFAULT_FEATURES } from '$lib/types/events.js';
@@ -98,6 +99,12 @@ function ensureApiConfiguration(fd: FlowDropInstance): void {
   });
 
   fd.api.configure(config);
+}
+
+/** The error when a save was refused because the workflow changed on the server meanwhile. */
+function isSaveConflict(error: unknown): ApiError | null {
+  const e = error as Partial<ApiError> | null;
+  return e?.status === 409 && e.errorData?.error_code === 'CONFLICT' ? (error as ApiError) : null;
 }
 
 /**
@@ -255,7 +262,16 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       suppressToast = eventHandlers.onApiError(errorObj, 'save') === true;
     }
 
-    if (features.showToasts && !suppressToast) {
+    // Someone else saved first: offer Keep mine / Load theirs / Compare instead
+    // of the generic error. Other 409s (a taken id) keep the normal toast.
+    const conflict = isSaveConflict(error);
+    if (conflict) {
+      const details = conflict.errorData.details as { current?: unknown } | undefined;
+      fd.saveConflict.report({
+        currentRevision: String(details?.current ?? ''),
+        retry: () => globalSaveWorkflow(options)
+      });
+    } else if (features.showToasts && !suppressToast) {
       // The error object, not its message: an ApiError carries the server's
       // reasons as `details`, and the toast renders them as a list.
       // "Show problems" opens the navbar's problems popover, when there are

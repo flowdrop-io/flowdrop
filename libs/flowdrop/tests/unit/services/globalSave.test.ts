@@ -17,6 +17,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Workflow } from '$lib/types/index.js';
 import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
+import { ApiError } from '$lib/api/enhanced-client.js';
+import { SaveConflictStore } from '$lib/stores/saveConflictStore.svelte.js';
+import { apiToasts } from '$lib/services/toastService.js';
 import { createTestNode, createTestWorkflow } from '../../utils/index.js';
 
 // ---------------------------------------------------------------------------
@@ -34,7 +37,8 @@ const {
   mockApiIsConfigured,
   mockApiConfigure,
   mockStoreAcknowledgeServer,
-  mockNoteWorkflowSaved
+  mockNoteWorkflowSaved,
+  mockReport
 } = vi.hoisted(() => ({
   mockGetWorkflowStore: vi.fn(),
   mockWorkflowActionsBatchUpdate: vi.fn(),
@@ -44,7 +48,8 @@ const {
   mockApiIsConfigured: vi.fn(),
   mockApiConfigure: vi.fn(),
   mockStoreAcknowledgeServer: vi.fn(),
-  mockNoteWorkflowSaved: vi.fn()
+  mockNoteWorkflowSaved: vi.fn(),
+  mockReport: vi.fn()
 }));
 
 // globalSave resolves its target via getDefaultInstance(). Mock the instance
@@ -62,6 +67,7 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
       acknowledgeServer: (...args: unknown[]) => mockStoreAcknowledgeServer(...args)
     },
     doctor: { canOpen: false, requestOpen: () => false },
+    saveConflict: { report: (...args: unknown[]) => mockReport(...args) },
     runs: {
       noteWorkflowSaved: (...args: unknown[]) => mockNoteWorkflowSaved(...args)
     },
@@ -84,6 +90,7 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
 vi.mock('$lib/services/toastService.js', () => ({
   apiToasts: { loading: vi.fn(() => 'toast-id'), error: vi.fn() },
   workflowToasts: { saved: vi.fn() },
+  showError: vi.fn(),
   dismissToast: vi.fn()
 }));
 
@@ -381,6 +388,78 @@ describe('globalSaveWorkflow', () => {
       const sent = mockClientUpdate.mock.calls[0][1] as Record<string, unknown>;
       expect(sent).not.toHaveProperty('revision');
       expect(sent).not.toHaveProperty('can');
+    });
+  });
+
+  describe('a clashing save (409 CONFLICT)', () => {
+    const conflict = () =>
+      new ApiError('Conflict', 409, 'update workflow', {
+        error_code: 'CONFLICT',
+        details: { current: '200', sent: '100' }
+      });
+
+    it('reports the clash with the server revision, skips the generic toast and still rejects', async () => {
+      mockGetWorkflowStore.mockReturnValue({ ...storeWorkflow('wf-1'), revision: '100' });
+      mockClientUpdate.mockRejectedValue(conflict());
+
+      await expect(globalSaveWorkflow()).rejects.toBeInstanceOf(ApiError);
+
+      expect(mockReport).toHaveBeenCalledWith(expect.objectContaining({ currentRevision: '200' }));
+      expect(apiToasts.error).not.toHaveBeenCalled();
+    });
+
+    it('keepMine takes the new revision and sends the save again', async () => {
+      mockGetWorkflowStore.mockReturnValue({ ...storeWorkflow('wf-1'), revision: '100' });
+      mockClientUpdate.mockRejectedValueOnce(conflict());
+      mockClientUpdate.mockResolvedValueOnce({ ...backendWorkflow('wf-1'), revision: '201' });
+      await expect(globalSaveWorkflow()).rejects.toBeInstanceOf(ApiError);
+      const report = mockReport.mock.calls[0][0] as {
+        currentRevision: string;
+        retry: () => Promise<boolean>;
+      };
+
+      const acknowledgeServer = vi.fn();
+      const store = new SaveConflictStore(() => ({ workflow: { acknowledgeServer } }) as never);
+      store.report(report);
+      await store.keepMine();
+
+      expect(acknowledgeServer).toHaveBeenCalledWith({ revision: '200' });
+      expect(mockClientUpdate).toHaveBeenCalledTimes(2);
+      expect(mockStoreMarkAsSaved).toHaveBeenCalled();
+    });
+
+    it('loadTheirs loads the saved version and leaves the editor clean', async () => {
+      const loadWorkflow = vi.fn().mockResolvedValue(backendWorkflow('wf-1'));
+      const initialize = vi.fn();
+      const schedule = vi.fn();
+      const store = new SaveConflictStore(
+        () =>
+          ({
+            workflow: { current: storeWorkflow('wf-1'), initialize },
+            api: { client: { loadWorkflow } },
+            doctor: { schedule }
+          }) as never
+      );
+      store.report({ currentRevision: '200', retry: async () => true });
+
+      await store.loadTheirs();
+
+      expect(loadWorkflow).toHaveBeenCalledWith('wf-1');
+      expect(initialize).toHaveBeenCalledWith(expect.objectContaining({ id: 'wf-1' }));
+      expect(schedule).toHaveBeenCalled();
+      expect(store.comparing).toBe(false);
+    });
+
+    it('keeps the old toast for a 409 that is not a revision clash', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow('wf-1'));
+      mockClientUpdate.mockRejectedValue(
+        new ApiError('Taken', 409, 'update workflow', { error_code: 'WORKFLOW_ID_CONFLICT' })
+      );
+
+      await expect(globalSaveWorkflow()).rejects.toBeInstanceOf(ApiError);
+
+      expect(mockReport).not.toHaveBeenCalled();
+      expect(apiToasts.error).toHaveBeenCalled();
     });
   });
 
