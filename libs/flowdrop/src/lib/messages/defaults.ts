@@ -428,6 +428,16 @@ export const defaultMessages = {
     failed: 'The run could not be started.'
   },
 
+  // The form Run opens for a workflow that has inputs.
+  runInputsDialog: {
+    title: ({ name }: { name: string }) => `Run ${name}`,
+    close: 'Close the run form',
+    // Shown under the Run button when required inputs are empty; names the inputs.
+    missing: ({ names }: { names: string }) => `Fill in the required inputs first: ${names}.`,
+    // Shown when an input holds text that is not the JSON its type needs.
+    invalid: ({ names }: { names: string }) => `These inputs are not valid: ${names}.`
+  },
+
   // The run bar on the Edit canvas: shown only while a run exists.
   runBar: {
     label: 'Run',

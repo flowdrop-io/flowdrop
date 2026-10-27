@@ -22,10 +22,15 @@
   import NodeInspector from '$lib/components/NodeInspector.svelte';
   import WorkflowSettingsPanel from '$lib/components/WorkflowSettingsPanel.svelte';
   import WorkflowCompareDialog from '$lib/components/WorkflowCompareDialog.svelte';
+  import RunInputsDialog from '$lib/components/RunInputsDialog.svelte';
   import ConfigPanel from '$lib/components/ConfigPanel.svelte';
   import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
   import WorkflowPlaygroundSettings from '$lib/components/WorkflowPlaygroundSettings.svelte';
-  import { withPlaygroundChat, withoutInterfaceTurns } from '$lib/utils/playgroundChat.js';
+  import {
+    resolvePlaygroundChat,
+    withPlaygroundChat,
+    withoutInterfaceTurns
+  } from '$lib/utils/playgroundChat.js';
   import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
   import ConsoleStrip from '$lib/components/console/ConsoleStrip.svelte';
@@ -84,6 +89,11 @@
   import { apiToasts, dismissToast, showError } from '$lib/services/toastService.js';
   import { workflowLaunchService } from '$lib/services/workflowLaunchService.js';
   import { canOfferRun } from '$lib/utils/runOffer.js';
+  import {
+    collectInterfaceInputs,
+    interfaceFormEntriesFor,
+    playgroundInputModeFor
+  } from '$lib/utils/workflowInterface.js';
   import { initAutoSave } from '$lib/services/autoSaveService.js';
   import {
     getUiSettings,
@@ -585,10 +595,55 @@
   );
   let runStarting = $state(false);
 
+  // The Run form: open while it asks for the inputs; the values stay per workflow id for the page.
+  let runDialogOpen = $state(false);
+  let runDialogValues = $state<Record<string, unknown>>({});
+  let runDialogError = $state<string | null>(null);
+  const runInputValues = new Map<string, Record<string, unknown>>();
+
+  /** The inputs a person fills in before a run: the interface inputs the chat binding does not fill. */
+  const runInputEntries = $derived.by(() => {
+    const workflow = fd.workflow.current;
+    if (!workflow) return [];
+    const binding = resolvePlaygroundChat(workflow);
+    return playgroundInputModeFor(workflow.interface, binding) === 'legacy'
+      ? []
+      : interfaceFormEntriesFor(workflow.interface, binding);
+  });
+
   /**
-   * Run the workflow from the canvas: save unsaved changes first, then start
-   * the run through `host.onRun` or the `workflows.run` endpoint, and show it
-   * as the shown run. A refusal shows the server's message.
+   * Start the run with these inputs through `host.onRun` or the `workflows.run` endpoint and show it
+   * as the shown run. Returns the reason when the run did not start, `null` otherwise.
+   */
+  async function launchRun(inputs: Record<string, unknown>): Promise<string | null> {
+    const workflow = fd.workflow.current;
+    if (!workflow?.id) return null;
+    try {
+      const hostOnRun = fd.host.current.onRun;
+      if (hostOnRun) {
+        const envelope = await fd.runs.wrapHostHooks(fd.host.current).onRun!(inputs);
+        return envelope.ok ? null : (envelope.message ?? mergedMessages.runButton.failed);
+      }
+      const result = await workflowLaunchService.launch(
+        endpointConfig,
+        workflow.id,
+        { inputs, workflow },
+        authProvider
+      );
+      if (result.status === 'launched') {
+        fd.runs.openRun(result.pipelineId, result.runStatus);
+        return null;
+      }
+      if (result.status === 'unsupported') return null;
+      return 'message' in result ? result.message : mergedMessages.runButton.failed;
+    } catch (error) {
+      return error instanceof Error ? error.message : mergedMessages.runButton.failed;
+    }
+  }
+
+  /**
+   * Run the workflow from the canvas: save unsaved changes first, then start the run. A workflow
+   * with inputs opens the Run form; one without runs at once. A refusal shows the server's message.
    */
   async function startRun(): Promise<void> {
     if (runStarting) return;
@@ -600,27 +655,38 @@
       }
       const workflow = fd.workflow.current;
       if (!workflow?.id) return;
-      // Inputs a person must fill get a dialog once one exists; until then the run starts with none.
-      const inputs: Record<string, unknown> = {};
-      const hostOnRun = fd.host.current.onRun;
-      if (hostOnRun) {
-        const envelope = await fd.runs.wrapHostHooks(fd.host.current).onRun!(inputs);
-        if (!envelope.ok) showError(envelope.message ?? m().runButton.failed);
+      if (runInputEntries.length > 0) {
+        runDialogValues = runInputValues.get(workflow.id) ?? {};
+        runDialogError = null;
+        runDialogOpen = true;
         return;
       }
-      const result = await workflowLaunchService.launch(
-        endpointConfig,
-        workflow.id,
-        { inputs, workflow },
-        authProvider
-      );
-      if (result.status === 'launched') {
-        fd.runs.openRun(result.pipelineId, result.runStatus);
-      } else if (result.status !== 'unsupported') {
-        showError('message' in result ? result.message : m().runButton.failed);
-      }
-    } catch (error) {
-      showError(error instanceof Error ? error.message : m().runButton.failed);
+      const refusal = await launchRun({});
+      if (refusal) showError(refusal);
+    } finally {
+      runStarting = false;
+    }
+  }
+
+  /** Run from the form: empty required inputs are refused here; a refusal from the server stays in the form. */
+  async function submitRunInputs(): Promise<void> {
+    const workflowId = fd.workflow.current?.id;
+    if (runStarting || !workflowId) return;
+    runInputValues.set(workflowId, runDialogValues);
+    const collected = collectInterfaceInputs(runInputEntries, runDialogValues);
+    if (!collected.ok) {
+      const names = (list: { id: string }[]) => list.map((entry) => entry.id).join(', ');
+      runDialogError = collected.missing.length
+        ? mergedMessages.runInputsDialog.missing({ names: names(collected.missing) })
+        : mergedMessages.runInputsDialog.invalid({ names: names(collected.invalid) });
+      return;
+    }
+    runStarting = true;
+    runDialogError = null;
+    try {
+      const refusal = await launchRun(collected.inputs);
+      if (refusal) runDialogError = refusal;
+      else runDialogOpen = false;
     } finally {
       runStarting = false;
     }
@@ -2535,6 +2601,22 @@
     {@render consoleChatTabs()}
   </SurfaceOverlay>
 {/if}
+
+<RunInputsDialog
+  open={runDialogOpen}
+  workflowName={fd.workflow.current?.name ?? ''}
+  entries={runInputEntries}
+  values={runDialogValues}
+  onChange={(values) => {
+    runDialogValues = values;
+    const id = fd.workflow.current?.id;
+    if (id) runInputValues.set(id, values);
+  }}
+  onRun={() => void submitRunInputs()}
+  runBusy={runStarting}
+  error={runDialogError}
+  onClose={() => (runDialogOpen = false)}
+/>
 
 {#if fd.saveConflict.comparing && fd.saveConflict.comparison}
   <WorkflowCompareDialog

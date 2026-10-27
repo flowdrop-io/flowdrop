@@ -142,7 +142,9 @@ class WorkflowLaunchService {
     }
 
     if (response.status === 400) {
-      return { status: 'invalid-input', message };
+      // Per-input details, when the backend names them, are the useful message.
+      const detail = (payload.details ?? []).map((item) => item.message).filter(Boolean);
+      return { status: 'invalid-input', message: detail.length > 0 ? detail.join(' ') : message };
     }
 
     return { status: 'failed', message };
