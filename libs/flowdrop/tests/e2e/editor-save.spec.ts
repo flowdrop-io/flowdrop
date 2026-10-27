@@ -130,4 +130,45 @@ test.describe('Save Workflow', () => {
     // Should contain Save action
     await expect(navbar).toContainText('Save', { timeout: 5000 });
   });
+
+  test('save button shows unsaved changes after an edit and clears after saving', async ({
+    page
+  }) => {
+    await page.route('**/api/flowdrop/workflows/**', async (route) => {
+      const method = route.request().method();
+      if (method === 'PUT' || method === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: { id: 'test-workflow-simple' },
+            message: 'Workflow saved'
+          })
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await gotoEditor(page, 'simple');
+
+    const saveButton = page.locator('.flowdrop-navbar__primary-action', { hasText: 'Save' });
+    await expect(saveButton).toBeVisible({ timeout: 5000 });
+    await expect(saveButton).not.toHaveAttribute('data-dirty', 'true');
+
+    // Move a node by dragging it.
+    const node = page.locator('.svelte-flow__node').first();
+    const box = (await node.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + 8);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 60, box.y + 68, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(saveButton).toHaveAttribute('data-dirty', 'true');
+    await expect(saveButton).toContainText('Unsaved changes');
+
+    await saveButton.click();
+    await expect(saveButton).not.toHaveAttribute('data-dirty', 'true', { timeout: 5000 });
+  });
 });

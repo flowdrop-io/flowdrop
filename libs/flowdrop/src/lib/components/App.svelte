@@ -2132,6 +2132,7 @@
         {branding}
         end={navbarEnd}
         saveShortcut
+        dirty={canvasEditable && fd.workflow.isDirty}
         onWorkflowSettings={toggleWorkflowSettings}
         status={doctorStatus}
         workflowSettingsOpen={isWorkflowSettingsOpen}

@@ -76,6 +76,8 @@
      * Renders nothing of its own, so an empty snippet leaves no gap.
      */
     status?: Snippet;
+    /** The workflow has changes that are not saved: the first action (Save) shows a dot. */
+    dirty?: boolean;
   }
 
   let {
@@ -92,7 +94,8 @@
     onWorkflowSettings,
     workflowSettingsOpen = false,
     saveShortcut = false,
-    status
+    status,
+    dirty = false
   }: Props = $props();
 
   // Settings modal state
@@ -348,10 +351,13 @@
     {#if taskActions.length > 0}
       <!-- Split mode: all actions as individual side-by-side buttons -->
       <div class="flowdrop-navbar__split-actions">
-        {#each taskActions as action (action.label)}
+        {#each taskActions as action, index (action.label)}
+          {@const unsaved = dirty && index === 0}
           <a
             href={action.href}
             class="flowdrop-navbar__action flowdrop-navbar__action--{action.variant || 'primary'}"
+            data-dirty={unsaved ? 'true' : undefined}
+            title={unsaved ? `${action.label}, ${nav.unsavedChanges}` : undefined}
             onclick={action.onclick}
             target={action.external ? '_blank' : undefined}
             rel={action.external ? 'noopener noreferrer' : undefined}
@@ -362,6 +368,10 @@
               </span>
             {/if}
             <span class="flowdrop-navbar__action-label">{action.label}</span>
+            {#if unsaved}
+              <span class="flowdrop-navbar__dirty-dot" aria-hidden="true"></span>
+              <span class="flowdrop-navbar__visually-hidden">, {nav.unsavedChanges}</span>
+            {/if}
           </a>
         {/each}
       </div>
@@ -374,6 +384,8 @@
             href={primaryAction.href}
             class="flowdrop-navbar__primary-action flowdrop-navbar__action--{primaryAction.variant ||
               'primary'}"
+            data-dirty={dirty ? 'true' : undefined}
+            title={dirty ? `${primaryAction.label}, ${nav.unsavedChanges}` : undefined}
             onclick={primaryAction.onclick}
             target={primaryAction.external ? '_blank' : undefined}
             rel={primaryAction.external ? 'noopener noreferrer' : undefined}
@@ -384,6 +396,10 @@
               </span>
             {/if}
             <span class="flowdrop-navbar__action-label">{primaryAction.label}</span>
+            {#if dirty}
+              <span class="flowdrop-navbar__dirty-dot" aria-hidden="true"></span>
+              <span class="flowdrop-navbar__visually-hidden">, {nav.unsavedChanges}</span>
+            {/if}
           </a>
         {/if}
 
@@ -1070,6 +1086,23 @@
 
   .flowdrop-navbar__action-label {
     font-weight: 500;
+  }
+
+  .flowdrop-navbar__dirty-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--fd-radius-full);
+    background: var(--fd-warning);
+    flex-shrink: 0;
+  }
+
+  .flowdrop-navbar__visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .flowdrop-navbar__end {

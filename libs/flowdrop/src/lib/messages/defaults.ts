@@ -257,6 +257,7 @@ export const defaultMessages = {
     tagline: 'Visual Workflow Manager',
     breadcrumbAriaLabel: 'Breadcrumb',
     connected: 'Connected',
+    unsavedChanges: 'Unsaved changes',
     settingsTitle: 'Settings',
     settingsAriaLabel: 'Open settings',
     // The gear menu: an Appearance switch, then the full settings dialog.
