@@ -17,6 +17,7 @@ import {
   setDraftStorage,
   getDraftStorage,
   resolveDraftStorage,
+  draftFingerprint,
   DraftAutoSaveManager,
   type DraftStorageAdapter
 } from '$lib/services/draftStorage.js';
@@ -799,6 +800,30 @@ describe('Draft Storage Service', () => {
       });
     });
 
+    describe('saved workflows have no draft (W2.80)', () => {
+      it('removes an existing draft when saveIfDirty sees a clean workflow', () => {
+        const workflow = createTestWorkflow();
+        getWorkflow.mockReturnValue(workflow);
+        isDirty.mockReturnValue(true);
+        manager.saveIfDirty();
+        expect(hasDraft('test-autosave')).toBe(true);
+
+        isDirty.mockReturnValue(false);
+        manager.saveIfDirty();
+        expect(hasDraft('test-autosave')).toBe(false);
+      });
+
+      it('removes the draft on markAsSaved', () => {
+        const workflow = createTestWorkflow();
+        getWorkflow.mockReturnValue(workflow);
+        isDirty.mockReturnValue(true);
+        manager.saveIfDirty();
+
+        manager.markAsSaved();
+        expect(hasDraft('test-autosave')).toBe(false);
+      });
+    });
+
     describe('markAsSaved', () => {
       it('should prevent saving unchanged workflow', () => {
         const workflow = createTestWorkflow();
@@ -932,6 +957,48 @@ describe('Draft Storage Service', () => {
         manager.stop();
         expect(manager.isRunning()).toBe(false);
       });
+    });
+  });
+
+  describe('baseRevision and draftFingerprint (W2.80)', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it("stores the workflow's revision as baseRevision", () => {
+      const workflow = { ...createTestWorkflow(), revision: 7 };
+      saveDraft(workflow, 'rev-key');
+      expect(loadDraft('rev-key')?.metadata.baseRevision).toBe('7');
+    });
+
+    it('omits baseRevision when the workflow has no revision', () => {
+      const workflow = createTestWorkflow();
+      delete (workflow as { revision?: unknown }).revision;
+      saveDraft(workflow, 'norev-key');
+      expect(loadDraft('norev-key')?.metadata.baseRevision).toBeUndefined();
+    });
+
+    it('loads an old-shape draft without baseRevision', () => {
+      const workflow = createTestWorkflow();
+      localStorage.setItem(
+        'old-key',
+        JSON.stringify({ workflow, metadata: { savedAt: '2026-01-01T00:00:00.000Z' } })
+      );
+      const draft = loadDraft('old-key');
+      expect(draft?.workflow.id).toBe(workflow.id);
+      expect(draft?.metadata.baseRevision).toBeUndefined();
+    });
+
+    it('changes the fingerprint on an interface-only edit', () => {
+      const workflow = createTestWorkflow();
+      const edited = { ...workflow, interface: { inputs: {}, outputs: {} } } as typeof workflow;
+      expect(draftFingerprint(edited)).not.toBe(draftFingerprint(workflow));
+    });
+
+    it('changes the fingerprint on a playground-only edit', () => {
+      const workflow = createTestWorkflow();
+      const edited = { ...workflow, playground: { chat: {} } } as unknown as typeof workflow;
+      expect(draftFingerprint(edited)).not.toBe(draftFingerprint(workflow));
     });
   });
 });

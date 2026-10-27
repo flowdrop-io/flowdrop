@@ -202,6 +202,7 @@ export {
   getDraftStorageKey,
   saveDraft,
   loadDraft,
+  draftFingerprint,
   deleteDraft,
   hasDraft,
   getDraftMetadata,

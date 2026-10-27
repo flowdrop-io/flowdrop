@@ -1105,6 +1105,8 @@ export async function mountFlowDropApp(
               getDraftStorageKey(saved.id, undefined, fd.storagePrefix)
             );
           }
+          // A saved workflow has no draft
+          state.draftManager?.markAsSaved();
         }
       });
     },

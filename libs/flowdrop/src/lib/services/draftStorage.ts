@@ -154,6 +154,8 @@ interface DraftMetadata {
   workflowId?: string;
   /** Workflow name */
   workflowName?: string;
+  /** Revision of the workflow the draft started from (absent in older drafts) */
+  baseRevision?: string;
 }
 
 /**
@@ -253,7 +255,10 @@ export function saveDraft(
       metadata: {
         savedAt: new Date().toISOString(),
         workflowId: workflow.id,
-        workflowName: workflow.name
+        workflowName: workflow.name,
+        ...(workflow.revision !== undefined && workflow.revision !== null
+          ? { baseRevision: String(workflow.revision) }
+          : {})
       }
     };
 
@@ -394,6 +399,36 @@ export function clearAllDrafts(
 }
 
 /**
+ * Fingerprint of everything a draft preserves, for change detection.
+ *
+ * Covers name, description, nodes, edges, the workflow interface and the
+ * Playground settings. Not cryptographic, just a stable string to compare.
+ *
+ * @param workflow - The workflow to fingerprint
+ * @returns A string that changes whenever a draft-relevant part changes
+ */
+export function draftFingerprint(workflow: Workflow): string {
+  return JSON.stringify({
+    name: workflow.name,
+    description: workflow.description,
+    nodes: workflow.nodes.map((n) => ({
+      id: n.id,
+      position: n.position,
+      data: n.data
+    })),
+    edges: workflow.edges.map((e) => ({
+      id: e.id,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle,
+      targetHandle: e.targetHandle
+    })),
+    interface: workflow.interface,
+    playground: workflow.playground
+  });
+}
+
+/**
  * Draft auto-save manager
  *
  * Handles interval-based auto-saving of workflow drafts.
@@ -499,13 +534,16 @@ export class DraftAutoSaveManager {
       return false;
     }
 
-    // Only save if dirty
+    // A saved workflow has no draft
     if (!this.isDirty()) {
+      if (hasDraft(this.storageKey, this.storage)) {
+        deleteDraft(this.storageKey, this.storage);
+      }
       return false;
     }
 
     // Check if workflow has actually changed since last save
-    const currentHash = this.hashWorkflow(workflow);
+    const currentHash = draftFingerprint(workflow);
     if (currentHash === this.lastSavedHash) {
       return false;
     }
@@ -537,7 +575,7 @@ export class DraftAutoSaveManager {
 
     const saved = saveDraft(workflow, this.storageKey, this.storage);
     if (saved) {
-      this.lastSavedHash = this.hashWorkflow(workflow);
+      this.lastSavedHash = draftFingerprint(workflow);
     }
 
     return saved;
@@ -554,12 +592,14 @@ export class DraftAutoSaveManager {
   /**
    * Mark the current state as saved
    *
-   * Updates the hash so the next saveIfDirty won't save unless there are new changes.
+   * Updates the hash so the next saveIfDirty won't save unless there are new
+   * changes, and removes the stored draft (a saved workflow has none).
    */
   markAsSaved(): void {
+    deleteDraft(this.storageKey, this.storage);
     const workflow = this.getWorkflow();
     if (workflow) {
-      this.lastSavedHash = this.hashWorkflow(workflow);
+      this.lastSavedHash = draftFingerprint(workflow);
     }
   }
 
@@ -583,37 +623,6 @@ export class DraftAutoSaveManager {
     }
 
     this.storageKey = newKey;
-  }
-
-  /**
-   * Simple hash function for change detection
-   *
-   * Not cryptographically secure, just for detecting changes.
-   *
-   * @param workflow - The workflow to hash
-   * @returns A simple hash string
-   */
-  private hashWorkflow(workflow: Workflow): string {
-    // Use a simple stringification for change detection
-    // We only need nodes, edges, name, and description for change detection
-    const toHash = {
-      name: workflow.name,
-      description: workflow.description,
-      nodes: workflow.nodes.map((n) => ({
-        id: n.id,
-        position: n.position,
-        data: n.data
-      })),
-      edges: workflow.edges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle,
-        targetHandle: e.targetHandle
-      }))
-    };
-
-    return JSON.stringify(toHash);
   }
 
   /**
