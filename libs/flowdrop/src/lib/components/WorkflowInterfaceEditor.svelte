@@ -298,7 +298,9 @@
       direction,
       entryFromBindablePort(
         candidate,
-        entriesFor(direction).map((entry) => entry.id)
+        entriesFor(direction).map((entry) => entry.id),
+        workflow,
+        entryDirectionOf(direction)
       )
     );
   }

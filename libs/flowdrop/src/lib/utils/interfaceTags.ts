@@ -266,7 +266,10 @@ export function exposePortAsEntry(
   if (validateInterfaceId(trimmed, target.direction, workflow.interface) !== null) return null;
   const candidate = exposableCandidate(workflow, target.nodeId, target.direction, target.portId);
   if (!candidate) return null;
-  const entry: WorkflowInterfaceEntry = { ...entryFromBindablePort(candidate, []), id: trimmed };
+  const entry: WorkflowInterfaceEntry = {
+    ...entryFromBindablePort(candidate, [], workflow, target.direction),
+    id: trimmed
+  };
   return {
     interface: withSide(workflow, target.direction, [
       ...entriesOf(workflow, target.direction),

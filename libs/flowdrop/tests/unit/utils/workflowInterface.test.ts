@@ -17,8 +17,8 @@ import {
   interfaceBoundTooltip,
   rankBindablePorts,
   entryFromBindablePort,
-  describeInterfaceEntryStatus,
   listBindablePorts,
+  describeInterfaceEntryStatus,
   turnsFor,
   isKnownTurn,
   turnTakenBy,
@@ -992,9 +992,9 @@ describe('entryFromBindablePort', () => {
   const candidate = {
     nodeId: 'node-1',
     nodeLabel: 'Node One',
-    port: makePort('text', 'string', {
+    port: makePort('subject', 'string', {
       type: 'input',
-      name: 'Text',
+      name: 'Subject',
       description: 'The text',
       required: true,
       defaultValue: 'hi'
@@ -1003,19 +1003,77 @@ describe('entryFromBindablePort', () => {
 
   it('binds to the port and pulls every derivable field, seeding the id from the port id', () => {
     expect(entryFromBindablePort(candidate, [])).toEqual({
-      id: 'text',
-      name: 'Text',
+      id: 'subject',
+      name: 'Subject',
       dataType: 'string',
       description: 'The text',
       required: true,
       defaultValue: 'hi',
-      bindings: [{ nodeId: 'node-1', portId: 'text' }]
+      bindings: [{ nodeId: 'node-1', portId: 'subject' }]
     });
   });
 
   it('suffixes the id until it is unique among the existing entries', () => {
-    expect(entryFromBindablePort(candidate, ['text']).id).toBe('text_2');
-    expect(entryFromBindablePort(candidate, ['text', 'text_2']).id).toBe('text_3');
+    expect(entryFromBindablePort(candidate, ['subject']).id).toBe('subject_2');
+    expect(entryFromBindablePort(candidate, ['subject', 'subject_2']).id).toBe('subject_3');
+  });
+});
+
+describe('entryFromBindablePort suggestions', () => {
+  function titled(id: string, title: string, inputs: NodePort[], outputs: NodePort[] = []) {
+    const node = makeNode(id, inputs, outputs);
+    node.data.config = { instanceTitle: title };
+    return node;
+  }
+  const bind = (wf: Workflow, nodeId: string, portId: string) => {
+    const candidate = listBindablePorts(wf, 'input').find(
+      (c) => c.nodeId === nodeId && c.port.id === portId
+    )!;
+    return entryFromBindablePort(candidate, [], wf, 'input');
+  };
+
+  it('names a generic port after its node', () => {
+    const wf = makeWorkflow([titled('n1', 'Customer email', [makePort('data')])]);
+    const entry = bind(wf, 'n1', 'data');
+    expect(entry.id).toBe('customer_email');
+    expect(entry.name).toBe('Customer email');
+  });
+
+  it('suffixes only when two nodes share a label', () => {
+    const wf = makeWorkflow([
+      titled('n1', 'Customer email', [makePort('data')]),
+      titled('n2', 'Customer email', [makePort('data')]),
+      titled('n3', 'Order', [makePort('data')])
+    ]);
+    const candidates = listBindablePorts(wf, 'input');
+    const first = entryFromBindablePort(candidates[0], [], wf, 'input');
+    expect(entryFromBindablePort(candidates[1], [first.id], wf, 'input').id).toBe(
+      'customer_email_2'
+    );
+    expect(entryFromBindablePort(candidates[2], [first.id], wf, 'input').id).toBe('order');
+  });
+
+  it('leaves a non-generic port unchanged', () => {
+    const wf = makeWorkflow([titled('n1', 'Customer email', [makePort('amount', 'number')])]);
+    const entry = bind(wf, 'n1', 'amount');
+    expect(entry.id).toBe('amount');
+    expect(entry.name).toBe('amount');
+  });
+
+  it('takes the type of the typed port across an edge for a mixed port', () => {
+    const wf = makeWorkflow(
+      [
+        makeNode('src', [], [makePort('out', 'number', { type: 'output' })]),
+        titled('n1', 'Total', [makePort('data', 'mixed')])
+      ],
+      [makeEdge('e1', 'src', 'out', 'n1', 'data')]
+    );
+    expect(bind(wf, 'n1', 'data').dataType).toBe('number');
+  });
+
+  it('stays mixed without an edge', () => {
+    const wf = makeWorkflow([titled('n1', 'Total', [makePort('data', 'mixed')])]);
+    expect(bind(wf, 'n1', 'data').dataType).toBe('mixed');
   });
 });
 

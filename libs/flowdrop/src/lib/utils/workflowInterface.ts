@@ -38,7 +38,7 @@ import {
 import { isPortExposed } from '$lib/utils/portUtils.js';
 import { LOOPBACK_PORT_NAME } from '$lib/utils/connections.js';
 import { PORTS_CONFIG_KEY } from '$lib/utils/nodeFormSchema.js';
-import { buildHandleId } from '$lib/utils/handleIds.js';
+import { buildHandleId, extractPortId } from '$lib/utils/handleIds.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
 import {
   isPlaygroundChatHalfSet,
@@ -703,19 +703,93 @@ export function rankBindablePorts(
  */
 export function entryFromBindablePort(
   candidate: BindablePort,
-  existingIds: Iterable<string>
+  existingIds: Iterable<string>,
+  workflow?: Workflow,
+  direction?: 'input' | 'output'
 ): WorkflowInterfaceEntry {
-  const taken = new Set(existingIds);
-  let id = candidate.port.id;
-  for (let n = 2; taken.has(id); n += 1) {
-    id = `${candidate.port.id}_${n}`;
-  }
+  const suggestion = suggestEntryFromBindablePort(workflow, candidate, existingIds, direction);
   return {
-    id,
-    dataType: candidate.port.dataType,
-    bindings: [{ nodeId: candidate.nodeId, portId: candidate.port.id }],
-    ...pullEntryFieldsFromPort(candidate.port)
+    ...pullEntryFieldsFromPort(candidate.port),
+    ...suggestion,
+    bindings: [{ nodeId: candidate.nodeId, portId: candidate.port.id }]
   };
+}
+
+/** Port ids too generic to name a public entry: the node's title names it instead. */
+export const GENERIC_PORT_IDS: readonly string[] = [
+  'data',
+  'value',
+  'input',
+  'output',
+  'result',
+  'text'
+];
+
+/**
+ * The id, title and type to seed a new entry with for a picked port.
+ *
+ * A generic port id (`data`, `value`, ...) says nothing about the contract, so
+ * the bound node's canvas label gives the id (snake_case) and the title. A
+ * `mixed` port takes the type of the port at the other end of an edge on its
+ * handle, when that one is typed. The id gets a numeric suffix only on a
+ * collision with `existingIds`.
+ */
+export function suggestEntryFromBindablePort(
+  workflow: Workflow | undefined,
+  candidate: BindablePort,
+  existingIds: Iterable<string>,
+  direction?: 'input' | 'output'
+): { id: string; name: string; dataType: string } {
+  const { port } = candidate;
+  const generic = GENERIC_PORT_IDS.includes(port.id);
+  const label = candidate.nodeLabel;
+  const fromLabel = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 40)
+    .replace(/_+$/g, '');
+  const base = generic && fromLabel ? fromLabel : port.id;
+
+  const taken = new Set(existingIds);
+  let id = base;
+  for (let n = 2; taken.has(id); n += 1) {
+    id = `${base}_${n}`;
+  }
+
+  let dataType = port.dataType;
+  if (dataType === 'mixed' && workflow && direction) {
+    const handleId = buildHandleId(candidate.nodeId, direction, port.id);
+    const edge = workflow.edges.find((e) =>
+      direction === 'input' ? e.targetHandle === handleId : e.sourceHandle === handleId
+    );
+    const otherNode = edge
+      ? workflow.nodes.find((n) => n.id === (direction === 'input' ? edge.source : edge.target))
+      : undefined;
+    const otherPortId = edge
+      ? extractPortId(direction === 'input' ? edge.sourceHandle : edge.targetHandle)
+      : null;
+    const otherMetadata = otherNode?.data?.metadata;
+    if (otherNode && otherMetadata && otherPortId) {
+      const otherDirection = direction === 'input' ? 'output' : 'input';
+      const dynamicRaw =
+        otherDirection === 'input'
+          ? otherNode.data?.config?.dynamicInputs
+          : otherNode.data?.config?.dynamicOutputs;
+      const otherPorts = [
+        ...(otherDirection === 'input'
+          ? (otherMetadata.inputs ?? [])
+          : (otherMetadata.outputs ?? [])),
+        ...((dynamicRaw as DynamicPort[] | undefined) ?? []).map((dynamic) =>
+          dynamicPortToNodePort(dynamic, otherDirection)
+        )
+      ];
+      const otherType = otherPorts.find((other) => other.id === otherPortId)?.dataType;
+      if (otherType && otherType !== 'mixed') dataType = otherType;
+    }
+  }
+
+  return { id, name: generic ? label : port.name, dataType };
 }
 
 // ---------------------------------------------------------------------------

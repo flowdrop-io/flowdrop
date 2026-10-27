@@ -167,6 +167,7 @@ describe('expose, rename, remove', () => {
     expect(result?.interface.outputs).toEqual([
       expect.objectContaining({
         id: 'total',
+        name: 'calc',
         dataType: 'number',
         bindings: [{ nodeId: 'calc', portId: 'result' }]
       })
