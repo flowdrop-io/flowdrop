@@ -987,6 +987,23 @@ export async function mountFlowDropApp(
   // Calls to runCommand still waiting for the workflow; settled on destroy.
   const pendingRuns = new Set<() => void>();
 
+  // Ask the browser to confirm leaving the page while there are unsaved changes.
+  let removeLeaveGuard: (() => void) | undefined;
+  if (
+    features.confirmUnsavedLeave &&
+    mode !== 'readonly' &&
+    mode !== 'locked' &&
+    typeof window !== 'undefined'
+  ) {
+    const onBeforeUnload = (event: BeforeUnloadEvent): void => {
+      if (!fd.workflow.isDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    removeLeaveGuard = () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }
+
   // Create the mounted app interface
   const mountedApp: MountedFlowDropApp = {
     instance: fd,
@@ -995,6 +1012,7 @@ export async function mountFlowDropApp(
     },
 
     destroy: () => {
+      removeLeaveGuard?.();
       // Remove the agent-facing tools before anything else goes away.
       destroyed = true;
       webmcpHandle?.detach();

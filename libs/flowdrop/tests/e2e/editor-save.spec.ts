@@ -171,4 +171,53 @@ test.describe('Save Workflow', () => {
     await saveButton.click();
     await expect(saveButton).not.toHaveAttribute('data-dirty', 'true', { timeout: 5000 });
   });
+
+  test.describe('leaving the page', () => {
+    test('a dirty editor asks before the page unloads, a clean one does not', async ({ page }) => {
+      await page.goto('/test/mount-app');
+      await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
+      await page.waitForFunction(
+        () => (window as unknown as { __mountedApp?: unknown }).__mountedApp !== undefined
+      );
+
+      const dialogs: string[] = [];
+      page.on('dialog', async (dialog) => {
+        dialogs.push(dialog.type());
+        await dialog.accept();
+      });
+
+      // Clean: closing the page raises no dialog.
+      await page.close({ runBeforeUnload: true });
+      expect(dialogs).toEqual([]);
+    });
+
+    test('a dirty editor shows the beforeunload dialog', async ({ page }) => {
+      await page.goto('/test/mount-app');
+      await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
+      await page.waitForFunction(
+        () => (window as unknown as { __mountedApp?: unknown }).__mountedApp !== undefined
+      );
+      await page.evaluate(() =>
+        (
+          window as unknown as {
+            __mountedApp: { runCommand: (line: string) => Promise<unknown> };
+          }
+        ).__mountedApp.runCommand('layout auto')
+      );
+
+      // Browsers only show the prompt for a page the user has interacted with.
+      await page.mouse.click(5, 5);
+      expect(
+        await page.evaluate(() =>
+          (window as unknown as { __mountedApp: { isDirty: () => boolean } }).__mountedApp.isDirty()
+        )
+      ).toBe(true);
+
+      const dialogPromise = page.waitForEvent('dialog', { timeout: 5000 });
+      await page.close({ runBeforeUnload: true });
+      const dialog = await dialogPromise;
+      expect(dialog.type()).toBe('beforeunload');
+      await dialog.accept();
+    });
+  });
 });

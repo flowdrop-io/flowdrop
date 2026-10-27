@@ -260,6 +260,18 @@ export interface FlowDropFeatures {
   showToasts?: boolean;
 
   /**
+   * Ask the browser to confirm before leaving the page while the workflow has
+   * unsaved changes.
+   *
+   * Applies to `mountFlowDropApp` only (not `mountWorkflowEditor`, whose host
+   * owns the page) and not to `readonly` or `locked` mounts. The browser shows
+   * its own wording. The listener is removed again on `destroy()`.
+   *
+   * @default true
+   */
+  confirmUnsavedLeave?: boolean;
+
+  /**
    * Enable node swap functionality
    *
    * When enabled, users can swap a node for a different type
@@ -358,6 +370,7 @@ export const DEFAULT_FEATURES: Required<FlowDropFeatures> = {
   autoSaveDraft: true,
   autoSaveDraftInterval: 30000,
   showToasts: true,
+  confirmUnsavedLeave: true,
   enableNodeSwap: true,
   builtinEditors: true,
   console: true,
