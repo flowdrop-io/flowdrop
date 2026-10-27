@@ -11,6 +11,11 @@
  * workflow update, which is one undo step; an operation the editor cannot map
  * aborts the whole remedy before anything changes.
  *
+ * A remedy the server marks `params.automatic` is applied by the editor itself
+ * when its problem first appears after the workflow loaded (never for a problem
+ * present at load, a destructive remedy or one that needs a choice), once per
+ * code per workflow, with an Undo toast. See {@link DoctorStore.setAutoApply}.
+ *
  * @module stores/doctorStore
  */
 
@@ -20,6 +25,8 @@ import type { ApiContext } from './apiContext.js';
 import { diagnoseDraft, doctorSupported, requestRemedy } from '../services/doctorService.js';
 import { applyDoctorOperations } from '../utils/doctorOperations.js';
 import { buildSaveBody } from '../utils/workflowDraft.js';
+import { showInfo } from '../services/toastService.js';
+import { defaultMessages } from '../messages/defaults.js';
 
 /** How long the draft must sit still before it is diagnosed. */
 export const DOCTOR_IDLE_MS = 800;
@@ -54,11 +61,28 @@ export class DoctorStore {
   readonly #workflow: WorkflowStore;
   readonly #api: ApiContext;
   readonly #idleMs: number;
+  readonly #undo: () => boolean;
+  #autoApply = false;
+  /** The problem ids of the first answer after a workflow loaded: those are never applied by themselves. */
+  #atLoad: { id: string; ids: Set<string> } | null = null;
+  /** `<workflow id>:<code>` of every remedy applied by itself in this mount, so an undone one stays undone. */
+  readonly #autoApplied = new Set<string>();
 
-  constructor(workflow: WorkflowStore, api: ApiContext, idleMs: number = DOCTOR_IDLE_MS) {
+  constructor(
+    workflow: WorkflowStore,
+    api: ApiContext,
+    idleMs: number = DOCTOR_IDLE_MS,
+    undo: () => boolean = () => false
+  ) {
     this.#workflow = workflow;
     this.#api = api;
     this.#idleMs = idleMs;
+    this.#undo = undo;
+  }
+
+  /** Whether the editor may apply automatic remedies (the canvas is editable). */
+  setAutoApply(enabled: boolean): void {
+    this.#autoApply = enabled;
   }
 
   /** Whether the backend offers a Doctor (the endpoints are configured). */
@@ -186,6 +210,7 @@ export class DoctorStore {
     if (result.status === 'ok') {
       this.#problems = result.problems;
       this.#status = 'ready';
+      await this.#applyAutomatic(id, result.problems);
     } else if (result.status === 'unavailable') {
       // Quiet: no indicator, no more requests for this version.
       this.#problems = [];
@@ -196,6 +221,36 @@ export class DoctorStore {
       // Keep what was shown; the next edit tries again.
       this.#status = 'error';
       this.#requested = null;
+    }
+  }
+
+  /**
+   * Apply the first automatic remedy of a problem that appeared after load.
+   * One per answer: the check that follows finds the next.
+   */
+  async #applyAutomatic(workflowId: string, problems: DoctorProblem[]): Promise<void> {
+    if (this.#atLoad?.id !== workflowId) {
+      this.#atLoad = { id: workflowId, ids: new Set(problems.map((p) => p.id)) };
+      return;
+    }
+    if (!this.#autoApply) return;
+    for (const problem of problems) {
+      if (this.#atLoad.ids.has(problem.id)) continue;
+      const key = `${workflowId}:${problem.code}`;
+      if (this.#autoApplied.has(key)) continue;
+      const remedy = problem.remedies.find(
+        (r) => r.params?.automatic === true && !r.destructive && !r.params.choices
+      );
+      if (!remedy) continue;
+      this.#autoApplied.add(key);
+      if (await this.applyRemedy(problem, remedy)) {
+        const messages = defaultMessages.doctor;
+        showInfo({
+          title: messages.autoDone({ label: remedy.label }),
+          action: { label: messages.undo, onClick: () => this.#undo() }
+        });
+      }
+      return;
     }
   }
 

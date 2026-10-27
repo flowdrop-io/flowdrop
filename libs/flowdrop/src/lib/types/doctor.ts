@@ -23,9 +23,10 @@ export interface DoctorRemedy {
   /**
    * What the remedy needs from the person. Today `choices` (value => label)
    * for a remedy that must be told which one (`replace_node_type`); the chosen
-   * value goes back as `params[<name>]`.
+   * value goes back as `params[<name>]`. `automatic: true` says the editor
+   * may apply this remedy by itself.
    */
-  params?: { choices?: Record<string, string> } & Record<string, unknown>;
+  params?: { choices?: Record<string, string>; automatic?: boolean } & Record<string, unknown>;
 }
 
 /** One finding on the draft. */

@@ -255,4 +255,112 @@ describe('DoctorStore', () => {
       expect(fd.doctor.notice?.kind).toBe('empty');
     });
   });
+
+  describe('automatic remedies', () => {
+    const auto = (over: Partial<DoctorProblem> = {}) =>
+      problem({
+        remedies: [
+          {
+            id: 'remove_config_key',
+            label: 'Remove unknown key',
+            destructive: false,
+            params: { automatic: true }
+          }
+        ],
+        ...over
+      });
+    const op = { op: 'updateNodeConfig', nodeId: 'a', patch: {}, unset: ['legacy'] };
+
+    /** Diagnose answers `answers` in turn (the last one repeats); a remedy answers `op`. */
+    function serve(answers: DoctorProblem[][]) {
+      let call = 0;
+      fetchMock.mockImplementation((url: string) =>
+        url.endsWith('/remedy')
+          ? reply({ operations: [op] })
+          : reply({ problems: answers[Math.min(call++, answers.length - 1)] })
+      );
+    }
+    const remedyCalls = () => fetchMock.mock.calls.filter((c) => String(c[0]).endsWith('/remedy'));
+
+    async function load() {
+      fd.workflow.initialize(workflow());
+      fd.doctor.setAutoApply(true);
+      fd.doctor.schedule();
+      await vi.runAllTimersAsync();
+    }
+
+    async function edit() {
+      fd.workflow.actions.updateName(`Edit ${Math.random()}`);
+      fd.doctor.schedule();
+      await vi.runAllTimersAsync();
+    }
+
+    it('applies it once for a problem that appears after load, as one undo step', async () => {
+      serve([[], [auto()], []]);
+      await load();
+      await edit();
+      expect(remedyCalls()).toHaveLength(1);
+      expect(fd.workflow.nodes[0].data.config).toEqual({ keep: 1 });
+      await edit();
+      expect(remedyCalls()).toHaveLength(1);
+      // One undo brings the key back.
+      expect(fd.historyBindings.undo()).toBe(true);
+      expect(fd.workflow.nodes[0].data.config).toEqual({ keep: 1, legacy: true });
+    });
+
+    it('does not apply a problem that was there at load', async () => {
+      serve([[auto()]]);
+      await load();
+      await edit();
+      expect(remedyCalls()).toHaveLength(0);
+    });
+
+    it('does not apply a destructive remedy or one that needs a choice', async () => {
+      serve([
+        [],
+        [
+          auto({
+            id: 'd',
+            remedies: [
+              { id: 'remove_node', label: 'Remove', destructive: true, params: { automatic: true } }
+            ]
+          }),
+          auto({
+            id: 'c',
+            remedies: [
+              {
+                id: 'replace_node_type',
+                label: 'Replace',
+                destructive: false,
+                params: { automatic: true, choices: { x: 'X' } }
+              }
+            ]
+          })
+        ]
+      ]);
+      await load();
+      await edit();
+      expect(remedyCalls()).toHaveLength(0);
+    });
+
+    it('does not apply it again after an undo', async () => {
+      serve([[], [auto()], [auto()]]);
+      await load();
+      await edit();
+      expect(remedyCalls()).toHaveLength(1);
+      expect(fd.historyBindings.undo()).toBe(true);
+      fd.doctor.schedule();
+      await vi.runAllTimersAsync();
+      await edit();
+      expect(remedyCalls()).toHaveLength(1);
+    });
+
+    it('applies nothing once setAutoApply(false)', async () => {
+      serve([[], [auto()]]);
+      await load();
+      fd.doctor.setAutoApply(false);
+      await edit();
+      expect(remedyCalls()).toHaveLength(0);
+    });
+  });
 });

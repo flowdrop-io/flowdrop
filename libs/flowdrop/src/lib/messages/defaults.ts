@@ -495,7 +495,10 @@ export const defaultMessages = {
       empty: 'That fix would change nothing.',
       failed: ({ message }: { message: string }) => `The fix could not be applied. ${message}`
     },
-    dismissNotice: 'Dismiss'
+    dismissNotice: 'Dismiss',
+    // A remedy the editor applied by itself: the toast names what it did.
+    autoDone: ({ label }: { label: string }) => `Done: ${label}`,
+    undo: 'Undo'
   },
 
   // The Runs list in Test mode: a popover from the canvas toolbar.

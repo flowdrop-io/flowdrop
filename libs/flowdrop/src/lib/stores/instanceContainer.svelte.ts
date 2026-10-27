@@ -297,7 +297,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   const playground = new PlaygroundStore();
   const instancePlaygroundService = isDefault ? playgroundService : new PlaygroundService();
   const api = new ApiContext();
-  const doctor = new DoctorStore(workflow, api);
+  const doctor = new DoctorStore(workflow, api, undefined, () => historyBindings.undo());
   const runs = new RunController({
     playground,
     service: instancePlaygroundService,

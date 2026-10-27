@@ -1071,6 +1071,7 @@
     return true;
   }
   $effect(() => fd.doctor.setFocusHandler(focusProblemNode));
+  $effect(() => fd.doctor.setAutoApply(canvasEditable));
 
   // The Doctor diagnoses the draft a moment after each edit, and on load (and
   // once the workflow has an id). Reading the version and the id is the trigger.

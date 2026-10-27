@@ -177,4 +177,65 @@ test.describe('Doctor', () => {
       legacy_flag: true
     });
   });
+
+  test('a remedy marked automatic is applied once after an edit, with an Undo toast', async ({
+    page
+  }) => {
+    let diagnoses = 0;
+    const remedies: unknown[] = [];
+    const automatic = {
+      id: 'auto',
+      code: 'AUTO_FIX',
+      severity: 'info',
+      message: 'Can be tidied.',
+      node: 'node-input',
+      remedies: [
+        {
+          id: 'set_flag',
+          label: 'Tidy',
+          destructive: false,
+          params: { automatic: true }
+        }
+      ]
+    };
+    await page.route('**/api/flowdrop/workflow/*/diagnose', async (route) => {
+      diagnoses += 1;
+      const problems = diagnoses > 1 && remedies.length === 0 ? [automatic] : [];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: { problems } })
+      });
+    });
+    await page.route('**/api/flowdrop/workflow/*/remedy', async (route) => {
+      remedies.push(route.request().postDataJSON());
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            operations: [{ op: 'setWorkflowPayload', key: 'playground', value: { chat: null } }]
+          }
+        })
+      });
+    });
+    await gotoDoctor(page);
+    await expect.poll(() => diagnoses).toBeGreaterThan(0);
+
+    // An edit after load: the next check finds the problem.
+    const box = (await page.locator('.svelte-flow__node').first().boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 60, box.y + 50, { steps: 8 });
+    await page.mouse.up();
+
+    // The test page mounts two toasters, stacked: take the top one.
+    const toast = page.locator('.flowdrop-toast-row').filter({ hasText: 'Done: Tidy' }).last();
+    await expect(toast).toBeVisible({ timeout: 10000 });
+    await expect(toast.getByRole('button', { name: 'Undo' })).toBeVisible();
+    // The remedy ran once, and the next check (the problem is gone) does not ask again.
+    await page.waitForTimeout(1500);
+    expect(remedies).toHaveLength(1);
+  });
 });
