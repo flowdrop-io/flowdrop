@@ -86,7 +86,7 @@
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
-  import { apiToasts, dismissToast, showError } from '$lib/services/toastService.js';
+  import { apiToasts, dismissToast, showError, showInfo } from '$lib/services/toastService.js';
   import { workflowLaunchService } from '$lib/services/workflowLaunchService.js';
   import { canOfferRun } from '$lib/utils/runOffer.js';
   import {
@@ -622,6 +622,9 @@
       const hostOnRun = fd.host.current.onRun;
       if (hostOnRun) {
         const envelope = await fd.runs.wrapHostHooks(fd.host.current).onRun!(inputs);
+        if (envelope.ok && (envelope.data as { queued?: boolean } | undefined)?.queued) {
+          showInfo(mergedMessages.runButton.queued);
+        }
         return envelope.ok ? null : (envelope.message ?? mergedMessages.runButton.failed);
       }
       const result = await workflowLaunchService.launch(
@@ -632,6 +635,7 @@
       );
       if (result.status === 'launched') {
         fd.runs.openRun(result.pipelineId, result.runStatus);
+        if (result.queued) showInfo(mergedMessages.runButton.queued);
         return null;
       }
       if (result.status === 'unsupported') return null;

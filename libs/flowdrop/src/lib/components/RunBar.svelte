@@ -34,13 +34,18 @@
      * failed with a known pipeline.
      */
     onAskAssistant?: (runId: string) => void;
+    /**
+     * An already expanded URL of the run's page. With a known run id the pill links "Open run" to it in
+     * every status.
+     */
+    runLink?: string | null;
     /** How long a finished run's pill stays, in milliseconds. @default 4500 */
     fadeMs?: number;
     /** Editor mode the pill is shown in. @default 'edit' */
     mode?: 'edit' | 'test';
   }
 
-  let { onOpen, onAskAssistant, fadeMs = 4500, mode = 'edit' }: Props = $props();
+  let { onOpen, onAskAssistant, runLink, fadeMs = 4500, mode = 'edit' }: Props = $props();
 
   const fd = getInstance();
   const getMsgs = getMessages();
@@ -136,6 +141,17 @@
         {msgs.askAssistant}
       </Button>
     {/if}
+    {#if runLink && run.runId}
+      <a
+        class="flowdrop-run-bar__link"
+        href={runLink}
+        target="_self"
+        title={msgs.openRunTitle}
+        data-testid="run-bar-open-run"
+      >
+        {msgs.openRun}
+      </a>
+    {/if}
     {#if live}
       <Button
         variant="danger-ghost"
@@ -206,6 +222,26 @@
   }
   .flowdrop-run-bar__label {
     white-space: nowrap;
+  }
+  /* A link drawn as a small ghost button. */
+  .flowdrop-run-bar__link {
+    display: inline-flex;
+    align-items: center;
+    height: calc(var(--fd-canvas-control) - 2 * var(--fd-space-2xs));
+    padding: 0 var(--fd-space-sm);
+    border-radius: var(--fd-radius-control, var(--fd-radius-surface));
+    color: var(--fd-foreground);
+    font-size: var(--fd-text-sm);
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .flowdrop-run-bar__link:hover {
+    background-color: var(--fd-muted);
+  }
+  .flowdrop-run-bar__link:focus-visible {
+    outline: 2px solid var(--fd-ring, var(--fd-foreground));
+    outline-offset: 1px;
   }
   .flowdrop-run-bar--fading {
     opacity: 0;

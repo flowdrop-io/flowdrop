@@ -20,6 +20,7 @@
   import Button from './primitives/Button.svelte';
   import RunBar from './RunBar.svelte';
   import RunsMenu from './RunsMenu.svelte';
+  import { expandAdminUrl } from '../utils/runsList.js';
 
   interface Props {
     /** Current editor mode. */
@@ -66,6 +67,12 @@
   // Drawn when it has controls; a pill-only host gets the toolbar while a run exists.
   const runMsgs = $derived(getMsgs().runButton);
   const runOffered = $derived(!!onRun && editorMode === 'edit' && !fd.runs.isLive);
+  const runLink = $derived(
+    expandAdminUrl(adminLinks?.run, {
+      workflowId: fd.workflow.current?.id,
+      pipelineId: fd.runs.activeRun?.runId ?? undefined
+    })
+  );
   const drawn = $derived(!!onEditorModeChange || !!onRun || (showRun && !!fd.runs.activeRun));
 </script>
 
@@ -101,7 +108,12 @@
         </Button>
       {/if}
       {#if showRun}
-        <RunBar mode={editorMode} {onAskAssistant} onOpen={onOpenTest} />
+        <RunBar
+          mode={editorMode}
+          {onAskAssistant}
+          onOpen={onOpenTest}
+          runLink={runLink ?? undefined}
+        />
       {/if}
     </Toolbar>
   </div>

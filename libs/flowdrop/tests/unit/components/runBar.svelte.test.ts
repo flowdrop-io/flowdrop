@@ -105,6 +105,23 @@ describe('RunBar', () => {
     fd.destroy();
   });
 
+  it('links Open run to the run page when the host gave a link', async () => {
+    const { fd } = await withHostRun('bar-link', 'running');
+    const target = render(fd, { runLink: '/admin/flowdrop/pipelines/r1' });
+    const link = target.querySelector<HTMLAnchorElement>('[data-testid="run-bar-open-run"]');
+    expect(link?.getAttribute('href')).toBe('/admin/flowdrop/pipelines/r1');
+    expect(link?.textContent?.trim()).toBe('Open run');
+    expect(link?.getAttribute('title')).toBe('Open the run page');
+    fd.destroy();
+  });
+
+  it('draws no run link without a runLink', async () => {
+    const { fd } = await withHostRun('bar-no-link', 'running');
+    const target = render(fd);
+    expect(target.querySelector('[data-testid="run-bar-open-run"]')).toBeNull();
+    fd.destroy();
+  });
+
   it('Stop stops the run', async () => {
     const { fd } = await withHostRun('bar-stop', 'running');
     const stop = vi.spyOn(fd.runs, 'stopRun').mockResolvedValue();

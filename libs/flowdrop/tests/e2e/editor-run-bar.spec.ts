@@ -36,7 +36,7 @@ interface Stub {
   wait: () => void;
 }
 
-async function stubBackend(page: Page): Promise<Stub> {
+async function stubBackend(page: Page, executionId?: string): Promise<Stub> {
   const seen = { launches: 0, stops: 0 };
   let sessionStatus: 'idle' | 'running' | 'completed' | 'awaiting_input' = 'idle';
   await page.route('**/api/flowdrop/**', async (route) => {
@@ -58,7 +58,22 @@ async function stubBackend(page: Page): Promise<Stub> {
       return route.fulfill(json({}));
     }
     if (/\/playground\/sessions\/sess-1\/messages$/.test(path) && method === 'GET') {
-      return route.fulfill(json([], { hasMore: false, sessionStatus }));
+      // A run's id reaches the editor on the messages that run produced.
+      const messages =
+        executionId && sessionStatus !== 'idle'
+          ? [
+              {
+                id: 'm1',
+                sessionId: 'sess-1',
+                role: 'log',
+                content: 'Run started',
+                timestamp: '2026-01-01T00:00:01Z',
+                sequenceNumber: 1,
+                executionId
+              }
+            ]
+          : [];
+      return route.fulfill(json(messages, { hasMore: false, sessionStatus }));
     }
     return route.fallback();
   });
@@ -114,6 +129,18 @@ test.describe('Run bar', () => {
 
     // Faded out and gone, with the editor back at rest.
     await expect(bar).toHaveCount(0, { timeout: 10000 });
+  });
+
+  test('with features.adminLinks.run set, the pill links Open run to the run page', async ({
+    page
+  }) => {
+    await stubBackend(page, 'p1');
+    await page.goto('/test/editor?adminLinks=1');
+    await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
+    await startRun(page);
+
+    const link = page.locator('.flowdrop-run-bar').getByRole('link', { name: 'Open run' });
+    await expect(link).toHaveAttribute('href', '/admin/flowdrop/pipelines/p1');
   });
 
   test('Stop stops the run', async ({ page }) => {

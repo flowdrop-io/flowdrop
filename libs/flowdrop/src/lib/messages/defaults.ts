@@ -425,7 +425,9 @@ export const defaultMessages = {
     label: 'Run',
     title: 'Run this workflow',
     // Toast when the run could not start and the server gave no message.
-    failed: 'The run could not be started.'
+    failed: 'The run could not be started.',
+    // Info toast when the run was accepted but waits for the site's queue.
+    queued: "The run is queued. It starts when the site's queue runs (cron)."
   },
 
   // The form Run opens for a workflow that has inputs.
@@ -450,6 +452,8 @@ export const defaultMessages = {
     stopLabel: 'Stop the run',
     open: 'Open',
     openLabel: 'Open the run in Test mode',
+    openRun: 'Open run',
+    openRunTitle: 'Open the run page',
     askAssistant: 'Ask the Assistant',
     askAssistantLabel: 'Ask the Assistant about this run',
     // Read out politely when the status changes.
