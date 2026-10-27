@@ -195,6 +195,10 @@
      * while a run waits for them. Without it the button is not shown.
      */
     onOpenTest?: () => void;
+    /** Start the workflow: the canvas toolbar's Run button (Edit mode). Without it the button is not shown. */
+    onRun?: () => void;
+    /** A run is being started: the Run button spins. */
+    runBusy?: boolean;
     /** Current editor mode, shown in the canvas toolbar's Edit | Test switch. @default 'edit' */
     editorMode?: 'edit' | 'test';
     /** Switch the editor mode. The toolbar's Edit | Test switch is shown only when this is set. */
@@ -1995,6 +1999,8 @@
           editorMode={props.editorMode}
           onEditorModeChange={props.onEditorModeChange}
           onOpenTest={props.onOpenTest}
+          onRun={props.onRun}
+          runBusy={props.runBusy}
           onAskAssistant={props.onAskAssistant}
           showRun={props.showRunBar ?? true}
           showRuns={props.showRuns}

@@ -420,6 +420,14 @@ export const defaultMessages = {
     optionTaken: 'already taken'
   },
 
+  // The Run button in the canvas toolbar (Edit mode).
+  runButton: {
+    label: 'Run',
+    title: 'Run this workflow',
+    // Toast when the run could not start and the server gave no message.
+    failed: 'The run could not be started.'
+  },
+
   // The run bar on the Edit canvas: shown only while a run exists.
   runBar: {
     label: 'Run',

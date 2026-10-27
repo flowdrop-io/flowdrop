@@ -341,6 +341,16 @@ export interface FlowDropFeatures {
   testMode?: boolean;
 
   /**
+   * Offer a Run button in the canvas toolbar in Edit mode. It saves unsaved
+   * changes, then starts the workflow through `host.onRun` or the
+   * `workflows.run` endpoint and shows the run on the canvas. Drawn only for a
+   * saved workflow on an editable canvas whose backend can start a run.
+   *
+   * @default true
+   */
+  runButton?: boolean;
+
+  /**
    * Offer the Runs list in Test mode: a "Runs" control in the canvas toolbar
    * listing the workflow's past runs (from `endpoints.pipelines.list`), where
    * opening one shows its node statuses on the canvas. Turn this off for a
@@ -376,6 +386,7 @@ export const DEFAULT_FEATURES: Required<FlowDropFeatures> = {
   console: true,
   assistant: true,
   testMode: true,
+  runButton: true,
   runsList: true,
   adminLinks: {}
 };

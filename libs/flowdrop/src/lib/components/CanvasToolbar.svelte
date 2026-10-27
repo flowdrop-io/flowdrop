@@ -1,6 +1,6 @@
 <!--
   @component
-  The floating toolbar in the top-left corner of the canvas: the Edit | Test switch, the Runs list and the run pill.
+  The floating toolbar in the top-left corner of the canvas: the Edit | Test switch, the Runs list, the Run button and the run pill.
 
   Each group draws only when its prop is given. The switch needs `onEditorModeChange`;
   the Runs list needs `showRuns` (the host turns it on in Test mode); the pill shows while the instance has a run.
@@ -16,6 +16,8 @@
   import { getInstance } from '../stores/getInstance.svelte.js';
   import Toolbar from './primitives/Toolbar.svelte';
   import Segmented from './primitives/Segmented.svelte';
+  import Icon from '@iconify/svelte';
+  import Button from './primitives/Button.svelte';
   import RunBar from './RunBar.svelte';
   import RunsMenu from './RunsMenu.svelte';
 
@@ -28,6 +30,10 @@
     onOpenTest?: () => void;
     /** Take a failed run to the Assistant (the pill's "Ask the Assistant"). */
     onAskAssistant?: (runId: string) => void;
+    /** Start the workflow. The Run button is drawn in Edit mode only, and only when this is set. */
+    onRun?: () => void;
+    /** A run is being started (saving, or waiting for the server): the button spins and blocks. */
+    runBusy?: boolean;
     /** Show the run pill while a run exists. @default true */
     showRun?: boolean;
     /** Show the Runs list (Test mode's past runs). The host decides when. @default false */
@@ -41,6 +47,8 @@
     onEditorModeChange,
     onOpenTest,
     onAskAssistant,
+    onRun,
+    runBusy = false,
     showRun = true,
     showRuns = false,
     adminLinks
@@ -56,7 +64,9 @@
   ]);
 
   // Drawn when it has controls; a pill-only host gets the toolbar while a run exists.
-  const drawn = $derived(!!onEditorModeChange || (showRun && !!fd.runs.activeRun));
+  const runMsgs = $derived(getMsgs().runButton);
+  const runOffered = $derived(!!onRun && editorMode === 'edit' && !fd.runs.isLive);
+  const drawn = $derived(!!onEditorModeChange || !!onRun || (showRun && !!fd.runs.activeRun));
 </script>
 
 {#if drawn}
@@ -74,6 +84,21 @@
       {/if}
       {#if showRuns}
         <RunsMenu {adminLinks} />
+      {/if}
+      {#if runOffered}
+        <Button
+          variant="secondary"
+          size="md"
+          data-testid="canvas-run"
+          title={runMsgs.title}
+          loading={runBusy}
+          onclick={() => onRun?.()}
+        >
+          {#snippet leadingIcon()}
+            <Icon icon="mdi:play" aria-hidden="true" />
+          {/snippet}
+          {runMsgs.label}
+        </Button>
       {/if}
       {#if showRun}
         <RunBar mode={editorMode} {onAskAssistant} onOpen={onOpenTest} />

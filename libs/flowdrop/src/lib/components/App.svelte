@@ -81,7 +81,9 @@
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
-  import { apiToasts, dismissToast } from '$lib/services/toastService.js';
+  import { apiToasts, dismissToast, showError } from '$lib/services/toastService.js';
+  import { workflowLaunchService } from '$lib/services/workflowLaunchService.js';
+  import { canOfferRun } from '$lib/utils/runOffer.js';
   import { initAutoSave } from '$lib/services/autoSaveService.js';
   import {
     getUiSettings,
@@ -566,6 +568,63 @@
   // let workflow = $derived($workflowStore || initialWorkflow);
   let error = $state<string | null>(null);
   let endpointConfig = $state<EndpointConfig | null>(null);
+
+  /**
+   * The Edit canvas offers a Run button: editable, saved, and either the host
+   * supplies `onRun` or the backend has the `workflows.run` endpoint.
+   */
+  const runOffered = $derived(
+    canOfferRun({
+      runButton: features.runButton,
+      canvasEditable,
+      pipelineId,
+      workflowId: fd.workflow.current?.id,
+      hostCanRun: !!fd.host.current.onRun,
+      backendCanRun: workflowLaunchService.isSupported(endpointConfig)
+    })
+  );
+  let runStarting = $state(false);
+
+  /**
+   * Run the workflow from the canvas: save unsaved changes first, then start
+   * the run through `host.onRun` or the `workflows.run` endpoint, and show it
+   * as the shown run. A refusal shows the server's message.
+   */
+  async function startRun(): Promise<void> {
+    if (runStarting) return;
+    runStarting = true;
+    try {
+      if (fd.workflow.isDirty) {
+        // The save toast already explains a failed save.
+        if (!(await saveWorkflow())) return;
+      }
+      const workflow = fd.workflow.current;
+      if (!workflow?.id) return;
+      // Inputs a person must fill get a dialog once one exists; until then the run starts with none.
+      const inputs: Record<string, unknown> = {};
+      const hostOnRun = fd.host.current.onRun;
+      if (hostOnRun) {
+        const envelope = await fd.runs.wrapHostHooks(fd.host.current).onRun!(inputs);
+        if (!envelope.ok) showError(envelope.message ?? m().runButton.failed);
+        return;
+      }
+      const result = await workflowLaunchService.launch(
+        endpointConfig,
+        workflow.id,
+        { inputs, workflow },
+        authProvider
+      );
+      if (result.status === 'launched') {
+        fd.runs.openRun(result.pipelineId, result.runStatus);
+      } else if (result.status !== 'unsupported') {
+        showError('message' in result ? result.message : m().runButton.failed);
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : m().runButton.failed);
+    } finally {
+      runStarting = false;
+    }
+  }
 
   // ConfigSidebar state
   let isConfigSidebarOpen = $state(false);
@@ -2426,6 +2485,8 @@
         editorMode={effectiveEditorMode}
         onEditorModeChange={testModeAvailable ? (next) => fd.editorMode.set(next) : undefined}
         onOpenTest={testModeAvailable ? () => fd.editorMode.set('test') : undefined}
+        onRun={runOffered ? () => void startRun() : undefined}
+        runBusy={runStarting}
         onAskAssistant={askAssistant}
         showRuns={testMode && features.runsList}
         adminLinks={features.adminLinks}
