@@ -470,6 +470,10 @@ export const defaultMessages = {
   doctor: {
     trigger: ({ count }: { count: number }) => (count === 1 ? '1 problem' : `${count} problems`),
     triggerTitle: 'Problems found in this workflow',
+    checking: 'Checking...',
+    unavailable: 'Check unavailable',
+    unavailableTitle: 'The problem check could not run. It tries again after your next change.',
+    retry: 'Retry',
     title: 'Problems',
     listLabel: 'Problems in this workflow',
     severity: { error: 'Error', warning: 'Warning', info: 'Note' },

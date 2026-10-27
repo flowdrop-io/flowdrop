@@ -35,7 +35,12 @@
   const msgs = $derived(getMsgs().doctor);
 
   const problems = $derived(fd.doctor.problems);
-  const visible = $derived(fd.doctor.supported && problems.length > 0);
+  const status = $derived(fd.doctor.status);
+  /** A check that is still running after 600 ms: quick checks stay invisible. */
+  let showChecking = $state(false);
+  const hasProblems = $derived(problems.length > 0);
+  const failed = $derived(status === 'error');
+  const visible = $derived(fd.doctor.supported && (hasProblems || showChecking || failed));
   const worst = $derived<DoctorSeverity>(
     problems.some((p) => p.severity === 'error')
       ? 'error'
@@ -63,6 +68,15 @@
     fd.doctor.dismissNotice();
     if (returnFocus) rootEl?.querySelector<HTMLElement>('.fd-doctor__trigger')?.focus();
   }
+
+  $effect(() => {
+    if (status !== 'checking') {
+      showChecking = false;
+      return;
+    }
+    const timer = setTimeout(() => (showChecking = true), 600);
+    return () => clearTimeout(timer);
+  });
 
   // The last problem was fixed: nothing left to show.
   $effect(() => {
@@ -141,142 +155,194 @@
 
 {#if visible}
   <div class="fd-doctor" bind:this={rootEl} onkeydown={onKeydown} role="presentation">
-    <Button
-      variant="ghost"
-      class="fd-doctor__trigger fd-doctor__trigger--{worst} {open
-        ? 'fd-doctor__trigger--open'
-        : ''}"
-      aria-expanded={open}
-      aria-controls={open ? popoverId : undefined}
-      title={msgs.triggerTitle}
-      data-testid="doctor-trigger"
-      data-severity={worst}
-      onclick={() => (open ? close(false) : (open = true))}
-    >
-      {#snippet leadingIcon()}<Icon icon={ICONS[worst]} />{/snippet}
-      {msgs.trigger({ count: problems.length })}
-    </Button>
-
-    {#if open}
-      <div
-        class="fd-doctor__popover"
-        id={popoverId}
-        role="region"
-        aria-label={msgs.title}
-        data-testid="doctor-popover"
+    {#if !hasProblems && showChecking}
+      <span
+        class="fd-doctor__status"
+        role="status"
+        aria-live="polite"
+        data-testid="doctor-checking"
       >
-        {#if notice}
-          <div class="fd-doctor__notice" data-testid="doctor-notice">
-            <Notice
-              tone={fd.doctor.notice?.kind === 'failed' ? 'error' : 'info'}
-              ondismiss={() => fd.doctor.dismissNotice()}
-              dismissLabel={msgs.dismissNotice}
-            >
-              {notice}
-            </Notice>
-          </div>
-        {/if}
-        <ul class="fd-doctor__list" aria-label={msgs.listLabel}>
-          {#each problems as problem (problem.id)}
-            {@const name = nodeName(problem)}
-            {@const asking = pending?.problemId === problem.id ? pending : null}
-            {@const askedRemedy = asking
-              ? problem.remedies.find((r) => r.id === asking.remedyId)
-              : undefined}
-            {@const single =
-              canApply &&
-              problem.remedies.length === 1 &&
-              !asking &&
-              !choicesOf(problem.remedies[0])}
-            <li
-              class="fd-doctor__row fd-doctor__row--{problem.severity}"
-              data-testid="doctor-problem"
-              data-code={problem.code}
-              data-severity={problem.severity}
-            >
-              <span class="fd-doctor__dot" role="img" aria-label={msgs.severity[problem.severity]}
-              ></span>
-              <div class="fd-doctor__text">
-                {#if name && problem.node}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="fd-doctor__node"
-                    title={msgs.selectNode({ name })}
-                    data-testid="doctor-node-link"
-                    onclick={() => fd.doctor.focusNode(problem.node!)}
-                  >
-                    {name}
-                  </Button>
-                {:else}
-                  <span class="fd-doctor__node-plain">{msgs.workflowWide}</span>
-                {/if}
-                <span class="fd-doctor__message">
-                  {problem.message}
-                </span>
-              </div>
-              {#if canApply && problem.remedies.length > 0 && !asking}
-                <div class="fd-doctor__actions" class:fd-doctor__actions--side={single}>
-                  {#each problem.remedies as remedy (remedy.id)}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={busy}
-                      loading={fd.doctor.applyingId === problem.id}
-                      title={remedy.description}
-                      data-testid="doctor-remedy"
-                      data-remedy={remedy.id}
-                      onclick={() => choose(problem, remedy)}
-                    >
-                      {remedy.label}
-                    </Button>
-                  {/each}
-                </div>
-              {/if}
-              {#if asking && askedRemedy}
-                {@const choices = choicesOf(askedRemedy)}
-                <div class="fd-doctor__ask" data-testid="doctor-ask">
-                  {#if choices}
-                    <Select
-                      size="sm"
-                      options={choices}
-                      value={asking.choice}
-                      placeholder={msgs.choosePlaceholder}
-                      aria-label={msgs.chooseLabel}
-                      data-testid="doctor-choice"
-                      onValueChange={(value) => {
-                        if (pending) pending = { ...pending, choice: value };
-                      }}
-                    />
-                  {/if}
-                  {#if askedRemedy.destructive}
-                    <span class="fd-doctor__confirm">{msgs.confirm}</span>
-                  {/if}
-                  <span class="fd-doctor__ask-actions">
-                    <Button
-                      variant={askedRemedy.destructive ? 'danger' : 'primary'}
-                      size="sm"
-                      disabled={busy || (!!choices && !asking.choice)}
-                      data-testid="doctor-confirm"
-                      onclick={() => void run(problem, askedRemedy, asking.choice)}
-                    >
-                      {msgs.confirmApply}
-                    </Button>
+        <Icon icon="mdi:loading" class="fd-doctor__spinner" />
+        {msgs.checking}
+      </span>
+    {:else if !hasProblems && failed}
+      <span
+        class="fd-doctor__status"
+        data-testid="doctor-unavailable"
+        title={msgs.unavailableTitle}
+      >
+        {msgs.unavailable}
+        <Button
+          variant="ghost"
+          size="sm"
+          data-testid="doctor-retry"
+          onclick={() => void fd.doctor.diagnoseNow()}
+        >
+          {msgs.retry}
+        </Button>
+      </span>
+    {/if}
+    {#if hasProblems}
+      <Button
+        variant="ghost"
+        class="fd-doctor__trigger fd-doctor__trigger--{worst} {open
+          ? 'fd-doctor__trigger--open'
+          : ''}"
+        aria-expanded={open}
+        aria-controls={open ? popoverId : undefined}
+        title={msgs.triggerTitle}
+        data-testid="doctor-trigger"
+        data-severity={worst}
+        onclick={() => (open ? close(false) : (open = true))}
+      >
+        {#snippet leadingIcon()}
+          {#if showChecking}
+            <Icon icon="mdi:loading" class="fd-doctor__spinner" />
+          {:else}
+            <Icon icon={ICONS[worst]} />
+          {/if}
+        {/snippet}
+        {msgs.trigger({ count: problems.length })}
+      </Button>
+      {#if failed}
+        <span
+          class="fd-doctor__status"
+          data-testid="doctor-unavailable"
+          title={msgs.unavailableTitle}
+        >
+          {msgs.unavailable}
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="doctor-retry"
+            onclick={() => void fd.doctor.diagnoseNow()}
+          >
+            {msgs.retry}
+          </Button>
+        </span>
+      {/if}
+
+      {#if open}
+        <div
+          class="fd-doctor__popover"
+          id={popoverId}
+          role="region"
+          aria-label={msgs.title}
+          data-testid="doctor-popover"
+        >
+          {#if notice}
+            <div class="fd-doctor__notice" data-testid="doctor-notice">
+              <Notice
+                tone={fd.doctor.notice?.kind === 'failed' ? 'error' : 'info'}
+                ondismiss={() => fd.doctor.dismissNotice()}
+                dismissLabel={msgs.dismissNotice}
+              >
+                {notice}
+              </Notice>
+            </div>
+          {/if}
+          <ul class="fd-doctor__list" aria-label={msgs.listLabel}>
+            {#each problems as problem (problem.id)}
+              {@const name = nodeName(problem)}
+              {@const asking = pending?.problemId === problem.id ? pending : null}
+              {@const askedRemedy = asking
+                ? problem.remedies.find((r) => r.id === asking.remedyId)
+                : undefined}
+              {@const single =
+                canApply &&
+                problem.remedies.length === 1 &&
+                !asking &&
+                !choicesOf(problem.remedies[0])}
+              <li
+                class="fd-doctor__row fd-doctor__row--{problem.severity}"
+                data-testid="doctor-problem"
+                data-code={problem.code}
+                data-severity={problem.severity}
+              >
+                <span class="fd-doctor__dot" role="img" aria-label={msgs.severity[problem.severity]}
+                ></span>
+                <div class="fd-doctor__text">
+                  {#if name && problem.node}
                     <Button
                       variant="ghost"
                       size="sm"
-                      data-testid="doctor-cancel"
-                      onclick={() => (pending = null)}
+                      class="fd-doctor__node"
+                      title={msgs.selectNode({ name })}
+                      data-testid="doctor-node-link"
+                      onclick={() => fd.doctor.focusNode(problem.node!)}
                     >
-                      {msgs.confirmCancel}
+                      {name}
                     </Button>
+                  {:else}
+                    <span class="fd-doctor__node-plain">{msgs.workflowWide}</span>
+                  {/if}
+                  <span class="fd-doctor__message">
+                    {problem.message}
                   </span>
                 </div>
-              {/if}
-            </li>
-          {/each}
-        </ul>
-      </div>
+                {#if canApply && problem.remedies.length > 0 && !asking}
+                  <div class="fd-doctor__actions" class:fd-doctor__actions--side={single}>
+                    {#each problem.remedies as remedy (remedy.id)}
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busy}
+                        loading={fd.doctor.applyingId === problem.id}
+                        title={remedy.description}
+                        data-testid="doctor-remedy"
+                        data-remedy={remedy.id}
+                        onclick={() => choose(problem, remedy)}
+                      >
+                        {remedy.label}
+                      </Button>
+                    {/each}
+                  </div>
+                {/if}
+                {#if asking && askedRemedy}
+                  {@const choices = choicesOf(askedRemedy)}
+                  <div class="fd-doctor__ask" data-testid="doctor-ask">
+                    {#if choices}
+                      <Select
+                        size="sm"
+                        options={choices}
+                        value={asking.choice}
+                        placeholder={msgs.choosePlaceholder}
+                        aria-label={msgs.chooseLabel}
+                        data-testid="doctor-choice"
+                        onValueChange={(value) => {
+                          if (pending) pending = { ...pending, choice: value };
+                        }}
+                      />
+                    {/if}
+                    {#if askedRemedy.destructive}
+                      <span class="fd-doctor__confirm">{msgs.confirm}</span>
+                    {/if}
+                    <span class="fd-doctor__ask-actions">
+                      <Button
+                        variant={askedRemedy.destructive ? 'danger' : 'primary'}
+                        size="sm"
+                        disabled={busy || (!!choices && !asking.choice)}
+                        data-testid="doctor-confirm"
+                        onclick={() => void run(problem, askedRemedy, asking.choice)}
+                      >
+                        {msgs.confirmApply}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        data-testid="doctor-cancel"
+                        onclick={() => (pending = null)}
+                      >
+                        {msgs.confirmCancel}
+                      </Button>
+                    </span>
+                  </div>
+                {/if}
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
     {/if}
   </div>
 {/if}
@@ -302,6 +368,27 @@
   .fd-doctor :global(.fd-doctor__trigger--open),
   .fd-doctor :global(.fd-doctor__trigger:hover) {
     color: var(--_c);
+  }
+
+  .fd-doctor__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--fd-space-xs);
+    color: var(--fd-muted-foreground);
+    font-size: var(--fd-text-sm);
+  }
+  .fd-doctor :global(.fd-doctor__spinner) {
+    animation: fd-doctor-spin 1s linear infinite;
+  }
+  @keyframes fd-doctor-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fd-doctor :global(.fd-doctor__spinner) {
+      animation: none;
+    }
   }
 
   .fd-doctor__popover {

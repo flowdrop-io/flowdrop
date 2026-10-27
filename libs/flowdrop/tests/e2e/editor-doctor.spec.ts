@@ -238,4 +238,27 @@ test.describe('Doctor', () => {
     await page.waitForTimeout(1500);
     expect(remedies).toHaveLength(1);
   });
+  test('a failing check says so and offers Retry', async ({ page }) => {
+    await page.route('**/api/flowdrop/workflow/*/diagnose', (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: false, error: 'Boom' })
+      })
+    );
+    await gotoDoctor(page);
+    await expect(page.getByTestId('doctor-unavailable')).toContainText('Check unavailable');
+    await expect(page.getByTestId('doctor-retry')).toBeVisible();
+  });
+
+  test('a slow check shows Checking... and then the problems', async ({ page }) => {
+    await stubDoctor(page);
+    await page.route('**/api/flowdrop/workflow/*/diagnose', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await route.fallback();
+    });
+    await gotoDoctor(page);
+    await expect(page.getByTestId('doctor-checking')).toContainText('Checking...');
+    await expect(trigger(page)).toContainText('3 problems', { timeout: 10000 });
+  });
 });
