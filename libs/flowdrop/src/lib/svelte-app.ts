@@ -35,6 +35,7 @@ import {
 } from './stores/instanceContainer.svelte.js';
 import {
   DraftAutoSaveManager,
+  loadDraft,
   getDraftStorageKey,
   migrateLegacyDraftKey,
   setDraftStorage,
@@ -62,6 +63,9 @@ import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.
 import type { NavbarAction, NavbarBranding } from './types/navbar.js';
 import type { HostHooks, WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
 import { whenWorkflowLoaded } from './utils/whenWorkflowLoaded.svelte.js';
+import { draftOffer, draftTimeLabel } from './utils/draftRestore.js';
+import { defaultMessages } from './messages/defaults.js';
+import { showWarning } from './services/toastService.js';
 import { parseCommand } from './commands/parser.js';
 import { executeCommand } from './commands/executor.js';
 import { isSessionLine } from './commands/session.js';
@@ -929,6 +933,7 @@ export async function mountFlowDropApp(
   // Set up draft auto-save manager
   let draftManager: DraftAutoSaveManager | null = null;
   let unsubscribeDraftSettings: (() => void) | null = null;
+  let cancelDraftOffer: (() => void) | null = null;
 
   if (features.autoSaveDraft) {
     // Instance-scoped prefix: every instance (including the default) gets
@@ -959,6 +964,49 @@ export async function mountFlowDropApp(
     });
 
     draftManager.start();
+
+    // Offer a draft left behind by an earlier session (a reload, a crash).
+    // Not for a brand-new workflow: its key is shared by every tab.
+    const offerKey = draftManager.getStorageKey();
+    if (mode !== 'readonly' && mode !== 'locked' && !offerKey.endsWith(':new')) {
+      const manager = draftManager;
+      cancelDraftOffer = whenWorkflowLoaded(fd, (loaded) => {
+        const draft = loadDraft(offerKey, draftStorageAdapter);
+        const offer = draftOffer(draft, loaded);
+        if (!draft) return;
+        if (!offer) {
+          manager.clearDraft();
+          return;
+        }
+        // The mount takes no messages option, so the defaults are the mount's messages.
+        const text = defaultMessages.drafts;
+        showWarning(
+          {
+            title: text.found({ time: draftTimeLabel(offer.savedAt) }),
+            body: offer.savedSince ? text.savedSince : undefined,
+            actions: [
+              {
+                label: text.restore,
+                primary: true,
+                onClick: () => {
+                  fd.workflow.batchUpdate({
+                    nodes: draft.workflow.nodes,
+                    edges: draft.workflow.edges,
+                    name: draft.workflow.name,
+                    description: draft.workflow.description,
+                    interface: draft.workflow.interface,
+                    playground: draft.workflow.playground
+                  });
+                  manager.forceSave();
+                }
+              },
+              { label: text.discard, onClick: () => manager.clearDraft() }
+            ]
+          },
+          { id: `flowdrop:draft-offer:${offerKey}` }
+        );
+      });
+    }
 
     // When the user opts out, also remove the draft already in storage.
     unsubscribeDraftSettings = onSettingsChange((event) => {
@@ -1034,6 +1082,9 @@ export async function mountFlowDropApp(
         }
         state.draftManager.stop();
       }
+
+      // A draft offer still waiting for the workflow is no longer wanted
+      cancelDraftOffer?.();
 
       // Stop listening for the draft opt-out setting
       if (state.unsubscribeDraftSettings) {

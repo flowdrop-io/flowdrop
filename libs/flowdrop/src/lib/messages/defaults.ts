@@ -1323,6 +1323,16 @@ export const defaultMessages = {
     skipped: 'Skipped'
   },
 
+  // The offer to bring back unsaved changes found in browser storage.
+  drafts: {
+    // "Unsaved changes from 14:02 were found."
+    found: ({ time }: { time: string }) => `Unsaved changes from ${time} were found.`,
+    savedSince:
+      'The workflow was saved after this draft. Restoring puts your draft over that version.',
+    restore: 'Restore',
+    discard: 'Discard'
+  },
+
   composer: {
     placeholder: 'Type a message',
     send: 'Send',

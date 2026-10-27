@@ -4,7 +4,10 @@
   E2E test fixture that mounts FlowDrop through mountFlowDropApp() with a
   two-node workflow and exposes the mounted app as window.__mountedApp.
 
-  Used by: tests/e2e/editor-save.spec.ts (leave-page confirmation)
+  ?drafts=1 turns draft auto-save on (session storage, a 500 ms interval, toasts on).
+
+  Used by: tests/e2e/editor-save.spec.ts (leave-page confirmation),
+           tests/e2e/editor-draft-restore.spec.ts (draft offer)
 -->
 
 <script lang="ts">
@@ -42,12 +45,16 @@
   } as Workflow;
 
   onMount(() => {
+    const drafts = new URLSearchParams(window.location.search).has('drafts');
     let app: MountedFlowDropApp | undefined;
     void mountFlowDropApp(container, {
       workflow,
       nodes: [textType],
       height: '100vh',
-      features: { autoSaveDraft: false, showToasts: false }
+      ...(drafts ? { draftStorage: 'session' as const } : {}),
+      features: drafts
+        ? { autoSaveDraft: true, autoSaveDraftInterval: 500, showToasts: true }
+        : { autoSaveDraft: false, showToasts: false }
     }).then((mounted) => {
       app = mounted;
       (window as unknown as { __mountedApp: MountedFlowDropApp }).__mountedApp = mounted;
