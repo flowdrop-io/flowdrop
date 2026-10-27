@@ -31,6 +31,7 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import { SvelteSet } from 'svelte/reactivity';
   import Button from '$lib/components/primitives/Button.svelte';
   import { m } from '$lib/messages/index.js';
   import WorkflowInterfaceEntryCard from '$lib/components/WorkflowInterfaceEntryCard.svelte';
@@ -188,6 +189,9 @@
    */
   let rowIdSeq = 0;
 
+  /** Row ids of entries appended this session; their cards start open. */
+  const addedRowIds = new SvelteSet<string>();
+
   function mintRowId(): string {
     rowIdSeq += 1;
     return `row-${rowIdSeq}`;
@@ -282,7 +286,9 @@
   function appendEntry(direction: Direction, entry: WorkflowInterfaceEntry): void {
     // A row id of its own, so adding an entry leaves every other card — and
     // every other card's disclosure — exactly as the author left it.
-    rowIds[direction] = [...rowIds[direction], mintRowId()];
+    const addedId = mintRowId();
+    addedRowIds.add(addedId);
+    rowIds[direction] = [...rowIds[direction], addedId];
     commit(direction, [...entriesFor(direction), entry]);
     composerFor = null;
   }
@@ -414,6 +420,7 @@
                 : undefined}
               {onOpenPlaygroundSettings}
               turnSelector={workflow.playground === undefined}
+              initiallyOpen={addedRowIds.has(rowIds[section.key][index] ?? '')}
               isFirst={index === 0}
               isLast={index === list.length - 1}
               onPatch={(patch: Partial<WorkflowInterfaceEntry>) =>

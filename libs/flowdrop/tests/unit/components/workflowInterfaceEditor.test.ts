@@ -19,11 +19,12 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'svelte/server';
 import WorkflowInterfaceEditor from '$lib/components/WorkflowInterfaceEditor.svelte';
+import WorkflowInterfaceEntryCard from '$lib/components/WorkflowInterfaceEntryCard.svelte';
 import BindablePortListbox from '$lib/components/BindablePortListbox.svelte';
 import { rankBindablePorts } from '$lib/utils/workflowInterface.js';
 import { PortCompatibilityChecker } from '$lib/utils/connections.js';
 import { DEFAULT_PORT_CONFIG } from '$lib/config/defaultPortConfig.js';
-import type { NodePort, Workflow, WorkflowNode } from '$lib/types/index.js';
+import type { NodePort, Workflow, WorkflowInterfaceEntry, WorkflowNode } from '$lib/types/index.js';
 
 function makePort(id: string, dataType = 'string', overrides: Partial<NodePort> = {}): NodePort {
   return { id, name: id, type: 'input', dataType, ...overrides };
@@ -368,5 +369,55 @@ describe('WorkflowInterfaceEditor', () => {
     // A built-in from DEFAULT_PORT_CONFIG plus the empty-value placeholder.
     expect(body).toContain('<option value="string">String</option>');
     expect(body).toContain('Select a data type…');
+  });
+
+  describe('new and flagged input rows (W2.76)', () => {
+    function cardProps(entry: WorkflowInterfaceEntry, extra = {}) {
+      return {
+        entry,
+        direction: 'inputs' as const,
+        status: undefined,
+        candidates: [],
+        dataTypes: DEFAULT_PORT_CONFIG.dataTypes,
+        checker,
+        footerIssues: [],
+        isFirst: true,
+        isLast: true,
+        onPatch: () => {},
+        onMove: () => {},
+        onRemove: () => {},
+        ...extra
+      };
+    }
+
+    it('opens the fields of a row added this session', () => {
+      const entry = { id: 'input_1', dataType: 'string', bindings: [] };
+      const open = render(WorkflowInterfaceEntryCard, {
+        props: cardProps(entry, { initiallyOpen: true })
+      }).body;
+      const closed = render(WorkflowInterfaceEntryCard, { props: cardProps(entry) }).body;
+
+      expect(open).toContain('wf-interface__more');
+      expect(open).not.toMatch(/wf-interface__more[^>]*hidden/);
+      expect(closed).toMatch(/wf-interface__more[^>]*hidden/);
+    });
+
+    it('hints under the type select when an input is Mixed', () => {
+      const entry = { id: 'input_1', dataType: 'mixed', bindings: [] };
+      const body = render(WorkflowInterfaceEntryCard, { props: cardProps(entry) }).body;
+
+      expect(body).toContain('Callers can send anything.');
+    });
+
+    it('flags an untitled input on its closed row', () => {
+      const entry = { id: 'input_1', dataType: 'string', bindings: [] };
+      const untitled = render(WorkflowInterfaceEntryCard, { props: cardProps(entry) }).body;
+      const titled = render(WorkflowInterfaceEntryCard, {
+        props: cardProps({ ...entry, name: 'City' })
+      }).body;
+
+      expect(untitled).toContain('No title');
+      expect(titled).not.toContain('No title');
+    });
   });
 });

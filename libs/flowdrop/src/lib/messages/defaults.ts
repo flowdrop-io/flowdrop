@@ -1128,6 +1128,8 @@ export const defaultMessages = {
     descriptionLabel: 'Description',
     dataTypeLabel: 'Data type',
     dataTypePlaceholder: 'Select a data type…',
+    mixedInputHint: 'Callers can send anything. Pick a type so forms can ask for it properly.',
+    noTitle: 'No title',
     namePlaceholder: 'Defaults to ID',
     typeMismatchInline: ({ portType }: { portType: string }) =>
       `Doesn't match the bound port's type (${portType}).`,

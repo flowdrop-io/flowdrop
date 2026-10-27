@@ -81,6 +81,8 @@
      * up. With settings, a stored `turn` shows as a deprecated chip instead.
      */
     turnSelector?: boolean;
+    /** Open the secondary fields from the start (a row the author just added). */
+    initiallyOpen?: boolean;
     isFirst: boolean;
     isLast: boolean;
     onPatch: (patch: Partial<WorkflowInterfaceEntry>) => void;
@@ -101,6 +103,7 @@
     turnTakenBy,
     onOpenPlaygroundSettings,
     turnSelector = false,
+    initiallyOpen = false,
     isFirst,
     isLast,
     onPatch,
@@ -116,7 +119,9 @@
    */
   // The seed is meant to be read once.
   // svelte-ignore state_referenced_locally
-  let fieldsOpen = $state(status?.status === 'type-mismatch' || turnTakenBy !== undefined);
+  let fieldsOpen = $state(
+    initiallyOpen || status?.status === 'type-mismatch' || turnTakenBy !== undefined
+  );
 
   /** Statuses still explained in the footer (the rest render inline or as the dot). */
   const FOOTER_STATUSES = new Set(['unbound', 'dangling', 'hidden', 'over-bound']);
@@ -374,6 +379,11 @@
         {turnLabel}
       </span>
     {/if}
+    {#if isInput && !entry.name && !fieldsOpen}
+      <span class="wf-interface__turn-chip" data-testid="wf-entry-no-title">
+        {m().workflowInterface.noTitle}
+      </span>
+    {/if}
     <Menu
       size="sm"
       align="end"
@@ -521,6 +531,11 @@
               <option value={option.id}>{option.name}</option>
             {/each}
           </Select>
+          {#if isInput && entry.dataType === 'mixed'}
+            <span class="wf-interface__inline wf-interface__inline--warning">
+              {m().workflowInterface.mixedInputHint}
+            </span>
+          {/if}
           {#if status?.status === 'type-mismatch' && boundPortType}
             <span class="wf-interface__inline wf-interface__inline--warning">
               {m().workflowInterface.typeMismatchInline({ portType: boundPortType ?? '' })}
