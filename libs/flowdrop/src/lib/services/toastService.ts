@@ -36,7 +36,7 @@ const toastBody = asRenderable<{
   text: string;
   body?: string;
   details?: readonly string[];
-  action?: ToastAction;
+  actions?: readonly ToastAction[];
   kind: ToastKind;
   dismissible: boolean;
 }>(DismissibleToast);
@@ -87,6 +87,8 @@ export interface ToastContent {
   body?: string;
   details?: readonly string[];
   action?: ToastAction;
+  /** Several follow-up steps; listed after `action`. */
+  actions?: readonly ToastAction[];
 }
 
 /** What the show* helpers take: a plain string (the title) or its parts. */
@@ -105,6 +107,8 @@ export interface ToastOptions {
   details?: readonly string[];
   /** Same as `action` on a `ToastContent`; the content's own action wins. */
   action?: ToastAction;
+  /** Same as `actions` on a `ToastContent`; the content's own list wins. */
+  actions?: readonly ToastAction[];
   /**
    * Stable id: a toast with the same id replaces the one already showing
    * instead of stacking. Errors and warnings default to an id derived from
@@ -128,8 +132,14 @@ function toContent(input: ToastInput, options?: ToastOptions): ToastContent {
   return {
     ...content,
     details: content.details ?? options?.details,
-    action: content.action ?? options?.action
+    action: content.action ?? options?.action,
+    actions: content.actions ?? options?.actions
   };
+}
+
+/** Every action a toast offers, in order: the single `action` first, then `actions`. */
+function actionList(content: ToastContent): ToastAction[] {
+  return [...(content.action ? [content.action] : []), ...(content.actions ?? [])];
 }
 
 /** Default id for a persistent toast: one per distinct text. */
@@ -158,7 +168,8 @@ function present(
   const content = toContent(input, options);
   // An action is the next step the user may take: it must not vanish while they
   // read (or reach for) it, so it never auto-dismisses and can always be closed.
-  const sticky = content.action !== undefined;
+  const actions = actionList(content);
+  const sticky = actions.length > 0;
   const id = options?.id ?? defaults.id ?? dedupeId(kind, content);
   for (const evicted of planToastEviction(activeToasts(), { id, kind })) {
     toast.dismiss(evicted);
@@ -169,7 +180,7 @@ function present(
       text: content.title,
       body: content.body,
       details: content.details ?? [],
-      action: content.action,
+      actions,
       kind,
       dismissible: sticky || defaults.dismissible
     },

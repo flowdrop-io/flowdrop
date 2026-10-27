@@ -171,7 +171,16 @@
     calc(-1 * var(--fd-space-sm, 8px));
 }
 
-.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-actions button {
+.flowdrop-toaster.flowdrop-toaster
+  .flowdrop-toast-actions:not(.flowdrop-toast-actions--multi)
+  button {
   color: var(--fd-accent, var(--fd-primary));
   font-weight: 500;
+}
+
+/* Several actions: real buttons, so they keep their own colours and sit on the toast's left edge. */
+.flowdrop-toaster.flowdrop-toaster .flowdrop-toast-actions--multi {
+  margin-left: 0;
+  margin-bottom: 0;
+  flex-wrap: wrap;
 }

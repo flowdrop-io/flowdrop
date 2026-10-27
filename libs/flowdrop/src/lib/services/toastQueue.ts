@@ -14,6 +14,8 @@ export type ToastKind = 'success' | 'error' | 'warning' | 'info' | 'loading';
 export interface ToastAction {
   label: string;
   onClick: () => void;
+  /** Draws this action as the main one when a toast offers several (default: the first). */
+  primary?: boolean;
 }
 
 export interface ActiveToast {

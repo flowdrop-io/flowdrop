@@ -26,6 +26,7 @@ function render(props: {
   body?: string;
   details?: readonly string[];
   action?: { label: string; onClick: () => void };
+  actions?: { label: string; onClick: () => void; primary?: boolean }[];
   kind?: 'success' | 'error' | 'warning' | 'info';
   dismissible?: boolean;
 }) {
@@ -90,6 +91,54 @@ describe('DismissibleToast', () => {
     button?.click();
     expect(onClick).toHaveBeenCalledOnce();
     expect(dismiss).toHaveBeenCalledWith('error:x');
+  });
+
+  it('renders several actions in order; each runs once and dismisses', () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const el = render({
+      text: 'x',
+      actions: [
+        { label: 'Reload', onClick: first },
+        { label: 'Keep mine', onClick: second }
+      ]
+    });
+    const buttons = [...el.querySelectorAll<HTMLButtonElement>('.flowdrop-toast-actions button')];
+    expect(buttons.map((b) => b.textContent?.trim())).toEqual(['Reload', 'Keep mine']);
+    expect(buttons[0].className).toContain('--primary');
+    expect(buttons[1].className).toContain('--secondary');
+    buttons[1].click();
+    expect(second).toHaveBeenCalledOnce();
+    expect(first).not.toHaveBeenCalled();
+    expect(dismiss).toHaveBeenCalledWith('error:x');
+    buttons[0].click();
+    expect(first).toHaveBeenCalledOnce();
+    expect(dismiss).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws the action marked primary as the main one', () => {
+    const el = render({
+      text: 'x',
+      actions: [
+        { label: 'A', onClick: () => {} },
+        { label: 'B', onClick: () => {}, primary: true }
+      ]
+    });
+    const buttons = [...el.querySelectorAll<HTMLButtonElement>('.flowdrop-toast-actions button')];
+    expect(buttons[0].className).toContain('--secondary');
+    expect(buttons[1].className).toContain('--primary');
+  });
+
+  it('puts the single action before the list', () => {
+    const el = render({
+      text: 'x',
+      action: { label: 'One', onClick: () => {} },
+      actions: [{ label: 'Two', onClick: () => {} }]
+    });
+    const labels = [...el.querySelectorAll('.flowdrop-toast-actions button')].map((b) =>
+      b.textContent?.trim()
+    );
+    expect(labels).toEqual(['One', 'Two']);
   });
 
   it('has no close button when it is not dismissible (a success)', () => {

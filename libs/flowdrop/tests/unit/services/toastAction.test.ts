@@ -14,8 +14,10 @@ vi.mock('svelte-5-french-toast', () => ({
 
 import { showSuccess, showInfo } from '$lib/services/toastService.js';
 
-function lastCall(): { duration: number; props: { dismissible: boolean } } {
-  return toastFn.mock.calls.at(-1)![1] as { duration: number; props: { dismissible: boolean } };
+type Call = { duration: number; props: { dismissible: boolean; actions: { label: string }[] } };
+
+function lastCall(): Call {
+  return toastFn.mock.calls.at(-1)![1] as Call;
 }
 
 describe('toasts with an action', () => {
@@ -37,5 +39,30 @@ describe('toasts with an action', () => {
     showInfo('Moved', { duration: 1000, action: { label: 'Undo', onClick: () => {} } });
     expect(lastCall().duration).toBe(Infinity);
     expect(lastCall().props.dismissible).toBe(true);
+  });
+
+  it('a toast with several actions stays and can be closed', () => {
+    showSuccess({
+      title: 'Changed elsewhere',
+      actions: [
+        { label: 'Reload', onClick: () => {} },
+        { label: 'Keep mine', onClick: () => {} }
+      ]
+    });
+    expect(lastCall().duration).toBe(Infinity);
+    expect(lastCall().props.dismissible).toBe(true);
+  });
+
+  it('merges action and actions with action first', () => {
+    showInfo(
+      { title: 'x', action: { label: 'One', onClick: () => {} } },
+      { actions: [{ label: 'Two', onClick: () => {} }] }
+    );
+    expect(lastCall().props.actions.map((a) => a.label)).toEqual(['One', 'Two']);
+  });
+
+  it('a plain toast passes an empty list', () => {
+    showInfo('hi');
+    expect(lastCall().props.actions).toEqual([]);
   });
 });

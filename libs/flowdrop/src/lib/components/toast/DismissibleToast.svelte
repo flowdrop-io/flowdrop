@@ -29,7 +29,10 @@
     /** Why it happened, one short paragraph. */
     body?: string;
     details?: readonly string[];
+    /** Single action; kept for callers outside the library. */
     action?: ToastAction;
+    /** Follow-up steps, shown after `action`. */
+    actions?: readonly ToastAction[];
     kind?: ToastKind;
     dismissible?: boolean;
   }
@@ -40,12 +43,22 @@
     body,
     details = [],
     action,
+    actions = [],
     kind = 'info',
     dismissible = true
   }: Props = $props();
 
-  function runAction(): void {
-    action?.onClick();
+  const all = $derived([...(action ? [action] : []), ...actions]);
+  // The main action is the one marked `primary`, else the first.
+  const mainIndex = $derived(
+    Math.max(
+      0,
+      all.findIndex((a) => a.primary)
+    )
+  );
+
+  function run(item: ToastAction): void {
+    item.onClick();
     toastApi.dismiss(toast.id);
   }
 </script>
@@ -88,9 +101,15 @@
         {/each}
       </ul>
     {/if}
-    {#if action}
-      <div class="flowdrop-toast-actions">
-        <Button variant="ghost" size="sm" onclick={runAction}>{action.label}</Button>
+    {#if all.length}
+      <div class="flowdrop-toast-actions" class:flowdrop-toast-actions--multi={all.length > 1}>
+        {#each all as item, i (i)}
+          <Button
+            variant={all.length === 1 ? 'ghost' : i === mainIndex ? 'primary' : 'secondary'}
+            size="sm"
+            onclick={() => run(item)}>{item.label}</Button
+          >
+        {/each}
       </div>
     {/if}
   </div>
