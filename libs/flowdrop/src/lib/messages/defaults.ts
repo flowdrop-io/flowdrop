@@ -1362,5 +1362,27 @@ export const defaultMessages = {
     hintMove: 'move',
     hintChoose: 'choose',
     hintClose: 'close'
+  },
+
+  // The dialog that compares your workflow with the saved version.
+  compare: {
+    title: 'Your version and the saved version',
+    onlyMine: 'Only in yours',
+    onlyTheirs: 'Only in the saved version',
+    changedInBoth: 'Changed in both',
+    none: 'No differences in the workflow itself',
+    keepMine: 'Keep mine',
+    loadTheirs: 'Load the saved version',
+    cancel: 'Cancel',
+    stepOnly: ({ label }: { label: string }) => `Step "${label}"`,
+    stepSettings: ({ label }: { label: string }) => `Step "${label}": settings changed`,
+    stepLabel: ({ label }: { label: string }) => `Step "${label}": name changed`,
+    stepPosition: ({ label }: { label: string }) => `Step "${label}": moved`,
+    wiresOnly: ({ n }: { n: number }) => (n === 1 ? '1 wire' : `${n} wires`),
+    name: ({ mine, theirs }: { mine: string; theirs: string }) =>
+      `Workflow name: "${mine}" and "${theirs}"`,
+    description: 'Workflow description changed',
+    interface: 'Workflow interface changed',
+    chat: 'Chat settings changed'
   }
 } as const;
