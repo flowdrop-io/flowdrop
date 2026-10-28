@@ -1552,6 +1552,15 @@
   }
 
   /**
+   * A key press belongs to the canvas when it comes from inside it, or from the canvas region
+   * around it: a click on the empty canvas and the "Skip to the canvas" link both focus that region.
+   */
+  function onCanvas(target: HTMLElement): boolean {
+    if (target.closest('.flowdrop-canvas')) return true;
+    return target.getAttribute('role') === 'region' && !!canvasEl && target.contains(canvasEl);
+  }
+
+  /**
    * Shift+F10 / the Menu key: on a focused node wrapper open that node's menu
    * anchored at the node; elsewhere in the canvas open the pane menu at the
    * viewport centre. Returns true when the key was handled.
@@ -1559,7 +1568,7 @@
   function handleMenuKey(event: KeyboardEvent, target: HTMLElement): boolean {
     const isMenuKey = event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey);
     if (!isMenuKey || !canvasEditable) return false;
-    if (!target.closest('.flowdrop-canvas') || target.closest('.canvas-context-menu')) return false;
+    if (!onCanvas(target) || target.closest('.canvas-context-menu')) return false;
 
     event.preventDefault();
 
@@ -1782,7 +1791,7 @@
       !event.metaKey &&
       !event.altKey &&
       canvasEditable &&
-      target.closest('.flowdrop-canvas')
+      onCanvas(target)
     ) {
       const ids = flowNodes.filter((n) => n.selected).map((n) => n.id);
       if (ids.length > 0) {
@@ -1792,8 +1801,8 @@
       return;
     }
 
-    // Shift+Alt+T on the canvas, or with nothing focused (a click on the empty canvas leaves the
-    // focus on the body): tidy up the whole graph. By code: Alt changes the key on a Mac.
+    // Shift+Alt+T on the canvas, or with nothing focused: tidy up the whole graph.
+    // By code: Alt changes the key on a Mac.
     if (
       event.code === 'KeyT' &&
       event.shiftKey &&
@@ -1801,7 +1810,7 @@
       !event.ctrlKey &&
       !event.metaKey &&
       canvasEditable &&
-      (target === document.body || target.closest('.flowdrop-canvas'))
+      (target === document.body || onCanvas(target))
     ) {
       event.preventDefault();
       tidyLayout();
