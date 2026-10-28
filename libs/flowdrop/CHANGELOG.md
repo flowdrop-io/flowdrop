@@ -13,6 +13,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exported from `@flowdrop/flowdrop/settings`, describes each setting: its type, a short label and the
   values it allows.
 
+- Publishing a generic port (data, value, ...) suggests the id, title and type from the node instead of data, data_2 and Mixed.
+
+- New interface rows open their Title, Description, Required and Example fields; Mixed and untitled inputs are flagged.
+
+- Toasts accept `actions` (several follow-up buttons); a toast with actions stays until it is closed.
+
+- The navbar's main action (Save) shows a dot and says 'Unsaved changes' while the workflow has changes that are not saved.
+
+- mountFlowDropApp asks the browser to confirm leaving the page while there are unsaved changes (`features.confirmUnsavedLeave`, on by default).
+
+- When a stored draft differs from the loaded workflow, the editor offers Restore or Discard (and says when the workflow was saved after the draft).
+
+- New `compareWorkflows()` helper and WorkflowCompareDialog listing the steps, wires, interface and chat settings that differ.
+
+- A save refused with 409 CONFLICT shows Keep mine / Load theirs / Compare instead of a plain error.
+
+- Edit mode has a Run button (`features.runButton`): it saves unsaved changes first, then starts the workflow through `host.onRun` or the `workflows.run` endpoint and shows the run on the canvas.
+
+- Run opens a form built from the workflow interface's inputs and remembers the last values for the page.
+
+- The run pill links 'Open run' when `features.adminLinks.run` is set; a queued run says it waits for the site's queue.
+
+- Doctor remedies with `params.automatic: true` are applied by the editor when their problem first appears after load, as one undoable edit with an Undo toast.
+
+- The Problems indicator shows 'Checking...' for a slow check and 'Check unavailable' with Retry when the check fails, instead of staying blank.
+
+- The editor offers a 'Skip to the canvas' link, and mountFlowDropApp accepts navbarTitleLevel to render the title as the page's H1.
+
+### Fixed
+
+- Drafts carry `metadata.baseRevision`, include interface and Playground edits, and are removed when the workflow is saved; `draftFingerprint` is exported.
+
+- Run asks for a workflow's inputs also when it has no Playground settings.
+
+- "Connect to…" lists trigger pins under "Other types" when connecting a data port, and data ports when connecting a trigger pin.
+
 ## [2.16.0] - 2026-10-24
 
 ### Added
