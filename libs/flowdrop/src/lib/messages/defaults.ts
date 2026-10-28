@@ -589,6 +589,8 @@ export const defaultMessages = {
     // Edit mode's left slot: Nodes | Assistant.
     nodesTab: 'Nodes',
     workflowCanvas: 'Workflow canvas',
+    // The skip link at the start of the editor.
+    skipToCanvas: 'Skip to the canvas',
     executionLogs: 'Execution logs sidebar',
     settingsCategories: 'Settings categories',
     zoomLevelsTitle: 'Zoom levels',

@@ -20,6 +20,26 @@ test.describe('Editor frame', () => {
     await expect(page.locator('.flowdrop-status-bar')).toHaveCount(0);
   });
 
+  test('the first Tab stop is a skip link that moves focus to the canvas', async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await gotoEditor(page, 'simple');
+
+    // The test route sits inside the demo app's own shell: start from the editor's mount point.
+    await page.evaluate(() => {
+      const mount = document.querySelector<HTMLElement>('[data-testid="editor-test"]');
+      mount?.setAttribute('tabindex', '-1');
+      mount?.focus();
+    });
+    await page.keyboard.press('Tab');
+    const skip = page.locator('.flowdrop-skip-link');
+    await expect(skip).toBeFocused();
+    await expect(skip).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(
+      page.locator('[role="region"][aria-label="Workflow canvas"]').first()
+    ).toBeFocused();
+  });
+
   test('node count sits in the zoom control', async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 900 });
     await gotoEditor(page, 'simple');

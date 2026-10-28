@@ -163,6 +163,8 @@ export interface FlowDropMountOptions {
   // Navbar customization
   /** Custom navbar title */
   navbarTitle?: string;
+  /** Heading level of the navbar title: 1 renders it as the page's H1 (default 2) */
+  navbarTitleLevel?: 1 | 2;
   /** Custom navbar actions */
   navbarActions?: NavbarAction[];
   /**
@@ -764,6 +766,7 @@ export async function mountFlowDropApp(
     playground,
     pipelineId,
     navbarTitle,
+    navbarTitleLevel,
     navbarActions,
     branding,
     navbarEnd,
@@ -898,6 +901,7 @@ export async function mountFlowDropApp(
       playground,
       pipelineId,
       navbarTitle,
+      navbarTitleLevel,
       navbarActions,
       branding,
       navbarEnd: navbarEndSnippet,

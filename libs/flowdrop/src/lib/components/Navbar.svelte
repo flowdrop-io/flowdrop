@@ -45,6 +45,8 @@
     showStatus?: boolean;
     /** Page title */
     title?: string;
+    /** Heading level of the title: 1 makes it the page's H1 */
+    titleLevel?: 1 | 2;
     /** Breadcrumb navigation items */
     breadcrumbs?: BreadcrumbItem[];
     /** Show settings gear icon */
@@ -84,6 +86,7 @@
     primaryActions = [],
     showStatus = true,
     title,
+    titleLevel = 2,
     breadcrumbs = [],
     showSettings = true,
     settingsCategories,
@@ -326,7 +329,10 @@
       {:else if title}
         <div class="flowdrop-navbar__title-container">
           <div class="flowdrop-navbar__title">
-            <h2 class="flowdrop-navbar__title-text">{title}</h2>
+            <svelte:element
+              this={titleLevel === 1 ? 'h1' : 'h2'}
+              class="flowdrop-navbar__title-text">{title}</svelte:element
+            >
           </div>
         </div>
       {/if}

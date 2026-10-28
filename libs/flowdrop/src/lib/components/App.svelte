@@ -200,6 +200,8 @@
     refreshTrigger?: number;
     /** Custom navbar title */
     navbarTitle?: string;
+    /** Heading level of the navbar title: 1 renders it as the page's H1 (default 2) */
+    navbarTitleLevel?: 1 | 2;
     /** Custom navbar actions */
     navbarActions?: NavbarAction[];
     /** White-label logo for the navbar (replaces the FlowDrop wordmark) */
@@ -295,6 +297,7 @@
     pipelineId,
     refreshTrigger = 0,
     navbarTitle,
+    navbarTitleLevel = 2,
     navbarActions = [],
     branding,
     navbarEnd,
@@ -1615,6 +1618,7 @@
   const consoleStripShown = $derived(consoleGroupOffered && canvasEditable);
   /** Id of the Console panel, for the strip's `aria-controls`. */
   const consolePanelId = `${scopeId}-console-panel`;
+  const canvasRegionId = `${scopeId}-canvas`;
   /** Node-swap sub-flow occupies the right sidebar regardless of placement. */
   const swapActive = $derived(swapMode !== 'idle');
 
@@ -2220,6 +2224,14 @@
 
 <!-- MainLayout wrapper for workflow editor -->
 <div class="flowdrop-root" data-fd-scope={scopeId} use:themeScope={{ mirror: true }}>
+  <a
+    class="flowdrop-skip-link"
+    href={`#${canvasRegionId}`}
+    onclick={(e) => {
+      e.preventDefault();
+      document.getElementById(canvasRegionId)?.focus();
+    }}>{mergedMessages.layout.skipToCanvas}</a
+  >
   <MainLayout
     {height}
     {width}
@@ -2252,6 +2264,7 @@
       {/snippet}
       <Navbar
         title={breadcrumbTitle}
+        titleLevel={navbarTitleLevel}
         primaryActions={navbarActions.length > 0 ? navbarActions : defaultPrimaryActions}
         {showStatus}
         {showSettings}
@@ -2431,6 +2444,8 @@
           closeActiveConfig();
         } else closeConfigSidebar();
       }}
+      id={canvasRegionId}
+      tabindex="-1"
       role="region"
       aria-label={mergedMessages.layout.workflowCanvas}
     >
@@ -2628,6 +2643,33 @@
 {/if}
 
 <style>
+  /* Hidden until focused, then the first thing on screen. */
+  .flowdrop-skip-link {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .flowdrop-skip-link:focus {
+    position: fixed;
+    top: var(--fd-space-xs);
+    left: var(--fd-space-xs);
+    z-index: 1000;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    padding: var(--fd-space-xs) var(--fd-space-md);
+    background: var(--fd-background);
+    color: var(--fd-foreground);
+    border-radius: var(--fd-radius-md);
+    box-shadow: var(--fd-shadow-lg);
+    font-size: var(--fd-text-sm);
+  }
+
   .flowdrop-root {
     display: contents;
   }
