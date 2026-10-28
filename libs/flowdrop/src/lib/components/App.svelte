@@ -89,11 +89,7 @@
   import { apiToasts, dismissToast, showError, showInfo } from '$lib/services/toastService.js';
   import { workflowLaunchService } from '$lib/services/workflowLaunchService.js';
   import { canOfferRun } from '$lib/utils/runOffer.js';
-  import {
-    collectInterfaceInputs,
-    interfaceFormEntriesFor,
-    playgroundInputModeFor
-  } from '$lib/utils/workflowInterface.js';
+  import { collectInterfaceInputs, interfaceFormEntriesFor } from '$lib/utils/workflowInterface.js';
   import { initAutoSave } from '$lib/services/autoSaveService.js';
   import {
     getUiSettings,
@@ -605,10 +601,9 @@
   const runInputEntries = $derived.by(() => {
     const workflow = fd.workflow.current;
     if (!workflow) return [];
-    const binding = resolvePlaygroundChat(workflow);
-    return playgroundInputModeFor(workflow.interface, binding) === 'legacy'
-      ? []
-      : interfaceFormEntriesFor(workflow.interface, binding);
+    // Every input the chat does not fill, also in the Playground's legacy mode (no turn ports, no
+    // settings): the server refuses a run that leaves a required input out.
+    return interfaceFormEntriesFor(workflow.interface, resolvePlaygroundChat(workflow));
   });
 
   /**

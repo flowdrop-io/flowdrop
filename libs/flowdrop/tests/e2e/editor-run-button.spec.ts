@@ -132,6 +132,19 @@ test.describe('Run button', () => {
     await expect(page.locator('.flowdrop-run-bar')).toContainText('Done', { timeout: 10000 });
   });
 
+  test('a workflow without Playground settings or turn ports still asks for its inputs', async ({
+    page
+  }) => {
+    const stub = await stubBackend(page);
+    await gotoEditor(page, 'interface');
+    await runButton(page).click();
+
+    await expect(dialog(page)).toBeVisible();
+    await expect(dialog(page)).toContainText('amount');
+    await expect(dialog(page)).toContainText('items');
+    expect(stub.runBodies).toHaveLength(0);
+  });
+
   test('a second Run starts with the last values', async ({ page }) => {
     const stub = await stubBackend(page);
     await gotoFormEditor(page);

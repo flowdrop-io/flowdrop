@@ -27,6 +27,7 @@ import {
   historyLimitOf,
   declaresTurnPorts,
   interfaceFormEntries,
+  interfaceFormEntriesFor,
   resolvePlaygroundInputMode,
   playgroundChatIssues,
   findReplyPort,
@@ -35,6 +36,7 @@ import {
   collectInterfaceInputs
 } from '$lib/utils/workflowInterface.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
+import { resolvePlaygroundChat } from '$lib/utils/playgroundChat.js';
 import type { PortMapping } from '$lib/utils/nodeSwap.js';
 import type {
   NodeMetadata,
@@ -1219,6 +1221,16 @@ describe('Playground input mode', () => {
       'legacy'
     );
     expect(declaresTurnPorts({ inputs: [entry('topic')] })).toBe(false);
+  });
+
+  it('still lists every input for the Run form in legacy mode', () => {
+    const workflow = {
+      interface: { inputs: [entry('a'), entry('b'), entry('operation')] }
+    };
+    expect(resolvePlaygroundInputMode(workflow.interface)).toBe('legacy');
+    expect(
+      interfaceFormEntriesFor(workflow.interface, resolvePlaygroundChat(workflow)).map((e) => e.id)
+    ).toEqual(['a', 'b', 'operation']);
   });
 
   it('is chat when an input carries the message turn', () => {
