@@ -7,6 +7,9 @@
  * wire is a valid target (the pick adds another); a pair that is already wired
  * is marked and picking it does nothing.
  *
+ * Trigger pins and data ports never count as compatible with each other: they
+ * are listed, but under "Other types".
+ *
  * @module editor/connectCandidates
  */
 
@@ -112,9 +115,12 @@ export function listConnectCandidates(
             edge.target === target.nodeId &&
             edge.targetHandle === originHandle
       );
-      const compatible = fromOutput
-        ? checker.areDataTypesCompatible(origin.port.dataType, port.dataType)
-        : checker.areDataTypesCompatible(port.dataType, origin.port.dataType);
+      const sameKind = (origin.port.dataType === 'trigger') === (port.dataType === 'trigger');
+      const compatible =
+        sameKind &&
+        (fromOutput
+          ? checker.areDataTypesCompatible(origin.port.dataType, port.dataType)
+          : checker.areDataTypesCompatible(port.dataType, origin.port.dataType));
 
       const candidate: ConnectCandidate = {
         nodeId: node.id,
