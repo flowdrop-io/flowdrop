@@ -19,7 +19,8 @@
  * Since 2.6.0 "Add input" / "Add output" opens an inline two-step composer
  * ("Bind it to an existing port?") instead of dropping in a blank row; its
  * "No, add a custom entry" path adds the same empty, unbound entry the button
- * used to, so the helpers below take that path.
+ * used to, so the helpers below take that path. A row added this way opens its
+ * secondary fields (Title, Description, Required, Example) from the start.
  *
  * These assert the user-facing contract — the field stays on screen, keeps
  * focus, keeps what was typed, and the row actually goes away — rather than the
@@ -58,10 +59,9 @@ async function entryMenu(page: Page, nth: number, item: string | RegExp): Promis
     .click();
 }
 
-/** Add an input entry and open its secondary fields. */
+/** Add an input entry; a new row opens its secondary fields. */
 async function addInputWithFieldsOpen(page: Page, nth = 0): Promise<void> {
   await addCustomEntry(page, 'input');
-  await entryMenu(page, nth, 'More options');
   await expect(
     page.locator('.wf-interface__entry').nth(nth).locator('.wf-interface__example-add')
   ).toBeVisible();
@@ -128,8 +128,9 @@ test.describe('Interface editor', () => {
     await gotoEditor(page, 'simple');
     await openInterfaceTab(page);
 
-    // Two entries, with only the second one's fields open.
+    // Two entries, with only the second one's fields open: close the first.
     await addCustomEntry(page, 'input');
+    await entryMenu(page, 0, 'More options');
     await addInputWithFieldsOpen(page, 1);
 
     const entries = page.locator('.wf-interface__entry');
@@ -170,9 +171,10 @@ test.describe('Interface editor', () => {
     await gotoEditor(page, 'simple');
     await openInterfaceTab(page);
 
-    // Two entries, with only the first one's fields open.
+    // Two entries, with only the first one's fields open: close the second.
     await addInputWithFieldsOpen(page, 0);
     await addCustomEntry(page, 'input');
+    await entryMenu(page, 1, 'More options');
 
     const cards = page.locator('.wf-interface__entry');
     const isOpen = () =>
