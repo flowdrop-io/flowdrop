@@ -9,11 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Save asks before a change that breaks or switches off what uses the workflow (needs the workflows.impact endpoint).
-
-- New optional endpoint `workflows.impact` and a `checkImpact()` service that asks the server what a workflow change breaks or switches off.
-
-- New `ImpactConfirm` dialog and `confirmImpact()` helper that list what a save breaks or changes and ask to save anyway.
+- Save asks before a change that breaks or switches off what uses the workflow, listing what is affected and asking to save anyway (needs the new optional `workflows.impact` endpoint). The dialog opens on Cancel and is a native modal dialog.
 
 - **Field schema for every editor setting.** `SETTINGS_FIELD_SCHEMA` (and the `SettingsFieldSchema` type),
   exported from `@flowdrop/flowdrop/settings`, describes each setting: its type, a short label and the
@@ -31,11 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - When a stored draft differs from the loaded workflow, the editor offers Restore or Discard (and says when the workflow was saved after the draft).
 
-- New `compareWorkflows()` helper and WorkflowCompareDialog listing the steps, wires, interface and chat settings that differ.
+- A compare dialog lists the steps, wires, interface and chat settings that differ between two versions of a workflow.
 
 - A save refused with 409 CONFLICT shows Keep mine / Load theirs / Compare instead of a plain error.
 
-- Edit mode has a Run button (`features.runButton`): it saves unsaved changes first, then starts the workflow through `host.onRun` or the `workflows.run` endpoint and shows the run on the canvas.
+- Edit mode has a Run button (`features.runButton`, on with the default endpoint config; `false` turns it off): it saves unsaved changes first, then starts the workflow through `host.onRun` or the `workflows.run` endpoint and shows the run on the canvas.
 
 - Run opens a form built from the workflow interface's inputs and remembers the last values for the page.
 
@@ -58,6 +54,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drafts carry `metadata.baseRevision`, include interface and Playground edits, and are removed when the workflow is saved; `draftFingerprint` is exported.
 
 - Run asks for a workflow's inputs also when it has no Playground settings.
+
+- Autosave never opens the impact question: a save that needs an answer is skipped and the workflow stays unsaved. A 401 or 403 from the impact route counts as no impact check, like 404 and 405.
+
+- Doctor's Undo only undoes the automatic fix, and its toast goes once the history moves on. A reload never applies an automatic fix again.
+
+- The save conflict toast follows `showToasts` and `onApiError`.
+
+- Host `messages` reach the impact dialog, the draft offer, the conflict toast and the Doctor toast.
+
+- A stored draft stays while its Restore or Discard offer is open, however long the offer waits.
+
+- Port pins are Tab stops only on the selected node, not on every node; the palette adds one node per key press (Enter on key down, Space on key up).
+
+- A generated interface id keeps accented letters as plain letters (`Übersetzung` gives `ubersetzung`).
 
 - "Connect to…" lists trigger pins under "Other types" when connecting a data port, and data ports when connecting a trigger pin.
 
