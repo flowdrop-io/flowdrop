@@ -60,7 +60,7 @@ describe('WorkflowCompareDialog', () => {
     const cb = render(base);
     const buttons = [...target.querySelectorAll('button')];
     buttons.find((b) => b.textContent?.includes('Keep mine'))!.click();
-    buttons.find((b) => b.textContent?.includes('Load the saved version'))!.click();
+    buttons.find((b) => b.textContent?.includes('Load saved version'))!.click();
     buttons.find((b) => b.textContent?.includes('Cancel'))!.click();
     expect(cb.onKeepMine).toHaveBeenCalledOnce();
     expect(cb.onLoadTheirs).toHaveBeenCalledOnce();
@@ -69,9 +69,7 @@ describe('WorkflowCompareDialog', () => {
 
   it('calls onClose on Escape', () => {
     const cb = render(base);
-    target
-      .querySelector('dialog')!
-      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    target.querySelector('dialog')!.dispatchEvent(new Event('cancel', { cancelable: true }));
     expect(cb.onClose).toHaveBeenCalledOnce();
   });
 });

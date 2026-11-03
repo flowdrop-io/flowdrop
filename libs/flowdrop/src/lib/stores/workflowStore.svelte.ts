@@ -210,6 +210,7 @@ export class WorkflowStore {
    *    didn't persist the version the client submitted.
    */
   #editVersion = $state<number>(0);
+  #loadGeneration = 0;
 
   /**
    * Edit version captured at the last successful save.
@@ -423,6 +424,11 @@ export class WorkflowStore {
     return this.#editVersion;
   }
 
+  /** Counts the `initialize()` calls: a reload of the same id is a new load. */
+  get loadGeneration(): number {
+    return this.#loadGeneration;
+  }
+
   /** Whether history recording is enabled. */
   get historyEnabled(): boolean {
     return this.#historyEnabled;
@@ -588,6 +594,7 @@ export class WorkflowStore {
    * This sets the initial saved snapshot, clears dirty state, and initializes history.
    */
   initialize(workflow: Workflow): void {
+    this.#loadGeneration++;
     this.#configEditKey = null;
     workflow = normalizeWorkflowMetadata(workflow);
     this.#workflow = workflow;

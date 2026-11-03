@@ -308,15 +308,21 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       suppressToast = eventHandlers.onApiError(errorObj, 'save') === true;
     }
 
-    // Someone else saved first: offer Keep mine / Load theirs / Compare instead
-    // of the generic error. Other 409s (a taken id) keep the normal toast.
+    // Someone else saved first: offer Keep mine / Load saved version / Compare
+    // instead of the generic error. Other 409s (a taken id) keep the normal toast.
+    // The choices are reported even when toasts are off, only the toast is not.
     const conflict = isSaveConflict(error);
     if (conflict) {
       const details = conflict.errorData.details as { current?: unknown } | undefined;
-      fd.saveConflict.report({
-        currentRevision: String(details?.current ?? ''),
-        retry: () => globalSaveWorkflow(options)
-      });
+      const current = details?.current;
+      fd.saveConflict.report(
+        {
+          currentRevision:
+            current === undefined || current === null || current === '' ? null : String(current),
+          retry: () => globalSaveWorkflow(options)
+        },
+        features.showToasts && !suppressToast
+      );
     } else if (features.showToasts && !suppressToast) {
       // The error object, not its message: an ApiError carries the server's
       // reasons as `details`, and the toast renders them as a list.

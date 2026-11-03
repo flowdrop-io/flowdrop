@@ -6,6 +6,7 @@
  * applies a remedy as ONE undoable edit.
  */
 
+import { flushSync } from 'svelte';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   createFlowDropInstance,
@@ -14,6 +15,13 @@ import {
 import { defaultEndpointConfig } from '$lib/config/endpoints.js';
 import { createTestWorkflow, createTestNode, createTestEdge } from '../../utils/index.js';
 import type { DoctorProblem } from '$lib/types/doctor.js';
+import { dismissToast, showInfo } from '$lib/services/toastService.js';
+
+vi.mock('$lib/services/toastService.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('$lib/services/toastService.js')>()),
+  showInfo: vi.fn(() => 'id'),
+  dismissToast: vi.fn()
+}));
 
 const problem = (over: Partial<DoctorProblem> = {}): DoctorProblem => ({
   id: 'p1',
@@ -353,6 +361,54 @@ describe('DoctorStore', () => {
       await vi.runAllTimersAsync();
       await edit();
       expect(remedyCalls()).toHaveLength(1);
+    });
+
+    it('does not apply a problem present after a reload of the same workflow id', async () => {
+      serve([[], [auto()]]);
+      await load();
+      // Same id, loaded again (Load saved version): its problems are not new.
+      fd.workflow.initialize(workflow());
+      fd.doctor.schedule();
+      await vi.runAllTimersAsync();
+      await edit();
+      expect(remedyCalls()).toHaveLength(0);
+    });
+
+    describe('the Undo toast', () => {
+      /** The toast action and id of the latest automatic remedy. */
+      async function applied() {
+        serve([[], [auto()], []]);
+        await load();
+        await edit();
+        expect(remedyCalls()).toHaveLength(1);
+        const [content, options] = vi.mocked(showInfo).mock.calls.at(-1) as [
+          { action: { onClick: () => void } },
+          { id: string }
+        ];
+        return { undo: content.action.onClick, id: options.id };
+      }
+
+      beforeEach(() => {
+        vi.mocked(showInfo).mockClear();
+        vi.mocked(dismissToast).mockClear();
+      });
+
+      it('undoes the remedy while it is the latest step', async () => {
+        const { undo, id } = await applied();
+        undo();
+        expect(fd.workflow.nodes[0].data.config).toEqual({ keep: 1, legacy: true });
+        expect(dismissToast).toHaveBeenCalledWith(id);
+      });
+
+      it('does nothing once the person edited after the remedy, and the toast goes', async () => {
+        const { undo, id } = await applied();
+        fd.workflow.actions.addNode(createTestNode({ id: 'mine' }));
+        flushSync();
+        expect(dismissToast).toHaveBeenCalledWith(id);
+        undo();
+        expect(fd.workflow.nodes.map((n) => n.id)).toContain('mine');
+        expect(fd.workflow.nodes[0].data.config).toEqual({ keep: 1 });
+      });
     });
 
     it('applies nothing once setAutoApply(false)', async () => {

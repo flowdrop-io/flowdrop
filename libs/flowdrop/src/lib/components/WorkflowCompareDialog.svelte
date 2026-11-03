@@ -63,18 +63,18 @@
     ...(comparison.interfaceChanged ? [m().compare.interface] : []),
     ...(comparison.chatChanged ? [m().compare.chat] : [])
   ]);
+
+  const groups = $derived([
+    { heading: m().compare.onlyMine, lines: mineLines },
+    { heading: m().compare.onlyTheirs, lines: theirLines },
+    { heading: m().compare.changedInBoth, lines: bothLines }
+  ]);
 </script>
 
 <dialog
   bind:this={dialogRef}
   class="flowdrop-scope flowdrop-compare-dialog"
   aria-labelledby={titleId}
-  onkeydown={(event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onClose();
-    }
-  }}
   oncancel={(event) => {
     event.preventDefault();
     onClose();
@@ -87,12 +87,12 @@
       {#if comparison.same}
         <p>{m().compare.none}</p>
       {:else}
-        {#each [{ heading: m().compare.onlyMine, lines: mineLines }, { heading: m().compare.onlyTheirs, lines: theirLines }, { heading: m().compare.changedInBoth, lines: bothLines }] as group (group.heading)}
+        {#each groups as group (group.heading)}
           {#if group.lines.length > 0}
             <section>
               <h3 class="flowdrop-compare-dialog__heading">{group.heading}</h3>
               <ul>
-                {#each group.lines as line, i (i)}
+                {#each group.lines as line, i (`${i}:${line}`)}
                   <li>{line}</li>
                 {/each}
               </ul>

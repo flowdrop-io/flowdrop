@@ -2639,7 +2639,7 @@
   onClose={() => (runDialogOpen = false)}
 />
 
-{#if fd.saveConflict.comparing && fd.saveConflict.comparison}
+{#if fd.saveConflict.comparison}
   <WorkflowCompareDialog
     comparison={fd.saveConflict.comparison}
     onKeepMine={() => void fd.saveConflict.keepMine()}

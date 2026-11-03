@@ -19,6 +19,7 @@ import type { Workflow } from '$lib/types/index.js';
 import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
 import { ApiError } from '$lib/api/enhanced-client.js';
 import { SaveConflictStore } from '$lib/stores/saveConflictStore.svelte.js';
+import { defaultMessages } from '$lib/messages/defaults.js';
 import { apiToasts } from '$lib/services/toastService.js';
 import { createTestNode, createTestWorkflow } from '../../utils/index.js';
 
@@ -537,7 +538,10 @@ describe('globalSaveWorkflow', () => {
 
       await expect(globalSaveWorkflow()).rejects.toBeInstanceOf(ApiError);
 
-      expect(mockReport).toHaveBeenCalledWith(expect.objectContaining({ currentRevision: '200' }));
+      expect(mockReport).toHaveBeenCalledWith(
+        expect.objectContaining({ currentRevision: '200' }),
+        true
+      );
       expect(apiToasts.error).not.toHaveBeenCalled();
     });
 
@@ -552,7 +556,12 @@ describe('globalSaveWorkflow', () => {
       };
 
       const acknowledgeServer = vi.fn();
-      const store = new SaveConflictStore(() => ({ workflow: { acknowledgeServer } }) as never);
+      const store = new SaveConflictStore({
+        workflow: { acknowledgeServer },
+        loadWorkflow: vi.fn(),
+        schedule: vi.fn(),
+        messages: () => defaultMessages
+      } as never);
       store.report(report);
       await store.keepMine();
 
@@ -565,14 +574,12 @@ describe('globalSaveWorkflow', () => {
       const loadWorkflow = vi.fn().mockResolvedValue(backendWorkflow('wf-1'));
       const initialize = vi.fn();
       const schedule = vi.fn();
-      const store = new SaveConflictStore(
-        () =>
-          ({
-            workflow: { current: storeWorkflow('wf-1'), initialize },
-            api: { client: { loadWorkflow } },
-            doctor: { schedule }
-          }) as never
-      );
+      const store = new SaveConflictStore({
+        workflow: { current: storeWorkflow('wf-1'), initialize },
+        loadWorkflow,
+        schedule,
+        messages: () => defaultMessages
+      } as never);
       store.report({ currentRevision: '200', retry: async () => true });
 
       await store.loadTheirs();
@@ -581,6 +588,33 @@ describe('globalSaveWorkflow', () => {
       expect(initialize).toHaveBeenCalledWith(expect.objectContaining({ id: 'wf-1' }));
       expect(schedule).toHaveBeenCalled();
       expect(store.comparing).toBe(false);
+    });
+
+    it('reports a missing revision as null', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow('wf-1'));
+      mockClientUpdate.mockRejectedValue(
+        new ApiError('Conflict', 409, 'update workflow', { error_code: 'CONFLICT' })
+      );
+      await expect(globalSaveWorkflow()).rejects.toBeInstanceOf(ApiError);
+      expect(mockReport).toHaveBeenCalledWith(
+        expect.objectContaining({ currentRevision: null }),
+        true
+      );
+    });
+
+    it('still reports the clash, without the toast, when toasts are off or the host handles the error', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow('wf-1'));
+      mockClientUpdate.mockRejectedValue(conflict());
+      await expect(globalSaveWorkflow({ features: { showToasts: false } })).rejects.toBeInstanceOf(
+        ApiError
+      );
+      expect(mockReport).toHaveBeenLastCalledWith(expect.anything(), false);
+
+      await expect(
+        globalSaveWorkflow({ eventHandlers: { onApiError: () => true } })
+      ).rejects.toBeInstanceOf(ApiError);
+      expect(mockReport).toHaveBeenLastCalledWith(expect.anything(), false);
+      expect(apiToasts.error).not.toHaveBeenCalled();
     });
 
     it('keeps the old toast for a 409 that is not a revision clash', async () => {

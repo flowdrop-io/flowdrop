@@ -307,7 +307,16 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   const playground = new PlaygroundStore();
   const instancePlaygroundService = isDefault ? playgroundService : new PlaygroundService();
   const api = new ApiContext();
-  const doctor = new DoctorStore(workflow, api, undefined, () => historyBindings.undo());
+  const doctor = new DoctorStore(
+    workflow,
+    api,
+    undefined,
+    {
+      undo: () => historyBindings.undo(),
+      position: () => historyBindings.state.currentIndex
+    },
+    () => readMessages()
+  );
   const runs = new RunController({
     playground,
     service: instancePlaygroundService,
@@ -372,7 +381,12 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     doctor,
     nodeTypes: new NodeTypesStore(),
     host: new HostHooksStore(),
-    saveConflict: new SaveConflictStore(() => instance),
+    saveConflict: new SaveConflictStore({
+      workflow,
+      loadWorkflow: (id) => api.client.loadWorkflow(id),
+      schedule: () => doctor.schedule(),
+      messages: () => readMessages()
+    }),
     approvalGate: null,
     skinScope: null,
     get measureNode() {

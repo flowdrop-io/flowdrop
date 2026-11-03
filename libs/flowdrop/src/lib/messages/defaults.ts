@@ -1423,7 +1423,7 @@ export const defaultMessages = {
     changedInBoth: 'Changed in both',
     none: 'No differences in the workflow itself',
     keepMine: 'Keep mine',
-    loadTheirs: 'Load the saved version',
+    loadTheirs: 'Load saved version',
     cancel: 'Cancel',
     stepOnly: ({ label }: { label: string }) => `Step "${label}"`,
     stepSettings: ({ label }: { label: string }) => `Step "${label}": settings changed`,
@@ -1435,5 +1435,14 @@ export const defaultMessages = {
     description: 'Workflow description changed',
     interface: 'Workflow interface changed',
     chat: 'Chat settings changed'
+  },
+
+  // The toast shown when a save is refused because someone saved first. Its
+  // Keep mine / Load saved version labels are the compare dialog's.
+  saveConflict: {
+    title: 'Someone saved this workflow after you opened it.',
+    body: 'Your changes are not saved yet.',
+    compare: 'Compare',
+    noRevision: 'Could not read the saved version, so your changes were not sent.'
   }
 } as const;

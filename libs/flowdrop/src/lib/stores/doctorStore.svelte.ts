@@ -25,8 +25,8 @@ import type { ApiContext } from './apiContext.js';
 import { diagnoseDraft, doctorSupported, requestRemedy } from '../services/doctorService.js';
 import { applyDoctorOperations } from '../utils/doctorOperations.js';
 import { buildSaveBody } from '../utils/workflowDraft.js';
-import { showInfo } from '../services/toastService.js';
-import { defaultMessages } from '../messages/defaults.js';
+import { dismissToast, showInfo } from '../services/toastService.js';
+import type { Messages } from '../messages/index.js';
 
 /** How long the draft must sit still before it is diagnosed. */
 export const DOCTOR_IDLE_MS = 800;
@@ -39,6 +39,13 @@ export type DoctorNotice =
   | { kind: 'changed'; problemId: string }
   | { kind: 'empty'; problemId: string }
   | { kind: 'failed'; problemId: string; message: string };
+
+/** The undo history as the store needs it: undo one step, and say where the history stands. */
+export interface DoctorHistory {
+  undo(): boolean;
+  /** A number that changes with every step added, undone or redone. */
+  position(): number;
+}
 
 const RANK: Record<DoctorSeverity, number> = { error: 0, warning: 1, info: 2 };
 
@@ -61,10 +68,13 @@ export class DoctorStore {
   readonly #workflow: WorkflowStore;
   readonly #api: ApiContext;
   readonly #idleMs: number;
-  readonly #undo: () => boolean;
+  readonly #history: DoctorHistory;
+  readonly #messages: () => Messages;
+  #undoToast = 0;
+  #stopWatching: (() => void) | null = null;
   #autoApply = false;
   /** The problem ids of the first answer after a workflow loaded: those are never applied by themselves. */
-  #atLoad: { id: string; ids: Set<string> } | null = null;
+  #atLoad: { key: string; ids: Set<string> } | null = null;
   /** `<workflow id>:<code>` of every remedy applied by itself in this mount, so an undone one stays undone. */
   readonly #autoApplied = new Set<string>();
 
@@ -72,12 +82,14 @@ export class DoctorStore {
     workflow: WorkflowStore,
     api: ApiContext,
     idleMs: number = DOCTOR_IDLE_MS,
-    undo: () => boolean = () => false
+    history: DoctorHistory = { undo: () => false, position: () => 0 },
+    messages: () => Messages
   ) {
     this.#workflow = workflow;
     this.#api = api;
     this.#idleMs = idleMs;
-    this.#undo = undo;
+    this.#history = history;
+    this.#messages = messages;
   }
 
   /** Whether the editor may apply automatic remedies (the canvas is editable). */
@@ -229,8 +241,10 @@ export class DoctorStore {
    * One per answer: the check that follows finds the next.
    */
   async #applyAutomatic(workflowId: string, problems: DoctorProblem[]): Promise<void> {
-    if (this.#atLoad?.id !== workflowId) {
-      this.#atLoad = { id: workflowId, ids: new Set(problems.map((p) => p.id)) };
+    // A reload of the same id is a new load: its problems are not new.
+    const loadKey = `${workflowId}:${this.#workflow.loadGeneration}`;
+    if (this.#atLoad?.key !== loadKey) {
+      this.#atLoad = { key: loadKey, ids: new Set(problems.map((p) => p.id)) };
       return;
     }
     if (!this.#autoApply) return;
@@ -243,15 +257,49 @@ export class DoctorStore {
       );
       if (!remedy) continue;
       this.#autoApplied.add(key);
-      if (await this.applyRemedy(problem, remedy)) {
-        const messages = defaultMessages.doctor;
-        showInfo({
-          title: messages.autoDone({ label: remedy.label }),
-          action: { label: messages.undo, onClick: () => this.#undo() }
-        });
-      }
+      if (await this.applyRemedy(problem, remedy)) this.#offerUndo(remedy.label);
       return;
     }
+  }
+
+  /**
+   * Tell the person what was applied by itself. Undo works only while the
+   * remedy is the latest history step; once the history moves on the toast goes.
+   */
+  #offerUndo(label: string): void {
+    this.#stopWatching?.();
+    const messages = this.#messages().doctor;
+    const id = `flowdrop:doctor-auto-${++this.#undoToast}`;
+    const at = this.#history.position();
+    let stop: (() => void) | null = null;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      dismissToast(id);
+      // The effect may run before `stop` is assigned.
+      queueMicrotask(() => stop?.());
+    };
+    showInfo(
+      {
+        title: messages.autoDone({ label }),
+        action: {
+          label: messages.undo,
+          onClick: () => {
+            if (this.#history.position() === at) this.#history.undo();
+            finish();
+          }
+        }
+      },
+      { id }
+    );
+    stop = $effect.root(() => {
+      $effect(() => {
+        if (this.#history.position() !== at) finish();
+      });
+    });
+    if (done) queueMicrotask(() => stop?.());
+    this.#stopWatching = stop;
   }
 
   /**

@@ -3,68 +3,102 @@
  *
  * One editor's answer to a save the server refused because someone else saved
  * the workflow first (409 CONFLICT). It offers three ways out in a toast:
- * keep mine (send again on top of the newer version), load theirs (take the
+ * keep mine (send again on top of the newer version), load the saved version (take the
  * saved version) and compare (see what differs before choosing).
  *
  * @module stores/saveConflictStore
  */
 
 import type { Workflow } from '../types/index.js';
+import type { Messages } from '../messages/index.js';
 import { compareWorkflows, type WorkflowComparison } from '../utils/workflowCompare.js';
 import { apiToasts, dismissToast, showError } from '../services/toastService.js';
-import type { FlowDropInstance } from './instanceContainer.svelte.js';
+import type { WorkflowStore } from './workflowStore.svelte.js';
 
 /** What a refused save hands over. */
 export interface SaveConflictReport {
-  /** The revision the server holds now. */
-  currentRevision: string;
+  /** The revision the server holds now, or `null` when the refusal did not say. */
+  currentRevision: string | null;
   /** Sends the same save again; resolves true when it wrote. */
   retry: () => Promise<boolean>;
+}
+
+/** What the store needs from the editor. */
+export interface SaveConflictDeps {
+  workflow: Pick<WorkflowStore, 'current' | 'initialize' | 'acknowledgeServer'>;
+  /** Loads the saved version of a workflow. */
+  loadWorkflow: (id: string) => Promise<Workflow>;
+  /** Asks the Doctor to check the editor's workflow again. */
+  schedule: () => void;
+  messages: () => Messages;
 }
 
 const TOAST_ID = 'flowdrop:save-conflict';
 
 export class SaveConflictStore {
-  #fd: () => FlowDropInstance;
+  readonly #deps: SaveConflictDeps;
   #pending: SaveConflictReport | null = null;
 
-  /** The saved version, once loaded for Compare or Load theirs. */
+  /** The saved version, once loaded for Compare or Load saved version. */
   theirs = $state<Workflow | null>(null);
   /** The differences shown by the compare dialog. */
   comparison = $state<WorkflowComparison | null>(null);
 
-  constructor(fd: () => FlowDropInstance) {
-    this.#fd = fd;
+  constructor(deps: SaveConflictDeps) {
+    this.#deps = deps;
   }
 
   /** True while the compare dialog is wanted. */
   get comparing(): boolean {
-    return this.comparison !== null && this.theirs !== null;
+    return this.comparison !== null;
   }
 
-  /** Remember the refused save and offer the three choices in a toast that stays until closed. */
-  report(args: SaveConflictReport): void {
+  /**
+   * Remember the refused save and offer the three choices in a toast that
+   * stays until closed. With `showToast` false the choices stay available to
+   * code (keepMine, loadTheirs, compare) but nothing is shown.
+   */
+  report(args: SaveConflictReport, showToast = true): void {
     this.#pending = args;
+    if (!showToast) return;
+    const messages = this.#deps.messages();
     showError(
       {
-        title: 'Someone saved this workflow after you opened it.',
-        body: 'Your changes are not saved yet.',
+        title: messages.saveConflict.title,
+        body: messages.saveConflict.body,
         actions: [
-          { label: 'Keep mine', primary: true, onClick: () => void this.keepMine() },
-          { label: 'Load theirs', onClick: () => void this.loadTheirs() },
-          { label: 'Compare', onClick: () => void this.compare() }
+          {
+            label: messages.compare.keepMine,
+            primary: true,
+            onClick: () => void this.keepMine()
+          },
+          { label: messages.compare.loadTheirs, onClick: () => void this.loadTheirs() },
+          { label: messages.saveConflict.compare, onClick: () => void this.compare() }
         ]
       },
       { id: TOAST_ID }
     );
   }
 
-  /** Take the server's revision and send the save again. */
+  /**
+   * Take the server's revision and send the save again. When the refusal did
+   * not name the revision it is read from the saved version; if that cannot be
+   * done nothing is sent and the choice stays open.
+   */
   async keepMine(): Promise<void> {
     const pending = this.#pending;
     if (!pending) return;
+    let revision = pending.currentRevision;
+    if (revision === null) {
+      const loaded = this.theirs ?? (await this.#load());
+      revision = loaded?.revision ? String(loaded.revision) : null;
+      if (revision === null) {
+        showError(this.#deps.messages().saveConflict.noRevision);
+        return;
+      }
+    }
     this.#clear();
-    this.#fd().workflow.acknowledgeServer({ revision: pending.currentRevision });
+    this.#deps.workflow.acknowledgeServer({ revision });
     try {
       await pending.retry();
     } catch {
@@ -81,15 +115,14 @@ export class SaveConflictStore {
 
   /** Load the saved version and open the comparison. */
   async compare(): Promise<void> {
-    const fd = this.#fd();
-    const mine = fd.workflow.current;
+    const mine = this.#deps.workflow.current;
     const loaded = await this.#load();
     if (!loaded || !mine) return;
     this.theirs = loaded;
     this.comparison = compareWorkflows(mine, loaded);
   }
 
-  /** Use the already loaded saved version (the dialog's "Load the saved version"). */
+  /** Use the already loaded saved version (the dialog's "Load saved version"). */
   acceptTheirs(): void {
     if (this.theirs) this.#accept(this.theirs);
   }
@@ -101,10 +134,9 @@ export class SaveConflictStore {
   }
 
   #accept(loaded: Workflow): void {
-    const fd = this.#fd();
     this.#clear();
-    fd.workflow.initialize(loaded);
-    fd.doctor.schedule();
+    this.#deps.workflow.initialize(loaded);
+    this.#deps.schedule();
   }
 
   #clear(): void {
@@ -115,11 +147,10 @@ export class SaveConflictStore {
   }
 
   async #load(): Promise<Workflow | null> {
-    const fd = this.#fd();
-    const id = fd.workflow.current?.id;
+    const id = this.#deps.workflow.current?.id;
     if (!id) return null;
     try {
-      return await fd.api.client.loadWorkflow(id);
+      return await this.#deps.loadWorkflow(id);
     } catch (error) {
       apiToasts.error('Load workflow', error instanceof Error ? error : String(error));
       return null;
