@@ -172,6 +172,77 @@ test.describe('Save Workflow', () => {
     await expect(saveButton).not.toHaveAttribute('data-dirty', 'true', { timeout: 5000 });
   });
 
+  test.describe('impact check', () => {
+    const impactReport = {
+      confirm: true,
+      interface: { level: 'breaking', breaking: true },
+      items: [
+        {
+          kind: 'run_profile',
+          severity: 'breaks',
+          label: 'Quick calculator',
+          message: 'Is switched off: an input it binds is gone.',
+          url: null
+        }
+      ]
+    };
+
+    async function setup(page: import('@playwright/test').Page) {
+      const puts: string[] = [];
+      await page.route('**/api/flowdrop/workflow/*/impact', (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, data: impactReport })
+        })
+      );
+      await page.route('**/api/flowdrop/workflows/**', async (route) => {
+        if (route.request().method() === 'PUT') {
+          puts.push(route.request().url());
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true, data: { id: 'test-workflow-simple' } })
+          });
+        } else {
+          await route.continue();
+        }
+      });
+      await gotoEditor(page, 'simple');
+      const saveButton = page.locator('.flowdrop-navbar__primary-action', { hasText: 'Save' });
+      await expect(saveButton).toBeVisible({ timeout: 5000 });
+      const node = page.locator('.svelte-flow__node').first();
+      const box = (await node.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + 8);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width / 2 + 60, box.y + 68, { steps: 8 });
+      await page.mouse.up();
+      await expect(saveButton).toHaveAttribute('data-dirty', 'true');
+      return { saveButton, puts };
+    }
+
+    test('Cancel sends no save and keeps the unsaved marker', async ({ page }) => {
+      const { saveButton, puts } = await setup(page);
+      await saveButton.click();
+      const dialog = page.getByTestId('flowdrop-impact-confirm');
+      await expect(dialog).toBeVisible();
+      await expect(dialog).toContainText('Quick calculator');
+      await page.getByTestId('flowdrop-impact-cancel').click();
+      await expect(dialog).toHaveCount(0);
+      await page.waitForTimeout(500);
+      expect(puts).toHaveLength(0);
+      await expect(saveButton).toHaveAttribute('data-dirty', 'true');
+    });
+
+    test('Save anyway sends the save', async ({ page }) => {
+      const { saveButton, puts } = await setup(page);
+      await saveButton.click();
+      await page.getByTestId('flowdrop-impact-save').click();
+      await expect(saveButton).not.toHaveAttribute('data-dirty', 'true', { timeout: 5000 });
+      expect(puts).toHaveLength(1);
+    });
+  });
+
   test.describe('leaving the page', () => {
     test('a dirty editor asks before the page unloads, a clean one does not', async ({ page }) => {
       await page.goto('/test/mount-app');

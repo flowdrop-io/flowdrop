@@ -19,6 +19,9 @@ import { playgroundForSave } from '$lib/utils/playgroundChat.js';
 import { buildSaveBody } from '$lib/utils/workflowDraft.js';
 import type { ApiError } from '$lib/api/enhanced-client.js';
 import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
+import { checkImpact, impactSupported } from './impactService.js';
+import { confirmImpact } from './impactGate.js';
+import { scopeSelector } from '$lib/themes/scopedSkinCss.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 import { DEFAULT_FEATURES } from '$lib/types/events.js';
 
@@ -135,6 +138,7 @@ async function flushPendingFormChanges(): Promise<void> {
  * Steps performed:
  *  1. Flush pending form changes (blur active element + tick)
  *  2. Optionally call onBeforeSave — return false cancels the save
+ *  2b. Ask the backend what the save changes for the workflow's users; ask the person when something breaks or changes
  *  3. Build the canonical Workflow object (preserving metadata, format, etc.)
  *  4. Persist via the instance's API client (fd.api.client)
  *  5. Update the store if the server assigned a new ID
@@ -143,7 +147,8 @@ async function flushPendingFormChanges(): Promise<void> {
  */
 /**
  * Resolves `true` when the workflow was written, `false` when nothing was
- * saved because there was no workflow or `onBeforeSave` cancelled. A failed
+ * saved because there was no workflow, `onBeforeSave` cancelled or the person
+ * cancelled the impact question. A failed
  * request throws. Callers that relay the outcome (the WebMCP `save` tool)
  * must not read a quiet return as a save.
  */
@@ -176,7 +181,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     }
   }
 
-  const loadingToast = features.showToasts ? apiToasts.loading('Saving workflow') : null;
+  let loadingToast: string | null = null;
 
   try {
     // Ensure API configuration is initialised (needed when called outside App.svelte)
@@ -192,6 +197,30 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     const workflowId = currentWorkflow.id || uuidv4();
 
     const finalWorkflow: Workflow = buildSaveBody(currentWorkflow, workflowId);
+
+    // Step 3b — Ask what this save changes for what uses the workflow. A backend
+    // without the route (or that does not know the workflow) leaves the save
+    // unasked; a failed check is shown and the person decides.
+    const apiConfig = fd.api.config;
+    if (isExistingWorkflow && apiConfig && impactSupported(apiConfig)) {
+      const result = await checkImpact(
+        apiConfig,
+        fd.api.authProvider,
+        finalWorkflow.id,
+        finalWorkflow
+      );
+      // This instance's editor (a page may hold several), for the dialog's skin.
+      const host =
+        (fd.skinScope ? document.querySelector<HTMLElement>(scopeSelector(fd.skinScope)) : null) ??
+        document.body;
+      if (result.status === 'ok' && result.report.confirm) {
+        if (!(await confirmImpact({ report: result.report, host }))) return false;
+      } else if (result.status === 'error') {
+        if (!(await confirmImpact({ error: result.message, host }))) return false;
+      }
+    }
+
+    loadingToast = features.showToasts ? apiToasts.loading('Saving workflow') : null;
 
     // Step 4 — Persist via this instance's API client.
     // id-presence (computed above) decides update vs create — never UUID-regex.

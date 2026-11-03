@@ -38,7 +38,10 @@ const {
   mockApiConfigure,
   mockStoreAcknowledgeServer,
   mockNoteWorkflowSaved,
-  mockReport
+  mockReport,
+  mockImpactSupported,
+  mockCheckImpact,
+  mockConfirmImpact
 } = vi.hoisted(() => ({
   mockGetWorkflowStore: vi.fn(),
   mockWorkflowActionsBatchUpdate: vi.fn(),
@@ -49,7 +52,19 @@ const {
   mockApiConfigure: vi.fn(),
   mockStoreAcknowledgeServer: vi.fn(),
   mockNoteWorkflowSaved: vi.fn(),
-  mockReport: vi.fn()
+  mockReport: vi.fn(),
+  mockImpactSupported: vi.fn(() => false),
+  mockCheckImpact: vi.fn(),
+  mockConfirmImpact: vi.fn()
+}));
+
+vi.mock('$lib/services/impactService.js', () => ({
+  impactSupported: (...args: unknown[]) => mockImpactSupported(...(args as [])),
+  checkImpact: (...args: unknown[]) => mockCheckImpact(...args)
+}));
+
+vi.mock('$lib/services/impactGate.js', () => ({
+  confirmImpact: (...args: unknown[]) => mockConfirmImpact(...args)
 }));
 
 // globalSave resolves its target via getDefaultInstance(). Mock the instance
@@ -76,6 +91,7 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
       get config() {
         return { baseUrl: '/api/flowdrop' };
       },
+      authProvider: undefined,
       configure: (...args: unknown[]) => mockApiConfigure(...args),
       get client() {
         return {
@@ -133,6 +149,81 @@ describe('globalSaveWorkflow', () => {
     vi.clearAllMocks();
     // Simulate a configured API context so ensureApiConfiguration exits early.
     mockApiIsConfigured.mockReturnValue(true);
+    mockImpactSupported.mockReturnValue(false);
+  });
+
+  describe('impact check', () => {
+    const report = {
+      confirm: true,
+      interfaceLevel: 'breaking',
+      interfaceBreaking: true,
+      items: [{ kind: 'profile', severity: 'breaks', label: 'Quick', message: 'off', url: null }]
+    };
+
+    beforeEach(() => {
+      mockImpactSupported.mockReturnValue(true);
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow('wf-1'));
+      mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+    });
+
+    it('saves without a dialog when nothing needs confirming', async () => {
+      mockCheckImpact.mockResolvedValue({ status: 'ok', report: { ...report, confirm: false } });
+
+      expect(await globalSaveWorkflow({})).toBe(true);
+
+      expect(mockConfirmImpact).not.toHaveBeenCalled();
+      expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not save and returns false when the person cancels', async () => {
+      mockCheckImpact.mockResolvedValue({ status: 'ok', report });
+      mockConfirmImpact.mockResolvedValue(false);
+
+      expect(await globalSaveWorkflow({})).toBe(false);
+
+      expect(mockConfirmImpact).toHaveBeenCalledWith(expect.objectContaining({ report }));
+      expect(mockClientUpdate).not.toHaveBeenCalled();
+      expect(apiToasts.loading).not.toHaveBeenCalled();
+      expect(mockStoreMarkAsSaved).not.toHaveBeenCalled();
+    });
+
+    it('saves after Save anyway', async () => {
+      mockCheckImpact.mockResolvedValue({ status: 'ok', report });
+      mockConfirmImpact.mockResolvedValue(true);
+
+      expect(await globalSaveWorkflow({})).toBe(true);
+
+      expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('saves when the backend has no impact route', async () => {
+      mockCheckImpact.mockResolvedValue({ status: 'unavailable' });
+
+      expect(await globalSaveWorkflow({})).toBe(true);
+
+      expect(mockConfirmImpact).not.toHaveBeenCalled();
+      expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows a failed check and does not save when the person cancels', async () => {
+      mockCheckImpact.mockResolvedValue({ status: 'error', message: 'boom' });
+      mockConfirmImpact.mockResolvedValue(false);
+
+      expect(await globalSaveWorkflow({})).toBe(false);
+
+      expect(mockConfirmImpact).toHaveBeenCalledWith(expect.objectContaining({ error: 'boom' }));
+      expect(mockClientUpdate).not.toHaveBeenCalled();
+    });
+
+    it('does not ask for a new workflow', async () => {
+      mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+      mockClientSave.mockResolvedValue(backendWorkflow('new-id'));
+
+      await globalSaveWorkflow({});
+
+      expect(mockCheckImpact).not.toHaveBeenCalled();
+      expect(mockClientSave).toHaveBeenCalledTimes(1);
+    });
   });
 
   // -------------------------------------------------------------------------
