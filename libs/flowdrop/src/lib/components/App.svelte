@@ -2623,21 +2623,23 @@
   </SurfaceOverlay>
 {/if}
 
-<RunInputsDialog
-  open={runDialogOpen}
-  workflowName={fd.workflow.current?.name ?? ''}
-  entries={runInputEntries}
-  values={runDialogValues}
-  onChange={(values) => {
-    runDialogValues = values;
-    const id = fd.workflow.current?.id;
-    if (id) runInputValues.set(id, values);
-  }}
-  onRun={() => void submitRunInputs()}
-  runBusy={runStarting}
-  error={runDialogError}
-  onClose={() => (runDialogOpen = false)}
-/>
+{#if runOffered}
+  <RunInputsDialog
+    open={runDialogOpen}
+    workflowName={fd.workflow.current?.name ?? ''}
+    entries={runInputEntries}
+    values={runDialogValues}
+    onChange={(values) => {
+      runDialogValues = values;
+      const id = fd.workflow.current?.id;
+      if (id) runInputValues.set(id, values);
+    }}
+    onRun={() => void submitRunInputs()}
+    runBusy={runStarting}
+    error={runDialogError}
+    onClose={() => (runDialogOpen = false)}
+  />
+{/if}
 
 {#if fd.saveConflict.comparison}
   <WorkflowCompareDialog

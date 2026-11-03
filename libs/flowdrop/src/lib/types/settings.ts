@@ -463,14 +463,23 @@ const SURFACE_PLACEMENTS = [
 ] as const satisfies readonly SurfacePlacement[];
 
 /**
+ * One field schema per setting: the compiler flags a missing or an extra key.
+ * An optional setting (`theme.explicit`, an internal marker) has no schema.
+ */
+export type SettingsFieldSchemaMap = {
+  [C in keyof FlowDropSettings]: {
+    [K in keyof FlowDropSettings[C] as undefined extends FlowDropSettings[C][K]
+      ? never
+      : K]: SettingsFieldSchema;
+  };
+};
+
+/**
  * A field schema for every key of {@link DEFAULT_SETTINGS}, by category.
  * The nested width and zoom-tier settings are replaced as a whole, so they are
  * plain `object` fields.
  */
-export const SETTINGS_FIELD_SCHEMA: Record<
-  SettingsCategory,
-  Record<string, SettingsFieldSchema>
-> = {
+export const SETTINGS_FIELD_SCHEMA: SettingsFieldSchemaMap = {
   theme: {
     preference: {
       type: 'string',

@@ -1056,6 +1056,17 @@ describe('entryFromBindablePort suggestions', () => {
     expect(entryFromBindablePort(candidates[2], [first.id], wf, 'input').id).toBe('order');
   });
 
+  it('folds accents and ß to plain letters in the id', () => {
+    const wf = makeWorkflow([
+      titled('n1', 'Übersetzung', [makePort('data')]),
+      titled('n2', 'Straße', [makePort('data')]),
+      titled('n3', 'Crème brûlée', [makePort('data')])
+    ]);
+    expect(bind(wf, 'n1', 'data').id).toBe('ubersetzung');
+    expect(bind(wf, 'n2', 'data').id).toBe('strasse');
+    expect(bind(wf, 'n3', 'data').id).toBe('creme_brulee');
+  });
+
   it('leaves a non-generic port unchanged', () => {
     const wf = makeWorkflow([titled('n1', 'Customer email', [makePort('amount', 'number')])]);
     const entry = bind(wf, 'n1', 'amount');

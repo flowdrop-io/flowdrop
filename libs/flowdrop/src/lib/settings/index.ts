@@ -39,6 +39,7 @@ export type {
   FlowDropSettings,
   SettingsCategory,
   SettingsFieldSchema,
+  SettingsFieldSchemaMap,
   PartialSettings,
   DeepPartial,
   SettingsChangeEvent,

@@ -145,7 +145,6 @@
       <a
         class="flowdrop-run-bar__link"
         href={runLink}
-        target="_self"
         title={msgs.openRunTitle}
         data-testid="run-bar-open-run"
       >

@@ -766,7 +766,11 @@ export function suggestEntryFromBindablePort(
   // The picker label may carry a " · node id" suffix; an entry is named after the node itself.
   const ownNode = workflow?.nodes.find((n) => n.id === candidate.nodeId);
   const label = ownNode ? nodeCanvasLabel(ownNode) : candidate.nodeLabel;
+  // Accents fold to their base letter (Übersetzung -> ubersetzung), ß to ss.
   const fromLabel = label
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ß/g, 'ss')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '')
