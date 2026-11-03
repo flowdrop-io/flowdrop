@@ -61,6 +61,13 @@ export interface EndpointConfig {
        * the editor applies as one undoable edit. Needs `diagnose`.
        */
       remedy?: string;
+      /**
+       * Impact check before save (`POST`, body = the workflow as the editor
+       * would save it, `{id}` = the saved workflow id). Answers `{ success,
+       * data: { confirm, interface, renames, items } }`. A backend without it
+       * omits the key and the editor saves without asking.
+       */
+      impact?: string;
     };
 
     // Execution endpoints
@@ -331,7 +338,8 @@ export const defaultEndpointConfig: EndpointConfig = {
       // Singular `workflow` here is the reference backend's spelling, not a typo.
       run: '/workflow/{workflowId}/run',
       diagnose: '/workflow/{id}/diagnose',
-      remedy: '/workflow/{id}/remedy'
+      remedy: '/workflow/{id}/remedy',
+      impact: '/workflow/{id}/impact'
     },
     executions: {
       execute: '/workflows/{id}/execute',
