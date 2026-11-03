@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Save asks before a change that breaks or switches off what uses the workflow (needs the workflows.impact endpoint).
 
+- New optional endpoint `workflows.impact` and a `checkImpact()` service that asks the server what a workflow change breaks or switches off.
+
+- New `ImpactConfirm` dialog and `confirmImpact()` helper that list what a save breaks or changes and ask to save anyway.
+
 - **Field schema for every editor setting.** `SETTINGS_FIELD_SCHEMA` (and the `SettingsFieldSchema` type),
   exported from `@flowdrop/flowdrop/settings`, describes each setting: its type, a short label and the
   values it allows.
