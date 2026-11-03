@@ -20,6 +20,7 @@
   import { getInstance } from '../stores/getInstance.svelte.js';
   import { getUiSettings } from '../stores/settingsStore.svelte.js';
   import { extractConfigDefaults } from '../utils/nodeIds.js';
+  import { searchNodeTypes } from '../utils/nodeSearch.js';
   import { m } from '$lib/messages/index.js';
 
   interface Props {
@@ -103,7 +104,7 @@
 
   /**
    * Filter node types based on search query and selected category
-   * Preserves the API order - no client-side sorting applied
+   * Without a query the API order is preserved; a query ranks matches
    */
   function getFilteredNodes(): NodeMetadata[] {
     // Start with format-compatible nodes
@@ -114,16 +115,8 @@
       filtered = filtered.filter((node) => node.category === selectedCategory);
     }
 
-    // Filter by search query
-    if (searchInput.trim()) {
-      const query = searchInput.toLowerCase();
-      filtered = filtered.filter(
-        (node) =>
-          node.name.toLowerCase().includes(query) ||
-          node.description.toLowerCase().includes(query) ||
-          node.tags?.some((tag) => tag.toLowerCase().includes(query))
-      );
-    }
+    // Search ranks exact matches first; blank query keeps API order
+    filtered = searchNodeTypes(filtered, searchInput);
 
     // Return filtered results preserving API order
     return filtered;

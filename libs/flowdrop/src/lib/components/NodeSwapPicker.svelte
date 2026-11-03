@@ -14,6 +14,7 @@
   import { m } from '$lib/messages/index.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
   import { getVersionUpgrade } from '../utils/nodeSwap.js';
+  import { searchNodeTypes } from '../utils/nodeSearch.js';
 
   interface Props {
     /** The node being swapped */
@@ -48,19 +49,7 @@
   let formatCompatibleNodes = $derived(availableNodes.filter((n) => isNodeCompatibleWithFormat(n)));
 
   /** Apply search filter */
-  let filteredNodes = $derived.by(() => {
-    let nodes = formatCompatibleNodes;
-    if (searchInput.trim()) {
-      const query = searchInput.toLowerCase();
-      nodes = nodes.filter(
-        (node) =>
-          node.name.toLowerCase().includes(query) ||
-          node.description.toLowerCase().includes(query) ||
-          node.tags?.some((tag) => tag.toLowerCase().includes(query))
-      );
-    }
-    return nodes;
-  });
+  let filteredNodes = $derived(searchNodeTypes(formatCompatibleNodes, searchInput));
 
   /** Get unique categories preserving API order */
   let categories = $derived.by(() => {
