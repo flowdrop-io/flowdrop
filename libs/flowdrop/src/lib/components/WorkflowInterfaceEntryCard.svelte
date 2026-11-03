@@ -47,7 +47,8 @@
     turnsFor,
     type RankedBindablePort,
     type InterfaceIssue,
-    type ResolvedInterfaceEntry
+    type ResolvedInterfaceEntry,
+    nodeCanvasLabel
   } from '$lib/utils/workflowInterface.js';
 
   interface Props {
@@ -350,7 +351,7 @@
         ></span>
         <span class="wf-interface__binding-path">
           <span class="wf-interface__binding-node">
-            {boundTarget.node.data?.label ?? boundTarget.node.id}
+            {nodeCanvasLabel(boundTarget.node)}
           </span>
           <Icon icon="heroicons:chevron-right" />
           <span class="wf-interface__binding-port">{boundTarget.port.name}</span>

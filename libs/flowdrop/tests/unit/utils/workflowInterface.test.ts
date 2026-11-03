@@ -6,6 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  disambiguateLabels,
   nodeCanvasLabel,
   resolveBinding,
   resolveInterface,
@@ -1662,5 +1663,36 @@ describe('nodeCanvasLabel', () => {
       'Chat Output'
     );
     expect(nodeCanvasLabel({ id: 'n1' })).toBe('n1');
+  });
+});
+
+describe('disambiguateLabels', () => {
+  const port = (nodeId: string, nodeLabel: string, id: string) => ({ nodeId, nodeLabel, id });
+
+  it('leaves unique labels untouched', () => {
+    const items = [port('a', 'Prompt', 'x'), port('b', 'Chat', 'y')];
+    expect(disambiguateLabels(items).map((i) => i.nodeLabel)).toEqual(['Prompt', 'Chat']);
+  });
+
+  it('suffixes both nodes that share a label with their node id', () => {
+    const items = [
+      port('prompt_template.1', 'Prompt', 'x'),
+      port('prompt_template.2', 'Prompt', 'x')
+    ];
+    expect(disambiguateLabels(items).map((i) => i.nodeLabel)).toEqual([
+      'Prompt · prompt_template.1',
+      'Prompt · prompt_template.2'
+    ]);
+  });
+
+  it('ignores several ports of the same node', () => {
+    const items = [port('a', 'Prompt', 'x'), port('a', 'Prompt', 'y')];
+    expect(disambiguateLabels(items).map((i) => i.nodeLabel)).toEqual(['Prompt', 'Prompt']);
+  });
+
+  it('makes nodeCanvasLabel prefer the instance title', () => {
+    expect(
+      nodeCanvasLabel({ id: 'n1', data: { label: 'Prompt', config: { instanceTitle: 'Greeter' } } })
+    ).toBe('Greeter');
   });
 });

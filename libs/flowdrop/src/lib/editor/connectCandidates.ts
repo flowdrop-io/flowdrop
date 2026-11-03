@@ -21,7 +21,7 @@ import type { PortCompatibilityChecker } from '../utils/connections.js';
 import { buildHandleId } from '../utils/handleIds.js';
 import { isPortVisible } from '../utils/portUtils.js';
 import { isTriggerEventInput } from '../utils/reservedPorts.js';
-import { nodeCanvasLabel } from '../utils/workflowInterface.js';
+import { disambiguateLabels, nodeCanvasLabel } from '../utils/workflowInterface.js';
 import type { PortTarget } from './interfaceMenu.js';
 import type { PortPickerGroup } from '../components/PortPickerListbox.svelte';
 import { defaultMessages } from '../messages/defaults.js';
@@ -87,6 +87,7 @@ export function listConnectCandidates(
   target: PortTarget
 ): ConnectCandidateGroups {
   const groups: ConnectCandidateGroups = { compatible: [], other: [] };
+  const found: ConnectCandidate[] = [];
   const origin = resolveOrigin(workflow, target);
   if (!origin) return groups;
 
@@ -130,8 +131,11 @@ export function listConnectCandidates(
         wired,
         connected
       };
-      (compatible ? groups.compatible : groups.other).push(candidate);
+      found.push(candidate);
     }
+  }
+  for (const candidate of disambiguateLabels(found)) {
+    (candidate.compatible ? groups.compatible : groups.other).push(candidate);
   }
   return groups;
 }

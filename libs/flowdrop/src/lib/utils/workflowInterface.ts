@@ -569,6 +569,27 @@ export function nodeCanvasLabel(node: {
   return (typeof title === 'string' && title) || node.data?.label || node.id;
 }
 
+/**
+ * Tells same-named nodes apart in a picker: when two or more items with
+ * different node ids share a label, each of them gets " · <node id>" appended.
+ * Unique labels, and several ports of one node, stay as they are.
+ */
+export function disambiguateLabels<T extends { nodeId: string; nodeLabel: string }>(
+  items: T[]
+): T[] {
+  const nodesByLabel = new Map<string, Set<string>>();
+  for (const item of items) {
+    const ids = nodesByLabel.get(item.nodeLabel) ?? new Set<string>();
+    ids.add(item.nodeId);
+    nodesByLabel.set(item.nodeLabel, ids);
+  }
+  return items.map((item) =>
+    (nodesByLabel.get(item.nodeLabel)?.size ?? 0) > 1
+      ? { ...item, nodeLabel: `${item.nodeLabel} · ${item.nodeId}` }
+      : item
+  );
+}
+
 /** One inner port a `WorkflowInterfaceEntry` could bind to, plus its owning node. */
 export interface BindablePort {
   nodeId: string;
@@ -622,7 +643,7 @@ export function listBindablePorts(
     }
   }
 
-  return result;
+  return disambiguateLabels(result);
 }
 
 /** A bindable port plus what the canvas already does with it. */
@@ -742,7 +763,9 @@ export function suggestEntryFromBindablePort(
 ): { id: string; name: string; dataType: string } {
   const { port } = candidate;
   const generic = GENERIC_PORT_IDS.includes(port.id);
-  const label = candidate.nodeLabel;
+  // The picker label may carry a " · node id" suffix; an entry is named after the node itself.
+  const ownNode = workflow?.nodes.find((n) => n.id === candidate.nodeId);
+  const label = ownNode ? nodeCanvasLabel(ownNode) : candidate.nodeLabel;
   const fromLabel = label
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')

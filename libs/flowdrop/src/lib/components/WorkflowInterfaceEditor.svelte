@@ -55,7 +55,8 @@
     validateWorkflowInterface,
     type InterfaceIssue,
     type RankedBindablePort,
-    type ResolvedInterfaceEntry
+    type ResolvedInterfaceEntry,
+    nodeCanvasLabel
   } from '$lib/utils/workflowInterface.js';
 
   interface Props {
@@ -167,7 +168,7 @@
     const edge = workflow.edges.find((e) => e.targetHandle === handleId);
     if (!edge) return undefined;
     const source = workflow.nodes.find((n) => n.id === edge.source);
-    return source?.data?.label ?? edge.source;
+    return source ? nodeCanvasLabel(source) : edge.source;
   }
 
   /**

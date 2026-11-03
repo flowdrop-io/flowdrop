@@ -14,6 +14,7 @@
   import { m } from '$lib/messages/index.js';
   import { getInstance } from '../stores/getInstance.svelte.js';
   import { getVersionUpgrade } from '../utils/nodeSwap.js';
+  import { nodeCanvasLabel } from '../utils/workflowInterface.js';
   import { searchNodeTypes } from '../utils/nodeSearch.js';
 
   interface Props {
@@ -86,7 +87,7 @@
   <!-- Current node info -->
   <div class="swap-picker__current">
     <span class="swap-picker__current-label">Current:</span>
-    <span class="swap-picker__current-name">{currentNode.data.label}</span>
+    <span class="swap-picker__current-name">{nodeCanvasLabel(currentNode)}</span>
   </div>
 
   <!-- Version upgrade banner -->
