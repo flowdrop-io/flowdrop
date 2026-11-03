@@ -47,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The editor offers a 'Skip to the canvas' link, and mountFlowDropApp accepts navbarTitleLevel to render the title as the page's H1.
 
+- Node search in the palette and the swap picker ranks exact name and keyword matches first.
+
+- A palette item can be added by click or Enter: next to the selected node, else in the middle of the view.
+
+- Port pins can be reached with Tab; Enter opens the port menu with 'Connect to…'.
+
 ### Fixed
 
 - Drafts carry `metadata.baseRevision`, include interface and Playground edits, and are removed when the workflow is saved; `draftFingerprint` is exported.
@@ -54,6 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Run asks for a workflow's inputs also when it has no Playground settings.
 
 - "Connect to…" lists trigger pins under "Other types" when connecting a data port, and data ports when connecting a trigger pin.
+
+- Port and interface pickers show each node's own title, and add the node id when two nodes share a name.
 
 ## [2.16.0] - 2026-10-24
 
