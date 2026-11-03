@@ -1291,6 +1291,24 @@ export const defaultMessages = {
     }
   },
 
+  // The confirm dialog the editor shows before a save that breaks or changes what uses the workflow.
+  impact: {
+    title: 'Before you save',
+    breaks: 'This change breaks',
+    changes: 'This change also does',
+    info: 'Also good to know',
+    // The severity as a word on each row, so it never rests on colour alone.
+    severity: {
+      breaks: 'Breaks',
+      changes: 'Changes',
+      info: 'Info'
+    },
+    failed: ({ message }: { message: string }) =>
+      `The check of what uses this workflow failed: ${message}`,
+    cancel: 'Cancel',
+    save: 'Save anyway'
+  },
+
   // The confirm dialog the WebMCP adapter shows before a browser agent's change runs.
   webmcp: {
     // The desktop bridge: a button beside the canvas zoom controls and its popover, for a
