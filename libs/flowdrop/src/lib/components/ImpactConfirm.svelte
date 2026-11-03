@@ -7,10 +7,23 @@
   container (default `document.body`), one at a time.
 -->
 
+<!--
+  ImpactConfirm
+
+  The dialog shown before a workflow save that breaks or changes what uses the
+  workflow: lists the affected things by severity and asks the person at the
+  keyboard. Mounted imperatively by `services/impactGate.ts` into the host's
+  container (default `document.body`), one at a time per editor.
+
+  A native modal `<dialog>`: the page behind it is inert, Tab stays inside, and
+  the item links are part of the Tab order. Focus starts on Cancel, so Enter
+  never saves a breaking change by reflex.
+-->
+
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { m } from '../messages/index.js';
   import Button from './primitives/Button.svelte';
-  import { focusOnMount } from '../utils/focus.js';
   import type { ImpactItem, ImpactReport, ImpactSeverity } from '../types/impact.js';
 
   interface Props {
@@ -24,6 +37,11 @@
 
   let { report, error, onResolve }: Props = $props();
 
+  // Unique per instance so two dialogs on one page do not share a DOM id.
+  const uid = $props.id();
+  const titleId = `${uid}-impact-title`;
+  const bodyId = `${uid}-impact-body`;
+
   const severities: ImpactSeverity[] = ['breaks', 'changes', 'info'];
 
   const groups = $derived(
@@ -35,40 +53,50 @@
       .filter((group) => group.items.length > 0)
   );
 
-  // Focus starts on Save anyway and stays inside the dialog: Tab cycles the two
-  // buttons, Escape cancels.
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onResolve(false);
-    } else if (event.key === 'Tab') {
-      event.preventDefault();
-      const order = [
-        ...(event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('button')
-      ];
-      const i = order.indexOf(document.activeElement as HTMLButtonElement);
-      const step = event.shiftKey ? -1 : 1;
-      order[(i + step + order.length) % order.length]?.focus();
-    }
+  let dialogRef = $state<HTMLDialogElement | null>(null);
+  let cancelWrap = $state<HTMLElement | null>(null);
+  let opener: HTMLElement | null = null;
+  let resolved = false;
+
+  onMount(() => {
+    opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (dialogRef && !dialogRef.open) dialogRef.showModal();
+    // showModal focuses the first control (a link); the safe answer comes first.
+    cancelWrap?.querySelector('button')?.focus();
+  });
+
+  function resolve(save: boolean): void {
+    if (resolved) return;
+    resolved = true;
+    if (dialogRef?.open) dialogRef.close();
+    if (opener?.isConnected) opener.focus();
+    onResolve(save);
+  }
+
+  // Escape: the native cancel event. Resolve here and keep the browser from
+  // closing the dialog a second time.
+  function handleCancel(event: Event): void {
+    event.preventDefault();
+    resolve(false);
   }
 </script>
 
-<div class="flowdrop-portal fd-impact-confirm" data-testid="flowdrop-impact-confirm">
-  <div
-    class="fd-impact-confirm__dialog"
-    role="alertdialog"
-    aria-modal="true"
-    aria-labelledby="fd-impact-confirm-title"
-    aria-describedby="fd-impact-confirm-body"
-    tabindex="-1"
-    onkeydown={handleKeydown}
-  >
+<dialog
+  bind:this={dialogRef}
+  class="flowdrop-portal fd-impact-confirm"
+  data-testid="flowdrop-impact-confirm"
+  role="alertdialog"
+  aria-labelledby={titleId}
+  aria-describedby={bodyId}
+  oncancel={handleCancel}
+>
+  <div class="fd-impact-confirm__dialog">
     <header class="fd-impact-confirm__header">
-      <h2 id="fd-impact-confirm-title" class="fd-impact-confirm__title">
+      <h2 id={titleId} class="fd-impact-confirm__title">
         {m().impact.title}
       </h2>
     </header>
-    <div id="fd-impact-confirm-body" class="fd-impact-confirm__body">
+    <div id={bodyId} class="fd-impact-confirm__body">
       {#if error}
         <p class="fd-impact-confirm__error" data-testid="flowdrop-impact-error">
           {m().impact.failed({ message: error })}
@@ -78,7 +106,7 @@
         <section class="fd-impact-confirm__group" data-severity={group.severity}>
           <h3 class="fd-impact-confirm__group-title">{m().impact[group.severity]}</h3>
           <ul class="fd-impact-confirm__list" role="list">
-            {#each group.items as item, i (i)}
+            {#each group.items as item (item)}
               <li class="fd-impact-confirm__item">
                 <span class="fd-impact-confirm__severity"
                   >{m().impact.severity[group.severity]}</span
@@ -103,33 +131,38 @@
       {/each}
     </div>
     <footer class="fd-impact-confirm__actions">
-      <Button data-testid="flowdrop-impact-cancel" onclick={() => onResolve(false)}>
-        {m().impact.cancel}
-      </Button>
-      <Button
-        variant="primary"
-        data-testid="flowdrop-impact-save"
-        {@attach focusOnMount()}
-        onclick={() => onResolve(true)}
-      >
+      <span class="fd-impact-confirm__cancel" bind:this={cancelWrap}>
+        <Button data-testid="flowdrop-impact-cancel" onclick={() => resolve(false)}>
+          {m().impact.cancel}
+        </Button>
+      </span>
+      <Button variant="primary" data-testid="flowdrop-impact-save" onclick={() => resolve(true)}>
         {m().impact.save}
       </Button>
     </footer>
   </div>
-</div>
+</dialog>
 
 <style>
   /* Mounted on document.body, outside the editor tree. Tokens come from :root
      (tokens.css) and, for a skinned editor, from the editor's scope, which the
      helper copies onto the host element; the dark palette follows
-     [data-theme='dark'] on the host element; the buttons are the Button primitive. Everything else is set here, because the host page's own element
+     [data-theme='dark'] on the host element; the buttons are the Button primitive.
+     Everything else is set here, because the host page's own element
      rules (h2, h3, p, ul, li, a) reach a dialog on <body>: every element below
      states its margin, padding, font and list style. */
   .fd-impact-confirm {
     position: fixed;
     inset: 0;
     z-index: 10000;
-    display: flex;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    box-sizing: border-box;
+    margin: 0;
+    border: 0;
+    color: inherit;
     align-items: center;
     justify-content: center;
     padding: var(--fd-space-xl, 1rem);
@@ -142,6 +175,22 @@
     letter-spacing: normal;
     text-align: left;
     text-transform: none;
+  }
+
+  .fd-impact-confirm:not([open]) {
+    display: none;
+  }
+
+  .fd-impact-confirm[open] {
+    display: flex;
+  }
+
+  .fd-impact-confirm::backdrop {
+    background: transparent;
+  }
+
+  .fd-impact-confirm__cancel {
+    display: contents;
   }
 
   .fd-impact-confirm__dialog {
@@ -157,10 +206,6 @@
     color: var(--fd-foreground);
     box-shadow: var(--fd-shadow-xl);
     animation: fd-impact-confirm-enter 0.2s ease-out;
-  }
-
-  .fd-impact-confirm__dialog:focus {
-    outline: none;
   }
 
   @keyframes fd-impact-confirm-enter {

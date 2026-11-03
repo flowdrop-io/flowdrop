@@ -64,7 +64,6 @@ import type { NavbarAction, NavbarBranding } from './types/navbar.js';
 import type { HostHooks, WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
 import { whenWorkflowLoaded } from './utils/whenWorkflowLoaded.svelte.js';
 import { draftOffer, draftTimeLabel } from './utils/draftRestore.js';
-import { defaultMessages } from './messages/defaults.js';
 import { showWarning } from './services/toastService.js';
 import { parseCommand } from './commands/parser.js';
 import { executeCommand } from './commands/executor.js';
@@ -982,8 +981,7 @@ export async function mountFlowDropApp(
           manager.clearDraft();
           return;
         }
-        // The mount takes no messages option, so the defaults are the mount's messages.
-        const text = defaultMessages.drafts;
+        const text = fd.messages().drafts;
         showWarning(
           {
             title: text.found({ time: draftTimeLabel(offer.savedAt) }),

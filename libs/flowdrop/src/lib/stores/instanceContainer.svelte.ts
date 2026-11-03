@@ -14,6 +14,7 @@
  * @module stores/instanceContainer
  */
 
+import { defaultMessages, type Messages } from '../messages/index.js';
 import type { NodeMetadata } from '../types/index.js';
 import type { HostHooks } from '../webmcp/types.js';
 import type { ApprovalGate } from '../webmcp/gate.js';
@@ -190,6 +191,15 @@ export interface FlowDropInstance {
    */
   measureNode: ((nodeId: string) => MeasuredCard | undefined) | null;
   /**
+   * The messages this editor shows, merged with the host's overrides. `App`
+   * registers its live tree; until then (and on a page with no editor mounted)
+   * these are the defaults. Code that runs outside the component tree reads
+   * strings from here instead of `defaultMessages`.
+   */
+  readonly messages: () => Messages;
+  /** Register the getter `messages()` reads. `App` does this while it is mounted. */
+  setMessages(get: () => Messages): void;
+  /**
    * Run `fn` when this instance is destroyed. Returns an unsubscribe; calling
    * it before `destroy()` means `fn` never runs. Adapters that bind to an
    * instance (WebMCP, host integrations) hook their teardown here instead of
@@ -327,6 +337,8 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     }
   ];
 
+  let readMessages: () => Messages = () => defaultMessages;
+
   const instance: FlowDropInstance = {
     id,
     storagePrefix,
@@ -368,6 +380,10 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     },
     set measureNode(fn) {
       measureNodeFn = fn;
+    },
+    messages: () => readMessages(),
+    setMessages(get) {
+      readMessages = get;
     },
     onDestroy(fn) {
       cleanups.push(fn);

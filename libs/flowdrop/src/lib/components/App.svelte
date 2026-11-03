@@ -474,6 +474,8 @@
   // — Svelte enforces that. The context value is a getter that closes over
   // the live $derived, so child components always read the current tree.
   setMessages(() => mergedMessages);
+  // Code outside the component tree (the impact dialog) reads the same tree from the instance.
+  fd.setMessages(() => mergedMessages);
 
   // Default navbar primary actions — used when no `navbarActions` prop is supplied.
   // Derived so the labels track locale changes.
@@ -1301,7 +1303,7 @@
       : undefined
   );
 
-  async function saveWorkflow(): Promise<boolean> {
+  async function saveWorkflow(options: { interactive?: boolean } = {}): Promise<boolean> {
     // Commit any in-flight config edit so the save and its history are
     // consistent (the value itself is already live in the store).
     flushNodeConfigEdit();
@@ -1309,6 +1311,7 @@
       eventHandlers: { onBeforeSave, onAfterSave, onSaveError, onApiError },
       features,
       instance: fd,
+      interactive: options.interactive,
       onMarkAsSaved: () => fd.workflow.markAsSaved()
     });
   }
@@ -1471,7 +1474,8 @@
     const cleanupAutoSave = initAutoSave({
       isDirty: () => fd.workflow.isDirty,
       onSave: async () => {
-        await saveWorkflow();
+        // A timer must not open a question: a save that needs an answer waits.
+        await saveWorkflow({ interactive: false });
       },
       onError: (error) => {
         // Don't show toast for auto-save errors to avoid noise

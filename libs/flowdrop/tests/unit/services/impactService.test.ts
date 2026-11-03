@@ -46,6 +46,21 @@ describe('impactService', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it.each([401, 403, 404, 405])('answers unavailable on HTTP %i', async (status) => {
+    fetchMock.mockResolvedValue(json({ error: 'nope' }, status));
+    expect(await checkImpact(config, authProvider, 'wf1', draft)).toEqual({
+      status: 'unavailable'
+    });
+  });
+
+  it('still reports a server failure as an error', async () => {
+    fetchMock.mockResolvedValue(json({ error: 'boom' }, 500));
+    expect(await checkImpact(config, authProvider, 'wf1', draft)).toEqual({
+      status: 'error',
+      message: 'boom'
+    });
+  });
+
   it('parses an ok answer', async () => {
     fetchMock.mockResolvedValue(
       json({

@@ -17,7 +17,7 @@ import type { Workflow } from '../types/index.js';
 
 export type ImpactResult =
   | { status: 'ok'; report: ImpactReport }
-  /** The backend has no such route or does not know this workflow. */
+  /** The backend has no such route, refuses it, or does not know this workflow. */
   | { status: 'unavailable' }
   | { status: 'error'; message: string };
 
@@ -76,7 +76,10 @@ export async function checkImpact(
       { method: 'POST', body: JSON.stringify(draft) },
       { config, endpointKey: 'workflows.impact', authProvider }
     );
-    if (response.status === 404 || response.status === 405) return { status: 'unavailable' };
+    // 404/405: no such route. 401/403: a backend that answers an unknown route
+    // with a login or access refusal. The route ships in the default endpoints,
+    // so these must not read as a failed check before every save.
+    if ([401, 403, 404, 405].includes(response.status)) return { status: 'unavailable' };
     if (!response.ok) return { status: 'error', message: await errorMessage(response) };
     const body = (await response.json().catch(() => null)) as {
       success?: boolean;

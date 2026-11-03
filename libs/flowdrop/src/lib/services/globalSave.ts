@@ -20,7 +20,7 @@ import { buildSaveBody } from '$lib/utils/workflowDraft.js';
 import type { ApiError } from '$lib/api/enhanced-client.js';
 import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
 import { checkImpact, impactSupported } from './impactService.js';
-import { confirmImpact } from './impactGate.js';
+import { confirmImpact, impactPending } from './impactGate.js';
 import { scopeSelector } from '$lib/themes/scopedSkinCss.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 import { DEFAULT_FEATURES } from '$lib/types/events.js';
@@ -56,6 +56,12 @@ export interface GlobalSaveOptions {
    * Defaults to the page-default instance when omitted.
    */
   instance?: FlowDropInstance;
+  /**
+   * Whether the save may ask the person a question (the impact dialog).
+   * Default `true`. Autosave passes `false`: a save that needs an answer is not
+   * made, returns `false` and the workflow stays dirty.
+   */
+  interactive?: boolean;
 }
 
 /**
@@ -201,6 +207,9 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     // Step 3b — Ask what this save changes for what uses the workflow. A backend
     // without the route (or that does not know the workflow) leaves the save
     // unasked; a failed check is shown and the person decides.
+    // A second save while the question is open (Cmd+S again) is dropped, not
+    // queued: the open dialog is the one answer, and two saves must not follow it.
+    if (impactPending(fd)) return false;
     const apiConfig = fd.api.config;
     if (isExistingWorkflow && apiConfig && impactSupported(apiConfig)) {
       const result = await checkImpact(
@@ -213,10 +222,18 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       const host =
         (fd.skinScope ? document.querySelector<HTMLElement>(scopeSelector(fd.skinScope)) : null) ??
         document.body;
-      if (result.status === 'ok' && result.report.confirm) {
-        if (!(await confirmImpact({ report: result.report, host }))) return false;
-      } else if (result.status === 'error') {
-        if (!(await confirmImpact({ error: result.message, host }))) return false;
+      const needsAnswer =
+        (result.status === 'ok' && result.report.confirm) || result.status === 'error';
+      if (needsAnswer) {
+        if (options.interactive === false) return false;
+        const answer = await confirmImpact({
+          report: result.status === 'ok' ? result.report : undefined,
+          error: result.status === 'error' ? result.message : undefined,
+          host,
+          instance: fd,
+          messages: fd.messages
+        });
+        if (!answer) return false;
       }
     }
 

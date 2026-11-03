@@ -41,7 +41,8 @@ const {
   mockReport,
   mockImpactSupported,
   mockCheckImpact,
-  mockConfirmImpact
+  mockConfirmImpact,
+  mockImpactPending
 } = vi.hoisted(() => ({
   mockGetWorkflowStore: vi.fn(),
   mockWorkflowActionsBatchUpdate: vi.fn(),
@@ -55,7 +56,8 @@ const {
   mockReport: vi.fn(),
   mockImpactSupported: vi.fn(() => false),
   mockCheckImpact: vi.fn(),
-  mockConfirmImpact: vi.fn()
+  mockConfirmImpact: vi.fn(),
+  mockImpactPending: vi.fn(() => false)
 }));
 
 vi.mock('$lib/services/impactService.js', () => ({
@@ -64,7 +66,8 @@ vi.mock('$lib/services/impactService.js', () => ({
 }));
 
 vi.mock('$lib/services/impactGate.js', () => ({
-  confirmImpact: (...args: unknown[]) => mockConfirmImpact(...args)
+  confirmImpact: (...args: unknown[]) => mockConfirmImpact(...args),
+  impactPending: (...args: unknown[]) => mockImpactPending(...args)
 }));
 
 // globalSave resolves its target via getDefaultInstance(). Mock the instance
@@ -81,6 +84,7 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
       markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args),
       acknowledgeServer: (...args: unknown[]) => mockStoreAcknowledgeServer(...args)
     },
+    messages: () => ({}),
     doctor: { canOpen: false, requestOpen: () => false },
     saveConflict: { report: (...args: unknown[]) => mockReport(...args) },
     runs: {
@@ -150,6 +154,7 @@ describe('globalSaveWorkflow', () => {
     // Simulate a configured API context so ensureApiConfiguration exits early.
     mockApiIsConfigured.mockReturnValue(true);
     mockImpactSupported.mockReturnValue(false);
+    mockImpactPending.mockReturnValue(false);
   });
 
   describe('impact check', () => {
@@ -212,6 +217,43 @@ describe('globalSaveWorkflow', () => {
       expect(await globalSaveWorkflow({})).toBe(false);
 
       expect(mockConfirmImpact).toHaveBeenCalledWith(expect.objectContaining({ error: 'boom' }));
+      expect(mockClientUpdate).not.toHaveBeenCalled();
+    });
+
+    it('autosave (interactive: false) neither asks nor saves when the check needs an answer', async () => {
+      mockCheckImpact.mockResolvedValue({ status: 'ok', report });
+
+      expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+
+      expect(mockConfirmImpact).not.toHaveBeenCalled();
+      expect(mockClientUpdate).not.toHaveBeenCalled();
+      expect(mockStoreMarkAsSaved).not.toHaveBeenCalled();
+    });
+
+    it('autosave does not ask about a failed check either', async () => {
+      mockCheckImpact.mockResolvedValue({ status: 'error', message: 'boom' });
+
+      expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+
+      expect(mockConfirmImpact).not.toHaveBeenCalled();
+      expect(mockClientUpdate).not.toHaveBeenCalled();
+    });
+
+    it('autosave still saves when nothing needs confirming', async () => {
+      mockCheckImpact.mockResolvedValue({ status: 'ok', report: { ...report, confirm: false } });
+
+      expect(await globalSaveWorkflow({ interactive: false })).toBe(true);
+
+      expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('a second save while a question is open opens no second dialog and saves nothing', async () => {
+      mockImpactPending.mockReturnValue(true);
+
+      expect(await globalSaveWorkflow({})).toBe(false);
+
+      expect(mockCheckImpact).not.toHaveBeenCalled();
+      expect(mockConfirmImpact).not.toHaveBeenCalled();
       expect(mockClientUpdate).not.toHaveBeenCalled();
     });
 
