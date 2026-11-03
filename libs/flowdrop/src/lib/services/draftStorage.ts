@@ -469,6 +469,9 @@ export class DraftAutoSaveManager {
   /** Last saved workflow hash (for change detection) */
   private lastSavedHash: string | null = null;
 
+  /** Open draft offers: while any is open, a clean tick keeps the stored draft. */
+  private holds = new Set<symbol>();
+
   /**
    * Create a new DraftAutoSaveManager
    *
@@ -517,6 +520,22 @@ export class DraftAutoSaveManager {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    this.holds.clear();
+  }
+
+  /**
+   * Keep the stored draft while an offer to restore it is open. A tick that
+   * finds the workflow clean would otherwise delete it behind the offer.
+   *
+   * @returns a function that ends the hold; Restore and Discard call it, and
+   * `stop()` ends every hold
+   */
+  holdDraft(): () => void {
+    const hold = Symbol('draft-offer');
+    this.holds.add(hold);
+    return () => {
+      this.holds.delete(hold);
+    };
   }
 
   /**
@@ -536,7 +555,7 @@ export class DraftAutoSaveManager {
 
     // A saved workflow has no draft
     if (!this.isDirty()) {
-      if (hasDraft(this.storageKey, this.storage)) {
+      if (this.holds.size === 0 && hasDraft(this.storageKey, this.storage)) {
         deleteDraft(this.storageKey, this.storage);
       }
       return false;

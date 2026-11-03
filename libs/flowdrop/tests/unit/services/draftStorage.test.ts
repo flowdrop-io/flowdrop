@@ -824,6 +824,51 @@ describe('Draft Storage Service', () => {
       });
     });
 
+    describe('holdDraft (an open offer)', () => {
+      function storeDraftThenClean() {
+        getWorkflow.mockReturnValue(createTestWorkflow());
+        isDirty.mockReturnValue(true);
+        manager.forceSave();
+        isDirty.mockReturnValue(false);
+      }
+
+      it('keeps the draft on clean ticks while held', () => {
+        storeDraftThenClean();
+        manager.holdDraft();
+        manager.saveIfDirty();
+        manager.saveIfDirty();
+        expect(hasDraft('test-autosave')).toBe(true);
+      });
+
+      it('deletes the draft on a clean tick once released', () => {
+        storeDraftThenClean();
+        const release = manager.holdDraft();
+        release();
+        manager.saveIfDirty();
+        expect(hasDraft('test-autosave')).toBe(false);
+      });
+
+      it('stays held until every offer is released', () => {
+        storeDraftThenClean();
+        const a = manager.holdDraft();
+        const b = manager.holdDraft();
+        a();
+        manager.saveIfDirty();
+        expect(hasDraft('test-autosave')).toBe(true);
+        b();
+        manager.saveIfDirty();
+        expect(hasDraft('test-autosave')).toBe(false);
+      });
+
+      it('stop() ends the hold', () => {
+        storeDraftThenClean();
+        manager.holdDraft();
+        manager.stop();
+        manager.saveIfDirty();
+        expect(hasDraft('test-autosave')).toBe(false);
+      });
+    });
+
     describe('markAsSaved', () => {
       it('should prevent saving unchanged workflow', () => {
         const workflow = createTestWorkflow();

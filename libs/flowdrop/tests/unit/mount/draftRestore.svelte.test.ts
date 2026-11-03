@@ -105,7 +105,7 @@ describe('draftOffer', () => {
 
 let seq = 0;
 
-async function mountApp(storage: DraftStorageAdapter, key: string) {
+async function mountApp(storage: DraftStorageAdapter, key: string, interval = 600000) {
   const el = document.createElement('div');
   document.body.appendChild(el);
   return mountFlowDropApp(el, {
@@ -116,7 +116,7 @@ async function mountApp(storage: DraftStorageAdapter, key: string) {
     workflow: makeWorkflow(),
     draftStorage: storage,
     draftStorageKey: key,
-    features: { showToasts: false, autoSaveDraft: true, autoSaveDraftInterval: 600000 }
+    features: { showToasts: false, autoSaveDraft: true, autoSaveDraftInterval: interval }
   });
 }
 
@@ -153,6 +153,21 @@ describe('mount: stored draft offer', () => {
     shown[0].actions[0].onClick();
     expect(app.isDirty()).toBe(true);
     expect(app.getWorkflow()?.nodes.find((n) => n.id === 'a.1')?.position.x).toBe(300);
+    app.destroy();
+  });
+
+  it('keeps the draft behind an open offer through later autosave ticks', async () => {
+    const storage = memoryAdapter();
+    saveDraft(makeWorkflow(300), 'k-held', storage);
+    const app = await mountApp(storage, 'k-held', 20);
+    await app.runCommand('list nodes');
+    await vi.waitFor(() => expect(shown).toHaveLength(1));
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect(loadDraft('k-held', storage)).not.toBeNull();
+
+    // Discard ends the hold and removes the draft; ticks keep it gone.
+    shown[0].actions[1].onClick();
+    expect(loadDraft('k-held', storage)).toBeNull();
     app.destroy();
   });
 

@@ -982,6 +982,8 @@ export async function mountFlowDropApp(
           return;
         }
         const text = fd.messages().drafts;
+        // The offer is open until Restore or Discard: keep the draft meanwhile.
+        const release = manager.holdDraft();
         showWarning(
           {
             title: text.found({ time: draftTimeLabel(offer.savedAt) }),
@@ -991,6 +993,7 @@ export async function mountFlowDropApp(
                 label: text.restore,
                 primary: true,
                 onClick: () => {
+                  release();
                   fd.workflow.batchUpdate({
                     nodes: draft.workflow.nodes,
                     edges: draft.workflow.edges,
@@ -1002,7 +1005,13 @@ export async function mountFlowDropApp(
                   manager.forceSave();
                 }
               },
-              { label: text.discard, onClick: () => manager.clearDraft() }
+              {
+                label: text.discard,
+                onClick: () => {
+                  release();
+                  manager.clearDraft();
+                }
+              }
             ]
           },
           { id: `flowdrop:draft-offer:${offerKey}` }
