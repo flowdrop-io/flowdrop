@@ -125,14 +125,20 @@
   }
 
   /**
-   * Handle node type drag start - creates a new node instance
+   * Add a node from the keyboard. Enter acts on keydown, Space on keyup (like a
+   * button); a held key adds once.
    */
   function handleItemKey(event: KeyboardEvent, nodeType: NodeMetadata): void {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
-    props.onadd?.(nodeType);
+    if (event.repeat) return;
+    if (event.key === 'Enter' && event.type === 'keydown') props.onadd?.(nodeType);
+    if (event.key === ' ' && event.type === 'keyup') props.onadd?.(nodeType);
   }
 
+  /**
+   * Handle node type drag start - creates a new node instance
+   */
   function handleNodeDragStart(event: DragEvent, nodeType: NodeMetadata): void {
     if (!event.dataTransfer) return;
 
@@ -279,6 +285,7 @@
                 ondragstart={(e) => handleNodeDragStart(e, nodeType)}
                 onclick={() => props.onadd?.(nodeType)}
                 onkeydown={(e) => handleItemKey(e, nodeType)}
+                onkeyup={(e) => handleItemKey(e, nodeType)}
                 role="button"
                 tabindex="0"
                 aria-label={m().layout.addNode({ name: nodeType.name })}
@@ -339,6 +346,7 @@
                       ondragstart={(e) => handleNodeDragStart(e, nodeType)}
                       onclick={() => props.onadd?.(nodeType)}
                       onkeydown={(e) => handleItemKey(e, nodeType)}
+                      onkeyup={(e) => handleItemKey(e, nodeType)}
                     >
                       <span
                         class="fd-sidebar-flat-dot"
@@ -388,6 +396,7 @@
                         ondragstart={(e) => handleNodeDragStart(e, nodeType)}
                         onclick={() => props.onadd?.(nodeType)}
                         onkeydown={(e) => handleItemKey(e, nodeType)}
+                        onkeyup={(e) => handleItemKey(e, nodeType)}
                         title={nodeType.description}
                       >
                         <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">

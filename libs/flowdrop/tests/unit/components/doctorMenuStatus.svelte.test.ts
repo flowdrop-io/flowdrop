@@ -66,6 +66,18 @@ describe('DoctorMenu status', () => {
     expect(target.querySelector('[role="status"]')?.textContent).toContain('Checking...');
   });
 
+  it('keeps one live region mounted and changes its text', () => {
+    const { target, state } = render('checking');
+    vi.advanceTimersByTime(600);
+    flushSync();
+    const region = target.querySelector('[role="status"]');
+    expect(region?.textContent).toBe('Checking...');
+    state.status = 'error';
+    flushSync();
+    expect(target.querySelector('[role="status"]')).toBe(region);
+    expect(region?.textContent).toBe('');
+  });
+
   it('shows Check unavailable with a Retry that diagnoses again', () => {
     const { target, diagnoseNow } = render('error');
     expect(target.textContent).toContain('Check unavailable');

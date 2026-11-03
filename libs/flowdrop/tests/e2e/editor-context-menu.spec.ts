@@ -438,12 +438,16 @@ test.describe('Canvas context menu', () => {
     await assertStatusBar(page, 4, 3);
   });
 
-  test('a port pin takes Tab focus; Enter opens Connect to… and Escape returns to the pin', async ({
+  test("a selected node's port pins take Tab focus; Enter opens Connect to… and Escape returns to the pin", async ({
     page
   }) => {
     await gotoEditor(page, 'complex');
 
+    // Pins are Tab stops only on the selected node.
     const pin = page.locator(handle('node-calc-output-result'));
+    await expect(pin).toHaveAttribute('tabindex', '-1');
+    await page.locator(calc).click({ position: { x: 20, y: 10 } });
+    await expect(pin).toHaveAttribute('tabindex', '0');
     await pin.focus();
     await expect(pin).toBeFocused();
     await page.keyboard.press('Enter');

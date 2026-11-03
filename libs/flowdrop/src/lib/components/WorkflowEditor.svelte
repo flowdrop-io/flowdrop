@@ -1818,6 +1818,7 @@
     const pin = target.closest?.('.svelte-flow__handle');
     if (
       pin instanceof HTMLElement &&
+      canvasEl?.contains(pin) &&
       canvasEditable &&
       (event.key === 'Enter' ||
         event.key === ' ' ||

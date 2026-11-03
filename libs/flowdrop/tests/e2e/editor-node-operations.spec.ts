@@ -74,6 +74,20 @@ test.describe('Node Operations', () => {
     await assertNodeCount(page, 1);
   });
 
+  test('Space on a focused palette item adds one node, once, on key up', async ({ page }) => {
+    await gotoEditor(page, 'empty');
+
+    await page.locator('.flowdrop-details').first().locator('summary').click();
+    const nodeItem = page.locator('.flowdrop-node-item:visible').first();
+    await expect(nodeItem).toBeVisible({ timeout: 5000 });
+    await nodeItem.focus();
+    await page.keyboard.down(' ');
+    expect(await getNodeCount(page)).toBe(0);
+    await page.keyboard.up(' ');
+
+    await assertNodeCount(page, 1);
+  });
+
   test('a palette click with a node selected adds the node to its right', async ({ page }) => {
     await gotoEditor(page, 'simple');
     const before = await getNodeCount(page);

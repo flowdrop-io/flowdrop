@@ -153,34 +153,33 @@
   const busy = $derived(fd.doctor.applyingId !== null);
 </script>
 
+{#snippet unavailableStatus()}
+  <span class="fd-doctor__status" data-testid="doctor-unavailable" title={msgs.unavailableTitle}>
+    {msgs.unavailable}
+    <Button
+      variant="ghost"
+      size="sm"
+      data-testid="doctor-retry"
+      onclick={() => void fd.doctor.diagnoseNow()}
+    >
+      {msgs.retry}
+    </Button>
+  </span>
+{/snippet}
+
 {#if visible}
   <div class="fd-doctor" bind:this={rootEl} onkeydown={onKeydown} role="presentation">
+    <!-- Mounted while the indicator is visible, so a change of its text is announced. -->
+    <span class="fd-doctor__live" role="status" aria-live="polite"
+      >{showChecking ? msgs.checking : ''}</span
+    >
     {#if !hasProblems && showChecking}
-      <span
-        class="fd-doctor__status"
-        role="status"
-        aria-live="polite"
-        data-testid="doctor-checking"
-      >
+      <span class="fd-doctor__status" data-testid="doctor-checking" aria-hidden="true">
         <Icon icon="mdi:loading" class="fd-doctor__spinner" />
         {msgs.checking}
       </span>
     {:else if !hasProblems && failed}
-      <span
-        class="fd-doctor__status"
-        data-testid="doctor-unavailable"
-        title={msgs.unavailableTitle}
-      >
-        {msgs.unavailable}
-        <Button
-          variant="ghost"
-          size="sm"
-          data-testid="doctor-retry"
-          onclick={() => void fd.doctor.diagnoseNow()}
-        >
-          {msgs.retry}
-        </Button>
-      </span>
+      {@render unavailableStatus()}
     {/if}
     {#if hasProblems}
       <Button
@@ -205,21 +204,7 @@
         {msgs.trigger({ count: problems.length })}
       </Button>
       {#if failed}
-        <span
-          class="fd-doctor__status"
-          data-testid="doctor-unavailable"
-          title={msgs.unavailableTitle}
-        >
-          {msgs.unavailable}
-          <Button
-            variant="ghost"
-            size="sm"
-            data-testid="doctor-retry"
-            onclick={() => void fd.doctor.diagnoseNow()}
-          >
-            {msgs.retry}
-          </Button>
-        </span>
+        {@render unavailableStatus()}
       {/if}
 
       {#if open}
@@ -370,6 +355,14 @@
     color: var(--_c);
   }
 
+  .fd-doctor__live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .fd-doctor__status {
     display: inline-flex;
     align-items: center;
