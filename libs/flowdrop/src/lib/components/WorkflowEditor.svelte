@@ -42,6 +42,7 @@
     type ContextMenuTarget
   } from '../editor/contextMenu.js';
   import type { NodeMetadata } from '../types/index.js';
+  import { extractConfigDefaults } from '../utils/nodeIds.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
   import { nodeAriaLabel } from '../utils/nodeAriaLabel.js';
   import { decideInlineCommit } from '../utils/captionText.js';
@@ -62,7 +63,8 @@
     EdgeStylingHelper,
     NodeOperationsHelper,
     WorkflowOperationsHelper,
-    ConfigurationHelper
+    ConfigurationHelper,
+    placementForNewNode
   } from '../helpers/workflowEditorHelper.js';
   import { Toaster } from 'svelte-5-french-toast';
   import {
@@ -1708,6 +1710,53 @@
 
     // Trigger the EdgeRefresher component to call updateNodeInternals
     nodeIdToRefresh = nodeId;
+  }
+
+  /**
+   * Add a node from a palette click or Enter: right of the selected node,
+   * else the middle of the view. Goes through placeNode like a drop.
+   */
+  export function addNodeFromPalette(metadata: NodeMetadata): void {
+    if (!canvasEditable || !canvasControllerRef) return;
+    const grid = getEditorSettings().gridSize;
+    const selected = flowNodes.find((n) => n.selected);
+    const flowEl = canvasEl?.querySelector('.svelte-flow') ?? canvasEl;
+    const rect = flowEl?.getBoundingClientRect();
+    const centre = rect
+      ? canvasControllerRef.canvasScreenToFlow({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2
+        })
+      : { x: 0, y: 0 };
+    const position = snapPosition(
+      placementForNewNode(
+        selected
+          ? {
+              x: selected.position.x,
+              y: selected.position.y,
+              width: selected.measured?.width ?? selected.width ?? grid * 10
+            }
+          : null,
+        centre,
+        grid * 2
+      )
+    );
+    const { id } = placeNode(
+      JSON.stringify({
+        type: 'node',
+        nodeType: metadata.node_type_id,
+        nodeData: {
+          label: metadata.name,
+          config: extractConfigDefaults(metadata.configSchema),
+          metadata
+        }
+      }),
+      position
+    );
+    if (!id) return;
+    flowNodes = flowNodes.map((n) =>
+      n.selected === (n.id === id) ? n : { ...n, selected: n.id === id }
+    );
   }
 
   // Canvas viewport methods (forwarded to CanvasController inside <SvelteFlow>)

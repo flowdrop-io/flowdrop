@@ -533,6 +533,19 @@ export class WorkflowOperationsHelper {
 }
 
 /**
+ * Where a node added from the palette lands: to the right of the selected
+ * node, else the middle of the visible canvas.
+ */
+export function placementForNewNode(
+  selected: { x: number; y: number; width: number } | null,
+  viewportCentre: { x: number; y: number },
+  gap: number
+): { x: number; y: number } {
+  if (!selected) return { x: viewportCentre.x, y: viewportCentre.y };
+  return { x: selected.x + selected.width + gap, y: selected.y };
+}
+
+/**
  * Configuration helper
  */
 export class ConfigurationHelper {

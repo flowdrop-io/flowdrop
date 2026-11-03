@@ -586,6 +586,8 @@ export const defaultMessages = {
   layout: {
     // Sidebar/main-region landmarks.
     componentsSidebar: 'Components sidebar',
+    // Palette item: click or Enter adds the node.
+    addNode: ({ name }: { name: string }) => `Add ${name}`,
     // Edit mode's left slot: Nodes | Assistant.
     nodesTab: 'Nodes',
     workflowCanvas: 'Workflow canvas',

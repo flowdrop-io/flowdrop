@@ -42,6 +42,8 @@
      * flat 32px category rows (no card, no border) with a filled search field.
      */
     listStyle?: 'cards' | 'flat' | 'rows';
+    /** Called when a palette item is clicked or activated with Enter or Space. */
+    onadd?: (nodeType: NodeMetadata) => void;
   }
 
   let props: Props = $props();
@@ -125,6 +127,12 @@
   /**
    * Handle node type drag start - creates a new node instance
    */
+  function handleItemKey(event: KeyboardEvent, nodeType: NodeMetadata): void {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    props.onadd?.(nodeType);
+  }
+
   function handleNodeDragStart(event: DragEvent, nodeType: NodeMetadata): void {
     if (!event.dataTransfer) return;
 
@@ -269,8 +277,11 @@
                 class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
                 draggable="true"
                 ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+                onclick={() => props.onadd?.(nodeType)}
+                onkeydown={(e) => handleItemKey(e, nodeType)}
                 role="button"
                 tabindex="0"
+                aria-label={m().layout.addNode({ name: nodeType.name })}
                 title={nodeType.description}
               >
                 <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">
@@ -317,13 +328,17 @@
                 <div class="fd-sidebar-flat-category">
                   {getCategoryDisplayName(category).toUpperCase()}
                 </div>
-                <div class="fd-sidebar-flat-list" role="list">
+                <div class="fd-sidebar-flat-list">
                   {#each categoryNodes as nodeType (nodeType.node_type_id)}
                     <div
                       class="fd-sidebar-flat-item"
-                      role="listitem"
+                      role="button"
+                      tabindex="0"
+                      aria-label={m().layout.addNode({ name: nodeType.name })}
                       draggable="true"
                       ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+                      onclick={() => props.onadd?.(nodeType)}
+                      onkeydown={(e) => handleItemKey(e, nodeType)}
                     >
                       <span
                         class="fd-sidebar-flat-dot"
@@ -362,13 +377,17 @@
                   </div>
                 </summary>
                 <div class="flowdrop-details__content">
-                  <div class="flowdrop-node-list" role="list">
+                  <div class="flowdrop-node-list">
                     {#each categoryNodes as nodeType (nodeType.node_type_id)}
                       <div
                         class="flowdrop-card flowdrop-card--compact flowdrop-node-item"
-                        role="listitem"
+                        role="button"
+                        tabindex="0"
+                        aria-label={m().layout.addNode({ name: nodeType.name })}
                         draggable="true"
                         ondragstart={(e) => handleNodeDragStart(e, nodeType)}
+                        onclick={() => props.onadd?.(nodeType)}
+                        onkeydown={(e) => handleItemKey(e, nodeType)}
                         title={nodeType.description}
                       >
                         <div class="flowdrop-card__body flowdrop-p--1 flowdrop-py--1">

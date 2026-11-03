@@ -2162,6 +2162,7 @@
       activeFormat={fd.workflow.format}
       categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
       listStyle={themeConfig?.display?.sidebarList}
+      onadd={(n) => workflowEditorRef?.addNodeFromPalette(n)}
     />
   {/if}
 {/snippet}
@@ -2544,6 +2545,7 @@
             activeFormat={fd.workflow.format}
             categoriesDefaultOpen={themeConfig?.sidebar?.categoriesDefaultOpen ?? false}
             listStyle={themeConfig?.display?.sidebarList}
+            onadd={(n) => workflowEditorRef?.addNodeFromPalette(n)}
           />
         </div>
       {/if}

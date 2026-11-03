@@ -6,7 +6,13 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { gotoEditor, getNodeCount, assertStatusBar, selectNode } from './helpers/editor-helpers';
+import {
+  gotoEditor,
+  getNodeCount,
+  assertNodeCount,
+  assertStatusBar,
+  selectNode
+} from './helpers/editor-helpers';
 
 test.describe('Node Operations', () => {
   test.beforeEach(({}, testInfo) => {
@@ -41,6 +47,49 @@ test.describe('Node Operations', () => {
     // Should now have 1 node
     const nodeCount = await getNodeCount(page);
     expect(nodeCount).toBe(1);
+  });
+
+  test('click on a palette item adds one node', async ({ page }) => {
+    await gotoEditor(page, 'empty');
+    expect(await getNodeCount(page)).toBe(0);
+
+    await page.locator('.flowdrop-details').first().locator('summary').click();
+    const nodeItem = page.locator('.flowdrop-node-item:visible').first();
+    await expect(nodeItem).toBeVisible({ timeout: 5000 });
+    await nodeItem.click();
+
+    await assertNodeCount(page, 1);
+  });
+
+  test('Enter on a focused palette item adds one node', async ({ page }) => {
+    await gotoEditor(page, 'empty');
+    expect(await getNodeCount(page)).toBe(0);
+
+    await page.locator('.flowdrop-details').first().locator('summary').click();
+    const nodeItem = page.locator('.flowdrop-node-item:visible').first();
+    await expect(nodeItem).toBeVisible({ timeout: 5000 });
+    await nodeItem.focus();
+    await page.keyboard.press('Enter');
+
+    await assertNodeCount(page, 1);
+  });
+
+  test('a palette click with a node selected adds the node to its right', async ({ page }) => {
+    await gotoEditor(page, 'simple');
+    const before = await getNodeCount(page);
+    await selectNode(page, 0);
+    const selectedBox = await page.locator('.svelte-flow__node.selected').first().boundingBox();
+    expect(selectedBox).not.toBeNull();
+
+    await page.locator('.flowdrop-details').first().locator('summary').click();
+    const nodeItem = page.locator('.flowdrop-node-item:visible').first();
+    await expect(nodeItem).toBeVisible({ timeout: 5000 });
+    await nodeItem.click();
+
+    await assertNodeCount(page, before + 1);
+    const added = await page.locator('.svelte-flow__node.selected').first().boundingBox();
+    expect(added).not.toBeNull();
+    expect(added!.x).toBeGreaterThan(selectedBox!.x);
   });
 
   test('select a node by clicking it', async ({ page }) => {
