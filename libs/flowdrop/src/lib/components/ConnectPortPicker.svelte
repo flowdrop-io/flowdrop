@@ -37,8 +37,14 @@
 
   const { portName, fromInput, groups, checker, x, y, onselect, onclose }: Props = $props();
 
-  /** Element that had focus when the picker opened; focus returns there when it closes. */
-  let previouslyFocused: HTMLElement | null = null;
+  /**
+   * Element that had focus when the picker opened; focus returns there when it closes.
+   * Read when the component is created: the list takes focus as it mounts, before the popover attachment runs.
+   */
+  let previouslyFocused: HTMLElement | null =
+    typeof document !== 'undefined' && document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
 
   function restoreFocus(): void {
     if (previouslyFocused && previouslyFocused.isConnected) {
@@ -53,8 +59,6 @@
 
   /** Opening, once: remember the focus, show the popover, wire the dismissals a manual popover does not do itself. */
   const open: Attachment<HTMLDivElement> = (el) => {
-    previouslyFocused =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     // Optional: jsdom has no Popover API.
     el.showPopover?.();
     // The list asks for focus when it mounts, but a manual popover is not

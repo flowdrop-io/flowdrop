@@ -315,7 +315,7 @@
       data-fd-port-type={pin.port.dataType}
       aria-label={pin.direction === 'input' ? graph.execIn : graph.execOut}
       style="top: {pin.y}px; transform: translateY(-50%);"
-      tabindex={-1}
+      tabindex={0}
       onmouseenter={(e: Event) => showPortTip(e, pin.port, pin.direction, false, true)}
       onmouseleave={hideTip}
       onfocus={(e: Event) => showPortTip(e, pin.port, pin.direction, false, true)}
@@ -361,7 +361,7 @@
         ? graph.connectInputPort({ name: port.name })
         : graph.connectOutputPort({ name: port.name })}
       style="top: {item.y}px; transform: translateY(-50%); --_c: {portColor};"
-      tabindex={-1}
+      tabindex={0}
       onmouseenter={(e: Event) => showPortTip(e, port, item.direction, open, false)}
       onmouseleave={hideTip}
       onfocus={(e: Event) => showPortTip(e, port, item.direction, open, false)}

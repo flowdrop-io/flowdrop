@@ -1813,6 +1813,23 @@
   function handleKeydown(event: KeyboardEvent): void {
     // Don't handle shortcuts if user is typing in an input, textarea, or contenteditable
     const target = event.target as HTMLElement;
+
+    // A focused port pin: Enter, Space, Menu or Shift+F10 opens its port menu.
+    const pin = target.closest?.('.svelte-flow__handle');
+    if (
+      pin instanceof HTMLElement &&
+      canvasEditable &&
+      (event.key === 'Enter' ||
+        event.key === ' ' ||
+        event.key === 'ContextMenu' ||
+        (event.key === 'F10' && event.shiftKey))
+    ) {
+      event.preventDefault();
+      const rect = pin.getBoundingClientRect();
+      showPortMenu(pin, rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return;
+    }
+
     const isInputElement =
       target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 

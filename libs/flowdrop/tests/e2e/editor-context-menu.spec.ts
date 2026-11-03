@@ -438,6 +438,23 @@ test.describe('Canvas context menu', () => {
     await assertStatusBar(page, 4, 3);
   });
 
+  test('a port pin takes Tab focus; Enter opens Connect to… and Escape returns to the pin', async ({
+    page
+  }) => {
+    await gotoEditor(page, 'complex');
+
+    const pin = page.locator(handle('node-calc-output-result'));
+    await pin.focus();
+    await expect(pin).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(menu(page).getByRole('menuitem', { name: 'Connect to…' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('connect-port-picker')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('connect-port-picker')).toHaveCount(0);
+    await expect(pin).toBeFocused();
+  });
+
   test('Escape closes the Connect to… picker without connecting', async ({ page }) => {
     await gotoEditor(page, 'complex');
 
