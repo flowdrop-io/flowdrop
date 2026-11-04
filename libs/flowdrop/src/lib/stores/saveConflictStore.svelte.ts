@@ -38,6 +38,10 @@ const TOAST_ID = 'flowdrop:save-conflict';
 export class SaveConflictStore {
   readonly #deps: SaveConflictDeps;
   #pending: SaveConflictReport | null = null;
+  /** Whether the editor shows toasts; set by `report`. */
+  #showToasts = true;
+  /** True while keepMine, loadTheirs or compare runs; a second call is ignored. */
+  #busy = false;
 
   /** The saved version, once loaded for Compare or Load saved version. */
   theirs = $state<Workflow | null>(null);
@@ -55,11 +59,14 @@ export class SaveConflictStore {
 
   /**
    * Remember the refused save and offer the three choices in a toast that
-   * stays until closed. With `showToast` false the choices stay available to
+   * stays until closed. The actions set `keepOpen`: a failed or cancelled choice
+   * leaves the toast up, and the store dismisses it itself once a choice has
+   * been carried out. With `showToast` false the choices stay available to
    * code (keepMine, loadTheirs, compare) but nothing is shown.
    */
   report(args: SaveConflictReport, showToast = true): void {
     this.#pending = args;
+    this.#showToasts = showToast;
     if (!showToast) return;
     const messages = this.#deps.messages();
     showError(
@@ -70,10 +77,19 @@ export class SaveConflictStore {
           {
             label: messages.compare.keepMine,
             primary: true,
+            keepOpen: true,
             onClick: () => void this.keepMine()
           },
-          { label: messages.compare.loadTheirs, onClick: () => void this.loadTheirs() },
-          { label: messages.saveConflict.compare, onClick: () => void this.compare() }
+          {
+            label: messages.compare.loadTheirs,
+            keepOpen: true,
+            onClick: () => void this.loadTheirs()
+          },
+          {
+            label: messages.saveConflict.compare,
+            keepOpen: true,
+            onClick: () => void this.compare()
+          }
         ]
       },
       { id: TOAST_ID }
@@ -87,39 +103,57 @@ export class SaveConflictStore {
    */
   async keepMine(): Promise<void> {
     const pending = this.#pending;
-    if (!pending) return;
-    let revision = pending.currentRevision;
-    if (revision === null) {
-      const loaded = this.theirs ?? (await this.#load());
-      revision = loaded?.revision ? String(loaded.revision) : null;
-      if (revision === null) {
-        showError(this.#deps.messages().saveConflict.noRevision);
-        return;
-      }
-    }
-    this.#clear();
-    this.#deps.workflow.acknowledgeServer({ revision });
+    if (!pending || this.#busy) return;
+    this.#busy = true;
     try {
-      await pending.retry();
-    } catch {
-      // The retried save has already shown its own error.
+      let revision = pending.currentRevision;
+      if (revision === null) {
+        const loaded = this.theirs ?? (await this.#load());
+        revision = loaded?.revision ? String(loaded.revision) : null;
+        if (revision === null) {
+          // The toast stays, so the other choices are still there.
+          if (this.#showToasts) showError(this.#deps.messages().saveConflict.noRevision);
+          return;
+        }
+      }
+      this.#clear();
+      this.#deps.workflow.acknowledgeServer({ revision });
+      try {
+        await pending.retry();
+      } catch {
+        // The retried save has already shown its own error.
+      }
+    } finally {
+      this.#busy = false;
     }
   }
 
   /** Replace the editor's workflow with the saved version. */
   async loadTheirs(): Promise<void> {
-    const loaded = this.theirs ?? (await this.#load());
-    if (!loaded) return;
-    this.#accept(loaded);
+    if (this.#busy) return;
+    this.#busy = true;
+    try {
+      const loaded = this.theirs ?? (await this.#load());
+      if (!loaded) return;
+      this.#accept(loaded);
+    } finally {
+      this.#busy = false;
+    }
   }
 
   /** Load the saved version and open the comparison. */
   async compare(): Promise<void> {
-    const mine = this.#deps.workflow.current;
-    const loaded = await this.#load();
-    if (!loaded || !mine) return;
-    this.theirs = loaded;
-    this.comparison = compareWorkflows(mine, loaded);
+    if (this.#busy) return;
+    this.#busy = true;
+    try {
+      const mine = this.#deps.workflow.current;
+      const loaded = await this.#load();
+      if (!loaded || !mine) return;
+      this.theirs = loaded;
+      this.comparison = compareWorkflows(mine, loaded);
+    } finally {
+      this.#busy = false;
+    }
   }
 
   /** Use the already loaded saved version (the dialog's "Load saved version"). */
@@ -127,7 +161,7 @@ export class SaveConflictStore {
     if (this.theirs) this.#accept(this.theirs);
   }
 
-  /** Close the dialog without choosing; the toast stays. */
+  /** Close the dialog without choosing; the toast stays (its actions are `keepOpen`). */
   closeComparison(): void {
     this.comparison = null;
     this.theirs = null;
@@ -152,7 +186,8 @@ export class SaveConflictStore {
     try {
       return await this.#deps.loadWorkflow(id);
     } catch (error) {
-      apiToasts.error('Load workflow', error instanceof Error ? error : String(error));
+      if (this.#showToasts)
+        apiToasts.error('Load workflow', error instanceof Error ? error : String(error));
       return null;
     }
   }

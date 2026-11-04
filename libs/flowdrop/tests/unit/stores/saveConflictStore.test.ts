@@ -8,7 +8,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SaveConflictStore } from '$lib/stores/saveConflictStore.svelte.js';
 import { defaultMessages } from '$lib/messages/defaults.js';
-import { showError } from '$lib/services/toastService.js';
+import { apiToasts, dismissToast, showError } from '$lib/services/toastService.js';
 import { createTestWorkflow } from '../../utils/index.js';
 
 vi.mock('$lib/services/toastService.js', () => ({
@@ -89,5 +89,78 @@ describe('SaveConflictStore keepMine', () => {
     expect(showError).not.toHaveBeenCalled();
     await store.keepMine();
     expect(acknowledgeServer).toHaveBeenCalledWith({ revision: '5' });
+  });
+});
+
+describe('SaveConflictStore toast', () => {
+  beforeEach(() => {
+    vi.mocked(showError).mockClear();
+    vi.mocked(dismissToast).mockClear();
+    vi.mocked(apiToasts.error).mockClear();
+  });
+
+  it('marks all three actions keepOpen', () => {
+    const { store, retry } = setup(async () => null);
+    store.report({ currentRevision: '1', retry });
+    const actions = vi.mocked(showError).mock.calls[0][0].actions ?? [];
+    expect(actions).toHaveLength(3);
+    expect(actions.every((a) => a.keepOpen === true)).toBe(true);
+  });
+
+  it('closing the comparison leaves the toast up', async () => {
+    const { store, retry } = setup(async () => ({
+      ...createTestWorkflow({ id: 'wf-1' }),
+      revision: 2
+    }));
+    store.report({ currentRevision: '1', retry });
+    await store.compare();
+    expect(store.comparing).toBe(true);
+    store.closeComparison();
+    expect(store.comparing).toBe(false);
+    expect(dismissToast).not.toHaveBeenCalled();
+    // The choices still work afterwards.
+    await store.keepMine();
+    expect(retry).toHaveBeenCalled();
+    expect(dismissToast).toHaveBeenCalled();
+  });
+
+  it('keepMine without a revision leaves the toast up', async () => {
+    const { store, retry } = setup(async () => createTestWorkflow({ id: 'wf-1' }));
+    store.report({ currentRevision: null, retry });
+    await store.keepMine();
+    expect(dismissToast).not.toHaveBeenCalled();
+  });
+
+  it('a double keepMine retries once', async () => {
+    let release!: (w: unknown) => void;
+    const { store, retry, loadWorkflow } = setup(
+      () => new Promise((resolve) => (release = resolve))
+    );
+    store.report({ currentRevision: null, retry });
+    const first = store.keepMine();
+    const second = store.keepMine();
+    release({ ...createTestWorkflow({ id: 'wf-1' }), revision: 9 });
+    await Promise.all([first, second]);
+    expect(loadWorkflow).toHaveBeenCalledOnce();
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it('showToast=false suppresses the load error and noRevision toasts', async () => {
+    const { store, retry } = setup(async () => {
+      throw new Error('down');
+    });
+    store.report({ currentRevision: null, retry }, false);
+    await store.keepMine();
+    expect(apiToasts.error).not.toHaveBeenCalled();
+    expect(showError).not.toHaveBeenCalled();
+  });
+
+  it('shows the load error toast when toasts are on', async () => {
+    const { store, retry } = setup(async () => {
+      throw new Error('down');
+    });
+    store.report({ currentRevision: null, retry });
+    await store.keepMine();
+    expect(apiToasts.error).toHaveBeenCalled();
   });
 });

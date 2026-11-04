@@ -25,8 +25,8 @@ function render(props: {
   text: string;
   body?: string;
   details?: readonly string[];
-  action?: { label: string; onClick: () => void };
-  actions?: { label: string; onClick: () => void; primary?: boolean }[];
+  action?: { label: string; onClick: () => void; keepOpen?: boolean };
+  actions?: { label: string; onClick: () => void; primary?: boolean; keepOpen?: boolean }[];
   kind?: 'success' | 'error' | 'warning' | 'info';
   dismissible?: boolean;
 }) {
@@ -114,6 +114,24 @@ describe('DismissibleToast', () => {
     buttons[0].click();
     expect(first).toHaveBeenCalledOnce();
     expect(dismiss).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaves the toast up after an action marked keepOpen', () => {
+    const keep = vi.fn();
+    const other = vi.fn();
+    const el = render({
+      text: 'x',
+      actions: [
+        { label: 'Compare', onClick: keep, keepOpen: true },
+        { label: 'Reload', onClick: other }
+      ]
+    });
+    const buttons = [...el.querySelectorAll<HTMLButtonElement>('.flowdrop-toast-actions button')];
+    buttons[0].click();
+    expect(keep).toHaveBeenCalledOnce();
+    expect(dismiss).not.toHaveBeenCalled();
+    buttons[1].click();
+    expect(dismiss).toHaveBeenCalledWith('error:x');
   });
 
   it('draws the action marked primary as the main one', () => {

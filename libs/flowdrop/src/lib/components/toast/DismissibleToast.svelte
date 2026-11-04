@@ -59,7 +59,7 @@
 
   function run(item: ToastAction): void {
     item.onClick();
-    toastApi.dismiss(toast.id);
+    if (!item.keepOpen) toastApi.dismiss(toast.id);
   }
 </script>
 

@@ -82,4 +82,20 @@ describe('compareWorkflows', () => {
     expect(r.name).toEqual({ mine: 'Flow', theirs: 'Other' });
     expect(r.description).toBeDefined();
   });
+
+  it('names a step by its instance title first', () => {
+    const mine = wf();
+    const theirs = wf({
+      nodes: [
+        {
+          id: 'a',
+          type: 't',
+          position: { x: 0, y: 0 },
+          data: { label: 'Summarise', config: { instanceTitle: 'My summary' } }
+        }
+      ]
+    });
+    const r = compareWorkflows(theirs, mine);
+    expect(r.nodesChanged.find((n) => n.id === 'a')?.label).toBe('My summary');
+  });
 });

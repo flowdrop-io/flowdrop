@@ -4,6 +4,7 @@
  * Pure. Steps (nodes) match by id, wires (edges) by their four endpoints.
  */
 
+import { nodeCanvasLabel } from './workflowInterface.js';
 import type { Workflow, WorkflowNode, WorkflowEdge } from '$lib/types/index.js';
 
 export interface WorkflowComparison {
@@ -34,7 +35,7 @@ function stable(value: unknown): string {
 }
 
 function nodeLabel(node: WorkflowNode): string {
-  return node.data?.label || node.id;
+  return nodeCanvasLabel(node);
 }
 
 function edgeKey(edge: WorkflowEdge): string {

@@ -16,6 +16,13 @@ export interface ToastAction {
   onClick: () => void;
   /** Draws this action as the main one when a toast offers several (default: the first). */
   primary?: boolean;
+  /**
+   * Leave the toast on screen after this action runs (default: it is
+   * dismissed). For a choice that can fail or be cancelled, where the person
+   * still needs the other options; the caller dismisses the toast itself once
+   * the matter is settled.
+   */
+  keepOpen?: boolean;
 }
 
 export interface ActiveToast {
