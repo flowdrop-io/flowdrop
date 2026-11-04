@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Run asks for a workflow's inputs also when it has no Playground settings.
 
-- Autosave never opens the impact question: a save that needs an answer is skipped and the workflow stays unsaved. A 401 or 403 from the impact route counts as no impact check, like 404 and 405.
+- Autosave never opens the impact question: a save that needs an answer is skipped, the workflow stays unsaved, and an info toast says once that autosave waits for Save (no further impact request until the workflow changes). A 401 or 403 from the impact route counts as no impact check, like 404 and 405.
 
 - Doctor's Undo only undoes the automatic fix, and its toast goes once the history moves on. A reload never applies an automatic fix again.
 
@@ -72,6 +72,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Connect to…" lists trigger pins under "Other types" when connecting a data port, and data ports when connecting a trigger pin.
 
 - Port and interface pickers show each node's own title, and add the node id when two nodes share a name.
+
+- An edit made while a save is in flight stays unsaved instead of being marked saved. `WorkflowStore.markAsSaved(version?)` takes the edit version the save was taken at, and `globalSaveWorkflow`'s `onMarkAsSaved` receives it.
+
+- A second save while one is in flight joins it instead of sending the old revision again (which the server refused as a conflict). A Save pressed during an autosave that is waiting for the impact answer asks the question itself.
+
+- The impact question comes before `onBeforeSave`, so a cancelled question never leaves a host with `onBeforeSave` and no outcome hook; Cmd+S or autosave while the question is open no longer moves the focus out of it.
+
+- The save conflict choices stay on screen after Compare is cancelled or loading the saved version fails (toast actions accept `keepOpen`); the compare dialog heads its shared list 'Different in the two versions' and names steps by their title.
+
+- The Run form and the compare dialog take the editor's skin; the Run form no longer closes when a text selection ends over the backdrop.
+
+- The Problems indicator announces 'Checking...' and 'Check unavailable' to screen readers; a new automatic fix replaces the previous Undo toast; an impact question closes when its editor is destroyed.
 
 ## [2.16.0] - 2026-10-24
 

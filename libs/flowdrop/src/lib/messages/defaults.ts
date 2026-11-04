@@ -1415,12 +1415,18 @@ export const defaultMessages = {
     hintClose: 'close'
   },
 
+  // Autosave could not save on its own.
+  autoSave: {
+    waiting:
+      'Autosave is waiting: this change affects what uses the workflow. Press Save to review it.'
+  },
+
   // The dialog that compares your workflow with the saved version.
   compare: {
     title: 'Your version and the saved version',
     onlyMine: 'Only in yours',
     onlyTheirs: 'Only in the saved version',
-    changedInBoth: 'Changed in both',
+    changedInBoth: 'Different in the two versions',
     none: 'No differences in the workflow itself',
     keepMine: 'Keep mine',
     loadTheirs: 'Load saved version',

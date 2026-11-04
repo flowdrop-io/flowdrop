@@ -6,7 +6,7 @@
 
 <script lang="ts">
   import type { ContextMenuOptions } from '../editor/contextMenu.js';
-  import { onMount, tick, untrack } from 'svelte';
+  import { onDestroy, onMount, tick, untrack } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
   import { on } from 'svelte/events';
   import MainLayout from '$lib/components/layouts/MainLayout.svelte';
@@ -476,6 +476,8 @@
   setMessages(() => mergedMessages);
   // Code outside the component tree (the impact dialog) reads the same tree from the instance.
   fd.setMessages(() => mergedMessages);
+  // Do not leave the instance holding a getter into this destroyed component.
+  onDestroy(() => fd.setMessages(() => defaultMessages));
 
   // Default navbar primary actions — used when no `navbarActions` prop is supplied.
   // Derived so the labels track locale changes.
@@ -1312,7 +1314,7 @@
       features,
       instance: fd,
       interactive: options.interactive,
-      onMarkAsSaved: () => fd.workflow.markAsSaved()
+      onMarkAsSaved: (version) => fd.workflow.markAsSaved(version)
     });
   }
 
@@ -2581,6 +2583,33 @@
       />
     </div>
   </MainLayout>
+
+  {#if runOffered}
+    <RunInputsDialog
+      open={runDialogOpen}
+      workflowName={fd.workflow.current?.name ?? ''}
+      entries={runInputEntries}
+      values={runDialogValues}
+      onChange={(values) => {
+        runDialogValues = values;
+        const id = fd.workflow.current?.id;
+        if (id) runInputValues.set(id, values);
+      }}
+      onRun={() => void submitRunInputs()}
+      runBusy={runStarting}
+      error={runDialogError}
+      onClose={() => (runDialogOpen = false)}
+    />
+  {/if}
+
+  {#if fd.saveConflict.comparison}
+    <WorkflowCompareDialog
+      comparison={fd.saveConflict.comparison}
+      onKeepMine={() => void fd.saveConflict.keepMine()}
+      onLoadTheirs={() => fd.saveConflict.acceptTheirs()}
+      onClose={() => fd.saveConflict.closeComparison()}
+    />
+  {/if}
 </div>
 
 <!--
@@ -2621,33 +2650,6 @@
   >
     {@render consoleChatTabs()}
   </SurfaceOverlay>
-{/if}
-
-{#if runOffered}
-  <RunInputsDialog
-    open={runDialogOpen}
-    workflowName={fd.workflow.current?.name ?? ''}
-    entries={runInputEntries}
-    values={runDialogValues}
-    onChange={(values) => {
-      runDialogValues = values;
-      const id = fd.workflow.current?.id;
-      if (id) runInputValues.set(id, values);
-    }}
-    onRun={() => void submitRunInputs()}
-    runBusy={runStarting}
-    error={runDialogError}
-    onClose={() => (runDialogOpen = false)}
-  />
-{/if}
-
-{#if fd.saveConflict.comparison}
-  <WorkflowCompareDialog
-    comparison={fd.saveConflict.comparison}
-    onKeepMine={() => void fd.saveConflict.keepMine()}
-    onLoadTheirs={() => fd.saveConflict.acceptTheirs()}
-    onClose={() => fd.saveConflict.closeComparison()}
-  />
 {/if}
 
 <style>

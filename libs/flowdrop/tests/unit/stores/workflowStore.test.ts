@@ -597,6 +597,24 @@ describe('WorkflowStore', () => {
       expect(fd.workflow.isDirty).toBe(false);
     });
 
+    it('markAsSaved(version) leaves later edits dirty', () => {
+      fd.workflow.initialize(createTestWorkflow());
+      const dirty = vi.fn();
+      fd.workflow.setOnDirtyStateChange(dirty);
+      fd.workflow.updateName('v1');
+      const snapshot = fd.workflow.editVersion;
+      fd.workflow.updateName('v2'); // edit while the save was in flight
+      dirty.mockClear();
+
+      fd.workflow.markAsSaved(snapshot);
+      expect(fd.workflow.isDirty).toBe(true);
+      expect(dirty).not.toHaveBeenCalled();
+
+      fd.workflow.markAsSaved(fd.workflow.editVersion);
+      expect(fd.workflow.isDirty).toBe(false);
+      expect(dirty).toHaveBeenCalledWith(false);
+    });
+
     it('should mark clean when markAsSaved captures current version', () => {
       const workflow = createTestWorkflow();
       fd.workflow.initialize(workflow);

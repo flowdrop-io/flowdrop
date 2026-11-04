@@ -43,7 +43,9 @@ const {
   mockImpactSupported,
   mockCheckImpact,
   mockConfirmImpact,
-  mockImpactPending
+  mockImpactPending,
+  versionState,
+  mockShowInfo
 } = vi.hoisted(() => ({
   mockGetWorkflowStore: vi.fn(),
   mockWorkflowActionsBatchUpdate: vi.fn(),
@@ -58,7 +60,9 @@ const {
   mockImpactSupported: vi.fn(() => false),
   mockCheckImpact: vi.fn(),
   mockConfirmImpact: vi.fn(),
-  mockImpactPending: vi.fn(() => false)
+  mockImpactPending: vi.fn(() => false),
+  versionState: { editVersion: 0 },
+  mockShowInfo: vi.fn()
 }));
 
 vi.mock('$lib/services/impactService.js', () => ({
@@ -75,9 +79,17 @@ vi.mock('$lib/services/impactGate.js', () => ({
 // container so the fake workflow store's `current` getter reads from
 // mockGetWorkflowStore, mutations route to the mock fns, and the API context
 // exposes a client whose save/update route to mockClientSave/mockClientUpdate.
-vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
-  getDefaultInstance: () => ({
+vi.mock('$lib/stores/instanceContainer.svelte.js', () => {
+  // One stable instance: per-instance state in globalSave is keyed on it.
+  const instance = {
+    skinScope: null,
     workflow: {
+      get editVersion() {
+        return versionState.editVersion;
+      },
+      get isDirty() {
+        return true;
+      },
       get current() {
         return mockGetWorkflowStore();
       },
@@ -85,7 +97,7 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
       markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args),
       acknowledgeServer: (...args: unknown[]) => mockStoreAcknowledgeServer(...args)
     },
-    messages: () => ({}),
+    messages: () => ({ autoSave: { waiting: 'Autosave is waiting' } }),
     doctor: { canOpen: false, requestOpen: () => false },
     saveConflict: { report: (...args: unknown[]) => mockReport(...args) },
     runs: {
@@ -105,10 +117,12 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => ({
         };
       }
     }
-  })
-}));
+  };
+  return { getDefaultInstance: () => instance };
+});
 
 vi.mock('$lib/services/toastService.js', () => ({
+  showInfo: (...args: unknown[]) => mockShowInfo(...args),
   apiToasts: { loading: vi.fn(() => 'toast-id'), error: vi.fn() },
   workflowToasts: { saved: vi.fn() },
   showError: vi.fn(),
@@ -156,6 +170,8 @@ describe('globalSaveWorkflow', () => {
     mockApiIsConfigured.mockReturnValue(true);
     mockImpactSupported.mockReturnValue(false);
     mockImpactPending.mockReturnValue(false);
+    // The instance is shared, and autosave refusals are remembered per version.
+    versionState.editVersion += 1000;
   });
 
   describe('impact check', () => {
@@ -830,6 +846,160 @@ describe('globalSaveWorkflow', () => {
       const nodes = exported.nodes as { data: object }[];
       expect(nodes.length).toBeGreaterThan(0);
       for (const node of nodes) expect('executionInfo' in node.data).toBe(false);
+    });
+  });
+});
+
+describe('globalSaveWorkflow: versions, joining, ordering, autosave', () => {
+  const report = {
+    confirm: true,
+    interfaceLevel: 'breaking',
+    interfaceBreaking: true,
+    items: [{ kind: 'profile', severity: 'breaks', label: 'Quick', message: 'off', url: null }]
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    versionState.editVersion = 5;
+    mockApiIsConfigured.mockReturnValue(true);
+    mockImpactSupported.mockReturnValue(false);
+    mockImpactPending.mockReturnValue(false);
+    mockGetWorkflowStore.mockReturnValue(storeWorkflow('wf-1'));
+    mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+  });
+
+  it('marks saved only up to the version the snapshot was taken at', async () => {
+    mockClientUpdate.mockImplementation(async () => {
+      versionState.editVersion = 6; // an edit lands during the PUT
+      return backendWorkflow('wf-1');
+    });
+    await globalSaveWorkflow({});
+    expect(mockStoreMarkAsSaved).toHaveBeenCalledWith(5);
+
+    const onMarkAsSaved = vi.fn();
+    versionState.editVersion = 8;
+    await globalSaveWorkflow({ onMarkAsSaved });
+    expect(onMarkAsSaved).toHaveBeenCalledWith(8);
+  });
+
+  it('counts the new-id sync as saved when nothing else changed first', async () => {
+    mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+    mockClientSave.mockResolvedValue(backendWorkflow('server-1'));
+    mockWorkflowActionsBatchUpdate.mockImplementation(() => {
+      versionState.editVersion += 1;
+    });
+    await globalSaveWorkflow({});
+    expect(mockStoreMarkAsSaved).toHaveBeenCalledWith(6);
+  });
+
+  it('does not count the sync when another edit came first', async () => {
+    mockGetWorkflowStore.mockReturnValue(storeWorkflow(''));
+    mockClientSave.mockImplementation(async () => {
+      versionState.editVersion = 6; // edit during the POST
+      return backendWorkflow('server-1');
+    });
+    mockWorkflowActionsBatchUpdate.mockImplementation(() => {
+      versionState.editVersion += 1;
+    });
+    await globalSaveWorkflow({});
+    expect(mockStoreMarkAsSaved).toHaveBeenCalledWith(5);
+  });
+
+  it('joins a save already in flight: one PUT, same result', async () => {
+    let release!: (w: Workflow) => void;
+    mockClientUpdate.mockReturnValue(new Promise<Workflow>((r) => (release = r)));
+    const first = globalSaveWorkflow({});
+    const second = globalSaveWorkflow({});
+    expect(second).toBe(first);
+    await vi.waitFor(() => expect(mockClientUpdate).toHaveBeenCalledTimes(1));
+    release(backendWorkflow('wf-1'));
+    expect(await first).toBe(true);
+    expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+
+    // Settled: a later save (the keepMine retry) runs again.
+    mockClientUpdate.mockResolvedValue(backendWorkflow('wf-1'));
+    expect(await globalSaveWorkflow({})).toBe(true);
+    expect(mockClientUpdate).toHaveBeenCalledTimes(2);
+  });
+
+  it('a save while the impact dialog is open neither blurs nor calls onBeforeSave', async () => {
+    mockImpactPending.mockReturnValue(true);
+    const onBeforeSave = vi.fn();
+    const button = document.createElement('button');
+    document.body.appendChild(button);
+    button.focus();
+    expect(await globalSaveWorkflow({ eventHandlers: { onBeforeSave } })).toBe(false);
+    expect(document.activeElement).toBe(button);
+    expect(onBeforeSave).not.toHaveBeenCalled();
+    button.remove();
+  });
+
+  it('does not call onBeforeSave when the person cancels the impact question', async () => {
+    mockImpactSupported.mockReturnValue(true);
+    mockCheckImpact.mockResolvedValue({ status: 'ok', report });
+    mockConfirmImpact.mockResolvedValue(false);
+    const onBeforeSave = vi.fn();
+    expect(await globalSaveWorkflow({ eventHandlers: { onBeforeSave } })).toBe(false);
+    expect(onBeforeSave).not.toHaveBeenCalled();
+  });
+
+  it('calls onBeforeSave after the impact question is answered yes', async () => {
+    mockImpactSupported.mockReturnValue(true);
+    mockCheckImpact.mockResolvedValue({ status: 'ok', report });
+    mockConfirmImpact.mockResolvedValue(true);
+    const onBeforeSave = vi.fn().mockResolvedValue(true);
+    expect(await globalSaveWorkflow({ eventHandlers: { onBeforeSave } })).toBe(true);
+    expect(onBeforeSave).toHaveBeenCalledTimes(1);
+  });
+
+  describe('autosave that needs an answer', () => {
+    beforeEach(() => {
+      mockImpactSupported.mockReturnValue(true);
+      mockCheckImpact.mockResolvedValue({ status: 'ok', report });
+    });
+
+    it('asks /impact once per version and shows one toast', async () => {
+      versionState.editVersion = 20;
+      expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+      expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+      expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+      expect(mockCheckImpact).toHaveBeenCalledTimes(1);
+      expect(mockShowInfo).toHaveBeenCalledTimes(1);
+      expect(mockShowInfo.mock.calls[0][0]).toBe('Autosave is waiting');
+      expect(mockConfirmImpact).not.toHaveBeenCalled();
+      expect(mockClientUpdate).not.toHaveBeenCalled();
+
+      // A new edit asks again, and notes it again.
+      versionState.editVersion = 21;
+      await globalSaveWorkflow({ interactive: false });
+      expect(mockCheckImpact).toHaveBeenCalledTimes(2);
+      expect(mockShowInfo).toHaveBeenCalledTimes(2);
+    });
+
+    it('a manual save that lands on a refused autosave asks the question itself', async () => {
+      versionState.editVersion = 40;
+      let answer!: (r: unknown) => void;
+      mockCheckImpact.mockReturnValueOnce(new Promise((r) => (answer = r)));
+      const autosave = globalSaveWorkflow({ interactive: false });
+      mockConfirmImpact.mockResolvedValue(true);
+      const manual = globalSaveWorkflow({});
+      answer({ status: 'ok', report });
+      expect(await autosave).toBe(false);
+      expect(await manual).toBe(true);
+      expect(mockConfirmImpact).toHaveBeenCalledTimes(1);
+      expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('a manual save at the same version still asks and dismisses the toast on success', async () => {
+      versionState.editVersion = 30;
+      await globalSaveWorkflow({ interactive: false });
+      mockConfirmImpact.mockResolvedValue(true);
+      expect(await globalSaveWorkflow({})).toBe(true);
+      expect(mockConfirmImpact).toHaveBeenCalledTimes(1);
+      const { dismissToast } = await import('$lib/services/toastService.js');
+      expect(dismissToast).toHaveBeenCalledWith(
+        expect.stringContaining('flowdrop:autosave-waiting')
+      );
     });
   });
 });

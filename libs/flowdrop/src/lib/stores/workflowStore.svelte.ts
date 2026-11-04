@@ -458,13 +458,16 @@ export class WorkflowStore {
   /**
    * Mark the current workflow state as saved.
    *
-   * Captures the current edit version so isDirty becomes false.
-   * Call this after a successful backend save.
+   * Captures the edit version so isDirty becomes false. Call this after a
+   * successful backend save. Pass the `editVersion` read when the saved
+   * snapshot was taken: an edit made while the save was in flight is then not
+   * marked saved. Without it, the current version is taken.
    */
-  markAsSaved(): void {
+  markAsSaved(version?: number): void {
     const wasDirty = this.#editVersion !== this.#savedVersion;
-    this.#savedVersion = this.#editVersion;
-    if (wasDirty) this.#emitDirty(false);
+    this.#savedVersion = Math.min(version ?? this.#editVersion, this.#editVersion);
+    const isDirty = this.#editVersion !== this.#savedVersion;
+    if (wasDirty && !isDirty) this.#emitDirty(false);
   }
 
   /**

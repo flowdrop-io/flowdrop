@@ -18,7 +18,7 @@ import { stripExecutionInfo } from '$lib/utils/nodeStatus.js';
 import { playgroundForSave } from '$lib/utils/playgroundChat.js';
 import { buildSaveBody } from '$lib/utils/workflowDraft.js';
 import type { ApiError } from '$lib/api/enhanced-client.js';
-import { apiToasts, workflowToasts, dismissToast } from './toastService.js';
+import { apiToasts, workflowToasts, dismissToast, showInfo } from './toastService.js';
 import { checkImpact, impactSupported } from './impactService.js';
 import { confirmImpact, impactPending } from './impactGate.js';
 import { scopeSelector } from '$lib/themes/scopedSkinCss.js';
@@ -42,8 +42,10 @@ export interface GlobalSaveOptions {
   /**
    * Callback invoked after a successful save to clear the dirty state.
    * Pass workflowStore's markAsSaved here when calling from App.svelte.
+   * Receives the `editVersion` read when the saved snapshot was taken: pass it
+   * on, so an edit made while the save was in flight stays dirty.
    */
-  onMarkAsSaved?: () => void;
+  onMarkAsSaved?: (version: number) => void;
   /**
    * Callback invoked after a successful save with the persisted workflow.
    * Receives the server-returned workflow (which may have a different ID than
@@ -135,38 +137,80 @@ async function flushPendingFormChanges(): Promise<void> {
 // Public API
 // ---------------------------------------------------------------------------
 
+/** The save running now, per instance: a second call joins it. */
+const inFlight = new WeakMap<
+  FlowDropInstance,
+  { promise: Promise<boolean>; interactive: boolean }
+>();
+
+/** The editVersion at which a non-interactive save was last refused for needing an answer. */
+const autosaveRefusedAt = new WeakMap<FlowDropInstance, number>();
+
+/** Stable toast id so the autosave notice never stacks. */
+function autosaveToastId(fd: FlowDropInstance): string {
+  return `flowdrop:autosave-waiting:${fd.skinScope ?? ''}`;
+}
+
 /**
  * Save the current workflow to the backend.
  *
  * This is the single source of truth for save logic. App.svelte delegates
  * to this function rather than reimplementing the steps.
  *
+ * Joining: a call made while a save of the same instance is in flight (double
+ * Cmd+S, autosave plus a manual save) returns that save's promise instead of
+ * starting another, which would send the superseded revision and be refused as
+ * a conflict. Edits made meanwhile stay dirty and go with the next save.
+ *
  * Steps performed:
+ *  0. Join a save already in flight, or drop the call while the impact question is open
  *  1. Flush pending form changes (blur active element + tick)
- *  2. Optionally call onBeforeSave — return false cancels the save
- *  2b. Ask the backend what the save changes for the workflow's users; ask the person when something breaks or changes
- *  3. Build the canonical Workflow object (preserving metadata, format, etc.)
- *  4. Persist via the instance's API client (fd.api.client)
- *  5. Update the store if the server assigned a new ID
- *  6. Call onMarkAsSaved / onAfterSave hooks
- *  7. Show toast notifications (respecting features.showToasts)
- */
-/**
+ *  2. Build the canonical Workflow object (preserving metadata, format, etc.)
+ *     and note the edit version it was taken at
+ *  3. Ask the backend what the save changes for the workflow's users; ask the
+ *     person when something breaks or changes (autosave does not ask: it waits
+ *     for a person, and says so once)
+ *  4. Optionally call onBeforeSave — return false cancels the save
+ *  5. Persist via the instance's API client (fd.api.client)
+ *  6. Update the store if the server assigned a new ID
+ *  7. Call onMarkAsSaved (up to the version noted in step 2) / onAfterSave hooks
+ *  8. Show toast notifications (respecting features.showToasts)
+ *
  * Resolves `true` when the workflow was written, `false` when nothing was
  * saved because there was no workflow, `onBeforeSave` cancelled or the person
  * cancelled the impact question. A failed
  * request throws. Callers that relay the outcome (the WebMCP `save` tool)
  * must not read a quiet return as a save.
  */
-export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promise<boolean> {
+export function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promise<boolean> {
+  const fd = options.instance ?? getDefaultInstance();
+  const running = inFlight.get(fd);
+  if (running) {
+    // A person's save that lands on an autosave waits for it, then asks itself
+    // when the autosave did not write (it never asks the impact question).
+    if (options.interactive === false || running.interactive) return running.promise;
+    return running.promise.then((saved) =>
+      saved && !fd.workflow.isDirty ? true : globalSaveWorkflow(options)
+    );
+  }
+  const promise = runSave(fd, options).finally(() => {
+    if (inFlight.get(fd)?.promise === promise) inFlight.delete(fd);
+  });
+  inFlight.set(fd, { promise, interactive: options.interactive !== false });
+  return promise;
+}
+
+async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promise<boolean> {
   const { eventHandlers, onMarkAsSaved, onSaved } = options;
   const features = { ...DEFAULT_FEATURES, ...options.features };
-
-  // Resolve the target instance; defaults to the page-default instance.
-  const fd = options.instance ?? getDefaultInstance();
   const readWorkflow = () => fd.workflow.current;
 
-  // Step 1 — Flush pending form changes (single location for this logic)
+  // A save while the impact question is open is dropped, not queued: the open
+  // dialog is the one answer. Checked before the flush, which would blur its
+  // focused button.
+  if (impactPending(fd)) return false;
+
+  // Flush pending form changes (single location for this logic)
   await flushPendingFormChanges();
 
   // Get current workflow from the instance's store after flush
@@ -179,13 +223,10 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     return false;
   }
 
-  // Step 2 — Allow the parent to cancel the save
-  if (eventHandlers?.onBeforeSave) {
-    const shouldContinue = await eventHandlers.onBeforeSave(currentWorkflow);
-    if (shouldContinue === false) {
-      return false;
-    }
-  }
+  // Autosave already declined this very version: nothing changed, so asking
+  // the backend again would only repeat the refusal.
+  const interactive = options.interactive !== false;
+  if (!interactive && autosaveRefusedAt.get(fd) === fd.workflow.editVersion) return false;
 
   let loadingToast: string | null = null;
 
@@ -193,7 +234,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     // Ensure API configuration is initialised (needed when called outside App.svelte)
     ensureApiConfiguration(fd);
 
-    // Step 3 — Build the canonical workflow object.
+    // Build the canonical workflow object.
     // Preserve all existing metadata fields (format, tags, etc.) so nothing is dropped.
     //
     // Determine new vs existing BEFORE the uuidv4() fallback: if the store already
@@ -203,13 +244,12 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
     const workflowId = currentWorkflow.id || uuidv4();
 
     const finalWorkflow: Workflow = buildSaveBody(currentWorkflow, workflowId);
+    // What this snapshot contains: only up to here may be marked saved.
+    let savedVersion = fd.workflow.editVersion;
 
-    // Step 3b — Ask what this save changes for what uses the workflow. A backend
+    // Ask what this save changes for what uses the workflow. A backend
     // without the route (or that does not know the workflow) leaves the save
     // unasked; a failed check is shown and the person decides.
-    // A second save while the question is open (Cmd+S again) is dropped, not
-    // queued: the open dialog is the one answer, and two saves must not follow it.
-    if (impactPending(fd)) return false;
     const apiConfig = fd.api.config;
     if (isExistingWorkflow && apiConfig && impactSupported(apiConfig)) {
       const result = await checkImpact(
@@ -225,7 +265,14 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       const needsAnswer =
         (result.status === 'ok' && result.report.confirm) || result.status === 'error';
       if (needsAnswer) {
-        if (options.interactive === false) return false;
+        if (!interactive) {
+          // Say so once per version, then stay quiet until something changes.
+          if (autosaveRefusedAt.get(fd) !== savedVersion && features.showToasts) {
+            showInfo(fd.messages().autoSave.waiting, { id: autosaveToastId(fd) });
+          }
+          autosaveRefusedAt.set(fd, savedVersion);
+          return false;
+        }
         const answer = await confirmImpact({
           report: result.status === 'ok' ? result.report : undefined,
           error: result.status === 'error' ? result.message : undefined,
@@ -237,17 +284,29 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       }
     }
 
+    // Allow the parent to cancel the save (after the impact question, so a
+    // cancelled question leaves no onBeforeSave without an outcome hook).
+    if (eventHandlers?.onBeforeSave) {
+      const shouldContinue = await eventHandlers.onBeforeSave(currentWorkflow);
+      if (shouldContinue === false) {
+        return false;
+      }
+    }
+
     loadingToast = features.showToasts ? apiToasts.loading('Saving workflow') : null;
 
-    // Step 4 — Persist via this instance's API client.
+    // Persist via this instance's API client.
     // id-presence (computed above) decides update vs create — never UUID-regex.
     const apiClient = fd.api.client;
     const savedWorkflow: Workflow = isExistingWorkflow
       ? await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow)
       : await apiClient.saveWorkflow(finalWorkflow);
 
-    // Step 5 — If the server assigned a new ID, sync the store
+    // If the server assigned a new ID, sync the store
     if (savedWorkflow.id && savedWorkflow.id !== finalWorkflow.id) {
+      // The sync bumps editVersion itself; it counts as saved, but only when
+      // nothing else changed the workflow before it.
+      const cleanBeforeSync = fd.workflow.editVersion === savedVersion;
       fd.workflow.batchUpdate({
         nodes: finalWorkflow.nodes,
         edges: finalWorkflow.edges,
@@ -257,19 +316,22 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
           ...savedWorkflow.metadata
         }
       });
+      if (cleanBeforeSync) savedVersion = fd.workflow.editVersion;
     }
 
-    // Step 5b — The save minted a new revision (and may have refreshed what the
+    // The save minted a new revision (and may have refreshed what the
     // user may do); take the server's word so the next save sends the current
     // stamp rather than the one this save just superseded.
     fd.workflow.acknowledgeServer({ revision: savedWorkflow.revision, can: savedWorkflow.can });
 
-    // Step 6a — Mark dirty state as clean
+    // Mark dirty state as clean
     if (onMarkAsSaved) {
-      onMarkAsSaved();
+      onMarkAsSaved(savedVersion);
     } else {
-      fd.workflow.markAsSaved();
+      fd.workflow.markAsSaved(savedVersion);
     }
+    autosaveRefusedAt.delete(fd);
+    dismissToast(autosaveToastId(fd));
 
     // A conversation open in the editor's Playground marks the new version.
     // Not awaited: it asks the server which version this save made.
@@ -286,7 +348,7 @@ export async function globalSaveWorkflow(options: GlobalSaveOptions = {}): Promi
       workflowToasts.saved(finalWorkflow.name);
     }
 
-    // Step 6b — After-save hook
+    // After-save hook
     if (eventHandlers?.onAfterSave) {
       await eventHandlers.onAfterSave(savedWorkflow);
     }
