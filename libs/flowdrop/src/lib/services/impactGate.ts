@@ -61,17 +61,20 @@ export function confirmImpact(options: ConfirmImpactOptions): Promise<boolean> {
     if (options.theme) element.setAttribute('data-theme', options.theme);
     document.body.appendChild(element);
 
+    let component: ReturnType<typeof mount> | null = null;
+    let forget: (() => void) | null = null;
     const finish = (save: boolean): void => {
       if (settled) return;
       settled = true;
+      forget?.();
       if (key) pending.delete(key);
-      void unmount(component);
+      if (component) void unmount(component);
       theme?.destroy();
       element.remove();
       resolve(save);
     };
 
-    const component = mount(ImpactConfirm, {
+    component = mount(ImpactConfirm, {
       target: element,
       context: messagesContext(options.messages ?? (() => defaultMessages)),
       props: {
@@ -80,5 +83,7 @@ export function confirmImpact(options: ConfirmImpactOptions): Promise<boolean> {
         onResolve: finish
       }
     });
+    // The instance going away takes the question with it.
+    forget = key?.onDestroy(() => finish(false)) ?? null;
   });
 }

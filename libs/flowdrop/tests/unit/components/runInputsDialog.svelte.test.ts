@@ -88,4 +88,22 @@ describe('RunInputsDialog', () => {
     target.querySelector<HTMLButtonElement>('[data-testid="run-inputs-cancel"]')!.click();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('closes on a backdrop click that also began on the backdrop', () => {
+    const { target, onClose } = render();
+    const dialog = target.querySelector('dialog')!;
+    dialog.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    dialog.click();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays open when a selection began in a field and ended over the backdrop', () => {
+    const { target, onClose } = render();
+    const dialog = target.querySelector('dialog')!;
+    target
+      .querySelector('input, textarea')!
+      .dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    dialog.click();
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

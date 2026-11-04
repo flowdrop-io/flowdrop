@@ -26,10 +26,20 @@ import { diagnoseDraft, doctorSupported, requestRemedy } from '../services/docto
 import { applyDoctorOperations } from '../utils/doctorOperations.js';
 import { buildSaveBody } from '../utils/workflowDraft.js';
 import { dismissToast, showInfo } from '../services/toastService.js';
-import type { Messages } from '../messages/index.js';
+import { defaultMessages, type Messages } from '../messages/index.js';
 
 /** How long the draft must sit still before it is diagnosed. */
 export const DOCTOR_IDLE_MS = 800;
+
+/** What a {@link DoctorStore} can be given beyond the workflow and the api. */
+export interface DoctorStoreOptions {
+  /** How long the draft must sit still before it is diagnosed. Default {@link DOCTOR_IDLE_MS}. */
+  idleMs?: number;
+  /** The undo history, for the Undo toast. Default: nothing to undo. */
+  history?: DoctorHistory;
+  /** The editor's messages. Default: the built-in English. */
+  messages?: () => Messages;
+}
 
 export type DoctorStatus = 'off' | 'idle' | 'checking' | 'ready' | 'error';
 
@@ -71,6 +81,8 @@ export class DoctorStore {
   readonly #history: DoctorHistory;
   readonly #messages: () => Messages;
   #undoToast = 0;
+  /** The id of the Undo toast now showing, if any. */
+  #undoToastId: string | null = null;
   #stopWatching: (() => void) | null = null;
   #autoApply = false;
   /** The problem ids of the first answer after a workflow loaded: those are never applied by themselves. */
@@ -78,18 +90,12 @@ export class DoctorStore {
   /** `<workflow id>:<code>` of every remedy applied by itself in this mount, so an undone one stays undone. */
   readonly #autoApplied = new Set<string>();
 
-  constructor(
-    workflow: WorkflowStore,
-    api: ApiContext,
-    idleMs: number = DOCTOR_IDLE_MS,
-    history: DoctorHistory = { undo: () => false, position: () => 0 },
-    messages: () => Messages
-  ) {
+  constructor(workflow: WorkflowStore, api: ApiContext, options: DoctorStoreOptions = {}) {
     this.#workflow = workflow;
     this.#api = api;
-    this.#idleMs = idleMs;
-    this.#history = history;
-    this.#messages = messages;
+    this.#idleMs = options.idleMs ?? DOCTOR_IDLE_MS;
+    this.#history = options.history ?? { undo: () => false, position: () => 0 };
+    this.#messages = options.messages ?? (() => defaultMessages);
   }
 
   /** Whether the editor may apply automatic remedies (the canvas is editable). */
@@ -267,7 +273,7 @@ export class DoctorStore {
    * remedy is the latest history step; once the history moves on the toast goes.
    */
   #offerUndo(label: string): void {
-    this.#stopWatching?.();
+    this.#clearUndo();
     const messages = this.#messages().doctor;
     const id = `flowdrop:doctor-auto-${++this.#undoToast}`;
     const at = this.#history.position();
@@ -300,6 +306,15 @@ export class DoctorStore {
     });
     if (done) queueMicrotask(() => stop?.());
     this.#stopWatching = stop;
+    this.#undoToastId = done ? null : id;
+  }
+
+  /** Stop watching the history and take down the Undo toast, if one is up. */
+  #clearUndo(): void {
+    this.#stopWatching?.();
+    this.#stopWatching = null;
+    if (this.#undoToastId) dismissToast(this.#undoToastId);
+    this.#undoToastId = null;
   }
 
   /**
@@ -384,5 +399,6 @@ export class DoctorStore {
     this.#timer = null;
     this.#token++;
     this.#focus = null;
+    this.#clearUndo();
   }
 }

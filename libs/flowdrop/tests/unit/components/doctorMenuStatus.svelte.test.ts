@@ -75,7 +75,23 @@ describe('DoctorMenu status', () => {
     state.status = 'error';
     flushSync();
     expect(target.querySelector('[role="status"]')).toBe(region);
+    expect(region?.textContent).toBe('Check unavailable');
+    state.status = 'ready';
+    flushSync();
     expect(region?.textContent).toBe('');
+  });
+
+  it('has the live region mounted before the indicator appears and says Checking... in it', () => {
+    const { target, state } = render('ready');
+    const region = target.querySelector('[role="status"]');
+    expect(region).not.toBeNull();
+    expect(region?.textContent).toBe('');
+    state.status = 'checking';
+    flushSync();
+    vi.advanceTimersByTime(600);
+    flushSync();
+    expect(target.querySelector('[role="status"]')).toBe(region);
+    expect(region?.textContent).toBe('Checking...');
   });
 
   it('shows Check unavailable with a Retry that diagnoses again', () => {

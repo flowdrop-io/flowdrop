@@ -149,6 +149,9 @@
       : msgs.notice[notice.kind];
   }
 
+  const liveText = $derived(
+    !hasProblems && showChecking ? msgs.checking : !hasProblems && failed ? msgs.unavailable : ''
+  );
   const notice = $derived(noticeText());
   const busy = $derived(fd.doctor.applyingId !== null);
 </script>
@@ -167,12 +170,11 @@
   </span>
 {/snippet}
 
+<!-- Always mounted, so a change of its text is announced even when the indicator appears with it. -->
+<span class="fd-doctor__live" role="status" aria-live="polite">{liveText}</span>
+
 {#if visible}
   <div class="fd-doctor" bind:this={rootEl} onkeydown={onKeydown} role="presentation">
-    <!-- Mounted while the indicator is visible, so a change of its text is announced. -->
-    <span class="fd-doctor__live" role="status" aria-live="polite"
-      >{showChecking ? msgs.checking : ''}</span
-    >
     {#if !hasProblems && showChecking}
       <span class="fd-doctor__status" data-testid="doctor-checking" aria-hidden="true">
         <Icon icon="mdi:loading" class="fd-doctor__spinner" />

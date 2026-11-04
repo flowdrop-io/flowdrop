@@ -66,8 +66,19 @@
     else if (!open && dialogRef.open) dialogRef.close();
   });
 
+  /** Whether the press that led to the click began on the backdrop (the dialog element itself). */
+  let pressedOnBackdrop = false;
+
+  function handlePointerDown(event: PointerEvent): void {
+    pressedOnBackdrop = event.target === dialogRef;
+  }
+
+  // A text selection that starts in a field and ends over the backdrop clicks
+  // the dialog too: close only when the press began there as well.
   function handleBackdropClick(event: MouseEvent): void {
-    if (event.target === dialogRef) onClose();
+    const started = pressedOnBackdrop;
+    pressedOnBackdrop = false;
+    if (started && event.target === dialogRef) onClose();
   }
 
   // The native close event also fires for Escape.
@@ -81,6 +92,7 @@
   bind:this={dialogRef}
   class="flowdrop-scope flowdrop-run-inputs"
   data-testid="run-inputs-dialog"
+  onpointerdown={handlePointerDown}
   onclick={handleBackdropClick}
   onclose={handleDialogClose}
   aria-labelledby={titleId}

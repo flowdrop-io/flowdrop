@@ -15,6 +15,7 @@ import {
 import { defaultEndpointConfig } from '$lib/config/endpoints.js';
 import { createTestWorkflow, createTestNode, createTestEdge } from '../../utils/index.js';
 import type { DoctorProblem } from '$lib/types/doctor.js';
+import { DoctorStore } from '$lib/stores/doctorStore.svelte.js';
 import { dismissToast, showInfo } from '$lib/services/toastService.js';
 
 vi.mock('$lib/services/toastService.js', async (importOriginal) => ({
@@ -400,6 +401,34 @@ describe('DoctorStore', () => {
         expect(dismissToast).toHaveBeenCalledWith(id);
       });
 
+      it('takes the first Undo toast down when a second remedy offers its own', async () => {
+        const unset = ['legacy', 'keep'];
+        let removed = 0;
+        let diagnosed = 0;
+        const answers = [[], [auto()], [auto({ id: 'p2', code: 'W_OTHER' })]];
+        fetchMock.mockImplementation((url: string) =>
+          url.endsWith('/remedy')
+            ? reply({ operations: [{ ...op, unset: [unset[removed++]] }] })
+            : reply({ problems: answers[Math.min(diagnosed++, answers.length - 1)] })
+        );
+        await load();
+        // The check after the first remedy finds the second problem, which is applied too.
+        await edit();
+        expect(removed).toBe(2);
+        const ids = vi.mocked(showInfo).mock.calls.map((c) => c[1]!.id);
+        expect(ids).toHaveLength(2);
+        const [first, second] = ids;
+        expect(second).not.toBe(first);
+        expect(dismissToast).toHaveBeenCalledWith(first);
+        expect(dismissToast).not.toHaveBeenCalledWith(second);
+      });
+
+      it('takes the Undo toast down when the store is disposed', async () => {
+        const { id } = await applied();
+        fd.doctor.dispose();
+        expect(dismissToast).toHaveBeenCalledWith(id);
+      });
+
       it('does nothing once the person edited after the remedy, and the toast goes', async () => {
         const { undo, id } = await applied();
         fd.workflow.actions.addNode(createTestNode({ id: 'mine' }));
@@ -417,6 +446,30 @@ describe('DoctorStore', () => {
       fd.doctor.setAutoApply(false);
       await edit();
       expect(remedyCalls()).toHaveLength(0);
+    });
+  });
+
+  describe('constructor options', () => {
+    it('defaults the idle delay, history and messages', async () => {
+      const store = new DoctorStore(fd.workflow, fd.api);
+      expect(store.problems).toEqual([]);
+      store.dispose();
+    });
+
+    it('takes the idle delay from the options', async () => {
+      fd.workflow.initialize(workflow());
+      fetchMock.mockImplementation(() => reply({ problems: [problem()] }));
+      const store = new DoctorStore(fd.workflow, fd.api, { idleMs: 5000 });
+      store.schedule();
+      await vi.advanceTimersByTimeAsync(0);
+      fetchMock.mockClear();
+      fd.workflow.actions.updateName('Later');
+      store.schedule();
+      await vi.advanceTimersByTimeAsync(4000);
+      expect(fetchMock).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(fetchMock).toHaveBeenCalled();
+      store.dispose();
     });
   });
 });

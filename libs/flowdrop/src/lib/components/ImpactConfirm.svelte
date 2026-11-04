@@ -4,15 +4,6 @@
   The dialog shown before a workflow save that breaks or changes what uses the
   workflow: lists the affected things by severity and asks the person at the
   keyboard. Mounted imperatively by `services/impactGate.ts` into the host's
-  container (default `document.body`), one at a time.
--->
-
-<!--
-  ImpactConfirm
-
-  The dialog shown before a workflow save that breaks or changes what uses the
-  workflow: lists the affected things by severity and asks the person at the
-  keyboard. Mounted imperatively by `services/impactGate.ts` into the host's
   container (default `document.body`), one at a time per editor.
 
   A native modal `<dialog>`: the page behind it is inert, Tab stays inside, and
