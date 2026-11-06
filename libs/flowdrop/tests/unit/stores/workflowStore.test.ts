@@ -272,6 +272,58 @@ describe('WorkflowStore', () => {
     });
   });
 
+  describe('metadata keys added by the host', () => {
+    // A host such as the FlowDrop Drupal module stores its own keys in the
+    // workflow metadata (for example `orchestrator_settings`) and expects the
+    // editor to send them back on save.
+    const hostKey = { type: 'flowdrop_runtime:synchronous' };
+
+    function withHostKey(): WorkflowNode {
+      const node = createTestNode({ id: 'n1' });
+      node.data.config = { title: 'a' };
+      const workflow = createTestWorkflow({ nodes: [node] });
+      (workflow.metadata as Record<string, unknown>).orchestrator_settings = hostKey;
+      fd.workflow.initialize(workflow);
+      return node;
+    }
+
+    function hostKeyNow(): unknown {
+      return (fd.workflow.current?.metadata as Record<string, unknown>).orchestrator_settings;
+    }
+
+    it('keeps them when a node config changes', () => {
+      const node = withHostKey();
+      fd.workflow.updateNodeConfig(
+        'n1',
+        { data: { ...node.data, config: { title: 'b' } } },
+        { fieldKey: 'title' }
+      );
+      expect(hostKeyNow()).toEqual(hostKey);
+    });
+
+    it('keeps them when the workflow is renamed', () => {
+      withHostKey();
+      fd.workflow.updateName('Renamed');
+      expect(hostKeyNow()).toEqual(hostKey);
+    });
+
+    it('keeps them when other metadata is updated', () => {
+      withHostKey();
+      fd.workflow.updateMetadata({ tags: ['x'] });
+      expect(hostKeyNow()).toEqual(hostKey);
+      expect(fd.workflow.current?.metadata.tags).toEqual(['x']);
+    });
+
+    it('still drops the legacy `version` key when it rebuilds the metadata', () => {
+      fd.workflow.initialize(createTestWorkflow());
+      // initialize() already heals `version` away, so put it back afterwards
+      // to reach buildMetadata() with it.
+      (fd.workflow.current?.metadata as Record<string, unknown>).version = '1.0';
+      fd.workflow.updateName('Renamed');
+      expect(Object.hasOwn(fd.workflow.current?.metadata ?? {}, 'version')).toBe(false);
+    });
+  });
+
   describe('live config edits (updateNodeConfig / finalizeNodeConfig — #38 root cause)', () => {
     /** A node whose config starts as `{ title: 'a', subtitle: 'x' }`. */
     function withConfigNode(): WorkflowNode {

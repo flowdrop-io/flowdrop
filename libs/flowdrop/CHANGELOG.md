@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Workflow metadata keeps the keys a host adds.** Store updates such as a node config edit or a rename
+  rebuilt the metadata from a fixed list of keys. The next save then dropped keys the editor does not know,
+  such as `orchestrator_settings` from the Drupal module. The legacy `version` key is still dropped. (#70)
+
 ## [2.19.0] - 2026-11-21
 
 > **Breaking (types only).** A config property's `type` is now optional and may be an array (`BaseProperty.type`, `ConfigProperty['type']`, `FieldSchema.type`). A host with its own field matchers or code that reads `schema.type` as one string may no longer compile or match (`FieldSchema.type` still accepts a host's own type word, such as `'color'`). See the first entry under Changed. Nothing changes at runtime for a schema whose `type` is one word.
