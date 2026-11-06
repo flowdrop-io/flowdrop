@@ -96,6 +96,7 @@ export function createStoreCommandContext(
     nodeTypes,
     typeMap: buildTypeMap(nodeTypes),
     dispatch,
+    isLocked: () => fd.workflow.locked,
     // Node layout reads the canvas's measurement; without a canvas it falls back to computed geometry.
     measureNode: (nodeId) => fd.measureNode?.(nodeId),
     visualType: (node: WorkflowNode) => {

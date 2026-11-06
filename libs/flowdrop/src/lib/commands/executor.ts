@@ -51,6 +51,7 @@ import type {
   WorkflowEdge,
   WorkflowInterfaceEntry
 } from '../types/index.js';
+import { isMutatingCommand, isViewCommand } from '../chat/commandClassifier.js';
 import { generateNodeId } from '../utils/nodeIds.js';
 import { extractConfigDefaults } from '../utils/nodeIds.js';
 import { computeAutoPosition } from './positioner.js';
@@ -1943,6 +1944,14 @@ function executeCanvasResetView(context: CommandContext): CommandResult {
  * Execute a parsed command against a workflow context.
  */
 export function executeCommand(command: Command, context: CommandContext): CommandResult {
+  // A locked editor refuses every change; say so instead of failing silently.
+  if (context.isLocked?.() && isMutatingCommand(command.type) && !isViewCommand(command.type)) {
+    return {
+      ok: false,
+      code: 'LOCKED',
+      error: 'The editor is locked (read-only), so this change was not made. Nothing was run.'
+    };
+  }
   switch (command.type) {
     case 'add_node':
       return executeAddNode(command, context);

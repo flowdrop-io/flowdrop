@@ -3412,3 +3412,40 @@ describe('executeCommand — get_config with the schema', () => {
     expect(data.schema).toEqual({ key: 'model', type: 'string', default: 'gpt-4' });
   });
 });
+
+describe('executeCommand — locked editor', () => {
+  const meta = createMockMetadata('llm_node', 'LLM');
+  const lockedContext = () => {
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow([createMockNode('n1', meta)]);
+    return {
+      dispatch,
+      context: { ...createMockContext(workflow, [meta], dispatch), isLocked: () => true }
+    };
+  };
+
+  it('refuses a change with the LOCKED code and touches nothing', () => {
+    const { dispatch, context } = lockedContext();
+    const result = executeCommand({ type: 'delete_node', nodeId: 'n1' } as Command, context);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('LOCKED');
+    expect(dispatch.removeNode).not.toHaveBeenCalled();
+  });
+
+  it('still runs reads and view commands', () => {
+    const { context } = lockedContext();
+    expect(executeCommand({ type: 'list_nodes' } as Command, context).ok).toBe(true);
+    const view = executeCommand({ type: 'select_node', nodeId: 'n1' } as Command, context);
+    if (!view.ok) expect(view.code).not.toBe('LOCKED');
+  });
+
+  it('behaves as before when the context says nothing about locking', () => {
+    const dispatch = createMockDispatch();
+    const workflow = createMockWorkflow([createMockNode('n1', meta)]);
+    const result = executeCommand(
+      { type: 'delete_node', nodeId: 'n1' } as Command,
+      createMockContext(workflow, [meta], dispatch)
+    );
+    expect(result.ok).toBe(true);
+  });
+});

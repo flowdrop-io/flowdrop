@@ -264,6 +264,8 @@ export type CommandErrorCode =
   | 'INVALID_CONNECTION'
   | 'CYCLE_DETECTED'
   | 'NO_WORKFLOW'
+  /** The editor is locked (read-only): a command that would change the workflow was refused. */
+  | 'LOCKED'
   /** `runCommand({ baseline: true })` on a workflow with unsaved changes: nothing was run. */
   | 'DIRTY'
   | 'PARSE_ERROR'
@@ -572,6 +574,12 @@ export interface CommandContext {
   typeMap: Map<string, NodeMetadata>;
   /** Dispatch interface for mutating workflow state */
   dispatch: CommandDispatch;
+  /**
+   * Whether the editor is locked (read-only). Optional: without it nothing is
+   * treated as locked. While true, commands that change the workflow are
+   * refused with `LOCKED`; reads and view commands still run.
+   */
+  isLocked?(): boolean;
   /**
    * How the canvas measured a node (size, handle centres). Optional: without it
    * node layout commands use computed geometry.
