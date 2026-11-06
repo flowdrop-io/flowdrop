@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Workflow metadata keeps the keys a host adds.** Store updates such as a node config edit or a rename
+  rebuilt the metadata from a fixed list of keys. The next save then dropped keys the editor does not know,
+  such as `orchestrator_settings` from the Drupal module. The legacy `version` key is still dropped.
+
 ## [2.17.0] - 2026-11-04
 
 ### Added
