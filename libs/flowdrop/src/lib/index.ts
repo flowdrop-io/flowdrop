@@ -69,6 +69,7 @@ export type { AuthProvider } from './types/auth.js';
 export type { FlowDropInstance } from './stores/instanceContainer.svelte.js';
 export type { FlowDropMountOptions, MountedFlowDropApp, RunCommandOptions } from './svelte-app.js';
 export type { FlowDropEventHandlers } from './types/events.js';
+export type { EditorLock, EditorLockReason, EditorLockAction } from './types/lock.js';
 export type {
   ImpactSeverity,
   ImpactItem,

@@ -20,6 +20,7 @@ import type {
 import type { EndpointConfig } from './config/endpoints.js';
 import type { AuthProvider } from './types/auth.js';
 import type { EditorPlaygroundConfig } from './types/playground.js';
+import type { EditorLock } from './types/lock.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from './types/events.js';
 import type { FlowDropTheme, FlowDropThemeName } from './types/theme.js';
 import type { WorkflowFormatAdapter } from './registry/workflowFormatRegistry.js';
@@ -130,6 +131,18 @@ export interface FlowDropMountOptions {
    * @default 'edit'
    */
   mode?: 'edit' | 'readonly' | 'locked';
+  /**
+   * Open the editor locked: the workflow is read-only, nothing can change it
+   * (canvas, config panels, console, shortcuts, undo), Save is disabled, and a
+   * banner above the canvas lists `reasons` (plain text, optional link) and
+   * offers `actions` (buttons). A button press calls `onLockAction(id)`; the
+   * host answers it, for example by removing the lock with `app.setLock(null)`.
+   * Selecting, panning, zooming and inspecting stay available. Unset, the
+   * editor is not locked and nothing changes.
+   */
+  lock?: EditorLock | null;
+  /** Called with the action's `id` when a person presses a button on the lock banner. */
+  onLockAction?: (id: string) => void;
   /**
    * Start in Test mode (`'test'`): the Playground docked beside the canvas,
    * the inspector always open. Edit | Test is a second axis beside `mode`: it
@@ -353,6 +366,12 @@ export interface MountedFlowDropApp {
    * `app.instance.history.undo()` on the mount that owns the editor.
    */
   instance: FlowDropInstance;
+
+  /**
+   * Lock the editor (see the `lock` mount option) or, with `null`, unlock it.
+   * The same as `app.instance.lock.set(...)`.
+   */
+  setLock: (lock: EditorLock | null) => void;
 
   /**
    * Destroy the app and clean up resources
@@ -760,6 +779,8 @@ export async function mountFlowDropApp(
     configPlacement,
     consolePlacement,
     mode,
+    lock,
+    onLockAction,
     editorMode,
     onEditorModeChange,
     playground,
@@ -895,6 +916,8 @@ export async function mountFlowDropApp(
       configPlacement,
       consolePlacement,
       mode,
+      lock,
+      onLockAction,
       editorMode,
       onEditorModeChange,
       playground,
@@ -972,7 +995,7 @@ export async function mountFlowDropApp(
     // Offer a draft left behind by an earlier session (a reload, a crash).
     // Not for a brand-new workflow: its key is shared by every tab.
     const offerKey = draftManager.getStorageKey();
-    if (mode !== 'readonly' && mode !== 'locked' && !offerKey.endsWith(':new')) {
+    if (mode !== 'readonly' && mode !== 'locked' && !lock && !offerKey.endsWith(':new')) {
       const manager = draftManager;
       cancelDraftOffer = whenWorkflowLoaded(fd, (loaded) => {
         const draft = loadDraft(offerKey, draftStorageAdapter);
@@ -1067,6 +1090,7 @@ export async function mountFlowDropApp(
   // Create the mounted app interface
   const mountedApp: MountedFlowDropApp = {
     instance: fd,
+    setLock: (next) => fd.lock.set(next),
     get webmcp() {
       return webmcpHandle;
     },
@@ -1308,6 +1332,7 @@ export async function mountWorkflowEditor(
   // Create the mounted app interface (simpler version)
   const mountedApp: MountedFlowDropApp = {
     instance: fd,
+    setLock: (next) => fd.lock.set(next),
 
     destroy: () => {
       destroyed = true;

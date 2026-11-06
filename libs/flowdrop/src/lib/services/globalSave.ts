@@ -244,6 +244,9 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
   // focused button.
   if (impactPending(fd)) return false;
 
+  // A locked workflow is not saved: it cannot have changed, and the host asked for no edits.
+  if (fd.workflow.locked) return false;
+
   // Flush pending form changes (single location for this logic)
   await flushPendingFormChanges();
 

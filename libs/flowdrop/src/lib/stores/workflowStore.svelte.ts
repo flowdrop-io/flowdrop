@@ -233,6 +233,13 @@ export class WorkflowStore {
    */
   #restoringFromHistory = false;
 
+  /**
+   * Whether the editor is locked: every edit is refused, so a locked canvas
+   * cannot change by any route (canvas, config panel, console, shortcuts,
+   * undo). Loading a workflow (`initialize`) still works.
+   */
+  #locked = $state(false);
+
   /** Whether history recording is enabled (disable for bulk operations). */
   #historyEnabled = true;
 
@@ -284,6 +291,18 @@ export class WorkflowStore {
   // -----------------------------------------------------------------------
   // Reactive getters
   // -----------------------------------------------------------------------
+
+  /** Whether edits are refused (the editor is locked). */
+  get locked(): boolean {
+    return this.#locked;
+  }
+
+  /** Refuse (or allow again) every edit. Ends an open config-edit session first. */
+  setLocked(locked: boolean): void {
+    if (locked === this.#locked) return;
+    if (locked) this.finalizeNodeConfig();
+    this.#locked = locked;
+  }
 
   /** The current workflow, or null when none is loaded. */
   get current(): Workflow | null {
@@ -616,6 +635,7 @@ export class WorkflowStore {
    * for every small change. History is pushed by specific actions or drag handlers.
    */
   updateWorkflow(workflow: Workflow): void {
+    if (this.#locked) return;
     this.#workflow = this.#withoutRepliesOnRemovedNodes(workflow);
     this.#bumpVersion();
     this.#notifyWorkflowChange('metadata');
@@ -627,6 +647,7 @@ export class WorkflowStore {
    * This bypasses history recording to prevent recursive loops.
    */
   restoreFromHistory(workflow: Workflow): void {
+    if (this.#locked) return;
     // Undo/redo supersedes any in-progress config edit; drop the session marker
     // (the history service already closed the transaction).
     this.#configEditKey = null;
@@ -640,7 +661,7 @@ export class WorkflowStore {
 
   /** Update nodes. */
   updateNodes(nodes: WorkflowNode[]): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
 
     // Check if nodes have actually changed to prevent infinite loops
     if (!hasWorkflowDataChanged(this.#workflow, nodes, this.#workflow.edges)) {
@@ -664,7 +685,7 @@ export class WorkflowStore {
 
   /** Update edges. */
   updateEdges(edges: WorkflowEdge[]): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
 
     // Check if edges have actually changed to prevent infinite loops
     if (!hasWorkflowDataChanged(this.#workflow, this.#workflow.nodes, edges)) {
@@ -688,7 +709,7 @@ export class WorkflowStore {
 
   /** Update workflow name. */
   updateName(name: string): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     this.#workflow = {
       ...this.#workflow,
       name,
@@ -700,7 +721,7 @@ export class WorkflowStore {
 
   /** Add a node. */
   addNode(node: WorkflowNode): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     this.#workflow = {
       ...this.#workflow,
       nodes: [...this.#workflow.nodes, node],
@@ -718,7 +739,7 @@ export class WorkflowStore {
    * A single undo will restore both the node and its edges.
    */
   removeNode(nodeId: string): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     this.#workflow = this.#withoutRepliesOnRemovedNodes({
       ...this.#workflow,
       nodes: this.#workflow.nodes.filter((node) => node.id !== nodeId),
@@ -734,7 +755,7 @@ export class WorkflowStore {
 
   /** Add an edge. */
   addEdge(edge: WorkflowEdge): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     // Never append an edge whose id already exists — SvelteFlow keys edges by id
     // and a duplicate throws `each_key_duplicate`, taking down the canvas. Guard
     // before touching history so a no-op stays a no-op.
@@ -751,7 +772,7 @@ export class WorkflowStore {
 
   /** Remove an edge. */
   removeEdge(edgeId: string): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     this.#workflow = {
       ...this.#workflow,
       edges: this.#workflow.edges.filter((edge) => edge.id !== edgeId),
@@ -768,7 +789,7 @@ export class WorkflowStore {
    * Used for config changes. Pushes to history for undo support.
    */
   updateNode(nodeId: string, updates: Partial<WorkflowNode>): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     this.#workflow = {
       ...this.#workflow,
       nodes: this.#workflow.nodes.map((node) =>
@@ -805,7 +826,7 @@ export class WorkflowStore {
     updates: Partial<WorkflowNode>,
     opts?: { fieldKey?: string }
   ): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
 
     const sessionKey = `${nodeId}::${opts?.fieldKey ?? ''}`;
     // Moving to a different field/node closes the previous field's session.
@@ -869,7 +890,7 @@ export class WorkflowStore {
 
   /** Update workflow metadata. */
   updateMetadata(metadata: Partial<Workflow['metadata']>): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     this.#workflow = {
       ...this.#workflow,
       metadata: buildMetadata(this.#workflow.metadata, metadata)
@@ -894,7 +915,7 @@ export class WorkflowStore {
     interface?: Workflow['interface'];
     playground?: Workflow['playground'];
   }): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     const next: Workflow = {
       ...this.#workflow,
       ...(updates.nodes && { nodes: updates.nodes }),
@@ -953,7 +974,7 @@ export class WorkflowStore {
     newNodeId?: string;
     portMappings?: PortMapping[];
   }): void {
-    if (!this.#workflow) return;
+    if (!this.#workflow || this.#locked) return;
     // Node swap is the one mutation that actively moves interface bindings —
     // every other mutation (including delete) leaves them untouched. The chat
     // binding's replies name node ports directly, so they move with it.

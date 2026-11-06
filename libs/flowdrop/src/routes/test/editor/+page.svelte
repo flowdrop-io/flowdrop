@@ -7,6 +7,10 @@
     - ?workflow=complex  -> branching workflow with 4 nodes, 3 edges
     - (default)          -> simple workflow with 2 nodes, 1 edge
     - ?mode=readonly|locked -> editor mode (default 'edit')
+    - ?lock=1            -> open the editor locked (the `lock` prop): two reasons (one with a
+                           link) and the actions "Edit" (main) and "Not now". The test host
+                           answers actions like a real one: every press is pushed on
+                           window.__lockActions, and "edit" removes the lock
     - ?editorMode=test   -> start in Test mode (the Edit | Test axis, not `mode`)
     - ?workflow=inspector -> three nodes with the real fddo inspector shapes: a Chat
                            Output-like node (loose controls, then General / Execution /
@@ -76,6 +80,7 @@
   import App from '$lib/components/App.svelte';
   import { initializeSettings } from '$lib/stores/settingsStore.svelte.js';
   import type { Workflow, NodeMetadata } from '$lib/types/index.js';
+  import type { EditorLock } from '$lib/types/lock.js';
   import type {
     ColorSchemeOption,
     SettingsCategory,
@@ -122,6 +127,31 @@
       ? $page.url.searchParams.get('mode')
       : 'edit') as 'edit' | 'readonly' | 'locked'
   );
+
+  // --- Query param for the editor lock (?lock=1) ---
+  let lock = $state<EditorLock | null | undefined>(
+    browser && new URLSearchParams(window.location.search).get('lock')
+      ? {
+          reasons: [
+            {
+              kind: 'in_use',
+              message: 'Two forms use this workflow.',
+              url: '/admin/flowdrop/workflows/test/usage'
+            },
+            { kind: 'managed', message: 'A module provides this workflow.' }
+          ],
+          actions: [
+            { id: 'edit', label: 'Edit', primary: true },
+            { id: 'later', label: 'Not now' }
+          ]
+        }
+      : undefined
+  );
+  function onLockAction(id: string): void {
+    const w = window as unknown as { __lockActions?: string[] };
+    (w.__lockActions ??= []).push(id);
+    if (id === 'edit') lock = null;
+  }
 
   // --- Query param for the Edit | Test axis (?editorMode=test) ---
   let editorTestMode = $derived(
@@ -1651,6 +1681,8 @@
     theme={themeName}
     mode={editorMode}
     editorMode={editorTestMode}
+    {lock}
+    {onLockAction}
     {endpointConfig}
     {features}
     {contextMenu}

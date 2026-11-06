@@ -1423,6 +1423,11 @@ export const defaultMessages = {
     dismiss: 'Dismiss'
   },
 
+  lock: {
+    title: 'This workflow is read-only',
+    learnMore: 'Learn more'
+  },
+
   field: {
     required: 'required',
     examples: 'Examples'

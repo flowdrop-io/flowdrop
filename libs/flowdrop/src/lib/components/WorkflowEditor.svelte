@@ -22,6 +22,7 @@
   } from '../stores/settingsStore.svelte.js';
   import type { WorkflowNode as WorkflowNodeType, Workflow, WorkflowEdge } from '../types/index.js';
   import CanvasBanner from './CanvasBanner.svelte';
+  import LockBanner from './LockBanner.svelte';
   import CanvasToolbar from './CanvasToolbar.svelte';
   import CanvasController from './CanvasController.svelte';
   import StraightGuides from './StraightGuides.svelte';
@@ -1891,6 +1892,9 @@
       return;
     }
 
+    // A locked or read-only canvas has nothing to undo or redo.
+    if (!canvasEditable) return;
+
     // Undo: Ctrl+Z (without Shift)
     if (event.key === 'z' && !event.shiftKey) {
       event.preventDefault();
@@ -1912,6 +1916,7 @@
 <div class="flowdrop-scope flowdrop-workflow-editor">
   <!-- Main Editor Area -->
   <div class="flowdrop-workflow-editor__main">
+    <LockBanner />
     <!-- Flow Canvas.
            Capture-phase mousedown so dragging from a port never turns into a
            WebKit text-selection drag — see suppressPortDragSelection. -->
@@ -1969,7 +1974,8 @@
             fitViewOptions={{ padding: CANVAS_FIT_PADDING }}
             nodesDraggable={canvasEditable}
             nodesConnectable={canvasEditable}
-            elementsSelectable={canvasEditable}
+            elementsSelectable={canvasEditable || fd.lock.isLocked}
+            deleteKey={canvasEditable ? undefined : null}
           >
             <!-- Renderless helpers. They live inside <SvelteFlow>, not beside it
                    under a provider: @xyflow/svelte >= 1.6.6 replaces the provider's

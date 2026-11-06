@@ -32,6 +32,7 @@
     withoutInterfaceTurns
   } from '$lib/utils/playgroundChat.js';
   import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
+  import LockFence from '$lib/components/LockFence.svelte';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
   import ConsoleStrip from '$lib/components/console/ConsoleStrip.svelte';
   import {
@@ -111,6 +112,7 @@
   import type { SettingsCategory, SurfacePlacement } from '$lib/types/settings.js';
   import type { EditorPlaygroundConfig } from '../types/playground.js';
   import type { EditorMode } from '../stores/editorModeStore.svelte.js';
+  import type { EditorLock } from '../types/lock.js';
   import { defaultMessages, mergeMessages, setMessages, m } from '$lib/messages/index.js';
   import type { MessagesOverride } from '$lib/messages/index.js';
 
@@ -181,6 +183,23 @@
      * @default 'edit'
      */
     editorMode?: EditorMode;
+    /**
+     * Lock the editor: the workflow becomes read-only and a banner above the
+     * canvas lists the `reasons` and offers the `actions` (buttons the host
+     * answers through `onLockAction`). While locked, nothing can change the
+     * workflow (canvas, config panels, console, shortcuts, undo) and Save is
+     * disabled; selecting, panning, zooming and inspecting still work. `null`
+     * removes the lock. Seeds `instance.lock`, which holds it afterwards
+     * (`instance.lock.set(...)`); a later change of this prop sets it again.
+     * Unset, nothing changes.
+     */
+    lock?: EditorLock | null;
+    /**
+     * Called with the action's `id` when a person presses a button on the lock
+     * banner. The host decides what it does; an "Edit" action is answered by
+     * removing the lock.
+     */
+    onLockAction?: (id: string) => void;
     /**
      * Called when the Edit | Test mode changes after mount (the canvas toolbar switch,
      * the T shortcut, the run pill's "Open", `instance.editorMode.set`). Not called for the
@@ -294,6 +313,8 @@
     configPlacement: configPlacementProp,
     consolePlacement: consolePlacementProp,
     mode = 'edit',
+    lock: lockProp,
+    onLockAction,
     editorMode: editorModeProp,
     onEditorModeChange,
     pipelineId,
@@ -356,10 +377,22 @@
   // read when it fires, so a changed callback prop is the one used.
   onMount(() => fd.editorMode.onChange((mode) => onEditorModeChange?.(mode)));
 
+  // The lock: the `lock` prop seeds the instance's store (the holder from then
+  // on); a later change of the prop sets it again. `undefined` means "no opinion".
+  // svelte-ignore state_referenced_locally
+  if (lockProp !== undefined) fd.lock.set(lockProp);
+  $effect.pre(() => {
+    const requested = lockProp;
+    if (requested !== undefined) untrack(() => fd.lock.set(requested));
+  });
+  onMount(() => fd.lock.onAction((id) => onLockAction?.(id)));
+
   // `mode` is the public API; internally the canvas only cares whether editing
   // is disabled. 'readonly' and 'locked' both disable the same interactions
-  // (see the `mode` prop JSDoc for the full matrix).
-  const canvasEditable = $derived(mode === 'edit');
+  // (see the `mode` prop JSDoc for the full matrix). A lock on the editor does
+  // the same as `mode="locked"` while it lasts.
+  const effectiveMode = $derived(fd.lock.isLocked ? 'locked' : mode);
+  const canvasEditable = $derived(effectiveMode === 'edit');
 
   /**
    * Test mode can be entered: it is offered, the canvas is editable, this is
@@ -490,6 +523,7 @@
       href: '#save',
       icon: 'mdi:file-download-outline',
       variant: 'primary' as const,
+      disabled: fd.lock.isLocked,
       onclick: (e: Event) => {
         e.preventDefault();
         saveWorkflow();
@@ -510,6 +544,7 @@
       href: '#import',
       icon: 'mdi:upload',
       variant: 'outline' as const,
+      disabled: fd.lock.isLocked,
       onclick: (e: Event) => {
         e.preventDefault();
         fileInputRef?.click();
@@ -1309,6 +1344,7 @@
   );
 
   async function saveWorkflow(options: { interactive?: boolean } = {}): Promise<boolean> {
+    if (fd.lock.isLocked) return false;
     // Commit any in-flight config edit so the save and its history are
     // consistent (the value itself is already live in the store).
     flushNodeConfigEdit();
@@ -1337,6 +1373,7 @@
    * Reads the selected file, validates its structure, and loads it into the workflow store.
    */
   function importWorkflow(file: File): void {
+    if (fd.lock.isLocked) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -1917,34 +1954,36 @@
 -->
 
 {#snippet nodeConfigFormEl(node: WorkflowNode)}
-  <ConfigForm
-    {authProvider}
-    {node}
-    commitMode="live"
-    workflowId={fd.workflow.current?.id}
-    workflowNodes={fd.workflow.current?.nodes}
-    workflowEdges={fd.workflow.current?.edges}
-    onExternalEdit={externalEditForConfig}
-    onChange={(updatedConfig, meta) => {
-      if (!node.id) return;
-      const updatedData = { ...node.data, config: updatedConfig };
+  <LockFence>
+    <ConfigForm
+      {authProvider}
+      {node}
+      commitMode="live"
+      workflowId={fd.workflow.current?.id}
+      workflowNodes={fd.workflow.current?.nodes}
+      workflowEdges={fd.workflow.current?.edges}
+      onExternalEdit={externalEditForConfig}
+      onChange={(updatedConfig, meta) => {
+        if (!node.id) return;
+        const updatedData = { ...node.data, config: updatedConfig };
 
-      // Blur / end-of-session: commit the coalesced undo step + fire the
-      // change event once, and refresh edges once.
-      if (meta?.commit) {
+        // Blur / end-of-session: commit the coalesced undo step + fire the
+        // change event once, and refresh edges once.
+        if (meta?.commit) {
+          pendingConfigNodeId = node.id;
+          flushNodeConfigEdit();
+          return;
+        }
+
+        // Live edit (every change): update the store cheaply — no history clone,
+        // no external event; both are deferred to the session flush above. Also
+        // reflect the change on the canvas immediately (e.g. nodeType changes).
         pendingConfigNodeId = node.id;
-        flushNodeConfigEdit();
-        return;
-      }
-
-      // Live edit (every change): update the store cheaply — no history clone,
-      // no external event; both are deferred to the session flush above. Also
-      // reflect the change on the canvas immediately (e.g. nodeType changes).
-      pendingConfigNodeId = node.id;
-      fd.workflow.updateNodeConfig(node.id, { data: updatedData }, { fieldKey: meta?.fieldKey });
-      workflowEditorRef?.updateNodeData(node.id, updatedData);
-    }}
-  />
+        fd.workflow.updateNodeConfig(node.id, { data: updatedData }, { fieldKey: meta?.fieldKey });
+        workflowEditorRef?.updateNodeData(node.id, updatedData);
+      }}
+    />
+  </LockFence>
 {/snippet}
 
 <!-- Last run of a failed node: take the run to the Assistant -->
@@ -1982,49 +2021,51 @@
 {/snippet}
 
 {#snippet workflowConfigFormEl()}
-  <ConfigForm
-    {authProvider}
-    schema={workflowConfigSchema}
-    values={workflowConfigValues}
-    commitMode="blur"
-    onChange={(config) => {
-      // Sync workflow settings changes immediately on field blur
-      const wf = fd.workflow.current;
-      if (wf) {
-        const currentFormat = wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
-        // Fall back to the CURRENT format, not the default: when the field is
-        // hidden (host supports one format) config.format is absent, and
-        // applying name/description must not silently rewrite the format.
-        const newFormat = (config.format as string) || currentFormat;
+  <LockFence>
+    <ConfigForm
+      {authProvider}
+      schema={workflowConfigSchema}
+      values={workflowConfigValues}
+      commitMode="blur"
+      onChange={(config) => {
+        // Sync workflow settings changes immediately on field blur
+        const wf = fd.workflow.current;
+        if (wf) {
+          const currentFormat = wf.metadata?.format || DEFAULT_WORKFLOW_FORMAT;
+          // Fall back to the CURRENT format, not the default: when the field is
+          // hidden (host supports one format) config.format is absent, and
+          // applying name/description must not silently rewrite the format.
+          const newFormat = (config.format as string) || currentFormat;
 
-        // Warn about incompatible nodes when format changes
-        if (newFormat !== currentFormat) {
-          const incompatibleNodes = wf.nodes?.filter((node) => {
-            const formats = node.data?.metadata?.formats;
-            return formats && formats.length > 0 && !formats.includes(newFormat);
-          });
-          if (incompatibleNodes && incompatibleNodes.length > 0) {
-            logger.warn(
-              `Format changed to '${newFormat}'. ${incompatibleNodes.length} node(s) are not compatible with this format and may not export correctly:`,
-              incompatibleNodes.map((n) => n.data?.label || n.type)
-            );
+          // Warn about incompatible nodes when format changes
+          if (newFormat !== currentFormat) {
+            const incompatibleNodes = wf.nodes?.filter((node) => {
+              const formats = node.data?.metadata?.formats;
+              return formats && formats.length > 0 && !formats.includes(newFormat);
+            });
+            if (incompatibleNodes && incompatibleNodes.length > 0) {
+              logger.warn(
+                `Format changed to '${newFormat}'. ${incompatibleNodes.length} node(s) are not compatible with this format and may not export correctly:`,
+                incompatibleNodes.map((n) => n.data?.label || n.type)
+              );
+            }
           }
-        }
 
-        // Extract built-in fields; everything else belongs in workflow.config
-        const { name, description, format: _format, ...customConfig } = config;
-        fd.workflow.batchUpdate({
-          name: name as string,
-          description: description as string | undefined,
-          metadata: {
-            ...wf.metadata,
-            format: newFormat
-          },
-          ...(workflowSettingsSchema && { config: customConfig as Record<string, unknown> })
-        });
-      }
-    }}
-  />
+          // Extract built-in fields; everything else belongs in workflow.config
+          const { name, description, format: _format, ...customConfig } = config;
+          fd.workflow.batchUpdate({
+            name: name as string,
+            description: description as string | undefined,
+            metadata: {
+              ...wf.metadata,
+              format: newFormat
+            },
+            ...(workflowSettingsSchema && { config: customConfig as Record<string, unknown> })
+          });
+        }
+      }}
+    />
+  </LockFence>
 {/snippet}
 
 <!--
@@ -2034,17 +2075,19 @@
   mutation.
 -->
 {#snippet workflowInterfaceEl()}
-  {#if fd.workflow.current}
-    <WorkflowInterfaceEditor
-      workflow={fd.workflow.current}
-      dataTypes={fd.portCompatibility.getEnabledDataTypes()}
-      checker={fd.portCompatibility}
-      onChange={(next, edit) => fd.workflow.editInterface(next, edit)}
-      onOpenPlaygroundSettings={fd.workflow.current.playground !== undefined
-        ? () => (workflowSettingsTab = 'playground')
-        : undefined}
-    />
-  {/if}
+  <LockFence>
+    {#if fd.workflow.current}
+      <WorkflowInterfaceEditor
+        workflow={fd.workflow.current}
+        dataTypes={fd.portCompatibility.getEnabledDataTypes()}
+        checker={fd.portCompatibility}
+        onChange={(next, edit) => fd.workflow.editInterface(next, edit)}
+        onOpenPlaygroundSettings={fd.workflow.current.playground !== undefined
+          ? () => (workflowSettingsTab = 'playground')
+          : undefined}
+      />
+    {/if}
+  </LockFence>
 {/snippet}
 
 <!--
@@ -2054,20 +2097,22 @@
   mark the workflow dirty and are saved with it.
 -->
 {#snippet workflowPlaygroundEl()}
-  {#if fd.workflow.current}
-    <WorkflowPlaygroundSettings
-      workflow={fd.workflow.current}
-      onChange={(next) => fd.workflow.batchUpdate({ playground: next })}
-      onMoveTurns={(chat) => {
-        const current = fd.workflow.current;
-        if (!current) return;
-        fd.workflow.batchUpdate({
-          playground: withPlaygroundChat(current.playground, chat),
-          interface: withoutInterfaceTurns(current.interface)
-        });
-      }}
-    />
-  {/if}
+  <LockFence>
+    {#if fd.workflow.current}
+      <WorkflowPlaygroundSettings
+        workflow={fd.workflow.current}
+        onChange={(next) => fd.workflow.batchUpdate({ playground: next })}
+        onMoveTurns={(chat) => {
+          const current = fd.workflow.current;
+          if (!current) return;
+          fd.workflow.batchUpdate({
+            playground: withPlaygroundChat(current.playground, chat),
+            interface: withoutInterfaceTurns(current.interface)
+          });
+        }}
+      />
+    {/if}
+  </LockFence>
 {/snippet}
 
 <!--
@@ -2568,7 +2613,7 @@
           ? swapFromCanvas
           : undefined}
         onNodeClick={testMode ? showNodeSheet : undefined}
-        {mode}
+        mode={effectiveMode}
         {pipelineId}
         {refreshTrigger}
         builtinEditors={features.builtinEditors}

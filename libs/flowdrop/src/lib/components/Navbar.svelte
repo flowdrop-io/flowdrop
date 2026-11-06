@@ -182,13 +182,23 @@
         return;
       }
       const save = taskActions[0];
-      if (!save?.onclick) return;
+      if (!save?.onclick || save.disabled) return;
       event.preventDefault();
       save.onclick(event);
     }
     window.addEventListener('keydown', onKeydown);
     return () => window.removeEventListener('keydown', onKeydown);
   });
+
+  /** Run an action's handler, unless it is disabled (then the link goes nowhere). */
+  function run(action: NavbarAction, event: Event, after?: () => void): void {
+    if (action.disabled) {
+      event.preventDefault();
+      return;
+    }
+    action.onclick?.(event);
+    after?.();
+  }
 
   // Cmd/Ctrl+, opens the full settings dialog, as in most desktop apps.
   $effect(() => {
@@ -216,10 +226,8 @@
     href={action.href}
     role="menuitem"
     class="flowdrop-navbar__dropdown-item"
-    onclick={(e) => {
-      action.onclick?.(e);
-      close();
-    }}
+    aria-disabled={action.disabled ? 'true' : undefined}
+    onclick={(e) => run(action, e, close)}
     target={action.external ? '_blank' : undefined}
     rel={action.external ? 'noopener noreferrer' : undefined}
   >
@@ -364,7 +372,8 @@
             class="flowdrop-navbar__action flowdrop-navbar__action--{action.variant || 'primary'}"
             data-dirty={unsaved ? 'true' : undefined}
             title={unsaved ? `${action.label}, ${nav.unsavedChanges}` : undefined}
-            onclick={action.onclick}
+            aria-disabled={action.disabled ? 'true' : undefined}
+            onclick={(e) => run(action, e)}
             target={action.external ? '_blank' : undefined}
             rel={action.external ? 'noopener noreferrer' : undefined}
           >
@@ -392,7 +401,8 @@
               'primary'}"
             data-dirty={dirty ? 'true' : undefined}
             title={dirty ? `${primaryAction.label}, ${nav.unsavedChanges}` : undefined}
-            onclick={primaryAction.onclick}
+            aria-disabled={primaryAction.disabled ? 'true' : undefined}
+            onclick={(e) => run(primaryAction, e)}
             target={primaryAction.external ? '_blank' : undefined}
             rel={primaryAction.external ? 'noopener noreferrer' : undefined}
           >
@@ -1024,6 +1034,11 @@
 
   :global(.flowdrop-navbar__workflow-btn[aria-pressed='true']) {
     background-color: var(--fd-muted);
+  }
+
+  a[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .flowdrop-navbar__action {

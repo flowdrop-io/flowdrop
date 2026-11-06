@@ -11,6 +11,12 @@ export interface NavbarAction {
   icon?: string;
   variant?: 'primary' | 'secondary' | 'outline';
   onclick?: (event: Event) => void;
+  /**
+   * The action is shown but cannot be used right now (Save on a locked
+   * workflow): it is dimmed, announced as disabled, and ignores clicks and
+   * the Save shortcut.
+   */
+  disabled?: boolean;
   /** If true, opens link in new tab with `rel="noopener noreferrer"`. */
   external?: boolean;
   /**

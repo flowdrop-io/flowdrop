@@ -29,6 +29,7 @@ import { PortCoordinateStore } from './portCoordinateStore.svelte.js';
 import { PipelinePanelStore } from './pipelinePanelStore.svelte.js';
 import { InlineEditStore } from './inlineEditStore.svelte.js';
 import { EditorModeStore } from './editorModeStore.svelte.js';
+import { EditorLockStore } from './lockStore.svelte.js';
 import { AttachedRunStore } from './attachedRunStore.svelte.js';
 import { NodeHighlightStore } from './nodeHighlightStore.svelte.js';
 import { ConnectDragStore } from './connectDragStore.svelte.js';
@@ -123,6 +124,12 @@ export interface FlowDropInstance {
    * writes the same store.
    */
   readonly editorMode: EditorModeStore;
+  /**
+   * The lock on this editor: why the workflow is read-only and which actions
+   * the banner offers. `fd.lock.set({ reasons, actions })` locks it, `set(null)`
+   * unlocks it. While it is set, every edit is refused.
+   */
+  readonly lock: EditorLockStore;
   /**
    * The run attached to the Assistant (`fd.attachedRun.attach(id)`): the chat
    * request carries it as `attachedRunId`, and the Assistant's run tools read it.
@@ -295,6 +302,9 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   const history = isDefault ? historyService : new HistoryService();
 
   const workflow = new WorkflowStore(history);
+  // A lock makes the workflow store refuse every edit, whoever asks.
+  const lock = new EditorLockStore();
+  lock.onChange((locked) => workflow.setLocked(locked));
   const historyBindings = new HistoryStore(history);
   // Default wiring: undo/redo restores into this instance's workflow store.
   // WorkflowEditor overrides this with a richer callback while mounted.
@@ -370,6 +380,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     pipelinePanel: new PipelinePanelStore(id),
     inlineEdit: new InlineEditStore(),
     editorMode: new EditorModeStore(),
+    lock,
     attachedRun: new AttachedRunStore(),
     highlight: new NodeHighlightStore(),
     connectDrag: new ConnectDragStore(),
