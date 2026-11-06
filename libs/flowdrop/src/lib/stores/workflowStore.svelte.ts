@@ -34,13 +34,18 @@ type WorkflowMetadata = Workflow['metadata'];
  *
  * Accepts loosely-typed legacy metadata so it can absorb 1.x documents (where
  * the schema-version field was named `version`) during load-time healing.
+ *
+ * Keys this library does not know (a host such as the Drupal module stores its
+ * own, for example `orchestrator_settings`) are kept, so a save sends them back.
  */
 function buildMetadata(
   existing?: Partial<WorkflowMetadata> & { version?: string },
   updates?: Partial<WorkflowMetadata>
 ): WorkflowMetadata {
+  const { version: legacyVersion, ...rest } = existing ?? {};
   return {
-    schemaVersion: existing?.schemaVersion ?? existing?.version ?? WORKFLOW_SCHEMA_VERSION,
+    ...rest,
+    schemaVersion: existing?.schemaVersion ?? legacyVersion ?? WORKFLOW_SCHEMA_VERSION,
     createdAt: existing?.createdAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     author: existing?.author,
