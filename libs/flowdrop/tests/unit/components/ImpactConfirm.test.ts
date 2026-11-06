@@ -14,6 +14,10 @@ const report: ImpactReport = {
   confirm: true,
   interfaceLevel: 'breaking',
   interfaceBreaking: true,
+  refused: false,
+  refusedMessage: null,
+  copyUrl: null,
+  renames: [],
   items: [
     {
       kind: 'workflow',
@@ -98,7 +102,7 @@ describe('confirmImpact', () => {
     await result;
     expect(cancel.defaultPrevented).toBe(true);
     expect(onSettled).toHaveBeenCalledTimes(1);
-    expect(onSettled).toHaveBeenCalledWith(false);
+    expect(onSettled).toHaveBeenCalledWith({ action: 'cancel' });
     expect(dialog()).toBeNull();
   });
 
@@ -106,7 +110,7 @@ describe('confirmImpact', () => {
     const result = confirmImpact({ report });
     flushSync();
     dialog().dispatchEvent(new Event('cancel', { cancelable: true }));
-    expect(await result).toBe(false);
+    expect(await result).toEqual({ action: 'cancel' });
   });
 
   it('is a modal dialog labelled by its title and body', () => {
@@ -139,10 +143,10 @@ describe('confirmImpact', () => {
     const first = confirmImpact({ report, instance: fd });
     flushSync();
     expect(impactPending(fd)).toBe(true);
-    expect(await confirmImpact({ report, instance: fd })).toBe(false);
+    expect(await confirmImpact({ report, instance: fd })).toEqual({ action: 'cancel' });
     expect(document.querySelectorAll('[data-testid="flowdrop-impact-confirm"]')).toHaveLength(1);
     (document.querySelector('[data-testid="flowdrop-impact-save"]') as HTMLButtonElement).click();
-    expect(await first).toBe(true);
+    expect(await first).toEqual({ action: 'save' });
     expect(impactPending(fd)).toBe(false);
   });
 
@@ -160,12 +164,12 @@ describe('confirmImpact', () => {
     const saved = confirmImpact({ report });
     flushSync();
     (document.querySelector('[data-testid="flowdrop-impact-save"]') as HTMLButtonElement).click();
-    expect(await saved).toBe(true);
+    expect(await saved).toEqual({ action: 'save' });
 
     const cancelled = confirmImpact({ report });
     flushSync();
     (document.querySelector('[data-testid="flowdrop-impact-cancel"]') as HTMLButtonElement).click();
-    expect(await cancelled).toBe(false);
+    expect(await cancelled).toEqual({ action: 'cancel' });
   });
 
   it('shows one line when the check failed', () => {
@@ -182,5 +186,158 @@ describe('confirmImpact', () => {
     flushSync();
     const buttons = [...dialog().querySelectorAll('button')].map((b) => b.textContent?.trim());
     expect(buttons).toEqual(['Cancel', 'Save anyway']);
+  });
+});
+
+describe('confirmImpact: refused saves', () => {
+  const refusedReport: ImpactReport = {
+    ...report,
+    refused: true,
+    refusedMessage: 'Remove the button first.',
+    copyUrl: '/workflow/wf1/copy'
+  };
+  const buttons = (): string[] =>
+    [...dialog().querySelectorAll('button')].map((b) => b.textContent?.trim() ?? '');
+  const click = (id: string): void =>
+    (document.querySelector(`[data-testid="${id}"]`) as HTMLButtonElement).click();
+
+  it('says the change cannot be saved while N places use it, and lists them', () => {
+    void confirmImpact({ report: refusedReport });
+    flushSync();
+    expect(dialog().querySelector('h2')?.textContent).toContain("can't be saved");
+    expect(
+      dialog().querySelector('[data-testid="flowdrop-impact-refused"]')?.textContent?.trim()
+    ).toBe("This change can't be saved while 3 places use it.");
+    expect(dialog().textContent).toContain('Remove the button first.');
+    expect(dialog().querySelectorAll('a')).toHaveLength(1);
+  });
+
+  it('offers no Save anyway', () => {
+    void confirmImpact({
+      report: refusedReport,
+      saveAsCopy: async () => ({ id: '2', editorUrl: null }),
+      undo: async () => {}
+    });
+    flushSync();
+    expect(buttons()).toEqual(['Keep editing', 'Undo the change', 'Save as a copy']);
+    expect(document.querySelector('[data-testid="flowdrop-impact-save"]')).toBeNull();
+  });
+
+  it('offers Keep editing alone when it cannot copy or undo', () => {
+    void confirmImpact({ report: { ...refusedReport, copyUrl: null } });
+    flushSync();
+    expect(buttons()).toEqual(['Keep editing']);
+  });
+
+  it('Save as a copy resolves with the copy', async () => {
+    const copy = { id: '2', editorUrl: '/admin/2' };
+    const saveAsCopy = vi.fn(async () => copy);
+    const answer = confirmImpact({ report: refusedReport, saveAsCopy });
+    flushSync();
+    click('flowdrop-impact-copy');
+    expect(await answer).toEqual({ action: 'copied', copy });
+    expect(saveAsCopy).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the dialog open and says why when the copy fails', async () => {
+    const answer = confirmImpact({
+      report: refusedReport,
+      saveAsCopy: async () => {
+        throw new Error('No access');
+      }
+    });
+    flushSync();
+    click('flowdrop-impact-copy');
+    await vi.waitFor(() => {
+      flushSync();
+      expect(
+        dialog().querySelector('[data-testid="flowdrop-impact-action-error"]')?.textContent
+      ).toContain('Could not save a copy: No access');
+    });
+    click('flowdrop-impact-cancel');
+    expect(await answer).toEqual({ action: 'cancel' });
+  });
+
+  it('Undo the change resolves undone after the revert ran', async () => {
+    const undo = vi.fn(async () => {});
+    const answer = confirmImpact({ report: refusedReport, undo });
+    flushSync();
+    click('flowdrop-impact-undo');
+    expect(await answer).toEqual({ action: 'undone' });
+    expect(undo).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('confirmImpact: renames', () => {
+  const renameReport: ImpactReport = {
+    ...report,
+    confirm: false,
+    items: [],
+    renames: [
+      {
+        direction: 'output',
+        from: 'node',
+        to: 'article',
+        places: [
+          {
+            kind: 'block',
+            severity: 'changes',
+            label: 'Tags block',
+            message: 'maps it',
+            url: '/b'
+          },
+          { kind: 'workflow', severity: 'changes', label: 'Caller', message: 'wires it', url: null }
+        ]
+      }
+    ]
+  };
+  const checkbox = (): HTMLInputElement =>
+    document.querySelector('[data-testid="flowdrop-impact-follow-renames"]') as HTMLInputElement;
+  const save = (): void =>
+    (document.querySelector('[data-testid="flowdrop-impact-save"]') as HTMLButtonElement).click();
+
+  it('lists each rename with its places and an unticked checkbox', () => {
+    void confirmImpact({ report: renameReport });
+    flushSync();
+    const text = dialog().textContent ?? '';
+    expect(text).toContain('Renaming output node \u2192 article also updates:');
+    expect(text).toContain('Tags block');
+    expect(text).toContain('Caller');
+    expect(dialog().querySelector('.flowdrop-ui-checkbox')?.textContent).toContain(
+      'Also update these 2 places'
+    );
+    expect(checkbox().checked).toBe(false);
+  });
+
+  it('saves with followRenames false by default and true when ticked', async () => {
+    const unticked = confirmImpact({ report: renameReport });
+    flushSync();
+    save();
+    expect(await unticked).toEqual({ action: 'save', followRenames: false });
+
+    const ticked = confirmImpact({ report: renameReport });
+    flushSync();
+    checkbox().click();
+    flushSync();
+    save();
+    expect(await ticked).toEqual({ action: 'save', followRenames: true });
+  });
+
+  it('labels the button Save when a rename is the only reason to ask', () => {
+    void confirmImpact({ report: renameReport });
+    flushSync();
+    expect(dialog().querySelector('[data-testid="flowdrop-impact-save"]')?.textContent).toContain(
+      'Save'
+    );
+    expect(
+      dialog().querySelector('[data-testid="flowdrop-impact-save"]')?.textContent
+    ).not.toContain('anyway');
+  });
+
+  it('sends no followRenames when the report has no renames', async () => {
+    const answer = confirmImpact({ report });
+    flushSync();
+    save();
+    expect(await answer).toEqual({ action: 'save' });
   });
 });

@@ -12,7 +12,13 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl } from '../config/endpoints.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import type { AuthProvider } from '../types/auth.js';
-import type { ImpactItem, ImpactReport, ImpactSeverity } from '../types/impact.js';
+import type {
+  ImpactItem,
+  ImpactRename,
+  ImpactReport,
+  ImpactSeverity,
+  SavedCopy
+} from '../types/impact.js';
 import type { Workflow } from '../types/index.js';
 
 export type ImpactResult =
@@ -28,15 +34,12 @@ export function impactSupported(config: EndpointConfig | null | undefined): bool
   return !!config?.endpoints?.workflows?.impact;
 }
 
-function parseReport(data: unknown): ImpactReport {
-  const d = (typeof data === 'object' && data !== null ? data : {}) as Record<string, unknown>;
-  const iface = (
-    typeof d.interface === 'object' && d.interface !== null ? d.interface : {}
-  ) as Record<string, unknown>;
+/** Read a list of impact items; entries without a label and message are skipped. */
+export function parseImpactItems(raw: unknown): ImpactItem[] {
   const items: ImpactItem[] = [];
-  for (const raw of Array.isArray(d.items) ? d.items : []) {
-    if (typeof raw !== 'object' || raw === null) continue;
-    const i = raw as Record<string, unknown>;
+  for (const entry of Array.isArray(raw) ? raw : []) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const i = entry as Record<string, unknown>;
     if (typeof i.label !== 'string' || typeof i.message !== 'string') continue;
     items.push({
       kind: typeof i.kind === 'string' ? i.kind : '',
@@ -48,11 +51,40 @@ function parseReport(data: unknown): ImpactReport {
       url: typeof i.url === 'string' ? i.url : null
     });
   }
+  return items;
+}
+
+function parseRenames(raw: unknown): ImpactRename[] {
+  const renames: ImpactRename[] = [];
+  for (const entry of Array.isArray(raw) ? raw : []) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const r = entry as Record<string, unknown>;
+    if (typeof r.from !== 'string' || typeof r.to !== 'string') continue;
+    renames.push({
+      direction: r.direction === 'output' ? 'output' : 'input',
+      from: r.from,
+      to: r.to,
+      places: parseImpactItems(r.places)
+    });
+  }
+  return renames;
+}
+
+export function parseReport(data: unknown): ImpactReport {
+  const d = (typeof data === 'object' && data !== null ? data : {}) as Record<string, unknown>;
+  const iface = (
+    typeof d.interface === 'object' && d.interface !== null ? d.interface : {}
+  ) as Record<string, unknown>;
   return {
     confirm: d.confirm === true,
     interfaceLevel: typeof iface.level === 'string' ? iface.level : '',
     interfaceBreaking: iface.breaking === true,
-    items
+    items: parseImpactItems(d.items),
+    refused: d.refused === true,
+    refusedMessage:
+      typeof d.refusedMessage === 'string' && d.refusedMessage ? d.refusedMessage : null,
+    copyUrl: typeof d.copyUrl === 'string' && d.copyUrl ? d.copyUrl : null,
+    renames: parseRenames(d.renames)
   };
 }
 
@@ -93,4 +125,37 @@ export async function checkImpact(
   } catch (error) {
     return { status: 'error', message: error instanceof Error ? error.message : String(error) };
   }
+}
+
+/**
+ * Save the draft as a new workflow: POST it to the `copyUrl` the impact check
+ * named (a path under the API base, or a full URL). Throws with the backend's
+ * reason when it refuses. The answer names the copy as `{ data: { id,
+ * editorUrl } }`; either may be missing.
+ */
+export async function saveAsCopy(
+  config: EndpointConfig,
+  authProvider: AuthProvider | undefined,
+  copyUrl: string,
+  draft: Workflow
+): Promise<SavedCopy> {
+  const response = await authenticatedFetch(
+    buildEndpointUrl(config, copyUrl),
+    { method: 'POST', body: JSON.stringify(draft) },
+    { config, endpointKey: 'workflows.copy', authProvider }
+  );
+  if (!response.ok) throw new Error(await errorMessage(response));
+  const body = (await response.json().catch(() => null)) as {
+    success?: boolean;
+    data?: Record<string, unknown>;
+    error?: string;
+  } | null;
+  if (body?.success === false) throw new Error(body.error ?? 'Saving a copy failed');
+  const data = body?.data ?? {};
+  const url = data.editorUrl ?? data.editor_url;
+  const id = data.id;
+  return {
+    id: typeof id === 'string' || typeof id === 'number' ? String(id) : null,
+    editorUrl: typeof url === 'string' && url ? url : null
+  };
 }

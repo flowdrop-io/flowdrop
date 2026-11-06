@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { checkImpact, impactSupported } from '$lib/services/impactService.js';
+import { checkImpact, impactSupported, saveAsCopy } from '$lib/services/impactService.js';
 import { createEndpointConfig } from '$lib/config/endpoints.js';
 import type { AuthProvider } from '$lib/types/auth.js';
 import type { Workflow } from '$lib/types/index.js';
@@ -83,6 +83,10 @@ describe('impactService', () => {
         confirm: true,
         interfaceLevel: 'major',
         interfaceBreaking: true,
+        refused: false,
+        refusedMessage: null,
+        copyUrl: null,
+        renames: [],
         items: [
           { kind: 'workflow', severity: 'breaks', label: 'Caller', message: 'Breaks', url: '/x' },
           { kind: 'profile', severity: 'changes', label: 'Profile', message: 'Changes', url: null }
@@ -114,6 +118,10 @@ describe('impactService', () => {
         confirm: false,
         interfaceLevel: 'none',
         interfaceBreaking: false,
+        refused: false,
+        refusedMessage: null,
+        copyUrl: null,
+        renames: [],
         items: [{ kind: 'k', severity: 'info', label: 'Odd', message: 'Odd one', url: null }]
       }
     });
@@ -145,5 +153,64 @@ describe('impactService', () => {
     expect(init.method).toBe('POST');
     expect(JSON.parse(init.body)).toEqual(draft);
     expect(init.headers).toMatchObject({ Authorization: 'Bearer t1' });
+  });
+
+  it('reads the refusal, the copy url and the renames of a newer backend', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        success: true,
+        data: {
+          confirm: true,
+          refused: true,
+          refusedMessage: 'Two places use it.',
+          copyUrl: '/workflow/wf1/copy',
+          interface: { level: 'major', breaking: true },
+          items: [],
+          renames: [
+            {
+              direction: 'output',
+              from: 'node',
+              to: 'article',
+              places: [{ kind: 'block', severity: 'changes', label: 'Tags', message: 'Follows' }]
+            },
+            { direction: 'input', from: 1 },
+            null
+          ]
+        }
+      })
+    );
+    const result = await checkImpact(config, authProvider, 'wf1', draft);
+    expect(result.status === 'ok' && result.report).toMatchObject({
+      refused: true,
+      refusedMessage: 'Two places use it.',
+      copyUrl: '/workflow/wf1/copy',
+      renames: [
+        {
+          direction: 'output',
+          from: 'node',
+          to: 'article',
+          places: [{ label: 'Tags', url: null }]
+        }
+      ]
+    });
+  });
+
+  it('saveAsCopy posts the draft to the copy url and names the copy', async () => {
+    fetchMock.mockResolvedValue(
+      json({ success: true, data: { id: 7, editorUrl: '/admin/flowdrop/7/edit' } })
+    );
+    const copy = await saveAsCopy(config, authProvider, '/workflow/wf1/copy', draft);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://api.example.com/workflow/wf1/copy');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual(draft);
+    expect(copy).toEqual({ id: '7', editorUrl: '/admin/flowdrop/7/edit' });
+  });
+
+  it('saveAsCopy throws the backend reason when it refuses', async () => {
+    fetchMock.mockResolvedValue(json({ success: false, error: 'No access' }, 403));
+    await expect(saveAsCopy(config, authProvider, '/workflow/wf1/copy', draft)).rejects.toThrow(
+      'No access'
+    );
   });
 });

@@ -434,14 +434,19 @@ export class EnhancedFlowDropApiClient {
   /**
    * Update an existing workflow
    */
-  async updateWorkflow(workflowId: string, workflow: Partial<Workflow>): Promise<Workflow> {
+  async updateWorkflow(
+    workflowId: string,
+    workflow: Partial<Workflow>,
+    /** Extra top-level fields of the request body, such as `followRenames`. */
+    extra?: Record<string, unknown>
+  ): Promise<Workflow> {
     const response = await this.request<WorkflowResponse>(
       'workflows.update',
       this.config.endpoints.workflows.update,
       { id: workflowId },
       {
         method: 'PUT',
-        body: JSON.stringify(workflow)
+        body: JSON.stringify(extra ? { ...workflow, ...extra } : workflow)
       },
       'update workflow'
     );

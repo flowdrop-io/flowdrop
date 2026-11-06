@@ -65,7 +65,8 @@ const {
   mockShowInfo: vi.fn()
 }));
 
-vi.mock('$lib/services/impactService.js', () => ({
+vi.mock('$lib/services/impactService.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('$lib/services/impactService.js')>()),
   impactSupported: (...args: unknown[]) => mockImpactSupported(...(args as [])),
   checkImpact: (...args: unknown[]) => mockCheckImpact(...args)
 }));
@@ -199,7 +200,7 @@ describe('globalSaveWorkflow', () => {
 
     it('does not save and returns false when the person cancels', async () => {
       mockCheckImpact.mockResolvedValue({ status: 'ok', report });
-      mockConfirmImpact.mockResolvedValue(false);
+      mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
 
       expect(await globalSaveWorkflow({})).toBe(false);
 
@@ -211,11 +212,145 @@ describe('globalSaveWorkflow', () => {
 
     it('saves after Save anyway', async () => {
       mockCheckImpact.mockResolvedValue({ status: 'ok', report });
-      mockConfirmImpact.mockResolvedValue(true);
+      mockConfirmImpact.mockResolvedValue({ action: 'save' });
 
       expect(await globalSaveWorkflow({})).toBe(true);
 
       expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    describe('renames and refusals', () => {
+      const renameReport = {
+        ...report,
+        confirm: false,
+        renames: [{ direction: 'output', from: 'node', to: 'article', places: [] as unknown[] }]
+      };
+      const refusedReport = {
+        ...report,
+        refused: true,
+        refusedMessage: null,
+        copyUrl: '/workflow/wf-1/copy',
+        renames: []
+      };
+
+      it('asks when only a rename needs an answer, and sends followRenames as ticked', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: renameReport });
+        mockConfirmImpact.mockResolvedValue({ action: 'save', followRenames: true });
+
+        expect(await globalSaveWorkflow({})).toBe(true);
+
+        expect(mockConfirmImpact).toHaveBeenCalledTimes(1);
+        expect(mockClientUpdate).toHaveBeenCalledWith('wf-1', expect.anything(), {
+          followRenames: true
+        });
+      });
+
+      it('sends followRenames false when the box stays unticked', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: renameReport });
+        mockConfirmImpact.mockResolvedValue({ action: 'save', followRenames: false });
+
+        await globalSaveWorkflow({});
+
+        expect(mockClientUpdate).toHaveBeenCalledWith('wf-1', expect.anything(), {
+          followRenames: false
+        });
+      });
+
+      it('sends no followRenames when the report has no renames', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report });
+        mockConfirmImpact.mockResolvedValue({ action: 'save' });
+
+        await globalSaveWorkflow({});
+
+        expect(mockClientUpdate.mock.calls[0]).toHaveLength(2);
+      });
+
+      it('autosave does not save past a rename that needs an answer', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: renameReport });
+
+        expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+
+        expect(mockClientUpdate).not.toHaveBeenCalled();
+      });
+
+      it('a refused check never saves, whatever the dialog answers', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
+
+        expect(await globalSaveWorkflow({})).toBe(false);
+
+        expect(mockConfirmImpact).toHaveBeenCalledWith(
+          expect.objectContaining({ report: refusedReport, saveAsCopy: expect.any(Function) })
+        );
+        expect(mockClientUpdate).not.toHaveBeenCalled();
+      });
+
+      it('hands a saved copy to onSavedAsCopy and does not save the original', async () => {
+        const copy = { id: '9', editorUrl: '/admin/9' };
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact.mockResolvedValue({ action: 'copied', copy });
+        const onSavedAsCopy = vi.fn(async () => {});
+
+        expect(await globalSaveWorkflow({ eventHandlers: { onSavedAsCopy } })).toBe(false);
+
+        expect(onSavedAsCopy).toHaveBeenCalledWith(copy, expect.objectContaining({ id: 'wf-1' }));
+        expect(mockClientUpdate).not.toHaveBeenCalled();
+      });
+
+      it('follows the copy editor url when the host has no handler', async () => {
+        const assign = vi.fn();
+        vi.stubGlobal('window', { ...globalThis.window, location: { assign } });
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact.mockResolvedValue({
+          action: 'copied',
+          copy: { id: '9', editorUrl: '/admin/9' }
+        });
+
+        await globalSaveWorkflow({});
+
+        expect(assign).toHaveBeenCalledWith('/admin/9');
+        vi.unstubAllGlobals();
+      });
+
+      it('shows the refused state when the save itself is refused as breaking', async () => {
+        mockCheckImpact.mockResolvedValue({
+          status: 'ok',
+          report: { ...renameReport, copyUrl: '/workflow/wf-1/copy' }
+        });
+        mockConfirmImpact
+          .mockResolvedValueOnce({ action: 'save', followRenames: false })
+          .mockResolvedValueOnce({ action: 'cancel' });
+        mockClientUpdate.mockRejectedValue(
+          new ApiError('Breaking change refused', 409, 'update workflow', {
+            error_code: 'WORKFLOW_IN_USE_BREAKING',
+            error: 'Breaking change refused',
+            details: [
+              { kind: 'block', severity: 'breaks', label: 'Tags', message: 'maps node', url: null }
+            ]
+          })
+        );
+
+        expect(await globalSaveWorkflow({})).toBe(false);
+
+        expect(mockConfirmImpact).toHaveBeenCalledTimes(2);
+        expect(mockConfirmImpact.mock.calls[1][0].report).toMatchObject({
+          refused: true,
+          refusedMessage: 'Breaking change refused',
+          copyUrl: '/workflow/wf-1/copy',
+          items: [{ label: 'Tags' }]
+        });
+        expect(apiToasts.error).not.toHaveBeenCalled();
+      });
+
+      it('another failed save still throws and toasts', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'unavailable' });
+        mockClientUpdate.mockRejectedValue(
+          new ApiError('Nope', 422, 'update workflow', { error_code: 'OTHER' })
+        );
+
+        await expect(globalSaveWorkflow({})).rejects.toThrow('Nope');
+        expect(mockConfirmImpact).not.toHaveBeenCalled();
+      });
     });
 
     it('saves when the backend has no impact route', async () => {
@@ -229,7 +364,7 @@ describe('globalSaveWorkflow', () => {
 
     it('shows a failed check and does not save when the person cancels', async () => {
       mockCheckImpact.mockResolvedValue({ status: 'error', message: 'boom' });
-      mockConfirmImpact.mockResolvedValue(false);
+      mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
 
       expect(await globalSaveWorkflow({})).toBe(false);
 
@@ -937,7 +1072,7 @@ describe('globalSaveWorkflow: versions, joining, ordering, autosave', () => {
   it('does not call onBeforeSave when the person cancels the impact question', async () => {
     mockImpactSupported.mockReturnValue(true);
     mockCheckImpact.mockResolvedValue({ status: 'ok', report });
-    mockConfirmImpact.mockResolvedValue(false);
+    mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
     const onBeforeSave = vi.fn();
     expect(await globalSaveWorkflow({ eventHandlers: { onBeforeSave } })).toBe(false);
     expect(onBeforeSave).not.toHaveBeenCalled();
@@ -946,7 +1081,7 @@ describe('globalSaveWorkflow: versions, joining, ordering, autosave', () => {
   it('calls onBeforeSave after the impact question is answered yes', async () => {
     mockImpactSupported.mockReturnValue(true);
     mockCheckImpact.mockResolvedValue({ status: 'ok', report });
-    mockConfirmImpact.mockResolvedValue(true);
+    mockConfirmImpact.mockResolvedValue({ action: 'save' });
     const onBeforeSave = vi.fn().mockResolvedValue(true);
     expect(await globalSaveWorkflow({ eventHandlers: { onBeforeSave } })).toBe(true);
     expect(onBeforeSave).toHaveBeenCalledTimes(1);
@@ -981,7 +1116,7 @@ describe('globalSaveWorkflow: versions, joining, ordering, autosave', () => {
       let answer!: (r: unknown) => void;
       mockCheckImpact.mockReturnValueOnce(new Promise((r) => (answer = r)));
       const autosave = globalSaveWorkflow({ interactive: false });
-      mockConfirmImpact.mockResolvedValue(true);
+      mockConfirmImpact.mockResolvedValue({ action: 'save' });
       const manual = globalSaveWorkflow({});
       answer({ status: 'ok', report });
       expect(await autosave).toBe(false);
@@ -993,7 +1128,7 @@ describe('globalSaveWorkflow: versions, joining, ordering, autosave', () => {
     it('a manual save at the same version still asks and dismisses the toast on success', async () => {
       versionState.editVersion = 30;
       await globalSaveWorkflow({ interactive: false });
-      mockConfirmImpact.mockResolvedValue(true);
+      mockConfirmImpact.mockResolvedValue({ action: 'save' });
       expect(await globalSaveWorkflow({})).toBe(true);
       expect(mockConfirmImpact).toHaveBeenCalledTimes(1);
       const { dismissToast } = await import('$lib/services/toastService.js');

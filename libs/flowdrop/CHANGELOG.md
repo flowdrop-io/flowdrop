@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- The save dialog handles a refused save: when the backend's impact check says `refused`, it says the change can't be saved while N places use it, lists them, and offers Save as a copy (POSTs the draft to the check's `copyUrl`) and Undo the change (loads the last saved version). The impact report gains the optional `refused`, `refusedMessage`, `copyUrl` and `renames` fields; a backend that sends none of them behaves as before.
+- Renamed inputs and outputs are listed with the places that use them and a box, "Also update these N places", unticked by default. The save request then carries a top-level `followRenames: true|false`. A save the backend refuses with `WORKFLOW_IN_USE_BREAKING` opens the same refused dialog instead of an error toast.
+- New event handler `onSavedAsCopy(copy, workflow)`, on the mount API and the `App` component. Without it the editor follows the copy's `editorUrl`.
+- `confirmImpact` now answers with an `ImpactAnswer` (`save`, `cancel`, `copied`, `undone`) instead of a boolean; `ImpactRename`, `ImpactAnswer` and `SavedCopy` are exported types.
+
 ## [2.17.0] - 2026-11-04
 
 ### Added

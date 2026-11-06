@@ -7,6 +7,10 @@
     confirm: true,
     interfaceLevel: 'breaking',
     interfaceBreaking: true,
+    refused: false,
+    refusedMessage: null,
+    copyUrl: null,
+    renames: [],
     items: [
       {
         kind: 'workflow',
@@ -28,6 +32,34 @@
         label: 'Nightly trigger',
         message: 'keeps working unchanged.',
         url: null
+      }
+    ]
+  };
+
+  const refusedReport: ImpactReport = {
+    ...report,
+    refused: true,
+    copyUrl: '/workflow/1/copy'
+  };
+
+  const renameReport: ImpactReport = {
+    ...report,
+    confirm: false,
+    items: [],
+    renames: [
+      {
+        direction: 'output',
+        from: 'node',
+        to: 'article',
+        places: [
+          {
+            kind: 'block',
+            severity: 'changes',
+            label: 'Tags block',
+            message: 'reads the old name.',
+            url: '#'
+          }
+        ]
       }
     ]
   };
@@ -58,6 +90,35 @@
   parameters={{
     docs: {
       description: { story: 'The check itself failed: one line, and the person decides.' }
+    }
+  }}
+/>
+
+<Story
+  name="Refused"
+  args={{
+    report: refusedReport,
+    onResolve: () => {},
+    onSaveAsCopy: async () => ({ id: '2', editorUrl: null }),
+    onUndo: async () => {}
+  }}
+  parameters={{
+    docs: {
+      description: {
+        story: 'The change cannot be saved while things use the workflow: copy it or undo it.'
+      }
+    }
+  }}
+/>
+
+<Story
+  name="Renames"
+  args={{ report: renameReport, onResolve: () => {} }}
+  parameters={{
+    docs: {
+      description: {
+        story: "A rename lists the places it also updates; following it is the person's choice."
+      }
     }
   }}
 />

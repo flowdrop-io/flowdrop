@@ -13,20 +13,47 @@
 
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { m } from '../messages/index.js';
+  import { getMessages } from '../messages/context.js';
+  import type { Messages } from '../messages/types.js';
   import Button from './primitives/Button.svelte';
-  import type { ImpactItem, ImpactReport, ImpactSeverity } from '../types/impact.js';
+  import Checkbox from './primitives/Checkbox.svelte';
+  import type {
+    ImpactAnswer,
+    ImpactItem,
+    ImpactReport,
+    ImpactSeverity,
+    SavedCopy
+  } from '../types/impact.js';
 
   interface Props {
     /** What the check found. `null` when the check itself failed (see `error`). */
     report: ImpactReport | null;
     /** The reason the check failed; shown as one line instead of the list. */
     error?: string;
-    /** Called exactly once: `true` to save, `false` to cancel. */
-    onResolve: (save: boolean) => void;
+    /** Called exactly once with what the person decided. */
+    onResolve: (answer: ImpactAnswer) => void;
+    /**
+     * Saves the draft as a new workflow (the refused state's "Save as a copy").
+     * Rejects with the reason when it fails; the dialog then stays open.
+     */
+    onSaveAsCopy?: () => Promise<SavedCopy>;
+    /** Reverts the draft to the last saved version (the refused state's "Undo the change"). */
+    onUndo?: () => Promise<void>;
   }
 
-  let { report, error, onResolve }: Props = $props();
+  let { report, error, onResolve, onSaveAsCopy, onUndo }: Props = $props();
+
+  // The getter is read at initialisation: the context is gone after an await.
+  const readMessages = getMessages();
+  const m = (): Messages => readMessages();
+
+  const refused = $derived(report?.refused === true);
+  const renames = $derived(report?.renames ?? []);
+  const renamedPlaces = $derived(renames.reduce((n, r) => n + r.places.length, 0));
+  // Opt-in: nothing a rename touches elsewhere changes unless the person asks.
+  let followRenames = $state(false);
+  let busy = $state<'copy' | 'undo' | null>(null);
+  let actionError = $state('');
 
   // Unique per instance so two dialogs on one page do not share a DOM id.
   const uid = $props.id();
@@ -56,21 +83,72 @@
     cancelWrap?.querySelector('button')?.focus();
   });
 
-  function resolve(save: boolean): void {
+  function resolve(answer: ImpactAnswer): void {
     if (resolved) return;
     resolved = true;
     if (dialogRef?.open) dialogRef.close();
     if (opener?.isConnected) opener.focus();
-    onResolve(save);
+    onResolve(answer);
+  }
+
+  function save(): void {
+    resolve(renames.length > 0 ? { action: 'save', followRenames } : { action: 'save' });
+  }
+
+  async function saveCopy(): Promise<void> {
+    if (!onSaveAsCopy || busy) return;
+    busy = 'copy';
+    actionError = '';
+    try {
+      const copy = await onSaveAsCopy();
+      resolve({ action: 'copied', copy });
+    } catch (e) {
+      actionError = m().impact.refused.copyFailed({
+        message: e instanceof Error ? e.message : String(e)
+      });
+      busy = null;
+    }
+  }
+
+  async function undo(): Promise<void> {
+    if (!onUndo || busy) return;
+    busy = 'undo';
+    actionError = '';
+    try {
+      await onUndo();
+      resolve({ action: 'undone' });
+    } catch (e) {
+      actionError = m().impact.refused.undoFailed({
+        message: e instanceof Error ? e.message : String(e)
+      });
+      busy = null;
+    }
   }
 
   // Escape: the native cancel event. Resolve here and keep the browser from
   // closing the dialog a second time.
   function handleCancel(event: Event): void {
     event.preventDefault();
-    resolve(false);
+    if (busy) return;
+    resolve({ action: 'cancel' });
   }
 </script>
+
+{#snippet itemRow(item: ImpactItem, severity: ImpactSeverity)}
+  <li class="fd-impact-confirm__item">
+    <span class="fd-impact-confirm__severity">{m().impact.severity[severity]}</span>
+    <span class="fd-impact-confirm__text">
+      {#if item.url}
+        <a class="fd-impact-confirm__label" href={item.url} target="_blank" rel="noopener"
+          >{item.label}</a
+        >
+      {:else}
+        <span class="fd-impact-confirm__label">{item.label}</span>
+      {/if}
+      <span class="fd-impact-confirm__message">{item.message}</span>
+    </span>
+  </li>
+{/snippet}
 
 <dialog
   bind:this={dialogRef}
@@ -84,10 +162,20 @@
   <div class="fd-impact-confirm__dialog">
     <header class="fd-impact-confirm__header">
       <h2 id={titleId} class="fd-impact-confirm__title">
-        {m().impact.title}
+        {refused ? m().impact.refused.title : m().impact.title}
       </h2>
     </header>
     <div id={bodyId} class="fd-impact-confirm__body">
+      {#if refused}
+        <p class="fd-impact-confirm__refused" data-testid="flowdrop-impact-refused">
+          {m().impact.refused.body({ count: report?.items.length ?? 0 })}
+        </p>
+        {#if report?.refusedMessage}
+          <p class="fd-impact-confirm__message fd-impact-confirm__refused-message">
+            {report.refusedMessage}
+          </p>
+        {/if}
+      {/if}
       {#if error}
         <p class="fd-impact-confirm__error" data-testid="flowdrop-impact-error">
           {m().impact.failed({ message: error })}
@@ -98,38 +186,79 @@
           <h3 class="fd-impact-confirm__group-title">{m().impact[group.severity]}</h3>
           <ul class="fd-impact-confirm__list" role="list">
             {#each group.items as item (item)}
-              <li class="fd-impact-confirm__item">
-                <span class="fd-impact-confirm__severity"
-                  >{m().impact.severity[group.severity]}</span
-                >
-                <span class="fd-impact-confirm__text">
-                  {#if item.url}
-                    <a
-                      class="fd-impact-confirm__label"
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener">{item.label}</a
-                    >
-                  {:else}
-                    <span class="fd-impact-confirm__label">{item.label}</span>
-                  {/if}
-                  <span class="fd-impact-confirm__message">{item.message}</span>
-                </span>
-              </li>
+              {@render itemRow(item, group.severity)}
             {/each}
           </ul>
         </section>
       {/each}
+      {#if !refused && renames.length > 0}
+        <section class="fd-impact-confirm__group" data-testid="flowdrop-impact-renames">
+          <h3 class="fd-impact-confirm__group-title">{m().impact.renames.heading}</h3>
+          {#each renames as rename (rename.direction + rename.from)}
+            <p class="fd-impact-confirm__rename-title">
+              {m().impact.renames.title({
+                kind: m().impact.renames[rename.direction],
+                from: rename.from,
+                to: rename.to
+              })}
+            </p>
+            {#if rename.places.length > 0}
+              <ul class="fd-impact-confirm__list" role="list">
+                {#each rename.places as place (place)}
+                  {@render itemRow(place, place.severity)}
+                {/each}
+              </ul>
+            {:else}
+              <p class="fd-impact-confirm__message">{m().impact.renames.noPlaces}</p>
+            {/if}
+          {/each}
+          <div class="fd-impact-confirm__follow">
+            <Checkbox
+              data-testid="flowdrop-impact-follow-renames"
+              checked={followRenames}
+              onchange={(checked) => (followRenames = checked)}
+              label={m().impact.renames.follow({ count: renamedPlaces })}
+            />
+          </div>
+        </section>
+      {/if}
+      {#if actionError}
+        <p class="fd-impact-confirm__error" role="alert" data-testid="flowdrop-impact-action-error">
+          {actionError}
+        </p>
+      {/if}
     </div>
     <footer class="fd-impact-confirm__actions">
       <span class="fd-impact-confirm__cancel" bind:this={cancelWrap}>
-        <Button data-testid="flowdrop-impact-cancel" onclick={() => resolve(false)}>
-          {m().impact.cancel}
+        <Button
+          data-testid="flowdrop-impact-cancel"
+          disabled={busy !== null}
+          onclick={() => resolve({ action: 'cancel' })}
+        >
+          {refused ? m().impact.refused.keepEditing : m().impact.cancel}
         </Button>
       </span>
-      <Button variant="primary" data-testid="flowdrop-impact-save" onclick={() => resolve(true)}>
-        {m().impact.save}
-      </Button>
+      {#if refused}
+        {#if onUndo}
+          <Button data-testid="flowdrop-impact-undo" disabled={busy !== null} onclick={undo}>
+            {busy === 'undo' ? m().impact.refused.undoing : m().impact.refused.undo}
+          </Button>
+        {/if}
+        {#if onSaveAsCopy && report?.copyUrl}
+          <Button
+            variant="primary"
+            data-testid="flowdrop-impact-copy"
+            disabled={busy !== null}
+            onclick={saveCopy}
+          >
+            {busy === 'copy' ? m().impact.refused.copying : m().impact.refused.copy}
+          </Button>
+        {/if}
+      {:else}
+        <Button variant="primary" data-testid="flowdrop-impact-save" onclick={save}>
+          {renames.length > 0 && !report?.confirm ? m().impact.saveRenames : m().impact.save}
+        </Button>
+      {/if}
     </footer>
   </div>
 </dialog>
@@ -242,6 +371,32 @@
     font-size: var(--fd-text-sm, 0.875rem);
     color: var(--fd-foreground);
     overflow-wrap: anywhere;
+  }
+
+  .fd-impact-confirm__refused,
+  .fd-impact-confirm__refused-message,
+  .fd-impact-confirm__rename-title {
+    margin: 0 0 var(--fd-space-xs, 0.5rem);
+    padding: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .fd-impact-confirm__refused {
+    font-weight: 600;
+  }
+
+  .fd-impact-confirm__rename-title {
+    margin-top: var(--fd-space-sm, 0.625rem);
+  }
+
+  .fd-impact-confirm__follow {
+    margin-top: var(--fd-space-md, 0.75rem);
+  }
+
+  .fd-impact-confirm__error + .fd-impact-confirm__group,
+  .fd-impact-confirm__refused-message + .fd-impact-confirm__group,
+  .fd-impact-confirm__refused + .fd-impact-confirm__group {
+    margin-top: var(--fd-space-lg, 0.875rem);
   }
 
   .fd-impact-confirm__group + .fd-impact-confirm__group {

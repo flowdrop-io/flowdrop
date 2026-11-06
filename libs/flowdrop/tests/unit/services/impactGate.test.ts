@@ -38,7 +38,7 @@ describe('confirmImpact and instance teardown', () => {
     expect(impactPending(fd)).toBe(true);
     expect(document.querySelector('.fd-impact-confirm-host')).not.toBeNull();
     fd.destroy();
-    expect(await result).toBe(false);
+    expect(await result).toEqual({ action: 'cancel' });
     expect(impactPending(fd)).toBe(false);
     expect(document.querySelector('.fd-impact-confirm-host')).toBeNull();
   });
@@ -48,7 +48,7 @@ describe('confirmImpact and instance teardown', () => {
     const result = confirmImpact({ error: 'check failed', instance: fd });
     flushSync();
     document.querySelector<HTMLElement>('[data-testid="flowdrop-impact-cancel"]')!.click();
-    expect(await result).toBe(false);
+    expect(await result).toEqual({ action: 'cancel' });
     expect(() => fd.destroy()).not.toThrow();
   });
 });

@@ -915,6 +915,7 @@ export async function mountFlowDropApp(
       onBeforeSave: eventHandlers?.onBeforeSave,
       onAfterSave: eventHandlers?.onAfterSave,
       onSaveError: eventHandlers?.onSaveError,
+      onSavedAsCopy: eventHandlers?.onSavedAsCopy,
       onApiError: eventHandlers?.onApiError,
       onWorkflowLoad: eventHandlers?.onWorkflowLoad,
       onExternalEdit: eventHandlers?.onExternalEdit

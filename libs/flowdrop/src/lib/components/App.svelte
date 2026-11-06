@@ -228,6 +228,8 @@
     onBeforeSave?: FlowDropEventHandlers['onBeforeSave'];
     /** Called after a successful save. */
     onAfterSave?: FlowDropEventHandlers['onAfterSave'];
+    /** Called after a refused save was saved as a copy; replaces following the copy's editor URL. */
+    onSavedAsCopy?: FlowDropEventHandlers['onSavedAsCopy'];
     /** Called when a save fails. */
     onSaveError?: FlowDropEventHandlers['onSaveError'];
     /** Called on any API error — return true to suppress the default toast. */
@@ -308,6 +310,7 @@
     authProvider,
     onBeforeSave,
     onAfterSave,
+    onSavedAsCopy,
     onSaveError,
     onApiError,
     onWorkflowLoad,
@@ -1310,7 +1313,7 @@
     // consistent (the value itself is already live in the store).
     flushNodeConfigEdit();
     return globalSaveWorkflow({
-      eventHandlers: { onBeforeSave, onAfterSave, onSaveError, onApiError },
+      eventHandlers: { onBeforeSave, onAfterSave, onSavedAsCopy, onSaveError, onApiError },
       features,
       instance: fd,
       interactive: options.interactive,

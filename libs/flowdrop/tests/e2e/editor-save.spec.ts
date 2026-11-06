@@ -187,18 +187,18 @@ test.describe('Save Workflow', () => {
       ]
     };
 
-    async function setup(page: import('@playwright/test').Page) {
+    async function setup(page: import('@playwright/test').Page, report: object = impactReport) {
       const puts: string[] = [];
       await page.route('**/api/flowdrop/workflow/*/impact', (route) =>
         route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: impactReport })
+          body: JSON.stringify({ success: true, data: report })
         })
       );
       await page.route('**/api/flowdrop/workflows/**', async (route) => {
         if (route.request().method() === 'PUT') {
-          puts.push(route.request().url());
+          puts.push(route.request().postData() ?? '');
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -240,6 +240,71 @@ test.describe('Save Workflow', () => {
       await page.getByTestId('flowdrop-impact-save').click();
       await expect(saveButton).not.toHaveAttribute('data-dirty', 'true', { timeout: 5000 });
       expect(puts).toHaveLength(1);
+    });
+
+    test('a rename is followed only when the box is ticked', async ({ page }) => {
+      const { saveButton, puts } = await setup(page, {
+        confirm: false,
+        interface: { level: 'minor', breaking: false },
+        items: [],
+        renames: [
+          {
+            direction: 'output',
+            from: 'node',
+            to: 'article',
+            places: [
+              {
+                kind: 'block',
+                severity: 'changes',
+                label: 'Tags block',
+                message: 'maps it',
+                url: null
+              }
+            ]
+          }
+        ]
+      });
+      await saveButton.click();
+      const dialog = page.getByTestId('flowdrop-impact-confirm');
+      await expect(dialog).toContainText('Renaming output node \u2192 article also updates:');
+      const follow = page.getByTestId('flowdrop-impact-follow-renames');
+      await expect(follow).not.toBeChecked();
+      await follow.check({ force: true });
+      await page.getByTestId('flowdrop-impact-save').click();
+      await expect(saveButton).not.toHaveAttribute('data-dirty', 'true', { timeout: 5000 });
+      expect(puts).toHaveLength(1);
+      expect(JSON.parse(puts[0]).followRenames).toBe(true);
+    });
+
+    test('a refused save offers Save as a copy and sends no save', async ({ page }) => {
+      const copies: string[] = [];
+      await page.route('**/api/flowdrop/workflow/*/copy', async (route) => {
+        copies.push(route.request().postData() ?? '');
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: { id: '99', editorUrl: '/test/copy-landed' }
+          })
+        });
+      });
+      await page.route('**/test/copy-landed', (route) =>
+        route.fulfill({ status: 200, contentType: 'text/html', body: '<p>copy opened</p>' })
+      );
+      const { saveButton, puts } = await setup(page, {
+        ...impactReport,
+        refused: true,
+        copyUrl: '/workflow/test-workflow-simple/copy'
+      });
+      await saveButton.click();
+      const dialog = page.getByTestId('flowdrop-impact-confirm');
+      await expect(dialog).toContainText("can't be saved while 1 place uses it");
+      await expect(page.getByTestId('flowdrop-impact-save')).toHaveCount(0);
+      await page.getByTestId('flowdrop-impact-copy').click();
+      await expect(page).toHaveURL(/\/test\/copy-landed$/);
+      expect(copies).toHaveLength(1);
+      expect(puts).toHaveLength(0);
     });
   });
 

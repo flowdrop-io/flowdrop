@@ -19,8 +19,9 @@ import { playgroundForSave } from '$lib/utils/playgroundChat.js';
 import { buildSaveBody } from '$lib/utils/workflowDraft.js';
 import type { ApiError } from '$lib/api/enhanced-client.js';
 import { apiToasts, workflowToasts, dismissToast, showInfo } from './toastService.js';
-import { checkImpact, impactSupported } from './impactService.js';
+import { checkImpact, impactSupported, parseImpactItems, saveAsCopy } from './impactService.js';
 import { confirmImpact, impactPending } from './impactGate.js';
+import type { ImpactReport, SavedCopy } from '$lib/types/impact.js';
 import { scopeSelector } from '$lib/themes/scopedSkinCss.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 import { DEFAULT_FEATURES } from '$lib/types/events.js';
@@ -110,6 +111,35 @@ function ensureApiConfiguration(fd: FlowDropInstance): void {
   });
 
   fd.api.configure(config);
+}
+
+/** The error code of a save refused because things use the workflow and the change breaks them. */
+const IN_USE_BREAKING = 'WORKFLOW_IN_USE_BREAKING';
+
+/**
+ * The refused-state report for a save the backend refused with
+ * WORKFLOW_IN_USE_BREAKING, or `null` for any other error. What the refusal
+ * does not carry (the items, the copy URL) comes from the earlier check.
+ */
+function inUseRefusal(error: unknown, earlier: ImpactReport | undefined): ImpactReport | null {
+  const e = error as Partial<ApiError> | null;
+  if (e?.errorData?.error_code !== IN_USE_BREAKING) return null;
+  const data = e.errorData as Record<string, unknown>;
+  const details = data.details as { items?: unknown } | unknown[] | undefined;
+  const fromError = parseImpactItems(
+    Array.isArray(details) ? details : (details?.items ?? data.items)
+  );
+  const copyUrl = data.copyUrl ?? data.copy_url;
+  return {
+    confirm: true,
+    interfaceLevel: earlier?.interfaceLevel ?? '',
+    interfaceBreaking: earlier?.interfaceBreaking ?? true,
+    items: fromError.length > 0 ? fromError : (earlier?.items ?? []),
+    refused: true,
+    refusedMessage: typeof data.error === 'string' && data.error ? data.error : null,
+    copyUrl: typeof copyUrl === 'string' && copyUrl ? copyUrl : (earlier?.copyUrl ?? null),
+    renames: []
+  };
 }
 
 /** The error when a save was refused because the workflow changed on the server meanwhile. */
@@ -204,6 +234,10 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
   const { eventHandlers, onMarkAsSaved, onSaved } = options;
   const features = { ...DEFAULT_FEATURES, ...options.features };
   const readWorkflow = () => fd.workflow.current;
+  // What the impact check said, and whether the person asked renames to be followed.
+  let lastReport: ImpactReport | undefined;
+  let followRenames: boolean | undefined;
+  let draftForCopy: Workflow | undefined;
 
   // A save while the impact question is open is dropped, not queued: the open
   // dialog is the one answer. Checked before the flush, which would blur its
@@ -246,6 +280,7 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
     const finalWorkflow: Workflow = buildSaveBody(currentWorkflow, workflowId);
     // What this snapshot contains: only up to here may be marked saved.
     let savedVersion = fd.workflow.editVersion;
+    draftForCopy = finalWorkflow;
 
     // Ask what this save changes for what uses the workflow. A backend
     // without the route (or that does not know the workflow) leaves the save
@@ -262,8 +297,13 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
       const host =
         (fd.skinScope ? document.querySelector<HTMLElement>(scopeSelector(fd.skinScope)) : null) ??
         document.body;
+      if (result.status === 'ok') lastReport = result.report;
       const needsAnswer =
-        (result.status === 'ok' && result.report.confirm) || result.status === 'error';
+        (result.status === 'ok' &&
+          (result.report.confirm ||
+            result.report.refused === true ||
+            (result.report.renames?.length ?? 0) > 0)) ||
+        result.status === 'error';
       if (needsAnswer) {
         if (!interactive) {
           // Say so once per version, then stay quiet until something changes.
@@ -278,9 +318,15 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
           error: result.status === 'error' ? result.message : undefined,
           host,
           instance: fd,
-          messages: fd.messages
+          messages: fd.messages,
+          ...refusalActions(fd, result.status === 'ok' ? result.report : undefined, finalWorkflow)
         });
-        if (!answer) return false;
+        if (answer.action === 'copied') {
+          await afterSavedAsCopy(answer.copy, finalWorkflow, eventHandlers);
+          return false;
+        }
+        if (answer.action !== 'save') return false;
+        followRenames = answer.followRenames;
       }
     }
 
@@ -299,7 +345,9 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
     // id-presence (computed above) decides update vs create — never UUID-regex.
     const apiClient = fd.api.client;
     const savedWorkflow: Workflow = isExistingWorkflow
-      ? await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow)
+      ? followRenames === undefined
+        ? await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow)
+        : await apiClient.updateWorkflow(finalWorkflow.id, finalWorkflow, { followRenames })
       : await apiClient.saveWorkflow(finalWorkflow);
 
     // If the server assigned a new ID, sync the store
@@ -364,6 +412,27 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
       await eventHandlers.onSaveError(errorObj, currentWorkflowForError);
     }
 
+    // Things use the workflow and this change breaks them: say so in the same
+    // dialog as a refused check, instead of a failure toast. The person has
+    // been answered, so this is not rethrown. Autosave never asks.
+    const refusal = interactive && draftForCopy ? inUseRefusal(error, lastReport) : null;
+    if (refusal && draftForCopy) {
+      const host =
+        (fd.skinScope ? document.querySelector<HTMLElement>(scopeSelector(fd.skinScope)) : null) ??
+        document.body;
+      const answer = await confirmImpact({
+        report: refusal,
+        host,
+        instance: fd,
+        messages: fd.messages,
+        ...refusalActions(fd, refusal, draftForCopy)
+      });
+      if (answer.action === 'copied') {
+        await afterSavedAsCopy(answer.copy, draftForCopy, eventHandlers);
+      }
+      return false;
+    }
+
     // onApiError hook — return true suppresses the default toast
     let suppressToast = false;
     if (eventHandlers?.onApiError) {
@@ -401,6 +470,44 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
 
     throw error;
   }
+}
+
+/**
+ * What the refused state offers: "Save as a copy" when the backend named a
+ * `copyUrl`, "Undo the change" when the workflow has a saved version to load.
+ */
+function refusalActions(fd: FlowDropInstance, report: ImpactReport | undefined, draft: Workflow) {
+  const config = fd.api.config;
+  const copyUrl = report?.copyUrl;
+  return {
+    saveAsCopy:
+      report?.refused && copyUrl && config
+        ? () => saveAsCopy(config, fd.api.authProvider, copyUrl, draft)
+        : undefined,
+    undo: report?.refused
+      ? async () => {
+          const loaded = await fd.api.client.loadWorkflow(draft.id);
+          fd.workflow.initialize(loaded);
+          fd.doctor.schedule();
+        }
+      : undefined
+  };
+}
+
+/**
+ * The draft now lives on as a new workflow. The host's `onSavedAsCopy` takes
+ * over when it has one; otherwise the editor follows the copy's editor URL.
+ */
+async function afterSavedAsCopy(
+  copy: SavedCopy,
+  draft: Workflow,
+  eventHandlers: FlowDropEventHandlers | undefined
+): Promise<void> {
+  if (eventHandlers?.onSavedAsCopy) {
+    await eventHandlers.onSavedAsCopy(copy, draft);
+    return;
+  }
+  if (copy.editorUrl && typeof window !== 'undefined') window.location.assign(copy.editorUrl);
 }
 
 /**

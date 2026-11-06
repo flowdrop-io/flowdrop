@@ -69,5 +69,12 @@ export type { AuthProvider } from './types/auth.js';
 export type { FlowDropInstance } from './stores/instanceContainer.svelte.js';
 export type { FlowDropMountOptions, MountedFlowDropApp, RunCommandOptions } from './svelte-app.js';
 export type { FlowDropEventHandlers } from './types/events.js';
-export type { ImpactSeverity, ImpactItem, ImpactReport } from './types/impact.js';
+export type {
+  ImpactSeverity,
+  ImpactItem,
+  ImpactReport,
+  ImpactRename,
+  ImpactAnswer,
+  SavedCopy
+} from './types/impact.js';
 export type { Messages, MessagesOverride } from './messages/index.js';

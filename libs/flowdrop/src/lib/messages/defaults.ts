@@ -1308,7 +1308,35 @@ export const defaultMessages = {
     failed: ({ message }: { message: string }) =>
       `The check of what uses this workflow failed: ${message}`,
     cancel: 'Cancel',
-    save: 'Save anyway'
+    save: 'Save anyway',
+    // Shown when the only reason to ask is a rename: nothing breaks, so "anyway" would mislead.
+    saveRenames: 'Save',
+    // The save is refused while things use the workflow.
+    refused: {
+      title: "This change can't be saved",
+      body: ({ count }: { count: number }) =>
+        count === 1
+          ? "This change can't be saved while 1 place uses it."
+          : `This change can't be saved while ${count} places use it.`,
+      keepEditing: 'Keep editing',
+      undo: 'Undo the change',
+      undoing: 'Undoing\u2026',
+      undoFailed: ({ message }: { message: string }) => `Could not undo the change: ${message}`,
+      copy: 'Save as a copy',
+      copying: 'Saving a copy\u2026',
+      copyFailed: ({ message }: { message: string }) => `Could not save a copy: ${message}`
+    },
+    // Renamed inputs and outputs, and the opt-in to follow them.
+    renames: {
+      heading: 'Renames',
+      title: ({ kind, from, to }: { kind: string; from: string; to: string }) =>
+        `Renaming ${kind} ${from} \u2192 ${to} also updates:`,
+      input: 'input',
+      output: 'output',
+      noPlaces: 'Nothing else uses it yet.',
+      follow: ({ count }: { count: number }) =>
+        count === 1 ? 'Also update this 1 place' : `Also update these ${count} places`
+    }
   },
 
   // The confirm dialog the WebMCP adapter shows before a browser agent's change runs.

@@ -14,6 +14,7 @@ import type {
   ConfigValues,
   ExternalEditLink
 } from './index.js';
+import type { SavedCopy } from './impact.js';
 import type { SwapEventContext, SwapResult } from '../utils/nodeSwap.js';
 
 /**
@@ -117,6 +118,19 @@ export interface FlowDropEventHandlers {
    * @param workflow - The saved workflow (may include server-assigned IDs)
    */
   onAfterSave?: (workflow: Workflow) => Promise<void>;
+
+  /**
+   * Called after the refused save was saved as a copy instead ("Save as a copy"
+   * in the save dialog).
+   *
+   * The original workflow is unchanged and the editor still holds the draft.
+   * Without this handler the editor follows `copy.editorUrl` (when the backend
+   * sent one); with it, the host decides what happens next.
+   *
+   * @param copy - The new workflow: its id and editor URL, when the backend names them
+   * @param workflow - The draft that was copied
+   */
+  onSavedAsCopy?: (copy: SavedCopy, workflow: Workflow) => void | Promise<void>;
 
   /**
    * Called when save fails

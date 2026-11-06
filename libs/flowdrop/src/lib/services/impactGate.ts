@@ -11,7 +11,7 @@
 
 import { mount, unmount } from 'svelte';
 import { defaultMessages, messagesContext, type Messages } from '../messages/index.js';
-import type { ImpactReport } from '../types/impact.js';
+import type { ImpactAnswer, ImpactReport, SavedCopy } from '../types/impact.js';
 import ImpactConfirm from '../components/ImpactConfirm.svelte';
 import { SCOPE_ATTR } from '../utils/portal.js';
 import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
@@ -33,6 +33,10 @@ export interface ConfirmImpactOptions {
    * second ask while one is open resolves `false` and opens no second dialog.
    */
   instance?: FlowDropInstance;
+  /** Saves the draft as a new workflow; offered in the refused state when the report has a `copyUrl`. */
+  saveAsCopy?: () => Promise<SavedCopy>;
+  /** Reverts the draft to the last saved version; offered in the refused state. */
+  undo?: () => Promise<void>;
 }
 
 const pending = new WeakSet<FlowDropInstance>();
@@ -42,16 +46,16 @@ export function impactPending(instance: FlowDropInstance): boolean {
   return pending.has(instance);
 }
 
-/** Ask whether the save may go ahead. Resolves `true` to save, `false` to cancel. */
-export function confirmImpact(options: ConfirmImpactOptions): Promise<boolean> {
+/** Ask whether the save may go ahead, and answer what the person chose. */
+export function confirmImpact(options: ConfirmImpactOptions): Promise<ImpactAnswer> {
   if (typeof document === 'undefined') {
     // No DOM to ask in: refuse rather than silently save.
-    return Promise.resolve(false);
+    return Promise.resolve<ImpactAnswer>({ action: 'cancel' });
   }
   const key = options.instance;
-  if (key && pending.has(key)) return Promise.resolve(false);
+  if (key && pending.has(key)) return Promise.resolve<ImpactAnswer>({ action: 'cancel' });
   if (key) pending.add(key);
-  return new Promise<boolean>((resolve) => {
+  return new Promise<ImpactAnswer>((resolve) => {
     let settled = false;
     const element = document.createElement('div');
     element.className = 'fd-impact-confirm-host';
@@ -63,7 +67,7 @@ export function confirmImpact(options: ConfirmImpactOptions): Promise<boolean> {
 
     let component: ReturnType<typeof mount> | null = null;
     let forget: (() => void) | null = null;
-    const finish = (save: boolean): void => {
+    const finish = (answer: ImpactAnswer): void => {
       if (settled) return;
       settled = true;
       forget?.();
@@ -71,7 +75,7 @@ export function confirmImpact(options: ConfirmImpactOptions): Promise<boolean> {
       if (component) void unmount(component);
       theme?.destroy();
       element.remove();
-      resolve(save);
+      resolve(answer);
     };
 
     component = mount(ImpactConfirm, {
@@ -80,10 +84,12 @@ export function confirmImpact(options: ConfirmImpactOptions): Promise<boolean> {
       props: {
         report: options.report ?? null,
         error: options.error,
-        onResolve: finish
+        onResolve: finish,
+        onSaveAsCopy: options.saveAsCopy,
+        onUndo: options.undo
       }
     });
     // The instance going away takes the question with it.
-    forget = key?.onDestroy(() => finish(false)) ?? null;
+    forget = key?.onDestroy(() => finish({ action: 'cancel' })) ?? null;
   });
 }
