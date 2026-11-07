@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed inputs and outputs are listed with the places that use them and a box, "Also update these N places", unticked by default. The save request then carries a top-level `followRenames: true|false`. A save the backend refuses with `WORKFLOW_IN_USE_BREAKING` opens the same refused dialog instead of an error toast.
 - New event handler `onSavedAsCopy(copy, workflow)`, on the mount API and the `App` component. Without it the editor follows the copy's `editorUrl`.
 - `confirmImpact` now answers with an `ImpactAnswer` (`save`, `cancel`, `copied`, `undone`) instead of a boolean; `ImpactRename`, `ImpactAnswer` and `SavedCopy` are exported types.
+- The run bar says "Waiting for a worker" while a run is queued and the backend reports `activity.kind: 'waiting_for_worker'` on the pipeline status endpoint (or in the data a host passes to `onRunStatus`). Once the run is done, the run bar link reads "View result" and opens the run page. New messages `waitingForWorker`, `viewResult` and `viewResultTitle`; the run status payload type gains an optional `activity`. A backend that sends no activity behaves as before.
+- The editor's Run button sends `origin: 'editor'` in the launch request, so the backend can show where a run was started. The launch options gain an optional `origin`; a backend that does not know the field ignores it.
 
 ## [2.17.0] - 2026-11-04
 
