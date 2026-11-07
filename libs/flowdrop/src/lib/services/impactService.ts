@@ -178,6 +178,18 @@ export async function saveAsCopy(
   const id = data.id;
   return {
     id: typeof id === 'string' || typeof id === 'number' ? String(id) : null,
-    editorUrl: typeof url === 'string' && url ? url : null
+    editorUrl: typeof url === 'string' && isFollowableUrl(url) ? url : null
   };
+}
+
+/** An editor URL the page may go to: a site path, or an http(s) address. */
+function isFollowableUrl(url: string): boolean {
+  if (!url || /[\t\n\r]/.test(url)) return false;
+  if (/^\/(?![/\\])/.test(url)) return true;
+  try {
+    const protocol = new URL(url).protocol;
+    return protocol === 'https:' || protocol === 'http:';
+  } catch {
+    return false;
+  }
 }

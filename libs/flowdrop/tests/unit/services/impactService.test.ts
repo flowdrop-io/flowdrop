@@ -250,6 +250,21 @@ describe('impactService', () => {
     expect(copy).toEqual({ id: '7', editorUrl: '/admin/flowdrop/7/edit' });
   });
 
+  it('saveAsCopy keeps only an editor url the page may go to', async () => {
+    for (const [given, kept] of [
+      ['https://cms.example.com/admin/7', 'https://cms.example.com/admin/7'],
+      ['/admin/7', '/admin/7'],
+      ['javascript:alert(1)', null],
+      ['/\\other.example.com', null],
+      ['//other.example.com', null],
+      ['/admin/\n7', null]
+    ] as const) {
+      fetchMock.mockResolvedValueOnce(json({ success: true, data: { id: 7, editorUrl: given } }));
+      const copy = await saveAsCopy(config, authProvider, '/workflow/wf1/copy', draft);
+      expect(copy.editorUrl).toBe(kept);
+    }
+  });
+
   it('saveAsCopy throws the backend reason when it refuses', async () => {
     fetchMock.mockResolvedValue(json({ success: false, error: 'No access' }, 403));
     await expect(saveAsCopy(config, authProvider, '/workflow/wf1/copy', draft)).rejects.toThrow(
