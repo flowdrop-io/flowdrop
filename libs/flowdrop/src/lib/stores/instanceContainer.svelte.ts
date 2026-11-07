@@ -306,6 +306,9 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   const lock = new EditorLockStore();
   lock.onChange((locked) => workflow.setLocked(locked));
   const historyBindings = new HistoryStore(history);
+  // A locked workflow keeps its history where it is: undo and redo would only
+  // move the position, because the store refuses the restore.
+  historyBindings.setIsBlockedCheck(() => workflow.locked);
   // Default wiring: undo/redo restores into this instance's workflow store.
   // WorkflowEditor overrides this with a richer callback while mounted.
   historyBindings.setOnRestoreCallback((restored) => workflow.restoreFromHistory(restored));
@@ -338,6 +341,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     () => historyBindings.cleanup(),
     () => historyBindings.setOnRestoreCallback(null),
     () => historyBindings.setBeforeNavigateCallback(null),
+    () => historyBindings.setIsBlockedCheck(null),
     () => doctor.dispose(),
     () => workflow.setOnDirtyStateChange(null),
     () => workflow.setOnWorkflowChange(null),

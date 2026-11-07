@@ -96,3 +96,45 @@ describe('a locked instance', () => {
     expect(fd.workflow.id).toBe('wf');
   });
 });
+
+describe('history while locked', () => {
+  function withTwoEdits(id: string) {
+    const fd = createFlowDropInstance({ id });
+    fd.workflow.initialize(workflow());
+    fd.workflow.addNode({ id: 'n1', type: 'default', position: { x: 0, y: 0 }, data: {} } as never);
+    fd.workflow.addNode({ id: 'n2', type: 'default', position: { x: 0, y: 0 }, data: {} } as never);
+    return fd;
+  }
+
+  it('does nothing on undo and redo: position, workflow and answer stay as they were', () => {
+    const fd = withTwoEdits('lock-history');
+    expect(fd.workflow.nodes).toHaveLength(2);
+    const position = fd.historyBindings.state.currentIndex;
+
+    fd.lock.set(lock);
+    expect(fd.historyBindings.undo()).toBe(false);
+    expect(fd.historyBindings.redo()).toBe(false);
+    expect(fd.historyBindings.state.currentIndex).toBe(position);
+    expect(fd.workflow.nodes).toHaveLength(2);
+  });
+
+  it('does not call the restore callback while locked', () => {
+    const fd = withTwoEdits('lock-history-callback');
+    const restored = vi.fn();
+    fd.historyBindings.setOnRestoreCallback(restored);
+    fd.lock.set(lock);
+    fd.historyBindings.undo();
+    expect(restored).not.toHaveBeenCalled();
+  });
+
+  it('undoes normally once the lock is removed', () => {
+    const fd = withTwoEdits('lock-history-unlock');
+    const position = fd.historyBindings.state.currentIndex;
+    fd.lock.set(lock);
+    fd.historyBindings.undo();
+    fd.lock.set(null);
+    expect(fd.historyBindings.undo()).toBe(true);
+    expect(fd.historyBindings.state.currentIndex).toBe(position - 1);
+    expect(fd.workflow.nodes).toHaveLength(1);
+  });
+});

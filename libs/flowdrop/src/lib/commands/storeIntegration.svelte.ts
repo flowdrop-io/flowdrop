@@ -44,6 +44,8 @@ export function createStoreCommandContext(
     batchUpdate: (updates) => actions.batchUpdate(updates),
 
     undo: () => {
+      // A locked workflow refuses the restore; leave the history where it is.
+      if (fd.workflow.locked) return false;
       // Flush a pending edit session into a committed step before undoing it.
       actions.finalizeNodeConfig();
       const previousState = history.undo();
@@ -55,6 +57,7 @@ export function createStoreCommandContext(
     },
 
     redo: () => {
+      if (fd.workflow.locked) return false;
       actions.finalizeNodeConfig();
       const nextState = history.redo();
       if (nextState) {

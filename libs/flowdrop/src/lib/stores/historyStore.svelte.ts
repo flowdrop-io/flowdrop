@@ -66,6 +66,12 @@ export class HistoryStore {
    */
   #onBeforeNavigate: (() => void) | null = null;
 
+  /**
+   * Answers whether history is frozen (for example while the editor is locked).
+   * While it says yes, undo and redo do nothing.
+   */
+  #isBlocked: (() => boolean) | null = null;
+
   /** Unsubscribe handle for the service subscription. */
   readonly #unsubscribe: () => void;
 
@@ -158,6 +164,20 @@ export class HistoryStore {
   }
 
   /**
+   * Set the check that freezes history. While it returns true, `undo()` and
+   * `redo()` change nothing (the history position stays, the restore callback
+   * is not called) and return false. Pass `null` to remove the check.
+   */
+  setIsBlockedCheck(check: (() => boolean) | null): void {
+    this.#isBlocked = check;
+  }
+
+  /** Whether history is frozen right now. */
+  get isBlocked(): boolean {
+    return this.#isBlocked?.() ?? false;
+  }
+
+  /**
    * Release the history service subscription.
    * Called by the owning instance's destroy(); safe to call repeatedly.
    */
@@ -188,9 +208,11 @@ export class HistoryStore {
    *
    * Restores the previous workflow state and invokes the restore callback.
    *
-   * @returns true if undo was successful, false if at beginning of history
+   * @returns true if undo was successful, false if at beginning of history or
+   * while history is frozen (see {@link setIsBlockedCheck})
    */
   undo(): boolean {
+    if (this.isBlocked) return false;
     // Flush any pending edit session into a committed step first, so undo reverts
     // exactly that step rather than skipping over an uncommitted edit.
     this.#onBeforeNavigate?.();
@@ -207,9 +229,11 @@ export class HistoryStore {
    *
    * Restores the next workflow state and invokes the restore callback.
    *
-   * @returns true if redo was successful, false if at end of history
+   * @returns true if redo was successful, false if at end of history or
+   * while history is frozen (see {@link setIsBlockedCheck})
    */
   redo(): boolean {
+    if (this.isBlocked) return false;
     // A pending edit session invalidates the redo stack (it is a new change), so
     // finalize it first; redo then correctly reports nothing to redo.
     this.#onBeforeNavigate?.();
