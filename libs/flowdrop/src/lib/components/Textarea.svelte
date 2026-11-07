@@ -11,6 +11,7 @@
 
 <script lang="ts">
   import type { HTMLTextareaAttributes } from 'svelte/elements';
+  import { useFormReadOnly } from '$lib/components/form/readOnly.js';
 
   interface Props extends HTMLTextareaAttributes {
     /** Size — `md` is the base; `sm`/`lg` add a modifier */
@@ -22,6 +23,9 @@
   }
 
   let { size = 'md', invalid = false, class: className = '', ...rest }: Props = $props();
+
+  const formReadOnly = useFormReadOnly();
+  const isDisabled = $derived(rest.disabled || formReadOnly());
 
   const textareaClass = $derived(
     [
@@ -36,4 +40,4 @@
   );
 </script>
 
-<textarea class={textareaClass} {...rest}></textarea>
+<textarea class={textareaClass} {...rest} disabled={isDisabled}></textarea>

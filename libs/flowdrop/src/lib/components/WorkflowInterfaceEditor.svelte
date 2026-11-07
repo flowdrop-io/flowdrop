@@ -33,6 +33,7 @@
   import Icon from '@iconify/svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import Button from '$lib/components/primitives/Button.svelte';
+  import { useFormReadOnly } from '$lib/components/form/readOnly.js';
   import { m } from '$lib/messages/index.js';
   import WorkflowInterfaceEntryCard from '$lib/components/WorkflowInterfaceEntryCard.svelte';
   import WorkflowInterfaceEntryComposer from '$lib/components/WorkflowInterfaceEntryComposer.svelte';
@@ -94,6 +95,7 @@
     dataTypes = DEFAULT_PORT_CONFIG.dataTypes.filter((dt) => dt.enabled !== false),
     checker = new PortCompatibilityChecker(DEFAULT_PORT_CONFIG)
   }: Props = $props();
+  const readOnly = useFormReadOnly();
 
   type Direction = 'inputs' | 'outputs';
 
@@ -451,6 +453,7 @@
           variant="ghost"
           size="sm"
           class="wf-interface__add"
+          disabled={readOnly()}
           onclick={() => toggleComposer(section.key)}
         >
           {#snippet leadingIcon()}<Icon icon="heroicons:plus" />{/snippet}

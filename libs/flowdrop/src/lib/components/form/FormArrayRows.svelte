@@ -65,7 +65,7 @@
         label: t.makeDefault,
         icon: 'mdi:star-outline',
         testId: 'array-row-make-default',
-        disabled: itemRef.wired || markedIndex === index,
+        disabled: disabled || itemRef.wired || markedIndex === index,
         onselect: () => {
           const name = (items[index] as Record<string, unknown> | undefined)?.[columns[0][0]];
           itemRef.onChange(typeof name === 'string' ? name : '');
@@ -77,13 +77,13 @@
       {
         label: t.moveUp,
         icon: 'mdi:arrow-up',
-        disabled: index === 0,
+        disabled: disabled || index === 0,
         onselect: () => onMove(index, index - 1)
       },
       {
         label: t.moveDown,
         icon: 'mdi:arrow-down',
-        disabled: index === items.length - 1,
+        disabled: disabled || index === items.length - 1,
         onselect: () => onMove(index, index + 1)
       },
       { type: 'separator' },
@@ -91,7 +91,7 @@
         label: t.delete,
         icon: 'mdi:trash-can-outline',
         testId: 'array-row-delete',
-        disabled: !canRemove,
+        disabled: disabled || !canRemove,
         onselect: () => onRemove(index)
       }
     );

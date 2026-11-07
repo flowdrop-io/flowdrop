@@ -1,10 +1,12 @@
 <!--
   @component
-  LockFence: makes every form control inside it read-only while the editor is locked.
+  LockFence: makes the form controls inside it read-only while the editor is locked.
 
-  It is a `<fieldset disabled>` that takes no space of its own, so inputs, selects
-  and buttons inside stop answering, while text stays selectable. The workflow store
-  refuses edits as well; this is what the person sees.
+  It tells every form field below it, through the form read-only context, that the
+  form is read-only. Inputs, selects, switches, code editors and the buttons that
+  add, move or remove things then stop answering, while text stays selectable and
+  the buttons that only open, close or refresh something keep working. The workflow
+  store refuses edits as well; this is what the person sees.
 
   **Use it for** wrapping a config form or panel body that edits the workflow.
   **Not for** navigation inside a panel (tabs stay usable on a locked workflow).
@@ -13,21 +15,19 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { getInstance } from '../stores/getInstance.svelte.js';
+  import { provideFormReadOnly } from './form/readOnly.js';
 
   let { children }: { children: Snippet } = $props();
   const fd = getInstance();
+  provideFormReadOnly(() => fd.lock.isLocked);
 </script>
 
-<fieldset class="flowdrop-lock-fence" disabled={fd.lock.isLocked}>
+<div class="flowdrop-lock-fence" data-locked={fd.lock.isLocked ? '' : undefined}>
   {@render children()}
-</fieldset>
+</div>
 
 <style>
   .flowdrop-lock-fence {
     display: contents;
-    border: 0;
-    margin: 0;
-    padding: 0;
-    min-width: 0;
   }
 </style>

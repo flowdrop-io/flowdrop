@@ -427,7 +427,9 @@ export const defaultMessages = {
     // Toast when the run could not start and the server gave no message.
     failed: 'The run could not be started.',
     // Info toast when the run was accepted but waits for the site's queue.
-    queued: "The run is queued. It starts when the site's queue runs (cron)."
+    queued: "The run is queued. It starts when the site's queue runs (cron).",
+    // Info toast when the editor is locked and the workflow has unsaved changes.
+    lockedUnsaved: 'The editor is locked, so unsaved changes are not part of this run.'
   },
 
   // The form Run opens for a workflow that has inputs.

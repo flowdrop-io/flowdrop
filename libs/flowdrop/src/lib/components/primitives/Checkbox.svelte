@@ -14,6 +14,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import type { HTMLInputAttributes } from 'svelte/elements';
+  import { useFormReadOnly } from '../form/readOnly.js';
 
   interface Props extends Omit<HTMLInputAttributes, 'type' | 'checked' | 'onchange' | 'class'> {
     /** Current state. */
@@ -31,9 +32,12 @@
     label,
     onchange,
     class: className = '',
-    disabled = false,
+    disabled: disabledProp = false,
     ...rest
   }: Props = $props();
+
+  const formReadOnly = useFormReadOnly();
+  const disabled = $derived(disabledProp || formReadOnly());
 </script>
 
 <label class="flowdrop-ui-checkbox {className}" class:flowdrop-ui-checkbox--disabled={disabled}>

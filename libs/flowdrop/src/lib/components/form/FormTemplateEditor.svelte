@@ -195,6 +195,13 @@
   /** Flag to prevent update loops */
   let isInternalUpdate = false;
 
+  /** Compartment so the editor can turn read-only on and off after it is mounted. */
+  const readOnlyCompartment = new Compartment();
+
+  function readOnlyExtensions(readOnly: boolean) {
+    return readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : [];
+  }
+
   /** Compartment for dynamic autocomplete reconfiguration */
   const autocompleteCompartment = new Compartment();
 
@@ -267,7 +274,7 @@
         : [history(), keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])]),
 
       // Read-only: prevent document changes and mark content as non-editable
-      ...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
+      readOnlyCompartment.of(readOnlyExtensions(disabled)),
 
       // Syntax highlighting - use default for light mode, oneDark handles dark mode
       ...(darkTheme ? [] : [syntaxHighlighting(defaultHighlightStyle, { fallback: true })]),
@@ -448,6 +455,15 @@
     if (editorView) {
       editorView.destroy();
     }
+  });
+
+  /** Follow `disabled` after mount (for example when the editor gets locked). */
+  $effect(() => {
+    const readOnly = disabled;
+    if (!editorView) return;
+    editorView.dispatch({
+      effects: [readOnlyCompartment.reconfigure(readOnlyExtensions(readOnly))]
+    });
   });
 
   /**

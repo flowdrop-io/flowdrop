@@ -17,7 +17,7 @@
     highlightActiveLineGutter,
     drawSelection
   } from '@codemirror/view';
-  import { EditorState } from '@codemirror/state';
+  import { EditorState, Compartment } from '@codemirror/state';
   import { history, historyKeymap } from '@codemirror/commands';
   import { highlightSpecialChars, highlightActiveLine } from '@codemirror/view';
   import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
@@ -172,6 +172,13 @@
     }
   }
 
+  /** Compartment so the editor can turn read-only on and off after it is mounted. */
+  const readOnlyCompartment = new Compartment();
+
+  function readOnlyExtensions(readOnly: boolean) {
+    return readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : [];
+  }
+
   /**
    * Create editor extensions array
    * Uses minimal setup for better performance (no auto-closing brackets, no autocompletion)
@@ -192,7 +199,7 @@
         : [history(), keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab])]),
 
       // Read-only: prevent document changes and mark content as non-editable
-      ...(disabled ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : []),
+      readOnlyCompartment.of(readOnlyExtensions(disabled)),
 
       // Syntax highlighting - use default for light mode, oneDark handles dark mode
       ...(darkTheme ? [oneDark] : [syntaxHighlighting(defaultHighlightStyle, { fallback: true })]),
@@ -261,6 +268,15 @@
     if (editorView) {
       editorView.destroy();
     }
+  });
+
+  /** Follow `disabled` after mount (for example when the editor gets locked). */
+  $effect(() => {
+    const readOnly = disabled;
+    if (!editorView) return;
+    editorView.dispatch({
+      effects: [readOnlyCompartment.reconfigure(readOnlyExtensions(readOnly))]
+    });
   });
 
   /**

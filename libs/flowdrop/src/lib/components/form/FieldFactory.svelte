@@ -59,6 +59,7 @@
   import FormPorts from './FormPorts.svelte';
   import FormAutocomplete from './FormAutocomplete.svelte';
   import { humanizeKey } from './humanizeKey.js';
+  import { useFormReadOnly } from './readOnly.js';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
   import type { FormFieldFactoryProps } from './types.js';
@@ -98,9 +99,11 @@
   }: Props = $props();
 
   /**
-   * When schema.readOnly is true, disable all inputs (no editing).
+   * Disable all inputs (no editing) when schema.readOnly is true or the form
+   * around the field is read-only (for example while the editor is locked).
    */
-  const isReadOnly = $derived(schema.readOnly === true);
+  const formReadOnly = useFormReadOnly();
+  const isReadOnly = $derived(schema.readOnly === true || formReadOnly());
 
   /**
    * Computed description ID for ARIA association
@@ -395,7 +398,8 @@
         minItems={schema.minItems}
         maxItems={schema.maxItems}
         addLabel={`Add ${schema.items.title ?? 'Item'}`}
-        readOnly={isReadOnly}
+        readOnly={schema.readOnly === true}
+        disabled={isReadOnly}
         {itemRef}
         help={arrayText.help}
         onChange={(val) => onChange(val)}

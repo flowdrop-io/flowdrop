@@ -22,6 +22,7 @@
   import type { Snippet } from 'svelte';
   import type { HTMLSelectAttributes } from 'svelte/elements';
   import Combobox from './Combobox.svelte';
+  import { useFormReadOnly } from '../form/readOnly.js';
   import { selectRendering, type SelectOption } from '../../utils/selectOptions.js';
 
   // Omit native numeric `size` so our design-token size (matching Button) wins.
@@ -59,6 +60,9 @@
     ...rest
   }: Props = $props();
 
+  const formReadOnly = useFormReadOnly();
+  const isDisabled = $derived(rest.disabled || formReadOnly());
+
   const rendering = $derived(options ? selectRendering(options, searchable) : 'native');
   const hasValue = $derived(options?.some((o) => o.value === value) ?? false);
 
@@ -86,7 +90,7 @@
     class={className}
     id={rest.id ?? undefined}
     name={rest.name ?? undefined}
-    disabled={rest.disabled ?? false}
+    disabled={isDisabled}
     aria-label={rest['aria-label'] ?? undefined}
     aria-labelledby={rest['aria-labelledby'] ?? undefined}
     aria-describedby={rest['aria-describedby'] ?? undefined}
@@ -97,6 +101,7 @@
     <select
       class={selectClass}
       {...rest}
+      disabled={isDisabled}
       {...value !== undefined ? { value } : {}}
       onchange={(event) => {
         // `rest.onchange` is the caller's handler (an event handler, or a list of them).

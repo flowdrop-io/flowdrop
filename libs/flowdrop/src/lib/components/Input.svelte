@@ -17,6 +17,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import type { HTMLInputAttributes } from 'svelte/elements';
+  import { useFormReadOnly } from '$lib/components/form/readOnly.js';
 
   // Omit native numeric `size` so our design-token size (matching Button) wins.
   interface Props extends Omit<HTMLInputAttributes, 'size'> {
@@ -41,6 +42,9 @@
     ...rest
   }: Props = $props();
 
+  const formReadOnly = useFormReadOnly();
+  const isDisabled = $derived(rest.disabled || formReadOnly());
+
   const inputClass = $derived(
     [
       'flowdrop-input',
@@ -62,7 +66,7 @@
         {@render leading()}
       </span>
     {/if}
-    <input class={inputClass} {...rest} />
+    <input class={inputClass} {...rest} disabled={isDisabled} />
     {#if trailing}
       <span class="flowdrop-input-wrap__icon flowdrop-input-wrap__icon--trailing">
         {@render trailing()}
@@ -70,5 +74,5 @@
     {/if}
   </div>
 {:else}
-  <input class={inputClass} {...rest} />
+  <input class={inputClass} {...rest} disabled={isDisabled} />
 {/if}

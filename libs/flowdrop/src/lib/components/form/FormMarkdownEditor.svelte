@@ -95,6 +95,13 @@
   /** Autosave timer */
   let autosaveTimer: ReturnType<typeof setTimeout> | undefined;
 
+  /** Compartment so the editor can turn read-only on and off after it is mounted. */
+  const readOnlyCompartment = new Compartment();
+
+  function readOnlyExtensions(readOnly: boolean) {
+    return readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : [];
+  }
+
   /** Theme compartment for dynamic theme switching */
   const themeCompartment = new Compartment();
 
@@ -349,14 +356,12 @@
       drawSelection(),
       placeholderCompartment.of(placeholder(placeholderText)),
 
-      // Editing features (skip when read-only)
-      ...(disabled
-        ? [EditorState.readOnly.of(true), EditorView.editable.of(false)]
-        : [
-            history(),
-            keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
-            createToolbarKeymap()
-          ]),
+      // Editing features
+      history(),
+      keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+      createToolbarKeymap(),
+      // Read-only: prevents document changes and marks content as non-editable
+      readOnlyCompartment.of(readOnlyExtensions(disabled)),
 
       // Theme
       themeCompartment.of(
@@ -453,6 +458,15 @@
   onDestroy(() => {
     if (autosaveTimer) clearTimeout(autosaveTimer);
     if (editorView) editorView.destroy();
+  });
+
+  /** Follow `disabled` after mount (for example when the editor gets locked). */
+  $effect(() => {
+    const readOnly = disabled;
+    if (!editorView) return;
+    editorView.dispatch({
+      effects: [readOnlyCompartment.reconfigure(readOnlyExtensions(readOnly))]
+    });
   });
 
   /**

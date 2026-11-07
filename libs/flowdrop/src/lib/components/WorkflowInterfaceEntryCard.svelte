@@ -22,6 +22,7 @@
   import Icon from '@iconify/svelte';
   import Button from '$lib/components/Button.svelte';
   import IconButton from '$lib/components/primitives/IconButton.svelte';
+  import { useFormReadOnly } from '$lib/components/form/readOnly.js';
   import Input from '$lib/components/Input.svelte';
   import Select from '$lib/components/primitives/Select.svelte';
   import Checkbox from '$lib/components/primitives/Checkbox.svelte';
@@ -191,18 +192,22 @@
    * remove are never on screen at rest; the menu is the one way in, and it is a
    * real menu (arrow keys, type-ahead, Escape), so the keyboard reaches all of it.
    */
+  /** Read-only (for example while the editor is locked): look, but do not change. */
+  const formReadOnly = useFormReadOnly();
+  const readOnly = $derived(formReadOnly());
+
   const rowMenu = $derived<MenuEntry[]>([
     {
       label: m().workflowInterface.menuMoveUp,
       icon: 'heroicons:chevron-up',
-      disabled: isFirst,
+      disabled: readOnly || isFirst,
       testId: 'wf-entry-move-up',
       onselect: () => onMove(-1)
     },
     {
       label: m().workflowInterface.menuMoveDown,
       icon: 'heroicons:chevron-down',
-      disabled: isLast,
+      disabled: readOnly || isLast,
       testId: 'wf-entry-move-down',
       onselect: () => onMove(1)
     },
@@ -217,6 +222,7 @@
     {
       label: m().workflowInterface.menuRemove,
       icon: 'heroicons:trash',
+      disabled: readOnly,
       testId: 'wf-entry-remove',
       onselect: onRemove
     }
@@ -320,6 +326,7 @@
         aria-label={m().workflowInterface.idLabel}
         title={m().workflowInterface.idLabel}
         spellcheck="false"
+        disabled={readOnly}
         value={entry.id}
         onchange={(e) => {
           // An input needs an id: an emptied field goes back to the old one
@@ -340,6 +347,7 @@
       aria-haspopup="listbox"
       aria-expanded={pickerOpen}
       title={m().workflowInterface.bindingChange}
+      disabled={readOnly}
       onclick={() => (pickerOpen = !pickerOpen)}
     >
       <span class="wf-interface__sr">{m().workflowInterface.bindingLabel}:</span>
@@ -415,7 +423,7 @@
       />
       <div class="wf-interface__picker-actions">
         {#if entry.bindings[0]}
-          <Button variant="ghost" size="sm" onclick={unbind}>
+          <Button variant="ghost" size="sm" disabled={readOnly} onclick={unbind}>
             <Icon icon="heroicons:link-slash" />
             {m().workflowInterface.bindingUnbind}
           </Button>
@@ -497,6 +505,7 @@
             size="sm"
             class="wf-interface__pull"
             title={m().workflowInterface.pullFromPortTitle}
+            disabled={readOnly}
             onclick={() => onPatch(pullEntryFieldsFromPort(boundTarget.port))}
           >
             <Icon icon="heroicons:arrow-down-tray" />
@@ -543,6 +552,7 @@
               <button
                 type="button"
                 class="wf-interface__quickfix"
+                disabled={readOnly}
                 onclick={() => onPatch({ dataType: boundPortType ?? entry.dataType })}
               >
                 {m().workflowInterface.useMatchPortType}
@@ -600,6 +610,7 @@
               <IconButton
                 size="sm"
                 class="wf-interface__example-remove"
+                disabled={readOnly}
                 onclick={() => removeExample(exampleIndex)}
                 ariaLabel={m().workflowInterface.removeExample}
               >
@@ -607,7 +618,13 @@
               </IconButton>
             </div>
           {/each}
-          <Button variant="ghost" size="sm" class="wf-interface__example-add" onclick={addExample}>
+          <Button
+            variant="ghost"
+            size="sm"
+            class="wf-interface__example-add"
+            disabled={readOnly}
+            onclick={addExample}
+          >
             <Icon icon="heroicons:plus" />
             {m().workflowInterface.addExample}
           </Button>

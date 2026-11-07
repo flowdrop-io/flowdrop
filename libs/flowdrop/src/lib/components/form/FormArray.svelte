@@ -647,7 +647,6 @@
 
   .form-array--disabled {
     opacity: 0.6;
-    pointer-events: none;
   }
 
   .form-array__items {

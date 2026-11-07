@@ -395,12 +395,13 @@
   const canvasEditable = $derived(effectiveMode === 'edit');
 
   /**
-   * Test mode can be entered: it is offered, the canvas is editable, this is
+   * Test mode can be entered: it is offered, the host's mode is `edit`, this is
    * not a pipeline view, and the workflow is saved (the Playground runs the
-   * saved workflow's id).
+   * saved workflow's id). A lock does not remove it: a locked workflow can still
+   * be tested, the canvas just stays read-only.
    */
   const testModeAvailable = $derived(
-    features.testMode && canvasEditable && !pipelineId && !!fd.workflow.current?.id
+    features.testMode && mode === 'edit' && !pipelineId && !!fd.workflow.current?.id
   );
   /** Test mode is in effect: requested, and available. */
   const testMode = $derived(testModeAvailable && fd.editorMode.isTest);
@@ -694,8 +695,13 @@
     runStarting = true;
     try {
       if (fd.workflow.isDirty) {
-        // The save toast already explains a failed save.
-        if (!(await saveWorkflow())) return;
+        if (fd.lock.isLocked) {
+          // A locked editor cannot save: run the saved workflow and say so.
+          showInfo(mergedMessages.runButton.lockedUnsaved);
+        } else if (!(await saveWorkflow())) {
+          // The save toast already explains a failed save.
+          return;
+        }
       }
       const workflow = fd.workflow.current;
       if (!workflow?.id) return;
@@ -1964,7 +1970,8 @@
       workflowEdges={fd.workflow.current?.edges}
       onExternalEdit={externalEditForConfig}
       onChange={(updatedConfig, meta) => {
-        if (!node.id) return;
+        // A locked workflow takes no edits: the store would refuse them and the canvas must not move.
+        if (!node.id || fd.lock.isLocked) return;
         const updatedData = { ...node.data, config: updatedConfig };
 
         // Blur / end-of-session: commit the coalesced undo step + fire the
@@ -2028,6 +2035,7 @@
       values={workflowConfigValues}
       commitMode="blur"
       onChange={(config) => {
+        if (fd.lock.isLocked) return;
         // Sync workflow settings changes immediately on field blur
         const wf = fd.workflow.current;
         if (wf) {
@@ -2081,7 +2089,10 @@
         workflow={fd.workflow.current}
         dataTypes={fd.portCompatibility.getEnabledDataTypes()}
         checker={fd.portCompatibility}
-        onChange={(next, edit) => fd.workflow.editInterface(next, edit)}
+        onChange={(next, edit) => {
+          if (fd.lock.isLocked) return;
+          fd.workflow.editInterface(next, edit);
+        }}
         onOpenPlaygroundSettings={fd.workflow.current.playground !== undefined
           ? () => (workflowSettingsTab = 'playground')
           : undefined}
@@ -2101,10 +2112,13 @@
     {#if fd.workflow.current}
       <WorkflowPlaygroundSettings
         workflow={fd.workflow.current}
-        onChange={(next) => fd.workflow.batchUpdate({ playground: next })}
+        onChange={(next) => {
+          if (fd.lock.isLocked) return;
+          fd.workflow.batchUpdate({ playground: next });
+        }}
         onMoveTurns={(chat) => {
           const current = fd.workflow.current;
-          if (!current) return;
+          if (!current || fd.lock.isLocked) return;
           fd.workflow.batchUpdate({
             playground: withPlaygroundChat(current.playground, chat),
             interface: withoutInterfaceTurns(current.interface)

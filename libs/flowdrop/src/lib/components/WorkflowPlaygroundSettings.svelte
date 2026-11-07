@@ -24,6 +24,7 @@
 <script lang="ts">
   import Icon from '@iconify/svelte';
   import Button from '$lib/components/Button.svelte';
+  import { useFormReadOnly } from '$lib/components/form/readOnly.js';
   import Input from '$lib/components/Input.svelte';
   import Select from '$lib/components/primitives/Select.svelte';
   import Checkbox from '$lib/components/primitives/Checkbox.svelte';
@@ -70,6 +71,7 @@
   }
 
   let { workflow, onChange, onMoveTurns }: Props = $props();
+  const readOnly = useFormReadOnly();
 
   /** The stored binding, every key present; `null` = not set up. */
   const stored = $derived(
@@ -257,6 +259,7 @@
             <Button
               variant="secondary"
               size="sm"
+              disabled={readOnly()}
               onclick={() => turnChat && onMoveTurns?.(turnChat)}
             >
               {m().playgroundSettings.moveTurns}
@@ -276,7 +279,12 @@
       {m().playgroundSettings.leftoverTurns}
       {#snippet actions()}
         {#if onMoveTurns}
-          <Button variant="secondary" size="sm" onclick={() => stored && onMoveTurns?.(stored)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={readOnly()}
+            onclick={() => stored && onMoveTurns?.(stored)}
+          >
             {m().playgroundSettings.removeTurns}
           </Button>
         {/if}
