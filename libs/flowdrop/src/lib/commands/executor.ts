@@ -1949,7 +1949,7 @@ export function executeCommand(command: Command, context: CommandContext): Comma
     return {
       ok: false,
       code: 'LOCKED',
-      error: 'The editor is locked (read-only), so this change was not made. Nothing was run.'
+      error: 'The editor is locked (read-only), so this change was not made.'
     };
   }
   switch (command.type) {
