@@ -939,6 +939,7 @@ export async function mountFlowDropApp(
       onAfterSave: eventHandlers?.onAfterSave,
       onSaveError: eventHandlers?.onSaveError,
       onSavedAsCopy: eventHandlers?.onSavedAsCopy,
+      onDiscardDraft: () => state.draftManager?.markAsSaved(),
       onApiError: eventHandlers?.onApiError,
       onWorkflowLoad: eventHandlers?.onWorkflowLoad,
       onExternalEdit: eventHandlers?.onExternalEdit
@@ -1180,6 +1181,7 @@ export async function mountFlowDropApp(
     save: async () => {
       return globalSaveWorkflow({
         instance: fd,
+        onDiscardDraft: () => state.draftManager?.markAsSaved(),
         onSaved: (saved) => {
           // globalSaveWorkflow does not write the server-assigned ID back to the
           // workflow store, so we cannot read it from the store here.

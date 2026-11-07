@@ -1329,12 +1329,17 @@ export const defaultMessages = {
             ? "This change can't be saved while 1 place uses it."
             : `This change can't be saved while ${count} places use it.`,
       keepEditing: 'Keep editing',
-      undo: 'Undo the change',
-      undoing: 'Undoing\u2026',
-      undoFailed: ({ message }: { message: string }) => `Could not undo the change: ${message}`,
+      // Throws away every unsaved edit and loads the saved version.
+      discard: 'Discard my changes',
+      discarding: 'Discarding\u2026',
+      discardFailed: ({ message }: { message: string }) =>
+        `Could not discard your changes: ${message}`,
       copy: 'Save as a copy',
       copying: 'Saving a copy\u2026',
-      copyFailed: ({ message }: { message: string }) => `Could not save a copy: ${message}`
+      copyFailed: ({ message }: { message: string }) => `Could not save a copy: ${message}`,
+      // Shown when the copy was saved and the editor stays where it is.
+      copied: 'Saved a copy of this workflow.',
+      copiedNamed: ({ id }: { id: string }) => `Saved a copy of this workflow as ${id}.`
     },
     // Renamed inputs and outputs, and the opt-in to follow them.
     renames: {

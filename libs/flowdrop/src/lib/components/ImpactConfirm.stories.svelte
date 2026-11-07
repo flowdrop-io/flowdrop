@@ -100,12 +100,13 @@
     report: refusedReport,
     onResolve: () => {},
     onSaveAsCopy: async () => ({ id: '2', editorUrl: null }),
-    onUndo: async () => {}
+    onDiscard: async () => {}
   }}
   parameters={{
     docs: {
       description: {
-        story: 'The change cannot be saved while things use the workflow: copy it or undo it.'
+        story:
+          'The change cannot be saved while things use the workflow: copy it or discard the edits.'
       }
     }
   }}

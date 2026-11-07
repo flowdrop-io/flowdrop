@@ -125,7 +125,11 @@ export interface FlowDropEventHandlers {
    *
    * The original workflow is unchanged and the editor still holds the draft.
    * Without this handler the editor follows `copy.editorUrl` (when the backend
-   * sent one); with it, the host decides what happens next.
+   * sent one): it first marks the workflow as saved, so the leave prompt stays
+   * quiet, and drops the stored draft of the original. With no URL either, it
+   * shows a "saved a copy" toast and stays as it is. With this handler the host
+   * decides what happens next and the editor does nothing else. An error thrown
+   * here is logged and never counts as a failed save.
    *
    * @param copy - The new workflow: its id and editor URL, when the backend names them
    * @param workflow - The draft that was copied

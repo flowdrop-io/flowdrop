@@ -249,6 +249,11 @@
     onAfterSave?: FlowDropEventHandlers['onAfterSave'];
     /** Called after a refused save was saved as a copy; replaces following the copy's editor URL. */
     onSavedAsCopy?: FlowDropEventHandlers['onSavedAsCopy'];
+    /**
+     * Called just before the editor follows a saved copy's editor URL, after the
+     * workflow is marked saved. The mount API uses it to drop the original's draft.
+     */
+    onDiscardDraft?: () => void;
     /** Called when a save fails. */
     onSaveError?: FlowDropEventHandlers['onSaveError'];
     /** Called on any API error — return true to suppress the default toast. */
@@ -332,6 +337,7 @@
     onBeforeSave,
     onAfterSave,
     onSavedAsCopy,
+    onDiscardDraft,
     onSaveError,
     onApiError,
     onWorkflowLoad,
@@ -1359,6 +1365,7 @@
       features,
       instance: fd,
       interactive: options.interactive,
+      onDiscardDraft,
       onMarkAsSaved: (version) => fd.workflow.markAsSaved(version)
     });
   }

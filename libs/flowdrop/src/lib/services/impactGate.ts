@@ -35,8 +35,8 @@ export interface ConfirmImpactOptions {
   instance?: FlowDropInstance;
   /** Saves the draft as a new workflow; offered in the refused state when the report has a `copyUrl`. */
   saveAsCopy?: () => Promise<SavedCopy>;
-  /** Reverts the draft to the last saved version; offered in the refused state. */
-  undo?: () => Promise<void>;
+  /** Throws away the unsaved edits and loads the saved version; offered in the refused state. */
+  discard?: () => Promise<void>;
 }
 
 const pending = new WeakSet<FlowDropInstance>();
@@ -86,7 +86,7 @@ export function confirmImpact(options: ConfirmImpactOptions): Promise<ImpactAnsw
         error: options.error,
         onResolve: finish,
         onSaveAsCopy: options.saveAsCopy,
-        onUndo: options.undo
+        onDiscard: options.discard
       }
     });
     // The instance going away takes the question with it.

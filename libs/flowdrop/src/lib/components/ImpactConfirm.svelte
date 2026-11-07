@@ -37,11 +37,14 @@
      * Rejects with the reason when it fails; the dialog then stays open.
      */
     onSaveAsCopy?: () => Promise<SavedCopy>;
-    /** Reverts the draft to the last saved version (the refused state's "Undo the change"). */
-    onUndo?: () => Promise<void>;
+    /**
+     * Throws away every unsaved edit and loads the saved version (the refused
+     * state's "Discard my changes").
+     */
+    onDiscard?: () => Promise<void>;
   }
 
-  let { report, error, onResolve, onSaveAsCopy, onUndo }: Props = $props();
+  let { report, error, onResolve, onSaveAsCopy, onDiscard }: Props = $props();
 
   // The getter is read at initialisation: the context is gone after an await.
   const readMessages = getMessages();
@@ -55,7 +58,7 @@
   );
   // Opt-in: nothing a rename touches elsewhere changes unless the person asks.
   let followRenames = $state(false);
-  let busy = $state<'copy' | 'undo' | null>(null);
+  let busy = $state<'copy' | 'discard' | null>(null);
   let actionError = $state('');
 
   // Unique per instance so two dialogs on one page do not share a DOM id.
@@ -114,15 +117,15 @@
     }
   }
 
-  async function undo(): Promise<void> {
-    if (!onUndo || busy) return;
-    busy = 'undo';
+  async function discard(): Promise<void> {
+    if (!onDiscard || busy) return;
+    busy = 'discard';
     actionError = '';
     try {
-      await onUndo();
-      resolve({ action: 'undone' });
+      await onDiscard();
+      resolve({ action: 'discarded' });
     } catch (e) {
-      actionError = m().impact.refused.undoFailed({
+      actionError = m().impact.refused.discardFailed({
         message: e instanceof Error ? e.message : String(e)
       });
       busy = null;
@@ -245,9 +248,9 @@
         </Button>
       </span>
       {#if refused}
-        {#if onUndo}
-          <Button data-testid="flowdrop-impact-undo" disabled={busy !== null} onclick={undo}>
-            {busy === 'undo' ? m().impact.refused.undoing : m().impact.refused.undo}
+        {#if onDiscard}
+          <Button data-testid="flowdrop-impact-discard" disabled={busy !== null} onclick={discard}>
+            {busy === 'discard' ? m().impact.refused.discarding : m().impact.refused.discard}
           </Button>
         {/if}
         {#if onSaveAsCopy && report?.copyUrl}

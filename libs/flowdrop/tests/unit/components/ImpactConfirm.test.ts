@@ -238,10 +238,10 @@ describe('confirmImpact: refused saves', () => {
     void confirmImpact({
       report: refusedReport,
       saveAsCopy: async () => ({ id: '2', editorUrl: null }),
-      undo: async () => {}
+      discard: async () => {}
     });
     flushSync();
-    expect(buttons()).toEqual(['Keep editing', 'Undo the change', 'Save as a copy']);
+    expect(buttons()).toEqual(['Keep editing', 'Discard my changes', 'Save as a copy']);
     expect(document.querySelector('[data-testid="flowdrop-impact-save"]')).toBeNull();
   });
 
@@ -280,13 +280,13 @@ describe('confirmImpact: refused saves', () => {
     expect(await answer).toEqual({ action: 'cancel' });
   });
 
-  it('Undo the change resolves undone after the revert ran', async () => {
-    const undo = vi.fn(async () => {});
-    const answer = confirmImpact({ report: refusedReport, undo });
+  it('Discard my changes resolves discarded after the reload ran', async () => {
+    const discard = vi.fn(async () => {});
+    const answer = confirmImpact({ report: refusedReport, discard });
     flushSync();
-    click('flowdrop-impact-undo');
-    expect(await answer).toEqual({ action: 'undone' });
-    expect(undo).toHaveBeenCalledTimes(1);
+    click('flowdrop-impact-discard');
+    expect(await answer).toEqual({ action: 'discarded' });
+    expect(discard).toHaveBeenCalledTimes(1);
   });
 });
 

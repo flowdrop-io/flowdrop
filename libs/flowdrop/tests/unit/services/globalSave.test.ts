@@ -45,7 +45,8 @@ const {
   mockConfirmImpact,
   mockImpactPending,
   versionState,
-  mockShowInfo
+  mockShowInfo,
+  mockShowSuccess
 } = vi.hoisted(() => ({
   mockGetWorkflowStore: vi.fn(),
   mockWorkflowActionsBatchUpdate: vi.fn(),
@@ -62,7 +63,8 @@ const {
   mockConfirmImpact: vi.fn(),
   mockImpactPending: vi.fn(() => false),
   versionState: { editVersion: 0 },
-  mockShowInfo: vi.fn()
+  mockShowInfo: vi.fn(),
+  mockShowSuccess: vi.fn()
 }));
 
 vi.mock('$lib/services/impactService.js', async (importOriginal) => ({
@@ -98,7 +100,15 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => {
       markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args),
       acknowledgeServer: (...args: unknown[]) => mockStoreAcknowledgeServer(...args)
     },
-    messages: () => ({ autoSave: { waiting: 'Autosave is waiting' } }),
+    messages: () => ({
+      autoSave: { waiting: 'Autosave is waiting' },
+      impact: {
+        refused: {
+          copied: 'Saved a copy.',
+          copiedNamed: ({ id }: { id: string }) => `Saved a copy as ${id}.`
+        }
+      }
+    }),
     doctor: { canOpen: false, requestOpen: () => false },
     saveConflict: { report: (...args: unknown[]) => mockReport(...args) },
     runs: {
@@ -124,6 +134,7 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => {
 
 vi.mock('$lib/services/toastService.js', () => ({
   showInfo: (...args: unknown[]) => mockShowInfo(...args),
+  showSuccess: (...args: unknown[]) => mockShowSuccess(...args),
   apiToasts: { loading: vi.fn(() => 'toast-id'), error: vi.fn() },
   workflowToasts: { saved: vi.fn() },
   showError: vi.fn(),
@@ -345,6 +356,88 @@ describe('globalSaveWorkflow', () => {
 
         expect(assign).toHaveBeenCalledWith('/admin/9');
         vi.unstubAllGlobals();
+      });
+
+      it('marks the workflow saved and drops the draft before following the copy', async () => {
+        const order: string[] = [];
+        const assign = vi.fn(() => order.push('assign'));
+        vi.stubGlobal('window', { ...globalThis.window, location: { assign } });
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact.mockResolvedValue({
+          action: 'copied',
+          copy: { id: '9', editorUrl: '/admin/9' }
+        });
+        mockStoreMarkAsSaved.mockImplementation(() => order.push('saved'));
+        const onDiscardDraft = vi.fn(() => order.push('draft'));
+
+        await globalSaveWorkflow({ onDiscardDraft });
+
+        expect(order).toEqual(['saved', 'draft', 'assign']);
+        mockStoreMarkAsSaved.mockReset();
+        vi.unstubAllGlobals();
+      });
+
+      it('says the copy was saved and stays put with no url and no handler', async () => {
+        const assign = vi.fn();
+        vi.stubGlobal('window', { ...globalThis.window, location: { assign } });
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact.mockResolvedValue({
+          action: 'copied',
+          copy: { id: '9', editorUrl: null }
+        });
+
+        await globalSaveWorkflow({});
+
+        expect(mockShowSuccess).toHaveBeenCalledWith('Saved a copy as 9.');
+        expect(assign).not.toHaveBeenCalled();
+        expect(mockStoreMarkAsSaved).not.toHaveBeenCalled();
+        vi.unstubAllGlobals();
+      });
+
+      it('an onSavedAsCopy that throws is logged, not a failed save (check refused)', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact.mockResolvedValue({
+          action: 'copied',
+          copy: { id: '9', editorUrl: null }
+        });
+        const onSaveError = vi.fn();
+        const onSavedAsCopy = vi.fn(async () => {
+          throw new Error('host broke');
+        });
+
+        expect(await globalSaveWorkflow({ eventHandlers: { onSavedAsCopy, onSaveError } })).toBe(
+          false
+        );
+
+        expect(onSaveError).not.toHaveBeenCalled();
+        expect(apiToasts.error).not.toHaveBeenCalled();
+      });
+
+      it('an onSavedAsCopy that throws does not escape a save refused as breaking', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact
+          .mockResolvedValueOnce({ action: 'save' })
+          .mockResolvedValueOnce({ action: 'copied', copy: { id: '9', editorUrl: null } });
+        mockClientUpdate.mockRejectedValue(
+          new ApiError('Refused', 409, 'update workflow', {
+            error_code: 'WORKFLOW_IN_USE_BREAKING',
+            error: 'Refused'
+          })
+        );
+        const onSavedAsCopy = vi.fn(async () => {
+          throw new Error('host broke');
+        });
+
+        expect(await globalSaveWorkflow({ eventHandlers: { onSavedAsCopy } })).toBe(false);
+      });
+
+      it('offers Discard my changes only when the draft has an id', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
+
+        await globalSaveWorkflow({});
+
+        expect(mockConfirmImpact.mock.calls[0][0].discard).toEqual(expect.any(Function));
       });
 
       it('shows the refused state when the save itself is refused as breaking', async () => {

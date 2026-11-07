@@ -59,5 +59,5 @@ export type ImpactAnswer =
   | { action: 'cancel' }
   /** The draft was saved as a new workflow. */
   | { action: 'copied'; copy: SavedCopy }
-  /** The draft was reverted to the last saved version. */
-  | { action: 'undone' };
+  /** The unsaved edits were thrown away and the saved version was loaded. */
+  | { action: 'discarded' };

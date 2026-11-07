@@ -18,7 +18,8 @@ import { stripExecutionInfo } from '$lib/utils/nodeStatus.js';
 import { playgroundForSave } from '$lib/utils/playgroundChat.js';
 import { buildSaveBody } from '$lib/utils/workflowDraft.js';
 import type { ApiError } from '$lib/api/enhanced-client.js';
-import { apiToasts, workflowToasts, dismissToast, showInfo } from './toastService.js';
+import { apiToasts, workflowToasts, dismissToast, showInfo, showSuccess } from './toastService.js';
+import { logger } from '../utils/logger.js';
 import {
   checkImpact,
   impactSupported,
@@ -71,6 +72,12 @@ export interface GlobalSaveOptions {
    * made, returns `false` and the workflow stays dirty.
    */
   interactive?: boolean;
+  /**
+   * Called when the editor is about to follow a saved copy to its editor URL
+   * (no `onSavedAsCopy` handler). The editor is already marked as saved; use
+   * this to drop the stored draft of the original workflow.
+   */
+  onDiscardDraft?: () => void;
 }
 
 /**
@@ -331,7 +338,7 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
           ...refusalActions(fd, result.status === 'ok' ? result.report : undefined, finalWorkflow)
         });
         if (answer.action === 'copied') {
-          await afterSavedAsCopy(answer.copy, finalWorkflow, eventHandlers);
+          await afterSavedAsCopy(answer.copy, finalWorkflow, fd, options, features.showToasts);
           return false;
         }
         if (answer.action !== 'save') return false;
@@ -437,7 +444,7 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
         ...refusalActions(fd, refusal, draftForCopy)
       });
       if (answer.action === 'copied') {
-        await afterSavedAsCopy(answer.copy, draftForCopy, eventHandlers);
+        await afterSavedAsCopy(answer.copy, draftForCopy, fd, options, features.showToasts);
       }
       return false;
     }
@@ -483,7 +490,8 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
 
 /**
  * What the refused state offers: "Save as a copy" when the backend named a
- * `copyUrl`, "Undo the change" when the workflow has a saved version to load.
+ * safe `copyUrl`, "Discard my changes" when the draft has an id to load the
+ * saved version by. Discarding drops every unsaved edit and the undo history.
  */
 function refusalActions(fd: FlowDropInstance, report: ImpactReport | undefined, draft: Workflow) {
   const config = fd.api.config;
@@ -493,30 +501,53 @@ function refusalActions(fd: FlowDropInstance, report: ImpactReport | undefined, 
       report?.refused && copyUrl && config && isSafeCopyUrl(config, copyUrl)
         ? () => saveAsCopy(config, fd.api.authProvider, copyUrl, draft)
         : undefined,
-    undo: report?.refused
-      ? async () => {
-          const loaded = await fd.api.client.loadWorkflow(draft.id);
-          fd.workflow.initialize(loaded);
-          fd.doctor.schedule();
-        }
-      : undefined
+    discard:
+      report?.refused && draft.id
+        ? async () => {
+            const loaded = await fd.api.client.loadWorkflow(draft.id);
+            fd.workflow.initialize(loaded);
+            fd.doctor.schedule();
+          }
+        : undefined
   };
 }
 
 /**
  * The draft now lives on as a new workflow. The host's `onSavedAsCopy` takes
- * over when it has one; otherwise the editor follows the copy's editor URL.
+ * over when it has one. Otherwise the editor follows the copy's editor URL,
+ * after clearing the unsaved state so the leave guard stays quiet and the
+ * original's draft is not offered again; with no URL it says the copy exists
+ * and stays as it is. A failure here never counts as a failed save: the copy
+ * exists.
  */
 async function afterSavedAsCopy(
   copy: SavedCopy,
   draft: Workflow,
-  eventHandlers: FlowDropEventHandlers | undefined
+  fd: FlowDropInstance,
+  options: GlobalSaveOptions,
+  showToasts: boolean
 ): Promise<void> {
-  if (eventHandlers?.onSavedAsCopy) {
-    await eventHandlers.onSavedAsCopy(copy, draft);
-    return;
+  try {
+    const handler = options.eventHandlers?.onSavedAsCopy;
+    if (handler) {
+      await handler(copy, draft);
+      return;
+    }
+    if (copy.editorUrl && typeof window !== 'undefined') {
+      const version = fd.workflow.editVersion;
+      if (options.onMarkAsSaved) options.onMarkAsSaved(version);
+      else fd.workflow.markAsSaved(version);
+      options.onDiscardDraft?.();
+      window.location.assign(copy.editorUrl);
+      return;
+    }
+    if (showToasts) {
+      const refused = fd.messages().impact.refused;
+      showSuccess(copy.id ? refused.copiedNamed({ id: copy.id }) : refused.copied);
+    }
+  } catch (error) {
+    logger.error('Handling the saved copy failed', error);
   }
-  if (copy.editorUrl && typeof window !== 'undefined') window.location.assign(copy.editorUrl);
 }
 
 /**
