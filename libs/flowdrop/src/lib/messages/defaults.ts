@@ -444,6 +444,8 @@ export const defaultMessages = {
   runBar: {
     label: 'Run',
     running: 'Running',
+    // A run that is queued while no worker has picked it up.
+    waitingForWorker: 'Waiting for a worker',
     waiting: 'Waiting',
     failed: 'Failed',
     done: 'Done',
@@ -453,6 +455,9 @@ export const defaultMessages = {
     open: 'Open',
     openLabel: 'Open the run in Test mode',
     openRun: 'Open run',
+    // The same link once the run has ended: the run page shows what it produced.
+    viewResult: 'View result',
+    viewResultTitle: 'Open the run page to see its result',
     openRunTitle: 'Open the run page',
     askAssistant: 'Ask the Assistant',
     askAssistantLabel: 'Ask the Assistant about this run',

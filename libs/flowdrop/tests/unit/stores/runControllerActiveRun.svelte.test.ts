@@ -237,6 +237,34 @@ describe('activeRun: host runs', () => {
     runs.dispose();
   });
 
+  it('says a running run waits for a worker while the site reports it queued', async () => {
+    const { runs } = setup();
+    runs.hostPollInterval = 1000;
+    const answers = [
+      { status: 'running', activity: { kind: 'waiting_for_worker' } },
+      { status: 'running', activity: { kind: 'running_on_worker' } },
+      { status: 'completed', activity: null }
+    ];
+    const onRunStatus = vi.fn(async (runId: string) => ({
+      ok: true,
+      data: { runId, ...(answers.shift() ?? { status: 'completed' }) }
+    }));
+    const wrapped = runs.wrapHostHooks({
+      onRun: hooks([]).onRun,
+      onRunStatus
+    } as unknown as HostHooks);
+    await wrapped.onRun!({});
+    expect(runs.activeRun?.waitingForWorker).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(runs.activeRun).toMatchObject({ status: 'running', waitingForWorker: true });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(runs.activeRun).toMatchObject({ status: 'running', waitingForWorker: false });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(runs.activeRun).toMatchObject({ status: 'done', waitingForWorker: false });
+    runs.dispose();
+  });
+
   it('moves with the status an agent reads itself', async () => {
     const { runs } = setup();
     const wrapped = runs.wrapHostHooks(hooks(['failed']));

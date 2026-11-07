@@ -84,6 +84,29 @@ export async function readRunStatus(
   return body?.data?.status;
 }
 
+/**
+ * The status of one run plus what the site says is happening to it
+ * (`activity.kind`, for example `waiting_for_worker`), or `undefined` when it
+ * cannot be read. Older backends send no activity.
+ */
+export async function readRunState(
+  config: EndpointConfig,
+  pipelineId: string,
+  authProvider?: AuthProvider
+): Promise<{ status: string | undefined; activityKind: string | null } | undefined> {
+  const url = buildEndpointUrl(config, config.endpoints.pipelines.status, { id: pipelineId });
+  const response = await authenticatedFetch(
+    url,
+    { method: 'GET' },
+    { config, endpointKey: 'pipelines.status', authProvider }
+  );
+  if (!response.ok) return undefined;
+  const body = (await response.json().catch(() => null)) as {
+    data?: { status?: string; activity?: { kind?: string } | null };
+  } | null;
+  return { status: body?.data?.status, activityKind: body?.data?.activity?.kind ?? null };
+}
+
 /** Re-run a finished run; the answer names the new pipeline. */
 export async function rerunRun(
   config: EndpointConfig,

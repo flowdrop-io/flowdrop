@@ -204,6 +204,11 @@ export interface RunStatus {
   pending?: RunPending | null;
   /** Why an execution budget paused the run, when it did. */
   pausedReason?: string | null;
+  /**
+   * What the site says is happening to the run. `kind: 'waiting_for_worker'`
+   * makes the run bar say the run waits for a worker.
+   */
+  activity?: { kind?: string; label?: string } | null;
   /** The run's output once it has one. Host-shaped. */
   outputs?: unknown;
   /** Per-node status once the host has it. Host-shaped. */

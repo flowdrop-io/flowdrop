@@ -72,7 +72,13 @@
   /** Test mode shows the pill only while the run is live. */
   const visible = $derived(mode === 'test' ? live : status !== null);
 
-  const statusLabel = $derived(status ? msgs[status] : '');
+  const statusLabel = $derived(
+    status === 'running' && run?.waitingForWorker
+      ? msgs.waitingForWorker
+      : status
+        ? msgs[status]
+        : ''
+  );
   const announcement = $derived(status ? msgs.announce[status] : '');
 
   // The bar stays put while it is hovered or holds focus: a person reading it
@@ -145,10 +151,10 @@
       <a
         class="flowdrop-run-bar__link"
         href={runLink}
-        title={msgs.openRunTitle}
+        title={status === 'done' ? msgs.viewResultTitle : msgs.openRunTitle}
         data-testid="run-bar-open-run"
       >
-        {msgs.openRun}
+        {status === 'done' ? msgs.viewResult : msgs.openRun}
       </a>
     {/if}
     {#if live}

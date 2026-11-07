@@ -29,7 +29,7 @@ import type { WorkflowStore } from './workflowStore.svelte.js';
 import type { ApiContext } from './apiContext.js';
 import type { PlaygroundService } from '../services/playgroundService.js';
 import { nodeExecutionService } from '../services/nodeExecutionService.js';
-import { readRunStatus } from '../services/runsService.js';
+import { readRunState } from '../services/runsService.js';
 import { pipelineSignalService } from '../services/pipelineSignalService.js';
 import { workflowLaunchService, type LaunchResult } from '../services/workflowLaunchService.js';
 import type { CommandHandlers } from '../playground/commands/dispatch.js';
@@ -83,6 +83,8 @@ export interface ActiveRun {
   startedAt: number;
   /** When the run reached a terminal status (ms epoch), `null` while it is live. */
   endedAt: number | null;
+  /** The run is queued and no worker has picked it up yet (the site says `waiting_for_worker`). */
+  waitingForWorker: boolean;
 }
 
 interface TrackedRun {
@@ -92,6 +94,8 @@ interface TrackedRun {
   startedAt: number;
   stopped: boolean;
   hostStatus: ActiveRunStatus;
+  /** What the site says is happening to a host run (`activity.kind`), when it says. */
+  activityKind?: string | null;
 }
 
 function sessionRunStatus(status: PlaygroundSessionStatus, stopped: boolean): ActiveRunStatus {
@@ -1231,7 +1235,11 @@ export class RunController {
       runId,
       status,
       startedAt: tracked.startedAt,
-      endedAt: TERMINAL_RUN_STATUSES.includes(status) ? (this.#endedAt ?? tracked.startedAt) : null
+      endedAt: TERMINAL_RUN_STATUSES.includes(status) ? (this.#endedAt ?? tracked.startedAt) : null,
+      waitingForWorker:
+        tracked.origin === 'host' &&
+        status === 'running' &&
+        tracked.activityKind === 'waiting_for_worker'
     };
   });
 
@@ -1278,7 +1286,11 @@ export class RunController {
       this.#hostStatusHook = onRunStatus;
       out.onRunStatus = async (runId) => {
         const envelope = await onRunStatus(runId);
-        this.#applyHostStatus(runId, envelope.ok ? envelope.data?.status : undefined);
+        this.#applyHostStatus(
+          runId,
+          envelope.ok ? envelope.data?.status : undefined,
+          envelope.ok ? (envelope.data?.activity?.kind ?? null) : null
+        );
         return envelope;
       };
     }
@@ -1387,12 +1399,21 @@ export class RunController {
     }
   }
 
-  #applyHostStatus(runId: string, status: string | undefined): void {
+  #applyHostStatus(
+    runId: string,
+    status: string | undefined,
+    activityKind: string | null = null
+  ): void {
     const tracked = this.#tracked;
     if (tracked?.origin !== 'host' || tracked.runId !== runId || status === undefined) return;
     const next = hostRunStatus(status);
-    if (next === tracked.hostStatus) return;
-    this.#tracked = { ...tracked, hostStatus: next };
+    if (next === tracked.hostStatus) {
+      if ((tracked.activityKind ?? null) !== activityKind) {
+        this.#tracked = { ...tracked, activityKind };
+      }
+      return;
+    }
+    this.#tracked = { ...tracked, hostStatus: next, activityKind };
     if (TERMINAL_RUN_STATUSES.includes(next)) {
       this.#endedAt = Date.now();
       this.#clearHostPoll();
@@ -1417,7 +1438,11 @@ export class RunController {
     try {
       const envelope = await hook(runId);
       if (epoch !== this.#hostPollEpoch) return;
-      this.#applyHostStatus(runId, envelope.ok ? envelope.data?.status : undefined);
+      this.#applyHostStatus(
+        runId,
+        envelope.ok ? envelope.data?.status : undefined,
+        envelope.ok ? (envelope.data?.activity?.kind ?? null) : null
+      );
     } catch (err) {
       logger.error('Failed to read host run status:', err);
     }
@@ -1435,11 +1460,21 @@ export class RunController {
   /** The status read of a run opened from the Runs list when the host gave no `onRunStatus`. */
   #readStatusFromApi = async (
     runId: string
-  ): Promise<{ ok: boolean; data?: { status?: string } }> => {
+  ): Promise<{
+    ok: boolean;
+    data?: { status?: string; activity?: { kind?: string } | null };
+  }> => {
     const config = this.#api.config;
     if (!config) return { ok: false };
-    const status = await readRunStatus(config, runId, this.#api.authProvider);
-    return status === undefined ? { ok: false } : { ok: true, data: { status } };
+    const state = await readRunState(config, runId, this.#api.authProvider);
+    if (state === undefined || state.status === undefined) return { ok: false };
+    return {
+      ok: true,
+      data: {
+        status: state.status,
+        activity: state.activityKind === null ? null : { kind: state.activityKind }
+      }
+    };
   };
 
   #clearHostPoll(): void {
