@@ -88,6 +88,27 @@ describe('RunBar', () => {
     fd.destroy();
   });
 
+  it('announces that the run waits for a worker', async () => {
+    const fd = createFlowDropInstance({ id: 'bar-worker' });
+    vi.spyOn(fd.runs, 'loadNodeStatuses').mockResolvedValue();
+    const hooks = fd.runs.wrapHostHooks({
+      onRun: async () => ({ ok: true, data: { runId: 'r1', status: 'running' } }),
+      onRunStatus: async (runId) => ({
+        ok: true,
+        data: { runId, status: 'running', activity: { kind: 'waiting_for_worker' } }
+      })
+    } as HostHooks);
+    await hooks.onRun!({});
+    const target = render(fd);
+    const live = target.querySelector('[role="status"]')!;
+    expect(live.textContent?.trim()).toBe('Run started.');
+    await hooks.onRunStatus!('r1');
+    flushSync();
+    expect(live.textContent?.trim()).toBe('Run is waiting for a worker.');
+    expect(bar(target)?.textContent).toContain('Waiting for a worker');
+    fd.destroy();
+  });
+
   it('offers Open when the run waits, and calls onOpen', async () => {
     const { fd } = await withHostRun('bar-waiting', 'paused');
     const onOpen = vi.fn();

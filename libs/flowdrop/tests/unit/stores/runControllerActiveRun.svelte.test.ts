@@ -227,7 +227,8 @@ describe('activeRun: host runs', () => {
     await wrapped.onRun!({});
     expect(runs.activeRun).toMatchObject({ origin: 'host', runId: 'r1', status: 'running' });
 
-    await vi.advanceTimersByTimeAsync(1000);
+    // The first read comes at once, the next ones at the interval.
+    await vi.advanceTimersByTimeAsync(0);
     expect(runs.activeRun?.status).toBe('running');
     await vi.advanceTimersByTimeAsync(1000);
     expect(runs.activeRun?.status).toBe('waiting');
@@ -256,7 +257,8 @@ describe('activeRun: host runs', () => {
     await wrapped.onRun!({});
     expect(runs.activeRun?.waitingForWorker).toBe(false);
 
-    await vi.advanceTimersByTimeAsync(1000);
+    // Not after the first interval: the first read is immediate.
+    await vi.advanceTimersByTimeAsync(0);
     expect(runs.activeRun).toMatchObject({ status: 'running', waitingForWorker: true });
     await vi.advanceTimersByTimeAsync(1000);
     expect(runs.activeRun).toMatchObject({ status: 'running', waitingForWorker: false });
@@ -356,7 +358,7 @@ describe('activeRun: host runs', () => {
     expect(given.onRunStatus).not.toHaveBeenCalled();
 
     await wrapped.onRun!({});
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(0);
     expect(given.onRunStatus).toHaveBeenCalledTimes(1);
     runs.dispose();
   });

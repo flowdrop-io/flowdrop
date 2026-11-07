@@ -466,6 +466,7 @@ export const defaultMessages = {
     // Read out politely when the status changes.
     announce: {
       running: 'Run started.',
+      waitingForWorker: 'Run is waiting for a worker.',
       waiting: 'Run is waiting for you.',
       failed: 'Run failed.',
       done: 'Run finished.',

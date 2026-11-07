@@ -79,7 +79,13 @@
         ? msgs[status]
         : ''
   );
-  const announcement = $derived(status ? msgs.announce[status] : '');
+  const announcement = $derived(
+    status === 'running' && run?.waitingForWorker
+      ? msgs.announce.waitingForWorker
+      : status
+        ? msgs.announce[status]
+        : ''
+  );
 
   // The bar stays put while it is hovered or holds focus: a person reading it
   // or about to press Open is not made to chase it.

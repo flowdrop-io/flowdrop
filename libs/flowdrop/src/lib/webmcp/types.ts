@@ -210,7 +210,7 @@ export interface RunStatus {
    * What the site says is happening to the run. `kind: 'waiting_for_worker'`
    * makes the run bar say the run waits for a worker.
    */
-  activity?: { kind?: string; label?: string } | null;
+  activity?: { kind?: string } | null;
   /** The run's output once it has one. Host-shaped. */
   outputs?: unknown;
   /** Per-node status once the host has it. Host-shaped. */

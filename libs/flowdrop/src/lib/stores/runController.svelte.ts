@@ -1326,7 +1326,8 @@ export class RunController {
     };
     const terminal = TERMINAL_RUN_STATUSES.includes(hostStatus);
     this.#endedAt = terminal ? Date.now() : null;
-    if (!terminal) this.#scheduleHostPoll(runId, this.hostPollInterval);
+    // Read the status now, so "waiting for a worker" shows at once; then keep the interval.
+    if (!terminal) this.#scheduleHostPoll(runId, 0);
   }
 
   /**
@@ -1395,7 +1396,7 @@ export class RunController {
     };
     this.#endedAt = TERMINAL_RUN_STATUSES.includes(hostStatus) ? Date.now() : null;
     if (!TERMINAL_RUN_STATUSES.includes(hostStatus)) {
-      this.#scheduleHostPoll(runId, this.hostPollInterval);
+      this.#scheduleHostPoll(runId, 0);
     }
   }
 
