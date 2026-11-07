@@ -75,7 +75,6 @@ export type {
   ImpactItem,
   ImpactReport,
   ImpactRename,
-  ImpactAnswer,
   SavedCopy
 } from './types/impact.js';
 export type { Messages, MessagesOverride } from './messages/index.js';

@@ -26,13 +26,13 @@ export interface ImpactReport {
   interfaceBreaking: boolean;
   items: ImpactItem[];
   /** The save is refused while things use the workflow. Absent from an older backend: `false`. */
-  refused: boolean;
+  refused?: boolean;
   /** The backend's own words for the refusal, when it gives them. */
-  refusedMessage: string | null;
+  refusedMessage?: string | null;
   /** Where to POST the draft to save it as a new workflow instead (`Save as a copy`). */
-  copyUrl: string | null;
+  copyUrl?: string | null;
   /** Renamed inputs and outputs, with the places that follow when the person agrees. */
-  renames: ImpactRename[];
+  renames?: ImpactRename[];
 }
 
 /** An interface input or output the draft renames. */
@@ -52,7 +52,7 @@ export interface SavedCopy {
   editorUrl: string | null;
 }
 
-/** What the person decided in the impact dialog. */
+/** What the person decided in the impact dialog. Internal: nothing public takes or returns it. */
 export type ImpactAnswer =
   /** Save. `followRenames` is set only when the dialog listed renames. */
   | { action: 'save'; followRenames?: boolean }
