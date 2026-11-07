@@ -209,6 +209,48 @@ describe('createToolRuntime', () => {
   });
 });
 
+describe('a locked editor', () => {
+  it('answers LOCKED to a changing call without asking the gate', async () => {
+    const approval = vi.fn(async () => true);
+    const { instance, runtime } = setup({ approval });
+    instance.lock.set({ reasons: [{ kind: 'in_use', message: 'In use.' }] });
+    const res = await runtime.runTool('add_node', { nodeTypeId: 'text_input' });
+    expect(res.isError).toBe(true);
+    expect(parse(res).code).toBe('LOCKED');
+    expect(approval).not.toHaveBeenCalled();
+    expect(instance.workflow.current?.nodes).toHaveLength(0);
+  });
+
+  it('answers LOCKED to undo without asking, and still runs a read', async () => {
+    const approval = vi.fn(async () => true);
+    const { instance, runtime } = setup({ approval });
+    instance.lock.set({ reasons: [{ kind: 'in_use', message: 'In use.' }] });
+    expect(parse(await runtime.runTool('undo', {})).code).toBe('LOCKED');
+    expect(approval).not.toHaveBeenCalled();
+    const read = parse(await runtime.runTool('list_nodes', {}));
+    expect(read.code).not.toBe('LOCKED');
+  });
+
+  it('answers LOCKED to save before the gate and never calls the hook', async () => {
+    const request = vi.fn(async () => true);
+    const onSave = vi.fn(async () => undefined);
+    const gate = { request, busy: false, asks: true, editsPreApproved: false, dispose: vi.fn() };
+    const { instance, runtime } = setup({ gate, hooks: { onSave } });
+    instance.lock.set({ reasons: [{ kind: 'in_use', message: 'In use.' }] });
+    expect(parse(await runtime.runTool('save', {})).code).toBe('LOCKED');
+    expect(request).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(runtime.preview('save', {})?.asks).toBe(false);
+  });
+
+  it('works again once the lock is removed', async () => {
+    const { instance, runtime } = setup();
+    instance.lock.set({ reasons: [{ kind: 'in_use', message: 'In use.' }] });
+    instance.lock.set(null);
+    expect(parse(await runtime.runTool('add_node', { nodeTypeId: 'text_input' })).ok).toBe(true);
+  });
+});
+
 describe('buildHostToolDescriptors', () => {
   it('run_status needs both onRun and onRunStatus', () => {
     const statusOnly = buildHostToolDescriptors({

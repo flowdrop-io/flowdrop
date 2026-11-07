@@ -107,6 +107,14 @@ function describeError(err: unknown): string {
   return reasons.length ? `${err.message}: ${reasons.join('; ')}` : err.message;
 }
 
+/** The answer for a change a locked editor would refuse, given before any approval is asked. */
+function lockedResult(): ToolResult {
+  return errorResult(
+    'LOCKED',
+    'The editor is locked (read-only), so this change was not made. Ask the user to unlock it.'
+  );
+}
+
 function stripResult(result: CommandResult): Record<string, unknown> {
   if (result.ok) {
     const out: Record<string, unknown> = { ok: true, message: result.message };
@@ -192,7 +200,8 @@ export function buildHostToolDescriptors(hooks: HostHooks): HostToolDescriptor[]
       description:
         'Save the workflow to the server. Nothing an agent changes is persisted until ' +
         'this runs or the person clicks Save. Asks for approval; cannot be undone from ' +
-        'the editor. Fails with FORBIDDEN when the user may not save, CONFLICT when the ' +
+        'the editor. Fails with FORBIDDEN when the user may not save, LOCKED when the editor is ' +
+        'locked (read-only), CONFLICT when the ' +
         'server copy changed since it was loaded (reload the page), INVALID when the ' +
         'server rejected the workflow — the message says which node or port.',
       inputSchema: EMPTY_SCHEMA,
@@ -314,6 +323,9 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     const context = createStoreCommandContext(nodeTypes(), onUIAction, instance);
     if (!context) return errorResult('NO_WORKFLOW', 'No workflow is loaded in this editor');
 
+    // A locked editor refuses every change: say so now, do not ask first and refuse after.
+    if (instance.workflow.locked && needsApproval(commands)) return lockedResult();
+
     // D3: reads and view changes run; document changes wait for the gate.
     if (needsApproval(commands)) {
       let approved: boolean;
@@ -406,6 +418,9 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     if (workflowCan('save') === false) {
       return errorResult('FORBIDDEN', 'Saving this workflow is not permitted');
     }
+
+    // The editor refuses a save while locked; do not ask for approval first.
+    if (instance.workflow.locked) return lockedResult();
 
     const refused = await askHostGate('save');
     if (refused) return refused;
@@ -514,12 +529,13 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     const host = hostByVerb.get(name);
     if (host) {
       const mutating = !host.readOnly;
+      const refused = name === 'save' && instance.workflow.locked;
       return {
         commands: [],
         skipped: [],
         mutating,
         consequential: host.consequential,
-        asks: gate.asks && mutating
+        asks: gate.asks && mutating && !refused
       };
     }
     const descriptor = byVerb.get(name);
@@ -533,7 +549,7 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
       skipped,
       mutating,
       consequential: false,
-      asks: gate.asks && mutating && !gate.editsPreApproved
+      asks: gate.asks && mutating && !gate.editsPreApproved && !instance.workflow.locked
     };
   }
 

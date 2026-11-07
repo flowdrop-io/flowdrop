@@ -141,6 +141,7 @@ export interface ModelContextLike {
  * (`CONFLICT`, `NOT_FOUND`); the rest name what a browser agent must do next.
  *
  * - `FORBIDDEN` — the server refused; the agent should tell the user.
+ * - `LOCKED` — the editor is locked (read-only); nothing was changed and nobody was asked.
  * - `UNAVAILABLE` — nothing to act on yet (unsaved workflow, no runtime).
  * - `NEEDS_APPROVAL` — a person must approve in the UI first.
  * - `INVALID` — the workflow failed validation; `message` says where.
@@ -150,6 +151,7 @@ export interface ModelContextLike {
  */
 export type HostCode =
   | 'FORBIDDEN'
+  | 'LOCKED'
   | 'UNAVAILABLE'
   | 'NEEDS_APPROVAL'
   | 'INVALID'
