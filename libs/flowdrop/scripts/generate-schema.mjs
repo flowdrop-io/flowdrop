@@ -110,7 +110,11 @@ function convertSchema(schema, currentFile) {
 
   // OpenAPI 3.0 `nullable: true` -> JSON Schema: accept null as well.
   if (schema.nullable === true) {
-    if (typeof result.type === 'string') {
+    // A schema that also combines others (allOf: [$ref], ...) is wrapped: a
+    // `type: [x, 'null']` beside it would still be held to the referenced schema,
+    // which refuses null.
+    const combines = ['allOf', 'anyOf', 'oneOf', '$ref'].some((key) => key in result);
+    if (typeof result.type === 'string' && !combines) {
       result.type = [result.type, 'null'];
     } else {
       return { anyOf: [result, { type: 'null' }] };

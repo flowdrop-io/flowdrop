@@ -818,6 +818,7 @@
         "history": {
           "anyOf": [
             {
+              "type": "object",
               "allOf": [
                 {
                   "$ref": "#/$defs/PlaygroundChatHistory"
@@ -1422,6 +1423,7 @@
         "chat": {
           "anyOf": [
             {
+              "type": "object",
               "allOf": [
                 {
                   "$ref": "#/$defs/PlaygroundChatBinding"
