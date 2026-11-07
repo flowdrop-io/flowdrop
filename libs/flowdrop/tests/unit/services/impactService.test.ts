@@ -3,7 +3,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { checkImpact, impactSupported, saveAsCopy } from '$lib/services/impactService.js';
+import {
+  checkImpact,
+  impactSupported,
+  isSafeCopyUrl,
+  saveAsCopy
+} from '$lib/services/impactService.js';
 import { createEndpointConfig } from '$lib/config/endpoints.js';
 import type { AuthProvider } from '$lib/types/auth.js';
 import type { Workflow } from '$lib/types/index.js';
@@ -193,6 +198,44 @@ describe('impactService', () => {
         }
       ]
     });
+  });
+
+  it('keeps the first of two renames with the same direction and name', async () => {
+    fetchMock.mockResolvedValue(
+      json({
+        success: true,
+        data: {
+          renames: [
+            { direction: 'input', from: 'a', to: 'b', places: [] },
+            { direction: 'input', from: 'a', to: 'c', places: [] },
+            { direction: 'output', from: 'a', to: 'd', places: [] }
+          ]
+        }
+      })
+    );
+    const result = await checkImpact(config, authProvider, 'wf1', draft);
+    const renames = result.status === 'ok' ? result.report.renames : [];
+    expect(renames?.map((r) => `${r.direction}:${r.from}>${r.to}`)).toEqual([
+      'input:a>b',
+      'output:a>d'
+    ]);
+  });
+
+  it('accepts a copy url that is a path or on the API origin, and no other', () => {
+    expect(isSafeCopyUrl(config, '/workflow/wf1/copy')).toBe(true);
+    expect(isSafeCopyUrl(config, 'https://api.example.com/other/copy')).toBe(true);
+    expect(isSafeCopyUrl(config, 'https://other.example.com/copy')).toBe(false);
+    expect(isSafeCopyUrl(config, '//other.example.com/copy')).toBe(false);
+    expect(isSafeCopyUrl(config, '/\\other.example.com/copy')).toBe(false);
+    expect(isSafeCopyUrl(config, 'workflow/copy')).toBe(false);
+    expect(isSafeCopyUrl(config, 'javascript:alert(1)')).toBe(false);
+  });
+
+  it('saveAsCopy sends nothing to another origin', async () => {
+    await expect(
+      saveAsCopy(config, authProvider, 'https://other.example.com/copy', draft)
+    ).rejects.toThrow('not on this server');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('saveAsCopy posts the draft to the copy url and names the copy', async () => {

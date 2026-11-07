@@ -207,9 +207,31 @@ describe('confirmImpact: refused saves', () => {
     expect(dialog().querySelector('h2')?.textContent).toContain("can't be saved");
     expect(
       dialog().querySelector('[data-testid="flowdrop-impact-refused"]')?.textContent?.trim()
-    ).toBe("This change can't be saved while 3 places use it.");
+    ).toBe("This change can't be saved while 1 place uses it.");
     expect(dialog().textContent).toContain('Remove the button first.');
     expect(dialog().querySelectorAll('a')).toHaveLength(1);
+  });
+
+  it('counts only the places that break, and gives no number when none do', () => {
+    const two = { ...refusedReport.items[0], label: 'B' };
+    void confirmImpact({
+      report: { ...refusedReport, items: [...refusedReport.items, two] }
+    });
+    flushSync();
+    expect(
+      dialog().querySelector('[data-testid="flowdrop-impact-refused"]')?.textContent?.trim()
+    ).toBe("This change can't be saved while 3 places use it.".replace('3', '2'));
+    document.body.innerHTML = '';
+    void confirmImpact({
+      report: {
+        ...refusedReport,
+        items: refusedReport.items.filter((i) => i.severity !== 'breaks')
+      }
+    });
+    flushSync();
+    expect(
+      dialog().querySelector('[data-testid="flowdrop-impact-refused"]')?.textContent?.trim()
+    ).toBe("This change can't be saved while other things use this workflow.");
   });
 
   it('offers no Save anyway', () => {
@@ -332,6 +354,19 @@ describe('confirmImpact: renames', () => {
     expect(
       dialog().querySelector('[data-testid="flowdrop-impact-save"]')?.textContent
     ).not.toContain('anyway');
+  });
+
+  it('shows a rename nothing uses without the box, and sends no followRenames', async () => {
+    const noPlaces: ImpactReport = {
+      ...report,
+      renames: [{ direction: 'input', from: 'a', to: 'b', places: [] }]
+    };
+    const answer = confirmImpact({ report: noPlaces });
+    flushSync();
+    expect(dialog().textContent).toContain('Nothing else uses it yet.');
+    expect(checkbox()).toBeNull();
+    save();
+    expect(await answer).toEqual({ action: 'save' });
   });
 
   it('sends no followRenames when the report has no renames', async () => {

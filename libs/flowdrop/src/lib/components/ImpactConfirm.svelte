@@ -50,6 +50,9 @@
   const refused = $derived(report?.refused === true);
   const renames = $derived(report?.renames ?? []);
   const renamedPlaces = $derived(renames.reduce((n, r) => n + r.places.length, 0));
+  const breakingCount = $derived(
+    (report?.items ?? []).filter((item) => item.severity === 'breaks').length
+  );
   // Opt-in: nothing a rename touches elsewhere changes unless the person asks.
   let followRenames = $state(false);
   let busy = $state<'copy' | 'undo' | null>(null);
@@ -92,7 +95,8 @@
   }
 
   function save(): void {
-    resolve(renames.length > 0 ? { action: 'save', followRenames } : { action: 'save' });
+    // Only a box the person saw is an answer.
+    resolve(renamedPlaces > 0 ? { action: 'save', followRenames } : { action: 'save' });
   }
 
   async function saveCopy(): Promise<void> {
@@ -168,7 +172,7 @@
     <div id={bodyId} class="fd-impact-confirm__body">
       {#if refused}
         <p class="fd-impact-confirm__refused" data-testid="flowdrop-impact-refused">
-          {m().impact.refused.body({ count: report?.items.length ?? 0 })}
+          {m().impact.refused.body({ count: breakingCount })}
         </p>
         {#if report?.refusedMessage}
           <p class="fd-impact-confirm__message fd-impact-confirm__refused-message">
@@ -212,14 +216,16 @@
               <p class="fd-impact-confirm__message">{m().impact.renames.noPlaces}</p>
             {/if}
           {/each}
-          <div class="fd-impact-confirm__follow">
-            <Checkbox
-              data-testid="flowdrop-impact-follow-renames"
-              checked={followRenames}
-              onchange={(checked) => (followRenames = checked)}
-              label={m().impact.renames.follow({ count: renamedPlaces })}
-            />
-          </div>
+          {#if renamedPlaces > 0}
+            <div class="fd-impact-confirm__follow">
+              <Checkbox
+                data-testid="flowdrop-impact-follow-renames"
+                checked={followRenames}
+                onchange={(checked) => (followRenames = checked)}
+                label={m().impact.renames.follow({ count: renamedPlaces })}
+              />
+            </div>
+          {/if}
         </section>
       {/if}
       {#if actionError}
@@ -256,7 +262,7 @@
         {/if}
       {:else}
         <Button variant="primary" data-testid="flowdrop-impact-save" onclick={save}>
-          {renames.length > 0 && !report?.confirm ? m().impact.saveRenames : m().impact.save}
+          {renamedPlaces > 0 && !report?.confirm ? m().impact.saveRenames : m().impact.save}
         </Button>
       {/if}
     </footer>

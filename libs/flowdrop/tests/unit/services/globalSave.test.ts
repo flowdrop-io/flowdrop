@@ -223,7 +223,16 @@ describe('globalSaveWorkflow', () => {
       const renameReport = {
         ...report,
         confirm: false,
-        renames: [{ direction: 'output', from: 'node', to: 'article', places: [] as unknown[] }]
+        renames: [
+          {
+            direction: 'output',
+            from: 'node',
+            to: 'article',
+            places: [
+              { kind: 'block', severity: 'changes', label: 'Tags', message: 'maps', url: null }
+            ] as unknown[]
+          }
+        ]
       };
       const refusedReport = {
         ...report,
@@ -243,6 +252,32 @@ describe('globalSaveWorkflow', () => {
         expect(mockClientUpdate).toHaveBeenCalledWith('wf-1', expect.anything(), {
           followRenames: true
         });
+      });
+
+      it('a rename nothing uses neither asks nor stops autosave', async () => {
+        const unused = {
+          ...renameReport,
+          renames: [{ direction: 'input', from: 'a', to: 'b', places: [] as unknown[] }]
+        };
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: unused });
+
+        expect(await globalSaveWorkflow({})).toBe(true);
+        expect(await globalSaveWorkflow({ interactive: false })).toBe(true);
+
+        expect(mockConfirmImpact).not.toHaveBeenCalled();
+        expect(mockClientUpdate.mock.calls[0]).toHaveLength(2);
+      });
+
+      it('offers no Save as a copy for a copy url on another origin', async () => {
+        mockCheckImpact.mockResolvedValue({
+          status: 'ok',
+          report: { ...refusedReport, copyUrl: 'https://evil.example.com/copy' }
+        });
+        mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
+
+        await globalSaveWorkflow({});
+
+        expect(mockConfirmImpact.mock.calls[0][0].saveAsCopy).toBeUndefined();
       });
 
       it('sends followRenames false when the box stays unticked', async () => {

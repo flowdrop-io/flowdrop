@@ -1321,10 +1321,13 @@ export const defaultMessages = {
     // The save is refused while things use the workflow.
     refused: {
       title: "This change can't be saved",
+      // `count` is the places the change breaks; none counted means no number.
       body: ({ count }: { count: number }) =>
-        count === 1
-          ? "This change can't be saved while 1 place uses it."
-          : `This change can't be saved while ${count} places use it.`,
+        count === 0
+          ? "This change can't be saved while other things use this workflow."
+          : count === 1
+            ? "This change can't be saved while 1 place uses it."
+            : `This change can't be saved while ${count} places use it.`,
       keepEditing: 'Keep editing',
       undo: 'Undo the change',
       undoing: 'Undoing\u2026',

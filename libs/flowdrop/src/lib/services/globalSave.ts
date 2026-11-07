@@ -19,7 +19,13 @@ import { playgroundForSave } from '$lib/utils/playgroundChat.js';
 import { buildSaveBody } from '$lib/utils/workflowDraft.js';
 import type { ApiError } from '$lib/api/enhanced-client.js';
 import { apiToasts, workflowToasts, dismissToast, showInfo } from './toastService.js';
-import { checkImpact, impactSupported, parseImpactItems, saveAsCopy } from './impactService.js';
+import {
+  checkImpact,
+  impactSupported,
+  isSafeCopyUrl,
+  parseImpactItems,
+  saveAsCopy
+} from './impactService.js';
 import { confirmImpact, impactPending } from './impactGate.js';
 import type { ImpactReport, SavedCopy } from '$lib/types/impact.js';
 import { scopeSelector } from '$lib/themes/scopedSkinCss.js';
@@ -305,7 +311,7 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
         (result.status === 'ok' &&
           (result.report.confirm ||
             result.report.refused === true ||
-            (result.report.renames?.length ?? 0) > 0)) ||
+            (result.report.renames ?? []).some((r) => r.places.length > 0))) ||
         result.status === 'error';
       if (needsAnswer) {
         if (!interactive) {
@@ -484,7 +490,7 @@ function refusalActions(fd: FlowDropInstance, report: ImpactReport | undefined, 
   const copyUrl = report?.copyUrl;
   return {
     saveAsCopy:
-      report?.refused && copyUrl && config
+      report?.refused && copyUrl && config && isSafeCopyUrl(config, copyUrl)
         ? () => saveAsCopy(config, fd.api.authProvider, copyUrl, draft)
         : undefined,
     undo: report?.refused

@@ -56,12 +56,18 @@ export function parseImpactItems(raw: unknown): ImpactItem[] {
 
 function parseRenames(raw: unknown): ImpactRename[] {
   const renames: ImpactRename[] = [];
+  const seen = new Set<string>();
   for (const entry of Array.isArray(raw) ? raw : []) {
     if (typeof entry !== 'object' || entry === null) continue;
     const r = entry as Record<string, unknown>;
     if (typeof r.from !== 'string' || typeof r.to !== 'string') continue;
+    const direction = r.direction === 'output' ? 'output' : 'input';
+    // The dialog keys its rows by direction and name: the first one wins.
+    const key = `${direction}:${r.from}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     renames.push({
-      direction: r.direction === 'output' ? 'output' : 'input',
+      direction,
       from: r.from,
       to: r.to,
       places: parseImpactItems(r.places)
@@ -128,6 +134,21 @@ export async function checkImpact(
 }
 
 /**
+ * Whether a `copyUrl` may receive the draft and the auth headers: a path on
+ * this site (one `/`, not `//` or `/\`) or a URL on the API base's origin.
+ */
+export function isSafeCopyUrl(config: EndpointConfig, copyUrl: string): boolean {
+  if (/^\/(?![/\\])/.test(copyUrl)) return true;
+  try {
+    const here = typeof window !== 'undefined' ? window.location.href : undefined;
+    const base = new URL(config.baseUrl, here);
+    return new URL(copyUrl).origin === base.origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Save the draft as a new workflow: POST it to the `copyUrl` the impact check
  * named (a path under the API base, or a full URL). Throws with the backend's
  * reason when it refuses. The answer names the copy as `{ data: { id,
@@ -139,6 +160,7 @@ export async function saveAsCopy(
   copyUrl: string,
   draft: Workflow
 ): Promise<SavedCopy> {
+  if (!isSafeCopyUrl(config, copyUrl)) throw new Error('The copy address is not on this server');
   const response = await authenticatedFetch(
     buildEndpointUrl(config, copyUrl),
     { method: 'POST', body: JSON.stringify(draft) },
