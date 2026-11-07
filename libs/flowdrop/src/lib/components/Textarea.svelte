@@ -25,7 +25,9 @@
   let { size = 'md', invalid = false, class: className = '', ...rest }: Props = $props();
 
   const formReadOnly = useFormReadOnly();
-  const isDisabled = $derived(rest.disabled || formReadOnly());
+  // A read-only form (a locked editor) keeps the value readable: it can be
+  // focused, selected and copied, just not changed. Hence readonly, not disabled.
+  const isReadOnly = $derived(Boolean(rest.readonly) || formReadOnly());
 
   const textareaClass = $derived(
     [
@@ -40,4 +42,4 @@
   );
 </script>
 
-<textarea class={textareaClass} {...rest} disabled={isDisabled}></textarea>
+<textarea class={textareaClass} {...rest} readonly={isReadOnly}></textarea>

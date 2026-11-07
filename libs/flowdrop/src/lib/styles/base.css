@@ -467,6 +467,12 @@
   cursor: not-allowed;
 }
 
+/* Read-only (a locked editor): the value can be focused, selected and copied, not changed. */
+.flowdrop-input[readonly] {
+  background-color: var(--fd-muted);
+  border-color: var(--fd-border-muted);
+}
+
 /* Invalid keeps its error border even on hover. */
 .flowdrop-input--invalid,
 .flowdrop-input--invalid:hover:not(:disabled) {

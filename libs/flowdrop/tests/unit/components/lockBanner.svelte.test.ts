@@ -156,8 +156,10 @@ describe('a form that is read-only', () => {
 
   it('makes the inputs and the add button read-only but keeps the array toggle usable', () => {
     const stop = mountForm(true);
+    // Read-only, not disabled: the value can still be focused, selected and copied.
     const input = target.querySelector('input[type="text"]') as HTMLInputElement;
-    expect(input.disabled).toBe(true);
+    expect(input.readOnly).toBe(true);
+    expect(input.disabled).toBe(false);
     const toggle = target.querySelector('.form-array__item-toggle') as HTMLButtonElement;
     expect(toggle).not.toBeNull();
     expect(toggle.disabled).toBe(false);

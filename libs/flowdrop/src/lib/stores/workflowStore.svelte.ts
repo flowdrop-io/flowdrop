@@ -820,13 +820,15 @@ export class WorkflowStore {
    * @param updates - Partial node updates (typically `{ data }`)
    * @param opts.fieldKey - The config field being edited; drives per-field
    *   session boundaries. Omit to treat the whole node as one session.
+   * @returns `false` when the edit was refused (no workflow, or the editor is
+   *   locked): whatever mirrors the store must not show it either.
    */
   updateNodeConfig(
     nodeId: string,
     updates: Partial<WorkflowNode>,
     opts?: { fieldKey?: string }
-  ): void {
-    if (!this.#workflow || this.#locked) return;
+  ): boolean {
+    if (!this.#workflow || this.#locked) return false;
 
     const sessionKey = `${nodeId}::${opts?.fieldKey ?? ''}`;
     // Moving to a different field/node closes the previous field's session.
@@ -852,6 +854,7 @@ export class WorkflowStore {
     this.#bumpVersion();
     // Deliberately no #pushToHistory (coalesced into the transaction) and no
     // #notifyWorkflowChange (deferred to finalize) — that is the whole point.
+    return true;
   }
 
   /**

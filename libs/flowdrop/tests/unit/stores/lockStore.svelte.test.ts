@@ -97,6 +97,45 @@ describe('a locked instance', () => {
   });
 });
 
+describe('a config edit while locked', () => {
+  it('answers false, so whatever mirrors the store does not show it', () => {
+    const fd = createFlowDropInstance({ id: 'lock-config-answer' });
+    fd.workflow.initialize(workflow());
+    fd.workflow.addNode({ id: 'n1', type: 'default', position: { x: 0, y: 0 }, data: {} } as never);
+    expect(fd.workflow.updateNodeConfig('n1', { data: { label: 'A' } } as never)).toBe(true);
+    fd.lock.set(lock);
+    expect(fd.workflow.updateNodeConfig('n1', { data: { label: 'B' } } as never)).toBe(false);
+    expect(fd.workflow.nodes[0].data).toEqual({ label: 'A' });
+  });
+
+  it('lets a field being typed in commit first: it is blurred before the store closes', () => {
+    const fd = createFlowDropInstance({ id: 'lock-blur' });
+    fd.workflow.initialize(workflow());
+    const fence = document.createElement('div');
+    fence.className = 'flowdrop-lock-fence';
+    const input = document.createElement('input');
+    fence.append(input);
+    document.body.append(fence);
+    const lockedWhenBlurred: boolean[] = [];
+    input.addEventListener('blur', () => lockedWhenBlurred.push(fd.workflow.locked));
+    input.focus();
+    fd.lock.set(lock);
+    expect(lockedWhenBlurred).toEqual([false]);
+    expect(document.activeElement).not.toBe(input);
+    fence.remove();
+  });
+
+  it('leaves focus alone outside a lock fence', () => {
+    const fd = createFlowDropInstance({ id: 'lock-no-blur' });
+    const button = document.createElement('button');
+    document.body.append(button);
+    button.focus();
+    fd.lock.set(lock);
+    expect(document.activeElement).toBe(button);
+    button.remove();
+  });
+});
+
 describe('history while locked', () => {
   function withTwoEdits(id: string) {
     const fd = createFlowDropInstance({ id });

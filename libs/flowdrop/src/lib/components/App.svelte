@@ -190,8 +190,8 @@
      * workflow (canvas, config panels, console, shortcuts, undo) and Save is
      * disabled; selecting, panning, zooming and inspecting still work. `null`
      * removes the lock. Seeds `instance.lock`, which holds it afterwards
-     * (`instance.lock.set(...)`); a later change of this prop sets it again.
-     * Unset, nothing changes.
+     * (`instance.lock.set(...)`); passing a different value later sets it
+     * again, passing the same one does not. Unset, nothing changes.
      */
     lock?: EditorLock | null;
     /**
@@ -250,8 +250,10 @@
     /** Called after a refused save was saved as a copy; replaces following the copy's editor URL. */
     onSavedAsCopy?: FlowDropEventHandlers['onSavedAsCopy'];
     /**
-     * Called just before the editor follows a saved copy's editor URL, after the
-     * workflow is marked saved. The mount API uses it to drop the original's draft.
+     * Called when the unsaved edits are gone for good: just before the editor
+     * follows a saved copy's editor URL (after the workflow is marked saved), or
+     * after "Discard my changes" loaded the saved version. The mount API uses it
+     * to drop the stored draft.
      */
     onDiscardDraft?: () => void;
     /** Called when a save fails. */
@@ -383,13 +385,19 @@
   // read when it fires, so a changed callback prop is the one used.
   onMount(() => fd.editorMode.onChange((mode) => onEditorModeChange?.(mode)));
 
-  // The lock: the `lock` prop seeds the instance's store (the holder from then
-  // on); a later change of the prop sets it again. `undefined` means "no opinion".
+  // The lock: `instance.lock` holds it. The `lock` prop seeds it and sets it
+  // again only when the host passes a different value, so the prop and
+  // `instance.lock.set(...)` take turns rather than fight: the last one wins.
+  // `undefined` means "no opinion".
+  // svelte-ignore state_referenced_locally
+  let appliedLockProp = lockProp;
   // svelte-ignore state_referenced_locally
   if (lockProp !== undefined) fd.lock.set(lockProp);
   $effect.pre(() => {
     const requested = lockProp;
-    if (requested !== undefined) untrack(() => fd.lock.set(requested));
+    if (requested === undefined || requested === appliedLockProp) return;
+    appliedLockProp = requested;
+    untrack(() => fd.lock.set(requested));
   });
   onMount(() => fd.lock.onAction((id) => onLockAction?.(id)));
 
@@ -1361,7 +1369,14 @@
     // consistent (the value itself is already live in the store).
     flushNodeConfigEdit();
     return globalSaveWorkflow({
-      eventHandlers: { onBeforeSave, onAfterSave, onSavedAsCopy, onSaveError, onApiError },
+      eventHandlers: {
+        onBeforeSave,
+        onAfterSave,
+        onSavedAsCopy,
+        onSaveError,
+        onApiError,
+        onWorkflowLoad
+      },
       features,
       instance: fd,
       interactive: options.interactive,
@@ -1992,9 +2007,13 @@
         // Live edit (every change): update the store cheaply — no history clone,
         // no external event; both are deferred to the session flush above. Also
         // reflect the change on the canvas immediately (e.g. nodeType changes).
+        // The canvas mirrors the store, so it follows only an edit the store took.
         pendingConfigNodeId = node.id;
-        fd.workflow.updateNodeConfig(node.id, { data: updatedData }, { fieldKey: meta?.fieldKey });
-        workflowEditorRef?.updateNodeData(node.id, updatedData);
+        if (
+          fd.workflow.updateNodeConfig(node.id, { data: updatedData }, { fieldKey: meta?.fieldKey })
+        ) {
+          workflowEditorRef?.updateNodeData(node.id, updatedData);
+        }
       }}
     />
   </LockFence>

@@ -104,6 +104,9 @@
    */
   const formReadOnly = useFormReadOnly();
   const isReadOnly = $derived(schema.readOnly === true || formReadOnly());
+  // Text, textarea and number fields take a read-only form from the form context
+  // themselves (as readonly, so the value stays selectable); they are disabled
+  // only by a read-only schema.
 
   /**
    * Computed description ID for ARIA association
@@ -334,7 +337,7 @@
         placeholder={schema.placeholder ?? ''}
         {required}
         ariaDescribedBy={descriptionId}
-        disabled={isReadOnly}
+        disabled={schema.readOnly === true}
         onChange={(val) => onChange(val)}
       />
     {:else if fieldType === 'text'}
@@ -344,7 +347,7 @@
         placeholder={schema.placeholder ?? ''}
         {required}
         ariaDescribedBy={descriptionId}
-        disabled={isReadOnly}
+        disabled={schema.readOnly === true}
         onChange={(val) => onChange(val)}
       />
     {:else if fieldType === 'number'}
@@ -357,7 +360,7 @@
         step={schema.step}
         {required}
         ariaDescribedBy={descriptionId}
-        disabled={isReadOnly}
+        disabled={schema.readOnly === true}
         onChange={(val) => onChange(val)}
       />
     {:else if fieldType === 'range'}

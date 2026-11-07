@@ -43,7 +43,9 @@
   }: Props = $props();
 
   const formReadOnly = useFormReadOnly();
-  const isDisabled = $derived(rest.disabled || formReadOnly());
+  // A read-only form (a locked editor) keeps the value readable: it can be
+  // focused, selected and copied, just not changed. Hence readonly, not disabled.
+  const isReadOnly = $derived(Boolean(rest.readonly) || formReadOnly());
 
   const inputClass = $derived(
     [
@@ -66,7 +68,7 @@
         {@render leading()}
       </span>
     {/if}
-    <input class={inputClass} {...rest} disabled={isDisabled} />
+    <input class={inputClass} {...rest} readonly={isReadOnly} />
     {#if trailing}
       <span class="flowdrop-input-wrap__icon flowdrop-input-wrap__icon--trailing">
         {@render trailing()}
@@ -74,5 +76,5 @@
     {/if}
   </div>
 {:else}
-  <input class={inputClass} {...rest} disabled={isDisabled} />
+  <input class={inputClass} {...rest} readonly={isReadOnly} />
 {/if}
