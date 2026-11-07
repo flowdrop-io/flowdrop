@@ -670,7 +670,7 @@
       const result = await workflowLaunchService.launch(
         endpointConfig,
         workflow.id,
-        { inputs, workflow },
+        { inputs, workflow, origin: 'editor' },
         authProvider
       );
       if (result.status === 'launched') {

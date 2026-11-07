@@ -63,6 +63,12 @@ export interface LaunchOptions {
    * server's own refusal. Value type/schema checking stays with the server.
    */
   workflow?: Workflow;
+  /**
+   * Tell the backend where the run was started from, so its run page can say
+   * so. Only `'editor'` is sent today; a backend that does not know the field
+   * ignores it.
+   */
+  origin?: 'editor';
 }
 
 class WorkflowLaunchService {
@@ -99,6 +105,7 @@ class WorkflowLaunchService {
     const body: Record<string, unknown> = {};
     if (options.inputs && Object.keys(options.inputs).length > 0) body.inputs = options.inputs;
     if (options.sessionId) body.sessionId = options.sessionId;
+    if (options.origin) body.origin = options.origin;
 
     const response = await authenticatedFetch(
       url,
