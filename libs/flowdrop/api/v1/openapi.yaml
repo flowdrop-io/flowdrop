@@ -122,6 +122,12 @@ paths:
     $ref: './paths/workflows.yaml#/~1workflows~1import'
   /workflows/{id}/execute:
     $ref: './paths/workflows.yaml#/~1workflows~1{id}~1execute'
+  /workflows/{id}/copy:
+    $ref: './paths/workflows.yaml#/~1workflows~1{id}~1copy'
+  /workflow/{id}/impact:
+    $ref: './paths/workflows.yaml#/~1workflow~1{id}~1impact'
+  /workflow/{id}/run:
+    $ref: './paths/workflows.yaml#/~1workflow~1{id}~1run'
 
   # Executions
   /executions:
@@ -302,6 +308,24 @@ components:
       $ref: './components/schemas/workflow.yaml#/CreateWorkflowRequest'
     UpdateWorkflowRequest:
       $ref: './components/schemas/workflow.yaml#/UpdateWorkflowRequest'
+    WorkflowRefusedResponse:
+      $ref: './components/schemas/impact.yaml#/WorkflowRefusedResponse'
+
+    # Impact Types
+    ImpactItem:
+      $ref: './components/schemas/impact.yaml#/ImpactItem'
+    ImpactRenamePlace:
+      $ref: './components/schemas/impact.yaml#/ImpactRenamePlace'
+    ImpactRename:
+      $ref: './components/schemas/impact.yaml#/ImpactRename'
+    ImpactInterfaceChange:
+      $ref: './components/schemas/impact.yaml#/ImpactInterfaceChange'
+    ImpactReport:
+      $ref: './components/schemas/impact.yaml#/ImpactReport'
+    ImpactResponse:
+      $ref: './components/schemas/impact.yaml#/ImpactResponse'
+    WorkflowCopyResponse:
+      $ref: './components/schemas/impact.yaml#/WorkflowCopyResponse'
 
     # Pipeline Types
     JobStatus:

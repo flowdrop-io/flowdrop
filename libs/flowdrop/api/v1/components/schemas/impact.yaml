@@ -1,0 +1,251 @@
+# Impact Schemas
+# What saving a draft workflow would do to the places that use it
+
+ImpactItem:
+  type: object
+  description: One place that uses the workflow, and what a change does to it.
+  required:
+    - kind
+    - severity
+    - label
+    - message
+  properties:
+    kind:
+      type: string
+      description: |
+        What is affected, such as `profile`, `trigger`, `parent`, `runs`,
+        `status` or `other`. A backend may add kinds; read an unknown one as `other`.
+      example: trigger
+    severity:
+      type: string
+      description: |
+        `breaks` means something in use stops working and the save is refused.
+        `changes` means it keeps working but behaves differently. `info` is
+        for noting only.
+      enum:
+        - breaks
+        - changes
+        - info
+    label:
+      type: string
+      description: The name of the affected place. A place the viewer may not open gets a generic name.
+    message:
+      type: string
+      description: What happens to it, in plain words.
+    url:
+      type: string
+      nullable: true
+      description: Where to look at the affected place, or null when there is no page for it.
+
+ImpactRenamePlace:
+  type: object
+  description: One place that uses a renamed workflow input or output.
+  required:
+    - kind
+    - label
+    - enabled
+  properties:
+    kind:
+      type: string
+      description: What kind of place it is, using the same values as `ImpactItem.kind`.
+    label:
+      type: string
+      description: The name of the place.
+    url:
+      type: string
+      nullable: true
+      description: Where to look at the place, or null when there is no page for it.
+    enabled:
+      type: boolean
+      description: Whether the place is switched on. A place that is switched off still follows a rename.
+
+ImpactRename:
+  type: object
+  description: |
+    An input or output of the workflow that the draft renames in place, with
+    the places that use the old name. Those places follow the new name when
+    the save sets `followRenames`.
+  required:
+    - direction
+    - from
+    - to
+    - places
+  properties:
+    direction:
+      type: string
+      enum:
+        - input
+        - output
+    from:
+      type: string
+      description: The port name stored now.
+    to:
+      type: string
+      description: The port name in the draft.
+    places:
+      type: array
+      items:
+        $ref: '#/ImpactRenamePlace'
+
+ImpactInterfaceChange:
+  type: object
+  description: One difference between the stored workflow interface and the draft.
+  properties:
+    side:
+      type: string
+      enum:
+        - input
+        - output
+    path:
+      type: string
+      description: Where in the interface the difference is.
+    kind:
+      type: string
+      description: What kind of difference it is.
+    breaking:
+      type: boolean
+      description: Whether the difference breaks callers of that side.
+
+ImpactReport:
+  type: object
+  description: |
+    What saving the draft would do to the workflows, profiles and triggers
+    that use the saved workflow. Nothing is saved. The shape is experimental
+    and may change in a minor release of the backend.
+  required:
+    - confirm
+    - interface
+    - items
+    - refused
+  properties:
+    confirm:
+      type: boolean
+      description: True when the author should confirm before saving, because at least one item is not `info`.
+    interface:
+      type: object
+      description: How the draft changes the workflow interface (its inputs and outputs).
+      properties:
+        level:
+          type: string
+          description: The version level the change calls for.
+          enum:
+            - major
+            - minor
+            - patch
+            - none
+        breaking:
+          type: boolean
+          description: Whether the interface change breaks callers.
+        changes:
+          type: array
+          items:
+            $ref: '#/ImpactInterfaceChange'
+    items:
+      type: array
+      description: The affected places, breaking ones first.
+      items:
+        $ref: '#/ImpactItem'
+    ways:
+      type: array
+      description: Ways to make the change safely.
+      items:
+        type: object
+        properties:
+          title:
+            type: string
+          description:
+            type: string
+          url:
+            type: string
+          code:
+            type: string
+    refused:
+      type: boolean
+      description: |
+        True when the save would be refused, because it breaks a place that is
+        in use. A PUT with the same draft answers 409 `WORKFLOW_IN_USE_BREAKING`.
+    refusedMessage:
+      type: string
+      nullable: true
+      description: The refusal in plain words, naming each place. Null when the save is not refused.
+    copyUrl:
+      type: string
+      nullable: true
+      description: |
+        Where to POST the draft to save it as a new workflow instead (see
+        `copyWorkflow`). Either a path from the site root, such as
+        `/api/flowdrop/workflows/{id}/copy` (resolved against the site, not
+        the API base), or an absolute URL on the site's or the API's origin.
+        The editor offers no copy for anything else. Null when the backend
+        offers no copy.
+    renames:
+      type: array
+      description: Inputs and outputs the draft renames in place, with the places that use them.
+      items:
+        $ref: '#/ImpactRename'
+
+ImpactResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/ImpactReport'
+
+WorkflowCopyResponse:
+  allOf:
+    - $ref: './common.yaml#/ApiResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - editorUrl
+          properties:
+            id:
+              type: string
+              description: The id of the new workflow.
+            label:
+              type: string
+              description: The name of the new workflow, the draft name followed by ` (copy)`.
+            editorUrl:
+              type: string
+              description: Where the new workflow opens in the editor, as a path from the site root.
+            triggersSwitchedOff:
+              type: boolean
+              description: True when triggers carried over from the original start switched off.
+
+WorkflowRefusedResponse:
+  type: object
+  description: |
+    The answer of a workflow update the backend refuses with 409. The code
+    says why; the remedy depends on it.
+  required:
+    - success
+    - error
+    - error_code
+  properties:
+    success:
+      type: boolean
+      example: false
+    error:
+      type: string
+      description: The refusal in plain words.
+    error_code:
+      type: string
+      description: |
+        `WORKFLOW_IN_USE_BREAKING`: the change breaks places that use the
+        workflow right now; `details` lists them. Save the draft as a copy, or
+        change those places first.
+        `WORKFLOW_MANAGED`: a module manages this workflow and updates keep it
+        in step. Duplicate the workflow and change the copy, or take the
+        workflow over.
+      enum:
+        - WORKFLOW_IN_USE_BREAKING
+        - WORKFLOW_MANAGED
+    details:
+      type: array
+      description: For `WORKFLOW_IN_USE_BREAKING`, the breaking impact items, one per place.
+      items:
+        $ref: '#/ImpactItem'

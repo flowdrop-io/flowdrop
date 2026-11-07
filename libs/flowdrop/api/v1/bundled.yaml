@@ -631,6 +631,12 @@ paths:
       description: |
         Update an existing workflow. All fields are optional - only provided fields will be updated.
         The updatedAt timestamp will be automatically set to the current time.
+
+        A change that would break places that use the workflow right now is
+        refused with 409 and error code `WORKFLOW_IN_USE_BREAKING`; `details`
+        lists the breaking places. Ask the impact endpoint first to learn this
+        before saving. A workflow that a module manages is refused with 409 and
+        error code `WORKFLOW_MANAGED`.
       tags:
         - Workflows
       parameters:
@@ -658,6 +664,25 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            The update is refused. `error_code` is `WORKFLOW_IN_USE_BREAKING`
+            (the change breaks places in use; `details` lists them) or
+            `WORKFLOW_MANAGED` (a module manages this workflow).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowRefusedResponse'
+              example:
+                success: false
+                error: This change cannot be saved yet. It would break 1 place that uses this workflow.
+                error_code: WORKFLOW_IN_USE_BREAKING
+                details:
+                  - kind: parent
+                    severity: breaks
+                    label: Order intake
+                    message: Calls this workflow; the interface change breaks its callers (major).
+                    url: /admin/flowdrop/workflows/order_intake
         '422':
           $ref: '#/components/responses/ValidationError'
         '500':
@@ -862,6 +887,185 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /workflows/{id}/copy:
+    post:
+      operationId: copyWorkflow
+      summary: Save a draft as a new workflow
+      description: |
+        Save the draft in the body as a new workflow, named after the draft with
+        ` (copy)` added. The workflow `id` names is left as it is. Triggers carried
+        over from it start switched off, so the copy does not fire next to the
+        original. This is the way out of a refused update. The impact check names
+        this endpoint in `copyUrl`.
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          description: UUID of the workflow the draft came from
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: The draft, in the shape of the update request.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkflowRequest'
+      responses:
+        '201':
+          description: The copy was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowCopyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /workflow/{id}/impact:
+    post:
+      operationId: checkWorkflowImpact
+      summary: Check what saving a draft would change
+      description: |
+        Ask what saving the draft in the body over the stored workflow would do
+        to the workflows, profiles and triggers that use it. Nothing is saved.
+        The editor calls this before every save. A backend without this route
+        answers 404 or 405, and the editor then saves without asking.
+      tags:
+        - Workflows
+      parameters:
+        - name: id
+          in: path
+          description: Workflow UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: The draft, in the shape of the update request.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkflowRequest'
+      responses:
+        '200':
+          description: The impact of the draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImpactResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /workflow/{id}/run:
+    post:
+      operationId: runWorkflow
+      summary: Run workflow
+      description: |
+        Start a run of the stored workflow with the given inputs. Without a body
+        the workflow runs with no inputs. Reading the run later needs its own
+        permission, so launching does not imply read access.
+      tags:
+        - Pipeline
+      parameters:
+        - name: id
+          in: path
+          description: Workflow UUID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inputs:
+                  type: object
+                  description: Input values by workflow input name
+                  additionalProperties: true
+                sessionId:
+                  type: string
+                  description: The session the run belongs to
+                waitSeconds:
+                  type: integer
+                  minimum: 0
+                  maximum: 30
+                  default: 0
+                  description: How long to wait for the run to finish before answering
+                origin:
+                  type: string
+                  description: |
+                    Where the launch comes from. `editor` says the run was
+                    started from the workflow editor, so the run page can say so.
+                    It is the only value today. A backend that does not know the
+                    field ignores it, and so does one that gets another value.
+                  enum:
+                    - editor
+      responses:
+        '202':
+          description: The run was started
+          headers:
+            Location:
+              description: The URL of the run
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          pipelineId:
+                            type: string
+                            description: The run id, to read its status with
+                          runId:
+                            type: string
+                            description: The same value as `pipelineId`
+                          status:
+                            type: string
+                          queued:
+                            type: boolean
+                            description: True when a queue worker will pick the run up
+                          runUrl:
+                            type: string
+                            description: The URL of the run
+                          run:
+                            type: object
+                            nullable: true
+                            additionalProperties: true
+                            description: The run as it stands after the optional wait
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The workflow is switched off. The run starts once it is enabled again.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /executions:
@@ -1189,6 +1393,38 @@ paths:
                           updated:
                             type: string
                             format: date-time
+                          activity:
+                            nullable: true
+                            description: |
+                              What is happening to a run that has not ended,
+                              worked out by the backend so a client never
+                              compares a lease with its own clock. Null once the
+                              run has ended or waits on a person. A backend
+                              without this field leaves it out.
+                            type: object
+                            properties:
+                              kind:
+                                type: string
+                                description: |
+                                  `waiting_for_worker` (nobody holds the run and a
+                                  queue worker will pick it up), `running_here` (a
+                                  web request holds it), `running_on_worker` (a
+                                  queue worker holds it) or `stuck` (the holder
+                                  went away, or nobody picked it up in time). A
+                                  backend may add kinds.
+                                example: waiting_for_worker
+                              label:
+                                type: string
+                                description: The activity in words, for a person
+                                example: Waiting for a worker
+                              since:
+                                type: string
+                                format: date-time
+                                description: Since when
+                              heldBy:
+                                type: string
+                                nullable: true
+                                description: The kind of holder while one has the run, otherwise null
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -4487,6 +4723,14 @@ components:
         playground:
           $ref: '#/components/schemas/WorkflowPlayground'
           description: 'Playground settings. Send only `chat`: null clears the stored settings, and omitting the key leaves them alone.'
+        followRenames:
+          type: boolean
+          default: false
+          description: |
+            Set when the author agreed in the save dialog that the places using a
+            renamed workflow input or output follow the new name in this same save.
+            The impact check lists them in `renames`. Without it, a rename leaves
+            those places on the old name.
         metadata:
           type: object
           properties:
@@ -4499,6 +4743,247 @@ components:
             author:
               type: string
               maxLength: 100
+    WorkflowRefusedResponse:
+      type: object
+      description: |
+        The answer of a workflow update the backend refuses with 409. The code
+        says why; the remedy depends on it.
+      required:
+        - success
+        - error
+        - error_code
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: The refusal in plain words.
+        error_code:
+          type: string
+          description: |
+            `WORKFLOW_IN_USE_BREAKING`: the change breaks places that use the
+            workflow right now; `details` lists them. Save the draft as a copy, or
+            change those places first.
+            `WORKFLOW_MANAGED`: a module manages this workflow and updates keep it
+            in step. Duplicate the workflow and change the copy, or take the
+            workflow over.
+          enum:
+            - WORKFLOW_IN_USE_BREAKING
+            - WORKFLOW_MANAGED
+        details:
+          type: array
+          description: For `WORKFLOW_IN_USE_BREAKING`, the breaking impact items, one per place.
+          items:
+            $ref: '#/components/schemas/ImpactItem'
+    ImpactItem:
+      type: object
+      description: One place that uses the workflow, and what a change does to it.
+      required:
+        - kind
+        - severity
+        - label
+        - message
+      properties:
+        kind:
+          type: string
+          description: |
+            What is affected, such as `profile`, `trigger`, `parent`, `runs`,
+            `status` or `other`. A backend may add kinds; read an unknown one as `other`.
+          example: trigger
+        severity:
+          type: string
+          description: |
+            `breaks` means something in use stops working and the save is refused.
+            `changes` means it keeps working but behaves differently. `info` is
+            for noting only.
+          enum:
+            - breaks
+            - changes
+            - info
+        label:
+          type: string
+          description: The name of the affected place. A place the viewer may not open gets a generic name.
+        message:
+          type: string
+          description: What happens to it, in plain words.
+        url:
+          type: string
+          nullable: true
+          description: Where to look at the affected place, or null when there is no page for it.
+    ImpactRenamePlace:
+      type: object
+      description: One place that uses a renamed workflow input or output.
+      required:
+        - kind
+        - label
+        - enabled
+      properties:
+        kind:
+          type: string
+          description: What kind of place it is, using the same values as `ImpactItem.kind`.
+        label:
+          type: string
+          description: The name of the place.
+        url:
+          type: string
+          nullable: true
+          description: Where to look at the place, or null when there is no page for it.
+        enabled:
+          type: boolean
+          description: Whether the place is switched on. A place that is switched off still follows a rename.
+    ImpactRename:
+      type: object
+      description: |
+        An input or output of the workflow that the draft renames in place, with
+        the places that use the old name. Those places follow the new name when
+        the save sets `followRenames`.
+      required:
+        - direction
+        - from
+        - to
+        - places
+      properties:
+        direction:
+          type: string
+          enum:
+            - input
+            - output
+        from:
+          type: string
+          description: The port name stored now.
+        to:
+          type: string
+          description: The port name in the draft.
+        places:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImpactRenamePlace'
+    ImpactInterfaceChange:
+      type: object
+      description: One difference between the stored workflow interface and the draft.
+      properties:
+        side:
+          type: string
+          enum:
+            - input
+            - output
+        path:
+          type: string
+          description: Where in the interface the difference is.
+        kind:
+          type: string
+          description: What kind of difference it is.
+        breaking:
+          type: boolean
+          description: Whether the difference breaks callers of that side.
+    ImpactReport:
+      type: object
+      description: |
+        What saving the draft would do to the workflows, profiles and triggers
+        that use the saved workflow. Nothing is saved. The shape is experimental
+        and may change in a minor release of the backend.
+      required:
+        - confirm
+        - interface
+        - items
+        - refused
+      properties:
+        confirm:
+          type: boolean
+          description: True when the author should confirm before saving, because at least one item is not `info`.
+        interface:
+          type: object
+          description: How the draft changes the workflow interface (its inputs and outputs).
+          properties:
+            level:
+              type: string
+              description: The version level the change calls for.
+              enum:
+                - major
+                - minor
+                - patch
+                - none
+            breaking:
+              type: boolean
+              description: Whether the interface change breaks callers.
+            changes:
+              type: array
+              items:
+                $ref: '#/components/schemas/ImpactInterfaceChange'
+        items:
+          type: array
+          description: The affected places, breaking ones first.
+          items:
+            $ref: '#/components/schemas/ImpactItem'
+        ways:
+          type: array
+          description: Ways to make the change safely.
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+              description:
+                type: string
+              url:
+                type: string
+              code:
+                type: string
+        refused:
+          type: boolean
+          description: |
+            True when the save would be refused, because it breaks a place that is
+            in use. A PUT with the same draft answers 409 `WORKFLOW_IN_USE_BREAKING`.
+        refusedMessage:
+          type: string
+          nullable: true
+          description: The refusal in plain words, naming each place. Null when the save is not refused.
+        copyUrl:
+          type: string
+          nullable: true
+          description: |
+            Where to POST the draft to save it as a new workflow instead (see
+            `copyWorkflow`). Either a path from the site root, such as
+            `/api/flowdrop/workflows/{id}/copy` (resolved against the site, not
+            the API base), or an absolute URL on the site's or the API's origin.
+            The editor offers no copy for anything else. Null when the backend
+            offers no copy.
+        renames:
+          type: array
+          description: Inputs and outputs the draft renames in place, with the places that use them.
+          items:
+            $ref: '#/components/schemas/ImpactRename'
+    ImpactResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ImpactReport'
+    WorkflowCopyResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              required:
+                - id
+                - editorUrl
+              properties:
+                id:
+                  type: string
+                  description: The id of the new workflow.
+                label:
+                  type: string
+                  description: The name of the new workflow, the draft name followed by ` (copy)`.
+                editorUrl:
+                  type: string
+                  description: Where the new workflow opens in the editor, as a path from the site root.
+                triggersSwitchedOff:
+                  type: boolean
+                  description: True when triggers carried over from the original start switched off.
     JobStatus:
       type: object
       properties:
@@ -6692,6 +7177,7 @@ components:
           nullable: true
           description: Interface input that receives the person's message.
         history:
+          type: object
           allOf:
             - $ref: '#/components/schemas/PlaygroundChatHistory'
           nullable: true
@@ -6724,6 +7210,7 @@ components:
         binding.
       properties:
         chat:
+          type: object
           allOf:
             - $ref: '#/components/schemas/PlaygroundChatBinding'
           nullable: true

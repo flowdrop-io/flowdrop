@@ -150,6 +150,38 @@
                         updated:
                           type: string
                           format: date-time
+                        activity:
+                          nullable: true
+                          description: |
+                            What is happening to a run that has not ended,
+                            worked out by the backend so a client never
+                            compares a lease with its own clock. Null once the
+                            run has ended or waits on a person. A backend
+                            without this field leaves it out.
+                          type: object
+                          properties:
+                            kind:
+                              type: string
+                              description: |
+                                `waiting_for_worker` (nobody holds the run and a
+                                queue worker will pick it up), `running_here` (a
+                                web request holds it), `running_on_worker` (a
+                                queue worker holds it) or `stuck` (the holder
+                                went away, or nobody picked it up in time). A
+                                backend may add kinds.
+                              example: waiting_for_worker
+                            label:
+                              type: string
+                              description: The activity in words, for a person
+                              example: Waiting for a worker
+                            since:
+                              type: string
+                              format: date-time
+                              description: Since when
+                            heldBy:
+                              type: string
+                              nullable: true
+                              description: The kind of holder while one has the run, otherwise null
       '404':
         $ref: '../components/responses.yaml#/NotFound'
       '500':

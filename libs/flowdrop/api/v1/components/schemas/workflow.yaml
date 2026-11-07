@@ -365,6 +365,7 @@ PlaygroundChatBinding:
       nullable: true
       description: Interface input that receives the person's message.
     history:
+      type: object
       allOf:
         - $ref: '#/PlaygroundChatHistory'
       nullable: true
@@ -398,6 +399,7 @@ WorkflowPlayground:
     binding.
   properties:
     chat:
+      type: object
       allOf:
         - $ref: '#/PlaygroundChatBinding'
       nullable: true
@@ -533,6 +535,14 @@ UpdateWorkflowRequest:
     playground:
       $ref: '#/WorkflowPlayground'
       description: 'Playground settings. Send only `chat`: null clears the stored settings, and omitting the key leaves them alone.'
+    followRenames:
+      type: boolean
+      default: false
+      description: |
+        Set when the author agreed in the save dialog that the places using a
+        renamed workflow input or output follow the new name in this same save.
+        The impact check lists them in `renames`. Without it, a rename leaves
+        those places on the old name.
     metadata:
       type: object
       properties:
