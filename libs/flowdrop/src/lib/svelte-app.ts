@@ -1283,6 +1283,17 @@ export async function mountWorkflowEditor(
     builtinEditors?: boolean;
     /** Customise the canvas context menu — see {@link FlowDropMountOptions.contextMenu}. */
     contextMenu?: ContextMenuOptions;
+    /**
+     * Open the editor locked: the workflow is read-only, nothing can change it
+     * (canvas, undo), and a banner above the canvas lists `reasons` (plain text,
+     * optional link) and offers `actions` (buttons). A button press calls
+     * `onLockAction(id)`; the host answers it, for example by removing the lock
+     * with `app.setLock(null)`. Selecting, panning, zooming and inspecting stay
+     * available. Unset, the editor is not locked and nothing changes.
+     */
+    lock?: EditorLock | null;
+    /** Called with the action's `id` when a person presses a button on the lock banner. */
+    onLockAction?: (id: string) => void;
   } = {}
 ): Promise<MountedFlowDropApp> {
   const {
@@ -1293,7 +1304,9 @@ export async function mountWorkflowEditor(
     authProvider,
     instanceId,
     builtinEditors,
-    contextMenu
+    contextMenu,
+    lock,
+    onLockAction
   } = options;
 
   // Per-instance state container (see mountFlowDropApp)
@@ -1313,6 +1326,10 @@ export async function mountWorkflowEditor(
   if (workflow) {
     fd.workflow.initialize(workflow);
   }
+
+  // Lock after the workflow is in: a locked store refuses the seed above.
+  if (lock !== undefined) fd.lock.set(lock);
+  const unsubscribeLockAction = onLockAction ? fd.lock.onAction((id) => onLockAction(id)) : null;
 
   // Create the Svelte component
   const svelteApp = mount(WorkflowEditor, {
@@ -1337,6 +1354,7 @@ export async function mountWorkflowEditor(
     destroy: () => {
       destroyed = true;
       for (const cancel of [...pendingRuns]) cancel();
+      unsubscribeLockAction?.();
       releaseInstance(fd, isDefault);
       unmount(svelteApp);
     },
