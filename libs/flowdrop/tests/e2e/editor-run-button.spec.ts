@@ -126,7 +126,7 @@ test.describe('Run button', () => {
     await dialogRun(page).click();
 
     await expect(dialog(page)).toBeHidden();
-    expect(stub.runBodies).toEqual([{ inputs: { topic: 'Ada' } }]);
+    expect(stub.runBodies).toEqual([{ inputs: { topic: 'Ada' }, origin: 'editor' }]);
 
     stub.complete();
     await expect(page.locator('.flowdrop-run-bar')).toContainText('Done', { timeout: 10000 });
