@@ -15,10 +15,12 @@ import type { AuthProvider } from '../types/auth.js';
 import type {
   ImpactItem,
   ImpactRename,
+  ImpactRenamePlace,
   ImpactReport,
   ImpactSeverity,
   SavedCopy
 } from '../types/impact.js';
+import { resolveRequestUrl, safeLinkUrl } from '../utils/links.js';
 import type { Workflow } from '../types/index.js';
 
 export type ImpactResult =
@@ -54,6 +56,24 @@ export function parseImpactItems(raw: unknown): ImpactItem[] {
   return items;
 }
 
+/** Read the places a rename touches; only a label is required. */
+function parseRenamePlaces(raw: unknown): ImpactRenamePlace[] {
+  const places: ImpactRenamePlace[] = [];
+  for (const entry of Array.isArray(raw) ? raw : []) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const p = entry as Record<string, unknown>;
+    if (typeof p.label !== 'string' || p.label === '') continue;
+    places.push({
+      kind: typeof p.kind === 'string' ? p.kind : '',
+      label: p.label,
+      url: typeof p.url === 'string' && p.url ? p.url : null,
+      ...(typeof p.message === 'string' && p.message ? { message: p.message } : {}),
+      ...(typeof p.enabled === 'boolean' ? { enabled: p.enabled } : {})
+    });
+  }
+  return places;
+}
+
 function parseRenames(raw: unknown): ImpactRename[] {
   const renames: ImpactRename[] = [];
   const seen = new Set<string>();
@@ -70,7 +90,7 @@ function parseRenames(raw: unknown): ImpactRename[] {
       direction,
       from: r.from,
       to: r.to,
-      places: parseImpactItems(r.places)
+      places: parseRenamePlaces(r.places)
     });
   }
   return renames;
@@ -135,22 +155,17 @@ export async function checkImpact(
 
 /**
  * Whether a `copyUrl` may receive the draft and the auth headers: a path on
- * this site (one `/`, not `//` or `/\`) or a URL on the API base's origin.
+ * this site (one `/`, not `//` or `/\`), or an `http(s)` address on this
+ * site's origin or the API's.
  */
 export function isSafeCopyUrl(config: EndpointConfig, copyUrl: string): boolean {
-  if (/^\/(?![/\\])/.test(copyUrl)) return true;
-  try {
-    const here = typeof window !== 'undefined' ? window.location.href : undefined;
-    const base = new URL(config.baseUrl, here);
-    return new URL(copyUrl).origin === base.origin;
-  } catch {
-    return false;
-  }
+  return resolveRequestUrl(copyUrl, config.baseUrl) !== null;
 }
 
 /**
  * Save the draft as a new workflow: POST it to the `copyUrl` the impact check
- * named (a path under the API base, or a full URL). Throws with the backend's
+ * named (a path on this site, or a full URL on this site's or the API's
+ * origin). Throws with the backend's
  * reason when it refuses. The answer names the copy as `{ data: { id,
  * editorUrl } }`; either may be missing.
  */
@@ -160,9 +175,11 @@ export async function saveAsCopy(
   copyUrl: string,
   draft: Workflow
 ): Promise<SavedCopy> {
-  if (!isSafeCopyUrl(config, copyUrl)) throw new Error('The copy address is not on this server');
+  // A path is a path on this site, as the backend wrote it, not one under the API base.
+  const url = resolveRequestUrl(copyUrl, config.baseUrl);
+  if (url === null) throw new Error('The copy address is not on this server');
   const response = await authenticatedFetch(
-    buildEndpointUrl(config, copyUrl),
+    url,
     { method: 'POST', body: JSON.stringify(draft) },
     { config, endpointKey: 'workflows.copy', authProvider }
   );
@@ -174,22 +191,10 @@ export async function saveAsCopy(
   } | null;
   if (body?.success === false) throw new Error(body.error ?? 'Saving a copy failed');
   const data = body?.data ?? {};
-  const url = data.editorUrl ?? data.editor_url;
+  const editorUrl = data.editorUrl ?? data.editor_url;
   const id = data.id;
   return {
     id: typeof id === 'string' || typeof id === 'number' ? String(id) : null,
-    editorUrl: typeof url === 'string' && isFollowableUrl(url) ? url : null
+    editorUrl: typeof editorUrl === 'string' ? safeLinkUrl(editorUrl) : null
   };
-}
-
-/** An editor URL the page may go to: a site path, or an http(s) address. */
-function isFollowableUrl(url: string): boolean {
-  if (!url || /[\t\n\r]/.test(url)) return false;
-  if (/^\/(?![/\\])/.test(url)) return true;
-  try {
-    const protocol = new URL(url).protocol;
-    return protocol === 'https:' || protocol === 'http:';
-  } catch {
-    return false;
-  }
 }

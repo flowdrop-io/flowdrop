@@ -1181,6 +1181,11 @@ export async function mountFlowDropApp(
     save: async () => {
       return globalSaveWorkflow({
         instance: fd,
+        // The refused-save answers reach the host from here too, as from the Save button.
+        eventHandlers: {
+          onSavedAsCopy: eventHandlers?.onSavedAsCopy,
+          onWorkflowLoad: eventHandlers?.onWorkflowLoad
+        },
         onDiscardDraft: () => state.draftManager?.markAsSaved(),
         onSaved: (saved) => {
           // globalSaveWorkflow does not write the server-assigned ID back to the
@@ -1329,7 +1334,7 @@ export async function mountWorkflowEditor(
     fd.workflow.initialize(workflow);
   }
 
-  // Lock after the workflow is in: a locked store refuses the seed above.
+  // A lock does not stop `initialize`, so the order of the two does not matter.
   if (lock !== undefined) fd.lock.set(lock);
   const unsubscribeLockAction = onLockAction ? fd.lock.onAction((id) => onLockAction(id)) : null;
 

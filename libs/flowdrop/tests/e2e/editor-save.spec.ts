@@ -205,7 +205,8 @@ test.describe('Save Workflow', () => {
             body: JSON.stringify({ success: true, data: { id: 'test-workflow-simple' } })
           });
         } else {
-          await route.continue();
+          // Let a route the test set up before this one (the copy endpoint) answer.
+          await route.fallback();
         }
       });
       await gotoEditor(page, 'simple');
@@ -252,21 +253,16 @@ test.describe('Save Workflow', () => {
             direction: 'output',
             from: 'node',
             to: 'article',
-            places: [
-              {
-                kind: 'block',
-                severity: 'changes',
-                label: 'Tags block',
-                message: 'maps it',
-                url: null
-              }
-            ]
+            // The shape fddo sends: no severity, no message.
+            places: [{ kind: 'block', label: 'Tags block', url: null, enabled: true }]
           }
         ]
       });
       await saveButton.click();
       const dialog = page.getByTestId('flowdrop-impact-confirm');
-      await expect(dialog).toContainText('Renaming output node \u2192 article also updates:');
+      await expect(dialog).toContainText(
+        'Renaming output node \u2192 article. Places that use it:'
+      );
       const follow = page.getByTestId('flowdrop-impact-follow-renames');
       await expect(follow).not.toBeChecked();
       await follow.check({ force: true });
@@ -278,7 +274,8 @@ test.describe('Save Workflow', () => {
 
     test('a refused save offers Save as a copy and sends no save', async ({ page }) => {
       const copies: string[] = [];
-      await page.route('**/api/flowdrop/workflow/*/copy', async (route) => {
+      // fddo writes the copy url as a path on the site (Url::toString()), API prefix included.
+      await page.route('**/api/flowdrop/workflows/*/copy', async (route) => {
         copies.push(route.request().postData() ?? '');
         await route.fulfill({
           status: 200,
@@ -295,7 +292,7 @@ test.describe('Save Workflow', () => {
       const { saveButton, puts } = await setup(page, {
         ...impactReport,
         refused: true,
-        copyUrl: '/workflow/test-workflow-simple/copy'
+        copyUrl: '/api/flowdrop/workflows/test-workflow-simple/copy'
       });
       await saveButton.click();
       const dialog = page.getByTestId('flowdrop-impact-confirm');

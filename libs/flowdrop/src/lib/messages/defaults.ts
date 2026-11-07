@@ -1339,17 +1339,18 @@ export const defaultMessages = {
       copying: 'Saving a copy\u2026',
       copyFailed: ({ message }: { message: string }) => `Could not save a copy: ${message}`,
       // Shown when the copy was saved and the editor stays where it is.
-      copied: 'Saved a copy of this workflow.',
-      copiedNamed: ({ id }: { id: string }) => `Saved a copy of this workflow as ${id}.`
+      copied: 'Saved a copy of this workflow.'
     },
     // Renamed inputs and outputs, and the opt-in to follow them.
     renames: {
       heading: 'Renames',
       title: ({ kind, from, to }: { kind: string; from: string; to: string }) =>
-        `Renaming ${kind} ${from} \u2192 ${to} also updates:`,
+        `Renaming ${kind} ${from} \u2192 ${to}. Places that use it:`,
       input: 'input',
       output: 'output',
-      noPlaces: 'Nothing else uses it yet.',
+      noPlaces: 'Nothing uses it yet.',
+      // After a place that is switched off.
+      disabledPlace: 'switched off',
       follow: ({ count }: { count: number }) =>
         count === 1 ? 'Also update this 1 place' : `Also update these ${count} places`
     }

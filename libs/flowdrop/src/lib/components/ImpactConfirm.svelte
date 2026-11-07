@@ -17,9 +17,11 @@
   import type { Messages } from '../messages/types.js';
   import Button from './primitives/Button.svelte';
   import Checkbox from './primitives/Checkbox.svelte';
+  import { safeLinkUrl } from '../utils/links.js';
   import type {
     ImpactAnswer,
     ImpactItem,
+    ImpactRenamePlace,
     ImpactReport,
     ImpactSeverity,
     SavedCopy
@@ -141,18 +143,35 @@
   }
 </script>
 
+{#snippet label(text: string, url: string | null)}
+  {@const href = safeLinkUrl(url)}
+  {#if href}
+    <a class="fd-impact-confirm__label" {href} target="_blank" rel="noopener">{text}</a>
+  {:else}
+    <span class="fd-impact-confirm__label">{text}</span>
+  {/if}
+{/snippet}
+
 {#snippet itemRow(item: ImpactItem, severity: ImpactSeverity)}
   <li class="fd-impact-confirm__item">
     <span class="fd-impact-confirm__severity">{m().impact.severity[severity]}</span>
     <span class="fd-impact-confirm__text">
-      {#if item.url}
-        <a class="fd-impact-confirm__label" href={item.url} target="_blank" rel="noopener"
-          >{item.label}</a
-        >
-      {:else}
-        <span class="fd-impact-confirm__label">{item.label}</span>
-      {/if}
+      {@render label(item.label, item.url)}
       <span class="fd-impact-confirm__message">{item.message}</span>
+    </span>
+  </li>
+{/snippet}
+
+{#snippet placeRow(place: ImpactRenamePlace)}
+  <li class="fd-impact-confirm__item fd-impact-confirm__item--place">
+    <span class="fd-impact-confirm__text">
+      {@render label(place.label, place.url)}
+      {#if place.enabled === false}
+        <span class="fd-impact-confirm__message">{m().impact.renames.disabledPlace}</span>
+      {/if}
+      {#if place.message}
+        <span class="fd-impact-confirm__message">{place.message}</span>
+      {/if}
     </span>
   </li>
 {/snippet}
@@ -212,7 +231,7 @@
             {#if rename.places.length > 0}
               <ul class="fd-impact-confirm__list" role="list">
                 {#each rename.places as place (place)}
-                  {@render itemRow(place, place.severity)}
+                  {@render placeRow(place)}
                 {/each}
               </ul>
             {:else}

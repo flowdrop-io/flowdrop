@@ -16,25 +16,14 @@
   import Notice from './primitives/Notice.svelte';
   import Button from './primitives/Button.svelte';
   import { m } from '../messages/index.js';
+  import { safeLinkUrl } from '../utils/links.js';
 
   const fd = getInstance();
   const lock = $derived(fd.lock.current);
   const lockMessages = $derived(m().lock);
 
   /** Only http(s) and site-relative links are made clickable. */
-  function safeUrl(url: string | null | undefined): string | null {
-    if (!url) return null;
-    // Browsers drop tabs and line breaks inside a URL, so a link that holds one is refused.
-    if (/[\t\r\n]/.test(url)) return null;
-    // `/\example.test` reads as `//example.test`, so a backslash after the slash is refused too.
-    if (/^\/(?![/\\])/.test(url)) return url;
-    try {
-      const parsed = new URL(url);
-      return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? url : null;
-    } catch {
-      return null;
-    }
-  }
+  const safeUrl = safeLinkUrl;
 </script>
 
 {#if lock}

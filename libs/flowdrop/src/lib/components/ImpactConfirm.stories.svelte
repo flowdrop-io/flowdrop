@@ -52,13 +52,8 @@
         from: 'node',
         to: 'article',
         places: [
-          {
-            kind: 'block',
-            severity: 'changes',
-            label: 'Tags block',
-            message: 'reads the old name.',
-            url: '#'
-          }
+          { kind: 'block', label: 'Tags block', url: '/admin/structure/block/tags' },
+          { kind: 'form', label: 'Old intake form', url: null, enabled: false }
         ]
       }
     ]
@@ -118,7 +113,8 @@
   parameters={{
     docs: {
       description: {
-        story: "A rename lists the places it also updates; following it is the person's choice."
+        story:
+          "A rename lists the places that use the old name; updating them is the person's choice."
       }
     }
   }}

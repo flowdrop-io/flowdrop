@@ -46,7 +46,9 @@ const {
   mockImpactPending,
   versionState,
   mockShowInfo,
-  mockShowSuccess
+  mockShowSuccess,
+  mockClientLoad,
+  mockStoreInitialize
 } = vi.hoisted(() => ({
   mockGetWorkflowStore: vi.fn(),
   mockWorkflowActionsBatchUpdate: vi.fn(),
@@ -64,7 +66,9 @@ const {
   mockImpactPending: vi.fn(() => false),
   versionState: { editVersion: 0 },
   mockShowInfo: vi.fn(),
-  mockShowSuccess: vi.fn()
+  mockShowSuccess: vi.fn(),
+  mockClientLoad: vi.fn(),
+  mockStoreInitialize: vi.fn()
 }));
 
 vi.mock('$lib/services/impactService.js', async (importOriginal) => ({
@@ -98,18 +102,18 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => {
       },
       batchUpdate: (...args: unknown[]) => mockWorkflowActionsBatchUpdate(...args),
       markAsSaved: (...args: unknown[]) => mockStoreMarkAsSaved(...args),
+      initialize: (...args: unknown[]) => mockStoreInitialize(...args),
       acknowledgeServer: (...args: unknown[]) => mockStoreAcknowledgeServer(...args)
     },
     messages: () => ({
       autoSave: { waiting: 'Autosave is waiting' },
       impact: {
         refused: {
-          copied: 'Saved a copy.',
-          copiedNamed: ({ id }: { id: string }) => `Saved a copy as ${id}.`
+          copied: 'Saved a copy.'
         }
       }
     }),
-    doctor: { canOpen: false, requestOpen: () => false },
+    doctor: { canOpen: false, requestOpen: () => false, schedule: () => {} },
     saveConflict: { report: (...args: unknown[]) => mockReport(...args) },
     runs: {
       noteWorkflowSaved: (...args: unknown[]) => mockNoteWorkflowSaved(...args)
@@ -124,7 +128,8 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => {
       get client() {
         return {
           saveWorkflow: (...args: unknown[]) => mockClientSave(...args),
-          updateWorkflow: (...args: unknown[]) => mockClientUpdate(...args)
+          updateWorkflow: (...args: unknown[]) => mockClientUpdate(...args),
+          loadWorkflow: (...args: unknown[]) => mockClientLoad(...args)
         };
       }
     }
@@ -388,7 +393,7 @@ describe('globalSaveWorkflow', () => {
 
         await globalSaveWorkflow({});
 
-        expect(mockShowSuccess).toHaveBeenCalledWith('Saved a copy as 9.');
+        expect(mockShowSuccess).toHaveBeenCalledWith('Saved a copy.');
         expect(assign).not.toHaveBeenCalled();
         expect(mockStoreMarkAsSaved).not.toHaveBeenCalled();
         vi.unstubAllGlobals();
@@ -438,6 +443,29 @@ describe('globalSaveWorkflow', () => {
         await globalSaveWorkflow({});
 
         expect(mockConfirmImpact.mock.calls[0][0].discard).toEqual(expect.any(Function));
+      });
+
+      it('Discard my changes loads the saved version, drops the stored draft and tells the host', async () => {
+        const saved = { id: 'wf-1', name: 'Saved', nodes: [], edges: [] };
+        mockClientLoad.mockResolvedValue(saved);
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        mockConfirmImpact.mockImplementationOnce(
+          async (options: { discard: () => Promise<void> }) => {
+            await options.discard();
+            return { action: 'discarded' };
+          }
+        );
+        const onDiscardDraft = vi.fn();
+        const onWorkflowLoad = vi.fn();
+
+        expect(
+          await globalSaveWorkflow({ onDiscardDraft, eventHandlers: { onWorkflowLoad } })
+        ).toBe(false);
+
+        expect(mockStoreInitialize).toHaveBeenCalledWith(saved);
+        expect(onDiscardDraft).toHaveBeenCalledTimes(1);
+        expect(onWorkflowLoad).toHaveBeenCalledWith(saved);
+        expect(mockClientUpdate).not.toHaveBeenCalled();
       });
 
       it('shows the refused state when the save itself is refused as breaking', async () => {

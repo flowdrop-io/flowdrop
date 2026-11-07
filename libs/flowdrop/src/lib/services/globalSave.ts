@@ -73,9 +73,10 @@ export interface GlobalSaveOptions {
    */
   interactive?: boolean;
   /**
-   * Called when the editor is about to follow a saved copy to its editor URL
-   * (no `onSavedAsCopy` handler). The editor is already marked as saved; use
-   * this to drop the stored draft of the original workflow.
+   * Called when the unsaved edits are gone for good: the editor is about to
+   * follow a saved copy to its editor URL (no `onSavedAsCopy` handler), or the
+   * person chose "Discard my changes" and the saved version was loaded. Use it
+   * to drop the stored draft, so a reload does not offer those edits again.
    */
   onDiscardDraft?: () => void;
 }
@@ -335,7 +336,12 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
           host,
           instance: fd,
           messages: fd.messages,
-          ...refusalActions(fd, result.status === 'ok' ? result.report : undefined, finalWorkflow)
+          ...refusalActions(
+            fd,
+            options,
+            result.status === 'ok' ? result.report : undefined,
+            finalWorkflow
+          )
         });
         if (answer.action === 'copied') {
           await afterSavedAsCopy(answer.copy, finalWorkflow, fd, options, features.showToasts);
@@ -441,7 +447,7 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
         host,
         instance: fd,
         messages: fd.messages,
-        ...refusalActions(fd, refusal, draftForCopy)
+        ...refusalActions(fd, options, refusal, draftForCopy)
       });
       if (answer.action === 'copied') {
         await afterSavedAsCopy(answer.copy, draftForCopy, fd, options, features.showToasts);
@@ -493,7 +499,12 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
  * safe `copyUrl`, "Discard my changes" when the draft has an id to load the
  * saved version by. Discarding drops every unsaved edit and the undo history.
  */
-function refusalActions(fd: FlowDropInstance, report: ImpactReport | undefined, draft: Workflow) {
+function refusalActions(
+  fd: FlowDropInstance,
+  options: GlobalSaveOptions,
+  report: ImpactReport | undefined,
+  draft: Workflow
+) {
   const config = fd.api.config;
   const copyUrl = report?.copyUrl;
   return {
@@ -507,6 +518,9 @@ function refusalActions(fd: FlowDropInstance, report: ImpactReport | undefined, 
             const loaded = await fd.api.client.loadWorkflow(draft.id);
             fd.workflow.initialize(loaded);
             fd.doctor.schedule();
+            // The edits are gone: so is their stored draft. The host hears of the load as of any other.
+            options.onDiscardDraft?.();
+            options.eventHandlers?.onWorkflowLoad?.(loaded);
           }
         : undefined
   };
@@ -542,8 +556,7 @@ async function afterSavedAsCopy(
       return;
     }
     if (showToasts) {
-      const refused = fd.messages().impact.refused;
-      showSuccess(copy.id ? refused.copiedNamed({ id: copy.id }) : refused.copied);
+      showSuccess(fd.messages().impact.refused.copied);
     }
   } catch (error) {
     logger.error('Handling the saved copy failed', error);

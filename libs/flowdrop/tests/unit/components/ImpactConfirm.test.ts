@@ -300,15 +300,10 @@ describe('confirmImpact: renames', () => {
         direction: 'output',
         from: 'node',
         to: 'article',
+        // The shape fddo sends: no severity, no message.
         places: [
-          {
-            kind: 'block',
-            severity: 'changes',
-            label: 'Tags block',
-            message: 'maps it',
-            url: '/b'
-          },
-          { kind: 'workflow', severity: 'changes', label: 'Caller', message: 'wires it', url: null }
+          { kind: 'block', label: 'Tags block', url: '/b', enabled: false },
+          { kind: 'workflow', label: 'Caller', url: 'javascript:alert(1)' }
         ]
       }
     ]
@@ -322,9 +317,13 @@ describe('confirmImpact: renames', () => {
     void confirmImpact({ report: renameReport });
     flushSync();
     const text = dialog().textContent ?? '';
-    expect(text).toContain('Renaming output node \u2192 article also updates:');
+    expect(text).toContain('Renaming output node \u2192 article. Places that use it:');
     expect(text).toContain('Tags block');
+    expect(text).toContain('switched off');
     expect(text).toContain('Caller');
+    // A link the page may not follow is drawn as text.
+    expect(dialog().querySelector('a[href^="javascript"]')).toBeNull();
+    expect(dialog().querySelector('a[href="/b"]')?.textContent).toBe('Tags block');
     expect(dialog().querySelector('.flowdrop-ui-checkbox')?.textContent).toContain(
       'Also update these 2 places'
     );
@@ -363,7 +362,7 @@ describe('confirmImpact: renames', () => {
     };
     const answer = confirmImpact({ report: noPlaces });
     flushSync();
-    expect(dialog().textContent).toContain('Nothing else uses it yet.');
+    expect(dialog().textContent).toContain('Nothing uses it yet.');
     expect(checkbox()).toBeNull();
     save();
     expect(await answer).toEqual({ action: 'save' });

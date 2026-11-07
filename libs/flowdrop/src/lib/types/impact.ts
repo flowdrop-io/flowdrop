@@ -41,7 +41,19 @@ export interface ImpactRename {
   from: string;
   to: string;
   /** What uses the old name and is updated when the rename is followed. */
-  places: ImpactItem[];
+  places: ImpactRenamePlace[];
+}
+
+/** One place that uses a renamed input or output. */
+export interface ImpactRenamePlace {
+  kind: string;
+  label: string;
+  /** Where to look at the place, when the backend knows. */
+  url: string | null;
+  /** What the rename does to it, when the backend says. */
+  message?: string;
+  /** `false` when the place is switched off; absent when the backend does not say. */
+  enabled?: boolean;
 }
 
 /** The new workflow a `Save as a copy` made. */

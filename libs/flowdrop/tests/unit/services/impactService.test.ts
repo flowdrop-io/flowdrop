@@ -176,7 +176,11 @@ describe('impactService', () => {
               direction: 'output',
               from: 'node',
               to: 'article',
-              places: [{ kind: 'block', severity: 'changes', label: 'Tags', message: 'Follows' }]
+              // The shape fddo sends: no severity, no message.
+              places: [
+                { kind: 'block', label: 'Tags', url: '/admin/block/tags', enabled: false },
+                { kind: 'block', url: null }
+              ]
             },
             { direction: 'input', from: 1 },
             null
@@ -194,7 +198,7 @@ describe('impactService', () => {
           direction: 'output',
           from: 'node',
           to: 'article',
-          places: [{ label: 'Tags', url: null }]
+          places: [{ kind: 'block', label: 'Tags', url: '/admin/block/tags', enabled: false }]
         }
       ]
     });
@@ -222,8 +226,10 @@ describe('impactService', () => {
   });
 
   it('accepts a copy url that is a path or on the API origin, and no other', () => {
-    expect(isSafeCopyUrl(config, '/workflow/wf1/copy')).toBe(true);
+    expect(isSafeCopyUrl(config, '/api/flowdrop/workflows/wf1/copy')).toBe(true);
     expect(isSafeCopyUrl(config, 'https://api.example.com/other/copy')).toBe(true);
+    expect(isSafeCopyUrl(config, `${window.location.origin}/copy`)).toBe(true);
+    expect(isSafeCopyUrl(config, '/\t/other.example.com/copy')).toBe(false);
     expect(isSafeCopyUrl(config, 'https://other.example.com/copy')).toBe(false);
     expect(isSafeCopyUrl(config, '//other.example.com/copy')).toBe(false);
     expect(isSafeCopyUrl(config, '/\\other.example.com/copy')).toBe(false);
@@ -242,9 +248,10 @@ describe('impactService', () => {
     fetchMock.mockResolvedValue(
       json({ success: true, data: { id: 7, editorUrl: '/admin/flowdrop/7/edit' } })
     );
-    const copy = await saveAsCopy(config, authProvider, '/workflow/wf1/copy', draft);
+    // A path is a path on this site, as Drupal's Url::toString() writes it, never one under the API base.
+    const copy = await saveAsCopy(config, authProvider, '/api/flowdrop/workflows/wf1/copy', draft);
     const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://api.example.com/workflow/wf1/copy');
+    expect(url).toBe(`${window.location.origin}/api/flowdrop/workflows/wf1/copy`);
     expect(init.method).toBe('POST');
     expect(JSON.parse(init.body)).toEqual(draft);
     expect(copy).toEqual({ id: '7', editorUrl: '/admin/flowdrop/7/edit' });
