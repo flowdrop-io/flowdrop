@@ -188,7 +188,9 @@
      * canvas lists the `reasons` and offers the `actions` (buttons the host
      * answers through `onLockAction`). While locked, nothing can change the
      * workflow (canvas, config panels, console, shortcuts, undo) and Save is
-     * disabled; selecting, panning, zooming and inspecting still work. `null`
+     * disabled (a host's own Save action stays enabled; pressing it saves nothing
+     * and says the editor is locked); selecting, panning, zooming and inspecting
+     * still work. `null`
      * removes the lock. Seeds `instance.lock`, which holds it afterwards
      * (`instance.lock.set(...)`); passing a different value later sets it
      * again, passing the same one does not. Unset, nothing changes.

@@ -14,7 +14,7 @@
  * backends that use UUIDs as primary keys to always POST instead of PUT.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Workflow } from '$lib/types/index.js';
 import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
 import { ApiError } from '$lib/api/enhanced-client.js';
@@ -64,7 +64,7 @@ const {
   mockCheckImpact: vi.fn(),
   mockConfirmImpact: vi.fn(),
   mockImpactPending: vi.fn(() => false),
-  versionState: { editVersion: 0 },
+  versionState: { editVersion: 0, locked: false },
   mockShowInfo: vi.fn(),
   mockShowSuccess: vi.fn(),
   mockClientLoad: vi.fn(),
@@ -97,6 +97,9 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => {
       get isDirty() {
         return true;
       },
+      get locked() {
+        return versionState.locked;
+      },
       get current() {
         return mockGetWorkflowStore();
       },
@@ -107,6 +110,7 @@ vi.mock('$lib/stores/instanceContainer.svelte.js', () => {
     },
     messages: () => ({
       autoSave: { waiting: 'Autosave is waiting' },
+      lock: { saveRefused: 'The editor is locked, so nothing was saved.' },
       impact: {
         refused: {
           copied: 'Saved a copy.'
@@ -749,6 +753,36 @@ describe('globalSaveWorkflow', () => {
 
     expect(mockClientSave).not.toHaveBeenCalled();
     expect(mockClientUpdate).not.toHaveBeenCalled();
+  });
+
+  describe('a locked editor', () => {
+    afterEach(() => {
+      versionState.locked = false;
+    });
+
+    it("saves nothing and says so when a person saves (a host's own Save button)", async () => {
+      versionState.locked = true;
+      mockGetWorkflowStore.mockReturnValue({ id: 'wf-1', name: 'W', nodes: [], edges: [] });
+
+      expect(await globalSaveWorkflow({})).toBe(false);
+
+      expect(mockClientUpdate).not.toHaveBeenCalled();
+      expect(mockShowInfo).toHaveBeenCalledWith(
+        'The editor is locked, so nothing was saved.',
+        expect.objectContaining({ id: expect.stringContaining('save-locked') })
+      );
+    });
+
+    it('stays quiet for autosave and when toasts are off', async () => {
+      versionState.locked = true;
+      mockGetWorkflowStore.mockReturnValue({ id: 'wf-1', name: 'W', nodes: [], edges: [] });
+
+      expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+      expect(await globalSaveWorkflow({ features: { showToasts: false } })).toBe(false);
+
+      expect(mockClientUpdate).not.toHaveBeenCalled();
+      expect(mockShowInfo).not.toHaveBeenCalled();
+    });
   });
 
   // -------------------------------------------------------------------------

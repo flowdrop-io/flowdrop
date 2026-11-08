@@ -278,7 +278,15 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
   if (impactPending(fd)) return false;
 
   // A locked workflow is not saved: it cannot have changed, and the host asked for no edits.
-  if (fd.workflow.locked) return false;
+  // A person's save says so: a host's own Save button is not disabled by the lock.
+  if (fd.workflow.locked) {
+    if (options.interactive !== false && features.showToasts) {
+      showInfo(fd.messages().lock.saveRefused, {
+        id: `flowdrop:save-locked:${fd.skinScope ?? ''}`
+      });
+    }
+    return false;
+  }
 
   // Flush pending form changes (single location for this logic)
   await flushPendingFormChanges();

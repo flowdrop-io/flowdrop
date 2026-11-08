@@ -138,7 +138,9 @@ export interface FlowDropMountOptions {
   mode?: 'edit' | 'readonly' | 'locked';
   /**
    * Open the editor locked: the workflow is read-only, nothing can change it
-   * (canvas, config panels, console, shortcuts, undo), Save is disabled, and a
+   * (canvas, config panels, console, shortcuts, undo), Save is disabled (a
+   * Save in `navbarActions` stays enabled; it saves nothing and says the editor
+   * is locked), and a
    * banner above the canvas lists `reasons` (plain text, optional link) and
    * offers `actions` (buttons). A button press calls `onLockAction(id)`; the
    * host answers it, for example by removing the lock with `app.setLock(null)`.
