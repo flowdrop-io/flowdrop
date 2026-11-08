@@ -996,9 +996,9 @@ export async function mountFlowDropApp(
     // Offer a draft left behind by an earlier session (a reload, a crash).
     // Not for a brand-new workflow: its key is shared by every tab.
     const offerKey = draftManager.getStorageKey();
-    if (mode !== 'readonly' && mode !== 'locked' && !lock && !offerKey.endsWith(':new')) {
+    if (mode !== 'readonly' && mode !== 'locked' && !offerKey.endsWith(':new')) {
       const manager = draftManager;
-      cancelDraftOffer = whenWorkflowLoaded(fd, (loaded) => {
+      const offerDraft = (loaded: Workflow): void => {
         const draft = loadDraft(offerKey, draftStorageAdapter);
         const offer = draftOffer(draft, loaded);
         if (!draft) return;
@@ -1049,7 +1049,25 @@ export async function mountFlowDropApp(
           },
           { id: `flowdrop:draft-offer:${offerKey}` }
         );
-      });
+      };
+      if (fd.lock.isLocked) {
+        // A locked editor cannot restore, so the offer waits for the lock to go.
+        // Meanwhile the workflow is clean and an autosave tick would delete the
+        // draft: hold it until then.
+        const releaseLockHold = manager.holdDraft();
+        const stopWatching = fd.lock.onChange((locked) => {
+          if (locked) return;
+          stopWatching();
+          releaseLockHold();
+          cancelDraftOffer = whenWorkflowLoaded(fd, offerDraft);
+        });
+        cancelDraftOffer = () => {
+          stopWatching();
+          releaseLockHold();
+        };
+      } else {
+        cancelDraftOffer = whenWorkflowLoaded(fd, offerDraft);
+      }
     }
 
     // When the user opts out, also remove the draft already in storage.

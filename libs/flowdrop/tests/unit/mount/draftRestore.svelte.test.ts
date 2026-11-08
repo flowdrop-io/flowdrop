@@ -188,6 +188,35 @@ describe('mount: stored draft offer', () => {
     app.destroy();
   });
 
+  it('an editor opened locked keeps the draft and offers it once unlocked', async () => {
+    const storage = memoryAdapter();
+    saveDraft(makeWorkflow(300), 'k-mount-locked', storage);
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    const app = await mountFlowDropApp(el, {
+      instanceId: `draft-restore-${++seq}`,
+      portConfig: DEFAULT_PORT_CONFIG,
+      categories: [],
+      nodes: [textType],
+      workflow: makeWorkflow(),
+      draftStorage: storage,
+      draftStorageKey: 'k-mount-locked',
+      lock: { reasons: [{ kind: 'in_use', message: 'In use.' }], actions: [] },
+      features: { showToasts: false, autoSaveDraft: true, autoSaveDraftInterval: 20 }
+    });
+    await app.runCommand('list nodes');
+    // Locked: no offer, and the draft outlives the autosave ticks of a clean workflow.
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect(shown).toHaveLength(0);
+    expect(loadDraft('k-mount-locked', storage)).not.toBeNull();
+
+    app.setLock(null);
+    await vi.waitFor(() => expect(shown).toHaveLength(1));
+    shown[0].actions[0].onClick();
+    expect(app.getWorkflow()?.nodes.find((n) => n.id === 'a.1')?.position.x).toBe(300);
+    app.destroy();
+  });
+
   it('Discard removes the draft', async () => {
     const storage = memoryAdapter();
     saveDraft(makeWorkflow(300), 'k-discard', storage);
