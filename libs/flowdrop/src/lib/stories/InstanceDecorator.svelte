@@ -12,7 +12,8 @@
 
   With `runs`, the instance is also given an endpoint config, and the browser's
   `fetch` answers the runs list and run status requests from that data (and
-  nothing else) until the story is destroyed. Other requests go through.
+  nothing else) until the story is destroyed; a run's `activity` is passed on
+  in its status. Other requests go through.
 -->
 
 <script lang="ts" module>
@@ -96,12 +97,18 @@
       if (url.startsWith(STORY_API_BASE)) {
         const path = url.slice(STORY_API_BASE.length);
         if (/\/workflow\/[^/]+\/pipelines\?/.test(path)) return Promise.resolve(json(runsBody));
-        const status = /\/pipelines\/([^/?]+)/.exec(path);
+        // The run status endpoint: `/pipeline/{id}/status` (also `/pipelines/{id}`).
+        const status = /^\/pipelines?\/([^/?]+)/.exec(path);
         if (status) {
-          const all = (runsBody as { data?: { pipelines?: { id: string; status: string }[] } }).data
-            ?.pipelines;
+          const all = (
+            runsBody as {
+              data?: { pipelines?: { id: string; status: string; activity?: unknown }[] };
+            }
+          ).data?.pipelines;
           const found = all?.find((p) => p.id === decodeURIComponent(status[1]));
-          return Promise.resolve(json({ success: true, data: { status: found?.status } }));
+          return Promise.resolve(
+            json({ success: true, data: { status: found?.status, activity: found?.activity } })
+          );
         }
       }
       return realFetch(input, init);

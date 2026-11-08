@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { fn } from 'storybook/test';
+  import { expect, fn, within } from 'storybook/test';
   import RunBar from './RunBar.svelte';
   import Toolbar from './primitives/Toolbar.svelte';
   import InstanceDecorator from '../stories/InstanceDecorator.svelte';
@@ -46,6 +46,38 @@
 </Story>
 
 <Story
+  name="Waiting for a worker"
+  asChild
+  play={async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Waiting for a worker')).toBeInTheDocument();
+  }}
+  parameters={{
+    docs: {
+      description: {
+        story:
+          "A run the site has queued but no worker has picked up yet: the backend reports `activity.kind: 'waiting_for_worker'` on the run status, and the pill says so until the run starts."
+      }
+    }
+  }}
+>
+  <InstanceDecorator
+    workflow={chatWorkflow}
+    runs={{
+      success: true,
+      data: {
+        pipelines: [{ id: '143', status: 'running', activity: { kind: 'waiting_for_worker' } }]
+      }
+    }}
+    run={{ runId: '143', status: 'running' }}
+  >
+    <Toolbar ariaLabel="Canvas controls">
+      <RunBar fadeMs={stay} runLink="#run-143" />
+    </Toolbar>
+  </InstanceDecorator>
+</Story>
+
+<Story
   name="Waiting for you"
   asChild
   parameters={{
@@ -85,18 +117,23 @@
 <Story
   name="Done"
   asChild
+  play={async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByTestId('run-bar-open-run')).toHaveTextContent(
+      'View result'
+    );
+  }}
   parameters={{
     docs: {
       description: {
         story:
-          'The run finished well. In the editor the pill fades after about four seconds and the badges on the nodes go with it; here it stays.'
+          'The run finished well. When the host gives a run page, the link reads "View result". In the editor the pill fades after about four seconds and the badges on the nodes go with it; here it stays.'
       }
     }
   }}
 >
   <InstanceDecorator workflow={chatWorkflow} run={{ runId: '141', status: 'completed' }}>
     <Toolbar ariaLabel="Canvas controls">
-      <RunBar fadeMs={stay} />
+      <RunBar fadeMs={stay} runLink="#run-141" />
     </Toolbar>
   </InstanceDecorator>
 </Story>

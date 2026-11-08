@@ -75,6 +75,34 @@
 </Story>
 
 <Story
+  name="Locked"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'While the editor is locked, Save and Import are disabled: dimmed, announced as disabled, and Ctrl/Cmd+S does nothing. Export still works.'
+      }
+    }
+  }}
+>
+  <ScopeFrame
+    ><InstanceDecorator>
+      <Navbar
+        title="Support chat"
+        primaryActions={editorActions.map((action) =>
+          action.label === 'Export' ? action : { ...action, disabled: true }
+        )}
+        showStatus
+        showSettings
+        saveShortcut
+        {onWorkflowSettings}
+      />
+    </InstanceDecorator></ScopeFrame
+  >
+</Story>
+
+<Story
   name="Workflow settings open"
   asChild
   parameters={{

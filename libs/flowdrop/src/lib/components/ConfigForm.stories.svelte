@@ -1,8 +1,10 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { fn } from 'storybook/test';
+  import { expect, fn } from 'storybook/test';
   import ConfigForm from './ConfigForm.svelte';
   import InstanceDecorator from '../stories/InstanceDecorator.svelte';
+  import LockFence from './LockFence.svelte';
+  import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import { agentNode, agentWorkflow, registerEditors } from '../stories/formFixtures.js';
   import type { ConfigSchema } from '../types/index.js';
 
@@ -48,6 +50,52 @@
       workflowEdges={agentWorkflow.edges}
       {onChange}
     />
+  </InstanceDecorator>
+</Story>
+
+<Story
+  name="Locked"
+  asChild
+  play={async ({ canvasElement }) => {
+    // Nothing in the form takes a change: text stays readable, controls are off.
+    const editable = canvasElement.querySelectorAll(
+      'input:not([readonly]):not([disabled]):not([type="hidden"]), textarea:not([readonly]):not([disabled]), select:not([disabled])'
+    );
+    await expect(editable.length).toBe(0);
+    await expect(
+      canvasElement.querySelectorAll('input[readonly], textarea[readonly]').length
+    ).toBeGreaterThan(0);
+  }}
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'The same form while the editor is locked (the editor wraps it in a lock fence). Text, number and code fields turn read-only, so their values can still be selected and copied; selects, switches and checkboxes are disabled, and the list rows can be opened but not added, moved or removed.'
+      }
+    }
+  }}
+>
+  <InstanceDecorator
+    workflow={agentWorkflow}
+    setup={(fd: FlowDropInstance) => {
+      registerEditors(fd);
+      fd.lock.set({
+        reasons: [{ kind: 'in_use', message: 'Two forms use this workflow.' }],
+        actions: []
+      });
+    }}
+    width="26rem"
+  >
+    <LockFence>
+      <ConfigForm
+        node={agentNode}
+        commitMode="live"
+        workflowId={agentWorkflow.id}
+        workflowNodes={agentWorkflow.nodes}
+        workflowEdges={agentWorkflow.edges}
+        {onChange}
+      />
+    </LockFence>
   </InstanceDecorator>
 </Story>
 
