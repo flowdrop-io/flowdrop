@@ -262,4 +262,39 @@ describe('mountFlowDropApp({ webmcp })', () => {
 
     app.destroy();
   });
+
+  it('reports WORKFLOW_IN_USE_BREAKING when the backend refused the save', async () => {
+    const runtime = createFakeModelContext();
+    Object.defineProperty(document, 'modelContext', { value: runtime, configurable: true });
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('no network'));
+    vi.spyOn(window, 'fetch').mockRejectedValue(new Error('no network'));
+    // The refused dialog: the person saved a copy, the save itself resolves false.
+    vi.mocked(globalSaveModule.globalSaveWorkflow).mockClear();
+    vi.mocked(globalSaveModule.globalSaveWorkflow).mockImplementationOnce(async (options) => {
+      options?.onRefused?.('copied');
+      return false;
+    });
+
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    const app = await mountFlowDropApp(el, {
+      workflow,
+      nodes: [textIn],
+      portConfig: DEFAULT_PORT_CONFIG,
+      categories: [],
+      webmcp: { approval: 'auto' },
+      features: { showToasts: false, autoSaveDraft: false },
+      instanceId: `mount-save-refused-${Math.random().toString(36).slice(2)}`
+    });
+
+    await untilAttached(app);
+    await app.webmcp!.ready;
+
+    const out = await runtime.call('flowdrop_save');
+    expect(out.ok).toBe(false);
+    expect(out.code).toBe('WORKFLOW_IN_USE_BREAKING');
+    expect(String(out.error)).toContain('saved the draft as a new workflow');
+
+    app.destroy();
+  });
 });

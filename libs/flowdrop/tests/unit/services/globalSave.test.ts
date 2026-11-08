@@ -498,6 +498,49 @@ describe('globalSaveWorkflow', () => {
         expect(apiToasts.error).not.toHaveBeenCalled();
       });
 
+      it('tells onRefused what the person did about a refused check', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report: refusedReport });
+        const onRefused = vi.fn();
+
+        mockConfirmImpact.mockResolvedValueOnce({ action: 'cancel' });
+        expect(await globalSaveWorkflow({ onRefused })).toBe(false);
+        mockConfirmImpact.mockResolvedValueOnce({ action: 'discarded' });
+        await globalSaveWorkflow({ onRefused });
+        mockConfirmImpact.mockResolvedValueOnce({
+          action: 'copied',
+          copy: { id: '9', editorUrl: null }
+        });
+        await globalSaveWorkflow({ onRefused, features: { showToasts: false } });
+
+        expect(onRefused.mock.calls).toEqual([['kept'], ['discarded'], ['copied']]);
+      });
+
+      it('does not call onRefused for an ordinary cancel', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'ok', report });
+        mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
+        const onRefused = vi.fn();
+
+        expect(await globalSaveWorkflow({ onRefused })).toBe(false);
+
+        expect(onRefused).not.toHaveBeenCalled();
+      });
+
+      it('calls onRefused when the save itself is refused as breaking', async () => {
+        mockCheckImpact.mockResolvedValue({ status: 'unavailable' });
+        mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
+        mockClientUpdate.mockRejectedValue(
+          new ApiError('Breaking change refused', 409, 'update workflow', {
+            error_code: 'WORKFLOW_IN_USE_BREAKING',
+            error: 'Breaking change refused'
+          })
+        );
+        const onRefused = vi.fn();
+
+        expect(await globalSaveWorkflow({ onRefused })).toBe(false);
+
+        expect(onRefused).toHaveBeenCalledWith('kept');
+      });
+
       it('another failed save still throws and toasts', async () => {
         mockCheckImpact.mockResolvedValue({ status: 'unavailable' });
         mockClientUpdate.mockRejectedValue(

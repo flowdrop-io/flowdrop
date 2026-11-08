@@ -146,6 +146,8 @@ export interface ModelContextLike {
  * - `NEEDS_APPROVAL` — a person must approve in the UI first.
  * - `INVALID` — the workflow failed validation; `message` says where.
  * - `CONFLICT` — the server copy changed since it was loaded; reload.
+ * - `WORKFLOW_IN_USE_BREAKING` — the server refused the save because the change
+ *   breaks places that use the workflow; the person has been shown them.
  * - `PENDING` — a run is paused for a person (never for the agent, D8).
  * - `NOT_FOUND` — the run id is unknown.
  */

@@ -201,7 +201,8 @@ export function buildHostToolDescriptors(hooks: HostHooks): HostToolDescriptor[]
         'Save the workflow to the server. Nothing an agent changes is persisted until ' +
         'this runs or the person clicks Save. Asks for approval; cannot be undone from ' +
         'the editor. Fails with FORBIDDEN when the user may not save, LOCKED when the editor is ' +
-        'locked (read-only), CONFLICT when the ' +
+        'locked (read-only), WORKFLOW_IN_USE_BREAKING when the change breaks places that use the ' +
+        'workflow (the person was shown them; do not retry), CONFLICT when the ' +
         'server copy changed since it was loaded (reload the page), INVALID when the ' +
         'server rejected the workflow — the message says which node or port.',
       inputSchema: EMPTY_SCHEMA,

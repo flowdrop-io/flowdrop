@@ -182,6 +182,7 @@ export {
 } from '../services/workflowStorage.js';
 
 export { globalSaveWorkflow, globalExportWorkflow } from '../services/globalSave.js';
+export type { SaveRefusalOutcome } from '../services/globalSave.js';
 
 export { fetchPortConfig, validatePortConfig } from '../services/portConfigApi.js';
 

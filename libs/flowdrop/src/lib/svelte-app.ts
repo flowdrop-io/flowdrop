@@ -59,7 +59,12 @@ import {
   onSettingsChange
 } from './stores/settingsStore.svelte.js';
 import { logger } from './utils/logger.js';
-import { globalSaveWorkflow, globalExportWorkflow } from './services/globalSave.js';
+import {
+  globalSaveWorkflow,
+  globalExportWorkflow,
+  type GlobalSaveOptions,
+  type SaveRefusalOutcome
+} from './services/globalSave.js';
 
 import type { NavbarAction, NavbarBranding } from './types/navbar.js';
 import type { HostHooks, WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
@@ -739,6 +744,22 @@ function createRunCommand(
 }
 
 /**
+ * What the default `onSave` tells an agent when the backend refused the save
+ * because things use the workflow, by what the person chose in the dialog.
+ */
+const SAVE_REFUSED_MESSAGES: Record<SaveRefusalOutcome, string> = {
+  kept:
+    'Nothing was saved: the change breaks places that use this workflow, so the server refused it. ' +
+    'The person was shown those places and kept editing; tell them, do not retry.',
+  copied:
+    'The workflow itself was not changed: the change breaks places that use it, so the server ' +
+    'refused it, and the person saved the draft as a new workflow instead.',
+  discarded:
+    'Nothing was saved: the change breaks places that use this workflow, so the server refused it, ' +
+    'and the person discarded the unsaved changes. The editor now holds the saved version.'
+};
+
+/**
  * Mount the full FlowDrop App with navbar, sidebars, and workflow editor
  *
  * Use this for a complete workflow editing experience with all UI components.
@@ -1114,6 +1135,37 @@ export async function mountFlowDropApp(
     removeLeaveGuard = () => window.removeEventListener('beforeunload', onBeforeUnload);
   }
 
+  /**
+   * The mount's Save (`app.save()`, the default WebMCP `onSave`). `onRefused` hears
+   * when the backend refused it because things use the workflow.
+   */
+  const saveFromMount = (onRefused?: GlobalSaveOptions['onRefused']): Promise<boolean> =>
+    globalSaveWorkflow({
+      instance: fd,
+      onRefused,
+      // The refused-save answers reach the host from here too, as from the Save button.
+      eventHandlers: {
+        onSavedAsCopy: eventHandlers?.onSavedAsCopy,
+        onWorkflowLoad: eventHandlers?.onWorkflowLoad
+      },
+      onDiscardDraft: () => state.draftManager?.markAsSaved(),
+      onSaved: (saved) => {
+        // globalSaveWorkflow does not write the server-assigned ID back to the
+        // workflow store, so we cannot read it from the store here.
+        // Instead we use the savedWorkflow returned by the API directly.
+        // This migrates '<prefix>:new' to a unique per-workflow key
+        // immediately after the first save, preventing cross-tab collisions
+        // when multiple new workflows are open simultaneously.
+        if (state.draftManager && !customDraftKey && saved.id) {
+          state.draftManager.updateStorageKey(
+            getDraftStorageKey(saved.id, undefined, fd.storagePrefix)
+          );
+        }
+        // A saved workflow has no draft
+        state.draftManager?.markAsSaved();
+      }
+    });
+
   // Create the mounted app interface
   const mountedApp: MountedFlowDropApp = {
     instance: fd,
@@ -1204,32 +1256,7 @@ export async function mountFlowDropApp(
       () => state.draftManager?.markAsSaved()
     ),
 
-    save: async () => {
-      return globalSaveWorkflow({
-        instance: fd,
-        // The refused-save answers reach the host from here too, as from the Save button.
-        eventHandlers: {
-          onSavedAsCopy: eventHandlers?.onSavedAsCopy,
-          onWorkflowLoad: eventHandlers?.onWorkflowLoad
-        },
-        onDiscardDraft: () => state.draftManager?.markAsSaved(),
-        onSaved: (saved) => {
-          // globalSaveWorkflow does not write the server-assigned ID back to the
-          // workflow store, so we cannot read it from the store here.
-          // Instead we use the savedWorkflow returned by the API directly.
-          // This migrates '<prefix>:new' to a unique per-workflow key
-          // immediately after the first save, preventing cross-tab collisions
-          // when multiple new workflows are open simultaneously.
-          if (state.draftManager && !customDraftKey && saved.id) {
-            state.draftManager.updateStorageKey(
-              getDraftStorageKey(saved.id, undefined, fd.storagePrefix)
-            );
-          }
-          // A saved workflow has no draft
-          state.draftManager?.markAsSaved();
-        }
-      });
-    },
+    save: async () => saveFromMount(),
 
     export: () => {
       globalExportWorkflow({ instance: fd });
@@ -1255,14 +1282,23 @@ export async function mountFlowDropApp(
   // WebMCP is on: the chat panel's tool loop offers `save`, `run` and
   // `run_status` through them, so the built-in assistant and a browser agent
   // persist and run the same way.
-  const defaultOnSave: NonNullable<WebMCPMountOptions['onSave']> = async () =>
-    (await mountedApp.save())
-      ? undefined
-      : {
-          ok: false,
-          code: 'UNAVAILABLE',
-          message: 'Nothing was saved: the host cancelled the save or no workflow is loaded.'
-        };
+  const defaultOnSave: NonNullable<WebMCPMountOptions['onSave']> = async () => {
+    // The dialog answers through the callback, before the save resolves.
+    const heard: { refused?: SaveRefusalOutcome } = {};
+    if (await saveFromMount((outcome) => (heard.refused = outcome))) return undefined;
+    if (heard.refused) {
+      return {
+        ok: false,
+        code: 'WORKFLOW_IN_USE_BREAKING',
+        message: SAVE_REFUSED_MESSAGES[heard.refused]
+      };
+    }
+    return {
+      ok: false,
+      code: 'UNAVAILABLE',
+      message: 'Nothing was saved: the host cancelled the save or no workflow is loaded.'
+    };
+  };
   // Hook keys are merged through `definedHostHooks` on both inputs, so an
   // explicit `onSave: undefined` in either never shadows the default.
   const webmcpGiven: WebMCPMountOptions = webmcp === true || !webmcp ? {} : webmcp;

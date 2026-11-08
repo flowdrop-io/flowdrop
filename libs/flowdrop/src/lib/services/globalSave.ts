@@ -28,7 +28,7 @@ import {
   saveAsCopy
 } from './impactService.js';
 import { confirmImpact, impactPending } from './impactGate.js';
-import type { ImpactReport, SavedCopy } from '$lib/types/impact.js';
+import type { ImpactAnswer, ImpactReport, SavedCopy } from '$lib/types/impact.js';
 import { scopeSelector } from '$lib/themes/scopedSkinCss.js';
 import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
 import { DEFAULT_FEATURES } from '$lib/types/events.js';
@@ -79,6 +79,25 @@ export interface GlobalSaveOptions {
    * to drop the stored draft, so a reload does not offer those edits again.
    */
   onDiscardDraft?: () => void;
+  /**
+   * Called when the backend refused the save because things use the workflow
+   * and the change breaks them (a `refused` impact check, or a save answered
+   * with `WORKFLOW_IN_USE_BREAKING`), after the person answered the dialog:
+   * `copied` (saved as a new workflow), `discarded` (the saved version was
+   * loaded) or `kept` (they kept editing). The save itself resolves `false`.
+   */
+  onRefused?: (outcome: SaveRefusalOutcome) => void;
+}
+
+/** What the person did about a refused save. */
+export type SaveRefusalOutcome = 'copied' | 'discarded' | 'kept';
+
+function refusalOutcome(answer: ImpactAnswer): SaveRefusalOutcome {
+  return answer.action === 'copied'
+    ? 'copied'
+    : answer.action === 'discarded'
+      ? 'discarded'
+      : 'kept';
 }
 
 /**
@@ -343,6 +362,9 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
             finalWorkflow
           )
         });
+        if (result.status === 'ok' && result.report.refused === true) {
+          options.onRefused?.(refusalOutcome(answer));
+        }
         if (answer.action === 'copied') {
           await afterSavedAsCopy(answer.copy, finalWorkflow, fd, options, features.showToasts);
           return false;
@@ -449,6 +471,7 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
         messages: fd.messages,
         ...refusalActions(fd, options, refusal, draftForCopy)
       });
+      options.onRefused?.(refusalOutcome(answer));
       if (answer.action === 'copied') {
         await afterSavedAsCopy(answer.copy, draftForCopy, fd, options, features.showToasts);
       }
