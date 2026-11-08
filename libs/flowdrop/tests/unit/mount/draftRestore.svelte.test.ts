@@ -171,6 +171,23 @@ describe('mount: stored draft offer', () => {
     app.destroy();
   });
 
+  it('Restore on an editor locked after mount keeps the draft for later', async () => {
+    const storage = memoryAdapter();
+    saveDraft(makeWorkflow(300), 'k-locked', storage);
+    const app = await mountApp(storage, 'k-locked', 20);
+    await app.runCommand('list nodes');
+    await vi.waitFor(() => expect(shown).toHaveLength(1));
+    app.setLock({ reasons: [{ kind: 'in_use', message: 'In use.' }], actions: [] });
+
+    shown[0].actions[0].onClick();
+    // Nothing restored, and the stored draft survives later autosave ticks.
+    expect(app.isDirty()).toBe(false);
+    expect(app.getWorkflow()?.nodes.find((n) => n.id === 'a.1')?.position.x).toBe(0);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    expect(loadDraft('k-locked', storage)?.workflow.nodes[0].position.x).toBe(300);
+    app.destroy();
+  });
+
   it('Discard removes the draft', async () => {
     const storage = memoryAdapter();
     saveDraft(makeWorkflow(300), 'k-discard', storage);

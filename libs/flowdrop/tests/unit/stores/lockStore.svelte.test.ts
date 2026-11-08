@@ -116,11 +116,15 @@ describe('a config edit while locked', () => {
     const input = document.createElement('input');
     fence.append(input);
     document.body.append(fence);
-    const lockedWhenBlurred: boolean[] = [];
-    input.addEventListener('blur', () => lockedWhenBlurred.push(fd.workflow.locked));
+    // Both flags: the workflow store refuses on `workflow.locked`, the config
+    // forms' onChange guards on `lock.isLocked`.
+    const lockedWhenBlurred: Array<[boolean, boolean]> = [];
+    input.addEventListener('blur', () =>
+      lockedWhenBlurred.push([fd.workflow.locked, fd.lock.isLocked])
+    );
     input.focus();
     fd.lock.set(lock);
-    expect(lockedWhenBlurred).toEqual([false]);
+    expect(lockedWhenBlurred).toEqual([[false, false]]);
     expect(document.activeElement).not.toBe(input);
     fence.remove();
   });

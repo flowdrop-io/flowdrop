@@ -283,13 +283,6 @@ export interface CreateInstanceOptions {
 // Incrementing across SSR requests is harmless; no state hangs off the value.
 let instanceCounter = 0;
 
-/** Blur the focused element when it sits inside a lock fence (a config form or panel body). */
-function blurFieldInsideLockFence(): void {
-  if (typeof document === 'undefined') return;
-  const active = document.activeElement;
-  if (active instanceof HTMLElement && active.closest('.flowdrop-lock-fence')) active.blur();
-}
-
 /**
  * Create a fully wired FlowDrop instance.
  *
@@ -311,12 +304,8 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   const workflow = new WorkflowStore(history);
   // A lock makes the workflow store refuse every edit, whoever asks.
   const lock = new EditorLockStore();
-  lock.onChange((locked) => {
-    // A field being typed in commits on blur. Let that edit land before the
-    // store closes, so the field never shows a value the workflow does not have.
-    if (locked) blurFieldInsideLockFence();
-    workflow.setLocked(locked);
-  });
+  // The lock store blurs a field being typed in before it locks, so that edit lands first.
+  lock.onChange((locked) => workflow.setLocked(locked));
   const historyBindings = new HistoryStore(history);
   // A locked workflow keeps its history where it is: undo and redo would only
   // move the position, because the store refuses the restore.

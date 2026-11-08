@@ -31,6 +31,13 @@ function normalise(lock: EditorLock | null | undefined): EditorLock | null {
   };
 }
 
+/** Blur the focused element when it sits inside a lock fence (a config form or panel body). */
+function blurFieldInsideLockFence(): void {
+  if (typeof document === 'undefined') return;
+  const active = document.activeElement;
+  if (active instanceof HTMLElement && active.closest('.flowdrop-lock-fence')) active.blur();
+}
+
 export class EditorLockStore {
   #current = $state<EditorLock | null>(null);
   #changeListeners = new Set<(locked: boolean) => void>();
@@ -53,6 +60,9 @@ export class EditorLockStore {
   set(lock: EditorLock | null | undefined): void {
     const next = normalise(lock);
     const was = this.#current !== null;
+    // A field being typed in commits on blur. Blur it while the editor still
+    // reads as unlocked, so the edit lands before anything refuses it.
+    if (!was && next !== null) blurFieldInsideLockFence();
     this.#current = next;
     const is = next !== null;
     if (was !== is) for (const listener of [...this.#changeListeners]) listener(is);

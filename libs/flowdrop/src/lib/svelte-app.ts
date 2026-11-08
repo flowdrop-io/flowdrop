@@ -65,7 +65,7 @@ import type { NavbarAction, NavbarBranding } from './types/navbar.js';
 import type { HostHooks, WebMCPHandle, WebMCPMountOptions } from './webmcp/types.js';
 import { whenWorkflowLoaded } from './utils/whenWorkflowLoaded.svelte.js';
 import { draftOffer, draftTimeLabel } from './utils/draftRestore.js';
-import { showWarning } from './services/toastService.js';
+import { showInfo, showWarning } from './services/toastService.js';
 import { parseCommand } from './commands/parser.js';
 import { executeCommand } from './commands/executor.js';
 import { isSessionLine } from './commands/session.js';
@@ -1018,6 +1018,14 @@ export async function mountFlowDropApp(
                 label: text.restore,
                 primary: true,
                 onClick: () => {
+                  // A locked workflow refuses the restore, and saving the draft
+                  // now would write the saved version over it. Keep the hold, so
+                  // the clean workflow does not delete the draft either: it is
+                  // offered again when the workflow next opens.
+                  if (fd.workflow.locked) {
+                    showInfo(text.restoreLocked);
+                    return;
+                  }
                   release();
                   fd.workflow.batchUpdate({
                     nodes: draft.workflow.nodes,

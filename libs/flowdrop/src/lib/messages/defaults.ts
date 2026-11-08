@@ -1426,7 +1426,9 @@ export const defaultMessages = {
     savedSince:
       'The workflow was saved after this draft. Restoring puts your draft over that version.',
     restore: 'Restore',
-    discard: 'Discard'
+    discard: 'Discard',
+    restoreLocked:
+      'The editor is locked, so the draft was not restored. It is kept and offered again when the workflow next opens.'
   },
 
   composer: {
