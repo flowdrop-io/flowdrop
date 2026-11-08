@@ -251,7 +251,8 @@
   // enabled. 'readonly' and 'locked' both disable interaction identically, and
   // so does a lock on the instance (`fd.lock`), even when this editor is mounted
   // on its own without App.
-  const canvasEditable = $derived((props.mode ?? 'edit') === 'edit' && !fd.lock.isLocked);
+  const hostEditable = $derived((props.mode ?? 'edit') === 'edit');
+  const canvasEditable = $derived(hostEditable && !fd.lock.isLocked);
 
   // Canvas grid pattern, supplied by the active theme's config.canvas.grid
   // (App passes it down). BackgroundVariant's enum values are the same strings
@@ -2078,7 +2079,8 @@
         {/if}
       </FlowDropZone>
 
-      {#if canvasEditable}
+      <!-- Edit | Test, Run and the run bar change nothing in the workflow: a lock keeps them. -->
+      {#if hostEditable}
         <CanvasToolbar
           editorMode={props.editorMode}
           onEditorModeChange={props.onEditorModeChange}

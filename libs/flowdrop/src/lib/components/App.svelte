@@ -636,13 +636,15 @@
   let endpointConfig = $state<EndpointConfig | null>(null);
 
   /**
-   * The Edit canvas offers a Run button: editable, saved, and either the host
-   * supplies `onRun` or the backend has the `workflows.run` endpoint.
+   * The Edit canvas offers a Run button: the host's mode is `edit`, saved, and
+   * either the host supplies `onRun` or the backend has the `workflows.run`
+   * endpoint. A lock does not remove it: a locked workflow can still be run (the
+   * saved version; `startRun` says so when there are unsaved changes).
    */
   const runOffered = $derived(
     canOfferRun({
       runButton: features.runButton,
-      canvasEditable,
+      canvasEditable: mode === 'edit',
       pipelineId,
       workflowId: fd.workflow.current?.id,
       hostCanRun: !!fd.host.current.onRun,
@@ -2653,7 +2655,7 @@
           ? swapFromCanvas
           : undefined}
         onNodeClick={testMode ? showNodeSheet : undefined}
-        mode={effectiveMode}
+        {mode}
         {pipelineId}
         {refreshTrigger}
         builtinEditors={features.builtinEditors}

@@ -109,6 +109,21 @@ test.describe('Run button', () => {
     expect(stub.calls).toEqual(['PUT save', 'POST run']);
   });
 
+  test('a locked workflow keeps Run and Edit | Test, and runs without saving', async ({ page }) => {
+    const stub = await stubBackend(page);
+    await page.goto('/test/editor?lock=1');
+    await page.waitForSelector('[data-testid="editor-test"]', { timeout: 15000 });
+    await waitForEditor(page);
+    await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
+    await expect(page.getByTestId('lock-banner')).toBeVisible();
+
+    await expect(page.locator('.flowdrop-canvas-toolbar').getByRole('radio')).toHaveCount(2);
+    await runButton(page).click();
+
+    await expect(page.locator('.flowdrop-run-bar')).toBeVisible();
+    expect(stub.calls).toEqual(['POST run']);
+  });
+
   test('a workflow with a required input asks for it first', async ({ page }) => {
     const stub = await stubBackend(page);
     await gotoFormEditor(page);
