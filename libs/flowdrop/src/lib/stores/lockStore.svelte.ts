@@ -93,6 +93,8 @@ export class EditorLockStore {
   /**
    * Be told just before the editor becomes locked, while it still reads as
    * unlocked, so an edit in progress can be saved. Returns a function that stops listening.
+   *
+   * @internal Used by the editor to save a half-typed name; not a supported host API.
    */
   onBeforeLock(listener: () => void): () => void {
     this.#beforeLockListeners.add(listener);

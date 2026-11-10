@@ -75,6 +75,11 @@ export interface NodeTypeInfo {
    * The node edits its text in place. Enter on the focused node, the
    * context menu's "Edit text" and a double-click then ask the component to
    * start typing (via `fd.inlineEdit`) instead of opening the config panel.
+   *
+   * A component that edits in place should mark its editing element with a
+   * `data-lock-commit` attribute and commit on blur. When the editor is about
+   * to be locked, the focused element carrying that attribute is blurred first,
+   * so what is half typed is saved before the lock is applied.
    */
   editsInPlace?: boolean;
 }
