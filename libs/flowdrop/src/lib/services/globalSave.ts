@@ -469,7 +469,7 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
       if (!interactive) {
         // Autosave never asks: say so once per version, then stay quiet until
         // something changes (the same as a check that needs an answer).
-        const version = snapshotVersion ?? fd.workflow.editVersion;
+        const version = snapshotVersion!;
         if (autosaveRefusedAt.get(fd) !== version && features.showToasts) {
           showInfo(fd.messages().autoSave.waiting, { id: autosaveToastId(fd) });
         }
