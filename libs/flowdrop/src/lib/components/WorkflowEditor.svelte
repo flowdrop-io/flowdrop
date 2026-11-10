@@ -871,6 +871,8 @@
     options: { history?: boolean; emptyLabel?: boolean } = {}
   ): { id: string | null; done: Promise<void> } {
     const { history = true, emptyLabel = false } = options;
+    // The store refuses the node when locked; the canvas must not show it either.
+    if (!canvasEditable) return { id: null, done: Promise.resolve() };
     // The machine's `dropping` state is what holds the store -> canvas sync
     // off while a node is added (see its permissions), so every placement
     // goes through it, not only a sidebar drop.
@@ -1621,8 +1623,12 @@
    * loads it into the workflow store. Shows a toast on validation failure or read error.
    */
   function handleWorkflowFileDrop(file: File): void {
+    // `initialize` ignores the lock on purpose, so a drop must check it itself:
+    // now, and again when the file has been read (a lock may arrive meanwhile).
+    if (!canvasEditable) return;
     const reader = new FileReader();
     reader.onload = (event) => {
+      if (!canvasEditable) return;
       try {
         const text = event.target?.result;
         if (typeof text !== 'string') {
@@ -1934,6 +1940,7 @@
       <FlowDropZone
         ondrop={handleNodeDrop}
         onfiledrop={handleWorkflowFileDrop}
+        editable={canvasEditable}
         toFlowPosition={(point) => canvasControllerRef?.canvasScreenToFlow(point) ?? null}
       >
         {#key svelteFlowKey}

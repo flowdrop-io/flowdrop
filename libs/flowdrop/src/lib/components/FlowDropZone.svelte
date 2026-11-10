@@ -19,6 +19,11 @@
      * ignored.
      */
     toFlowPosition: (point: { x: number; y: number }) => { x: number; y: number } | null;
+    /**
+     * Whether a drop may change the workflow. When false, drops are swallowed
+     * (so the browser does not open a dropped file) and nothing is reported.
+     */
+    editable?: boolean;
     children: Snippet;
   }
 
@@ -30,7 +35,7 @@
   function handleDragOver(e: DragEvent): void {
     e.preventDefault();
     if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'copy';
+      e.dataTransfer.dropEffect = props.editable === false ? 'none' : 'copy';
     }
   }
 
@@ -43,6 +48,7 @@
    */
   function handleDrop(e: DragEvent): void {
     e.preventDefault();
+    if (props.editable === false) return;
 
     // Check if the drop contains files (e.g. a workflow JSON file from the OS)
     const files = e.dataTransfer?.files;

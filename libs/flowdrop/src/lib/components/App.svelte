@@ -1408,6 +1408,8 @@
     if (fd.lock.isLocked) return;
     const reader = new FileReader();
     reader.onload = (event) => {
+      // A lock may have arrived while the file was being read.
+      if (fd.lock.isLocked) return;
       try {
         const text = event.target?.result;
         if (typeof text !== 'string') {
