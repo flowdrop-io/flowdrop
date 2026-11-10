@@ -1368,7 +1368,8 @@
   );
 
   async function saveWorkflow(options: { interactive?: boolean } = {}): Promise<boolean> {
-    if (fd.lock.isLocked) return false;
+    // A locked editor is refused inside globalSaveWorkflow, the one place that
+    // decides it: quietly for autosave, with "nothing was saved" for a person.
     // Commit any in-flight config edit so the save and its history are
     // consistent (the value itself is already live in the store).
     flushNodeConfigEdit();
