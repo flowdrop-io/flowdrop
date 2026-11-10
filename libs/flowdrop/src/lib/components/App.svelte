@@ -561,7 +561,7 @@
       href: '#import',
       icon: 'mdi:upload',
       variant: 'outline' as const,
-      disabled: fd.lock.isLocked,
+      disabled: !canvasEditable,
       onclick: (e: Event) => {
         e.preventDefault();
         fileInputRef?.click();
@@ -1405,11 +1405,12 @@
    * Reads the selected file, validates its structure, and loads it into the workflow store.
    */
   function importWorkflow(file: File): void {
-    if (fd.lock.isLocked) return;
+    // Import replaces the workflow: not while it is locked or read-only.
+    if (!canvasEditable) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-      // A lock may have arrived while the file was being read.
-      if (fd.lock.isLocked) return;
+      // A lock or read-only mode may have arrived while the file was being read.
+      if (!canvasEditable) return;
       try {
         const text = event.target?.result;
         if (typeof text !== 'string') {
