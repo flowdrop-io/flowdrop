@@ -3,7 +3,7 @@
  * editable: locked, and also mode="readonly".
  */
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, unmount, flushSync, tick } from 'svelte';
 import App from '$lib/components/App.svelte';
 import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
@@ -36,7 +36,13 @@ function wf(id: string): Workflow {
 }
 
 let app: ReturnType<typeof mount> | null = null;
+// App's start-up requests must fail at once: a real request can take seconds
+// on a busy machine, and the workflow prop is only loaded after them.
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+});
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
   if (app) unmount(app);
   app = null;
@@ -79,7 +85,7 @@ async function importFile(
     } as never
   });
   // App loads its `workflow` prop once its start-up requests have finished
-  // (they fail fast here). An import made before that would be overwritten, so
+  // (fetch is stubbed to fail at once). An import made before that would be overwritten, so
   // wait for the load.
   for (let i = 0; i < 300 && fd.workflow.current?.id !== 'original'; i++) {
     await new Promise((r) => setTimeout(r, 10));
