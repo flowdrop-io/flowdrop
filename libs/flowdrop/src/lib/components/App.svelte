@@ -2373,7 +2373,7 @@
         {branding}
         end={navbarEnd}
         saveShortcut
-        onSaveShortcutRefused={() => {
+        onDisabledSave={() => {
           // Save is disabled by the lock: saving says so ("nothing was saved").
           if (fd.lock.isLocked) void saveWorkflow();
         }}

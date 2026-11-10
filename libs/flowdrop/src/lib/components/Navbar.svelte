@@ -74,11 +74,11 @@
      */
     saveShortcut?: boolean;
     /**
-     * Called when the Save shortcut is pressed while Save is disabled. The key
-     * is still taken (the browser's own Save Page must not open); this is the
-     * place to say why nothing was saved.
+     * Called when Ctrl/Cmd+S is pressed (with `saveShortcut`) while the first
+     * action (Save) is `disabled`. The key is still taken, so the browser's own
+     * Save Page does not open; use this to say why nothing was saved.
      */
-    onSaveShortcutRefused?: () => void;
+    onDisabledSave?: () => void;
     /**
      * Drawn in the action row before the Save button: the Problems indicator.
      * Renders nothing of its own, so an empty snippet leaves no gap.
@@ -103,7 +103,7 @@
     onWorkflowSettings,
     workflowSettingsOpen = false,
     saveShortcut = false,
-    onSaveShortcutRefused,
+    onDisabledSave,
     status,
     dirty = false
   }: Props = $props();
@@ -194,7 +194,7 @@
       // the browser's Save Page does not open in its place.
       if (save.disabled) {
         event.preventDefault();
-        onSaveShortcutRefused?.();
+        onDisabledSave?.();
         return;
       }
       event.preventDefault();

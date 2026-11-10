@@ -92,7 +92,7 @@ describe('Navbar Save shortcut', () => {
       target,
       props: {
         saveShortcut: true,
-        onSaveShortcutRefused: onRefused,
+        onDisabledSave: onRefused,
         showSettings: false,
         showStatus: false,
         primaryActions: [
