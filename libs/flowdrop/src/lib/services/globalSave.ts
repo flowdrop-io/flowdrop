@@ -271,6 +271,8 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
   let lastReport: ImpactReport | undefined;
   let followRenames: boolean | undefined;
   let draftForCopy: Workflow | undefined;
+  // The edit version the snapshot was taken at (set once the body is built).
+  let snapshotVersion: number | undefined;
 
   // A save while the impact question is open is dropped, not queued: the open
   // dialog is the one answer. Checked before the flush, which would blur its
@@ -325,6 +327,7 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
     // What this snapshot contains: only up to here may be marked saved.
     let savedVersion = fd.workflow.editVersion;
     draftForCopy = finalWorkflow;
+    snapshotVersion = savedVersion;
 
     // Ask what this save changes for what uses the workflow. A backend
     // without the route (or that does not know the workflow) leaves the save
@@ -458,17 +461,21 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
 
     const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
 
-    // onSaveError hook
-    const currentWorkflowForError = readWorkflow();
-    if (eventHandlers?.onSaveError && currentWorkflowForError) {
-      await eventHandlers.onSaveError(errorObj, currentWorkflowForError);
-    }
-
-    // Things use the workflow and this change breaks them: say so in the same
-    // dialog as a refused check, instead of a failure toast. The person has
-    // been answered, so this is not rethrown. Autosave never asks.
-    const refusal = interactive && draftForCopy ? inUseRefusal(error, lastReport) : null;
+    // Things use the workflow and this change breaks them: say so, instead of
+    // a failure toast. The refusal is decided before anything reports a failed
+    // save, because it is an answer, not a failure, and is not rethrown.
+    const refusal = draftForCopy ? inUseRefusal(error, lastReport) : null;
     if (refusal && draftForCopy) {
+      if (!interactive) {
+        // Autosave never asks: say so once per version, then stay quiet until
+        // something changes (the same as a check that needs an answer).
+        const version = snapshotVersion ?? fd.workflow.editVersion;
+        if (autosaveRefusedAt.get(fd) !== version && features.showToasts) {
+          showInfo(fd.messages().autoSave.waiting, { id: autosaveToastId(fd) });
+        }
+        autosaveRefusedAt.set(fd, version);
+        return false;
+      }
       const host =
         (fd.skinScope ? document.querySelector<HTMLElement>(scopeSelector(fd.skinScope)) : null) ??
         document.body;
@@ -484,6 +491,12 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
         await afterSavedAsCopy(answer.copy, draftForCopy, fd, options, features.showToasts);
       }
       return false;
+    }
+
+    // onSaveError hook
+    const currentWorkflowForError = readWorkflow();
+    if (eventHandlers?.onSaveError && currentWorkflowForError) {
+      await eventHandlers.onSaveError(errorObj, currentWorkflowForError);
     }
 
     // onApiError hook — return true suppresses the default toast
@@ -548,6 +561,10 @@ function refusalActions(
         ? async () => {
             const loaded = await fd.api.client.loadWorkflow(draft.id);
             fd.workflow.initialize(loaded);
+            // Discarding resets the edit versions, so a refusal remembered
+            // for a version number no longer describes anything.
+            autosaveRefusedAt.delete(fd);
+            dismissToast(autosaveToastId(fd));
             fd.doctor.schedule();
             // The edits are gone: so is their stored draft. The host hears of the load as of any other.
             options.onDiscardDraft?.();

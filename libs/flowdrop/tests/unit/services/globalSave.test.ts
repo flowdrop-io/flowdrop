@@ -1344,6 +1344,100 @@ describe('globalSaveWorkflow: versions, joining, ordering, autosave', () => {
       expect(mockShowInfo).toHaveBeenCalledTimes(2);
     });
 
+    describe('a PUT refused as breaking', () => {
+      const refusedPut = () =>
+        new ApiError('Refused', 409, 'update workflow', {
+          error_code: 'WORKFLOW_IN_USE_BREAKING',
+          error: 'Refused'
+        });
+
+      beforeEach(() => {
+        // The check has nothing to say; the PUT itself is refused.
+        mockCheckImpact.mockResolvedValue({ status: 'unavailable' });
+        mockClientUpdate.mockRejectedValue(refusedPut());
+      });
+
+      it('autosave waits quietly: one toast, no failure report, no throw, no retry for that version', async () => {
+        versionState.editVersion = 50;
+        const onSaveError = vi.fn();
+
+        expect(
+          await globalSaveWorkflow({ interactive: false, eventHandlers: { onSaveError } })
+        ).toBe(false);
+        expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+
+        expect(onSaveError).not.toHaveBeenCalled();
+        expect(apiToasts.error).not.toHaveBeenCalled();
+        expect(mockShowInfo).toHaveBeenCalledTimes(1);
+        expect(mockShowInfo.mock.calls[0][0]).toBe('Autosave is waiting');
+        expect(mockConfirmImpact).not.toHaveBeenCalled();
+        // The second tick did not go back to the backend.
+        expect(mockClientUpdate).toHaveBeenCalledTimes(1);
+
+        // A new edit tries again.
+        versionState.editVersion = 51;
+        await globalSaveWorkflow({ interactive: false });
+        expect(mockClientUpdate).toHaveBeenCalledTimes(2);
+      });
+
+      it('a person who answers the refusal is not told the save failed', async () => {
+        versionState.editVersion = 60;
+        mockConfirmImpact.mockResolvedValue({ action: 'cancel' });
+        const onSaveError = vi.fn();
+
+        expect(await globalSaveWorkflow({ eventHandlers: { onSaveError } })).toBe(false);
+
+        expect(mockConfirmImpact).toHaveBeenCalledTimes(1);
+        expect(onSaveError).not.toHaveBeenCalled();
+      });
+
+      it('another failure still reaches onSaveError', async () => {
+        versionState.editVersion = 70;
+        mockClientUpdate.mockRejectedValue(
+          new ApiError('Nope', 422, 'update workflow', { error_code: 'OTHER' })
+        );
+        const onSaveError = vi.fn();
+
+        await expect(
+          globalSaveWorkflow({ interactive: false, eventHandlers: { onSaveError } })
+        ).rejects.toThrow('Nope');
+        expect(onSaveError).toHaveBeenCalledTimes(1);
+      });
+
+      it('Discard my changes forgets the refusal and takes the waiting notice down', async () => {
+        versionState.editVersion = 80;
+        mockClientLoad.mockResolvedValue({ id: 'wf-1', name: 'Saved', nodes: [], edges: [] });
+        mockCheckImpact.mockResolvedValue({
+          status: 'ok',
+          report: { ...report, refused: true, copyUrl: null }
+        });
+        const { dismissToast } = await import('$lib/services/toastService.js');
+
+        // Autosave is refused for this version.
+        expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+        expect(mockCheckImpact).toHaveBeenCalledTimes(1);
+
+        // The person discards through the dialog; discard resets the edit versions.
+        vi.mocked(dismissToast).mockClear();
+        mockConfirmImpact.mockImplementationOnce(
+          async (options: { discard: () => Promise<void> }) => {
+            await options.discard();
+            return { action: 'discarded' };
+          }
+        );
+        await globalSaveWorkflow({});
+        expect(dismissToast).toHaveBeenCalledWith(
+          expect.stringContaining('flowdrop:autosave-waiting')
+        );
+
+        // The reloaded workflow can land on the same version number: autosave must ask again.
+        mockConfirmImpact.mockClear();
+        mockCheckImpact.mockClear();
+        expect(await globalSaveWorkflow({ interactive: false })).toBe(false);
+        expect(mockCheckImpact).toHaveBeenCalledTimes(1);
+      });
+    });
+
     it('a manual save that lands on a refused autosave asks the question itself', async () => {
       versionState.editVersion = 40;
       let answer!: (r: unknown) => void;
