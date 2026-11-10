@@ -12,7 +12,7 @@
 -->
 
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { getMessages } from '../messages/context.js';
   import type { Messages } from '../messages/types.js';
   import Button from './primitives/Button.svelte';
@@ -91,6 +91,16 @@
     cancelWrap?.querySelector('button')?.focus();
   });
 
+  /**
+   * The safe answer takes focus. While an action runs every button is
+   * disabled and cannot hold focus, so this runs when the action has failed
+   * and the buttons are enabled again (the dialog may have been reopened).
+   */
+  async function focusCancel(): Promise<void> {
+    await tick();
+    cancelWrap?.querySelector('button')?.focus();
+  }
+
   function resolve(answer: ImpactAnswer): void {
     if (resolved) return;
     resolved = true;
@@ -116,6 +126,7 @@
         message: e instanceof Error ? e.message : String(e)
       });
       busy = null;
+      void focusCancel();
     }
   }
 
@@ -131,6 +142,7 @@
         message: e instanceof Error ? e.message : String(e)
       });
       busy = null;
+      void focusCancel();
     }
   }
 
@@ -150,7 +162,9 @@
   function handleClose(): void {
     if (resolved) return;
     if (busy) {
-      if (dialogRef && !dialogRef.open) dialogRef.showModal();
+      if (dialogRef && !dialogRef.open) {
+        dialogRef.showModal();
+      }
       return;
     }
     resolve({ action: 'cancel' });

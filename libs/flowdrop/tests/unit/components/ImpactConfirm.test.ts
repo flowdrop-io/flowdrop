@@ -145,6 +145,27 @@ describe('confirmImpact', () => {
     });
   });
 
+  it('puts focus back on the safe answer when Save as a copy fails', async () => {
+    let fail!: (e: Error) => void;
+    void confirmImpact({
+      report: { ...report, refused: true, copyUrl: '/copy' },
+      saveAsCopy: () => new Promise((_, reject) => (fail = reject))
+    });
+    flushSync();
+    const el = dialog();
+    const copy = [...el.querySelectorAll('button')].find((b) => /copy/i.test(b.textContent ?? ''));
+    copy?.click();
+    flushSync();
+    // The buttons are disabled while the copy is made: nothing holds focus.
+    el.tabIndex = -1;
+    el.focus();
+    expect(document.activeElement).toBe(el);
+    fail(new Error('nope'));
+    await new Promise((r) => setTimeout(r, 0));
+    flushSync();
+    expect(document.activeElement).toBe(el.querySelector('.fd-impact-confirm__cancel button'));
+  });
+
   it('answers false on Escape', async () => {
     const result = confirmImpact({ report });
     flushSync();
