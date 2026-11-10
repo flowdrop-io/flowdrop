@@ -41,13 +41,11 @@ ImpactRenamePlace:
   type: object
   description: One place that uses a renamed workflow input or output.
   required:
-    - kind
     - label
-    - enabled
   properties:
     kind:
       type: string
-      description: What kind of place it is, using the same values as `ImpactItem.kind`.
+      description: What kind of place it is, using the same values as `ImpactItem.kind`. Optional; the editor reads a missing kind as empty.
     label:
       type: string
       description: The name of the place.
@@ -55,9 +53,13 @@ ImpactRenamePlace:
       type: string
       nullable: true
       description: Where to look at the place, or null when there is no page for it.
+    message:
+      type: string
+      nullable: true
+      description: What the rename does to this place, in plain words. Optional; shown beside the place when given.
     enabled:
       type: boolean
-      description: Whether the place is switched on. A place that is switched off still follows a rename.
+      description: Whether the place is switched on. Optional; when `false` the editor notes that the place is switched off. A place that is switched off still follows a rename.
 
 ImpactRename:
   type: object
@@ -201,7 +203,6 @@ WorkflowCopyResponse:
           type: object
           required:
             - id
-            - editorUrl
           properties:
             id:
               type: string
@@ -211,7 +212,11 @@ WorkflowCopyResponse:
               description: The name of the new workflow, the draft name followed by ` (copy)`.
             editorUrl:
               type: string
-              description: Where the new workflow opens in the editor, as a path from the site root.
+              nullable: true
+              description: |
+                Where the new workflow opens in the editor: a path from the site
+                root or an http(s) address. Optional; when it is missing or null
+                the editor offers no link to the copy.
             triggersSwitchedOff:
               type: boolean
               description: True when triggers carried over from the original start switched off.
