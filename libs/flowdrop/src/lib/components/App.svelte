@@ -409,6 +409,9 @@
   // the same as `mode="locked"` while it lasts.
   const effectiveMode = $derived(fd.lock.isLocked ? 'locked' : mode);
   const canvasEditable = $derived(effectiveMode === 'edit');
+  // Save's unsaved marker follows the host's mode, not the lock: edits made
+  // before a lock arrived are still unsaved (the leave prompt and Run say so).
+  const showUnsaved = $derived(mode === 'edit' && fd.workflow.isDirty);
 
   /**
    * Test mode can be entered: it is offered, the host's mode is `edit`, this is
@@ -2378,7 +2381,7 @@
           // Save is disabled by the lock: saving says so ("nothing was saved").
           if (fd.lock.isLocked) void saveWorkflow();
         }}
-        dirty={canvasEditable && fd.workflow.isDirty}
+        dirty={showUnsaved}
         onWorkflowSettings={toggleWorkflowSettings}
         status={doctorStatus}
         workflowSettingsOpen={isWorkflowSettingsOpen}

@@ -1,6 +1,7 @@
 /**
- * Ctrl/Cmd+S on a locked editor: Save is disabled, so the key saves nothing,
- * and the person is told so (not silence, not the browser's Save Page).
+ * A locked editor's Save: Ctrl/Cmd+S saves nothing and the person is told so
+ * (not silence, not the browser's Save Page), and edits made before the lock
+ * arrived still show as unsaved.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -68,6 +69,63 @@ async function settle(): Promise<void> {
     await new Promise((r) => setTimeout(r, 5));
   }
 }
+
+async function mountApp(
+  id: string,
+  props: Record<string, unknown>
+): Promise<ReturnType<typeof createFlowDropInstance>> {
+  const fd = createFlowDropInstance({ id });
+  const target = document.createElement('div');
+  document.body.appendChild(target);
+  app = mount(App, {
+    target,
+    props: {
+      instance: fd,
+      workflow,
+      showNavbar: true,
+      portConfig: DEFAULT_PORT_CONFIG,
+      features: { showToasts: false, autoSaveDraft: false },
+      ...props
+    } as never
+  });
+  for (let i = 0; i < 300 && fd.workflow.current?.id !== 'wf-locked'; i++) {
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  expect(fd.workflow.current?.id).toBe('wf-locked');
+  await settle();
+  return fd;
+}
+
+/** The Save button's unsaved marker. */
+function saveShowsUnsaved(): boolean {
+  return document.querySelector('[data-dirty="true"]') !== null;
+}
+
+describe('App: unsaved marker on a locked editor', () => {
+  it('still shows edits made before the lock arrived', async () => {
+    const fd = await mountApp('locked-dirty', {});
+    fd.workflow.updateName('renamed');
+    await settle();
+    expect(fd.workflow.isDirty).toBe(true);
+    expect(saveShowsUnsaved()).toBe(true);
+
+    fd.lock.set({ reasons: [{ kind: 'in_use', message: 'Used.' }], actions: [] });
+    await settle();
+    // The edits are still unsaved (the leave prompt and Run say so); so does Save.
+    expect(fd.workflow.isDirty).toBe(true);
+    expect(saveShowsUnsaved()).toBe(true);
+    fd.destroy();
+  });
+
+  it('shows nothing in read-only mode', async () => {
+    const fd = await mountApp('readonly-dirty', { mode: 'readonly' });
+    fd.workflow.updateName('renamed');
+    await settle();
+    expect(fd.workflow.isDirty).toBe(true);
+    expect(saveShowsUnsaved()).toBe(false);
+    fd.destroy();
+  });
+});
 
 describe('App: Ctrl/Cmd+S on a locked editor', () => {
   it('saves nothing and says the editor is locked', async () => {
