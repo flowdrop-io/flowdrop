@@ -1012,13 +1012,12 @@
   function handleInlineCommit(id: string, text: string | null): void {
     const node = flowNodes.find((n) => n.id === id);
     const isNew = pendingNewIds.delete(id);
-    if (!node || !canvasEditable) {
-      // Gone (undo, workflow switch) or no longer editable. A pending node
-      // must not linger, unless the store is locked: it refuses the removal,
-      // so dropping the node from the canvas would make the two disagree.
-      if (node && isNew && !fd.workflow.locked) removeNode(id);
-      return;
-    }
+    // Gone (undo, workflow switch).
+    if (!node) return;
+    // A locked store refuses every change, so the canvas must not make one
+    // either: the node stays as it is. A read-only editor is not locked: the
+    // edit that was in progress ends like any other.
+    if (fd.workflow.locked) return;
 
     const { outcome, label } = decideInlineCommit(text, node.data.label ?? '', isNew);
     if (outcome === 'none') return;
