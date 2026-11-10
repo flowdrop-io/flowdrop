@@ -143,9 +143,16 @@
   }
 
   // The browser can close the dialog without a cancel event (a second Escape
-  // under CloseWatcher). Whoever is waiting for an answer still gets one.
+  // under close-request handling). An action in flight must not be cut off:
+  // its answer ('copied', 'discarded') or its error is what the person needs,
+  // so the dialog opens again. Otherwise whoever waits still gets an answer.
   // `resolve` ignores this when the dialog was closed by an answer.
   function handleClose(): void {
+    if (resolved) return;
+    if (busy) {
+      if (dialogRef && !dialogRef.open) dialogRef.showModal();
+      return;
+    }
     resolve({ action: 'cancel' });
   }
 </script>
@@ -192,6 +199,7 @@
   aria-describedby={bodyId}
   oncancel={handleCancel}
   onclose={handleClose}
+  closedby={busy ? 'none' : 'closerequest'}
 >
   <div class="fd-impact-confirm__dialog">
     <header class="fd-impact-confirm__header">

@@ -106,23 +106,43 @@ describe('confirmImpact', () => {
     expect(dialog()).toBeNull();
   });
 
-  it('resolves cancel when the browser closes the dialog itself, even while busy', async () => {
-    // A second Escape under CloseWatcher closes the dialog without a second
-    // cancel event; the caller still has to be answered.
+  it('resolves cancel when the browser closes an idle dialog itself', async () => {
     const onSettled = vi.fn();
-    const result = confirmImpact({
-      report: { ...report, refused: true },
-      saveAsCopy: () => new Promise(() => {})
-    }).then(onSettled);
+    const result = confirmImpact({ report }).then(onSettled);
     flushSync();
-    const el = dialog();
-    const copy = [...el.querySelectorAll('button')].find((b) => /copy/i.test(b.textContent ?? ''));
-    copy?.click();
-    flushSync();
-    el.dispatchEvent(new Event('close'));
+    dialog().dispatchEvent(new Event('close'));
     await result;
     expect(onSettled).toHaveBeenCalledTimes(1);
     expect(onSettled).toHaveBeenCalledWith({ action: 'cancel' });
+  });
+
+  it('keeps the dialog and reports the real outcome when the browser closes it during Save as a copy', async () => {
+    // A second Escape closes the dialog without a cancel event while the copy is being made.
+    const onSettled = vi.fn();
+    let finish!: (copy: { id: string; editorUrl: string | null }) => void;
+    const result = confirmImpact({
+      report: { ...report, refused: true, copyUrl: '/copy' },
+      saveAsCopy: () => new Promise((r) => (finish = r))
+    }).then(onSettled);
+    flushSync();
+    const el = dialog() as HTMLDialogElement;
+    const copy = [...el.querySelectorAll('button')].find((b) => /copy/i.test(b.textContent ?? ''));
+    copy?.click();
+    flushSync();
+    expect(el.getAttribute('closedby')).toBe('none');
+
+    el.removeAttribute('open'); // the browser closed it
+    el.dispatchEvent(new Event('close'));
+    await Promise.resolve();
+    expect(onSettled).not.toHaveBeenCalled();
+    expect(el.hasAttribute('open')).toBe(true);
+
+    finish({ id: '9', editorUrl: null });
+    await result;
+    expect(onSettled).toHaveBeenCalledWith({
+      action: 'copied',
+      copy: { id: '9', editorUrl: null }
+    });
   });
 
   it('answers false on Escape', async () => {
