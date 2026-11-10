@@ -106,6 +106,25 @@ describe('confirmImpact', () => {
     expect(dialog()).toBeNull();
   });
 
+  it('resolves cancel when the browser closes the dialog itself, even while busy', async () => {
+    // A second Escape under CloseWatcher closes the dialog without a second
+    // cancel event; the caller still has to be answered.
+    const onSettled = vi.fn();
+    const result = confirmImpact({
+      report: { ...report, refused: true },
+      saveAsCopy: () => new Promise(() => {})
+    }).then(onSettled);
+    flushSync();
+    const el = dialog();
+    const copy = [...el.querySelectorAll('button')].find((b) => /copy/i.test(b.textContent ?? ''));
+    copy?.click();
+    flushSync();
+    el.dispatchEvent(new Event('close'));
+    await result;
+    expect(onSettled).toHaveBeenCalledTimes(1);
+    expect(onSettled).toHaveBeenCalledWith({ action: 'cancel' });
+  });
+
   it('answers false on Escape', async () => {
     const result = confirmImpact({ report });
     flushSync();

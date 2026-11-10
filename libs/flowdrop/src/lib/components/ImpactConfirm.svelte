@@ -141,6 +141,13 @@
     if (busy) return;
     resolve({ action: 'cancel' });
   }
+
+  // The browser can close the dialog without a cancel event (a second Escape
+  // under CloseWatcher). Whoever is waiting for an answer still gets one.
+  // `resolve` ignores this when the dialog was closed by an answer.
+  function handleClose(): void {
+    resolve({ action: 'cancel' });
+  }
 </script>
 
 {#snippet label(text: string, url: string | null)}
@@ -184,6 +191,7 @@
   aria-labelledby={titleId}
   aria-describedby={bodyId}
   oncancel={handleCancel}
+  onclose={handleClose}
 >
   <div class="fd-impact-confirm__dialog">
     <header class="fd-impact-confirm__header">
