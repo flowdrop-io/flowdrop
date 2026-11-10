@@ -406,6 +406,26 @@ describe('WorkflowStore', () => {
     });
   });
 
+  describe('history while locked', () => {
+    it('pushHistory records nothing while the store is locked', () => {
+      fd.workflow.initialize(createTestWorkflow({ nodes: [] }));
+      fd.workflow.setLocked(true);
+
+      fd.workflow.pushHistory(
+        'Add node',
+        createTestWorkflow({ nodes: [createTestNode({ id: 'n1' })] })
+      );
+      expect(fd.historyBindings.canUndo).toBe(false);
+
+      fd.workflow.setLocked(false);
+      fd.workflow.pushHistory(
+        'Add node',
+        createTestWorkflow({ nodes: [createTestNode({ id: 'n1' })] })
+      );
+      expect(fd.historyBindings.canUndo).toBe(true);
+    });
+  });
+
   describe('edge operations', () => {
     it('should add edge to workflow', () => {
       const workflow = createTestWorkflow();

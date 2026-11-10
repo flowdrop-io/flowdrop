@@ -1023,6 +1023,8 @@ export class WorkflowStore {
    * @param workflow - Optional workflow to push (uses store state if not provided)
    */
   pushHistory(description?: string, workflow?: Workflow): void {
+    // A locked store refuses every edit, so there is nothing to undo.
+    if (this.#locked) return;
     this.#pushToHistory(description, workflow);
   }
 }
