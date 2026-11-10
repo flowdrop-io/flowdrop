@@ -245,6 +245,7 @@
       role="textbox"
       tabindex="0"
       aria-label={caption.editLabel}
+      data-lock-commit
       data-placeholder={caption.placeholder}
       bind:this={editorEl}
       {@attach editable}

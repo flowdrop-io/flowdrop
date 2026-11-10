@@ -129,24 +129,30 @@
   );
 
   // --- Query param for the editor lock (?lock=1) ---
+  const testLock = (): EditorLock => ({
+    reasons: [
+      {
+        kind: 'in_use',
+        message: 'Two forms use this workflow.',
+        url: '/admin/flowdrop/workflows/test/usage'
+      },
+      { kind: 'managed', message: 'A module provides this workflow.' }
+    ],
+    actions: [
+      { id: 'edit', label: 'Edit', primary: true },
+      { id: 'later', label: 'Not now' }
+    ]
+  });
   let lock = $state<EditorLock | null | undefined>(
-    browser && new URLSearchParams(window.location.search).get('lock')
-      ? {
-          reasons: [
-            {
-              kind: 'in_use',
-              message: 'Two forms use this workflow.',
-              url: '/admin/flowdrop/workflows/test/usage'
-            },
-            { kind: 'managed', message: 'A module provides this workflow.' }
-          ],
-          actions: [
-            { id: 'edit', label: 'Edit', primary: true },
-            { id: 'later', label: 'Not now' }
-          ]
-        }
-      : undefined
+    browser && new URLSearchParams(window.location.search).get('lock') ? testLock() : undefined
   );
+  // window.__setLock(true|false) locks the open editor, as a host does when a
+  // form starts using the workflow.
+  if (browser) {
+    (window as unknown as Record<string, unknown>).__setLock = (on: boolean) => {
+      lock = on ? testLock() : null;
+    };
+  }
   function onLockAction(id: string): void {
     const w = window as unknown as { __lockActions?: string[] };
     (w.__lockActions ??= []).push(id);

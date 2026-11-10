@@ -129,6 +129,34 @@ describe('a config edit while locked', () => {
     fence.remove();
   });
 
+  it('blurs an in-place editor that commits on blur, before the store closes', () => {
+    const fd = createFlowDropInstance({ id: 'lock-blur-inline' });
+    fd.workflow.initialize(workflow());
+    const box = document.createElement('div');
+    box.tabIndex = 0;
+    box.setAttribute('data-lock-commit', '');
+    document.body.append(box);
+    const lockedWhenBlurred: boolean[] = [];
+    box.addEventListener('blur', () => lockedWhenBlurred.push(fd.workflow.locked));
+    box.focus();
+    fd.lock.set(lock);
+    expect(lockedWhenBlurred).toEqual([false]);
+    box.remove();
+  });
+
+  it('tells onBeforeLock listeners while the editor still reads as unlocked, only for a new lock', () => {
+    const fd = createFlowDropInstance({ id: 'lock-before' });
+    const seen: boolean[] = [];
+    const stop = fd.lock.onBeforeLock(() => seen.push(fd.lock.isLocked || fd.workflow.locked));
+    fd.lock.set(lock);
+    fd.lock.set({ ...lock, reasons: [] });
+    expect(seen).toEqual([false]);
+    fd.lock.clear();
+    stop();
+    fd.lock.set(lock);
+    expect(seen).toEqual([false]);
+  });
+
   it('leaves focus alone outside a lock fence', () => {
     const fd = createFlowDropInstance({ id: 'lock-no-blur' });
     const button = document.createElement('button');

@@ -10,6 +10,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import {
   assertStatusBar,
+  gotoEditor,
   selectNode,
   waitForEditor,
   waitForSidebar
@@ -116,5 +117,87 @@ test.describe('Editor lock', () => {
     const gapBefore = await gapOf();
     await dragFirstNode(page);
     expect(Math.abs((await gapOf()) - gapBefore)).toBeGreaterThan(40);
+  });
+
+  test('a name being typed when the lock arrives is kept', async ({ page }) => {
+    await page.goto('/test/editor?caption=1');
+    await page.waitForSelector('[data-testid="editor-test"]', { timeout: 15000 });
+    await waitForEditor(page);
+    await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
+    await assertStatusBar(page, 2, 1);
+
+    const box = await page.locator('.svelte-flow__pane').boundingBox();
+    if (!box) throw new Error('Canvas pane not found');
+    await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.8, {
+      button: 'right'
+    });
+    await page
+      .getByRole('menu', { name: 'Canvas actions' })
+      .getByRole('menuitem', { name: /Add caption/ })
+      .click();
+    await expect(page.getByRole('textbox', { name: 'Caption text' })).toBeFocused();
+    await page.keyboard.type('Half typed');
+
+    // The host locks the editor while the name is still being typed.
+    await page.evaluate(() =>
+      (window as never as { __setLock: (on: boolean) => void }).__setLock(true)
+    );
+    await expect(page.getByTestId('lock-banner')).toBeVisible();
+
+    // The edit was committed (the box is closed), and the node and its name
+    // stay, on the canvas and in the workflow.
+    await expect(page.getByRole('textbox', { name: 'Caption text' })).toHaveCount(0);
+    await expect(
+      page.locator('.svelte-flow__node').filter({ hasText: 'Half typed' })
+    ).toBeVisible();
+    await assertStatusBar(page, 3, 1);
+  });
+
+  test('a workflow file dropped on a locked editor is refused', async ({ page }) => {
+    await gotoLocked(page);
+    await assertStatusBar(page, 2, 1);
+    await page.evaluate(() => {
+      const data = new DataTransfer();
+      data.items.add(
+        new File(
+          [
+            JSON.stringify({
+              id: 'dropped',
+              name: 'Dropped',
+              nodes: [],
+              edges: [],
+              metadata: { version: '1.0.0' }
+            })
+          ],
+          'dropped.json',
+          { type: 'application/json' }
+        )
+      );
+      const zone = document.querySelector('.flow-drop-zone') as HTMLElement;
+      zone.dispatchEvent(
+        new DragEvent('drop', { dataTransfer: data, bubbles: true, cancelable: true })
+      );
+    });
+    await page.waitForTimeout(500);
+    await assertStatusBar(page, 2, 1);
+  });
+
+  test('a port name being typed when the lock arrives is saved', async ({ page }) => {
+    await gotoEditor(page, 'interface');
+    await page
+      .locator(
+        '.svelte-flow__node[data-id="node-calc"] .svelte-flow__handle[data-handleid="node-calc-output-result"]'
+      )
+      .click({ button: 'right', force: true });
+    await page.getByRole('menuitem', { name: 'Expose as workflow output…' }).click();
+    await page.getByTestId('interface-name-input').fill('total');
+
+    await page.evaluate(() =>
+      (window as never as { __setLock: (on: boolean) => void }).__setLock(true)
+    );
+    await expect(page.getByTestId('lock-banner')).toBeVisible();
+
+    await expect(page.getByTestId('interface-name-input')).toHaveCount(0);
+    await expect(page.locator('[data-interface-id="total"]')).toBeVisible();
   });
 });

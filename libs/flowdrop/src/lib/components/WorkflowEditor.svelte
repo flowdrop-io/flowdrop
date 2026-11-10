@@ -1013,8 +1013,9 @@
     const node = flowNodes.find((n) => n.id === id);
     const isNew = pendingNewIds.delete(id);
     if (!node || !canvasEditable) {
-      // Gone (undo, workflow switch) or no longer editable: a pending node must not linger.
-      if (node && isNew) removeNode(id);
+      // Gone (undo, workflow switch) or no longer editable. A node that is
+      // still here stays: the store holds it and refuses a removal, so
+      // dropping it from the canvas would make the two disagree.
       return;
     }
 
@@ -1526,6 +1527,11 @@
     };
     return true;
   }
+
+  // A name being typed beside a port is saved when the lock arrives, while the
+  // store still accepts it. (A node's own label is saved by the caption's blur,
+  // which the lock store triggers right after.)
+  $effect(() => fd.lock.onBeforeLock(() => tagEdit && commitTagEdit()));
 
   // A name being typed never outlives edit mode, its workflow, or its port (undo).
   $effect(() => {

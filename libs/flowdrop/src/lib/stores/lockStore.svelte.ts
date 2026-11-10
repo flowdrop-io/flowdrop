@@ -31,16 +31,21 @@ function normalise(lock: EditorLock | null | undefined): EditorLock | null {
   };
 }
 
-/** Blur the focused element when it sits inside a lock fence (a config form or panel body). */
+/**
+ * Blur the focused element when it sits inside a lock fence (a config form or
+ * panel body) or is an in-place editor that commits on blur (`data-lock-commit`).
+ */
 function blurFieldInsideLockFence(): void {
   if (typeof document === 'undefined') return;
   const active = document.activeElement;
-  if (active instanceof HTMLElement && active.closest('.flowdrop-lock-fence')) active.blur();
+  if (active instanceof HTMLElement && active.closest('.flowdrop-lock-fence, [data-lock-commit]'))
+    active.blur();
 }
 
 export class EditorLockStore {
   #current = $state<EditorLock | null>(null);
   #changeListeners = new Set<(locked: boolean) => void>();
+  #beforeLockListeners = new Set<() => void>();
   #actionListeners = new Set<(id: string) => void>();
 
   /** The lock in force, or null when the editor is not locked. */
@@ -62,7 +67,11 @@ export class EditorLockStore {
     const was = this.#current !== null;
     // A field being typed in commits on blur. Blur it while the editor still
     // reads as unlocked, so the edit lands before anything refuses it.
-    if (!was && next !== null) blurFieldInsideLockFence();
+    if (!was && next !== null) {
+      // Let an editor save what is half typed (a name beside a port) first.
+      for (const listener of [...this.#beforeLockListeners]) listener();
+      blurFieldInsideLockFence();
+    }
     this.#current = next;
     const is = next !== null;
     if (was !== is) for (const listener of [...this.#changeListeners]) listener(is);
@@ -78,6 +87,17 @@ export class EditorLockStore {
     this.#changeListeners.add(listener);
     return () => {
       this.#changeListeners.delete(listener);
+    };
+  }
+
+  /**
+   * Be told just before the editor becomes locked, while it still reads as
+   * unlocked, so an edit in progress can be saved. Returns a function that stops listening.
+   */
+  onBeforeLock(listener: () => void): () => void {
+    this.#beforeLockListeners.add(listener);
+    return () => {
+      this.#beforeLockListeners.delete(listener);
     };
   }
 
