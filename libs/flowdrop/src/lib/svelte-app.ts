@@ -516,7 +516,7 @@ function acquireInstance(instanceId?: string): { fd: FlowDropInstance; isDefault
  * Release a mount's instance on destroy.
  *
  * Non-default instances are fully destroyed (subscriptions, effect roots,
- * callbacks). The default instance is only *released* — its callbacks and lock are
+ * callbacks). The default instance is only *released* — its callbacks are
  * cleared but its reactive wiring stays alive, matching the pre-multi-instance
  * behavior where module stores survived unmount and a later mount reused them.
  */
@@ -526,13 +526,20 @@ function releaseInstance(fd: FlowDropInstance, isDefault: boolean): void {
     fd.workflow.setOnWorkflowChange(null);
     // A host run's status poll must not outlive the mount.
     fd.runs.stopHostPolling();
-    // A lock belongs to the mount that set it; the next mount starts unlocked
-    // unless its own options say otherwise.
-    fd.lock.clear();
     defaultInstanceClaimed = false;
   } else {
     fd.destroy();
   }
+}
+
+/**
+ * Forget the lock of a released default instance. A lock belongs to the mount
+ * that set it; the next mount starts unlocked unless its own options say
+ * otherwise. Called after the component is unmounted, so a blur during the
+ * unmount cannot write into the instance once it is unlocked again.
+ */
+function releaseLock(fd: FlowDropInstance, isDefault: boolean): void {
+  if (isDefault) fd.lock.clear();
 }
 
 /**
@@ -1223,6 +1230,7 @@ export async function mountFlowDropApp(
 
       // Unmount Svelte app
       unmount(state.svelteApp);
+      releaseLock(fd, isDefault);
     },
 
     isDirty: () => fd.workflow.isDirty,
@@ -1431,6 +1439,7 @@ export async function mountWorkflowEditor(
       unsubscribeLockAction?.();
       releaseInstance(fd, isDefault);
       unmount(svelteApp);
+      releaseLock(fd, isDefault);
     },
 
     isDirty: () => fd.workflow.isDirty,
