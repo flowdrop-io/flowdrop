@@ -1013,9 +1013,10 @@
     const node = flowNodes.find((n) => n.id === id);
     const isNew = pendingNewIds.delete(id);
     if (!node || !canvasEditable) {
-      // Gone (undo, workflow switch) or no longer editable. A node that is
-      // still here stays: the store holds it and refuses a removal, so
-      // dropping it from the canvas would make the two disagree.
+      // Gone (undo, workflow switch) or no longer editable. A pending node
+      // must not linger, unless the store is locked: it refuses the removal,
+      // so dropping the node from the canvas would make the two disagree.
+      if (node && isNew && !fd.workflow.locked) removeNode(id);
       return;
     }
 

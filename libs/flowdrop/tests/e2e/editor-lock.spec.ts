@@ -200,4 +200,32 @@ test.describe('Editor lock', () => {
     await expect(page.getByTestId('interface-name-input')).toHaveCount(0);
     await expect(page.locator('[data-interface-id="total"]')).toBeVisible();
   });
+
+  test('an empty new caption is removed when the host turns the editor read-only meanwhile', async ({
+    page
+  }) => {
+    await page.goto('/test/editor?caption=1');
+    await page.waitForSelector('[data-testid="editor-test"]', { timeout: 15000 });
+    await waitForEditor(page);
+    await page.waitForSelector('.svelte-flow__node', { timeout: 15000 });
+
+    const box = await page.locator('.svelte-flow__pane').boundingBox();
+    if (!box) throw new Error('Canvas pane not found');
+    await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.8, {
+      button: 'right'
+    });
+    await page
+      .getByRole('menu', { name: 'Canvas actions' })
+      .getByRole('menuitem', { name: /Add caption/ })
+      .click();
+    await expect(page.getByRole('textbox', { name: 'Caption text' })).toBeFocused();
+    await assertStatusBar(page, 3, 1);
+
+    // Read-only is not a lock: the store would still accept the removal.
+    await page.evaluate(() =>
+      (window as never as { __setMode: (m: string) => void }).__setMode('readonly')
+    );
+    await page.getByRole('textbox', { name: 'Caption text' }).blur();
+    await assertStatusBar(page, 2, 1);
+  });
 });

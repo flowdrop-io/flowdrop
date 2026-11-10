@@ -128,6 +128,15 @@
       : 'edit') as 'edit' | 'readonly' | 'locked'
   );
 
+  // window.__setMode('edit'|'readonly'|'locked') switches the open editor's mode, as a host does.
+  if (browser) {
+    (window as unknown as Record<string, unknown>).__setMode = (
+      next: 'edit' | 'readonly' | 'locked'
+    ) => {
+      editorMode = next;
+    };
+  }
+
   // --- Query param for the editor lock (?lock=1) ---
   const testLock = (): EditorLock => ({
     reasons: [
