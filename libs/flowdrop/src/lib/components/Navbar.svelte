@@ -74,6 +74,12 @@
      */
     saveShortcut?: boolean;
     /**
+     * Called when the Save shortcut is pressed while Save is disabled. The key
+     * is still taken (the browser's own Save Page must not open); this is the
+     * place to say why nothing was saved.
+     */
+    onSaveShortcutRefused?: () => void;
+    /**
      * Drawn in the action row before the Save button: the Problems indicator.
      * Renders nothing of its own, so an empty snippet leaves no gap.
      */
@@ -97,6 +103,7 @@
     onWorkflowSettings,
     workflowSettingsOpen = false,
     saveShortcut = false,
+    onSaveShortcutRefused,
     status,
     dirty = false
   }: Props = $props();
@@ -182,7 +189,14 @@
         return;
       }
       const save = taskActions[0];
-      if (!save?.onclick || save.disabled) return;
+      if (!save?.onclick) return;
+      // Disabled (for example locked): the key still belongs to the editor, so
+      // the browser's Save Page does not open in its place.
+      if (save.disabled) {
+        event.preventDefault();
+        onSaveShortcutRefused?.();
+        return;
+      }
       event.preventDefault();
       save.onclick(event);
     }

@@ -3,7 +3,7 @@
  * "Unsaved changes" accessible name while the workflow has unsaved changes.
  */
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import Navbar from '$lib/components/Navbar.svelte';
 
@@ -70,5 +70,54 @@ describe('Navbar dirty marker', () => {
     expect(main.textContent).toContain('Publish');
     expect(main.textContent).toContain('Unsaved changes');
     expect(main.getAttribute('data-dirty')).toBe('true');
+  });
+});
+
+describe('Navbar Save shortcut', () => {
+  function press(): KeyboardEvent {
+    const event = new KeyboardEvent('keydown', {
+      key: 's',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true
+    });
+    window.dispatchEvent(event);
+    return event;
+  }
+
+  function renderWithSave(disabled: boolean, onclick: () => void, onRefused: () => void) {
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    app = mount(Navbar, {
+      target,
+      props: {
+        saveShortcut: true,
+        onSaveShortcutRefused: onRefused,
+        showSettings: false,
+        showStatus: false,
+        primaryActions: [
+          { label: 'Save', href: '#', variant: 'primary' as const, disabled, onclick }
+        ]
+      }
+    });
+    flushSync();
+  }
+
+  it('runs Save when it is enabled', () => {
+    const onclick = vi.fn();
+    const onRefused = vi.fn();
+    renderWithSave(false, onclick, onRefused);
+    expect(press().defaultPrevented).toBe(true);
+    expect(onclick).toHaveBeenCalledTimes(1);
+    expect(onRefused).not.toHaveBeenCalled();
+  });
+
+  it('still takes the key when Save is disabled, saves nothing and reports the refusal', () => {
+    const onclick = vi.fn();
+    const onRefused = vi.fn();
+    renderWithSave(true, onclick, onRefused);
+    expect(press().defaultPrevented).toBe(true);
+    expect(onclick).not.toHaveBeenCalled();
+    expect(onRefused).toHaveBeenCalledTimes(1);
   });
 });

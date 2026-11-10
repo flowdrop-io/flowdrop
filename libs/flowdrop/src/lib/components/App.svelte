@@ -2372,6 +2372,10 @@
         {branding}
         end={navbarEnd}
         saveShortcut
+        onSaveShortcutRefused={() => {
+          // Save is disabled by the lock: saving says so ("nothing was saved").
+          if (fd.lock.isLocked) void saveWorkflow();
+        }}
         dirty={canvasEditable && fd.workflow.isDirty}
         onWorkflowSettings={toggleWorkflowSettings}
         status={doctorStatus}
