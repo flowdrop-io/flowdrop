@@ -328,6 +328,31 @@ describe('dynamicSchemaService', () => {
       expect(url).toBe('https://admin.example.com/nodes/llm-node/edit/node-1');
     });
 
+    it('returns http, https and relative URLs', () => {
+      for (const url of [
+        'http://a.example/x',
+        'HTTPS://a.example/x',
+        '/nodes/1/edit',
+        'edit?id=1',
+        '//a.example/x'
+      ]) {
+        expect(resolveExternalEditUrl({ ...link, url }, makeNode())).toBe(url);
+      }
+    });
+
+    it('returns an empty string for URLs with any other scheme', () => {
+      for (const url of [
+        'javascript:alert(1)',
+        ' JavaScript:alert(1)',
+        'java\tscript:alert(1)',
+        'data:text/html,hi',
+        'vbscript:x',
+        'file:///etc/hosts'
+      ]) {
+        expect(resolveExternalEditUrl({ ...link, url }, makeNode())).toBe('');
+      }
+    });
+
     it('appends callback URL when callbackUrlParam is configured', () => {
       const linkWithCallback: ExternalEditLink = {
         ...link,

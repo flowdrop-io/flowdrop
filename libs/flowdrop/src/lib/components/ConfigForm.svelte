@@ -463,6 +463,7 @@
     }
 
     const url = getExternalEditUrl();
+    if (!url) return;
     const openInNewTab = configEditOptions.externalEditLink.openInNewTab !== false;
 
     if (openInNewTab) {
