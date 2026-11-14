@@ -459,7 +459,18 @@ export function resolveExternalEditUrl(
     url = `${url}${separator}${link.callbackUrlParam}=${encodeURIComponent(callbackUrl)}`;
   }
 
-  return url;
+  return isWebOrRelativeUrl(url) ? url : '';
+}
+
+/**
+ * True when the URL is http(s) or relative (no scheme of its own).
+ * Leading whitespace and the control characters browsers drop while parsing are ignored.
+ */
+function isWebOrRelativeUrl(url: string): boolean {
+  // eslint-disable-next-line no-control-regex
+  const compact = url.replace(/[\u0000-\u0020]/g, '');
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(compact);
+  return scheme === null || /^https?$/i.test(scheme[1]);
 }
 
 /**
