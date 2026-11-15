@@ -49,6 +49,9 @@ export async function fetchRuntimeConfig(force = false): Promise<RuntimeConfig> 
   }
 
   try {
+    // Bootstrap read: this response carries the auth settings, so it is sent
+    // before any AuthProvider exists.
+    // eslint-disable-next-line no-restricted-globals
     const response = await fetch('/api/config');
 
     if (!response.ok) {

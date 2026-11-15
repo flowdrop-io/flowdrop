@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Every editor request now carries the host's `AuthProvider` headers (and its 401/403 handling). Four kinds of request went out without them, so a backend that needs authentication answered 401: a node's `configEdit.dynamicSchema` fetch, the node-status reads after a run (`pipelines.get`, `NodeExecutionService.getAllNodeExecutionCounts`), and the API connection test. A dynamic schema gets the auth headers only when its URL is on the page's origin or under the API base, as autocomplete already does; a header set on the endpoint still wins. `fetchDynamicSchema` and the `NodeExecutionService` methods take a new optional last argument, `authProvider`.
+- A lint rule (`no-restricted-globals` / `no-restricted-properties` for `fetch` in `src/lib`) makes a raw `fetch()` a lint error, so a new request cannot skip the `AuthProvider` again. Requests go through `authenticatedFetch` (`utils/fetchWithAuth.ts`) or the API client.
+
 ## [2.18.0] - 2026-11-10
 
 ### Added

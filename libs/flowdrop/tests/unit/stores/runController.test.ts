@@ -494,14 +494,15 @@ describe('RunController', () => {
     });
 
     it('puts the run status in the instance playground store, scoped to workflow and run', async () => {
-      const { runs, playground } = setup();
+      const { runs, playground, api } = setup();
       const spy = vi
         .spyOn(nodeExecutionService, 'fetchMultipleNodeExecutionInfo')
         .mockResolvedValue({ n1: done });
 
       await runs.loadNodeStatuses('p1', wf());
 
-      expect(spy).toHaveBeenCalledWith(expect.anything(), ['n1', 'n2'], 'p1');
+      // The instance's auth provider goes along, so the read is authenticated.
+      expect(spy).toHaveBeenCalledWith(expect.anything(), ['n1', 'n2'], 'p1', api.authProvider);
       expect(playground.nodeStatusFor('n1')).toEqual(done);
       expect(playground.nodeStatusScope).toEqual({ workflowId: 'wf', pipelineId: 'p1' });
     });

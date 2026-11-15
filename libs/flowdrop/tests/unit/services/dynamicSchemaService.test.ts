@@ -292,9 +292,53 @@ describe('dynamicSchemaService', () => {
       });
     });
 
-    // NOTE: EndpointConfig.auth was removed in 2.0 — authentication now flows
-    // through AuthProvider on the API client, not the dynamic-schema fetch's
-    // endpoint config. The former "authentication headers" tests were dropped.
+    describe('authentication', () => {
+      const authProvider = {
+        getAuthHeaders: async () => ({ Authorization: 'Bearer t0ken' })
+      };
+
+      function sentHeaders(): Record<string, string> {
+        const init = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+        return init.headers as Record<string, string>;
+      }
+
+      it('sends the auth provider headers to a URL under the API base', async () => {
+        global.fetch = fetchOk(validSchema);
+        endpointConfig = { baseUrl: 'https://api.example.com/flowdrop' } as EndpointConfig;
+        const endpoint = makeEndpoint({ url: '/triggers/schema', parameterMapping: undefined });
+
+        await callFetch(endpoint, makeNode(), undefined, authProvider);
+
+        expect(sentHeaders().Authorization).toBe('Bearer t0ken');
+      });
+
+      it('does not send the auth provider headers to another host', async () => {
+        global.fetch = fetchOk(validSchema);
+        endpointConfig = { baseUrl: 'https://api.example.com/flowdrop' } as EndpointConfig;
+        const endpoint = makeEndpoint({
+          url: 'https://other.example.org/schema',
+          parameterMapping: undefined
+        });
+
+        await callFetch(endpoint, makeNode(), undefined, authProvider);
+
+        expect(sentHeaders().Authorization).toBeUndefined();
+      });
+
+      it('lets a header set on the endpoint override the provider', async () => {
+        global.fetch = fetchOk(validSchema);
+        endpointConfig = { baseUrl: 'https://api.example.com/flowdrop' } as EndpointConfig;
+        const endpoint = makeEndpoint({
+          url: '/triggers/schema',
+          parameterMapping: undefined,
+          headers: { Authorization: 'Bearer endpoint' }
+        });
+
+        await callFetch(endpoint, makeNode(), undefined, authProvider);
+
+        expect(sentHeaders().Authorization).toBe('Bearer endpoint');
+      });
+    });
 
     describe('POST body', () => {
       it('serialises body to JSON for non-GET requests', async () => {

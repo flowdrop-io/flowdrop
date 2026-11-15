@@ -82,5 +82,42 @@ export default ts.config(
     rules: {
       'no-console': 'warn'
     }
+  },
+  {
+    // A raw fetch() skips the consumer's AuthProvider, so the request goes out
+    // unauthenticated and an authenticated backend answers 401 (#75). Library
+    // requests go through authenticatedFetch (utils/fetchWithAuth.ts) or the
+    // API client, which both apply auth and the 401/403 lifecycle.
+    files: ['src/lib/**/*.ts', 'src/lib/**/*.svelte'],
+    ignores: [
+      // The two places that wrap fetch with auth.
+      'src/lib/utils/fetchWithAuth.ts',
+      'src/lib/api/enhanced-client.ts',
+      // Agent Spec runtimes authenticate from their own endpoint config, not
+      // the instance's AuthProvider (config/agentSpecEndpoints.ts).
+      'src/lib/services/agentSpecExecutionService.ts',
+      // Storybook fixtures and mocks stub fetch on purpose.
+      'src/lib/stories/**',
+      'src/lib/mocks/**',
+      '**/*.test.ts',
+      '**/*.spec.ts'
+    ],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'fetch',
+          message: 'Use authenticatedFetch (utils/fetchWithAuth.ts) so the AuthProvider is applied.'
+        }
+      ],
+      'no-restricted-properties': [
+        'error',
+        ...['window', 'globalThis', 'self'].map((object) => ({
+          object,
+          property: 'fetch',
+          message: 'Use authenticatedFetch (utils/fetchWithAuth.ts) so the AuthProvider is applied.'
+        }))
+      ]
+    }
   }
 );
