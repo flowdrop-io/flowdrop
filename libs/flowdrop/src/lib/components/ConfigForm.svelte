@@ -337,7 +337,8 @@
         fd.api.config,
         configEditOptions.dynamicSchema,
         node,
-        workflowId
+        workflowId,
+        authProvider ?? fd.api.authProvider
       );
 
       if (result.success && result.schema) {

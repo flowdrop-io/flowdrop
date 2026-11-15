@@ -13,7 +13,8 @@ const mockBuildEndpointUrl = vi.fn();
 let endpointConfig: EndpointConfig | null = null;
 
 vi.mock('$lib/config/endpoints.js', () => ({
-  buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args)
+  buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args),
+  getEndpointHeaders: () => ({ 'Content-Type': 'application/json' })
 }));
 
 vi.mock('$lib/config/constants.js', () => ({
@@ -67,6 +68,44 @@ describe('NodeExecutionService', () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+  });
+
+  describe('authentication', () => {
+    const authProvider = {
+      getAuthHeaders: async () => ({ Authorization: 'Bearer t0ken' })
+    };
+    const okPipeline = { ok: true, json: async () => ({ jobs: [], node_statuses: {} }) };
+
+    function sentHeaders(): Record<string, string> {
+      const init = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+      return init.headers as Record<string, string>;
+    }
+
+    it('sends the auth provider headers on a single node read', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okPipeline);
+      await service.getNodeExecutionInfo(endpointConfig, 'node-1', 'pipeline-1', authProvider);
+      expect(sentHeaders().Authorization).toBe('Bearer t0ken');
+    });
+
+    it('sends the auth provider headers on a multi-node read', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okPipeline);
+      await service.fetchMultipleNodeExecutionInfo(
+        endpointConfig,
+        ['node-1'],
+        'pipeline-1',
+        authProvider
+      );
+      expect(sentHeaders().Authorization).toBe('Bearer t0ken');
+    });
+
+    it('sends the auth provider headers on the execution counts read', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: {} })
+      });
+      await service.getAllNodeExecutionCounts(endpointConfig, authProvider);
+      expect(sentHeaders().Authorization).toBe('Bearer t0ken');
+    });
   });
 
   describe('singleton', () => {

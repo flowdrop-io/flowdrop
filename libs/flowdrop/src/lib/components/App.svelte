@@ -85,6 +85,7 @@
   import { buildScopedSkinCss, toScopeId } from '$lib/themes/scopedSkinCss.js';
   import { resolveTheme } from '$lib/themes/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
+  import { authenticatedFetch } from '../utils/fetchWithAuth.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
   import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
   import { apiToasts, dismissToast, showError, showInfo } from '$lib/services/toastService.js';
@@ -985,7 +986,11 @@
       const baseUrl = endpointConfig?.baseUrl || apiBaseUrl || '/api/flowdrop';
       const testUrl = `${baseUrl}/nodes`;
 
-      const response = await fetch(testUrl);
+      const response = await authenticatedFetch(
+        testUrl,
+        {},
+        { authProvider: authProvider ?? fd.api.authProvider }
+      );
       const data = await response.json();
 
       if (response.ok && data.success) {

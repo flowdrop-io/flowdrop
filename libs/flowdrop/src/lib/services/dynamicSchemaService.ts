@@ -16,6 +16,9 @@ import type {
 } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
+import type { AuthProvider } from '../types/auth.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
+import { mayCarryInstanceAuth } from '../utils/apiUrl.js';
 
 /**
  * Context object containing all available data for resolving template variables
@@ -244,9 +247,12 @@ function isCacheValid(entry: SchemaCacheEntry, ttl: number = DEFAULT_CACHE_TTL):
 /**
  * Fetches a dynamic configuration schema from a REST endpoint.
  *
+ * @param endpointConfig - The instance's endpoint configuration (base URL for relative URLs)
  * @param endpoint - The dynamic schema endpoint configuration
  * @param node - The workflow node instance
  * @param workflowId - Optional workflow ID for context
+ * @param authProvider - Optional auth provider; its headers are sent only when
+ *   the URL is on the page's origin or under the API base
  * @returns A promise that resolves to the schema result
  *
  * @example
@@ -267,7 +273,8 @@ export async function fetchDynamicSchema(
   endpointConfig: EndpointConfig | null,
   endpoint: DynamicSchemaEndpoint,
   node: WorkflowNode,
-  workflowId?: string
+  workflowId?: string,
+  authProvider?: AuthProvider
 ): Promise<DynamicSchemaResult> {
   // Build the context from the node
   const context = buildNodeContext(node, workflowId);
@@ -302,18 +309,20 @@ export async function fetchDynamicSchema(
   const method = endpoint.method ?? 'GET';
   const timeout = endpoint.timeout ?? 10000;
 
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...endpoint.headers
-  };
-
-  // Prepare fetch options
+  // Prepare fetch options. authenticatedFetch adds the JSON defaults and the
+  // provider's auth headers; the endpoint's own headers override both.
   const fetchOptions: RequestInit = {
     method,
-    headers,
+    headers: { ...endpoint.headers },
     signal: AbortSignal.timeout(timeout)
   };
+
+  // The instance's auth goes only to the site or the API base, never to
+  // another host an endpoint URL may name.
+  const pageUrl = typeof location === 'undefined' ? undefined : location.href;
+  const auth = mayCarryInstanceAuth(url, endpointConfig?.baseUrl ?? '', pageUrl)
+    ? authProvider
+    : undefined;
 
   // Add body for non-GET requests
   if (method !== 'GET' && endpoint.body) {
@@ -330,7 +339,7 @@ export async function fetchDynamicSchema(
   }
 
   try {
-    const response = await fetch(url, fetchOptions);
+    const response = await authenticatedFetch(url, fetchOptions, { authProvider: auth });
 
     if (!response.ok) {
       const errorText = await response.text();
