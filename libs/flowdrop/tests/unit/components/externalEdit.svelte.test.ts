@@ -106,6 +106,15 @@ describe('ConfigForm dynamic schema error state', () => {
     expect(target.querySelector('.config-form__button--external')).toBeNull();
   });
 
+  it('keeps the external editor button for a refused URL when the host handles the click', async () => {
+    const target = mountForm({
+      node: nodeWithFailingSchema('javascript:void(0)'),
+      onExternalEdit: vi.fn(async () => {})
+    });
+    await flush();
+    expect(target.querySelector('.config-form__button--external')).not.toBeNull();
+  });
+
   it("sends the instance's auth when ConfigForm has no authProvider prop", async () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error('offline'));
     vi.stubGlobal('fetch', fetchMock);
@@ -122,6 +131,24 @@ describe('ConfigForm dynamic schema error state', () => {
     expect(fetchMock).toHaveBeenCalled();
     const init = fetchMock.mock.calls[0][1] as RequestInit;
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer inst');
+  });
+});
+
+describe('ConfigForm with a refused URL and nothing to configure', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+  });
+
+  it('shows the empty state, not a blank panel', () => {
+    const node = nodeWithLink();
+    node.data.metadata.configSchema = undefined;
+    node.data.metadata.inputs = [];
+    node.data.metadata.outputs = [];
+    node.data.metadata.configEdit = { externalEditLink: { ...link, url: 'javascript:void(0)' } };
+    const target = mountForm({ node });
+    expect(target.textContent).toContain('No configuration options available');
+    expect(target.querySelector('.config-form__button--external')).toBeNull();
+    expect(target.querySelector('[data-testid="external-config-link"]')).toBeNull();
   });
 });
 
@@ -270,6 +297,30 @@ describe('ExternalLinkRow', () => {
     });
     return target.querySelector('a')!;
   }
+
+  it('with an empty href and a handler, renders a button that sends every click to it', () => {
+    const cb = vi.fn();
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    app = mount(ExternalLinkRow, { target, props: { name: 'Calc', href: '', onActivate: cb } });
+    flushSync();
+    expect(target.querySelector('a')).toBeNull();
+    const button = target.querySelector<HTMLButtonElement>(
+      'button[data-testid="external-config-link"]'
+    )!;
+    button.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true })
+    );
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('with an empty href and no handler, renders nothing', () => {
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    app = mount(ExternalLinkRow, { target, props: { name: 'Calc', href: '' } });
+    flushSync();
+    expect(target.querySelector('[data-testid="external-config-link"]')).toBeNull();
+  });
 
   it('plain click: prevented and callback called', () => {
     const cb = vi.fn();
