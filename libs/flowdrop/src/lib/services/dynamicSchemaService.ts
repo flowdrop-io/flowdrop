@@ -18,6 +18,7 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import type { AuthProvider } from '../types/auth.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
+import { mayCarryInstanceAuth } from '../utils/apiUrl.js';
 
 /**
  * Context object containing all available data for resolving template variables
@@ -331,7 +332,13 @@ export async function fetchDynamicSchema(
   }
 
   try {
-    const response = await authenticatedFetch(url, fetchOptions, { authProvider });
+    // The provider's headers go only to the site or under the API base, as for
+    // autocomplete requests; an endpoint on another host gets none.
+    const pageUrl = typeof location === 'undefined' ? undefined : location.href;
+    const sendAuth = mayCarryInstanceAuth(url, endpointConfig?.baseUrl ?? '', pageUrl);
+    const response = await authenticatedFetch(url, fetchOptions, {
+      authProvider: sendAuth ? authProvider : undefined
+    });
 
     if (!response.ok) {
       const errorText = await response.text();

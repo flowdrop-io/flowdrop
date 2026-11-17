@@ -161,6 +161,20 @@ describe('dynamicSchemaService', () => {
         expect(init.headers.Authorization).toBe('Bearer tok');
       });
 
+      it('sends no AuthProvider headers to an endpoint on another host', async () => {
+        global.fetch = fetchOk(validSchema);
+        await fetchDynamicSchema(
+          null,
+          makeEndpoint({ url: 'https://elsewhere.example/schema' }),
+          makeNode(),
+          'wf-1',
+          authProvider
+        );
+
+        const init = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(init.headers.Authorization).toBeUndefined();
+      });
+
       it('refreshes on 401 and retries once with the new headers', async () => {
         let token = 'old';
         const refreshing = {
