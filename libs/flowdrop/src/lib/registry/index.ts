@@ -28,6 +28,7 @@ export {
 // Built-in nodes
 export {
   BUILTIN_NODE_COMPONENTS,
+  createBuiltinNodeComponents,
   BUILTIN_NODE_TYPES,
   FLOWDROP_SOURCE,
   resolveBuiltinAlias,

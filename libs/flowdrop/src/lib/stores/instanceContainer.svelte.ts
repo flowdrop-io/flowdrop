@@ -45,7 +45,7 @@ import type { MeasuredCard } from '../layout/fromWorkflow.js';
 import { NodeComponentRegistry } from '../registry/nodeComponentRegistry.js';
 import { FieldComponentRegistry } from '../form/fieldRegistry.js';
 import { WorkflowFormatRegistry } from '../registry/workflowFormatRegistry.js';
-import { BUILTIN_NODE_COMPONENTS } from '../registry/builtinNodes.js';
+import { createBuiltinNodeComponents } from '../registry/builtinNodes.js';
 import { getBuiltinFormatAdapters } from '../registry/builtinFormats.js';
 
 /** Storage key prefix shared by the default instance and legacy consumers. */
@@ -373,7 +373,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     interrupts: new InterruptStore(),
     api,
     nodes: new NodeComponentRegistry({
-      registrations: BUILTIN_NODE_COMPONENTS,
+      registrations: createBuiltinNodeComponents(),
       defaultType: 'workflowNode'
     }),
     fields: new FieldComponentRegistry(),
