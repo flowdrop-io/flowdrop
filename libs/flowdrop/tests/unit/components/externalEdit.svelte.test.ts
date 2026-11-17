@@ -42,6 +42,37 @@ function mountForm(props: Record<string, unknown>): HTMLElement {
   return target;
 }
 
+describe('ConfigForm external edit link with a refused URL', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+  });
+
+  function nodeWithUrl(url: string): WorkflowNode {
+    const node = nodeWithLink();
+    node.data.metadata.configEdit = { externalEditLink: { ...link, url } };
+    return node;
+  }
+
+  it('shows no link when the URL is neither http(s) nor relative', () => {
+    const target = mountForm({ node: nodeWithUrl('javascript:void(0)') });
+    expect(target.querySelector('[data-testid="external-config-link"]')).toBeNull();
+  });
+
+  it('keeps the link for a relative URL', () => {
+    const target = mountForm({ node: nodeWithUrl('/admin/nodes/{instanceId}') });
+    const anchor = target.querySelector<HTMLAnchorElement>('[data-testid="external-config-link"]');
+    expect(anchor?.getAttribute('href')).toBe('/admin/nodes/n1');
+  });
+
+  it('keeps the row when the host handles the click itself', () => {
+    const target = mountForm({
+      node: nodeWithUrl('javascript:void(0)'),
+      onExternalEdit: vi.fn(async () => {})
+    });
+    expect(target.querySelector('[data-testid="external-config-link"]')).not.toBeNull();
+  });
+});
+
 describe('ConfigForm external edit link', () => {
   let openSpy: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {

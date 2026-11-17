@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fragment targets (any other target shows its label as text), links carry `rel="noopener noreferrer"`,
   and `headingOffset` moves headings down for pages that already own the upper levels.
 
+### Fixed
+
+- A node's external edit link opens only `http(s)` and relative URLs. A link whose URL has another scheme is not shown, unless the host handles the click itself through `onExternalEdit`.
+
 ## [2.15.2] - 2026-10-18
 
 ### Fixed
