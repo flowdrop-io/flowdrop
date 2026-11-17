@@ -100,6 +100,14 @@ describe('renderMarkdown', () => {
     expect(auto.querySelector('a')).toBeNull();
   });
 
+  it('shows the label of a link whose target holds a control character as text', () => {
+    for (const target of ['/\t/example.com', '/\t\\example.com', 'https://exa\tmple.com']) {
+      const el = parse(renderMarkdown(`[label](<${target}>)`));
+      expect(el.querySelector('a'), JSON.stringify(target)).toBeNull();
+      expect(el.textContent, JSON.stringify(target)).toContain('label');
+    }
+  });
+
   it('shows an image as a link to its source, under the same target rule', () => {
     const el = parse(renderMarkdown('![pic](https://example.com/a.png) ![bad](javascript:x)'));
     expect(el.querySelector('img')).toBeNull();
@@ -153,6 +161,11 @@ describe('allowedLinkTarget', () => {
       'data:text/html,x',
       '//example.com',
       '/\\example.com',
+      '/\t/example.com',
+      '/\n/example.com',
+      '/\r/example.com',
+      '/\u0000/example.com',
+      '/\u007f/example.com',
       'mailto:a@example.com',
       'relative/path',
       '',

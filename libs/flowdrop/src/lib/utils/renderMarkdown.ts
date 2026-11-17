@@ -27,6 +27,13 @@ export interface RenderMarkdownOptions {
 /** Link targets that are kept: http(s), root-relative and fragment. */
 const ALLOWED_TARGET = /^(?:https?:\/\/|\/(?![/\\])|#)/i;
 
+/**
+ * Control characters. The browser's URL parser drops tab, CR and LF inside a
+ * URL, so a target with any of them is not the target the rule sees.
+ */
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
+
 const escapeText = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -36,7 +43,7 @@ const escapeAttribute = (s: string): string =>
 /**
  * The link rule of {@link renderMarkdown}, for host pages that build their own
  * links: returns the trimmed target when it is http(s), root-relative or a
- * fragment, otherwise null.
+ * fragment and holds no control character, otherwise null.
  *
  * @param href - The candidate target.
  * @returns The trimmed target, or null.
@@ -51,7 +58,7 @@ const escapeAttribute = (s: string): string =>
  */
 export function allowedLinkTarget(href: string | null | undefined): string | null {
   const target = String(href ?? '').trim();
-  return ALLOWED_TARGET.test(target) ? target : null;
+  return ALLOWED_TARGET.test(target) && !CONTROL_CHARACTER.test(target) ? target : null;
 }
 
 /**

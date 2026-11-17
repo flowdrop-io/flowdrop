@@ -12,11 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`renderMarkdown()` in `@flowdrop/flowdrop/display`.** Turns Markdown into HTML for pages that place it
   with `innerHTML` outside a Svelte component, with the same `marked` and `sanitizeHtml()` the message
   views use. HTML in the source is shown as text, links and images keep http(s), root-relative and
-  fragment targets (any other target shows its label as text), links carry `rel="noopener noreferrer"`,
+  fragment targets without control characters (any other target shows its label as text), links carry `rel="noopener noreferrer"`,
   and `headingOffset` moves headings down for pages that already own the upper levels.
 - **`allowedLinkTarget()` in `@flowdrop/flowdrop/display`.** The link rule of `renderMarkdown()` on its own,
   for host pages that build their own links: the trimmed target when it is http(s), root-relative or a
-  fragment, otherwise `null`.
+  fragment and holds no control character (the browser drops tab, CR and LF inside a URL), otherwise `null`.
 
 ### Fixed
 
