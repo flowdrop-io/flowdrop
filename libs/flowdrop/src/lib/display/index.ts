@@ -40,3 +40,10 @@ export { default as MarkdownDisplay } from '../components/MarkdownDisplay.svelte
 // ============================================================================
 
 export { sanitizeHtml } from '../utils/sanitize.js';
+
+// ============================================================================
+// Markdown to HTML for host pages (marked + DOMPurify)
+// ============================================================================
+
+export { renderMarkdown } from '../utils/renderMarkdown.js';
+export type { RenderMarkdownOptions } from '../utils/renderMarkdown.js';

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`renderMarkdown()` in `@flowdrop/flowdrop/display`.** Turns Markdown into HTML for pages that place it
+  with `innerHTML` outside a Svelte component, with the same `marked` and `sanitizeHtml()` the message
+  views use. HTML in the source is shown as text, links and images keep http(s), root-relative and
+  fragment targets (any other target shows its label as text), links carry `rel="noopener noreferrer"`,
+  and `headingOffset` moves headings down for pages that already own the upper levels.
+
 ## [2.15.2] - 2026-10-18
 
 ### Fixed
