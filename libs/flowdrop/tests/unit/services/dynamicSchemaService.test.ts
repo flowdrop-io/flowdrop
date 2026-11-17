@@ -113,6 +113,95 @@ describe('dynamicSchemaService', () => {
   });
 
   describe('fetchDynamicSchema', () => {
+    describe('AuthProvider', () => {
+      const authProvider = {
+        getAuthHeaders: async () => ({ Authorization: 'Bearer tok', 'X-Tenant': 'provider' })
+      };
+
+      it('sends the AuthProvider headers on a GET', async () => {
+        global.fetch = fetchOk(validSchema);
+        await fetchDynamicSchema(null, makeEndpoint(), makeNode(), 'wf-1', authProvider);
+
+        const init = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(init.method).toBe('GET');
+        expect(init.headers).toMatchObject({
+          Accept: 'application/json',
+          Authorization: 'Bearer tok'
+        });
+      });
+
+      it('sends the AuthProvider headers on a POST with the body', async () => {
+        global.fetch = fetchOk(validSchema);
+        await fetchDynamicSchema(
+          null,
+          makeEndpoint({ method: 'POST', body: { id: '{nodeTypeId}' } }),
+          makeNode(),
+          'wf-1',
+          authProvider
+        );
+
+        const init = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(init.method).toBe('POST');
+        expect(init.headers).toMatchObject({ Authorization: 'Bearer tok' });
+        expect(JSON.parse(init.body)).toEqual({ id: 'llm-node' });
+      });
+
+      it('lets a header set on the endpoint override the AuthProvider', async () => {
+        global.fetch = fetchOk(validSchema);
+        await fetchDynamicSchema(
+          null,
+          makeEndpoint({ headers: { 'X-Tenant': 'endpoint' } }),
+          makeNode(),
+          'wf-1',
+          authProvider
+        );
+
+        const init = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1];
+        expect(init.headers['X-Tenant']).toBe('endpoint');
+        expect(init.headers.Authorization).toBe('Bearer tok');
+      });
+
+      it('refreshes on 401 and retries once with the new headers', async () => {
+        let token = 'old';
+        const refreshing = {
+          getAuthHeaders: async () => ({ Authorization: `Bearer ${token}` }),
+          onUnauthorized: vi.fn(async () => {
+            token = 'new';
+            return true;
+          })
+        };
+        global.fetch = vi
+          .fn()
+          .mockResolvedValueOnce({
+            ok: false,
+            status: 401,
+            statusText: 'Unauthorized',
+            text: async () => ''
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            json: async () => validSchema,
+            text: async () => ''
+          });
+
+        const result = await fetchDynamicSchema(
+          null,
+          makeEndpoint(),
+          makeNode(),
+          'wf-1',
+          refreshing
+        );
+
+        expect(result.success).toBe(true);
+        expect(refreshing.onUnauthorized).toHaveBeenCalledTimes(1);
+        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        expect(calls).toHaveLength(2);
+        expect(calls[1][1].headers.Authorization).toBe('Bearer new');
+      });
+    });
+
     describe('cache behaviour', () => {
       it('caches a successful fetch and returns fromCache on subsequent calls', async () => {
         global.fetch = fetchOk(validSchema);

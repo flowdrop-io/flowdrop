@@ -15,7 +15,9 @@ import type {
   WorkflowNode
 } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
+import type { AuthProvider } from '../types/auth.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 
 /**
  * Context object containing all available data for resolving template variables
@@ -267,7 +269,8 @@ export async function fetchDynamicSchema(
   endpointConfig: EndpointConfig | null,
   endpoint: DynamicSchemaEndpoint,
   node: WorkflowNode,
-  workflowId?: string
+  workflowId?: string,
+  authProvider?: AuthProvider
 ): Promise<DynamicSchemaResult> {
   // Build the context from the node
   const context = buildNodeContext(node, workflowId);
@@ -302,11 +305,9 @@ export async function fetchDynamicSchema(
   const method = endpoint.method ?? 'GET';
   const timeout = endpoint.timeout ?? 10000;
 
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...endpoint.headers
-  };
+  // Headers set explicitly on the endpoint; authenticatedFetch layers them over
+  // the AuthProvider's headers, so the endpoint wins on a clash.
+  const headers: Record<string, string> = { ...endpoint.headers };
 
   // Prepare fetch options
   const fetchOptions: RequestInit = {
@@ -330,7 +331,7 @@ export async function fetchDynamicSchema(
   }
 
   try {
-    const response = await fetch(url, fetchOptions);
+    const response = await authenticatedFetch(url, fetchOptions, { authProvider });
 
     if (!response.ok) {
       const errorText = await response.text();
