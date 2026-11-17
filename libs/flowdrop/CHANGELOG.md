@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- The node inspector shows a node's port settings again when the node type has no config fields of its own (#34). Such a node has only a Ports tab, and the inspector opened on a Config tab it did not have, so the panel looked empty. It now opens on the first tab the node has. Broken since 2.12.0.
+
 ## [2.18.0] - 2026-11-10
 
 ### Added

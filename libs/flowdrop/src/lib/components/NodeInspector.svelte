@@ -55,7 +55,12 @@
 
   const showLastRun = $derived(editorMode === 'test');
   const lastRunActive = $derived(showLastRun && tab === 'lastRun');
-  const activeForm = $derived<FormSection>(sections.includes(formTab) ? formTab : 'config');
+  // The picked tab, or the first one the form has. A node with only Ports (no
+  // config schema of its own) must open on Ports, not on a Config tab it lacks:
+  // with one tab there is no tab bar to switch, so the panel would stay hidden (#34).
+  const activeForm = $derived<FormSection>(
+    sections.includes(formTab) ? formTab : (sections[0] ?? 'config')
+  );
   const active = $derived(lastRunActive ? 'lastRun' : activeForm);
 
   provideInspectorContext({
