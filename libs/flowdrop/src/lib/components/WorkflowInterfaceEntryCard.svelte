@@ -224,6 +224,7 @@
       icon: 'heroicons:trash',
       disabled: readOnly,
       testId: 'wf-entry-remove',
+      danger: true,
       onselect: onRemove
     }
   ]);

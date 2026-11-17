@@ -91,6 +91,7 @@
         label: t.delete,
         icon: 'mdi:trash-can-outline',
         testId: 'array-row-delete',
+        danger: true,
         disabled: disabled || !canRemove,
         onselect: () => onRemove(index)
       }

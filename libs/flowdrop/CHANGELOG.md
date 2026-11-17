@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `MenuItem` takes `danger: true` for a destructive item such as Delete (#62): label and icon in `--fd-error`, with an error-tinted wash (`--fd-error-muted`) on hover and focus. Behaviour and ARIA are unchanged. The editor's own Delete row (array fields), Remove (interface entry) and Remove from interface (Ports tab) items use it, as the canvas context menu already does.
+
 ### Fixed
 
 - The node inspector shows a node's port settings again when the node type has no config fields of its own (#34). Such a node has only a Ports tab, and the inspector opened on a Config tab it did not have, so the panel looked empty. It now opens on the first tab the node has. Broken since 2.12.0.

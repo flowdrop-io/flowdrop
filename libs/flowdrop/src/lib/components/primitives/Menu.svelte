@@ -34,6 +34,8 @@
     /** Makes it a radio item (use with `checked`). */
     radio?: boolean;
     disabled?: boolean;
+    /** Destructive action (Delete, Remove): label and icon in the error colour, with an error-tinted hover. Behaviour and ARIA are unchanged. */
+    danger?: boolean;
     /** Test hook, put on the item. */
     testId?: string;
     /** Runs when chosen; the menu closes afterwards unless `keepOpen`. */
@@ -272,6 +274,7 @@
                 : 'menuitem'}
             aria-checked={entry.checked === undefined ? undefined : entry.checked}
             class="flowdrop-ui-menu__item"
+            class:flowdrop-ui-menu__item--danger={entry.danger}
             disabled={entry.disabled}
             data-testid={entry.testId}
             onclick={() => choose(entry)}
@@ -379,6 +382,15 @@
      overflow does not clip it. */
   .flowdrop-ui-menu__item:focus-visible {
     outline-offset: calc(var(--fd-ring-width) * -1);
+  }
+
+  /* Destructive item: error-coloured text and icon, error-tinted wash on hover and focus. */
+  .flowdrop-ui-menu__item--danger {
+    color: var(--fd-error);
+  }
+  .flowdrop-ui-menu__item--danger:hover:not(:disabled),
+  .flowdrop-ui-menu__item--danger:focus-visible {
+    background-color: var(--fd-error-muted);
   }
 
   .flowdrop-ui-menu__item:disabled {

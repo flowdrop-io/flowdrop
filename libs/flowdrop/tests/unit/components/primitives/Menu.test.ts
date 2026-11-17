@@ -147,4 +147,23 @@ describe('primitives/Menu', () => {
     flushSync();
     expect(menuItems().map((i) => i.textContent)).toEqual(['Free']);
   });
+
+  it('marks a danger item with the danger modifier and keeps its role and behaviour', () => {
+    const remove = vi.fn();
+    render({
+      items: [
+        { label: 'Rename', onselect },
+        { label: 'Delete', icon: 'mdi:delete-outline', danger: true, onselect: remove }
+      ]
+    });
+    trigger().click();
+    flushSync();
+    const [rename, del] = menuItems();
+    expect(rename.classList.contains('flowdrop-ui-menu__item--danger')).toBe(false);
+    expect(del.classList.contains('flowdrop-ui-menu__item--danger')).toBe(true);
+    expect(del.getAttribute('role')).toBe('menuitem');
+    del.click();
+    flushSync();
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
 });

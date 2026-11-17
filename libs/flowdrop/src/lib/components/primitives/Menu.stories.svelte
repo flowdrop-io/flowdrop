@@ -23,7 +23,7 @@
     { label: 'Move up', icon: 'mdi:arrow-up', onselect },
     { label: 'Move down', icon: 'mdi:arrow-down', onselect },
     { type: 'separator' },
-    { label: 'Delete', icon: 'mdi:delete-outline', onselect }
+    { label: 'Delete', icon: 'mdi:delete-outline', danger: true, onselect }
   ];
   const items: MenuEntry[] = [
     { label: 'Show steps', hint: 'Log every node as it runs', checked: true, onselect },

@@ -112,6 +112,7 @@
           label: m().contextMenu.removeInterfaceEntry,
           icon: 'mdi:link-off',
           testId: 'port-interface-remove',
+          danger: true,
           onselect: () => {
             const result = removeInterfaceEntry(workflow, dir, entry.id);
             if (result) fd.workflow.editInterface(result.interface, result.edit);
