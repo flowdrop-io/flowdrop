@@ -403,6 +403,10 @@
   const externalInfo = $derived.by<ExternalLinkInfo | null>(() => {
     const link = configEditOptions?.externalEditLink;
     if (!showExternalEditLink || !link || !node) return null;
+    const href = getExternalEditUrl();
+    // A refused URL resolves to '': show no link rather than one to this page,
+    // unless the host handles the click itself and never uses the URL.
+    if (!href && !onExternalEdit) return null;
     const target =
       link.targetName ?? /^run workflow:\s*(.+)$/i.exec(node.data.label ?? '')?.[1]?.trim();
     return {
@@ -410,7 +414,7 @@
         ? { prefix: 'Runs', name: target }
         : { name: link.label ?? 'Configure externally' }),
       title: link.description,
-      href: getExternalEditUrl(),
+      href,
       newTab: link.openInNewTab !== false,
       ...(onExternalEdit ? { onActivate: handleExternalEditClick } : {})
     };
