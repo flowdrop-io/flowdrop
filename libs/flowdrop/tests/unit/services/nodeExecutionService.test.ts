@@ -13,7 +13,8 @@ const mockBuildEndpointUrl = vi.fn();
 let endpointConfig: EndpointConfig | null = null;
 
 vi.mock('$lib/config/endpoints.js', () => ({
-  buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args)
+  buildEndpointUrl: (...args: unknown[]) => mockBuildEndpointUrl(...args),
+  getEndpointHeaders: () => ({ 'Content-Type': 'application/json' })
 }));
 
 vi.mock('$lib/config/constants.js', () => ({
@@ -67,6 +68,48 @@ describe('NodeExecutionService', () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+  });
+
+  describe('AuthProvider', () => {
+    const authProvider = {
+      getAuthHeaders: async () => ({ Authorization: 'Bearer tok' })
+    };
+    const okPipeline = () =>
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ jobs: [], node_statuses: {} })
+      });
+    const sentHeaders = () => (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].headers;
+
+    it('getNodeExecutionInfo sends the provider headers', async () => {
+      okPipeline();
+      await service.getNodeExecutionInfo(endpointConfig, 'node-1', 'p-1', authProvider);
+      expect(sentHeaders()).toMatchObject({ Authorization: 'Bearer tok' });
+    });
+
+    it('fetchMultipleNodeExecutionInfo sends the provider headers', async () => {
+      okPipeline();
+      await service.fetchMultipleNodeExecutionInfo(endpointConfig, ['node-1'], 'p-1', authProvider);
+      expect(sentHeaders()).toMatchObject({ Authorization: 'Bearer tok' });
+    });
+
+    it('getMultipleNodeExecutionInfo forwards the provider', async () => {
+      okPipeline();
+      await service.getMultipleNodeExecutionInfo(endpointConfig, ['node-1'], 'p-1', authProvider);
+      expect(sentHeaders()).toMatchObject({ Authorization: 'Bearer tok' });
+    });
+
+    it('getAllNodeExecutionCounts sends the provider headers', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true, data: { 'node-1': 2 } })
+      });
+      const counts = await service.getAllNodeExecutionCounts(endpointConfig, authProvider);
+      expect(counts).toEqual({ 'node-1': 2 });
+      expect(sentHeaders()).toMatchObject({ Authorization: 'Bearer tok' });
+    });
   });
 
   describe('singleton', () => {

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - The node inspector shows a node's port settings again when the node type has no config fields of its own (#34). Such a node has only a Ports tab, and the inspector opened on a Config tab it did not have, so the panel looked empty. It now opens on the first tab the node has. Broken since 2.12.0.
+- A node's dynamic config schema request sends the host's `AuthProvider` headers again (#75). `fetchDynamicSchema` skipped the provider, so authenticated backends answered 401. It now takes an optional trailing `authProvider` (`ConfigForm` passes it), layers the provider's headers under the headers set on the endpoint (the endpoint wins on a clash), and on a 401 calls `onUnauthorized` and retries once.
+- Node-status reads and the API connection test send the `AuthProvider` headers (#76). `getNodeExecutionInfo`, `getMultipleNodeExecutionInfo`, `fetchMultipleNodeExecutionInfo` and `getAllNodeExecutionCounts` take an optional trailing `authProvider` (the editor and the run controller pass the instance's), and the "test connection" request in `App` goes through the provider too. For contributors: a raw `fetch` in `src/lib` is now an ESLint error; use `authenticatedFetch` (`src/lib/utils/fetchWithAuth.ts`).
 
 ## [2.18.0] - 2026-11-10
 

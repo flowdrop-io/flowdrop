@@ -49,6 +49,7 @@ export async function fetchRuntimeConfig(force = false): Promise<RuntimeConfig> 
   }
 
   try {
+    // eslint-disable-next-line no-restricted-globals -- bootstrap read that carries the auth settings themselves; runs before any AuthProvider exists
     const response = await fetch('/api/config');
 
     if (!response.ok) {

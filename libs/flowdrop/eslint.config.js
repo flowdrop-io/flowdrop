@@ -82,5 +82,44 @@ export default ts.config(
     rules: {
       'no-console': 'warn'
     }
+  },
+  {
+    // Library requests must go through authenticatedFetch so the host's
+    // AuthProvider headers (and its 401 refresh) apply.
+    files: ['src/lib/**/*.ts', 'src/lib/**/*.svelte'],
+    ignores: [
+      'src/lib/utils/fetchWithAuth.ts',
+      'src/lib/api/enhanced-client.ts',
+      // Authenticates from its own config
+      'src/lib/services/agentSpecExecutionService.ts',
+      'src/lib/stories/**',
+      'src/lib/mocks/**',
+      'src/lib/**/*.stories.*'
+    ],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'fetch',
+          message:
+            "Use authenticatedFetch() from '$lib/utils/fetchWithAuth.js' so the AuthProvider's headers are sent."
+        }
+      ],
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'window',
+          property: 'fetch',
+          message:
+            "Use authenticatedFetch() from '$lib/utils/fetchWithAuth.js' so the AuthProvider's headers are sent."
+        },
+        {
+          object: 'globalThis',
+          property: 'fetch',
+          message:
+            "Use authenticatedFetch() from '$lib/utils/fetchWithAuth.js' so the AuthProvider's headers are sent."
+        }
+      ]
+    }
   }
 );

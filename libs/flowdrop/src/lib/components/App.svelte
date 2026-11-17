@@ -78,6 +78,7 @@
   import { DEFAULT_WORKFLOW_FORMAT } from '$lib/types/index.js';
   import { createEndpointConfig } from '$lib/config/endpoints.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
+  import { authenticatedFetch } from '$lib/utils/fetchWithAuth.js';
   import type { AuthProvider } from '$lib/types/auth.js';
   import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
   import { mergeFeatures } from '$lib/types/events.js';
@@ -985,7 +986,11 @@
       const baseUrl = endpointConfig?.baseUrl || apiBaseUrl || '/api/flowdrop';
       const testUrl = `${baseUrl}/nodes`;
 
-      const response = await fetch(testUrl);
+      const response = await authenticatedFetch(
+        testUrl,
+        { method: 'GET' },
+        { config: endpointConfig ?? undefined, endpointKey: 'nodes.list', authProvider }
+      );
       const data = await response.json();
 
       if (response.ok && data.success) {
