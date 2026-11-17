@@ -9,6 +9,7 @@ import ConfigForm from '$lib/components/ConfigForm.svelte';
 import ExternalLinkRow from '$lib/components/ExternalLinkRow.svelte';
 import { runExternalEdit } from '$lib/utils/externalEdit.svelte.js';
 import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
+import { FLOWDROP_INSTANCE_KEY } from '$lib/stores/getInstance.svelte.js';
 import { createTestWorkflow, createTestNode } from '../../utils/index.js';
 import type { ExternalEditLink, WorkflowNode } from '$lib/types/index.js';
 
@@ -70,6 +71,57 @@ describe('ConfigForm external edit link with a refused URL', () => {
       onExternalEdit: vi.fn(async () => {})
     });
     expect(target.querySelector('[data-testid="external-config-link"]')).not.toBeNull();
+  });
+});
+
+describe('ConfigForm dynamic schema error state', () => {
+  const flush = async () => {
+    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+    flushSync();
+  };
+
+  function nodeWithFailingSchema(url: string): WorkflowNode {
+    const node = nodeWithLink();
+    node.data.metadata.configEdit = {
+      dynamicSchema: { url: '/schema/{id}', parameterMapping: { id: 'id' } },
+      externalEditLink: { ...link, url },
+      preferDynamicSchema: true
+    };
+    return node;
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+  });
+
+  it('offers the external editor button for a usable URL', async () => {
+    const target = mountForm({ node: nodeWithFailingSchema('https://admin.example.com/x') });
+    await flush();
+    expect(target.querySelector('.config-form__button--external')).not.toBeNull();
+  });
+
+  it('offers no external editor button for a refused URL', async () => {
+    const target = mountForm({ node: nodeWithFailingSchema('javascript:void(0)') });
+    await flush();
+    expect(target.querySelector('.config-form__button--external')).toBeNull();
+  });
+
+  it("sends the instance's auth when ConfigForm has no authProvider prop", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('offline'));
+    vi.stubGlobal('fetch', fetchMock);
+    const fd = createFlowDropInstance();
+    fd.api.setAuthProvider({ getAuthHeaders: async () => ({ Authorization: 'Bearer inst' }) });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    app = mount(ConfigForm, {
+      target,
+      props: { node: nodeWithFailingSchema('https://admin.example.com/x') },
+      context: new Map([[FLOWDROP_INSTANCE_KEY, fd]])
+    });
+    await flush();
+    expect(fetchMock).toHaveBeenCalled();
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer inst');
   });
 });
 

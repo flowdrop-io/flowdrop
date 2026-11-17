@@ -338,7 +338,9 @@
         configEditOptions.dynamicSchema,
         node,
         workflowId,
-        authProvider
+        // A ConfigForm mounted without the prop still sends the instance's auth;
+        // fetchDynamicSchema sends it only to the site or under the API base.
+        authProvider ?? fd.api.authProvider
       );
 
       if (result.success && result.schema) {
@@ -400,13 +402,19 @@
    * node's own "Run workflow: <name>" label is the fallback, and a node with
    * neither shows the link's label as a plain link.
    */
+  /**
+   * Whether the external edit link can do anything: the host handles the click
+   * itself, or the URL resolves (a refused URL resolves to ''). Every external
+   * edit affordance reads this, so none shows up only to do nothing.
+   */
+  const externalEditUsable = $derived(
+    !!configEditOptions?.externalEditLink && (!!onExternalEdit || getExternalEditUrl() !== '')
+  );
+
   const externalInfo = $derived.by<ExternalLinkInfo | null>(() => {
     const link = configEditOptions?.externalEditLink;
-    if (!showExternalEditLink || !link || !node) return null;
+    if (!showExternalEditLink || !link || !node || !externalEditUsable) return null;
     const href = getExternalEditUrl();
-    // A refused URL resolves to '': show no link rather than one to this page,
-    // unless the host handles the click itself and never uses the URL.
-    if (!href && !onExternalEdit) return null;
     const target =
       link.targetName ?? /^run workflow:\s*(.+)$/i.exec(node.data.label ?? '')?.[1]?.trim();
     return {
@@ -737,7 +745,7 @@
           <Icon icon="heroicons:arrow-path" />
           <span>Retry</span>
         </button>
-        {#if configEditOptions?.externalEditLink}
+        {#if configEditOptions?.externalEditLink && externalEditUsable}
           <button
             type="button"
             class="config-form__button config-form__button--external"
@@ -773,7 +781,7 @@
           <Icon icon="heroicons:arrow-path" />
           <span>Refresh Schema</span>
         </button>
-        {#if configEditOptions?.externalEditLink}
+        {#if configEditOptions?.externalEditLink && externalEditUsable}
           <button
             type="button"
             class="config-form__schema-external"
@@ -914,7 +922,7 @@
       <Icon icon="heroicons:cog-6-tooth" />
     </div>
     <p class="config-form__empty-text">No configuration options available for this node.</p>
-    {#if configEditOptions?.externalEditLink}
+    {#if configEditOptions?.externalEditLink && externalEditUsable}
       <button
         type="button"
         class="config-form__button config-form__button--external config-form__empty-button"

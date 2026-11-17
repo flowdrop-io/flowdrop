@@ -114,6 +114,12 @@ export default ts.config(
             "Use authenticatedFetch() from '$lib/utils/fetchWithAuth.js' so the AuthProvider's headers are sent."
         },
         {
+          object: 'self',
+          property: 'fetch',
+          message:
+            "Use authenticatedFetch() from '$lib/utils/fetchWithAuth.js' so the AuthProvider's headers are sent."
+        },
+        {
           object: 'globalThis',
           property: 'fetch',
           message:

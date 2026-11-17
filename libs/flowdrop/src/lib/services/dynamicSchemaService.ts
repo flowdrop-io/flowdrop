@@ -428,7 +428,8 @@ export async function fetchDynamicSchema(
  * @param node - The workflow node instance
  * @param workflowId - Optional workflow ID for context
  * @param callbackUrl - Optional callback URL to append
- * @returns The resolved URL string
+ * @returns The resolved URL string, or `''` when the URL is neither http(s) nor
+ *   relative (another scheme is never opened)
  *
  * @example
  * ```typescript
