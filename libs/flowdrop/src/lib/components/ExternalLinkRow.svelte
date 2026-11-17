@@ -6,6 +6,7 @@
 
 <script lang="ts">
   import Icon from '@iconify/svelte';
+  import Button from './primitives/Button.svelte';
 
   interface Props {
     /** Muted lead-in, e.g. "Runs"; absent for a plain labelled link */
@@ -20,6 +21,8 @@
     /**
      * Handle a plain left click instead of following the link. The href stays,
      * so middle-click, modified clicks and "copy link" work as for any link.
+     * With an empty `href` there is nothing to follow: the row renders as a
+     * button and every click goes to `onActivate`.
      */
     onActivate?: () => void;
   }
@@ -36,20 +39,37 @@
   }
 </script>
 
+{#snippet content()}
+  <span class="external-link-row__name">{name}</span>
+  <Icon icon="mdi:arrow-top-right" aria-hidden="true" />
+{/snippet}
+
 <div class="external-link-row">
   {#if prefix}<span class="external-link-row__prefix">{prefix}</span>{/if}
-  <a
-    class="external-link-row__link"
-    {href}
-    target={newTab ? '_blank' : undefined}
-    rel={newTab ? 'noopener noreferrer' : undefined}
-    title={title ?? name}
-    onclick={handleClick}
-    data-testid="external-config-link"
-  >
-    <span class="external-link-row__name">{name}</span>
-    <Icon icon="mdi:arrow-top-right" aria-hidden="true" />
-  </a>
+  {#if href}
+    <a
+      class="external-link-row__link"
+      {href}
+      target={newTab ? '_blank' : undefined}
+      rel={newTab ? 'noopener noreferrer' : undefined}
+      title={title ?? name}
+      onclick={handleClick}
+      data-testid="external-config-link"
+    >
+      {@render content()}
+    </a>
+  {:else if onActivate}
+    <Button
+      variant="ghost"
+      size="sm"
+      class="external-link-row__link external-link-row__link--button"
+      title={title ?? name}
+      onclick={() => onActivate()}
+      data-testid="external-config-link"
+    >
+      {@render content()}
+    </Button>
+  {/if}
 </div>
 
 <style>
@@ -79,7 +99,21 @@
     cursor: pointer;
   }
 
-  .external-link-row__link:hover .external-link-row__name {
+  /* The Button primitive, dressed as the link it stands in for. */
+  .external-link-row :global(.external-link-row__link--button),
+  .external-link-row :global(.external-link-row__link--button:hover:not(:disabled)) {
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--fd-inspector-link-color);
+    font: inherit;
+    font-weight: 500;
+  }
+
+  .external-link-row__link:hover .external-link-row__name,
+  .external-link-row :global(.external-link-row__link--button:hover .external-link-row__name) {
     text-decoration: underline;
   }
 

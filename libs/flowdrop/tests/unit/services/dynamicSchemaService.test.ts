@@ -342,9 +342,9 @@ describe('dynamicSchemaService', () => {
 
     it('returns an empty string for URLs with any other scheme', () => {
       for (const url of [
-        'javascript:alert(1)',
-        ' JavaScript:alert(1)',
-        'java\tscript:alert(1)',
+        'javascript:void(0)',
+        ' JavaScript:void(0)',
+        'java\tscript:void(0)',
         'data:text/html,hi',
         'vbscript:x',
         'file:///etc/hosts'

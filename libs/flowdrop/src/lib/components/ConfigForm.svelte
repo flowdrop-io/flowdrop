@@ -913,7 +913,7 @@
       </div>
     {/if}
   </form>
-{:else if !dynamicSchemaLoading && !showExternalEditLink}
+{:else if !dynamicSchemaLoading && (!showExternalEditLink || !externalEditUsable)}
   <div class="flowdrop-scope config-form__empty">
     <div class="config-form__empty-icon">
       <Icon icon="heroicons:cog-6-tooth" />
