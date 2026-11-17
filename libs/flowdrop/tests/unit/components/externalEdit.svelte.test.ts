@@ -73,6 +73,40 @@ describe('ConfigForm external edit link with a refused URL', () => {
   });
 });
 
+describe('ConfigForm dynamic schema error state', () => {
+  const flush = async () => {
+    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+    flushSync();
+  };
+
+  function nodeWithFailingSchema(url: string): WorkflowNode {
+    const node = nodeWithLink();
+    node.data.metadata.configEdit = {
+      dynamicSchema: { url: '/schema/{id}', parameterMapping: { id: 'id' } },
+      externalEditLink: { ...link, url },
+      preferDynamicSchema: true
+    };
+    return node;
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+  });
+
+  it('offers the external editor button for a usable URL', async () => {
+    const target = mountForm({ node: nodeWithFailingSchema('https://admin.example.com/x') });
+    await flush();
+    expect(target.querySelector('.config-form__button--external')).not.toBeNull();
+  });
+
+  it('offers no external editor button for a refused URL', async () => {
+    const target = mountForm({ node: nodeWithFailingSchema('javascript:void(0)') });
+    await flush();
+    expect(target.querySelector('.config-form__button--external')).toBeNull();
+  });
+
+});
+
 describe('ConfigForm external edit link', () => {
   let openSpy: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {

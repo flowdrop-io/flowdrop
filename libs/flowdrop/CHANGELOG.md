@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- A node's external edit link opens only `http(s)` and relative URLs. A link whose URL has another scheme is not shown, unless the host handles the click itself through `onExternalEdit`.
+- A node's external edit link opens only `http(s)` and relative URLs. A link whose URL has another scheme is not shown, nor are the External Editor buttons, unless the host handles the click itself through `onExternalEdit`. `resolveExternalEditUrl` returns `''` for such a URL.
 
 ## [2.15.2] - 2026-10-18
 
