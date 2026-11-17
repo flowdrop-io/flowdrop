@@ -34,9 +34,22 @@ const escapeAttribute = (s: string): string =>
   escapeText(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 /**
- * Returns the target when it is one of the allowed kinds, otherwise null.
+ * The link rule of {@link renderMarkdown}, for host pages that build their own
+ * links: returns the trimmed target when it is http(s), root-relative or a
+ * fragment, otherwise null.
+ *
+ * @param href - The candidate target.
+ * @returns The trimmed target, or null.
+ *
+ * @example
+ * ```typescript
+ * import { allowedLinkTarget } from '@flowdrop/flowdrop/display';
+ *
+ * const href = allowedLinkTarget(url);
+ * if (href !== null) anchor.href = href;
+ * ```
  */
-function allowedTarget(href: string | null | undefined): string | null {
+export function allowedLinkTarget(href: string | null | undefined): string | null {
   const target = String(href ?? '').trim();
   return ALLOWED_TARGET.test(target) ? target : null;
 }
@@ -58,7 +71,7 @@ function createParser(headingOffset: number): Marked {
       },
       link(token: Tokens.Link): string {
         const label = this.parser.parseInline(token.tokens);
-        const target = allowedTarget(token.href);
+        const target = allowedLinkTarget(token.href);
         if (target === null) {
           return label;
         }
@@ -66,7 +79,7 @@ function createParser(headingOffset: number): Marked {
       },
       image(token: Tokens.Image): string {
         const label = escapeText(token.text);
-        const target = allowedTarget(token.href);
+        const target = allowedLinkTarget(token.href);
         if (target === null) {
           return label;
         }

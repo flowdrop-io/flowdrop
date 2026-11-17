@@ -45,5 +45,5 @@ export { sanitizeHtml } from '../utils/sanitize.js';
 // Markdown to HTML for host pages (marked + DOMPurify)
 // ============================================================================
 
-export { renderMarkdown } from '../utils/renderMarkdown.js';
+export { allowedLinkTarget, renderMarkdown } from '../utils/renderMarkdown.js';
 export type { RenderMarkdownOptions } from '../utils/renderMarkdown.js';

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { renderMarkdown } from '$lib/utils/renderMarkdown.js';
-import { renderMarkdown as fromDisplay } from '$lib/display/index.js';
+import { allowedLinkTarget, renderMarkdown } from '$lib/utils/renderMarkdown.js';
+import {
+  allowedLinkTarget as targetFromDisplay,
+  renderMarkdown as fromDisplay
+} from '$lib/display/index.js';
 
 /** Parses rendered HTML into a detached container for structural checks. */
 function parse(html: string): HTMLElement {
@@ -128,5 +131,35 @@ describe('renderMarkdown', () => {
     const { marked } = await import('marked');
     renderMarkdown('# x');
     expect(marked.parse('<b>x</b>') as string).toContain('<b>x</b>');
+  });
+});
+
+describe('allowedLinkTarget', () => {
+  it('is exported from the display entry', () => {
+    expect(targetFromDisplay).toBe(allowedLinkTarget);
+  });
+
+  it('keeps http(s), root-relative and fragment targets, trimmed', () => {
+    expect(allowedLinkTarget(' https://example.com/a ')).toBe('https://example.com/a');
+    expect(allowedLinkTarget('HTTP://example.com')).toBe('HTTP://example.com');
+    expect(allowedLinkTarget('/admin/flowdrop/jobs/1')).toBe('/admin/flowdrop/jobs/1');
+    expect(allowedLinkTarget('#top')).toBe('#top');
+  });
+
+  it('returns null for any other target, the same targets renderMarkdown shows as text', () => {
+    for (const target of [
+      'javascript:void(0)',
+      ' JaVaScRiPt:void(0)',
+      'data:text/html,x',
+      '//example.com',
+      '/\\example.com',
+      'mailto:a@example.com',
+      'relative/path',
+      '',
+      null,
+      undefined
+    ]) {
+      expect(allowedLinkTarget(target), String(target)).toBeNull();
+    }
   });
 });
