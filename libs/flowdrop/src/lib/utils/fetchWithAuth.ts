@@ -29,14 +29,32 @@ import type { AuthProvider } from '$lib/types/auth.js';
  * URL). When neither is given the request carries only JSON defaults plus auth.
  */
 export interface AuthenticatedFetchOptions {
-  /** Auth provider supplying `Authorization` etc. and 401/403 lifecycle hooks. */
-  authProvider?: AuthProvider;
+  /**
+   * Auth provider supplying `Authorization` etc. and 401/403 lifecycle hooks.
+   * Required on purpose: every call site has to decide, and pass `undefined`
+   * only where a request must go out without the host's auth. An optional key
+   * let calls forget it, which is how requests reached backends without auth.
+   */
+  authProvider: AuthProvider | undefined;
   /** Endpoint configuration, used with `endpointKey` to look up static headers. */
   config?: EndpointConfig;
   /** Endpoint key identifying which static headers to apply. */
   endpointKey?: string;
   /** Base headers for requests not tied to a configured endpoint. */
   baseHeaders?: Record<string, string>;
+  /**
+   * Abort each attempt after this many milliseconds. The retry after a `401`
+   * gets its own timeout, so a login the provider shows in `onUnauthorized`
+   * does not use up the retry's time.
+   */
+  timeoutMs?: number;
+}
+
+/** The attempt's init: its own timeout signal when one is asked for. */
+function attemptInit(init: RequestInit, opts: AuthenticatedFetchOptions): RequestInit {
+  return opts.timeoutMs === undefined
+    ? init
+    : { ...init, signal: AbortSignal.timeout(opts.timeoutMs) };
 }
 
 const DEFAULT_HEADERS: Record<string, string> = {
@@ -102,18 +120,18 @@ export function refreshAuth(authProvider: AuthProvider): Promise<boolean> {
  */
 export async function authenticatedFetch(
   url: string,
-  init: RequestInit = {},
-  opts: AuthenticatedFetchOptions = {}
+  init: RequestInit,
+  opts: AuthenticatedFetchOptions
 ): Promise<Response> {
   const headers = await buildHeaders(init, opts);
-  let response = await fetch(url, { ...init, headers });
+  let response = await fetch(url, { ...attemptInit(init, opts), headers });
 
   // 401 → let the provider refresh, then retry once with fresh headers.
   if (response.status === 401 && opts.authProvider?.onUnauthorized) {
     const refreshed = await refreshAuth(opts.authProvider);
     if (refreshed) {
       const retryHeaders = await buildHeaders(init, opts);
-      response = await fetch(url, { ...init, headers: retryHeaders });
+      response = await fetch(url, { ...attemptInit(init, opts), headers: retryHeaders });
     }
   }
 

@@ -396,13 +396,6 @@
   });
 
   /**
-   * The row naming the workflow a node runs ("Runs Calculator ↗"). The name is
-   * the link's `targetName` when the backend sends one; fddo does not (it sends
-   * only the editor URL, "Edit Workflow" and a filler description), so the
-   * node's own "Run workflow: <name>" label is the fallback, and a node with
-   * neither shows the link's label as a plain link.
-   */
-  /**
    * Whether the external edit link can do anything: the host handles the click
    * itself, or the URL resolves (a refused URL resolves to ''). Every external
    * edit affordance reads this, so none shows up only to do nothing.
@@ -411,6 +404,13 @@
     !!configEditOptions?.externalEditLink && (!!onExternalEdit || getExternalEditUrl() !== '')
   );
 
+  /**
+   * The row naming the workflow a node runs ("Runs Calculator ↗"). The name is
+   * the link's `targetName` when the backend sends one; fddo does not (it sends
+   * only the editor URL, "Edit Workflow" and a filler description), so the
+   * node's own "Run workflow: <name>" label is the fallback, and a node with
+   * neither shows the link's label as a plain link.
+   */
   const externalInfo = $derived.by<ExternalLinkInfo | null>(() => {
     const link = configEditOptions?.externalEditLink;
     if (!showExternalEditLink || !link || !node || !externalEditUsable) return null;

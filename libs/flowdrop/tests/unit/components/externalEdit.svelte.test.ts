@@ -317,9 +317,10 @@ describe('ExternalLinkRow', () => {
   it('with an empty href and no handler, renders nothing', () => {
     const target = document.createElement('div');
     document.body.appendChild(target);
-    app = mount(ExternalLinkRow, { target, props: { name: 'Calc', href: '' } });
+    app = mount(ExternalLinkRow, { target, props: { prefix: 'Runs', name: 'Calc', href: '' } });
     flushSync();
-    expect(target.querySelector('[data-testid="external-config-link"]')).toBeNull();
+    expect(target.querySelector('.external-link-row')).toBeNull();
+    expect(target.textContent?.trim()).toBe('');
   });
 
   it('plain click: prevented and callback called', () => {

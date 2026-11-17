@@ -247,9 +247,13 @@ function isCacheValid(entry: SchemaCacheEntry, ttl: number = DEFAULT_CACHE_TTL):
 /**
  * Fetches a dynamic configuration schema from a REST endpoint.
  *
+ * @param endpointConfig - The instance's endpoint configuration; its `baseUrl` is
+ *   put in front of a URL that starts with `/`
  * @param endpoint - The dynamic schema endpoint configuration
  * @param node - The workflow node instance
  * @param workflowId - Optional workflow ID for context
+ * @param authProvider - Optional auth provider. Its headers are sent only to the
+ *   page's own origin or under the API base.
  * @returns A promise that resolves to the schema result
  *
  * @example
@@ -260,7 +264,7 @@ function isCacheValid(entry: SchemaCacheEntry, ttl: number = DEFAULT_CACHE_TTL):
  *   parameterMapping: { nodeTypeId: "metadata.node_type_id" }
  * };
  *
- * const result = await fetchDynamicSchema(endpoint, node);
+ * const result = await fetchDynamicSchema(fd.api.config, endpoint, node, workflowId, fd.api.authProvider);
  * if (result.success && result.schema) {
  *   // Use the fetched schema
  * }
@@ -311,10 +315,11 @@ export async function fetchDynamicSchema(
   const headers: Record<string, string> = { ...endpoint.headers };
 
   // Prepare fetch options
+  // The timeout is set per attempt by authenticatedFetch (timeoutMs), so the
+  // retry after a 401 gets its own.
   const fetchOptions: RequestInit = {
     method,
-    headers,
-    signal: AbortSignal.timeout(timeout)
+    headers
   };
 
   // Add body for non-GET requests
@@ -332,12 +337,13 @@ export async function fetchDynamicSchema(
   }
 
   try {
-    // The provider's headers go only to the site or under the API base, as for
-    // autocomplete requests; an endpoint on another host gets none.
+    // The provider's headers go only to the page's own origin or under the API
+    // base, whichever provider was passed in; an endpoint on another host gets none.
     const pageUrl = typeof location === 'undefined' ? undefined : location.href;
     const sendAuth = mayCarryInstanceAuth(url, endpointConfig?.baseUrl ?? '', pageUrl);
     const response = await authenticatedFetch(url, fetchOptions, {
-      authProvider: sendAuth ? authProvider : undefined
+      authProvider: sendAuth ? authProvider : undefined,
+      timeoutMs: timeout
     });
 
     if (!response.ok) {

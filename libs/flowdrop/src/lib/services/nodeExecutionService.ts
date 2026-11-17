@@ -221,11 +221,7 @@ export class NodeExecutionService {
       if (!endpointConfig) throw new Error('Endpoint config not available');
       const url = buildEndpointUrl(endpointConfig, '/node-execution-counts');
 
-      const response = await authenticatedFetch(
-        url,
-        { method: 'GET' },
-        { config: endpointConfig, endpointKey: 'nodeExecution.counts', authProvider }
-      );
+      const response = await authenticatedFetch(url, { method: 'GET' }, { authProvider });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

@@ -10,7 +10,7 @@
  * this; `NodeInspectorBody` mounts it inside NodeInspector as the editor does.
  */
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import NodeInspectorBody from '$lib/stories/NodeInspectorBody.svelte';
 import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
@@ -41,10 +41,15 @@ function makeNode(configSchema?: ConfigSchema): WorkflowNode {
 }
 
 let app: ReturnType<typeof mount> | null = null;
+beforeEach(() => {
+  // Nothing here should reach the network; fail fast if something tries.
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+});
 afterEach(() => {
   if (app) unmount(app);
   app = null;
   document.body.innerHTML = '';
+  vi.unstubAllGlobals();
 });
 
 function mountInspector(node: WorkflowNode): HTMLElement {

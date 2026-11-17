@@ -1,16 +1,20 @@
 /**
- * flowdrop-io/flowdrop#67: under Vite dev (esbuild prebundle) the built-in
- * `workflowNode` registration had no component, so every `default` node
- * rendered as an empty 0x0 card. The list was built while its module loaded,
- * inside an import cycle with the instance store. It is now built when an
- * instance is created; every built-in type must resolve to a component.
+ * Smoke test for flowdrop-io/flowdrop#67. Under Vite dev (esbuild prebundle)
+ * the built-in `workflowNode` registration had no component, so every
+ * `default` node rendered as an empty 0x0 card: the list was built while its
+ * module loaded, inside an import cycle with the instance store. It is now
+ * built when an instance is created.
+ *
+ * Vitest resolves that cycle in the safe order, so this test does not
+ * reproduce the bug; it only guards that every built-in type of a new instance
+ * resolves to a component.
  */
 import { describe, it, expect } from 'vitest';
 import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
 import { BUILTIN_NODE_TYPES } from '$lib/registry/builtinNodeTypes.js';
 import { createBuiltinNodeComponents } from '$lib/registry/builtinNodes.js';
 
-describe('built-in node components (#67)', () => {
+describe('built-in node components (#67, smoke test)', () => {
   it('registers a component for every built-in type on a new instance', () => {
     const fd = createFlowDropInstance();
     const types = fd.nodes.getTypes();

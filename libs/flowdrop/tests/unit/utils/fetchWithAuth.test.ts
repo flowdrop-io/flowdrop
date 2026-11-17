@@ -89,6 +89,31 @@ describe('authenticatedFetch', () => {
     expect(response.status).toBe(200);
   });
 
+  it('gives the retry after a 401 its own timeout', async () => {
+    fetchMock.mockResolvedValueOnce(unauthorized()).mockResolvedValueOnce(ok());
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+
+    await authenticatedFetch(
+      'https://api.example.com/p',
+      {},
+      {
+        authProvider: {
+          getAuthHeaders: async () => ({}),
+          onUnauthorized: async () => true
+        },
+        timeoutMs: 5000
+      }
+    );
+
+    expect(timeout).toHaveBeenCalledTimes(2);
+    expect(timeout).toHaveBeenCalledWith(5000);
+    const first = fetchMock.mock.calls[0][1].signal;
+    const second = fetchMock.mock.calls[1][1].signal;
+    expect(first).toBeInstanceOf(AbortSignal);
+    expect(second).not.toBe(first);
+    timeout.mockRestore();
+  });
+
   it('shares one onUnauthorized call between concurrent 401s', async () => {
     fetchMock.mockImplementation(async (_url, init: RequestInit) =>
       (init.headers as Record<string, string>).Authorization === 'Bearer fresh'
@@ -176,7 +201,7 @@ describe('authenticatedFetch', () => {
   it('works without any auth provider (default JSON headers)', async () => {
     fetchMock.mockResolvedValue(ok());
 
-    await authenticatedFetch('https://api.example.com/p');
+    await authenticatedFetch('https://api.example.com/p', {}, { authProvider: undefined });
 
     expect(headersOf()).toEqual({
       Accept: 'application/json',

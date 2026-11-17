@@ -44,33 +44,35 @@
   <Icon icon="mdi:arrow-top-right" aria-hidden="true" />
 {/snippet}
 
-<div class="external-link-row">
-  {#if prefix}<span class="external-link-row__prefix">{prefix}</span>{/if}
-  {#if href}
-    <a
-      class="external-link-row__link"
-      {href}
-      target={newTab ? '_blank' : undefined}
-      rel={newTab ? 'noopener noreferrer' : undefined}
-      title={title ?? name}
-      onclick={handleClick}
-      data-testid="external-config-link"
-    >
-      {@render content()}
-    </a>
-  {:else if onActivate}
-    <Button
-      variant="ghost"
-      size="sm"
-      class="external-link-row__link external-link-row__link--button"
-      title={title ?? name}
-      onclick={() => onActivate()}
-      data-testid="external-config-link"
-    >
-      {@render content()}
-    </Button>
-  {/if}
-</div>
+{#if href || onActivate}
+  <div class="external-link-row">
+    {#if prefix}<span class="external-link-row__prefix">{prefix}</span>{/if}
+    {#if href}
+      <a
+        class="external-link-row__link"
+        {href}
+        target={newTab ? '_blank' : undefined}
+        rel={newTab ? 'noopener noreferrer' : undefined}
+        title={title ?? name}
+        onclick={handleClick}
+        data-testid="external-config-link"
+      >
+        {@render content()}
+      </a>
+    {:else if onActivate}
+      <Button
+        variant="ghost"
+        size="sm"
+        class="external-link-row__link"
+        title={title ?? name}
+        onclick={() => onActivate()}
+        data-testid="external-config-link"
+      >
+        {@render content()}
+      </Button>
+    {/if}
+  </div>
+{/if}
 
 <style>
   .external-link-row {
@@ -86,12 +88,20 @@
     color: var(--fd-muted-foreground);
   }
 
-  .external-link-row__link {
+  /* One look for both forms: the <a>, and the Button primitive that stands in
+     for it when there is no URL. :global reaches the Button's own element; the
+     two-class selector outweighs the primitive's single-class sizing. */
+  .external-link-row :global(.external-link-row__link),
+  .external-link-row :global(.external-link-row__link:hover:not(:disabled)) {
     display: inline-flex;
     align-items: center;
     gap: var(--fd-space-3xs);
     min-width: 0;
+    height: auto;
+    min-height: 0;
     padding: 0;
+    border: none;
+    background: none;
     color: var(--fd-inspector-link-color);
     text-decoration: none;
     font: inherit;
@@ -99,21 +109,7 @@
     cursor: pointer;
   }
 
-  /* The Button primitive, dressed as the link it stands in for. */
-  .external-link-row :global(.external-link-row__link--button),
-  .external-link-row :global(.external-link-row__link--button:hover:not(:disabled)) {
-    height: auto;
-    min-height: 0;
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--fd-inspector-link-color);
-    font: inherit;
-    font-weight: 500;
-  }
-
-  .external-link-row__link:hover .external-link-row__name,
-  .external-link-row :global(.external-link-row__link--button:hover .external-link-row__name) {
+  .external-link-row :global(.external-link-row__link:hover .external-link-row__name) {
     text-decoration: underline;
   }
 
@@ -123,7 +119,7 @@
     white-space: nowrap;
   }
 
-  .external-link-row__link :global(svg) {
+  .external-link-row :global(.external-link-row__link svg) {
     flex: none;
     width: 0.875rem;
     height: 0.875rem;
