@@ -162,6 +162,16 @@ export function isSafeCopyUrl(config: EndpointConfig, copyUrl: string): boolean 
   return resolveRequestUrl(copyUrl, config.baseUrl) !== null;
 }
 
+/** The origin of the API base, as a base every path on that origin is under. */
+function apiOrigin(baseUrl: string): string | undefined {
+  if (!baseUrl || typeof window === 'undefined') return undefined;
+  try {
+    return `${new URL(baseUrl, window.location.href).origin}/`;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Save the draft as a new workflow: POST it to the `copyUrl` the impact check
  * named (a path on this site, or a full URL on this site's or the API's
@@ -181,7 +191,9 @@ export async function saveAsCopy(
   const response = await authenticatedFetch(
     url,
     { method: 'POST', body: JSON.stringify(draft) },
-    { config, endpointKey: 'workflows.copy', authProvider }
+    // `resolveRequestUrl` accepts the API's whole origin for a copy URL (as in
+    // 2.18), so the provider's headers may go anywhere on that origin too.
+    { config, endpointKey: 'workflows.copy', authProvider, apiBase: apiOrigin(config.baseUrl) }
   );
   if (!response.ok) throw new Error(await errorMessage(response));
   const body = (await response.json().catch(() => null)) as {

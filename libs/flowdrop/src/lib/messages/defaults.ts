@@ -1456,7 +1456,9 @@ export const defaultMessages = {
     title: 'This workflow is read-only',
     learnMore: 'Learn more',
     // A person's save (a host's own Save button, app.save()) while the editor is locked.
-    saveRefused: 'The editor is locked, so nothing was saved.'
+    saveRefused: 'The editor is locked, so nothing was saved.',
+    // The host's payload says this user may not save (`can.save: false`).
+    saveForbidden: 'Saving this workflow is not permitted.'
   },
 
   field: {

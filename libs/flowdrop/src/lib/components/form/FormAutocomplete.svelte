@@ -239,16 +239,21 @@
    * GET a URL through `authenticatedFetch`. Whichever provider is used (the
    * form's, or the instance's where the form has none, as in interrupt forms)
    * gets the same rule there: its headers go only to the page's own origin or
-   * under the instance's API base. SchemaForm's `baseUrl` prop is not an API base here.
-   * Each attempt, including the retry after a 401, has its own timeout.
+   * under the API base. A provider the form was given goes with the `baseUrl`
+   * the form was given (a host's SchemaForm on its own API), else the
+   * instance's base; the instance's provider only ever goes under the
+   * instance's base. Each attempt, including the retry after a 401, has its
+   * own timeout.
    */
   function get(requestUrl: string, signal: AbortSignal): Promise<Response> {
+    const fromForm = getAuthProvider?.();
+    const instanceBase = fd?.api.config?.baseUrl;
     return authenticatedFetch(
       requestUrl,
       { method: 'GET', signal },
       {
-        authProvider: getAuthProvider?.() ?? fd?.api.authProvider,
-        apiBase: fd?.api.config?.baseUrl,
+        authProvider: fromForm ?? fd?.api.authProvider,
+        apiBase: fromForm ? getBaseUrl?.() || instanceBase : instanceBase,
         timeoutMs: REQUEST_TIMEOUT_MS
       }
     );

@@ -205,6 +205,27 @@ describe('FormAutocomplete URL resolution', () => {
       expect(authOf()).toBe('form');
     });
 
+    it("a form's own provider goes under the form's own baseUrl, even on another host", async () => {
+      const url = await fetchedUrl(
+        'users/search',
+        API_BASE,
+        { 'flowdrop:getBaseUrl': 'https://api.x' },
+        { instanceAuth: authWith('inst'), formAuth: authWith('form') }
+      );
+      expect(url).toBe('https://api.x/users/search?q=a');
+      expect(authOf()).toBe('form');
+    });
+
+    it("a form's own provider gets no headers for a host outside the form's baseUrl", async () => {
+      await fetchedUrl(
+        'https://other.test/users',
+        API_BASE,
+        { 'flowdrop:getBaseUrl': 'https://api.x' },
+        { instanceAuth: authWith('inst'), formAuth: authWith('form') }
+      );
+      expect(authOf()).toBeUndefined();
+    });
+
     it('absolute URLs get no instance auth when the form has no provider', async () => {
       await fetchedUrl(
         'https://other.test/users',

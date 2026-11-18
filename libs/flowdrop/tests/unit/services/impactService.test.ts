@@ -257,6 +257,14 @@ describe('impactService', () => {
     expect(copy).toEqual({ id: '7', editorUrl: '/admin/flowdrop/7/edit' });
   });
 
+  it('saveAsCopy sends auth to a copy url anywhere on the API origin, as 2.18 did', async () => {
+    const based = createEndpointConfig('https://api.example.com/api/flowdrop');
+    fetchMock.mockResolvedValueOnce(json({ success: true, data: { id: 'wf2' } }));
+    await saveAsCopy(based, authProvider, 'https://api.example.com/workflows/copy', draft);
+    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
+    expect(headers.Authorization).toBe('Bearer t1');
+  });
+
   it('saveAsCopy keeps only an editor url the page may go to', async () => {
     for (const [given, kept] of [
       ['https://cms.example.com/admin/7', 'https://cms.example.com/admin/7'],

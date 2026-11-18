@@ -222,7 +222,7 @@ function autosaveToastId(fd: FlowDropInstance): string {
  */
 export function saveRefusal(fd: FlowDropInstance): string | null {
   if (fd.workflow.locked) return fd.messages().lock.saveRefused;
-  if (fd.workflow.current?.can?.save === false) return 'Saving this workflow is not permitted.';
+  if (fd.workflow.current?.can?.save === false) return fd.messages().lock.saveForbidden;
   return null;
 }
 
