@@ -86,13 +86,18 @@
 
   let attached = $state<'pending' | 'attached' | 'no-runtime'>('pending');
   // The page has no server; `save` and `run` count calls so the spec can see
-  // the gate → hook chain end to end, and `run_status` answers from a script:
-  // first paused (a person must act), then completed with an output.
+  // the gate → hook chain end to end, and `run_status` answers paused (a person
+  // must act) until the spec calls `window.__finishWebmcpRun()`, then completed
+  // with an output. Not a call count: the editor's own run poller calls
+  // `onRunStatus` too, and could take the one paused answer first.
   let saves = $state(0);
   let runs = $state(0);
-  let polls = 0;
+  let finished = false;
 
   onMount(() => {
+    (window as unknown as { __finishWebmcpRun?: () => void }).__finishWebmcpRun = () => {
+      finished = true;
+    };
     const handle = attachWebMCP(fd, {
       nodeTypes,
       onSave: async () => {
@@ -106,8 +111,7 @@
         };
       },
       onRunStatus: async (runId) => {
-        polls += 1;
-        return polls === 1
+        return !finished
           ? {
               ok: true,
               data: {

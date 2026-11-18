@@ -50,5 +50,7 @@ describe('public entry point', () => {
     expect(core.firstNonNullType).toBe(firstNonNullType);
     expect(core.typeAdmitsNull).toBe(typeAdmitsNull);
     expect(core.schemaAdmitsNull).toBe(schemaAdmitsNull);
-  });
+    // A cold import of the whole entry point: well under a second alone, but
+    // slow on a loaded test box running every worker.
+  }, 30_000);
 });

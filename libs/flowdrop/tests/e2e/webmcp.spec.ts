@@ -214,6 +214,9 @@ test.describe('WebMCP editor tools', () => {
     await expect(page.getByTestId('flowdrop-webmcp-confirm')).toHaveCount(0);
 
     // … and a completed run carries its outputs.
+    await page.evaluate(() =>
+      (window as unknown as { __finishWebmcpRun: () => void }).__finishWebmcpRun()
+    );
     await startCall(page, 'flowdrop_run_status', { runId: 'run-1' });
     const done = await awaitResult(page);
     expect(done.code).toBeUndefined();
