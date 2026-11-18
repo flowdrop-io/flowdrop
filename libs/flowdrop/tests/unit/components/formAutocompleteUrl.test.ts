@@ -267,14 +267,43 @@ describe('FormAutocomplete URL resolution', () => {
       expect(authOf()).toBe('inst');
     });
 
-    it('absolute URLs still get the form provider', async () => {
+    it('the form provider follows the same rule: no headers to another host', async () => {
       await fetchedUrl(
         'https://other.test/users',
         API_BASE,
         {},
         { instanceAuth: authWith('inst'), formAuth: authWith('form') }
       );
+      expect(authOf()).toBeUndefined();
+    });
+
+    it('the form provider is sent to the API base and the page origin', async () => {
+      await fetchedUrl(`${API_BASE}/users`, API_BASE, {}, { formAuth: authWith('form') });
       expect(authOf()).toBe('form');
+    });
+
+    it('the label lookup of a filled field sends the form provider only under the same rule', async () => {
+      mountField(
+        { value: 'u1', autocomplete: { url: 'https://other.test/users', fetchOnFocus: true } },
+        API_BASE,
+        {},
+        { formAuth: authWith('form') }
+      );
+      await vi.runAllTimersAsync();
+      expect(fetchMock).toHaveBeenCalled();
+      expect(authOf()).toBeUndefined();
+    });
+
+    it('a valueParam lookup sends the form provider only under the same rule', async () => {
+      mountField(
+        { value: 'u1', autocomplete: { url: 'https://other.test/users', valueParam: 'id' } },
+        API_BASE,
+        {},
+        { formAuth: authWith('form') }
+      );
+      await vi.runAllTimersAsync();
+      expect(String(fetchMock.mock.calls[0][0])).toBe('https://other.test/users?id=u1');
+      expect(authOf()).toBeUndefined();
     });
   });
 

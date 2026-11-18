@@ -4,9 +4,16 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { authenticatedFetch } from '$lib/utils/fetchWithAuth.js';
+import {
+  authenticatedFetch as rawAuthenticatedFetch,
+  type AuthenticatedFetchOptions
+} from '$lib/utils/fetchWithAuth.js';
 import { createEndpointConfig } from '$lib/config/endpoints.js';
 import type { AuthProvider } from '$lib/types/auth.js';
+
+/** The tests' API lives at api.example.com, which the base names unless a test says otherwise. */
+const authenticatedFetch = (url: string, init: RequestInit, opts: AuthenticatedFetchOptions) =>
+  rawAuthenticatedFetch(url, init, { apiBase: 'https://api.example.com', ...opts });
 
 describe('authenticatedFetch', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -207,5 +214,131 @@ describe('authenticatedFetch', () => {
       Accept: 'application/json',
       'Content-Type': 'application/json'
     });
+  });
+
+  describe('origin rule', () => {
+    const provider = (): AuthProvider => ({
+      getAuthHeaders: async () => ({ Authorization: 'Bearer t1' }),
+      onUnauthorized: vi.fn().mockResolvedValue(true),
+      onForbidden: vi.fn()
+    });
+
+    it('sends the provider headers to the API base and, with no base, to the page origin only', async () => {
+      fetchMock.mockResolvedValue(ok());
+      vi.stubGlobal('location', { href: 'https://app.example.com/editor' });
+      await rawAuthenticatedFetch(
+        'https://api.example.com/v1/x',
+        {},
+        { authProvider: provider(), apiBase: 'https://api.example.com/v1' }
+      );
+      await rawAuthenticatedFetch('/local', {}, { authProvider: provider() });
+      expect(headersOf(0).Authorization).toBe('Bearer t1');
+      expect(headersOf(1).Authorization).toBe('Bearer t1');
+    });
+
+    it('sends no provider headers, and calls no hooks, to another host or outside the base path', async () => {
+      fetchMock.mockResolvedValue(unauthorized());
+      vi.stubGlobal('location', { href: 'https://app.example.com/editor' });
+      const p = provider();
+      await rawAuthenticatedFetch(
+        'https://evil.example.net/x',
+        {},
+        { authProvider: p, apiBase: 'https://api.example.com/v1' }
+      );
+      await rawAuthenticatedFetch(
+        'https://api.example.com/other',
+        {},
+        { authProvider: p, apiBase: 'https://api.example.com/v1' }
+      );
+      expect(headersOf(0).Authorization).toBeUndefined();
+      expect(headersOf(1).Authorization).toBeUndefined();
+      expect(p.onUnauthorized).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('takes the API base from config.baseUrl', async () => {
+      fetchMock.mockResolvedValue(ok());
+      vi.stubGlobal('location', { href: 'https://app.example.com/' });
+      const config = createEndpointConfig('https://api.example.com/v1');
+      await rawAuthenticatedFetch(
+        'https://api.example.com/v1/a',
+        {},
+        { authProvider: provider(), config }
+      );
+      expect(headersOf().Authorization).toBe('Bearer t1');
+    });
+
+    it('refuses an opaque page origin', async () => {
+      fetchMock.mockResolvedValue(ok());
+      vi.stubGlobal('location', { href: 'data:text/html,x' });
+      await rawAuthenticatedFetch('data:text/plain,y', {}, { authProvider: provider() }).catch(
+        () => undefined
+      );
+      const sent = fetchMock.mock.calls[0]?.[1].headers as Record<string, string> | undefined;
+      expect(sent?.Authorization).toBeUndefined();
+    });
+  });
+
+  describe('header merging', () => {
+    it('lets endpoint and request headers win over the provider, ignoring case', async () => {
+      fetchMock.mockResolvedValue(ok());
+      const config = createEndpointConfig('https://api.example.com', {
+        headers: { svc: { authorization: 'Bearer endpoint', 'X-A': '1' } }
+      });
+      await authenticatedFetch(
+        'https://api.example.com/p',
+        { headers: new Headers({ 'x-a': '2' }) },
+        {
+          config,
+          endpointKey: 'svc',
+          authProvider: { getAuthHeaders: async () => ({ Authorization: 'Bearer provider' }) }
+        }
+      );
+      const sent = headersOf();
+      const names = Object.keys(sent).map((n) => n.toLowerCase());
+      expect(names.filter((n) => n === 'authorization')).toHaveLength(1);
+      expect(Object.values(sent)).toContain('Bearer endpoint');
+      expect(Object.values(sent)).not.toContain('Bearer provider');
+      expect(names.filter((n) => n === 'x-a')).toHaveLength(1);
+      expect(Object.values(sent)).toContain('2');
+    });
+
+    it('accepts tuple headers and lets a request header beat the provider in another case', async () => {
+      fetchMock.mockResolvedValue(ok());
+      await authenticatedFetch(
+        'https://api.example.com/p',
+        { headers: [['authorization', 'Bearer own']] },
+        { authProvider: { getAuthHeaders: async () => ({ Authorization: 'Bearer provider' }) } }
+      );
+      expect(Object.values(headersOf())).toContain('Bearer own');
+      expect(Object.values(headersOf())).not.toContain('Bearer provider');
+    });
+  });
+
+  describe('signals', () => {
+    it('aborts the attempt when the caller signal aborts, with a timeout set', async () => {
+      const caller = new AbortController();
+      fetchMock.mockImplementation(
+        (_u, init: RequestInit) =>
+          new Promise((_res, rej) => {
+            init.signal?.addEventListener('abort', () => rej(init.signal?.reason));
+          })
+      );
+      const pending = authenticatedFetch(
+        'https://api.example.com/p',
+        { signal: caller.signal },
+        { authProvider: undefined, timeoutMs: 60_000 }
+      );
+      await Promise.resolve();
+      caller.abort(new DOMException('stop', 'AbortError'));
+      await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    });
+  });
+
+  it('refuses, at the type level, a call that names neither config nor apiBase', () => {
+    const call = () =>
+      // @ts-expect-error -- one of `config` or `apiBase` is required
+      rawAuthenticatedFetch('https://api.example.com/p', {}, { authProvider: undefined });
+    expect(typeof call).toBe('function');
   });
 });

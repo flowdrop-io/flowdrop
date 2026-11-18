@@ -237,4 +237,75 @@ describe('FormAutocomplete valueParam', () => {
       expect(headersOf(0).Authorization).toBeUndefined();
     });
   });
+
+  describe('cost', () => {
+    const instance = () =>
+      new Map<string, unknown>([
+        [FLOWDROP_INSTANCE_KEY, { api: { config: { baseUrl: '/api' }, authProvider: undefined } }]
+      ]);
+
+    it('runs at most four lookups at a time', async () => {
+      let active = 0;
+      let peak = 0;
+      fetchMock.mockImplementation(async () => {
+        active++;
+        peak = Math.max(peak, active);
+        await new Promise((r) => setTimeout(r, 5));
+        active--;
+        return new Response('[]', { status: 200 });
+      });
+      render(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'], { multiple: true });
+      await new Promise((r) => setTimeout(r, 60));
+      await settle();
+      expect(fetchMock).toHaveBeenCalledTimes(8);
+      expect(peak).toBe(4);
+    });
+
+    it('caches every label in an answer', async () => {
+      fetchMock.mockImplementation(
+        async () =>
+          new Response(JSON.stringify([...ANSWERS['wf-1'], ...ANSWERS['wf-2']]), { status: 200 })
+      );
+      const target = render(['wf-1', 'wf-2'], { multiple: true });
+      await settle();
+      expect(tags(target)).toEqual(['Nightly import', 'Weekly report']);
+    });
+
+    it('asks again after a failed lookup when the field is mounted again', async () => {
+      fetchMock.mockImplementationOnce(async () => new Response('no', { status: 500 }));
+      const ctx = instance();
+      render('wf-1', {}, ctx);
+      await settle();
+      unmount(mounted!);
+      mounted = null;
+      const target = render('wf-1', {}, ctx);
+      await settle();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(tags(target)).toEqual(['Nightly import']);
+    });
+
+    it('does not ask again when the field is mounted again under the same instance', async () => {
+      const ctx = instance();
+      render('wf-1', {}, ctx);
+      await settle();
+      unmount(mounted!);
+      mounted = null;
+      const target = render('wf-1', {}, ctx);
+      await settle();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(tags(target)).toEqual(['Nightly import']);
+    });
+
+    it('sends no auth headers to another host from a form provider', async () => {
+      const ctx = new Map<string, unknown>([
+        [
+          'flowdrop:getAuthProvider',
+          () => ({ getAuthHeaders: async () => ({ Authorization: 'form' }) })
+        ]
+      ]);
+      render('wf-1', { url: 'https://elsewhere.example/options' }, ctx);
+      await settle();
+      expect(headersOf(0).Authorization).toBeUndefined();
+    });
+  });
 });

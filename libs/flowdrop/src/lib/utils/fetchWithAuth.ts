@@ -17,74 +17,143 @@
  */
 
 import type { EndpointConfig } from '$lib/config/endpoints.js';
-import { getEndpointHeaders } from '$lib/config/endpoints.js';
 import type { AuthProvider } from '$lib/types/auth.js';
+import { mayCarryInstanceAuth } from '$lib/utils/apiUrl.js';
 
 /**
- * Options describing how to authenticate and where the base headers come from.
- *
- * Provide `config` + `endpointKey` to source static endpoint headers (the usual
- * case for endpoint-keyed services), or `baseHeaders` for ad-hoc requests that
- * are not tied to a configured endpoint (e.g. a user-configured autocomplete
- * URL). When neither is given the request carries only JSON defaults plus auth.
+ * Fields common to every call. `config` + `endpointKey` source static endpoint
+ * headers; `baseHeaders` serve ad-hoc requests not tied to an endpoint.
  */
-export interface AuthenticatedFetchOptions {
+interface AuthenticatedFetchBase {
   /**
    * Auth provider supplying `Authorization` etc. and 401/403 lifecycle hooks.
    * Required on purpose: every call site has to decide, and pass `undefined`
    * only where a request must go out without the host's auth. An optional key
    * let calls forget it, which is how requests reached backends without auth.
+   *
+   * The provider is used only when the final request URL is on the page's own
+   * origin or under the API base (see `apiBase`). For any other URL the
+   * request goes out without the provider's headers and its `onUnauthorized`
+   * and `onForbidden` hooks are not called. Callers do not check this.
    */
   authProvider: AuthProvider | undefined;
-  /** Endpoint configuration, used with `endpointKey` to look up static headers. */
-  config?: EndpointConfig;
-  /** Endpoint key identifying which static headers to apply. */
+  /** Endpoint key identifying which static headers to apply (with `config`). */
   endpointKey?: string;
   /** Base headers for requests not tied to a configured endpoint. */
   baseHeaders?: Record<string, string>;
   /**
    * Abort each attempt after this many milliseconds. The retry after a `401`
    * gets its own timeout, so a login the provider shows in `onUnauthorized`
-   * does not use up the retry's time.
+   * does not use up the retry's time. A caller's own `init.signal` is combined
+   * with it: either one aborts the attempt.
    */
   timeoutMs?: number;
 }
 
-/** The attempt's init: its own timeout signal when one is asked for. */
-function attemptInit(init: RequestInit, opts: AuthenticatedFetchOptions): RequestInit {
-  return opts.timeoutMs === undefined
-    ? init
-    : { ...init, signal: AbortSignal.timeout(opts.timeoutMs) };
+/**
+ * Options for {@link authenticatedFetch}. Besides the base fields, a call must
+ * say where the provider's headers may go, with one of:
+ *
+ * - `config`: the endpoint configuration; its `baseUrl` is the API base and,
+ *   with `endpointKey`, its static headers apply.
+ * - `apiBase`: the API base (relative or absolute) for a request that is not
+ *   tied to a configured endpoint. `undefined` says there is none: only the
+ *   page's own origin then qualifies.
+ *
+ * The type refuses a call with neither, so a caller cannot leave the origin
+ * rule without a base by accident (which would drop the provider's headers for
+ * an API on another origin than the page).
+ */
+export type AuthenticatedFetchOptions = AuthenticatedFetchBase &
+  (
+    | { config: EndpointConfig; apiBase?: string }
+    | { config?: EndpointConfig; apiBase: string | undefined }
+  );
+
+/** One signal that aborts when any of the given ones does. */
+function anySignal(signals: AbortSignal[]): AbortSignal {
+  if (typeof AbortSignal.any === 'function') return AbortSignal.any(signals);
+  const controller = new AbortController();
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+      break;
+    }
+    signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
+  }
+  return controller.signal;
 }
 
+/** The attempt's init: the caller's signal combined with its own timeout. */
+function attemptInit(init: RequestInit, opts: AuthenticatedFetchOptions): RequestInit {
+  if (opts.timeoutMs === undefined) return init;
+  const timeout = AbortSignal.timeout(opts.timeoutMs);
+  return { ...init, signal: init.signal ? anySignal([init.signal, timeout]) : timeout };
+}
+
+/** JSON defaults for requests not tied to a configured endpoint. */
 const DEFAULT_HEADERS: Record<string, string> = {
   Accept: 'application/json',
   'Content-Type': 'application/json'
 };
 
+/** Headers in a `HeadersInit` of any form (record, tuples, `Headers`). */
+function headerPairs(init: HeadersInit | undefined | null): [string, string][] {
+  if (!init) return [];
+  if (typeof Headers !== 'undefined' && init instanceof Headers) return [...init.entries()];
+  if (Array.isArray(init)) return init.map(([k, v]) => [k, v]);
+  return Object.entries(init as Record<string, string>).filter(
+    (entry): entry is [string, string] => entry[1] !== undefined && entry[1] !== null
+  );
+}
+
 /**
- * Build the merged header set: base headers < auth headers < per-request headers.
+ * Whether the provider may be used for this URL: the final URL, resolved
+ * against the page, is on the page's own origin or under the API base.
+ */
+function providerAllowed(url: string, opts: AuthenticatedFetchOptions): boolean {
+  if (!opts.authProvider) return false;
+  const pageUrl = typeof location === 'undefined' ? undefined : location.href;
+  const apiBase = opts.apiBase ?? opts.config?.baseUrl ?? '';
+  return mayCarryInstanceAuth(url, apiBase, pageUrl);
+}
+
+/**
+ * Build the merged header set. Later layers replace earlier ones by header
+ * name, ignoring case (`Authorization` and `authorization` are one header), in
+ * this order:
  *
- * Re-invoked for the retry so a refreshed token is picked up.
+ * 1. defaults (`Content-Type`, plus `Accept` for requests without an endpoint
+ *    key) and `baseHeaders`
+ * 2. the auth provider's headers (only when `useProvider`)
+ * 3. `config.headers[endpointKey]`, the static headers configured for the
+ *    endpoint
+ * 4. the request's own `init.headers` (any `HeadersInit`)
+ *
+ * Headers set for the endpoint (3) or the request (4) therefore always win
+ * over the provider's, the same rule `endpoint.headers` follows in the
+ * dynamic-schema and variable services. Re-invoked for the retry so a refreshed
+ * token is picked up.
  */
 async function buildHeaders(
   init: RequestInit,
-  opts: AuthenticatedFetchOptions
+  opts: AuthenticatedFetchOptions,
+  useProvider: boolean
 ): Promise<Record<string, string>> {
-  const headers: Record<string, string> =
-    opts.config && opts.endpointKey
-      ? getEndpointHeaders(opts.config, opts.endpointKey)
-      : { ...DEFAULT_HEADERS, ...opts.baseHeaders };
+  // Keyed by lower-case name; the last name spelling set is the one sent.
+  const merged = new Map<string, [string, string]>();
+  const set = (pairs: Iterable<[string, string]>) => {
+    for (const [name, value] of pairs) merged.set(name.toLowerCase(), [name, value]);
+  };
 
-  if (opts.authProvider) {
-    Object.assign(headers, await opts.authProvider.getAuthHeaders());
-  }
+  const keyed = opts.config && opts.endpointKey;
+  set(keyed ? [['Content-Type', 'application/json']] : Object.entries(DEFAULT_HEADERS));
+  set(headerPairs(opts.baseHeaders));
+  if (useProvider && opts.authProvider) set(headerPairs(await opts.authProvider.getAuthHeaders()));
+  if (keyed) set(headerPairs(opts.config?.headers?.[opts.endpointKey as string]));
+  set(headerPairs(init.headers));
 
-  if (init.headers) {
-    Object.assign(headers, init.headers as Record<string, string>);
-  }
-
-  return headers;
+  return Object.fromEntries(merged.values());
 }
 
 const pendingRefreshes = new WeakMap<AuthProvider, Promise<boolean>>();
@@ -115,7 +184,7 @@ export function refreshAuth(authProvider: AuthProvider): Promise<boolean> {
  *
  * @param url - The fully-resolved request URL
  * @param init - Standard fetch options (method, body, signal, headers, …)
- * @param opts - Auth provider and header source
+ * @param opts - Auth provider, API base and header source
  * @returns The raw {@link Response}; callers handle `.ok`/parsing themselves
  */
 export async function authenticatedFetch(
@@ -123,21 +192,24 @@ export async function authenticatedFetch(
   init: RequestInit,
   opts: AuthenticatedFetchOptions
 ): Promise<Response> {
-  const headers = await buildHeaders(init, opts);
+  // Decided once, on the final URL: a request to another host gets neither the
+  // provider's headers nor its 401/403 hooks.
+  const provider = providerAllowed(url, opts) ? opts.authProvider : undefined;
+  const headers = await buildHeaders(init, opts, !!provider);
   let response = await fetch(url, { ...attemptInit(init, opts), headers });
 
   // 401 → let the provider refresh, then retry once with fresh headers.
-  if (response.status === 401 && opts.authProvider?.onUnauthorized) {
-    const refreshed = await refreshAuth(opts.authProvider);
+  if (response.status === 401 && provider?.onUnauthorized) {
+    const refreshed = await refreshAuth(provider);
     if (refreshed) {
-      const retryHeaders = await buildHeaders(init, opts);
+      const retryHeaders = await buildHeaders(init, opts, true);
       response = await fetch(url, { ...attemptInit(init, opts), headers: retryHeaders });
     }
   }
 
   // 403 → notify the provider (e.g. surface a permission error).
-  if (response.status === 403 && opts.authProvider?.onForbidden) {
-    await opts.authProvider.onForbidden();
+  if (response.status === 403 && provider?.onForbidden) {
+    await provider.onForbidden();
   }
 
   return response;

@@ -161,6 +161,21 @@ describe('dynamicSchemaService', () => {
         expect(init.headers.Authorization).toBe('Bearer tok');
       });
 
+      it('does not share a cached schema between API bases for the same /path', async () => {
+        global.fetch = fetchOk(validSchema);
+        const cfg = (baseUrl: string) => ({ baseUrl, endpoints: {} }) as unknown as EndpointConfig;
+        const endpoint = makeEndpoint({ url: '/schema/same-path' });
+        await fetchDynamicSchema(cfg('https://a.example/api'), endpoint, makeNode(), 'wf-1');
+        const second = await fetchDynamicSchema(
+          cfg('https://b.example/api'),
+          endpoint,
+          makeNode(),
+          'wf-1'
+        );
+        expect(second.fromCache).toBeFalsy();
+        expect(global.fetch).toHaveBeenCalledTimes(2);
+      });
+
       it('sends no AuthProvider headers to an endpoint on another host', async () => {
         global.fetch = fetchOk(validSchema);
         await fetchDynamicSchema(
@@ -469,6 +484,18 @@ describe('dynamicSchemaService', () => {
       );
       expect(url).toContain('return=');
       expect(url).toContain(encodeURIComponent('https://app.example.com/back'));
+    });
+
+    it('encodes the callback parameter name and keeps the #fragment last', () => {
+      const url = resolveExternalEditUrl(
+        { ...link, url: 'https://admin.example.com/edit#top', callbackUrlParam: 'a&b=c' },
+        makeNode(),
+        undefined,
+        'https://app.example.com/x?y=1'
+      );
+      expect(url).toBe(
+        `https://admin.example.com/edit?a%26b%3Dc=${encodeURIComponent('https://app.example.com/x?y=1')}#top`
+      );
     });
 
     it('uses & separator when URL already has query params', () => {

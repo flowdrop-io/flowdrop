@@ -285,6 +285,12 @@ describe('FormAutocomplete requests in flight', () => {
 
   it('a search that times out shows an error instead of nothing', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    // The timeout is AbortSignal.timeout, which fake timers cannot drive.
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), ms);
+      return controller.signal;
+    });
     try {
       const target = render('');
       const input = target.querySelector('input')!;
@@ -294,6 +300,7 @@ describe('FormAutocomplete requests in flight', () => {
       expect(target.querySelector('.form-autocomplete__spinner')).toBeNull();
       expect(target.textContent).toContain('The request timed out');
     } finally {
+      timeout.mockRestore();
       vi.useRealTimers();
     }
   });

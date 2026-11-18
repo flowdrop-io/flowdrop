@@ -10,7 +10,6 @@ import type { VariableSchema, ApiVariablesConfig, AuthProvider } from '../types/
 import type { EndpointConfig } from '../config/endpoints.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
-import { mayCarryInstanceAuth } from '../utils/apiUrl.js';
 
 /**
  * Context for variable API requests
@@ -214,10 +213,7 @@ export async function fetchVariableSchema(
   const timeout = endpoint.timeout ?? 30000;
 
   // Prepare fetch options
-  const fetchOptions: RequestInit = {
-    method,
-    signal: AbortSignal.timeout(timeout)
-  };
+  const fetchOptions: RequestInit = { method };
 
   // Add body for non-GET requests
   if (method !== 'GET' && endpoint.body) {
@@ -229,15 +225,16 @@ export async function fetchVariableSchema(
     // authenticatedFetch merges auth headers and transparently refreshes +
     // retries once on 401 via the provider's onUnauthorized hook.
     // The provider's headers go only to the page's own origin or under the API
-    // base; an endpoint on another host gets none. Precedence: defaults <
-    // provider < headers set on the endpoint (passed as the request's headers).
-    const pageUrl = typeof location === 'undefined' ? undefined : location.href;
-    const sendAuth = mayCarryInstanceAuth(url, endpointConfig?.baseUrl ?? '', pageUrl);
+    // base (decided in authenticatedFetch). Precedence: defaults < provider <
+    // headers set on the endpoint (passed as the request's headers). Each
+    // attempt has its own timeout.
     const response = await authenticatedFetch(
       url,
       { ...fetchOptions, headers: { ...endpoint.headers } },
       {
-        authProvider: sendAuth ? authProvider : undefined,
+        authProvider,
+        apiBase: endpointConfig?.baseUrl,
+        timeoutMs: timeout,
         baseHeaders: {
           Accept: 'application/json',
           'Content-Type': 'application/json'

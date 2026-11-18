@@ -151,4 +151,19 @@ describe('mayCarryInstanceAuth', () => {
       true
     );
   });
+
+  it('ignores the search and fragment of the API base', () => {
+    const page = 'https://app.test/';
+    expect(mayCarryInstanceAuth('https://api.test/f/x', 'https://api.test/f?v=1#h', page)).toBe(
+      true
+    );
+    expect(mayCarryInstanceAuth('https://api.test/g/x', 'https://api.test/f?v=1#h', page)).toBe(
+      false
+    );
+  });
+
+  it('refuses an opaque origin', () => {
+    expect(mayCarryInstanceAuth('data:text/plain,x', '', 'data:text/html,y')).toBe(false);
+    expect(mayCarryInstanceAuth('/x', '', 'file:///tmp/page.html')).toBe(false);
+  });
 });

@@ -16,12 +16,12 @@ import type {
   WorkflowsResponse
 } from '../types/index.js';
 import type { EndpointConfig } from '../config/endpoints.js';
-import { buildEndpointUrl, getEndpointMethod, getRequestHeaders } from '../config/endpoints.js';
+import { buildEndpointUrl, getEndpointMethod } from '../config/endpoints.js';
 import type { AuthProvider } from '../types/auth.js';
 import { NoAuthProvider } from '../types/auth.js';
 import { getApiSettings } from '../stores/settingsStore.svelte.js';
 import { logger } from '../utils/logger.js';
-import { refreshAuth } from '../utils/fetchWithAuth.js';
+import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import { DEFAULT_API_TIMEOUT_MS } from '../config/constants.js';
 
 /**
@@ -206,24 +206,12 @@ export class EnhancedFlowDropApiClient {
     // Get user settings for timeout and retry
     const userApiSettings = getApiSettings();
 
-    // Merge headers via the shared path: static endpoint headers < auth headers
-    // < request-specific headers.
-    const headers: Record<string, string> = {
-      ...(await getRequestHeaders(this.config, endpointKey, this.authProvider)),
-      ...(options.headers as Record<string, string>)
-    };
-
-    // Create AbortController for timeout
-    const controller = new AbortController();
+    // Headers, the origin rule, the 401 refresh and the per-attempt timeout all
+    // come from authenticatedFetch (one merge order for every request).
     const timeoutMs = userApiSettings.timeout ?? this.config.timeout ?? DEFAULT_API_TIMEOUT_MS;
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    const fetchConfig: RequestInit = {
-      method,
-      headers,
-      signal: controller.signal,
-      ...options
-    };
+    // The client's own method and options; a caller's headers and signal are
+    // merged by authenticatedFetch, they do not replace its headers or timeout.
+    const init: RequestInit = { ...options, method };
 
     let lastError: Error | null = null;
 
@@ -246,32 +234,21 @@ export class EnhancedFlowDropApiClient {
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        const response = await fetch(url, fetchConfig);
+        const response = await authenticatedFetch(url, init, {
+          config: this.config,
+          endpointKey,
+          authProvider: this.authProvider,
+          timeoutMs
+        });
 
-        // Clear timeout on successful response
-        clearTimeout(timeoutId);
-
-        // Handle 401 Unauthorized
+        // Still 401 after the provider's refresh (if any) and its retry.
         if (response.status === 401) {
-          if (this.authProvider.onUnauthorized) {
-            const refreshed = await refreshAuth(this.authProvider);
-            if (refreshed && attempt < maxAttempts) {
-              // Rebuild headers via the shared path to pick up the fresh token.
-              fetchConfig.headers = {
-                ...(await getRequestHeaders(this.config, endpointKey, this.authProvider)),
-                ...(options.headers as Record<string, string>)
-              };
-              continue; // Retry with new headers
-            }
-          }
           throw await refusal(response, 401, 'Unauthorized');
         }
 
         // Handle 403 Forbidden
         if (response.status === 403) {
-          if (this.authProvider.onForbidden) {
-            await this.authProvider.onForbidden();
-          }
+          // authenticatedFetch has already called the provider's onForbidden.
           throw await refusal(response, 403, 'Forbidden');
         }
 
@@ -283,11 +260,8 @@ export class EnhancedFlowDropApiClient {
         const data = await response.json();
         return data as T;
       } catch (error) {
-        // Clear timeout on error
-        clearTimeout(timeoutId);
-
-        // Handle abort (timeout)
-        if (error instanceof Error && error.name === 'AbortError') {
+        // Handle the per-attempt timeout
+        if (error instanceof Error && error.name === 'TimeoutError') {
           lastError = new ApiError(`Request timeout after ${timeoutMs}ms`, 0, operation, {
             timeout: true
           });

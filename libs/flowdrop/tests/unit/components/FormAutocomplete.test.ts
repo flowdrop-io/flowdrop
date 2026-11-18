@@ -612,7 +612,11 @@ describe('FormAutocomplete', () => {
     async function sentHeaders(
       provider?: import('$lib/types/auth.js').AuthProvider
     ): Promise<Record<string, string>> {
-      await authenticatedFetch('https://example.com/suggest', {}, { authProvider: provider });
+      await authenticatedFetch(
+        'https://example.com/suggest',
+        {},
+        { authProvider: provider, apiBase: 'https://example.com' }
+      );
       return fetchMock.mock.calls[0][1].headers as Record<string, string>;
     }
 

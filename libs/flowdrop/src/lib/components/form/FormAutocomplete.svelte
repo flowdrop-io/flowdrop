@@ -23,14 +23,42 @@
   - Selected values appear as tags with "x" button to remove
 -->
 
+<script lang="ts" module>
+  import type { FieldOption as LookupOption } from './types.js';
+
+  /** `valueParam` lookups sent at the same time by one field. */
+  const VALUE_LOOKUP_CONCURRENCY = 4;
+  /** How long a `valueParam` answer is reused, and how many are kept. */
+  const VALUE_LOOKUP_TTL_MS = 5 * 60_000;
+  const VALUE_LOOKUP_CACHE_MAX = 500;
+
+  type LookupCache = Map<string, { at: number; options: LookupOption[] }>;
+
+  /**
+   * `valueParam` answers per FlowDrop instance, keyed by the resolved request
+   * URL (which carries the parameter, the value and the dependency values). A
+   * WeakMap on the instance object, so the cache lives as long as the instance
+   * and a field that is remounted (node reselected, panel reopened) does not
+   * ask again. A field outside any instance has no such home and keeps its
+   * answers only for its own lifetime.
+   */
+  const lookupCaches = new WeakMap<object, LookupCache>();
+
+  function lookupCacheFor(instance: object | undefined): LookupCache {
+    if (!instance) return new Map();
+    let cache = lookupCaches.get(instance);
+    if (!cache) {
+      cache = new Map();
+      lookupCaches.set(instance, cache);
+    }
+    return cache;
+  }
+</script>
+
 <script lang="ts">
   import { getContext, onMount, untrack } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
-  import {
-    isBaseRelative,
-    mayCarryInstanceAuth,
-    resolveAutocompleteUrl
-  } from '$lib/utils/apiUrl.js';
+  import { isBaseRelative, resolveAutocompleteUrl } from '$lib/utils/apiUrl.js';
   import { FLOWDROP_INSTANCE_KEY } from '$lib/stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
   import Icon from '@iconify/svelte';
@@ -107,6 +135,9 @@
   const multiple = $derived(autocomplete.multiple ?? false);
   const params = $derived(autocomplete.params ?? {});
   const valueParam = $derived(autocomplete.valueParam || undefined);
+
+  /** Each request (a fetch attempt) is cut off after this long. */
+  const REQUEST_TIMEOUT_MS = 5000;
 
   // Component state
   let inputElement: HTMLInputElement | undefined = $state(undefined);
@@ -205,20 +236,22 @@
   }
 
   /**
-   * Auth for a request: the form's provider, or, where the form has none
-   * (interrupt forms), the instance's for requests to the site or under an
-   * absolute API base. Other hosts get no instance auth.
+   * GET a URL through `authenticatedFetch`. Whichever provider is used (the
+   * form's, or the instance's where the form has none, as in interrupt forms)
+   * gets the same rule there: its headers go only to the page's own origin or
+   * under the instance's API base. SchemaForm's `baseUrl` prop is not an API base here.
+   * Each attempt, including the retry after a 401, has its own timeout.
    */
-  function currentAuthProvider(requestUrl: string): AuthProvider | undefined {
-    const fromForm = getAuthProvider?.();
-    if (fromForm) return fromForm;
-    // Judge the URL that is actually fetched, resolved as the browser does, not
-    // the configured text: a no-slash URL can resolve against an absolute
-    // baseUrl prop.
-    const pageUrl = typeof location === 'undefined' ? undefined : location.href;
-    return mayCarryInstanceAuth(requestUrl, fd?.api.config?.baseUrl ?? '', pageUrl)
-      ? fd?.api.authProvider
-      : undefined;
+  function get(requestUrl: string, signal: AbortSignal): Promise<Response> {
+    return authenticatedFetch(
+      requestUrl,
+      { method: 'GET', signal },
+      {
+        authProvider: getAuthProvider?.() ?? fd?.api.authProvider,
+        apiBase: fd?.api.config?.baseUrl,
+        timeoutMs: REQUEST_TIMEOUT_MS
+      }
+    );
   }
 
   /**
@@ -283,14 +316,6 @@
   }
 
   /**
-   * Abort reason for a request that ran out of time. Unlike a plain abort
-   * (superseded or unmounted), it is a failure the field reports.
-   */
-  function timeoutError(): DOMException {
-    return new DOMException('Request timed out', 'TimeoutError');
-  }
-
-  /**
    * Fetch suggestions from the callback URL
    * @param query - The search query
    */
@@ -315,23 +340,13 @@
 
     isLoading = true;
     error = null;
-    // Capture in a local const so the timeout closure and fetch signal
-    // always reference the same controller, even if a new request starts
-    // before the 5-second timeout fires.
+    // Capture in a local const so the fetch signal and the cleanup below
+    // always reference the same controller, even if a new request starts.
     const controller = new AbortController();
     abortController = controller;
 
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     try {
-      timeoutId = setTimeout(() => controller.abort(timeoutError()), 5000);
-
-      // authenticatedFetch merges auth headers (call getter for current value)
-      // and applies the 401/403 lifecycle consistently with the rest of the lib.
-      const response = await authenticatedFetch(
-        requestUrl,
-        { method: 'GET', signal: controller.signal },
-        { authProvider: currentAuthProvider(requestUrl) }
-      );
+      const response = await get(requestUrl, controller.signal);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -363,7 +378,6 @@
           : 'Failed to fetch suggestions';
       suggestions = [];
     } finally {
-      if (timeoutId !== null) clearTimeout(timeoutId);
       // An aborted request settles after its replacement started; the loading
       // state and controller belong to that replacement then.
       if (abortController === controller) {
@@ -713,13 +727,8 @@
     const controller = new AbortController();
     labelController = controller;
     const fingerprint = depFingerprint;
-    const timeoutId = setTimeout(() => controller.abort(timeoutError()), 5000);
     try {
-      const response = await authenticatedFetch(
-        requestUrl,
-        { method: 'GET', signal: controller.signal },
-        { authProvider: currentAuthProvider(requestUrl) }
-      );
+      const response = await get(requestUrl, controller.signal);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -731,7 +740,6 @@
       if (err instanceof Error && err.name === 'AbortError') return;
       logger.warn('[FormAutocomplete] Label lookup failed:', err);
     } finally {
-      clearTimeout(timeoutId);
       if (labelController === controller) labelController = null;
     }
   }
@@ -743,43 +751,67 @@
 
   /**
    * With `valueParam`: ask the endpoint for each value's own option
-   * (`url?{valueParam}=<value>`), one request per value, and cache the label of
-   * the entry whose value matches. An empty or unrelated answer, or a failed
-   * request, leaves the raw value shown. Same URL resolution, auth and abort
-   * rules as the field's other requests.
+   * (`url?{valueParam}=<value>`), one request per value, at most
+   * {@link VALUE_LOOKUP_CONCURRENCY} at a time. Every label in an answer is
+   * cached, not only the one for the value asked for. An empty or unrelated
+   * answer leaves the raw value shown. A request that fails (not an abort)
+   * is forgotten, so a later run of the effect (a changed value, a remount)
+   * asks again. Answers are also kept per instance (see `lookupCacheFor`), so a
+   * remounted field does not ask again. Same URL resolution, auth, timeout and
+   * abort rules as the field's other requests.
    */
   async function lookupValueLabels(values: string[]): Promise<void> {
     const name = valueParam;
     if (!name) return;
     const fingerprint = depFingerprint;
-    await Promise.all(
-      values.map(async (val) => {
-        const requestUrl = buildUrl(val, name);
-        if (requestUrl === null) return;
-        const controller = new AbortController();
-        valueControllers.add(controller);
-        const timeoutId = setTimeout(() => controller.abort(timeoutError()), 5000);
-        try {
-          const response = await authenticatedFetch(
-            requestUrl,
-            { method: 'GET', signal: controller.signal },
-            { authProvider: currentAuthProvider(requestUrl) }
-          );
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          const mapped = mapResponse(await response.json());
-          if (controller.signal.aborted || fingerprint !== depFingerprint) return;
-          const match = mapped.find((opt) => opt.value === val);
-          if (match) labelCache.set(val, match.label);
-        } catch (err) {
-          if (err instanceof Error && err.name === 'AbortError') return;
-          logger.warn('[FormAutocomplete] Label lookup failed:', err);
-        } finally {
-          clearTimeout(timeoutId);
-          valueControllers.delete(controller);
+    const answers = lookupCacheFor(fd);
+    const queue = [...values];
+
+    async function lookupOne(val: string): Promise<void> {
+      const requestUrl = buildUrl(val, name!);
+      if (requestUrl === null) return;
+      const cached = answers.get(requestUrl);
+      if (cached && Date.now() - cached.at < VALUE_LOOKUP_TTL_MS) {
+        applyAnswer(val, cached.options);
+        return;
+      }
+      const controller = new AbortController();
+      valueControllers.add(controller);
+      try {
+        const response = await get(requestUrl, controller.signal);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-      })
+        const mapped = mapResponse(await response.json());
+        if (controller.signal.aborted || fingerprint !== depFingerprint) return;
+        if (answers.size >= VALUE_LOOKUP_CACHE_MAX) answers.clear();
+        answers.set(requestUrl, { at: Date.now(), options: mapped });
+        applyAnswer(val, mapped);
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+        lookedUp.delete(val);
+        logger.warn('[FormAutocomplete] Label lookup failed:', err);
+      } finally {
+        valueControllers.delete(controller);
+      }
+    }
+
+    /** Cache every label in the answer; the asked-for value needs a match. */
+    function applyAnswer(val: string, options: FieldOption[]): void {
+      for (const opt of options) {
+        if (opt.value === val || !labelCache.has(opt.value)) labelCache.set(opt.value, opt.label);
+      }
+    }
+
+    async function worker(): Promise<void> {
+      for (let val = queue.shift(); val !== undefined; val = queue.shift()) {
+        if (fingerprint !== depFingerprint) return;
+        await lookupOne(val);
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(VALUE_LOOKUP_CONCURRENCY, queue.length) }, worker)
     );
   }
 

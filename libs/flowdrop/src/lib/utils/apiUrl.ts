@@ -109,9 +109,15 @@ export function mayCarryInstanceAuth(
 ): boolean {
   try {
     const target = new URL(requestUrl, pageUrl);
-    if (pageUrl && target.origin === new URL(pageUrl).origin) return true;
+    // An opaque origin ("null": file:, data:, sandboxed pages) equals no other.
+    if (target.origin === 'null') return false;
+    if (pageUrl) {
+      const pageOrigin = new URL(pageUrl).origin;
+      if (pageOrigin !== 'null' && target.origin === pageOrigin) return true;
+    }
     if (!apiBase) return false;
-    const root = new URL(`${apiBase.replace(/\/+$/, '')}/`, pageUrl);
+    // The base's own query and fragment are not part of the path prefix.
+    const root = new URL(`${apiBase.replace(/[?#].*$/s, '').replace(/\/+$/, '')}/`, pageUrl);
     return target.origin === root.origin && target.pathname.startsWith(root.pathname);
   } catch {
     // Not parseable against the page (or no page at all): no instance auth.

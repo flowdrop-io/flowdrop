@@ -18,7 +18,6 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import type { AuthProvider } from '../types/auth.js';
 import { DEFAULT_CACHE_TTL_MS } from '../config/constants.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
-import { mayCarryInstanceAuth } from '../utils/apiUrl.js';
 
 /**
  * Context object containing all available data for resolving template variables
@@ -173,6 +172,9 @@ function resolveTemplate(
   return resolved;
 }
 
+/** Separates the API base from the endpoint URL in a cache key. */
+const CACHE_KEY_SEP = '\u0000';
+
 /**
  * Generates a cache key for a schema based on the node context and endpoint configuration.
  *
@@ -180,9 +182,16 @@ function resolveTemplate(
  * @param context - The node context
  * @returns A unique cache key string
  */
-function generateCacheKey(endpoint: DynamicSchemaEndpoint, context: NodeContext): string {
+function generateCacheKey(
+  endpoint: DynamicSchemaEndpoint,
+  context: NodeContext,
+  endpointConfig?: EndpointConfig | null
+): string {
   const url = resolveTemplate(endpoint.url, endpoint.parameterMapping, context);
-  return `schema:${url}`;
+  // A `/path` URL is fetched under the API base, so the same text under another
+  // base (another instance) is another request and must not share an entry.
+  const base = url.startsWith('/') ? (endpointConfig?.baseUrl ?? '') : '';
+  return `schema:${base}${CACHE_KEY_SEP}${url}`;
 }
 
 /**
@@ -281,7 +290,7 @@ export async function fetchDynamicSchema(
   const context = buildNodeContext(node, workflowId);
 
   // Generate cache key
-  const cacheKey = generateCacheKey(endpoint, context);
+  const cacheKey = generateCacheKey(endpoint, context, endpointConfig);
 
   // Check cache first (if caching is enabled)
   if (endpoint.cacheSchema !== false) {
@@ -337,12 +346,11 @@ export async function fetchDynamicSchema(
   }
 
   try {
-    // The provider's headers go only to the page's own origin or under the API
-    // base, whichever provider was passed in; an endpoint on another host gets none.
-    const pageUrl = typeof location === 'undefined' ? undefined : location.href;
-    const sendAuth = mayCarryInstanceAuth(url, endpointConfig?.baseUrl ?? '', pageUrl);
+    // authenticatedFetch sends the provider's headers only to the page's own
+    // origin or under the API base; an endpoint on another host gets none.
     const response = await authenticatedFetch(url, fetchOptions, {
-      authProvider: sendAuth ? authProvider : undefined,
+      authProvider,
+      apiBase: endpointConfig?.baseUrl,
       timeoutMs: timeout
     });
 
@@ -462,8 +470,12 @@ export function resolveExternalEditUrl(
 
   // Append callback URL if configured
   if (callbackUrl && link.callbackUrlParam) {
-    const separator = url.includes('?') ? '&' : '?';
-    url = `${url}${separator}${link.callbackUrlParam}=${encodeURIComponent(callbackUrl)}`;
+    // The parameter goes before any `#fragment`, which the request never sends.
+    const hashAt = url.indexOf('#');
+    const path = hashAt === -1 ? url : url.slice(0, hashAt);
+    const fragment = hashAt === -1 ? '' : url.slice(hashAt);
+    const separator = path.includes('?') ? '&' : '?';
+    url = `${path}${separator}${encodeURIComponent(link.callbackUrlParam)}=${encodeURIComponent(callbackUrl)}${fragment}`;
   }
 
   return isWebOrRelativeUrl(url) ? url : '';
@@ -557,14 +569,25 @@ export function clearSchemaCache(pattern?: string): void {
  * @param node - The workflow node to invalidate cache for
  * @param endpoint - The dynamic schema endpoint configuration
  * @param workflowId - Optional workflow ID, matching the fetch context
+ * @param endpointConfig - The endpoint config used for the fetch. The cache is
+ *   keyed on the API base too; without it, the entry for this URL under any
+ *   base is invalidated.
  */
 export function invalidateSchemaCache(
   node: WorkflowNode,
   endpoint: DynamicSchemaEndpoint,
-  workflowId?: string
+  workflowId?: string,
+  endpointConfig?: EndpointConfig | null
 ): void {
-  const cacheKey = generateCacheKey(endpoint, buildNodeContext(node, workflowId));
-  schemaCache.delete(cacheKey);
+  const context = buildNodeContext(node, workflowId);
+  if (endpointConfig) {
+    schemaCache.delete(generateCacheKey(endpoint, context, endpointConfig));
+    return;
+  }
+  const suffix = generateCacheKey(endpoint, context).slice('schema:'.length);
+  for (const key of schemaCache.keys()) {
+    if (key.endsWith(suffix)) schemaCache.delete(key);
+  }
 }
 
 /**
