@@ -88,6 +88,7 @@
       <Button
         variant="ghost"
         size="sm"
+        class="form-field__null-toggle"
         aria-pressed={nullToggle.on}
         ariaLabel={m().form.field.nullToggleLabel}
         title={m().form.field.nullToggleTitle}
@@ -228,6 +229,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* The null toggle: muted while off; selected look (primary text on its muted
+     wash, like a chosen Segmented option) while on, so the state shows without
+     reading aria-pressed. */
+  .form-field :global(.form-field__null-toggle) {
+    color: var(--fd-muted-foreground);
+    font-weight: 400;
+  }
+  .form-field :global(.form-field__null-toggle[aria-pressed='true']),
+  .form-field :global(.form-field__null-toggle[aria-pressed='true']:hover:not(:disabled)) {
+    color: var(--fd-primary);
+    background-color: var(--fd-primary-muted);
+    font-weight: 600;
   }
 
   /* The muted state of a field that holds null: same footprint as a text input. */
