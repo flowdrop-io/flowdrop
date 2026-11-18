@@ -88,3 +88,68 @@
     />
   </div>
 </Story>
+
+<Story
+  name="Nullable fields"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A field whose type array or enum lists `null` gets a "null" toggle on its label row. The first column is off (the field holds a value), the second is on (the config holds `null`). A required field marked `when_missing: skip` also says it is skipped when empty.'
+      }
+    }
+  }}
+>
+  <div style="display: grid; gap: var(--fd-space-2xl); max-width: 22rem">
+    <FieldInEditor
+      schema={{ type: ['string', 'null'], title: 'Subject (off)' }}
+      value="Your order has shipped"
+      fieldKey="subject_off"
+    />
+    <FieldInEditor
+      schema={{ type: ['string', 'null'], title: 'Subject (on)' }}
+      value={null}
+      fieldKey="subject_on"
+    />
+    <FieldInEditor
+      schema={{ type: ['integer', 'null'], title: 'Max retries (off)' }}
+      value={3}
+      fieldKey="retries_off"
+    />
+    <FieldInEditor
+      schema={{ type: 'string', enum: ['fast', 'slow', null], title: 'Mode (on)' }}
+      value={null}
+      fieldKey="mode_on"
+    />
+    <FieldInEditor
+      schema={{ type: 'string', title: 'Recipient', when_missing: 'skip' }}
+      value=""
+      required
+      fieldKey="recipient"
+    />
+  </div>
+</Story>
+
+<Story
+  name="No type"
+  asChild
+  parameters={{
+    docs: {
+      description: {
+        story:
+          'A field with no `type` accepts any JSON value, so the full factory edits it as JSON rather than as a text field.'
+      }
+    }
+  }}
+>
+  <div style="display: grid; gap: var(--fd-space-2xl); max-width: 30rem">
+    <FieldInEditor
+      full
+      width="30rem"
+      schema={{ title: 'Payload' }}
+      fieldKey="payload"
+      value={{ id: 1 }}
+    />
+  </div>
+</Story>

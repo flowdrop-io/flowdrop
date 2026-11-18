@@ -59,6 +59,8 @@
   import FormArray from './FormArray.svelte';
   import FormPorts from './FormPorts.svelte';
   import FormAutocomplete from './FormAutocomplete.svelte';
+  import { schemaAdmitsNull } from '$lib/utils/schemaType.js';
+  import { m } from '$lib/messages/index.js';
   import { humanizeKey } from './humanizeKey.js';
   import { useFormReadOnly } from './readOnly.js';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
@@ -181,6 +183,32 @@
   });
 
   /**
+   * The "null" toggle: offered only where `null` is a valid value (the type
+   * lists it or the enum does). Anywhere else saving `null` would fail validation.
+   * A config that already holds `null` shows it on.
+   */
+  const nullable = $derived(schemaAdmitsNull(schema));
+  const isNull = $derived(value === null);
+  // The value the field had before it was set to null, to bring back when the
+  // toggle goes off. Absent (never held a value) -> the key goes back to absent.
+  let beforeNull: { value: unknown } | undefined;
+  function toggleNull() {
+    if (isNull) {
+      const back = beforeNull;
+      beforeNull = undefined;
+      onChange(back ? back.value : undefined);
+      return;
+    }
+    beforeNull = value === undefined ? undefined : { value };
+    onChange(null);
+  }
+
+  /** A required field with `when_missing: skip` says what an empty value does. */
+  const whenMissingHint = $derived(
+    required && schema.when_missing === 'skip' ? m().form.field.skippedWhenEmpty : undefined
+  );
+
+  /**
    * Get enum options as string array for select/checkbox components
    */
   const enumOptions = $derived.by((): string[] => {
@@ -279,6 +307,10 @@
         : undefined}
     plain={fieldType === 'ports'}
     inline={fieldType === 'toggle'}
+    nullToggle={nullable && fieldType !== 'ports'
+      ? { on: isNull, disabled: isReadOnly, onToggle: toggleNull }
+      : undefined}
+    hint={whenMissingHint}
     {animationDelay}
   >
     {#if fieldType === 'registered' && RegisteredComponent}

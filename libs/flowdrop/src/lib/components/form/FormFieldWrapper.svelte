@@ -12,6 +12,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { m } from '$lib/messages/index.js';
+  import Button from '../primitives/Button.svelte';
 
   interface Props {
     /** Field identifier for label association */
@@ -34,6 +35,13 @@
     inline?: boolean;
     /** Short muted note on the label row, right-aligned (an array's "Matched in order"). */
     aside?: string;
+    /**
+     * A "null" toggle on the label row, for a field that may hold `null` (its type
+     * or enum lists it). While `on`, the field shows a muted "null" in place of its input.
+     */
+    nullToggle?: { on: boolean; disabled?: boolean; onToggle: () => void };
+    /** A short plain-text hint under the field (e.g. "Skipped when empty") */
+    hint?: string;
     /** Slot content for the field input */
     children: Snippet;
   }
@@ -47,6 +55,8 @@
     plain = false,
     inline = false,
     aside,
+    nullToggle,
+    hint,
     children
   }: Props = $props();
 
@@ -54,6 +64,7 @@
    * Computed description ID for ARIA association
    */
   const descriptionId = $derived(description ? `${id}-description` : undefined);
+  const hintId = $derived(hint ? `${id}-hint` : undefined);
 </script>
 
 <div
@@ -73,6 +84,19 @@
       {/if}
     </label>
     {#if aside}<span class="form-field__aside">{aside}</span>{/if}
+    {#if nullToggle}
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-pressed={nullToggle.on}
+        ariaLabel={m().form.field.nullToggleLabel}
+        title={m().form.field.nullToggleTitle}
+        disabled={nullToggle.disabled}
+        onclick={nullToggle.onToggle}
+      >
+        {m().form.field.nullToggle}
+      </Button>
+    {/if}
   </div>
 
   {#if plain && description}
@@ -83,7 +107,11 @@
 
   <!-- Field Input Container -->
   <div class="form-field__input-wrapper">
-    {@render children()}
+    {#if nullToggle?.on}
+      <div class="form-field__null" data-null-value>{m().form.field.nullValue}</div>
+    {:else}
+      {@render children()}
+    {/if}
   </div>
 
   <!-- Field Description -->
@@ -91,6 +119,10 @@
     <p id={descriptionId} class="form-field__description" title={description}>
       {description}
     </p>
+  {/if}
+
+  {#if hint}
+    <p id={hintId} class="form-field__description form-field__hint">{hint}</p>
   {/if}
 </div>
 
@@ -196,6 +228,21 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* The muted state of a field that holds null: same footprint as a text input. */
+  .form-field__null {
+    display: flex;
+    align-items: center;
+    min-height: var(--fd-control-md);
+    padding: 0 var(--fd-space-md);
+    border: 1px dashed var(--fd-border);
+    border-radius: var(--fd-radius-md);
+    background-color: var(--fd-muted);
+    color: var(--fd-muted-foreground);
+    font-family: var(--fd-font-mono);
+    font-size: var(--fd-field-help-size);
+    user-select: none;
   }
 
   .form-field__description--wrap {

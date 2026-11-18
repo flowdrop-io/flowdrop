@@ -59,7 +59,10 @@ describe('one field factory', () => {
     ['markdown', { type: 'string', format: 'markdown' }],
     ['template', { type: 'string', format: 'template' }],
     ['object without format', { type: 'object' }],
-    ['object with a format nothing renders', { type: 'object', format: 'key-value' }]
+    ['object with a format nothing renders', { type: 'object', format: 'key-value' }],
+    ['no type', {}],
+    ['a null-only type array', { type: ['null'] }],
+    ['an object type array', { type: ['object', 'null'] }]
   ] as [string, FieldSchema][])(
     '%s: Full has the editor built in, Light shows the registration hint',
     (_, schema) => {
@@ -98,6 +101,17 @@ describe('one field factory', () => {
       context: new Map([[FLOWDROP_INSTANCE_KEY, createFlowDropInstance()]])
     }).body;
     expect(body).toContain('Editor component not registered');
+  });
+
+  it('a nullable integer renders as a number field, a nullable string as a text field', () => {
+    expect(html(FormFieldLight, { type: ['integer', 'null'] }, 3)).toContain('type="number"');
+    expect(html(FormFieldLight, { type: ['string', 'null'] }, 'a')).toContain('type="text"');
+  });
+
+  it('a field with no type but options is still a select, not the JSON editor', () => {
+    const body = html(FormFieldLight, { enum: ['a', 'b'] }, 'a');
+    expect(body).not.toContain('Editor component not registered');
+    expect(body).toContain('<select');
   });
 
   it('passes step to the number field', () => {

@@ -120,7 +120,14 @@ export const defaultMessages = {
     },
 
     field: {
-      required: 'required'
+      required: 'required',
+      // A field whose type or enum admits null: the toggle that stores null for it.
+      nullToggle: 'null',
+      nullToggleLabel: 'Set to null',
+      nullToggleTitle: 'Store null instead of a value. Turn off to bring the value back.',
+      nullValue: 'null',
+      // A required field marked when_missing: skip.
+      skippedWhenEmpty: 'Skipped when empty'
     },
 
     toggle: {
