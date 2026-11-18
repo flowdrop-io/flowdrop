@@ -24,9 +24,15 @@
   } from '../../types/index.js';
   import { dynamicPortToNodePort } from '../../types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { buildPortsConfig, isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
+  import { isPortExposed, orderPortsFor } from '$lib/utils/portUtils.js';
   import { buildHandleId } from '$lib/utils/handleIds.js';
-  import { countPortWires, hideBlock, isExposureLocked } from '$lib/utils/portExposure.js';
+  import {
+    countPortWires,
+    hideBlock,
+    isExposureLocked,
+    movePort,
+    setPortExposed
+  } from '$lib/utils/portExposure.js';
   import {
     entryAtPort,
     exposableCandidate,
@@ -142,6 +148,7 @@
       nameEdit.entryId
     );
     if (reason === 'empty') return m().workflowInterface.tagIdEmpty;
+    if (reason === 'whitespace') return m().workflowInterface.tagIdWhitespace;
     if (reason === 'duplicate') {
       return m().workflowInterface.tagIdDuplicate({ id: nameEdit.value.trim(), direction: dir });
     }
@@ -213,15 +220,6 @@
     return orderPortsFor(portsFor(direction), portsConfig[direction]);
   }
 
-  /** Write a direction's desired ordered list back to the bound value (see `buildPortsConfig`). */
-  function commit(
-    direction: Direction,
-    ordered: NodePort[],
-    exposureOf: (port: NodePort) => boolean
-  ): void {
-    onChange(buildPortsConfig(portsConfig, direction, ordered, portsFor(direction), exposureOf));
-  }
-
   /** Edges on each of this node's ports, counted once per edge change. */
   const wires = $derived(
     node && fd.workflow.current
@@ -244,18 +242,14 @@
   }
 
   function setExposed(direction: Direction, portId: string, exposed: boolean): void {
-    commit(direction, orderedPorts(direction), (port) =>
-      port.id === portId ? exposed : isPortExposed(port, portsConfig[direction])
-    );
+    onChange(setPortExposed(portsConfig, direction, portsFor(direction), portId, exposed));
   }
 
   /** Move the port at `from` to position `to` (the rows in between shift). */
   function moveTo(direction: Direction, from: number, to: number): void {
-    const ordered = orderedPorts(direction);
-    if (from === to || to < 0 || to >= ordered.length || from < 0 || from >= ordered.length) return;
-    const [port] = ordered.splice(from, 1);
-    ordered.splice(to, 0, port);
-    commit(direction, ordered, (p) => isPortExposed(p, portsConfig[direction]));
+    const port = orderedPorts(direction)[from];
+    const moved = port && movePort(portsConfig, direction, portsFor(direction), port.id, to);
+    if (moved) onChange(moved.ports);
   }
 
   function move(direction: Direction, index: number, delta: -1 | 1): void {

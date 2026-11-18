@@ -73,7 +73,7 @@ import { draftOffer, draftTimeLabel } from './utils/draftRestore.js';
 import { showInfo, showWarning } from './services/toastService.js';
 import { parseCommand } from './commands/parser.js';
 import { executeCommand } from './commands/executor.js';
-import { isSessionLine } from './commands/session.js';
+import { consoleRefusal } from './commands/console.js';
 import { createStoreCommandContext } from './commands/storeIntegration.svelte.js';
 import { dispatchUIAction } from './commands/uiActionTarget.js';
 import { validateCommand } from './commands/validate.js';
@@ -464,8 +464,11 @@ export interface MountedFlowDropApp {
    * - **UI actions** (select a node, open its config panel, fit/zoom/pan) are
    *   applied by `mountFlowDropApp`'s editor shell. `mountWorkflowEditor` has
    *   no shell, so they are dropped there.
-   * - **Session commands** (`session ...`) belong to the console and are not
-   *   available: they resolve with `{ ok: false, code: 'SESSION_REFUSED' }`.
+   * - **Console commands** (`session`, `mode`, `runs`, `save`, `export`) belong
+   *   to the editor Console and are not available: they resolve with
+   *   `{ ok: false, code: 'CONSOLE_REFUSED' }` (`session` lines keep the
+   *   `SESSION_REFUSED` code they had in 2.18), and the error names the WebMCP
+   *   tool that does the same where there is one (`set_editor_mode`, `save`).
    */
   runCommand: (command: string | Command, options?: RunCommandOptions) => Promise<CommandResult>;
 
@@ -659,12 +662,12 @@ function createRunCommand(
 
     let parsed: Command;
     if (typeof command === 'string') {
-      if (isSessionLine(command)) {
-        return {
-          ok: false,
-          code: 'SESSION_REFUSED',
-          error: '`session` commands run only in the editor Console; they are not available here.'
-        };
+      // Every Console line (session, mode, runs, save, export) is refused; a
+      // `session` line keeps the code it had in 2.18 so hosts that match it still do.
+      const console = consoleRefusal(command);
+      if (console) {
+        const code = /^session(\s|$)/i.test(command.trim()) ? 'SESSION_REFUSED' : 'CONSOLE_REFUSED';
+        return { ok: false, code, error: console };
       }
       const result = parseCommand(command);
       if (!result.ok) return { ok: false, code: 'PARSE_ERROR', error: result.error };

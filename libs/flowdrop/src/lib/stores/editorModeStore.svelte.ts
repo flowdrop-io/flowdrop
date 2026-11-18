@@ -18,9 +18,21 @@
 
 export type EditorMode = 'edit' | 'test';
 
+let provide!: (store: EditorModeStore, blocker: () => string | null) => () => void;
+
 export class EditorModeStore {
+  static {
+    provide = (store, blocker) => {
+      store.#testBlocker = blocker;
+      return () => {
+        if (store.#testBlocker === blocker) store.#testBlocker = null;
+      };
+    };
+  }
+
   #current = $state<EditorMode>('edit');
   #listeners = new Set<(mode: EditorMode) => void>();
+  #testBlocker = $state<(() => string | null) | null>(null);
 
   /**
    * Be told, synchronously, whenever the mode really changes (not when it is
@@ -49,6 +61,20 @@ export class EditorModeStore {
     return this.#current === 'test';
   }
 
+  /**
+   * Why Test cannot be in effect right now, or `null` when it can. `App`
+   * provides the answer (unsaved workflow, read-only editor, pipeline view,
+   * feature off); without an `App`, Test is never in effect, so it says so.
+   */
+  get testBlocker(): string | null {
+    return this.#testBlocker ? this.#testBlocker() : 'Test mode is not available in this editor.';
+  }
+
+  /** The mode in effect: the requested one, except a Test that is held back. */
+  get effective(): EditorMode {
+    return this.#current === 'test' && this.testBlocker ? 'edit' : this.#current;
+  }
+
   /** Switch mode. A value that is not a mode is ignored. */
   set(mode: EditorMode): void {
     if (mode === 'edit' || mode === 'test') this.#move(mode);
@@ -58,4 +84,17 @@ export class EditorModeStore {
   toggle(): void {
     this.#move(this.#current === 'test' ? 'edit' : 'test');
   }
+}
+
+/**
+ * Called by `App` (and tests), never by a host: the live reason Test is held
+ * back. Not a method, so it is not on the public class and a host cannot
+ * replace it. Returns a function that withdraws it (only if it is still the
+ * one provided).
+ */
+export function provideTestBlocker(
+  store: EditorModeStore,
+  blocker: () => string | null
+): () => void {
+  return provide(store, blocker);
 }

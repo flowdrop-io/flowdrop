@@ -15,6 +15,7 @@ import type { Workflow, WorkflowInterface, WorkflowInterfaceEntry } from '$lib/t
 import type { InterfaceInputEdit } from '$lib/utils/playgroundChat.js';
 import { buildHandleId } from '$lib/utils/handleIds.js';
 import {
+  applyEntryPatch,
   entryFromBindablePort,
   listBindablePorts,
   resolveInterface,
@@ -41,12 +42,13 @@ export function truncateInterfaceId(id: string, max: number = INTERFACE_TAG_MAX_
 }
 
 /** Why an id cannot be used for an entry. */
-export type InterfaceIdError = 'empty' | 'duplicate';
+export type InterfaceIdError = 'empty' | 'whitespace' | 'duplicate';
 
 /**
  * Check an id for a new or renamed entry. Ids are unique within their
- * direction (inputs and outputs are scoped separately). `ownId` is the id the
- * entry has now, so keeping it is not a duplicate.
+ * direction (inputs and outputs are scoped separately) and contain no
+ * whitespace. `ownId` is the id the entry has now, so keeping it is not a
+ * duplicate.
  */
 export function validateInterfaceId(
   id: string,
@@ -56,6 +58,9 @@ export function validateInterfaceId(
 ): InterfaceIdError | null {
   const trimmed = id.trim();
   if (trimmed === '') return 'empty';
+  // An id is one token: no command can address one with a space in it. (An
+  // entry that already has such an id may keep it.)
+  if (/\s/.test(trimmed) && trimmed !== ownId) return 'whitespace';
   const entries =
     (direction === 'input' ? workflowInterface?.inputs : workflowInterface?.outputs) ?? [];
   if (entries.some((entry) => entry.id === trimmed && entry.id !== ownId)) return 'duplicate';
@@ -229,11 +234,41 @@ export interface InterfaceEditResult {
   edit?: InterfaceInputEdit;
 }
 
+/**
+ * The result of an edit of one side. The one place the chat-follows rule
+ * lives: an input id edit is reported (so the Playground chat binding follows
+ * it) unless another input still carries the id, in which case nothing the
+ * binding names went away.
+ */
+function editResult(
+  workflow: Workflow,
+  direction: InterfaceDirection,
+  next: WorkflowInterfaceEntry[],
+  edit?: InterfaceInputEdit
+): InterfaceEditResult {
+  const result: InterfaceEditResult = { interface: withSide(workflow, direction, next) };
+  if (edit && direction === 'input' && !next.some((entry) => entry.id === edit.id)) {
+    result.edit = edit;
+  }
+  return result;
+}
+
 function entriesOf(
   workflow: Workflow,
   direction: InterfaceDirection
 ): readonly WorkflowInterfaceEntry[] {
   return (direction === 'input' ? workflow.interface?.inputs : workflow.interface?.outputs) ?? [];
+}
+
+/**
+ * Where an entry is. `at` is the index the caller already has (the editor's
+ * cards, where an author may have typed an id twice); it counts when the entry
+ * there has this id. Otherwise the first entry with the id.
+ */
+function locate(entries: readonly WorkflowInterfaceEntry[], id: string, at?: number): number {
+  return at !== undefined && entries[at]?.id === id
+    ? at
+    : entries.findIndex((entry) => entry.id === id);
 }
 
 function withSide(
@@ -287,31 +322,101 @@ export function renameInterfaceEntry(
 ): InterfaceEditResult | null {
   const trimmed = newId.trim();
   const entries = entriesOf(workflow, direction);
-  if (!entries.some((entry) => entry.id === oldId)) return null;
+  const index = locate(entries, oldId);
+  if (index === -1) return null;
   if (validateInterfaceId(trimmed, direction, workflow.interface, oldId) !== null) return null;
-  const next = withSide(
+  return editResult(
     workflow,
     direction,
-    entries.map((entry) => (entry.id === oldId ? { ...entry, id: trimmed } : entry))
+    entries.map((entry, i) => (i === index ? { ...entry, id: trimmed } : entry)),
+    trimmed === oldId ? undefined : { kind: 'rename', id: oldId, to: trimmed }
   );
-  if (trimmed === oldId || direction !== 'input') return { interface: next };
-  return { interface: next, edit: { kind: 'rename', id: oldId, to: trimmed } };
 }
 
-/** Remove an entry from the interface. `null` when it does not exist. */
+/** Remove an entry from the interface. `null` when it does not exist. `at`: see {@link locate}. */
 export function removeInterfaceEntry(
   workflow: Workflow,
   direction: InterfaceDirection,
-  id: string
+  id: string,
+  at?: number
 ): InterfaceEditResult | null {
   const entries = entriesOf(workflow, direction);
-  if (!entries.some((entry) => entry.id === id)) return null;
-  const next = withSide(
+  const index = locate(entries, id, at);
+  if (index === -1) return null;
+  return editResult(
     workflow,
     direction,
-    entries.filter((entry) => entry.id !== id)
+    entries.filter((_, i) => i !== index),
+    { kind: 'remove', id }
   );
-  return direction === 'input'
-    ? { interface: next, edit: { kind: 'remove', id } }
-    : { interface: next };
+}
+
+/**
+ * Append an entry as it is, without checking its id: the interface editor's
+ * composer builds ids that are unique by construction, and an author may type
+ * any id into a card afterwards (the panel then says what is wrong with it).
+ */
+export function appendInterfaceEntry(
+  workflow: Workflow,
+  direction: InterfaceDirection,
+  entry: WorkflowInterfaceEntry
+): InterfaceEditResult {
+  return {
+    interface: withSide(workflow, direction, [...entriesOf(workflow, direction), entry])
+  };
+}
+
+/**
+ * Append a custom entry (an unbound draft is legal). `null` when the id is not
+ * usable.
+ */
+export function addInterfaceEntry(
+  workflow: Workflow,
+  direction: InterfaceDirection,
+  entry: WorkflowInterfaceEntry
+): InterfaceEditResult | null {
+  const trimmed = entry.id.trim();
+  if (validateInterfaceId(trimmed, direction, workflow.interface) !== null) return null;
+  return appendInterfaceEntry(workflow, direction, { ...entry, id: trimmed });
+}
+
+/**
+ * Merge a patch into one entry, as the interface editor's cards do. A patch
+ * that renames an input also reports the id edit, unless another input still
+ * carries the old id. `null` when the entry does not exist. `at`: see {@link locate}.
+ */
+export function patchInterfaceEntry(
+  workflow: Workflow,
+  direction: InterfaceDirection,
+  id: string,
+  patch: Partial<WorkflowInterfaceEntry>,
+  at?: number
+): InterfaceEditResult | null {
+  const entries = entriesOf(workflow, direction);
+  const index = locate(entries, id, at);
+  if (index === -1) return null;
+  return editResult(
+    workflow,
+    direction,
+    entries.map((entry, i) => (i === index ? applyEntryPatch(entry, patch) : entry)),
+    typeof patch.id === 'string' && patch.id !== id
+      ? { kind: 'rename', id, to: patch.id }
+      : undefined
+  );
+}
+
+/** Move an entry to a 0-based index within its side. `null` when it does not exist or the index is out of range. */
+export function moveInterfaceEntry(
+  workflow: Workflow,
+  direction: InterfaceDirection,
+  id: string,
+  toIndex: number,
+  at?: number
+): InterfaceEditResult | null {
+  const list = [...entriesOf(workflow, direction)];
+  const from = locate(list, id, at);
+  if (from === -1 || toIndex < 0 || toIndex >= list.length) return null;
+  const [entry] = list.splice(from, 1);
+  list.splice(toIndex, 0, entry);
+  return { interface: withSide(workflow, direction, list) };
 }

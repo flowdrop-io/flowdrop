@@ -42,6 +42,33 @@ export type {
   CanvasZoomToCommand,
   CanvasPanToCommand,
   CanvasResetViewCommand,
+  InterfaceSide,
+  InterfaceField,
+  InterfaceListCommand,
+  InterfaceExposeCommand,
+  InterfaceAddCommand,
+  InterfaceRemoveCommand,
+  InterfaceRenameCommand,
+  InterfaceBindCommand,
+  InterfaceSetCommand,
+  InterfacePullCommand,
+  InterfaceMoveCommand,
+  PortsListCommand,
+  PortsExposureCommand,
+  PortsMoveCommand,
+  DuplicateNodeCommand,
+  WorkflowGetCommand,
+  WorkflowSetCommand,
+  PlaygroundGetCommand,
+  PlaygroundChatEdit,
+  PlaygroundChatCommand,
+  InterfaceEntryDescription,
+  InterfaceListResultData,
+  PortStateDescription,
+  PortsListResultData,
+  DuplicateNodeResultData,
+  WorkflowGetResultData,
+  PlaygroundGetResultData,
   Command,
   ParseResult,
   CommandErrorCode,
@@ -79,15 +106,26 @@ export { parseCommand } from './parser.js';
 // Executor
 export { executeCommand, toShortId, toShortTypeId, resolveNode, COMMAND_HELP } from './executor.js';
 
-// Session commands (editor Console only; not part of the Command union)
+// The editor Console's own commands: session, mode, runs, save, export
+// (editor Console only; not part of the Command union)
 export {
-  parseSessionCommand,
-  executeSessionCommand,
-  isSessionLine,
-  SESSION_HELP,
+  parseConsoleLine,
+  executeConsoleCommand,
+  runConsoleLine,
+  isConsoleLine,
+  consoleHelp,
+  consoleRefusal,
+  testModeBlocker,
+  CONSOLE_HELP,
+  CONSOLE_VERBS,
+  type ConsoleCommand,
+  type ConsoleParseResult,
+  type ConsoleHost,
+  type ConsoleInstance,
+  type ConsoleHelpRow,
   type SessionCommand,
-  type SessionParseResult
-} from './session.js';
+  type EditorCommand
+} from './console.js';
 
 // Batch executor
 export { executeBatch } from './batch.js';

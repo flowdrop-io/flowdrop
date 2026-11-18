@@ -6,6 +6,7 @@ import {
   resolveNode
 } from '../../../src/lib/commands/executor.js';
 import type {
+  Command,
   CommandContext,
   CommandDispatch,
   AddNodeResultData,
@@ -24,6 +25,7 @@ import type {
   ConfigProperty
 } from '../../../src/lib/types/index.js';
 import { buildTypeMap } from '../../../src/lib/commands/types.js';
+import { parseCommand } from '../../../src/lib/commands/parser.js';
 
 // ============================================================================
 // Test Fixtures
@@ -84,6 +86,7 @@ function createMockDispatch(): CommandDispatch {
     addEdge: vi.fn(),
     removeEdge: vi.fn(),
     batchUpdate: vi.fn(),
+    editInterface: vi.fn(),
     undo: vi.fn().mockReturnValue(true),
     redo: vi.fn().mockReturnValue(true),
     startTransaction: vi.fn(),
@@ -3489,5 +3492,1232 @@ describe('executeCommand — locked editor', () => {
       createMockContext(workflow, [meta], dispatch)
     );
     expect(result.ok).toBe(true);
+  });
+});
+
+// ============================================================================
+// Editor parity: interface, ports, duplicate, workflow, playground
+// ============================================================================
+
+describe('editor parity commands', () => {
+  const llmType = createMockMetadata('agentspec.llm_node', 'LLM Node', {
+    inputs: [
+      { id: 'prompt', name: 'Prompt', type: 'input', dataType: 'string', required: true },
+      { id: 'ctx', name: 'Context', type: 'input', dataType: 'array', description: 'Extra rows' }
+    ],
+    outputs: [
+      { id: 'text', name: 'Text', type: 'output', dataType: 'string' },
+      { id: 'raw', name: 'Raw', type: 'output', dataType: 'object' },
+      { id: 'sticky', name: 'Sticky', type: 'output', dataType: 'string', exposureLocked: true }
+    ]
+  });
+  const echoType = createMockMetadata('agentspec.echo', 'Echo', {
+    inputs: [{ id: 'message', name: 'Message', type: 'input', dataType: 'string' }],
+    outputs: [{ id: 'message', name: 'Message', type: 'output', dataType: 'string' }]
+  });
+  const types = [llmType, echoType];
+  const LLM = 'agentspec.llm_node.1';
+  const ECHO = 'agentspec.echo.1';
+
+  const handle = (node: string, dir: 'input' | 'output', port: string) => `${node}-${dir}-${port}`;
+
+  function wf(extra: Partial<Workflow> = {}): Workflow {
+    return {
+      ...createMockWorkflow(
+        [createMockNode(LLM, llmType), createMockNode(ECHO, echoType)],
+        [
+          {
+            id: 'e1',
+            source: LLM,
+            target: ECHO,
+            sourceHandle: handle(LLM, 'output', 'text'),
+            targetHandle: handle(ECHO, 'input', 'message')
+          } as WorkflowEdge
+        ]
+      ),
+      ...extra
+    };
+  }
+
+  function setup(workflow: Workflow, extra: Partial<CommandContext> = {}) {
+    const dispatch = createMockDispatch();
+    dispatch.editInterface = vi.fn();
+    const context: CommandContext = {
+      ...createMockContext(workflow, types, dispatch),
+      ...extra
+    };
+    const run = (command: Command) => executeCommand(command, context);
+    return { dispatch, context, run };
+  }
+
+  const errorOf = (result: ReturnType<typeof executeCommand>) => {
+    expect(result.ok).toBe(false);
+    return result as Extract<typeof result, { ok: false }>;
+  };
+
+  const boundInput = (extra: Record<string, unknown> = {}) => ({
+    id: 'q',
+    dataType: 'string',
+    bindings: [{ nodeId: LLM, portId: 'prompt' }],
+    ...extra
+  });
+
+  // --------------------------------------------------------------------------
+  describe('interface list', () => {
+    it('reports entries with short node ids and the resolved status', () => {
+      const { run } = setup(
+        wf({
+          interface: {
+            inputs: [boundInput({ required: true, turn: 'message' })],
+            outputs: [{ id: 'free', dataType: 'string', bindings: [] }]
+          }
+        })
+      );
+      const result = run({ type: 'interface_list' });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const data =
+        result.data as import('../../../src/lib/commands/types.js').InterfaceListResultData;
+      expect(data.inputs[0]).toMatchObject({
+        id: 'q',
+        dataType: 'string',
+        required: true,
+        turn: 'message',
+        status: 'ok',
+        bindings: [{ nodeId: 'llm_node.1', port: 'prompt' }]
+      });
+      expect(data.outputs[0]).toMatchObject({ id: 'free', status: 'unbound', bindings: [] });
+      expect(result.message).toContain('q (string) -> llm_node.1:prompt');
+    });
+
+    it('says none for an empty interface', () => {
+      const result = setup(wf()).run({ type: 'interface_list' });
+      expect(result.ok && result.message).toContain('Inputs: none');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('interface expose', () => {
+    it('publishes an output port under its own id, taking type and name from the port', () => {
+      const { dispatch, run } = setup(wf());
+      const result = run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'raw' });
+      expect(result.ok).toBe(true);
+      expect(dispatch.editInterface).toHaveBeenCalledTimes(1);
+      const [next, edit] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(edit).toBeUndefined();
+      expect(next.outputs).toEqual([
+        expect.objectContaining({
+          id: 'raw',
+          dataType: 'object',
+          name: 'Raw',
+          bindings: [{ nodeId: LLM, portId: 'raw' }]
+        })
+      ]);
+      expect(next.inputs).toBeUndefined();
+    });
+
+    it('takes the id from `as`', () => {
+      const { dispatch, run } = setup(wf());
+      run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'prompt', id: 'question' });
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.inputs[0]).toMatchObject({ id: 'question', dataType: 'string' });
+    });
+
+    it('refuses a taken id and suggests `as`', () => {
+      const { dispatch, run } = setup(
+        wf({ interface: { outputs: [{ id: 'raw', dataType: 'string', bindings: [] }] } })
+      );
+      const err = errorOf(run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'raw' }));
+      expect(err.code).toBe('INVALID_ARGUMENT');
+      expect(err.error).toContain('as <id>');
+      expect(dispatch.editInterface).not.toHaveBeenCalled();
+    });
+
+    it('refuses an input that already has an incoming edge', () => {
+      const { dispatch, run } = setup(wf());
+      const err = errorOf(
+        run({ type: 'interface_expose', nodeId: 'echo.1', port: 'message', side: 'input' })
+      );
+      expect(err.error).toContain('incoming edge');
+      expect(dispatch.editInterface).not.toHaveBeenCalled();
+    });
+
+    it('asks which side when the port id exists on both', () => {
+      const { run } = setup(wf());
+      const err = errorOf(run({ type: 'interface_expose', nodeId: 'echo.1', port: 'message' }));
+      expect(err.error).toContain('both sides');
+      const ok = run({
+        type: 'interface_expose',
+        nodeId: 'echo.1',
+        port: 'message',
+        side: 'output'
+      });
+      expect(ok.ok).toBe(true);
+    });
+
+    it('refuses a port that is already published', () => {
+      const { run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      const err = errorOf(run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'prompt' }));
+      expect(err.error).toContain("already published as input 'q'");
+    });
+
+    it('refuses an unknown node and an unknown port', () => {
+      const { run } = setup(wf());
+      expect(errorOf(run({ type: 'interface_expose', nodeId: 'nope.1', port: 'x' })).code).toBe(
+        'NODE_NOT_FOUND'
+      );
+      expect(
+        errorOf(run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'nope' })).code
+      ).toBe('PORT_NOT_FOUND');
+    });
+
+    it('refuses a port hidden on the canvas', () => {
+      const hidden = createMockNode(LLM, llmType, {
+        data: {
+          label: 'LLM Node',
+          metadata: llmType,
+          config: { ports: { outputs: [{ id: 'raw', exposed: false }] } }
+        }
+      } as Partial<WorkflowNode>);
+      const { run } = setup({ ...wf(), nodes: [hidden, createMockNode(ECHO, echoType)] });
+      const err = errorOf(run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'raw' }));
+      expect(err.error).toContain('cannot be published');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('interface add / remove / rename', () => {
+    it('adds an unbound custom entry and says it is unbound', () => {
+      const { dispatch, run } = setup(wf());
+      const result = run({
+        type: 'interface_add',
+        side: 'input',
+        id: 'topic',
+        dataType: 'string'
+      });
+      expect(result.ok && result.message).toContain('unbound');
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.inputs).toEqual([{ id: 'topic', dataType: 'string', bindings: [] }]);
+    });
+
+    it('allows an entry with no data type and warns about an unknown one', () => {
+      const { run } = setup(wf());
+      const plain = run({ type: 'interface_add', side: 'output', id: 'o' });
+      expect(plain.ok).toBe(true);
+      const odd = run({ type: 'interface_add', side: 'output', id: 'p', dataType: 'strng' });
+      expect(odd.ok && odd.message).toContain('not a built-in data type');
+    });
+
+    it('refuses a duplicate or empty id, per side', () => {
+      const { run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      expect(errorOf(run({ type: 'interface_add', side: 'input', id: 'q' })).error).toContain(
+        'already taken'
+      );
+      expect(run({ type: 'interface_add', side: 'output', id: 'q' }).ok).toBe(true);
+      expect(errorOf(run({ type: 'interface_add', side: 'input', id: '  ' })).error).toContain(
+        'must not be empty'
+      );
+    });
+
+    it('removes an entry; removing an input reports the id edit for the chat binding', () => {
+      const { dispatch, run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      expect(run({ type: 'interface_remove', side: 'input', id: 'q' }).ok).toBe(true);
+      const [next, edit] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next).toEqual({ inputs: undefined, outputs: undefined });
+      expect(edit).toEqual({ kind: 'remove', id: 'q' });
+    });
+
+    it('names the existing ids when the entry is not found', () => {
+      const { run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      const err = errorOf(run({ type: 'interface_remove', side: 'input', id: 'zzz' }));
+      expect(err.error).toContain('q');
+    });
+
+    it('renames an entry and reports the rename edit for an input only', () => {
+      const { dispatch, run } = setup(
+        wf({
+          interface: {
+            inputs: [boundInput()],
+            outputs: [{ id: 'o', dataType: 'string', bindings: [] }]
+          }
+        })
+      );
+      run({ type: 'interface_rename', side: 'input', id: 'q', newId: 'question' });
+      run({ type: 'interface_rename', side: 'output', id: 'o', newId: 'out' });
+      const calls = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls[0][0].inputs[0].id).toBe('question');
+      expect(calls[0][1]).toEqual({ kind: 'rename', id: 'q', to: 'question' });
+      expect(calls[1][1]).toBeUndefined();
+    });
+
+    it('refuses to rename onto a taken id', () => {
+      const { run } = setup(
+        wf({
+          interface: {
+            inputs: [boundInput(), { id: 'r', dataType: 'string', bindings: [] }]
+          }
+        })
+      );
+      expect(
+        errorOf(run({ type: 'interface_rename', side: 'input', id: 'q', newId: 'r' })).error
+      ).toContain('already taken');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('interface bind / unbind', () => {
+    const draft = (dataType = '') =>
+      wf({ interface: { inputs: [{ id: 'q', dataType, bindings: [] }] } });
+
+    it('binds and fills an empty data type from the port', () => {
+      const { dispatch, run } = setup(draft());
+      const result = run({
+        type: 'interface_bind',
+        side: 'input',
+        id: 'q',
+        target: { nodeId: 'llm_node.1', port: 'prompt' }
+      });
+      expect(result.ok).toBe(true);
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.inputs[0]).toEqual({
+        id: 'q',
+        dataType: 'string',
+        bindings: [{ nodeId: LLM, portId: 'prompt' }]
+      });
+    });
+
+    it('keeps a declared type and only warns when the lane disagrees', () => {
+      const { dispatch, run } = setup(draft('number'));
+      const result = run({
+        type: 'interface_bind',
+        side: 'input',
+        id: 'q',
+        target: { nodeId: 'llm_node.1', port: 'prompt' }
+      });
+      expect(result.ok && result.message).toContain('declared number');
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.inputs[0].dataType).toBe('number');
+    });
+
+    it('warns when the input port already has an incoming edge', () => {
+      const { run } = setup(
+        wf({ interface: { inputs: [{ id: 'm', dataType: 'string', bindings: [] }] } })
+      );
+      const result = run({
+        type: 'interface_bind',
+        side: 'input',
+        id: 'm',
+        target: { nodeId: 'echo.1', port: 'message' }
+      });
+      expect(result.ok && result.message).toContain('incoming edge');
+    });
+
+    it('refuses a hidden port, an unknown port and an unknown node', () => {
+      const hidden = createMockNode(LLM, llmType, {
+        data: {
+          label: 'LLM Node',
+          metadata: llmType,
+          config: { ports: { inputs: [{ id: 'ctx', exposed: false }] } }
+        }
+      } as Partial<WorkflowNode>);
+      const { run } = setup({ ...draft(), nodes: [hidden, createMockNode(ECHO, echoType)] });
+      const bind = (nodeId: string, port: string) =>
+        run({ type: 'interface_bind', side: 'input', id: 'q', target: { nodeId, port } });
+      expect(errorOf(bind('llm_node.1', 'ctx')).error).toContain('hidden');
+      expect(errorOf(bind('llm_node.1', 'zzz')).code).toBe('PORT_NOT_FOUND');
+      expect(errorOf(bind('zzz.1', 'x')).code).toBe('NODE_NOT_FOUND');
+    });
+
+    it('unbinds', () => {
+      const { dispatch, run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      const result = run({ type: 'interface_bind', side: 'input', id: 'q', target: null });
+      expect(result.ok).toBe(true);
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.inputs[0].bindings).toEqual([]);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('interface set', () => {
+    const set = (field: string, value: string, side: 'input' | 'output' = 'input', extra = {}) =>
+      ({ type: 'interface_set', side, id: 'q', field, value, ...extra }) as Command;
+    const entry = (e: Record<string, unknown> = {}) =>
+      wf({
+        interface: {
+          inputs: [boundInput(e)],
+          outputs: [{ id: 'o', dataType: 'string', bindings: [] }]
+        }
+      });
+    const written = (d: CommandDispatch) =>
+      (d.editInterface as ReturnType<typeof vi.fn>).mock.calls[0][0];
+
+    it('sets name and description as text and clears them when empty', () => {
+      const { dispatch, run } = setup(entry({ name: 'Old', description: 'Old text' }));
+      expect(run(set('name', '"New name"')).ok).toBe(true);
+      expect(written(dispatch).inputs[0].name).toBe('New name');
+      for (const token of ['none', 'NONE', '""']) {
+        const cleared = setup(entry({ name: 'Old' }));
+        expect(cleared.run(set('name', token)).ok).toBe(true);
+        expect('name' in written(cleared.dispatch).inputs[0]).toBe(false);
+      }
+      const nulled = setup(entry({ description: 'x' }));
+      nulled.run(set('description', 'none'));
+      expect('description' in written(nulled.dispatch).inputs[0]).toBe(false);
+    });
+
+    it('never clears on a missing value, and the quoted word none stays text', () => {
+      const { dispatch, run } = setup(entry({ name: 'Old' }));
+      const refused = errorOf(run(set('name', '')));
+      expect(refused.code).toBe('INVALID_ARGUMENT');
+      expect(refused.error).toContain('none');
+      expect(dispatch.editInterface).not.toHaveBeenCalled();
+      run(set('name', '"none"'));
+      expect(written(dispatch).inputs[0].name).toBe('none');
+    });
+
+    it('writes nothing, and makes no undo step, when the value is already there', () => {
+      const { dispatch, run } = setup(entry({ name: 'Same' }));
+      const result = run(set('name', 'Same'));
+      expect(result.ok && result.message).toContain('already');
+      expect(dispatch.editInterface).not.toHaveBeenCalled();
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('keeps a bare number as text for a text field', () => {
+      const { dispatch, run } = setup(entry());
+      run(set('name', '42'));
+      expect(written(dispatch).inputs[0].name).toBe('42');
+    });
+
+    it('sets dataType, refuses to clear it and warns on an unknown one', () => {
+      const { dispatch, run } = setup(entry());
+      expect(run(set('dataType', 'number')).ok).toBe(true);
+      expect(written(dispatch).inputs[0].dataType).toBe('number');
+      expect(errorOf(run(set('dataType', 'none'))).error).toContain('cannot be cleared');
+      const odd = run(set('dataType', 'strng'));
+      expect(odd.ok && odd.message).toContain('not a built-in');
+    });
+
+    it('sets required on inputs only, and drops the key when false', () => {
+      const { dispatch, run } = setup(entry());
+      run(set('required', 'true'));
+      expect(written(dispatch).inputs[0].required).toBe(true);
+      const off = setup(entry({ required: true }));
+      off.run(set('required', 'false'));
+      expect('required' in written(off.dispatch).inputs[0]).toBe(false);
+      expect(errorOf(run(set('required', 'true', 'output', { id: 'o' }))).error).toContain(
+        'inputs only'
+      );
+      expect(errorOf(run(set('required', 'maybe'))).error).toContain('true or false');
+    });
+
+    it('parses the default like set does and clears it with none', () => {
+      const { dispatch, run } = setup(entry());
+      run(set('default', '{"a":1}'));
+      expect(written(dispatch).inputs[0].defaultValue).toEqual({ a: 1 });
+      const cleared = setup(entry({ defaultValue: 5 }));
+      cleared.run(set('default', 'none'));
+      expect('defaultValue' in written(cleared.dispatch).inputs[0]).toBe(false);
+    });
+
+    it('takes examples as a list on inputs and refuses anything else', () => {
+      const { dispatch, run } = setup(entry());
+      run(set('examples', '["a","b"]'));
+      expect(written(dispatch).inputs[0].examples).toEqual(['a', 'b']);
+      expect(errorOf(run(set('examples', 'a'))).error).toContain('JSON list');
+      expect(errorOf(run(set('examples', '[1]', 'output', { id: 'o' }))).error).toContain(
+        'inputs only'
+      );
+    });
+
+    it('no longer sets the deprecated turn or limit', () => {
+      const { dispatch, run } = setup(entry());
+      for (const field of ['turn', 'limit']) {
+        expect(errorOf(run(set(field, 'message'))).error).toContain('Unknown field');
+      }
+      expect(dispatch.editInterface).not.toHaveBeenCalled();
+    });
+
+    it('accepts a """ block through the parser as a plain string', () => {
+      const { dispatch, run } = setup(entry());
+      const parsed = parseCommand('interface set input q:description """line 1\nline 2"""');
+      expect(parsed.ok).toBe(true);
+      if (parsed.ok) run(parsed.command);
+      expect(written(dispatch).inputs[0].description).toBe('line 1\nline 2');
+    });
+
+    it('refuses an unknown entry', () => {
+      const { run } = setup(entry());
+      expect(errorOf(run(set('name', 'x', 'input', { id: 'zzz' }))).code).toBe('INVALID_ARGUMENT');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('interface pull / move', () => {
+    it('pulls name, type, description and required from the bound port', () => {
+      const { dispatch, run } = setup(
+        wf({
+          interface: {
+            inputs: [
+              {
+                id: 'c',
+                name: 'Mine',
+                dataType: 'string',
+                bindings: [{ nodeId: LLM, portId: 'ctx' }]
+              }
+            ]
+          }
+        })
+      );
+      expect(run({ type: 'interface_pull', side: 'input', id: 'c' }).ok).toBe(true);
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.inputs[0]).toMatchObject({
+        id: 'c',
+        name: 'Context',
+        dataType: 'array',
+        description: 'Extra rows'
+      });
+    });
+
+    it('refuses to pull for an unbound entry', () => {
+      const { run } = setup(
+        wf({ interface: { inputs: [{ id: 'q', dataType: '', bindings: [] }] } })
+      );
+      expect(errorOf(run({ type: 'interface_pull', side: 'input', id: 'q' })).error).toContain(
+        'not bound'
+      );
+    });
+
+    it('moves an entry to a 1-based position and refuses an out-of-range one', () => {
+      const three = ['a', 'b', 'c'].map((id) => ({ id, dataType: 'string', bindings: [] }));
+      const { dispatch, run } = setup(wf({ interface: { inputs: three } }));
+      expect(run({ type: 'interface_move', side: 'input', id: 'c', position: 1 }).ok).toBe(true);
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.inputs.map((e: { id: string }) => e.id)).toEqual(['c', 'a', 'b']);
+      for (const position of [0, 4]) {
+        expect(
+          errorOf(run({ type: 'interface_move', side: 'input', id: 'a', position })).error
+        ).toContain('out of range');
+      }
+    });
+  });
+
+  describe('interface writes', () => {
+    it('always go through editInterface, so the chat binding follows an id edit', () => {
+      const { dispatch, run } = setup(wf());
+      run({ type: 'interface_add', side: 'input', id: 'q' });
+      expect(dispatch.editInterface).toHaveBeenCalledWith(
+        { inputs: [{ id: 'q', dataType: '', bindings: [] }], outputs: undefined },
+        undefined
+      );
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('without editInterface (a 2.18 dispatch), write through batchUpdate with the chat following', () => {
+      const { dispatch, run } = setup(
+        wf({
+          interface: { inputs: [{ id: 'q', dataType: 'string', bindings: [] }] },
+          playground: { chat: { message: 'q' } as never }
+        })
+      );
+      delete (dispatch as { editInterface?: unknown }).editInterface;
+      expect(run({ type: 'interface_rename', side: 'input', id: 'q', newId: 'question' }).ok).toBe(
+        true
+      );
+      const [update] = (dispatch.batchUpdate as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(update.interface.inputs[0].id).toBe('question');
+      expect(update.playground.chat.message).toBe('question');
+    });
+
+    it('report the chat edit for a rename or a removal unless another input keeps the id', () => {
+      const twins = wf({
+        interface: {
+          inputs: [
+            { id: 'q', dataType: 'string', bindings: [] },
+            { id: 'q', dataType: 'string', bindings: [] }
+          ]
+        }
+      });
+      const kept = setup(twins);
+      kept.run({ type: 'interface_remove', side: 'input', id: 'q' });
+      expect(
+        (kept.dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0][1]
+      ).toBeUndefined();
+      const gone = setup(
+        wf({ interface: { inputs: [{ id: 'q', dataType: 'string', bindings: [] }] } })
+      );
+      gone.run({ type: 'interface_remove', side: 'input', id: 'q' });
+      expect((gone.dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0][1]).toEqual({
+        kind: 'remove',
+        id: 'q'
+      });
+    });
+
+    it('refuse an id with whitespace, so every verb can address it', () => {
+      const { dispatch, run } = setup(
+        wf({ interface: { inputs: [{ id: 'q', dataType: 'string', bindings: [] }] } })
+      );
+      expect(
+        errorOf(run({ type: 'interface_add', side: 'input', id: 'my question' })).error
+      ).toContain('one word');
+      expect(
+        errorOf(run({ type: 'interface_rename', side: 'input', id: 'q', newId: 'my question' }))
+          .error
+      ).toContain('one word');
+      expect(dispatch.editInterface).not.toHaveBeenCalled();
+    });
+
+    it('make no write and no undo step when the edit changes nothing', () => {
+      const { dispatch, run } = setup(
+        wf({
+          interface: {
+            inputs: [
+              { id: 'a', dataType: 'string', bindings: [] },
+              { id: 'b', dataType: 'string', bindings: [{ nodeId: LLM, portId: 'prompt' }] }
+            ]
+          }
+        })
+      );
+      for (const command of [
+        { type: 'interface_rename', side: 'input', id: 'a', newId: 'a' },
+        { type: 'interface_bind', side: 'input', id: 'a', target: null },
+        { type: 'interface_bind', side: 'input', id: 'b', target: { nodeId: LLM, port: 'prompt' } },
+        { type: 'interface_move', side: 'input', id: 'a', position: 1 }
+      ] as Command[]) {
+        const result = run(command);
+        expect(result.ok && result.message).toMatch(/already/);
+      }
+      expect(dispatch.editInterface).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('locked editor', () => {
+    it('refuses every new mutation with LOCKED and still runs the reads', () => {
+      const { dispatch, run } = setup(wf({ playground: { chat: null } }), { isLocked: () => true });
+      const mutations: Command[] = [
+        { type: 'interface_expose', nodeId: 'llm_node.1', port: 'raw' },
+        { type: 'interface_add', side: 'input', id: 'q' },
+        { type: 'interface_remove', side: 'input', id: 'q' },
+        { type: 'interface_rename', side: 'input', id: 'q', newId: 'r' },
+        { type: 'interface_bind', side: 'input', id: 'q', target: null },
+        { type: 'interface_set', side: 'input', id: 'q', field: 'name', value: 'x' },
+        { type: 'interface_pull', side: 'input', id: 'q' },
+        { type: 'interface_move', side: 'input', id: 'q', position: 1 },
+        { type: 'ports_exposure', nodeId: 'llm_node.1', mode: 'hide' },
+        { type: 'ports_move', nodeId: 'llm_node.1', port: 'text', position: 1 },
+        { type: 'duplicate_node', nodeId: 'llm_node.1' },
+        { type: 'workflow_set', field: 'name', value: 'x' },
+        { type: 'playground_chat', edit: { kind: 'off' } }
+      ];
+      for (const command of mutations) {
+        const err = errorOf(run(command));
+        expect(err.code, command.type).toBe('LOCKED');
+      }
+      expect(dispatch.editInterface).not.toHaveBeenCalled();
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+      expect(dispatch.updateNode).not.toHaveBeenCalled();
+      expect(dispatch.addNode).not.toHaveBeenCalled();
+      for (const type of ['interface_list', 'workflow_get', 'playground_get'] as const) {
+        expect(run({ type }).ok, type).toBe(true);
+      }
+      expect(run({ type: 'ports_list', nodeId: 'llm_node.1' }).ok).toBe(true);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('ports', () => {
+    const configWritten = (d: CommandDispatch, call = 0) =>
+      (d.updateNode as ReturnType<typeof vi.fn>).mock.calls[call][1].data.config;
+
+    it('lists ports with exposure and the reason a shown port cannot be hidden', () => {
+      const { run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      const result = run({ type: 'ports_list', nodeId: 'llm_node.1' });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const ports = (
+        result.data as import('../../../src/lib/commands/types.js').PortsListResultData
+      ).ports;
+      const by = (side: string, id: string) => ports.find((p) => p.side === side && p.port === id);
+      expect(by('input', 'prompt')).toMatchObject({ exposed: true, hideBlock: 'published' });
+      expect(by('output', 'text')).toMatchObject({ exposed: true, hideBlock: 'wired' });
+      expect(by('output', 'sticky')).toMatchObject({ exposed: true, hideBlock: 'locked' });
+      expect(by('output', 'raw')).toMatchObject({ exposed: true });
+      expect(by('output', 'raw')?.hideBlock).toBeUndefined();
+    });
+
+    it('hides the unconnected ports of a node in one write and keeps the others', () => {
+      const { dispatch, run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      const result = run({ type: 'ports_exposure', nodeId: 'llm_node.1', mode: 'hide' });
+      expect(result.ok).toBe(true);
+      expect(dispatch.updateNode).toHaveBeenCalledTimes(1);
+      const config = configWritten(dispatch);
+      const hidden = [...(config.ports.inputs ?? []), ...(config.ports.outputs ?? [])]
+        .filter((e: { exposed?: boolean }) => e.exposed === false)
+        .map((e: { id: string }) => e.id);
+      // prompt is published, text is wired, sticky is locked: only ctx and raw go.
+      expect(hidden.sort()).toEqual(['ctx', 'raw']);
+      expect(config.model).toBe('gpt-4');
+    });
+
+    it('does not write when there is nothing to hide or show', () => {
+      const { dispatch, run } = setup(wf());
+      const show = run({ type: 'ports_exposure', nodeId: 'llm_node.1', mode: 'show' });
+      expect(show.ok && show.message).toContain('no hidden port');
+      expect(dispatch.updateNode).not.toHaveBeenCalled();
+    });
+
+    it('shows every hidden port and drops the `ports` key when no override is left', () => {
+      const node = createMockNode(LLM, llmType, {
+        data: {
+          label: 'LLM Node',
+          metadata: llmType,
+          config: {
+            model: 'gpt-4',
+            ports: {
+              inputs: [{ id: 'prompt' }, { id: 'ctx', exposed: false }],
+              outputs: [{ id: 'text' }, { id: 'raw', exposed: false }, { id: 'sticky' }]
+            }
+          }
+        }
+      } as Partial<WorkflowNode>);
+      const { dispatch, run } = setup({ ...wf(), nodes: [node, createMockNode(ECHO, echoType)] });
+      expect(run({ type: 'ports_exposure', nodeId: 'llm_node.1', mode: 'show' }).ok).toBe(true);
+      const config = configWritten(dispatch);
+      expect('ports' in config).toBe(false);
+      expect(config.model).toBe('gpt-4');
+    });
+
+    it('hides a single port', () => {
+      const { dispatch, run } = setup(wf());
+      const result = run({
+        type: 'ports_exposure',
+        nodeId: 'llm_node.1',
+        mode: 'hide',
+        port: 'raw'
+      });
+      expect(result.ok).toBe(true);
+      expect(configWritten(dispatch).ports.outputs).toContainEqual({ id: 'raw', exposed: false });
+    });
+
+    it('refuses to hide a wired, a published and a locked port, with the reason', () => {
+      const { dispatch, run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      const hide = (port: string) =>
+        errorOf(run({ type: 'ports_exposure', nodeId: 'llm_node.1', mode: 'hide', port }));
+      expect(hide('text').error).toContain('1 wire(s)');
+      expect(hide('prompt').error).toContain("published on the interface as 'q'");
+      expect(hide('sticky').error).toContain('always shown');
+      expect(dispatch.updateNode).not.toHaveBeenCalled();
+    });
+
+    it('treats an already hidden / already shown port as a no-op', () => {
+      const { dispatch, run } = setup(wf());
+      const shown = run({
+        type: 'ports_exposure',
+        nodeId: 'llm_node.1',
+        mode: 'show',
+        port: 'raw'
+      });
+      expect(shown.ok && shown.message).toContain('already shown');
+      expect(dispatch.updateNode).not.toHaveBeenCalled();
+    });
+
+    it('shows a single hidden port', () => {
+      const node = createMockNode(LLM, llmType, {
+        data: {
+          label: 'LLM Node',
+          metadata: llmType,
+          config: { ports: { outputs: [{ id: 'text' }, { id: 'raw', exposed: false }] } }
+        }
+      } as Partial<WorkflowNode>);
+      const { dispatch, run } = setup({ ...wf(), nodes: [node, createMockNode(ECHO, echoType)] });
+      expect(
+        run({ type: 'ports_exposure', nodeId: 'llm_node.1', mode: 'show', port: 'raw' }).ok
+      ).toBe(true);
+      expect('ports' in configWritten(dispatch)).toBe(false);
+    });
+
+    it('asks for the side when a port id exists on both', () => {
+      const { run } = setup(wf());
+      const err = errorOf(
+        run({ type: 'ports_exposure', nodeId: 'echo.1', mode: 'hide', port: 'message' })
+      );
+      expect(err.error).toContain('both sides');
+    });
+
+    it('reorders a port within its side, 1-based', () => {
+      const { dispatch, run } = setup(wf());
+      expect(
+        run({ type: 'ports_move', nodeId: 'llm_node.1', port: 'sticky', position: 1 }).ok
+      ).toBe(true);
+      expect(configWritten(dispatch).ports.outputs.map((e: { id: string }) => e.id)).toEqual([
+        'sticky',
+        'text',
+        'raw'
+      ]);
+      const bad = errorOf(
+        run({ type: 'ports_move', nodeId: 'llm_node.1', port: 'text', position: 9 })
+      );
+      expect(bad.error).toContain('out of range');
+    });
+
+    it('refuses an unknown node and an unknown port', () => {
+      const { run } = setup(wf());
+      expect(errorOf(run({ type: 'ports_list', nodeId: 'zzz.1' })).code).toBe('NODE_NOT_FOUND');
+      expect(
+        errorOf(run({ type: 'ports_move', nodeId: 'llm_node.1', port: 'zzz', position: 1 })).code
+      ).toBe('PORT_NOT_FOUND');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('duplicate', () => {
+    it('copies the node with its label, a cloned config and a free id, offset two grid cells', () => {
+      const { dispatch, run } = setup(wf());
+      const result = run({ type: 'duplicate_node', nodeId: 'llm_node.1' });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data).toMatchObject({ nodeId: 'llm_node.2', sourceNodeId: 'llm_node.1' });
+      const added = (dispatch.addNode as ReturnType<typeof vi.fn>).mock.calls[0][0] as WorkflowNode;
+      expect(added.id).toBe('agentspec.llm_node.2');
+      expect(added.position).toEqual({ x: 140, y: 140 });
+      expect(added.data.label).toBe('LLM Node');
+      expect(added.data.config).toEqual({ model: 'gpt-4', temperature: 0.7 });
+      const source = wf().nodes[0];
+      expect(added.data.config).not.toBe(source.data.config);
+    });
+
+    it('follows the editor grid setting', () => {
+      const { dispatch, run } = setup(wf(), { layoutGaps: { gapX: 120, gapY: 40, gridSize: 10 } });
+      run({ type: 'duplicate_node', nodeId: 'llm_node.1' });
+      const added = (dispatch.addNode as ReturnType<typeof vi.fn>).mock.calls[0][0] as WorkflowNode;
+      expect(added.position).toEqual({ x: 120, y: 120 });
+    });
+
+    it('refuses an unknown node', () => {
+      expect(errorOf(setup(wf()).run({ type: 'duplicate_node', nodeId: 'zzz.1' })).code).toBe(
+        'NODE_NOT_FOUND'
+      );
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('workflow', () => {
+    it('reads name, description, format, formats and custom settings', () => {
+      const { run } = setup(
+        wf({
+          description: 'About',
+          config: { owner: 'me' },
+          metadata: { format: 'agentspec' } as Workflow['metadata']
+        }),
+        { formatOptions: () => ['flowdrop', 'agentspec'] }
+      );
+      const result = run({ type: 'workflow_get' });
+      expect(result.ok && result.data).toEqual({
+        name: 'Test Workflow',
+        description: 'About',
+        format: 'agentspec',
+        formats: ['flowdrop', 'agentspec'],
+        config: { owner: 'me' }
+      });
+    });
+
+    it('sets the name and refuses an empty one', () => {
+      const { dispatch, run } = setup(wf());
+      run({ type: 'workflow_set', field: 'name', value: '  New  ' });
+      expect(dispatch.batchUpdate).toHaveBeenCalledWith({ name: 'New' });
+      const err = errorOf(run({ type: 'workflow_set', field: 'name', value: '   ' }));
+      expect(err.code).toBe('INVALID_ARGUMENT');
+      expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('stores an empty description', () => {
+      const { dispatch, run } = setup(wf({ description: 'x' }));
+      const result = run({ type: 'workflow_set', field: 'description', value: '' });
+      expect(result.ok && result.message).toContain('cleared');
+      expect(dispatch.batchUpdate).toHaveBeenCalledWith({ description: '' });
+    });
+
+    it('sets a registered format and warns about nodes that do not support it', () => {
+      const picky = createMockMetadata('agentspec.picky', 'Picky', { formats: ['flowdrop'] });
+      const base = wf();
+      const { dispatch, run } = setup(
+        { ...base, nodes: [...base.nodes, createMockNode('agentspec.picky.1', picky)] },
+        { formatOptions: () => ['flowdrop', 'agentspec'] }
+      );
+      const result = run({ type: 'workflow_set', field: 'format', value: 'agentspec' });
+      expect(result.ok && result.message).toContain('picky.1');
+      expect(dispatch.batchUpdate).toHaveBeenCalledWith({ metadata: { format: 'agentspec' } });
+    });
+
+    it('refuses an unknown format, a single-format editor and an editor that does not say', () => {
+      const set = (context: Partial<CommandContext>) =>
+        errorOf(setup(wf(), context).run({ type: 'workflow_set', field: 'format', value: 'zzz' }));
+      expect(set({ formatOptions: () => ['flowdrop', 'agentspec'] }).error).toContain('Formats:');
+      expect(set({ formatOptions: () => ['flowdrop'] }).error).toContain('single workflow format');
+      expect(set({}).error).toContain('does not say');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  describe('playground', () => {
+    const inputs = ['message', 'history', 'sid', 'mid'].map((id) => ({
+      id,
+      dataType: 'string',
+      bindings: []
+    }));
+    const withChat = (chat: unknown, extra: Partial<Workflow> = {}) =>
+      wf({
+        interface: { inputs },
+        playground: { chat: chat as never },
+        ...extra
+      });
+    const lastPlayground = (d: CommandDispatch) =>
+      (d.batchUpdate as ReturnType<typeof vi.fn>).mock.calls.at(-1)?.[0];
+
+    it('reports unavailable for a backend without Playground settings', () => {
+      const { dispatch, run } = setup(wf());
+      const read = run({ type: 'playground_get' });
+      expect(read.ok && read.data).toEqual({ available: false });
+      expect(errorOf(run({ type: 'playground_chat', edit: { kind: 'off' } })).error).toContain(
+        '2.7.0'
+      );
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('reads the binding with short node ids, its source and issues', () => {
+      const { run } = setup(
+        withChat({
+          message: 'message',
+          history: { input: 'history', limit: 6 },
+          session_id: null,
+          message_id: null,
+          replies: [{ node_id: LLM, port: 'text' }],
+          sub_workflow_replies: false
+        })
+      );
+      const result = run({ type: 'playground_get' });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.data).toMatchObject({
+        available: true,
+        source: 'settings',
+        chat: {
+          message: 'message',
+          history: { input: 'history', limit: 6 },
+          replies: [{ nodeId: 'llm_node.1', port: 'text' }]
+        },
+        issues: []
+      });
+    });
+
+    it('binds the message input, then unbinds it with none', () => {
+      const { dispatch, run } = setup(withChat(null));
+      const bound = run({
+        type: 'playground_chat',
+        edit: { kind: 'input', key: 'message', id: 'message' }
+      });
+      expect(bound.ok && bound.message).toContain("bound to 'message'");
+      expect(bound.ok && bound.message).toContain('no reply is');
+      expect(lastPlayground(dispatch).playground.chat).toMatchObject({ message: 'message' });
+      expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses an input the interface does not have, and one bound twice', () => {
+      const { run } = setup(
+        withChat({
+          message: 'message',
+          history: null,
+          session_id: null,
+          message_id: null,
+          replies: [],
+          sub_workflow_replies: false
+        })
+      );
+      expect(
+        errorOf(
+          run({ type: 'playground_chat', edit: { kind: 'input', key: 'session_id', id: 'zzz' } })
+        ).error
+      ).toContain('not an input of the interface');
+      expect(
+        errorOf(
+          run({
+            type: 'playground_chat',
+            edit: { kind: 'input', key: 'session_id', id: 'message' }
+          })
+        ).error
+      ).toContain('already bound');
+    });
+
+    it('binds history with a limit, defaulting to the current or 10, and sets the limit alone', () => {
+      const { dispatch, run } = setup(withChat(null));
+      run({ type: 'playground_chat', edit: { kind: 'input', key: 'history', id: 'history' } });
+      expect(lastPlayground(dispatch).playground.chat.history).toEqual({
+        input: 'history',
+        limit: 10
+      });
+      run({
+        type: 'playground_chat',
+        edit: { kind: 'input', key: 'history', id: 'history', limit: 4 }
+      });
+      expect(lastPlayground(dispatch).playground.chat.history.limit).toBe(4);
+      expect(
+        errorOf(
+          run({
+            type: 'playground_chat',
+            edit: { kind: 'input', key: 'history', id: 'history', limit: 0 }
+          })
+        ).error
+      ).toContain('at least 1');
+      expect(
+        errorOf(run({ type: 'playground_chat', edit: { kind: 'limit', limit: 3 } })).error
+      ).toContain('No history input');
+    });
+
+    it('adds and removes replies, checking the node and the output port', () => {
+      const { dispatch, run } = setup(withChat(null));
+      expect(
+        run({
+          type: 'playground_chat',
+          edit: { kind: 'reply', mode: 'add', nodeId: 'llm_node.1', port: 'text' }
+        }).ok
+      ).toBe(true);
+      expect(lastPlayground(dispatch).playground.chat.replies).toEqual([
+        { node_id: LLM, port: 'text' }
+      ]);
+      expect(
+        errorOf(
+          run({
+            type: 'playground_chat',
+            edit: { kind: 'reply', mode: 'add', nodeId: 'llm_node.1', port: 'zzz' }
+          })
+        ).code
+      ).toBe('PORT_NOT_FOUND');
+      expect(
+        errorOf(
+          run({
+            type: 'playground_chat',
+            edit: { kind: 'reply', mode: 'remove', nodeId: 'llm_node.1', port: 'text' }
+          })
+        ).error
+      ).toContain('not a reply');
+      expect(
+        errorOf(
+          run({
+            type: 'playground_chat',
+            edit: { kind: 'reply', mode: 'add', nodeId: 'zzz.1', port: 'text' }
+          })
+        ).code
+      ).toBe('NODE_NOT_FOUND');
+    });
+
+    it('removes a reply that is set', () => {
+      const { dispatch, run } = setup(
+        withChat({
+          message: null,
+          history: null,
+          session_id: null,
+          message_id: null,
+          replies: [{ node_id: LLM, port: 'text' }],
+          sub_workflow_replies: false
+        })
+      );
+      expect(
+        run({
+          type: 'playground_chat',
+          edit: { kind: 'reply', mode: 'remove', nodeId: 'llm_node.1', port: 'text' }
+        }).ok
+      ).toBe(true);
+      // a binding that binds nothing is stored as no chat
+      expect(lastPlayground(dispatch).playground.chat).toBeNull();
+    });
+
+    it('adds a reply only on a port the settings panel lists, as the UI does', () => {
+      const hidden = withChat(null);
+      const llmNode = hidden.nodes.find((n) => n.id === LLM) as WorkflowNode;
+      llmNode.data = {
+        ...llmNode.data,
+        config: { ports: { outputs: [{ id: 'raw', exposed: false }] } }
+      };
+      const { dispatch, run } = setup(hidden);
+      const refused = errorOf(
+        run({
+          type: 'playground_chat',
+          edit: { kind: 'reply', mode: 'add', nodeId: 'llm_node.1', port: 'raw' }
+        })
+      );
+      expect(refused.code).toBe('INVALID_ARGUMENT');
+      expect(refused.error).toContain('hidden');
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('removes a reply left on a node that was deleted', () => {
+      const { dispatch, run } = setup(
+        withChat({
+          message: null,
+          history: null,
+          session_id: null,
+          message_id: null,
+          replies: [{ node_id: 'agentspec.gone.3', port: 'out' }],
+          sub_workflow_replies: false
+        })
+      );
+      expect(
+        run({
+          type: 'playground_chat',
+          edit: { kind: 'reply', mode: 'remove', nodeId: 'gone.3', port: 'out' }
+        }).ok
+      ).toBe(true);
+      expect(lastPlayground(dispatch).playground.chat).toBeNull();
+    });
+
+    it('turns sub-workflow replies on and switches the chat off', () => {
+      const { dispatch, run } = setup(withChat(null));
+      run({ type: 'playground_chat', edit: { kind: 'sub_replies', on: true } });
+      expect(lastPlayground(dispatch).playground.chat.sub_workflow_replies).toBe(true);
+      const on = setup(withChat({ message: 'q', replies: [], sub_workflow_replies: true }));
+      on.run({ type: 'playground_chat', edit: { kind: 'off' } });
+      expect(lastPlayground(on.dispatch).playground.chat).toBeNull();
+    });
+
+    it('makes no write for an edit that changes nothing', () => {
+      const { dispatch, run } = setup(withChat(null));
+      const result = run({ type: 'playground_chat', edit: { kind: 'sub_replies', on: false } });
+      expect(result.ok && result.message).toContain('No change');
+      expect(dispatch.batchUpdate).not.toHaveBeenCalled();
+    });
+
+    it('moves deprecated turn marks into the settings and clears them from the interface', () => {
+      const marked = wf({
+        playground: { chat: null },
+        interface: {
+          inputs: [{ id: 'q', dataType: 'string', bindings: [], turn: 'message' }],
+          outputs: [
+            {
+              id: 'a',
+              dataType: 'string',
+              bindings: [{ nodeId: LLM, portId: 'text' }],
+              turn: 'reply'
+            }
+          ]
+        }
+      });
+      const { dispatch, run } = setup(marked);
+      expect(run({ type: 'playground_chat', edit: { kind: 'move_turns' } }).ok).toBe(true);
+      const update = lastPlayground(dispatch);
+      expect(update.playground.chat).toMatchObject({
+        message: 'q',
+        replies: [{ node_id: LLM, port: 'text' }]
+      });
+      expect('turn' in update.interface.inputs[0]).toBe(false);
+      expect('turn' in update.interface.outputs[0]).toBe(false);
+      expect(dispatch.batchUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('moves the marks along with the first edit, so clearing never falls back to them', () => {
+      const marked = wf({
+        playground: { chat: null },
+        interface: {
+          inputs: [{ id: 'q', dataType: 'string', bindings: [], turn: 'message' }]
+        }
+      });
+      const { dispatch, run } = setup(marked);
+      const result = run({ type: 'playground_chat', edit: { kind: 'off' } });
+      expect(result.ok && result.message).toContain('moved into the settings');
+      const update = lastPlayground(dispatch);
+      expect(update.playground.chat).toBeNull();
+      expect('turn' in update.interface.inputs[0]).toBe(false);
+    });
+
+    it('refuses move_turns when no mark declares a chat', () => {
+      const { run } = setup(withChat(null));
+      expect(
+        errorOf(run({ type: 'playground_chat', edit: { kind: 'move_turns' } })).error
+      ).toContain('nothing to move');
+    });
+  });
+
+  describe('help', () => {
+    it('lists the new commands', () => {
+      const result = executeCommand({ type: 'help' }, createMockContext(null, []));
+      const names =
+        (result.ok && (result.data as HelpResultData).commands.map((c) => c.name)) || [];
+      for (const name of ['interface', 'ports', 'duplicate', 'workflow', 'playground']) {
+        expect(names).toContain(name);
+      }
+      const one = executeCommand(
+        { type: 'help', command: 'interface' },
+        createMockContext(null, [])
+      );
+      expect(one.ok && (one.data as HelpResultData).commands.length).toBeGreaterThan(5);
+    });
+  });
+});
+
+describe('executeCommand — branch ports and integer config', () => {
+  it('says a gateway branch is not an interface or Ports port, and does not offer it as one', () => {
+    const gate = createMockMetadata('agentspec.gate', 'Gate', {
+      inputs: [{ id: 'in', name: 'In', type: 'input', dataType: 'string' }],
+      outputs: [{ id: 'done', name: 'Done', type: 'output', dataType: 'string' }]
+    });
+    const node = createMockNode('agentspec.gate.1', gate, {
+      data: { label: 'Gate', config: { branches: [{ name: 'yes' }] }, metadata: gate }
+    } as Partial<WorkflowNode>);
+    const dispatch = createMockDispatch();
+    const context = createMockContext(createMockWorkflow([node]), [gate], dispatch);
+    for (const command of [
+      { type: 'interface_expose', nodeId: 'gate.1', port: 'yes' },
+      { type: 'ports_exposure', nodeId: 'gate.1', mode: 'hide', port: 'yes' },
+      { type: 'ports_move', nodeId: 'gate.1', port: 'yes', position: 1 }
+    ] as Command[]) {
+      const result = executeCommand(command, context);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toContain('branch');
+        expect(result.error).not.toContain('Its outputs');
+      }
+    }
+    const unknown = executeCommand(
+      { type: 'ports_exposure', nodeId: 'gate.1', mode: 'hide', port: 'zzz' },
+      context
+    );
+    expect(unknown.ok).toBe(false);
+    if (!unknown.ok) {
+      expect(unknown.code).toBe('PORT_NOT_FOUND');
+      expect(unknown.error).toContain('done');
+      expect(unknown.error).not.toContain('yes');
+    }
+  });
+
+  it('checks an integer config type with Number.isInteger', () => {
+    const m = createMockMetadata('agentspec.count', 'Count', {
+      configSchema: {
+        type: 'object',
+        properties: {
+          n: { type: 'integer' },
+          many: { type: ['integer', 'null'] },
+          anything: { type: [] }
+        }
+      }
+    } as Partial<NodeMetadata>);
+    const node = createMockNode('agentspec.count.1', m, {
+      data: { label: 'Count', config: {}, metadata: m }
+    } as Partial<WorkflowNode>);
+    const context = createMockContext(createMockWorkflow([node]), [m]);
+    const warn = (key: string, value: string) => {
+      const result = executeCommand({ type: 'set_config', nodeId: 'count.1', key, value }, context);
+      expect(result.ok).toBe(true);
+      return result.ok
+        ? (result.data as import('../../../src/lib/commands/types.js').SetConfigResultData).warnings
+        : undefined;
+    };
+    expect(warn('n', '3')).toBeUndefined();
+    expect(warn('n', '1.5')?.[0]).toMatchObject({ type: 'type_mismatch', expectedType: 'integer' });
+    expect(warn('n', '1.5')?.[0].message).toContain('non-integer');
+    expect(warn('many', '2')).toBeUndefined();
+    expect(warn('many', 'null')).toBeUndefined();
+    expect(warn('many', '2.5')?.[0].type).toBe('type_mismatch');
+    // An empty `type` array is no usable type, as in the config form: any value.
+    expect(warn('anything', '{"a":1}')).toBeUndefined();
+    expect(warn('anything', '2.5')).toBeUndefined();
   });
 });

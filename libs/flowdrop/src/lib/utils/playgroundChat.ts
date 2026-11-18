@@ -24,6 +24,7 @@ import type {
   WorkflowInterfaceEntry,
   WorkflowPlayground
 } from '$lib/types/index.js';
+import type { PlaygroundChatInputKey } from '$lib/utils/workflowInterface.js';
 import {
   DEFAULT_HISTORY_TURN_LIMIT,
   WORKFLOW_INTERFACE_INPUT_TURNS,
@@ -207,6 +208,137 @@ export function withPlaygroundChat(
   delete rest.resolved;
   delete rest.source;
   return rest;
+}
+
+/** The binding in effect for the settings panel and the commands, and where it came from. */
+export interface PlaygroundBindingInEffect {
+  /** The stored binding, every key present; `null` = not set up. */
+  stored: PlaygroundChatBinding | null;
+  /** What the deprecated interface `turn` marks declare, when nothing is stored. */
+  turnChat: PlaygroundChatBinding | null;
+  /** Known `turn` marks left on the interface beside stored settings (ignored). */
+  leftoverTurns: boolean;
+  /** What the controls show: stored, else the marks, else an empty binding. */
+  chat: PlaygroundChatBinding;
+  source: 'settings' | 'interface_turn' | 'none';
+}
+
+/** The binding the settings panel shows (and the commands edit): stored, else the `turn` marks, else none. */
+export function playgroundBindingInEffect(
+  workflow: Pick<Workflow, 'interface' | 'playground'>
+): PlaygroundBindingInEffect {
+  const stored = workflow.playground?.chat
+    ? normalizePlaygroundChat(workflow.playground.chat)
+    : null;
+  const turnChat = stored === null ? interfaceTurnChat(workflow.interface) : null;
+  return {
+    stored,
+    turnChat,
+    leftoverTurns: stored !== null && hasKnownInterfaceTurns(workflow.interface),
+    chat: stored ?? turnChat ?? emptyPlaygroundChat(),
+    source: stored ? 'settings' : turnChat ? 'interface_turn' : 'none'
+  };
+}
+
+/** One edit of the chat binding (what the settings panel and the commands both make). */
+export type PlaygroundChatChange =
+  | {
+      kind: 'input';
+      key: PlaygroundChatInputKey;
+      /** The interface input to bind; `null` unbinds. */
+      id: string | null;
+      /** History only: how many past messages (default: the current limit, else the default). */
+      limit?: number;
+    }
+  | { kind: 'limit'; limit: number }
+  | { kind: 'reply'; mode: 'add' | 'remove'; reply: PlaygroundReplyPort }
+  | { kind: 'sub_replies'; on: boolean }
+  | { kind: 'off' }
+  /** Store the binding the deprecated `turn` marks declare and clear the marks. */
+  | { kind: 'move_turns' };
+
+/** A chat edit applied to a workflow. */
+export interface PlaygroundChatEditResult {
+  /** The next `playground` value. */
+  playground: WorkflowPlayground;
+  /** The binding after the edit (every key present). */
+  chat: PlaygroundChatBinding;
+  /**
+   * The interface with its deprecated `turn` marks removed. Present only when
+   * the edit moved them: any edit while marks are on the interface moves them
+   * too, or clearing the binding would fall back to them.
+   */
+  interface?: WorkflowInterface;
+}
+
+/**
+ * The one place a chat edit is made: the settings panel and the `playground
+ * chat` command both call it. `null` when the edit changes nothing (nothing to
+ * move, no history input to set a limit on, or the binding stays as it was),
+ * so callers make no write and no undo step.
+ */
+export function editPlaygroundChat(
+  workflow: Pick<Workflow, 'interface' | 'playground'>,
+  edit: PlaygroundChatChange
+): PlaygroundChatEditResult | null {
+  const { stored, turnChat, leftoverTurns, chat: base } = playgroundBindingInEffect(workflow);
+
+  let next: PlaygroundChatBinding;
+  switch (edit.kind) {
+    case 'move_turns':
+      if (turnChat === null || !isPlaygroundChatSet(turnChat) || workflow.interface === undefined) {
+        return null;
+      }
+      return {
+        playground: withPlaygroundChat(workflow.playground, turnChat),
+        chat: turnChat,
+        interface: withoutInterfaceTurns(workflow.interface)
+      };
+    case 'off':
+      next = emptyPlaygroundChat();
+      break;
+    case 'input':
+      next =
+        edit.key === 'history'
+          ? {
+              ...base,
+              history:
+                edit.id === null
+                  ? null
+                  : {
+                      input: edit.id,
+                      limit: edit.limit ?? base.history?.limit ?? DEFAULT_HISTORY_TURN_LIMIT
+                    }
+            }
+          : { ...base, [edit.key]: edit.id };
+      break;
+    case 'limit':
+      if (base.history === null) return null;
+      next = { ...base, history: { ...base.history, limit: edit.limit } };
+      break;
+    case 'reply': {
+      const others = base.replies.filter(
+        (r) => !(r.node_id === edit.reply.node_id && r.port === edit.reply.port)
+      );
+      next = {
+        ...base,
+        replies: edit.mode === 'add' ? [...others, edit.reply] : others
+      };
+      break;
+    }
+    case 'sub_replies':
+      next = { ...base, sub_workflow_replies: edit.on };
+      break;
+  }
+
+  const movesTurns = (turnChat !== null || leftoverTurns) && workflow.interface !== undefined;
+  const playground = withPlaygroundChat(workflow.playground, next);
+  if (!movesTurns && JSON.stringify(playground.chat) === JSON.stringify(stored)) return null;
+  return {
+    playground,
+    chat: next,
+    ...(movesTurns ? { interface: withoutInterfaceTurns(workflow.interface) } : {})
+  };
 }
 
 /**

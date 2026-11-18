@@ -9,6 +9,9 @@
 
 import type { NodeMetadata, Workflow, WorkflowNode, WorkflowEdge } from '../types/index.js';
 import type { PortMapping } from '../utils/nodeSwap.js';
+import type { InterfaceInputEdit } from '../utils/playgroundChat.js';
+import type { ResolvedInterfaceEntry } from '../utils/workflowInterface.js';
+import type { ExposureBlock } from '../utils/portExposure.js';
 import type { MeasuredCard } from '../layout/fromWorkflow.js';
 
 // ============================================================================
@@ -209,6 +212,162 @@ export interface CanvasResetViewCommand {
   type: 'canvas_reset_view';
 }
 
+/** Interface, port visibility, duplicate, workflow settings and Playground commands */
+
+/**
+ * The side of the workflow interface (and of a node) a command names: the one
+ * word for input or output, in the interface and ports commands alike.
+ */
+export type InterfaceSide = 'input' | 'output';
+
+/** Read the workflow interface: every input and output with its binding and status. */
+export interface InterfaceListCommand {
+  type: 'interface_list';
+}
+
+/** Publish a node port on the interface. The side is the port's own side. */
+export interface InterfaceExposeCommand {
+  type: 'interface_expose';
+  nodeId: string;
+  port: string;
+  /** Only needed when the node has a port of this id on both sides. */
+  side?: InterfaceSide;
+  /** The public id; default the one the editor's "Expose" action suggests. */
+  id?: string;
+}
+
+/** Add a custom, unbound entry. */
+export interface InterfaceAddCommand {
+  type: 'interface_add';
+  side: InterfaceSide;
+  id: string;
+  dataType?: string;
+}
+
+export interface InterfaceRemoveCommand {
+  type: 'interface_remove';
+  side: InterfaceSide;
+  id: string;
+}
+
+export interface InterfaceRenameCommand {
+  type: 'interface_rename';
+  side: InterfaceSide;
+  id: string;
+  newId: string;
+}
+
+/** Bind an entry to a node port, or (`target: null`) unbind it. */
+export interface InterfaceBindCommand {
+  type: 'interface_bind';
+  side: InterfaceSide;
+  id: string;
+  target: { nodeId: string; port: string } | null;
+}
+
+/** The entry fields `interface_set` writes. */
+export type InterfaceField =
+  | 'name'
+  | 'description'
+  | 'dataType'
+  | 'required'
+  | 'default'
+  | 'examples';
+
+export interface InterfaceSetCommand {
+  type: 'interface_set';
+  side: InterfaceSide;
+  id: string;
+  field: InterfaceField;
+  /**
+   * The raw token, parsed like `set_config` values. `none` or `""` clears an
+   * optional field; an empty string is refused (a missing value must never
+   * erase one).
+   */
+  value: string;
+}
+
+/** Copy name, type, description, required and default from the bound port. */
+export interface InterfacePullCommand {
+  type: 'interface_pull';
+  side: InterfaceSide;
+  id: string;
+}
+
+export interface InterfaceMoveCommand {
+  type: 'interface_move';
+  side: InterfaceSide;
+  id: string;
+  /** 1-based position within its side. */
+  position: number;
+}
+
+/** Read a node's ports with their side, exposure and why one cannot be hidden. */
+export interface PortsListCommand {
+  type: 'ports_list';
+  nodeId: string;
+}
+
+/** Hide or show ports. Without `port`: hide the unconnected ones / show every hidden one. */
+export interface PortsExposureCommand {
+  type: 'ports_exposure';
+  nodeId: string;
+  mode: 'hide' | 'show';
+  port?: string;
+  /** Only needed when the node has a port of this id on both sides. */
+  side?: InterfaceSide;
+}
+
+export interface PortsMoveCommand {
+  type: 'ports_move';
+  nodeId: string;
+  port: string;
+  /** Only needed when the node has a port of this id on both sides. */
+  side?: InterfaceSide;
+  /** 1-based position within the port's side. */
+  position: number;
+}
+
+export interface DuplicateNodeCommand {
+  type: 'duplicate_node';
+  nodeId: string;
+}
+
+export interface WorkflowGetCommand {
+  type: 'workflow_get';
+}
+
+export interface WorkflowSetCommand {
+  type: 'workflow_set';
+  field: 'name' | 'description' | 'format';
+  value: string;
+}
+
+export interface PlaygroundGetCommand {
+  type: 'playground_get';
+}
+
+/** One edit of the Playground chat binding. */
+export type PlaygroundChatEdit =
+  | {
+      kind: 'input';
+      key: 'message' | 'history' | 'session_id' | 'message_id';
+      /** The interface input to bind; `null` unbinds. */
+      id: string | null;
+      /** History only: how many past messages. */
+      limit?: number;
+    }
+  | { kind: 'limit'; limit: number }
+  | { kind: 'reply'; mode: 'add' | 'remove'; nodeId: string; port: string }
+  | { kind: 'sub_replies'; on: boolean }
+  | { kind: 'off' }
+  | { kind: 'move_turns' };
+
+export interface PlaygroundChatCommand {
+  type: 'playground_chat';
+  edit: PlaygroundChatEdit;
+}
+
 /** Discriminated union of all commands */
 export type Command =
   | AddNodeCommand
@@ -242,7 +401,24 @@ export type Command =
   | CanvasZoomOutCommand
   | CanvasZoomToCommand
   | CanvasPanToCommand
-  | CanvasResetViewCommand;
+  | CanvasResetViewCommand
+  | InterfaceListCommand
+  | InterfaceExposeCommand
+  | InterfaceAddCommand
+  | InterfaceRemoveCommand
+  | InterfaceRenameCommand
+  | InterfaceBindCommand
+  | InterfaceSetCommand
+  | InterfacePullCommand
+  | InterfaceMoveCommand
+  | PortsListCommand
+  | PortsExposureCommand
+  | PortsMoveCommand
+  | DuplicateNodeCommand
+  | WorkflowGetCommand
+  | WorkflowSetCommand
+  | PlaygroundGetCommand
+  | PlaygroundChatCommand;
 
 // ============================================================================
 // Parse Result
@@ -282,9 +458,13 @@ export type CommandErrorCode =
   | 'CONFIG_VALIDATION_ERROR'
   | 'UNDO_UNAVAILABLE'
   | 'REDO_UNAVAILABLE'
-  /** A Console `session` command refused: busy, wrong input mode, nothing to act on. */
+  /** A Console command (`session`, `mode`, `runs`, `save`, `export`) refused: busy, not available, nothing to act on. */
+  | 'CONSOLE_REFUSED'
+  /** A Console command reached the backend or the editor and it failed. */
+  | 'CONSOLE_FAILED'
+  /** `runCommand`'s answer to a `session` line, as in 2.18. Other Console lines get `CONSOLE_REFUSED`. */
   | 'SESSION_REFUSED'
-  /** A Console `session` command reached the backend and it failed. */
+  /** @deprecated Released in 2.18.0; no longer returned. Use `CONSOLE_FAILED`. */
   | 'SESSION_FAILED';
 
 // ============================================================================
@@ -473,6 +653,80 @@ export interface SwapNodeResultData {
   configReset: string[];
 }
 
+/** One interface entry as `interface_list` reports it. */
+export interface InterfaceEntryDescription {
+  id: string;
+  name?: string;
+  description?: string;
+  dataType: string;
+  required?: boolean;
+  defaultValue?: unknown;
+  examples?: unknown[];
+  /** The deprecated chat `turn` mark, read-only here (`playground_chat` is where the binding lives). */
+  turn?: string;
+  limit?: number;
+  bindings: Array<{ nodeId: string; port: string }>;
+  status: ResolvedInterfaceEntry['status'];
+}
+
+/** Result data for interface_list */
+export interface InterfaceListResultData {
+  inputs: InterfaceEntryDescription[];
+  outputs: InterfaceEntryDescription[];
+}
+
+/** One port as `ports_list` reports it. */
+export interface PortStateDescription {
+  port: string;
+  name: string;
+  side: InterfaceSide;
+  dataType: string;
+  exposed: boolean;
+  /** Why an exposed port cannot be hidden. */
+  hideBlock?: ExposureBlock['kind'];
+}
+
+/** Result data for ports_list */
+export interface PortsListResultData {
+  nodeId: string;
+  ports: PortStateDescription[];
+}
+
+/** Result data for duplicate_node */
+export interface DuplicateNodeResultData {
+  nodeId: string;
+  sourceNodeId: string;
+  position: { x: number; y: number };
+}
+
+/** Result data for workflow_get */
+export interface WorkflowGetResultData {
+  name: string;
+  description: string;
+  format: string;
+  /** Formats this editor registers, when it says. */
+  formats?: string[];
+  /** The host's custom workflow settings (read-only here). */
+  config: Record<string, unknown>;
+}
+
+/** Result data for playground_get */
+export interface PlaygroundGetResultData {
+  /** False for a backend before FlowDrop 2.7.0: it has no Playground settings. */
+  available: boolean;
+  /** Where the binding in effect comes from. */
+  source?: 'settings' | 'interface_turn' | 'none';
+  chat?: {
+    message: string | null;
+    history: { input: string; limit: number } | null;
+    session_id: string | null;
+    message_id: string | null;
+    replies: Array<{ nodeId: string; port: string }>;
+    sub_workflow_replies: boolean;
+  };
+  issues?: string[];
+}
+
 /** Result data types union for typed access */
 export type CommandResultData =
   | AddNodeResultData
@@ -486,7 +740,12 @@ export type CommandResultData =
   | SetConfigResultData
   | HelpResultData
   | SwapNodeResultData
-  | LayoutResultData;
+  | LayoutResultData
+  | InterfaceListResultData
+  | PortsListResultData
+  | DuplicateNodeResultData
+  | WorkflowGetResultData
+  | PlaygroundGetResultData;
 
 /** Successful command result */
 export interface CommandResultOk {
@@ -543,7 +802,24 @@ export interface CommandDispatch {
   updateNode(nodeId: string, updates: Partial<Pick<WorkflowNode, 'data' | 'position'>>): void;
   addEdge(edge: WorkflowEdge): void;
   removeEdge(edgeId: string): void;
-  batchUpdate(updates: { nodes?: WorkflowNode[]; edges?: WorkflowEdge[] }): void;
+  batchUpdate(updates: {
+    nodes?: WorkflowNode[];
+    edges?: WorkflowEdge[];
+    name?: string;
+    description?: string;
+    metadata?: Partial<Workflow['metadata']>;
+    config?: Record<string, unknown>;
+    interface?: Workflow['interface'];
+    playground?: Workflow['playground'];
+  }): void;
+  /**
+   * Replace the workflow interface in one undo step. `edit` names an input id
+   * that was renamed or removed, so the Playground chat binding follows it.
+   * Optional, so a dispatch written for 2.18 still compiles: without it the
+   * commands write the same result through `batchUpdate` (the interface and the
+   * followed chat binding together).
+   */
+  editInterface?: (next: Workflow['interface'], edit?: InterfaceInputEdit) => void;
   undo(): boolean;
   redo(): boolean;
   startTransaction(description: string): void;
@@ -594,6 +870,8 @@ export interface CommandContext {
    * Optional: without it node layout commands use the library defaults on a 20 px grid.
    */
   layoutGaps?: { gapX: number; gapY: number; gridSize: number };
+  /** The workflow formats this editor offers (registered and allowed by the host), for `workflow format`. */
+  formatOptions?(): string[];
 }
 
 // ============================================================================

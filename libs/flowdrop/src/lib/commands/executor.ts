@@ -63,141 +63,39 @@ import { computeAutoLayout } from '../adapters/agentspec/autoLayout.js';
 import { interfaceTagReserve } from '../utils/interfaceTags.js';
 import { normalizePlaygroundChat, withPlaygroundChat } from '../utils/playgroundChat.js';
 
-// ============================================================================
-// Internal Helpers
-// ============================================================================
+import {
+  toShortId,
+  toShortTypeId,
+  resolveNode,
+  listCapped,
+  nodeNotFoundMessage,
+  typeNotFoundMessage,
+  portNotFoundMessage,
+  configKeys,
+  parseConfigValue
+} from './helpers.js';
 
-/**
- * Convert an internal namespaced node ID to a DSL short ID.
- * "agentspec.llm_node.1" → "llm_node.1"
- * "llm_node.1" → "llm_node.1" (no namespace, unchanged)
- */
-export function toShortId(internalId: string): string {
-  // Node IDs are <namespace>.<typeId>.<number> or <typeId>.<number>
-  // The namespace is the first segment if there are 3+ dot-separated parts
-  // and the last segment is a number
-  const parts = internalId.split('.');
-  if (parts.length >= 3) {
-    const lastPart = parts[parts.length - 1];
-    if (/^\d+$/.test(lastPart)) {
-      // Strip the first segment (namespace)
-      return parts.slice(1).join('.');
-    }
-  }
-  return internalId;
-}
+export { toShortId, toShortTypeId, resolveNode };
 
-/**
- * Convert a namespaced type ID to a short type ID.
- * "agentspec.llm_node" → "llm_node"
- * "llm_node" → "llm_node" (no namespace, unchanged)
- */
-export function toShortTypeId(typeId: string): string {
-  const dotIndex = typeId.indexOf('.');
-  if (dotIndex !== -1) {
-    return typeId.substring(dotIndex + 1);
-  }
-  return typeId;
-}
-
-/**
- * Resolve a DSL short ID (e.g. "llm_node.1") to the actual workflow node.
- * Tries direct match first, then looks for a namespaced match.
- */
-export function resolveNode(shortId: string, nodes: WorkflowNode[]): WorkflowNode | undefined {
-  // Direct match
-  const direct = nodes.find((n) => n.id === shortId);
-  if (direct) return direct;
-
-  // Namespaced match: node ID ends with ".<shortId>"
-  return nodes.find((n) => n.id.endsWith(`.${shortId}`));
-}
-
-// ============================================================================
-// Teaching errors (D7 of the browser-agent plan)
-// ============================================================================
-//
-// A failed command names the valid alternatives, because for a browser agent
-// the error text is the only channel there is: an unknown node lists the
-// nodes, an unknown type points at list_types and names near misses, an
-// unknown port lists the node's ports, an unknown config key lists the keys.
-// Lists are capped so a large workflow cannot turn one error into a dump.
-
-const MAX_LISTED = 15;
-
-function listCapped(items: string[]): string {
-  if (items.length === 0) return 'none';
-  const shown = items.slice(0, MAX_LISTED);
-  const rest = items.length - shown.length;
-  return shown.join(', ') + (rest > 0 ? `, … and ${rest} more` : '');
-}
-
-/** Near misses for an unknown id: same prefix, or one contains the other. */
-function nearMisses(needle: string, haystack: string[]): string[] {
-  const n = needle.toLowerCase();
-  const stem = n.split(/[._-]/)[0];
-  return haystack
-    .filter((h) => {
-      const l = h.toLowerCase();
-      return l.includes(n) || n.includes(l) || (stem.length >= 3 && l.startsWith(stem));
-    })
-    .slice(0, 5);
-}
-
-function nodeNotFoundMessage(nodeId: string, nodes: WorkflowNode[]): string {
-  const ids = nodes.map((n) => toShortId(n.id));
-  return nodes.length === 0
-    ? `Node not found: ${nodeId}. The workflow has no nodes yet — add_node first.`
-    : `Node not found: ${nodeId}. Nodes in this workflow: ${listCapped(ids)}.`;
-}
-
-function typeNotFoundMessage(typeId: string, context: CommandContext): string {
-  const ids = context.nodeTypes.map((m) => toShortTypeId(m.node_type_id));
-  const near = nearMisses(typeId, ids);
-  const hint =
-    near.length > 0
-      ? ` Did you mean: ${near.join(', ')}?`
-      : ' Call list_types (or search_types) for the ids this editor accepts.';
-  return `Unknown node type: ${typeId}.${hint}`;
-}
-
-/** Every port id a node exposes in one direction, static and config-driven. */
-function portIds(node: WorkflowNode, direction: 'input' | 'output'): string[] {
-  const metadata = node.data?.metadata;
-  const config = node.data?.config;
-  if (direction === 'output') {
-    return [
-      ...(metadata?.outputs ?? []).map((p) => p.id),
-      ...((config?.branches as Branch[] | undefined) ?? []).map((b) => b.name),
-      ...((config?.dynamicOutputs as DynamicPort[] | undefined) ?? []).map((p) => p.name)
-    ];
-  }
-  return [
-    ...(metadata?.inputs ?? []).map((p) => p.id),
-    ...((config?.dynamicInputs as DynamicPort[] | undefined) ?? []).map((p) => p.name)
-  ];
-}
-
-function portNotFoundMessage(
-  node: WorkflowNode,
-  portId: string,
-  direction: 'input' | 'output'
-): string {
-  const short = toShortId(node.id);
-  const wanted = portIds(node, direction);
-  const other = portIds(node, direction === 'input' ? 'output' : 'input');
-  const otherWord = direction === 'input' ? 'outputs' : 'inputs';
-  return (
-    `Port '${portId}' not found on node ${short}. ` +
-    `Its ${direction}s: ${listCapped(wanted)}; its ${otherWord}: ${listCapped(other)}.`
-  );
-}
-
-function configKeys(node: WorkflowNode): string[] {
-  const schemaKeys = Object.keys(node.data?.metadata?.configSchema?.properties ?? {});
-  const valueKeys = Object.keys((node.data?.config as Record<string, unknown> | undefined) ?? {});
-  return Array.from(new Set([...schemaKeys, ...valueKeys]));
-}
+import {
+  executeInterfaceAdd,
+  executeInterfaceBind,
+  executeInterfaceExpose,
+  executeInterfaceList,
+  executeInterfaceMove,
+  executeInterfacePull,
+  executeInterfaceRemove,
+  executeInterfaceRename,
+  executeInterfaceSet
+} from './interfaceCommands.js';
+import { executePortsExposure, executePortsList, executePortsMove } from './portCommands.js';
+import {
+  executeDuplicateNode,
+  executePlaygroundChat,
+  executePlaygroundGet,
+  executeWorkflowGet,
+  executeWorkflowSet
+} from './workflowCommands.js';
 
 // ============================================================================
 // Describing types (shared by list_types, search_types, describe_type, get_config)
@@ -407,47 +305,6 @@ function executeRenameNode(
 }
 
 /**
- * Parse a raw value string into the appropriate JS type.
- * Priority: quoted string (preserved) > JSON > number > boolean > raw string
- */
-function parseConfigValue(raw: string): unknown {
-  // Double-quoted string — JSON-unescape so \n, \t, \\ etc. work
-  if (raw.startsWith('"') && raw.endsWith('"')) {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return raw.slice(1, -1);
-    }
-  }
-
-  // Single-quoted string — strip quotes (no escape processing)
-  if (raw.startsWith("'") && raw.endsWith("'")) {
-    return raw.slice(1, -1);
-  }
-
-  // Try JSON (arrays, objects, null)
-  if (raw.startsWith('[') || raw.startsWith('{') || raw === 'null') {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      // fall through
-    }
-  }
-
-  // Number
-  if (raw !== '' && !isNaN(Number(raw))) {
-    return Number(raw);
-  }
-
-  // Boolean
-  if (raw === 'true') return true;
-  if (raw === 'false') return false;
-
-  // Raw string
-  return raw;
-}
-
-/**
  * Validate a parsed config value against a ConfigProperty schema.
  * Returns an array of validation warnings (empty if valid or no schema).
  */
@@ -472,24 +329,35 @@ function validateConfigValue(
     }
   }
 
-  // Type validation. `type` is a type word, an array of them (e.g. ['string',
-  // 'boolean']), or absent; an empty array or no usable word puts no constraint
-  // on the value (R6.d).
+  // Type validation. `type` is a type word or a non-empty array of them (e.g.
+  // ['string', 'boolean']). No usable type word (absent, or an empty array,
+  // which the OpenAPI schema forbids) puts no constraint on the value, as in
+  // the config form, where such a field takes any JSON value (R6.d).
   const declaredTypes = (
     Array.isArray(property.type) ? property.type : property.type ? [property.type] : []
   ).filter((t: unknown) => typeof t === 'string') as string[];
   if (declaredTypes.length > 0) {
     const actualType = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
-    const expectedTypes: string[] = declaredTypes.map((t) => (t === 'integer' ? 'number' : t));
 
     // `null` is a value like any other (R6.i): it fails `type` unless the type
     // lists `null`. A JSON object is typeof 'object', so it matches 'object'.
+    // `integer` needs a whole number; any number matches `number`.
     const matches =
-      value === null ? typeAdmitsNull(property.type) : expectedTypes.includes(actualType);
+      value === null
+        ? typeAdmitsNull(property.type)
+        : declaredTypes.some(
+            (t) =>
+              t === actualType ||
+              (t === 'integer' && typeof value === 'number' && Number.isInteger(value))
+          );
     if (!matches) {
       warnings.push({
         type: 'type_mismatch',
-        message: `Expected type ${expectedTypes.map((t) => `'${t}'`).join(' or ')} but got '${actualType}'`,
+        message: `Expected type ${declaredTypes.map((t) => `'${t}'`).join(' or ')} but got ${
+          actualType === 'number' && declaredTypes.includes('integer')
+            ? 'a non-integer number'
+            : `'${actualType}'`
+        }`,
         expectedType: declaredTypes.join('|'),
         actualType
       });
@@ -1239,6 +1107,149 @@ export const COMMAND_HELP: Array<{
     syntax: 'clear [--all]',
     description:
       'Remove all nodes and edges; the interface stays, unbound. --all also removes the interface and the Playground chat settings'
+  },
+  {
+    name: 'duplicate',
+    syntax: 'duplicate <nodeId>',
+    description:
+      'Copy a node with its config, offset by two grid cells; wires and interface bindings are not copied'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface [list]',
+    description: 'List the interface inputs and outputs with type, binding and status'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface expose [input|output] <nodeId>:<port> [as <id>]',
+    description:
+      'Publish a port on the interface (id defaults to the port id; the side is the port side, say it only when the node has the port on both)'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface add <input|output> <id> [<dataType>]',
+    description: 'Add a custom entry, unbound. An id is one word, no spaces'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface remove <input|output> <id>',
+    description: 'Remove an entry'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface rename <input|output> <id> to <newId>',
+    description:
+      'Rename an entry (the new id is one word, no spaces); the Playground chat binding follows a renamed input'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface bind <input|output> <id> to <nodeId>:<port>',
+    description:
+      'Bind an entry to a port (an empty data type takes the port type; a lane mismatch is a warning)'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface unbind <input|output> <id>',
+    description: 'Unbind an entry'
+  },
+  {
+    name: 'interface',
+    syntax:
+      'interface set <input|output> <id>:<name|description|dataType|required|default|examples> <value>',
+    description:
+      'Set one entry field, values parsed like set. A value is required; none or "" clears an optional field. required and examples are inputs only'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface pull <input|output> <id>',
+    description: 'Copy name, type, description, required and default from the bound port'
+  },
+  {
+    name: 'interface',
+    syntax: 'interface move <input|output> <id> to <position>',
+    description: 'Reorder an entry; positions count from 1'
+  },
+  {
+    name: 'ports',
+    syntax: 'ports <nodeId>',
+    description: 'List a node ports: side, type, shown or hidden, and why one cannot be hidden'
+  },
+  {
+    name: 'ports',
+    syntax: 'ports hide|show <nodeId>',
+    description: 'Hide the unconnected ports of a node, or show all its hidden ones'
+  },
+  {
+    name: 'ports',
+    syntax: 'ports hide|show [input|output] <nodeId>:<port>',
+    description:
+      'Hide or show one port; a port with wires, an interface entry or a locked exposure cannot be hidden'
+  },
+  {
+    name: 'ports',
+    syntax: 'ports move [input|output] <nodeId>:<port> to <position>',
+    description: 'Reorder a port within its side; positions count from 1'
+  },
+  {
+    name: 'workflow',
+    syntax: 'workflow',
+    description: 'Show the workflow name, description, format and custom settings'
+  },
+  {
+    name: 'workflow',
+    syntax: 'workflow name <text>',
+    description: 'Set the workflow name (must not be empty)'
+  },
+  {
+    name: 'workflow',
+    syntax: 'workflow description <text>|none',
+    description:
+      'Set the workflow description; none or "" clears it. Without text it shows the workflow instead, it never clears'
+  },
+  {
+    name: 'workflow',
+    syntax: 'workflow format <id>',
+    description: 'Set the workflow format (warns about nodes that do not support it)'
+  },
+  {
+    name: 'playground',
+    syntax: 'playground',
+    description: 'Show the Playground chat binding: message, history, ids, replies'
+  },
+  {
+    name: 'playground',
+    syntax: 'playground chat message|session_id|message_id <input>|none',
+    description: 'Bind an interface input to a chat field, or unbind it'
+  },
+  {
+    name: 'playground',
+    syntax: 'playground chat history <input>|none [limit <n>]',
+    description: 'Bind the input that receives recent messages, with an optional limit'
+  },
+  {
+    name: 'playground',
+    syntax: 'playground chat limit <n>',
+    description: 'Set how many recent messages the history input gets'
+  },
+  {
+    name: 'playground',
+    syntax: 'playground chat reply add|remove <nodeId>:<port>',
+    description: 'Print a node output port as a chat reply, or stop'
+  },
+  {
+    name: 'playground',
+    syntax: 'playground chat sub_replies on|off',
+    description: 'Let sub-workflows print their own replies'
+  },
+  {
+    name: 'playground',
+    syntax: 'playground chat off',
+    description: 'Switch the chat off: unbind every input and reply'
+  },
+  {
+    name: 'playground',
+    syntax: 'playground chat move_turns',
+    description: 'Move deprecated interface turn marks into the Playground settings'
   },
   {
     name: 'canvas',
@@ -2016,6 +2027,40 @@ export function executeCommand(command: Command, context: CommandContext): Comma
       return executeCanvasPanTo(command, context);
     case 'canvas_reset_view':
       return executeCanvasResetView(context);
+    case 'interface_list':
+      return executeInterfaceList(context);
+    case 'interface_expose':
+      return executeInterfaceExpose(command, context);
+    case 'interface_add':
+      return executeInterfaceAdd(command, context);
+    case 'interface_remove':
+      return executeInterfaceRemove(command, context);
+    case 'interface_rename':
+      return executeInterfaceRename(command, context);
+    case 'interface_bind':
+      return executeInterfaceBind(command, context);
+    case 'interface_set':
+      return executeInterfaceSet(command, context);
+    case 'interface_pull':
+      return executeInterfacePull(command, context);
+    case 'interface_move':
+      return executeInterfaceMove(command, context);
+    case 'ports_list':
+      return executePortsList(command, context);
+    case 'ports_exposure':
+      return executePortsExposure(command, context);
+    case 'ports_move':
+      return executePortsMove(command, context);
+    case 'duplicate_node':
+      return executeDuplicateNode(command, context);
+    case 'workflow_get':
+      return executeWorkflowGet(context);
+    case 'workflow_set':
+      return executeWorkflowSet(command, context);
+    case 'playground_get':
+      return executePlaygroundGet(context);
+    case 'playground_chat':
+      return executePlaygroundChat(command, context);
     default: {
       const _exhaustive: never = command;
       return {

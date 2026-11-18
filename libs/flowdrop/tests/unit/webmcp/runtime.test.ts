@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createFlowDropInstance } from '../../../src/lib/stores/instanceContainer.svelte.js';
 import { createToolRuntime, buildHostToolDescriptors } from '../../../src/lib/webmcp/runtime.js';
+import { provideTestBlocker } from '../../../src/lib/stores/editorModeStore.svelte.js';
 import { resetSettings, updateSettings } from '../../../src/lib/stores/settingsStore.svelte.js';
 import type { NodeMetadata, Workflow } from '../../../src/lib/types/index.js';
 
@@ -67,13 +68,18 @@ describe('createToolRuntime', () => {
   it('answers UNKNOWN_TOOL for a host tool whose hook is missing', async () => {
     const { runtime } = setup();
     expect(parse(await runtime.runTool('save', {})).code).toBe('UNKNOWN_TOOL');
-    expect(runtime.hostTools).toEqual([]);
+    // Only the editor-mode tools, which need no hook.
+    expect(runtime.hostTools.map((t) => t.verb)).toEqual(['get_editor_mode', 'set_editor_mode']);
   });
 
   it('runs save through the hook once it is present', async () => {
     const onSave = vi.fn(async () => undefined);
     const { runtime } = setup({ hooks: { onSave } });
-    expect(runtime.hostTools.map((t) => t.verb)).toEqual(['save']);
+    expect(runtime.hostTools.map((t) => t.verb)).toEqual([
+      'save',
+      'get_editor_mode',
+      'set_editor_mode'
+    ]);
     const out = parse(await runtime.runTool('save', {}));
     expect(out.ok).toBe(true);
     expect(onSave).toHaveBeenCalledTimes(1);
@@ -265,5 +271,61 @@ describe('buildHostToolDescriptors', () => {
       ['run', false, true],
       ['run_status', true, false]
     ]);
+  });
+});
+
+describe('editor-mode tools', () => {
+  it('are left out when the runtime is built with editorModeTools: false (the Assistant)', async () => {
+    const instance = createFlowDropInstance({ id: 'no-mode-tools' });
+    instance.workflow.initialize(workflow());
+    const runtime = createToolRuntime({
+      instance,
+      nodeTypes: [],
+      approval: 'auto',
+      editorModeTools: false
+    });
+    expect(runtime.hostTools.map((t) => t.verb)).toEqual([]);
+    const out = parse(await runtime.runTool('set_editor_mode', { mode: 'test' }));
+    expect(out.code).toBe('UNKNOWN_TOOL');
+    expect(instance.editorMode.current).toBe('edit');
+  });
+
+  it('reports the mode and why Test is held back, and refuses Test with the reason', async () => {
+    const { runtime, instance } = setup();
+    const release = provideTestBlocker(instance.editorMode, () => 'Save the workflow first.');
+    expect(parse(await runtime.runTool('get_editor_mode', {}))).toMatchObject({
+      ok: true,
+      mode: 'edit',
+      testAvailable: false,
+      testUnavailableReason: 'Save the workflow first.'
+    });
+    const refused = parse(await runtime.runTool('set_editor_mode', { mode: 'test' }));
+    expect(refused).toMatchObject({ code: 'UNAVAILABLE', error: 'Save the workflow first.' });
+    expect(instance.editorMode.current).toBe('edit');
+    release();
+  });
+
+  it('switches mode without asking for approval', async () => {
+    const { runtime, instance } = setup();
+    provideTestBlocker(instance.editorMode, () => null);
+    expect(runtime.preview('set_editor_mode', { mode: 'test' })).toMatchObject({
+      mutating: false,
+      asks: false
+    });
+    expect(parse(await runtime.runTool('set_editor_mode', { mode: 'test' }))).toMatchObject({
+      ok: true,
+      mode: 'test'
+    });
+    expect(instance.editorMode.current).toBe('test');
+    expect(parse(await runtime.runTool('set_editor_mode', { mode: 'sideways' })).code).toBe(
+      'INVALID_ARGUMENTS'
+    );
+  });
+
+  it('says Test is unavailable when no editor provides the answer', async () => {
+    const { runtime } = setup();
+    expect(parse(await runtime.runTool('get_editor_mode', {}))).toMatchObject({
+      testAvailable: false
+    });
   });
 });

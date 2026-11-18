@@ -12,6 +12,8 @@ import {
   EXPOSED_COMMAND_TYPES,
   VIEW_COMMAND_TYPES,
   EXCLUDED_COMMAND_TYPES,
+  INSPECT_COMMAND_TYPES,
+  SPLIT_COMMAND_TYPES,
   COMPOSITE_VERBS
 } from '../../../src/lib/webmcp/descriptors.js';
 import { ToolArgumentError } from '../../../src/lib/webmcp/types.js';
@@ -65,7 +67,24 @@ const ALL_COMMAND_TYPES: Record<Command['type'], true> = {
   canvas_zoom_out: true,
   canvas_zoom_to: true,
   canvas_pan_to: true,
-  canvas_reset_view: true
+  canvas_reset_view: true,
+  interface_list: true,
+  interface_expose: true,
+  interface_add: true,
+  interface_remove: true,
+  interface_rename: true,
+  interface_bind: true,
+  interface_set: true,
+  interface_pull: true,
+  interface_move: true,
+  ports_list: true,
+  ports_exposure: true,
+  ports_move: true,
+  duplicate_node: true,
+  workflow_get: true,
+  workflow_set: true,
+  playground_get: true,
+  playground_chat: true
 };
 
 describe('D8 coverage', () => {
@@ -73,6 +92,8 @@ describe('D8 coverage', () => {
     const classified = new Set<string>([
       ...EXPOSED_COMMAND_TYPES,
       ...VIEW_COMMAND_TYPES,
+      ...INSPECT_COMMAND_TYPES,
+      ...SPLIT_COMMAND_TYPES,
       ...EXCLUDED_COMMAND_TYPES
     ]);
     for (const type of Object.keys(ALL_COMMAND_TYPES)) {
@@ -80,8 +101,25 @@ describe('D8 coverage', () => {
     }
     // And nothing is in two lists.
     expect(classified.size).toBe(
-      EXPOSED_COMMAND_TYPES.length + VIEW_COMMAND_TYPES.length + EXCLUDED_COMMAND_TYPES.length
+      EXPOSED_COMMAND_TYPES.length +
+        VIEW_COMMAND_TYPES.length +
+        INSPECT_COMMAND_TYPES.length +
+        SPLIT_COMMAND_TYPES.length +
+        EXCLUDED_COMMAND_TYPES.length
     );
+  });
+
+  it('keeps interface_pull, interface_move and ports_move out of WebMCP (Console only)', () => {
+    const verbs = buildToolDescriptors().map((d) => d.verb);
+    for (const type of ['interface_pull', 'interface_move', 'ports_move']) {
+      expect(EXCLUDED_COMMAND_TYPES as readonly string[]).toContain(type);
+      expect(verbs).not.toContain(type);
+    }
+    // The four reads are one tool.
+    for (const read of ['interface_list', 'ports_list', 'workflow_get', 'playground_get']) {
+      expect(verbs).not.toContain(read);
+    }
+    expect(verbs).toContain('inspect');
   });
 
   it('never exposes clear or help', () => {
@@ -90,7 +128,7 @@ describe('D8 coverage', () => {
     expect(verbs).not.toContain('help');
   });
 
-  it('builds one tool per exposed type plus view and batch', () => {
+  it('builds one tool per exposed type, then the composite tools', () => {
     const verbs = buildToolDescriptors().map((d) => d.verb);
     expect(verbs).toEqual([...EXPOSED_COMMAND_TYPES, ...COMPOSITE_VERBS]);
   });
@@ -110,6 +148,7 @@ describe('D8 coverage', () => {
       'describe_type',
       'get_config',
       'info',
+      'inspect',
       'inspect_node_layout',
       'list_edges',
       'list_nodes',
@@ -227,6 +266,107 @@ describe('validateToolArgs', () => {
 // ---------------------------------------------------------------------------
 // view + batch mapping
 // ---------------------------------------------------------------------------
+
+describe('editor-parity tools', () => {
+  it('inspect reads one of four things and needs a node only for ports', () => {
+    expect(run('inspect', { what: 'interface' })).toEqual([{ type: 'interface_list' }]);
+    expect(run('inspect', { what: 'workflow' })).toEqual([{ type: 'workflow_get' }]);
+    expect(run('inspect', { what: 'playground' })).toEqual([{ type: 'playground_get' }]);
+    expect(run('inspect', { what: 'ports', nodeId: 'a.1' })).toEqual([
+      { type: 'ports_list', nodeId: 'a.1' }
+    ]);
+    expect(() => run('inspect', { what: 'ports' })).toThrow(/nodeId is required/);
+    expect(() => run('inspect', { what: 'nodes' })).toThrow(/what: expected one of/);
+    expect(byVerb('inspect').readOnly).toBe(true);
+  });
+
+  it('never unbinds or clears by leaving an argument out', () => {
+    // interface_bind needs its target; unbinding is its own tool.
+    expect(() => run('interface_bind', { side: 'input', id: 'q' })).toThrow(/target is required/);
+    expect(run('interface_unbind', { side: 'input', id: 'q' })).toEqual([
+      { type: 'interface_bind', side: 'input', id: 'q', target: null }
+    ]);
+    // interface_set needs its value; an empty string is the explicit clear.
+    expect(() => run('interface_set', { side: 'input', id: 'q', field: 'name' })).toThrow(
+      /value is required/
+    );
+    expect(run('interface_set', { side: 'input', id: 'q', field: 'name', value: '' })).toEqual([
+      { type: 'interface_set', side: 'input', id: 'q', field: 'name', value: '""' }
+    ]);
+    // The chat: bind needs the input, a limit alone is nothing, unbinding is its own tool.
+    expect(() => run('playground_bind', { field: 'message' })).toThrow(/input is required/);
+    expect(() => run('playground_bind', { field: 'history', limit: 20 })).toThrow(
+      /input is required/
+    );
+    expect(() => run('playground_bind', { field: 'message', input: 'q', limit: 5 })).toThrow(
+      /limit applies only to field "history"/
+    );
+    expect(run('playground_unbind', { field: 'message' })).toEqual([
+      { type: 'playground_chat', edit: { kind: 'input', key: 'message', id: null } }
+    ]);
+    expect(run('playground_unbind', { field: 'all' })).toEqual([
+      { type: 'playground_chat', edit: { kind: 'off' } }
+    ]);
+    expect(() => run('playground_reply', { nodeId: 'a.1', port: 'text' })).toThrow(
+      /on is required/
+    );
+  });
+
+  it('no longer offers turn or limit on interface_set', () => {
+    for (const field of ['turn', 'limit']) {
+      expect(() => run('interface_set', { side: 'input', id: 'q', field, value: 'x' })).toThrow(
+        /field: expected one of/
+      );
+    }
+  });
+
+  it('keeps a typed interface_set value typed (a string "true" stays a string)', () => {
+    const [command] = run('interface_set', {
+      side: 'input',
+      id: 'q',
+      field: 'default',
+      value: 'true'
+    });
+    expect(command).toMatchObject({ value: '"true"' });
+  });
+
+  it('rejects a bad side and field', () => {
+    expect(() => run('interface_add', { side: 'up', id: 'q' })).toThrow(/side: expected one of/);
+    expect(() =>
+      run('interface_set', { side: 'input', id: 'q', field: 'colour', value: 1 })
+    ).toThrow(/field: expected one of/);
+  });
+
+  it('names the sides `side`, never `direction`, in every interface and ports tool', () => {
+    for (const verb of [
+      'interface_expose',
+      'interface_add',
+      'interface_remove',
+      'interface_rename'
+    ]) {
+      const props = Object.keys(byVerb(verb).inputSchema.properties ?? {});
+      expect(props, verb).toContain('side');
+      expect(props, verb).not.toContain('direction');
+    }
+  });
+
+  it('runs inside a batch, the new composite tools included', () => {
+    const commands = run('batch', {
+      commands: [
+        { type: 'duplicate_node', nodeId: 'a.1' },
+        { type: 'interface_add', side: 'output', id: 'o' },
+        { type: 'interface_unbind', side: 'output', id: 'o' },
+        { type: 'playground_reply', nodeId: 'a.1', port: 'text', on: true }
+      ]
+    });
+    expect(commands.map((c) => c.type)).toEqual([
+      'duplicate_node',
+      'interface_add',
+      'interface_bind',
+      'playground_chat'
+    ]);
+  });
+});
 
 describe('view tool', () => {
   it('maps actions to the UI commands', () => {
@@ -347,6 +487,7 @@ function context(): { ctx: CommandContext; dispatch: CommandDispatch } {
     addEdge: vi.fn(),
     removeEdge: vi.fn(),
     batchUpdate: vi.fn(),
+    editInterface: vi.fn(),
     undo: vi.fn().mockReturnValue(true),
     redo: vi.fn().mockReturnValue(true),
     startTransaction: vi.fn(),
@@ -443,6 +584,107 @@ const PAIRS: Array<{ dsl: string; verb: string; args: Record<string, unknown> }>
     verb: 'beautify_node',
     args: { nodeId: 'compose.1', strategy: 'ports', dryRun: true }
   },
+  { dsl: 'interface list', verb: 'inspect', args: { what: 'interface' } },
+  {
+    dsl: 'interface expose llm_node.1:text as answer',
+    verb: 'interface_expose',
+    args: { nodeId: 'llm_node.1', port: 'text', id: 'answer' }
+  },
+  {
+    dsl: 'interface add input topic string',
+    verb: 'interface_add',
+    args: { side: 'input', id: 'topic', dataType: 'string' }
+  },
+  {
+    dsl: 'interface remove output a',
+    verb: 'interface_remove',
+    args: { side: 'output', id: 'a' }
+  },
+  {
+    dsl: 'interface rename input q to r',
+    verb: 'interface_rename',
+    args: { side: 'input', id: 'q', newId: 'r' }
+  },
+  {
+    dsl: 'interface bind input q to llm_node.1:prompt',
+    verb: 'interface_bind',
+    args: { side: 'input', id: 'q', target: { nodeId: 'llm_node.1', port: 'prompt' } }
+  },
+  {
+    dsl: 'interface unbind input q',
+    verb: 'interface_unbind',
+    args: { side: 'input', id: 'q' }
+  },
+  {
+    dsl: 'interface set input q:description "Ask me"',
+    verb: 'interface_set',
+    args: { side: 'input', id: 'q', field: 'description', value: 'Ask me' }
+  },
+  {
+    dsl: 'interface set input q:required true',
+    verb: 'interface_set',
+    args: { side: 'input', id: 'q', field: 'required', value: true }
+  },
+  {
+    dsl: 'interface set input q:default 5',
+    verb: 'interface_set',
+    args: { side: 'input', id: 'q', field: 'default', value: 5 }
+  },
+  {
+    dsl: 'interface set input q:name ""',
+    verb: 'interface_set',
+    args: { side: 'input', id: 'q', field: 'name', value: '' }
+  },
+  { dsl: 'ports llm_node.1', verb: 'inspect', args: { what: 'ports', nodeId: 'llm_node.1' } },
+  {
+    dsl: 'ports hide llm_node.1',
+    verb: 'ports_exposure',
+    args: { nodeId: 'llm_node.1', mode: 'hide' }
+  },
+  {
+    dsl: 'ports show input llm_node.1:prompt',
+    verb: 'ports_exposure',
+    args: { nodeId: 'llm_node.1', mode: 'show', port: 'prompt', side: 'input' }
+  },
+  { dsl: 'duplicate llm_node.1', verb: 'duplicate_node', args: { nodeId: 'llm_node.1' } },
+  { dsl: 'workflow', verb: 'inspect', args: { what: 'workflow' } },
+  {
+    dsl: 'workflow name Renamed',
+    verb: 'workflow_set',
+    args: { field: 'name', value: 'Renamed' }
+  },
+  {
+    dsl: 'workflow description ""',
+    verb: 'workflow_set',
+    args: { field: 'description', value: '' }
+  },
+  { dsl: 'playground', verb: 'inspect', args: { what: 'playground' } },
+  {
+    dsl: 'playground chat message question',
+    verb: 'playground_bind',
+    args: { field: 'message', input: 'question' }
+  },
+  {
+    dsl: 'playground chat history past limit 5',
+    verb: 'playground_bind',
+    args: { field: 'history', input: 'past', limit: 5 }
+  },
+  {
+    dsl: 'playground chat session_id none',
+    verb: 'playground_unbind',
+    args: { field: 'session_id' }
+  },
+  {
+    dsl: 'playground chat reply add llm_node.1:text',
+    verb: 'playground_reply',
+    args: { nodeId: 'llm_node.1', port: 'text', on: true }
+  },
+  {
+    dsl: 'playground chat reply remove llm_node.1:text',
+    verb: 'playground_reply',
+    args: { nodeId: 'llm_node.1', port: 'text', on: false }
+  },
+  { dsl: 'playground chat off', verb: 'playground_unbind', args: { field: 'all' } },
   { dsl: 'select llm_node.1', verb: 'view', args: { action: 'select_node', nodeId: 'llm_node.1' } },
   { dsl: 'config llm_node.1', verb: 'view', args: { action: 'open_config', nodeId: 'llm_node.1' } },
   { dsl: 'canvas fitview', verb: 'view', args: { action: 'fit_view' } },
@@ -491,10 +733,41 @@ describe('describeCommand', () => {
         auto_layout: {},
         inspect_node_layout: { nodeId: 'a.1' },
         beautify_node: { nodeId: 'a.1', strategy: 'ports', dryRun: true, gapX: 120, gapY: 40 },
-        view: { action: 'fit_view' }
+        view: { action: 'fit_view' },
+        interface_expose: { nodeId: 'a.1', port: 'o' },
+        interface_add: { side: 'input', id: 'q' },
+        interface_remove: { side: 'input', id: 'q' },
+        interface_rename: { side: 'input', id: 'q', newId: 'r' },
+        interface_bind: { side: 'input', id: 'q', target: { nodeId: 'a.1', port: 'i' } },
+        interface_unbind: { side: 'input', id: 'q' },
+        interface_set: { side: 'input', id: 'q', field: 'name', value: 'x' },
+        inspect: { what: 'interface' },
+        ports_exposure: { nodeId: 'a.1', mode: 'hide' },
+        duplicate_node: { nodeId: 'a.1' },
+        workflow_set: { field: 'name', value: 'x' },
+        playground_bind: { field: 'message', input: 'q' },
+        playground_unbind: { field: 'all' },
+        playground_reply: { nodeId: 'a.1', port: 'o', on: true }
       };
       const [cmd] = d.toCommands(validateToolArgs(d.inputSchema, sample[d.verb] ?? {}));
       expect(describeCommand(cmd).length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('describeCommand for commands without a tool of their own', () => {
+  it('still describes the Console-only and folded commands', () => {
+    const commands: Command[] = [
+      { type: 'interface_pull', side: 'input', id: 'q' },
+      { type: 'interface_move', side: 'input', id: 'q', position: 2 },
+      { type: 'ports_move', nodeId: 'a.1', port: 'o', position: 1 },
+      { type: 'interface_list' },
+      { type: 'ports_list', nodeId: 'a.1' },
+      { type: 'workflow_get' },
+      { type: 'playground_get' },
+      { type: 'playground_chat', edit: { kind: 'sub_replies', on: true } },
+      { type: 'playground_chat', edit: { kind: 'move_turns' } }
+    ];
+    for (const command of commands) expect(describeCommand(command).length).toBeGreaterThan(0);
   });
 });

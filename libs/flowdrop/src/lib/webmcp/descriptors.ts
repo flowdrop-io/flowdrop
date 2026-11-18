@@ -17,7 +17,12 @@
  * @module webmcp/descriptors
  */
 
-import type { BeautifyNodeStrategy, Command } from '../commands/types.js';
+import type {
+  BeautifyNodeStrategy,
+  Command,
+  InterfaceField,
+  InterfaceSide
+} from '../commands/types.js';
 import type { Messages } from '../messages/types.js';
 import { isMutatingCommand, VIEW_COMMAND_TYPES } from '../chat/commandClassifier.js';
 import {
@@ -58,7 +63,16 @@ export const EXPOSED_COMMAND_TYPES = [
   'auto_layout',
   'beautify_layout',
   'inspect_node_layout',
-  'beautify_node'
+  'beautify_node',
+  'interface_expose',
+  'interface_add',
+  'interface_remove',
+  'interface_rename',
+  'interface_bind',
+  'interface_set',
+  'ports_exposure',
+  'duplicate_node',
+  'workflow_set'
 ] as const satisfies readonly Command['type'][];
 
 /**
@@ -69,18 +83,59 @@ export const EXPOSED_COMMAND_TYPES = [
 export { VIEW_COMMAND_TYPES };
 
 /**
+ * The read commands folded into the single `inspect` tool (its `what`
+ * argument): the interface, a node's ports, the workflow settings and the
+ * Playground chat binding.
+ */
+export const INSPECT_COMMAND_TYPES = [
+  'interface_list',
+  'ports_list',
+  'workflow_get',
+  'playground_get'
+] as const satisfies readonly Command['type'][];
+
+/**
+ * Command types reached only through tools that are not named after them:
+ * `playground_chat`, as `playground_bind`, `playground_unbind` and
+ * `playground_reply`. The chat's `sub_replies` switch and `move_turns`
+ * migration are not offered here (the Playground settings and the Console
+ * have them).
+ */
+export const SPLIT_COMMAND_TYPES = [
+  'playground_chat'
+] as const satisfies readonly Command['type'][];
+
+/**
  * Command types deliberately not exposed.
  * - `clear` wipes the whole workflow; an agent can delete nodes one by one and
  *   each deletion is gated.
  * - `help` describes the text DSL; the tool schemas are the help.
+ * - `interface_pull`, `interface_move` and `ports_move` are conveniences for a
+ *   person at the Console (copy fields from a port, reorder): an agent sets
+ *   the fields itself and order is cosmetic.
  */
 export const EXCLUDED_COMMAND_TYPES = [
   'clear',
-  'help'
+  'help',
+  'interface_pull',
+  'interface_move',
+  'ports_move'
 ] as const satisfies readonly Command['type'][];
 
-/** Extra tool verbs that are not command types. */
-export const COMPOSITE_VERBS = ['view', 'batch'] as const;
+/**
+ * Extra tool verbs that are not one command type each, in the order they are
+ * registered after the single tools: `inspect` (four reads), `interface_unbind`,
+ * the three `playground_*` chat tools, then `view` and `batch`.
+ */
+export const COMPOSITE_VERBS = [
+  'inspect',
+  'interface_unbind',
+  'playground_bind',
+  'playground_unbind',
+  'playground_reply',
+  'view',
+  'batch'
+] as const;
 
 // ============================================================================
 // Schema fragments
@@ -98,6 +153,9 @@ const NODE_ID_DESCRIPTION =
  */
 const CALL_ORDER =
   ' Call describe_type before adding or configuring a type you have not seen; group several changes in one batch; save when done.';
+
+const portId: ToolSchemaProperty = { type: 'string' };
+const bareNodeId: ToolSchemaProperty = { type: 'string' };
 
 const nodeId = (description = NODE_ID_DESCRIPTION): ToolSchemaProperty => ({
   type: 'string',
@@ -151,6 +209,24 @@ const gapArg = (between: string): ToolSchemaProperty => ({
   multipleOf: LAYOUT_GRID,
   description: `Gap in px to keep between cards ${between}; a multiple of 20 (the layout grid, whatever the editor's grid size is). Default: the editor's layout gap setting.`
 });
+
+const sideArg: ToolSchemaProperty = { type: 'string', enum: ['input', 'output'] };
+
+const entryIdArg: ToolSchemaProperty = { type: 'string', description: 'Entry id.' };
+
+const INTERFACE_FIELDS = [
+  'name',
+  'description',
+  'dataType',
+  'required',
+  'default',
+  'examples'
+] as const satisfies readonly InterfaceField[];
+
+const CHAT_FIELDS = ['message', 'history', 'session_id', 'message_id'] as const;
+
+/** The raw `interface_set` token for a typed argument (an empty string clears the field). */
+const interfaceValue = (value: unknown): string => encodeConfigValue(value);
 
 // ============================================================================
 // Argument → Command
@@ -493,6 +569,300 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
     }),
     summarize: (c) =>
       `${c.dryRun ? 'Preview beautify of' : 'Beautify'} ${c.nodeId}${c.strategy ? ` (${c.strategy})` : ''}`
+  },
+  interface_expose: {
+    description:
+      'Publish a node port on the interface. Refuses an input with an incoming edge, a hidden port and control flow.',
+    inputSchema: object(
+      {
+        nodeId: bareNodeId,
+        port: portId,
+        id: { type: 'string', description: 'Default: the port id.' },
+        side: { ...sideArg, description: 'Only if the port exists on both sides.' }
+      },
+      ['nodeId', 'port']
+    ),
+    build: (a) => ({
+      type: 'interface_expose',
+      nodeId: a.nodeId as string,
+      port: a.port as string,
+      ...(a.id !== undefined ? { id: a.id as string } : {}),
+      ...(a.side ? { side: a.side as InterfaceSide } : {})
+    }),
+    summarize: (c) => `Publish ${c.nodeId}:${c.port} on the interface${c.id ? ` as ${c.id}` : ''}`
+  },
+  interface_add: {
+    description: 'Add an unbound interface entry (a one-word id); bind it with interface_bind.',
+    inputSchema: object(
+      {
+        side: sideArg,
+        id: { type: 'string', description: 'One word.' },
+        dataType: { type: 'string' }
+      },
+      ['side', 'id']
+    ),
+    build: (a) => ({
+      type: 'interface_add',
+      side: a.side as InterfaceSide,
+      id: a.id as string,
+      ...(a.dataType !== undefined ? { dataType: a.dataType as string } : {})
+    }),
+    summarize: (c) => `Add interface ${c.side} ${c.id}`
+  },
+  interface_remove: {
+    description: 'Remove an interface entry.',
+    inputSchema: object({ side: sideArg, id: entryIdArg }, ['side', 'id']),
+    build: (a) => ({
+      type: 'interface_remove',
+      side: a.side as InterfaceSide,
+      id: a.id as string
+    }),
+    summarize: (c) => `Remove interface ${c.side} ${c.id}`
+  },
+  interface_rename: {
+    description:
+      'Rename an interface entry (breaks callers of the old id; the chat binding follows).',
+    inputSchema: object(
+      {
+        side: sideArg,
+        id: entryIdArg,
+        newId: { type: 'string', description: 'One word.' }
+      },
+      ['side', 'id', 'newId']
+    ),
+    build: (a) => ({
+      type: 'interface_rename',
+      side: a.side as InterfaceSide,
+      id: a.id as string,
+      newId: a.newId as string
+    }),
+    summarize: (c) => `Rename interface ${c.side} ${c.id} to ${c.newId}`
+  },
+  interface_bind: {
+    description:
+      "Bind an interface entry to a node port (an empty data type takes the port's; a mismatch warns).",
+    inputSchema: object(
+      {
+        side: sideArg,
+        id: entryIdArg,
+        target: {
+          type: 'object',
+          properties: { nodeId: bareNodeId, port: portId },
+          required: ['nodeId', 'port'],
+          additionalProperties: false
+        }
+      },
+      ['side', 'id', 'target']
+    ),
+    build: (a) => {
+      const t = a.target as { nodeId: string; port: string };
+      return {
+        type: 'interface_bind',
+        side: a.side as InterfaceSide,
+        id: a.id as string,
+        target: { nodeId: t.nodeId, port: t.port }
+      };
+    },
+    summarize: (c) =>
+      c.target
+        ? `Bind interface ${c.side} ${c.id} to ${c.target.nodeId}:${c.target.port}`
+        : `Unbind interface ${c.side} ${c.id}`
+  },
+  interface_set: {
+    description: 'Set one interface entry field; "" clears an optional one.',
+    inputSchema: object(
+      {
+        side: sideArg,
+        id: entryIdArg,
+        field: { type: 'string', enum: INTERFACE_FIELDS },
+        value: { anyOf: configValue.anyOf }
+      },
+      ['side', 'id', 'field', 'value']
+    ),
+    build: (a) => ({
+      type: 'interface_set',
+      side: a.side as InterfaceSide,
+      id: a.id as string,
+      field: a.field as InterfaceField,
+      value: interfaceValue(a.value)
+    }),
+    summarize: (c) =>
+      /^(none|"")$/i.test(c.value)
+        ? `Clear ${c.field} of interface ${c.side} ${c.id}`
+        : `Set ${c.field} of interface ${c.side} ${c.id} = ${c.value}`
+  },
+  ports_exposure: {
+    description:
+      'Hide or show a port; without `port`, all unconnected / all hidden ones. A wired, published or locked port cannot be hidden.',
+    inputSchema: object(
+      {
+        nodeId: bareNodeId,
+        mode: { type: 'string', enum: ['hide', 'show'] },
+        port: { type: 'string', description: 'Omit for the whole node.' },
+        side: { ...sideArg, description: 'Only if the port exists on both sides.' }
+      },
+      ['nodeId', 'mode']
+    ),
+    build: (a) => ({
+      type: 'ports_exposure',
+      nodeId: a.nodeId as string,
+      mode: a.mode as 'hide' | 'show',
+      ...(a.port !== undefined ? { port: a.port as string } : {}),
+      ...(a.side ? { side: a.side as InterfaceSide } : {})
+    }),
+    summarize: (c) =>
+      `${c.mode === 'hide' ? 'Hide' : 'Show'} ${c.port ? `port ${c.nodeId}:${c.port}` : `${c.mode === 'hide' ? 'unconnected' : 'hidden'} ports of ${c.nodeId}`}`
+  },
+  duplicate_node: {
+    description:
+      'Copy a node with its config, offset down-right; wires and interface bindings are not copied.',
+    inputSchema: object({ nodeId: nodeId('Node to copy.') }, ['nodeId']),
+    build: (a) => ({ type: 'duplicate_node', nodeId: a.nodeId as string }),
+    summarize: (c) => `Duplicate ${c.nodeId}`
+  },
+  workflow_set: {
+    description: 'Set the workflow name, description ("" clears it) or format.',
+    inputSchema: object(
+      {
+        field: { type: 'string', enum: ['name', 'description', 'format'] },
+        value: { type: 'string' }
+      },
+      ['field', 'value']
+    ),
+    build: (a) => ({
+      type: 'workflow_set',
+      field: a.field as 'name' | 'description' | 'format',
+      value: a.value as string
+    }),
+    summarize: (c) => `Set workflow ${c.field}${c.value === '' ? ' (clear)' : ` to ${q(c.value)}`}`
+  }
+};
+
+// ============================================================================
+// Tools that are not one command each
+// ============================================================================
+
+interface CompositeRecord {
+  description: string;
+  inputSchema: ToolInputSchema;
+  readOnly: boolean;
+  build: (args: Args) => Command;
+}
+
+/**
+ * `inspect` (four reads behind one `what`), `interface_unbind` and the
+ * `playground_*` chat tools. Each has required arguments, so a missing one is
+ * refused by the schema and never reads as "clear it".
+ */
+const COMPOSITES: Record<
+  Exclude<(typeof COMPOSITE_VERBS)[number], 'view' | 'batch'>,
+  CompositeRecord
+> = {
+  inspect: {
+    description:
+      'Read editor state: "interface" (entries, bindings), "ports" (of node nodeId), "workflow" (name, description, format) or "playground" (the chat binding).',
+    inputSchema: object(
+      {
+        what: { type: 'string', enum: ['interface', 'ports', 'workflow', 'playground'] },
+        nodeId: nodeId('The node, for what "ports".')
+      },
+      ['what']
+    ),
+    readOnly: true,
+    build: (a) => {
+      switch (a.what) {
+        case 'interface':
+          return { type: 'interface_list' };
+        case 'workflow':
+          return { type: 'workflow_get' };
+        case 'playground':
+          return { type: 'playground_get' };
+        default:
+          if (a.nodeId === undefined) {
+            throw new ToolArgumentError('nodeId is required for what "ports"');
+          }
+          return { type: 'ports_list', nodeId: a.nodeId as string };
+      }
+    }
+  },
+  interface_unbind: {
+    description: 'Unbind an interface entry from its port; the entry stays.',
+    inputSchema: object({ side: sideArg, id: entryIdArg }, ['side', 'id']),
+    readOnly: false,
+    build: (a) => ({
+      type: 'interface_bind',
+      side: a.side as InterfaceSide,
+      id: a.id as string,
+      target: null
+    })
+  },
+  playground_bind: {
+    description:
+      'Bind a chat field to an interface input; one input fills one field. history takes `limit`.',
+    inputSchema: object(
+      {
+        field: { type: 'string', enum: CHAT_FIELDS },
+        input: { type: 'string', description: 'Interface input id.' },
+        limit: {
+          type: 'integer',
+          minimum: 1,
+          description: 'History size; only with field "history".'
+        }
+      },
+      ['field', 'input']
+    ),
+    readOnly: false,
+    build: (a) => {
+      if (a.limit !== undefined && a.field !== 'history') {
+        throw new ToolArgumentError('limit applies only to field "history"');
+      }
+      return {
+        type: 'playground_chat',
+        edit: {
+          kind: 'input',
+          key: a.field as (typeof CHAT_FIELDS)[number],
+          id: a.input as string,
+          ...(typeof a.limit === 'number' ? { limit: a.limit } : {})
+        }
+      };
+    }
+  },
+  playground_unbind: {
+    description: 'Unbind a chat field, or with "all" switch the chat off.',
+    inputSchema: object({ field: { type: 'string', enum: [...CHAT_FIELDS, 'all'] } }, ['field']),
+    readOnly: false,
+    build: (a) => ({
+      type: 'playground_chat',
+      edit:
+        a.field === 'all'
+          ? { kind: 'off' }
+          : {
+              kind: 'input',
+              key: a.field as (typeof CHAT_FIELDS)[number],
+              id: null
+            }
+    })
+  },
+  playground_reply: {
+    description: 'Print a node output port as a chat reply (on: true) or stop (on: false).',
+    inputSchema: object(
+      {
+        nodeId: bareNodeId,
+        port: portId,
+        on: { type: 'boolean' }
+      },
+      ['nodeId', 'port', 'on']
+    ),
+    readOnly: false,
+    build: (a) => ({
+      type: 'playground_chat',
+      edit: {
+        kind: 'reply',
+        mode: a.on === true ? 'add' : 'remove',
+        nodeId: a.nodeId as string,
+        port: a.port as string
+      }
+    })
   }
 };
 
@@ -578,7 +948,10 @@ function buildViewCommand(args: Args): Command {
   }
 }
 
-const BATCH_ITEM_TYPES: readonly string[] = [...EXPOSED_COMMAND_TYPES, 'view'];
+const BATCH_ITEM_TYPES: readonly string[] = [
+  ...EXPOSED_COMMAND_TYPES,
+  ...COMPOSITE_VERBS.filter((verb) => verb !== 'batch')
+];
 
 const BATCH_SCHEMA: ToolInputSchema = object(
   {
@@ -607,6 +980,10 @@ function commandsForVerb(verb: string, args: Args, viewEnabled: boolean): Comman
   }
   if ((EXPOSED_COMMAND_TYPES as readonly string[]).includes(verb)) {
     const record = COMMANDS[verb as ExposedType];
+    return [record.build(validateToolArgs(record.inputSchema, args))];
+  }
+  if (Object.hasOwn(COMPOSITES, verb)) {
+    const record = COMPOSITES[verb as keyof typeof COMPOSITES];
     return [record.build(validateToolArgs(record.inputSchema, args))];
   }
   throw new ToolArgumentError(`unknown command type "${verb}"`);
@@ -654,6 +1031,19 @@ export function buildToolDescriptors(options: BuildDescriptorsOptions = {}): Too
     };
   });
 
+  const composites: ToolDescriptor[] = (
+    Object.keys(COMPOSITES) as Array<keyof typeof COMPOSITES>
+  ).map((verb) => {
+    const record = COMPOSITES[verb];
+    return {
+      verb,
+      description: record.description,
+      inputSchema: record.inputSchema,
+      readOnly: record.readOnly,
+      toCommands: (args) => [record.build(args)]
+    };
+  });
+
   const view: ToolDescriptor[] = viewEnabled
     ? [
         {
@@ -678,7 +1068,7 @@ export function buildToolDescriptors(options: BuildDescriptorsOptions = {}): Too
     toCommands: (args) => buildBatchCommands(args, viewEnabled)
   };
 
-  return [...singles, ...view, batch];
+  return [...singles, ...composites, ...view, batch];
 }
 
 // ============================================================================
@@ -687,15 +1077,48 @@ export function buildToolDescriptors(options: BuildDescriptorsOptions = {}): Too
 
 type ViewCommandType = (typeof VIEW_COMMAND_TYPES)[number];
 type ExcludedCommandType = (typeof EXCLUDED_COMMAND_TYPES)[number];
+type InspectCommandType = (typeof INSPECT_COMMAND_TYPES)[number];
+type SplitCommandType = (typeof SPLIT_COMMAND_TYPES)[number];
+
+/** The chat edit as one line. */
+function summarizeChatEdit(e: Extract<Command, { type: 'playground_chat' }>['edit']): string {
+  switch (e.kind) {
+    case 'input':
+      return e.id === null
+        ? `Unbind chat ${e.key}`
+        : `Bind chat ${e.key} to input ${e.id}${e.limit !== undefined ? ` (limit ${e.limit})` : ''}`;
+    case 'limit':
+      return `Set chat history limit to ${e.limit}`;
+    case 'reply':
+      return `${e.mode === 'add' ? 'Add' : 'Remove'} chat reply ${e.nodeId}:${e.port}`;
+    case 'sub_replies':
+      return `Turn chat sub-workflow replies ${e.on ? 'on' : 'off'}`;
+    case 'off':
+      return 'Switch the chat off';
+    case 'move_turns':
+      return 'Move interface turn marks into the Playground settings';
+  }
+}
 
 /**
  * Summaries for the commands that are not one tool each: the view actions
- * (folded into `view`) and the two excluded verbs, which can still appear in
- * a command list a host asks the gate about.
+ * (folded into `view`), the reads folded into `inspect`, the chat edits behind
+ * the `playground_*` tools, and the excluded verbs (Console-only or withheld),
+ * which can still appear in a command list a host asks the gate about.
  */
 const OTHER_SUMMARIES: {
-  [K in ViewCommandType | ExcludedCommandType]: (command: Extract<Command, { type: K }>) => string;
+  [K in ViewCommandType | ExcludedCommandType | InspectCommandType | SplitCommandType]: (
+    command: Extract<Command, { type: K }>
+  ) => string;
 } = {
+  interface_list: () => 'List the interface',
+  ports_list: (c) => `List ports of ${c.nodeId}`,
+  workflow_get: () => 'Read the workflow settings',
+  playground_get: () => 'Read the Playground chat binding',
+  playground_chat: (c) => summarizeChatEdit(c.edit),
+  interface_pull: (c) => `Pull the fields of interface ${c.side} ${c.id} from its port`,
+  interface_move: (c) => `Move interface ${c.side} ${c.id} to position ${c.position}`,
+  ports_move: (c) => `Move port ${c.nodeId}:${c.port} to position ${c.position}`,
   select_node: (c) => `Select ${c.nodeId}`,
   config_open: (c) => `Open config of ${c.nodeId}`,
   canvas_fit_view: () => 'Fit view',

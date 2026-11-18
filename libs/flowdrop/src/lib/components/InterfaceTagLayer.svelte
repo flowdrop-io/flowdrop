@@ -107,6 +107,7 @@
       edit.entryId
     );
     if (reason === 'empty') return m().workflowInterface.tagIdEmpty;
+    if (reason === 'whitespace') return m().workflowInterface.tagIdWhitespace;
     if (reason === 'duplicate') {
       return m().workflowInterface.tagIdDuplicate({
         id: edit.value.trim(),

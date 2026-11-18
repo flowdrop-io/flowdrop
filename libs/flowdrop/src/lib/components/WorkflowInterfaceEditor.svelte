@@ -49,6 +49,13 @@
   } from '$lib/types/index.js';
   import type { InterfaceInputEdit } from '$lib/utils/playgroundChat.js';
   import {
+    appendInterfaceEntry,
+    moveInterfaceEntry,
+    patchInterfaceEntry,
+    removeInterfaceEntry,
+    type InterfaceEditResult
+  } from '$lib/utils/interfaceTags.js';
+  import {
     entryFromBindablePort,
     rankBindablePorts,
     resolveInterface,
@@ -239,41 +246,21 @@
   }
 
   /**
-   * Commit a direction's entry list back to the workflow, dropping a side that
-   * ends up empty so it reads as "declares nothing on this side".
-   *
-   * Always reports an interface *object*, even when the author has emptied both
-   * sides. Reporting `undefined` there — as this did — made removing the last
-   * entry impossible: the store treats `interface: undefined` as "no interface
-   * key supplied, leave it alone", so the removal never landed and the row
-   * stayed on screen. The server draws the same distinction, and for the same
-   * reason: an absent `interface` is a partial update that must not disturb
-   * port exposures authored elsewhere (the Drupal admin form), while a present
-   * one rewrites both sides — so `{}` is what "the author emptied this" has to
-   * look like on the wire.
+   * Report an interface edit. The pure helpers in `interfaceTags` build it,
+   * so the Console and WebMCP commands make the same edits: a side that ends
+   * up empty is dropped (it reads as "declares nothing here"), the result is
+   * always an interface *object* (the store treats `undefined` as "leave it
+   * alone", so removing the last entry could never land), and the input-id
+   * edit is reported unless another input still carries the id.
    *
    * Decision 5 (additive and optional — an interface nobody populated should
    * not linger as `{}`) still holds: a workflow nobody has authored an
    * interface for never reaches this function, and keeps its absent key.
    */
-  function commit(
-    direction: Direction,
-    next: WorkflowInterfaceEntry[],
-    edit?: InterfaceInputEdit
-  ): void {
-    const inputs = direction === 'inputs' ? next : (workflow.interface?.inputs ?? []);
-    const outputs = direction === 'outputs' ? next : (workflow.interface?.outputs ?? []);
-    const nextInterface = {
-      inputs: inputs.length > 0 ? inputs : undefined,
-      outputs: outputs.length > 0 ? outputs : undefined
-    };
-    // An id another input still carries is still on the interface: nothing
-    // the binding names went away.
-    if (direction === 'inputs' && edit && !inputs.some((entry) => entry.id === edit.id)) {
-      onChange(nextInterface, edit);
-    } else {
-      onChange(nextInterface);
-    }
+  function apply(result: InterfaceEditResult | null): void {
+    if (!result) return;
+    if (result.edit) onChange(result.interface, result.edit);
+    else onChange(result.interface);
   }
 
   /**
@@ -292,7 +279,7 @@
     const addedId = mintRowId();
     addedRowIds.add(addedId);
     rowIds[direction] = [...rowIds[direction], addedId];
-    commit(direction, [...entriesFor(direction), entry]);
+    apply(appendInterfaceEntry(workflow, entryDirectionOf(direction), entry));
     composerFor = null;
   }
 
@@ -318,24 +305,20 @@
     // Dropping the row id destroys that card's component, and its disclosure
     // state with it — no bookkeeping to keep in step.
     const removed = entriesFor(direction)[index];
+    if (!removed) return;
     rowIds[direction].splice(index, 1);
-    commit(
-      direction,
-      entriesFor(direction).filter((_, i) => i !== index),
-      removed && { kind: 'remove', id: removed.id }
-    );
+    apply(removeInterfaceEntry(workflow, entryDirectionOf(direction), removed.id, index));
   }
 
   function moveEntry(direction: Direction, index: number, delta: -1 | 1): void {
-    const list = [...entriesFor(direction)];
+    const entry = entriesFor(direction)[index];
     const target = index + delta;
-    if (target < 0 || target >= list.length) return;
-    [list[index], list[target]] = [list[target], list[index]];
+    if (!entry || target < 0 || target >= entriesFor(direction).length) return;
     // Row ids ride along, so a card's disclosure travels with the entry
     // instead of staying behind in the slot it used to occupy.
     const ids = rowIds[direction];
     [ids[index], ids[target]] = [ids[target], ids[index]];
-    commit(direction, list);
+    apply(moveInterfaceEntry(workflow, entryDirectionOf(direction), entry.id, target, index));
   }
 
   function patchEntry(
@@ -343,33 +326,9 @@
     index: number,
     patch: Partial<WorkflowInterfaceEntry>
   ): void {
-    const before = entriesFor(direction)[index];
-    const list = entriesFor(direction).map((entry, i) =>
-      i === index ? applyPatch(entry, patch) : entry
-    );
-    const renamed: InterfaceInputEdit | undefined =
-      before && typeof patch.id === 'string' && patch.id !== before.id
-        ? { kind: 'rename', id: before.id, to: patch.id }
-        : undefined;
-    commit(direction, list, renamed);
-  }
-
-  /**
-   * Merge a patch into an entry. A key the patch sets to `undefined` is
-   * removed rather than kept as an own `undefined` property, so clearing a
-   * field (a turn set back to none, an emptied name) leaves no key behind.
-   * Keys the patch does not mention — including ones this editor does not
-   * know — are carried over untouched.
-   */
-  function applyPatch(
-    entry: WorkflowInterfaceEntry,
-    patch: Partial<WorkflowInterfaceEntry>
-  ): WorkflowInterfaceEntry {
-    const next: WorkflowInterfaceEntry = { ...entry, ...patch };
-    for (const key of Object.keys(patch) as Array<keyof WorkflowInterfaceEntry>) {
-      if (patch[key] === undefined) delete next[key];
-    }
-    return next;
+    const entry = entriesFor(direction)[index];
+    if (entry)
+      apply(patchInterfaceEntry(workflow, entryDirectionOf(direction), entry.id, patch, index));
   }
 </script>
 

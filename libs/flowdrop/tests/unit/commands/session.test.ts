@@ -5,15 +5,18 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import {
-  parseSessionCommand,
-  executeSessionCommand,
-  isSessionLine,
-  parseCommand
+  parseConsoleLine,
+  executeConsoleCommand,
+  isConsoleLine,
+  parseCommand,
+  type ConsoleInstance
 } from '../../../src/lib/commands/index.js';
 import { emptyPlaygroundChat } from '../../../src/lib/utils/playgroundChat.js';
 import type { RunController } from '../../../src/lib/stores/runController.svelte.js';
 
-describe('parseSessionCommand', () => {
+const parseSessionCommand = (input: string) => parseConsoleLine(input);
+
+describe('parse session lines', () => {
   it('parses send with a quoted, a bare and a triple-quoted message', () => {
     expect(parseSessionCommand('session send "hi there"')).toEqual({
       ok: true,
@@ -71,6 +74,11 @@ describe('parseSessionCommand', () => {
       'session run a="x"y',
       'session stop now',
       'session dance',
+      'session select',
+      'session select a b',
+      'session delete',
+      'session list now',
+      'session reset now',
       'session send """ unclosed'
     ];
     for (const input of cases) {
@@ -81,10 +89,10 @@ describe('parseSessionCommand', () => {
   });
 
   it('recognises a session line by its first word', () => {
-    expect(isSessionLine('  Session send "x"')).toBe(true);
-    expect(isSessionLine('session')).toBe(true);
-    expect(isSessionLine('sessions')).toBe(false);
-    expect(isSessionLine('add session')).toBe(false);
+    expect(isConsoleLine('  Session send "x"')).toBe(true);
+    expect(isConsoleLine('session')).toBe(true);
+    expect(isConsoleLine('sessions')).toBe(false);
+    expect(isConsoleLine('add session')).toBe(false);
   });
 });
 
@@ -94,7 +102,7 @@ describe('parseCommand teaching error', () => {
       const result = parseCommand(input);
       expect(result.ok).toBe(false);
       expect(!result.ok && result.error).toBe(
-        '`session` commands run only in the editor Console; they are not part of the editing commands.'
+        '`session` runs only in the editor Console; it is not one of the editing commands.'
       );
     }
   });
@@ -132,7 +140,12 @@ function mockRuns(
   const state = {
     session: 'session' in overrides ? overrides.session : { id: 's1', name: 'Session 1' },
     status: overrides.status ?? 'idle',
-    formValues: {} as Record<string, unknown>
+    formValues: {} as Record<string, unknown>,
+    sessions: [
+      { id: 'abc-1', name: 'One', status: 'idle' },
+      { id: 'abc-2', name: 'Two', status: 'running' },
+      { id: 'xyz-3', name: 'Three', status: 'idle' }
+    ]
   };
   const playground = {
     get currentSession() {
@@ -158,6 +171,9 @@ function mockRuns(
     setFormValues: vi.fn((v: Record<string, unknown>) => {
       state.formValues = v;
     }),
+    get sessions() {
+      return state.sessions;
+    },
     setError: vi.fn(),
     error: overrides.error ?? null,
     messages: overrides.messages ?? [],
@@ -185,18 +201,31 @@ function mockRuns(
     stopExecution: vi.fn().mockResolvedValue(undefined),
     createSession: vi.fn().mockImplementation(async () => {
       state.session = { id: 's2', name: 'Session 2' };
+    }),
+    loadSessions: vi.fn().mockResolvedValue(undefined),
+    selectSession: vi.fn().mockImplementation(async (id: string) => {
+      state.session = state.sessions.find((x) => x.id === id) ?? state.session;
+    }),
+    resetSession: vi.fn().mockResolvedValue(undefined),
+    deleteSession: vi.fn().mockImplementation(async (id: string) => {
+      state.sessions = state.sessions.filter((x) => x.id !== id);
     })
   };
   return { runs: runs as unknown as RunController, mock: runs, playground, state };
 }
 
-const run = (input: string, runs: RunController) => {
+const run = (
+  input: string,
+  runs: RunController,
+  config: unknown = { endpoints: { sessions: { reset: '/s/{id}/reset' } } }
+) => {
   const parsed = parseSessionCommand(input);
   if (!parsed.ok) throw new Error(parsed.error);
-  return executeSessionCommand(parsed.command, runs);
+  const fd = { runs, api: { config } } as unknown as ConsoleInstance;
+  return executeConsoleCommand(parsed.command, fd);
 };
 
-describe('executeSessionCommand', () => {
+describe('execute session commands', () => {
   describe('guards', () => {
     it('asks to save an unsaved workflow first', async () => {
       const { runs, mock } = mockRuns({ workflowId: null });
@@ -252,7 +281,7 @@ describe('executeSessionCommand', () => {
     it('reports a refused turn with the store error', async () => {
       const { runs } = mockRuns({ takeTurn: false, error: '409 busy' });
       const result = await run('session send "hi"', runs);
-      expect(result).toMatchObject({ ok: false, error: '409 busy', code: 'SESSION_FAILED' });
+      expect(result).toMatchObject({ ok: false, error: '409 busy', code: 'CONSOLE_FAILED' });
     });
   });
 
@@ -373,5 +402,100 @@ describe('executeSessionCommand', () => {
       const result = await run('session status', runs);
       expect(result.ok && result.message).toContain('No test session yet');
     });
+  });
+});
+
+describe('session list / select / reset / delete', () => {
+  it('parses them', () => {
+    expect(parseSessionCommand('session list')).toEqual({
+      ok: true,
+      command: { type: 'session_list' }
+    });
+    expect(parseSessionCommand('session select abc-1')).toEqual({
+      ok: true,
+      command: { type: 'session_select', id: 'abc-1' }
+    });
+    expect(parseSessionCommand('session reset').ok).toBe(true);
+    expect(parseSessionCommand('session delete xyz')).toEqual({
+      ok: true,
+      command: { type: 'session_delete', id: 'xyz' }
+    });
+  });
+
+  it('lists sessions and marks the current one', async () => {
+    const { runs, mock } = mockRuns();
+    const result = await run('session list', runs);
+    expect(mock.loadSessions).toHaveBeenCalled();
+    expect(result.ok && result.message).toContain('3 sessions');
+    expect(result.ok && result.message).toContain('* s1'.slice(0, 0) + 'abc-1');
+  });
+
+  it('selects by unique prefix and refuses an ambiguous or unknown one', async () => {
+    const { runs, mock, state } = mockRuns();
+    const ok = await run('session select xyz', runs);
+    expect(ok.ok).toBe(true);
+    expect(mock.selectSession).toHaveBeenCalledWith('xyz-3');
+    expect(state.session).toMatchObject({ id: 'xyz-3' });
+
+    const ambiguous = await run('session select abc', runs);
+    expect(!ambiguous.ok && ambiguous.error).toContain('matches 2');
+    const unknown = await run('session select nope', runs);
+    expect(!unknown.ok && unknown.error).toContain('No session matches');
+  });
+
+  it('resets the current session, and refuses without one', async () => {
+    const { runs, mock } = mockRuns();
+    expect((await run('session reset', runs)).ok).toBe(true);
+    expect(mock.resetSession).toHaveBeenCalled();
+    const none = mockRuns({ session: null });
+    expect((await run('session reset', none.runs)).ok).toBe(false);
+  });
+
+  it('refuses a reset the backend cannot do, without touching the session', async () => {
+    const { runs, mock } = mockRuns();
+    const result = await run('session reset', runs, { endpoints: {} });
+    expect(result).toMatchObject({ ok: false, code: 'CONSOLE_REFUSED' });
+    expect(!result.ok && result.error).toContain('cannot reset');
+    expect(mock.resetSession).not.toHaveBeenCalled();
+  });
+
+  it('reloads the list once before reporting a miss', async () => {
+    const { runs, mock, state } = mockRuns();
+    mock.loadSessions.mockImplementation(async () => {
+      state.sessions = [...state.sessions, { id: 'new-9', name: 'Nine', status: 'idle' }];
+    });
+    const found = await run('session select new-9', runs);
+    expect(found.ok).toBe(true);
+    expect(mock.loadSessions).toHaveBeenCalledTimes(1);
+
+    mock.loadSessions.mockClear();
+    mock.loadSessions.mockResolvedValue(undefined);
+    const miss = await run('session select nope', runs);
+    expect(!miss.ok && miss.error).toContain('No session matches');
+    expect(mock.loadSessions).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a reset that throws', async () => {
+    const { runs, mock } = mockRuns();
+    mock.resetSession.mockRejectedValue(new Error('boom'));
+    const result = await run('session reset', runs);
+    expect(!result.ok && result.error).toBe('boom');
+  });
+
+  it('deletes by id, and fails when the session is still there', async () => {
+    const { runs, mock } = mockRuns();
+    const ok = await run('session delete xyz-3', runs);
+    expect(ok.ok && ok.message).toContain('Three');
+    const prefix = await run('session delete abc', runs);
+    expect(prefix).toMatchObject({ ok: false, code: 'CONSOLE_REFUSED' });
+    expect(!prefix.ok && prefix.error).toContain('full id');
+    mock.deleteSession.mockResolvedValue(undefined);
+    const stuck = await run('session delete abc-1', runs);
+    expect(stuck.ok).toBe(false);
+  });
+
+  it('needs a saved workflow', async () => {
+    const { runs } = mockRuns({ workflowId: null });
+    expect((await run('session list', runs)).ok).toBe(false);
   });
 });

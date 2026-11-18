@@ -42,6 +42,7 @@ export function createStoreCommandContext(
     addEdge: (edge) => actions.addEdge(edge),
     removeEdge: (edgeId) => actions.removeEdge(edgeId),
     batchUpdate: (updates) => actions.batchUpdate(updates),
+    editInterface: (next, edit) => fd.workflow.editInterface(next, edit),
 
     undo: () => {
       // A locked workflow refuses the restore; leave the history where it is.
@@ -100,6 +101,8 @@ export function createStoreCommandContext(
     typeMap: buildTypeMap(nodeTypes),
     dispatch,
     isLocked: () => fd.workflow.locked,
+    // The formats the host allows (the `workflowFormats` mount prop), not every registered one.
+    formatOptions: () => fd.formats.getAllowedOptions().map((option) => option.const),
     // Node layout reads the canvas's measurement; without a canvas it falls back to computed geometry.
     measureNode: (nodeId) => fd.measureNode?.(nodeId),
     visualType: (node: WorkflowNode) => {

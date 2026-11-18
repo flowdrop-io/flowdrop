@@ -123,6 +123,6 @@ test.describe('Console session commands', () => {
       el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true }));
     });
 
-    await expect(output).toContainText('session commands cannot be part of a batch');
+    await expect(output).toContainText('cannot be part of a batch');
   });
 });

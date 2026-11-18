@@ -123,9 +123,11 @@ export const defaultMessages = {
       required: 'required',
       // A field whose type or enum admits null: the toggle that stores null for it.
       nullToggle: 'null',
-      nullToggleLabel: 'Set to null',
+      nullToggleLabel: ({ label }: { label: string }) => `Set ${label} to null`,
       nullToggleTitle: 'Store null instead of a value. Turn off to bring the value back.',
       nullValue: 'null',
+      // The empty option of a select whose schema has a default; the value is that default's label.
+      defaultOption: ({ value }: { value: string }) => `Default (${value})`,
       // A required field marked when_missing: skip.
       skippedWhenNotSet: 'Skipped when not set'
     },
@@ -1158,6 +1160,7 @@ export const defaultMessages = {
     tagNameLabel: 'Interface name',
     tagNameHint: 'Enter saves · Esc cancels',
     tagIdEmpty: 'Give it a name.',
+    tagIdWhitespace: 'Use one word, without spaces.',
     tagIdDuplicate: ({ id, direction }: { id: string; direction: 'input' | 'output' }) =>
       `A workflow ${direction} named "${id}" already exists.`,
     exposeInputPort: ({ port }: { port: string }) => `Expose ${port} as workflow input…`,

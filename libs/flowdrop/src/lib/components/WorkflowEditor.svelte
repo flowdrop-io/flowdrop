@@ -44,6 +44,7 @@
   } from '../editor/contextMenu.js';
   import type { NodeMetadata } from '../types/index.js';
   import { extractConfigDefaults } from '../utils/nodeIds.js';
+  import { duplicateNodeData, duplicatePosition } from '../utils/duplicateNode.js';
   import { resolveComponentName } from '../utils/nodeTypes.js';
   import { nodeAriaLabel } from '../utils/nodeAriaLabel.js';
   import { decideInlineCommit } from '../utils/captionText.js';
@@ -96,6 +97,7 @@
   import {
     applyPortExposure,
     exposureCandidates,
+    withPorts,
     type PortExposureMode
   } from '../utils/portExposure.js';
   import {
@@ -1072,20 +1074,12 @@
     },
     duplicateNode(id) {
       const source = flowNodes.find((n) => n.id === id);
-      if (!source?.data.metadata) return;
-      const grid = getEditorSettings().gridSize;
-      const offset = grid * 2;
+      const data = source && duplicateNodeData($state.snapshot(source));
+      if (!source || !data) return;
       // The same path as a sidebar drop, so the id, history entry and sync all apply.
       placeNode(
-        JSON.stringify({
-          type: 'node',
-          nodeData: {
-            label: source.data.label,
-            config: structuredClone($state.snapshot(source.data.config ?? {})),
-            metadata: source.data.metadata
-          }
-        }),
-        { x: source.position.x + offset, y: source.position.y + offset }
+        JSON.stringify({ type: 'node', nodeData: data }),
+        duplicatePosition(source, getEditorSettings().gridSize)
       );
     },
     tidyLayout() {
@@ -1285,9 +1279,7 @@
     if (changes.size === 0) return;
     flowNodes = flowNodes.map((n) => {
       if (!changes.has(n.id)) return n;
-      const { ports: _previous, ...rest } = n.data.config ?? {};
-      const ports = changes.get(n.id);
-      return { ...n, data: { ...n.data, config: ports ? { ...rest, ports } : rest } };
+      return { ...n, data: { ...n.data, config: withPorts(n.data.config, changes.get(n.id)) } };
     });
     syncFlowToStore();
     const storeValue = fd.workflow.current;

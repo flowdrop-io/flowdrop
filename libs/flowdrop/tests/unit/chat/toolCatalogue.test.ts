@@ -40,7 +40,12 @@ describe('toToolDefinitions', () => {
     const defs = toToolDefinitions(rt);
     const descriptors = buildToolDescriptors({ view: false });
 
-    expect(defs.map((d) => d.name)).toEqual(descriptors.map((d) => d.verb));
+    // The editor tools, then the editor-mode tools every runtime offers.
+    expect(defs.map((d) => d.name)).toEqual([
+      ...descriptors.map((d) => d.verb),
+      'get_editor_mode',
+      'set_editor_mode'
+    ]);
     for (const def of defs) {
       expect(def.name).not.toMatch(/^flowdrop_/);
       expect(Object.keys(def).sort()).toEqual(['description', 'input_schema', 'name', 'readOnly']);
@@ -59,7 +64,7 @@ describe('toToolDefinitions', () => {
     const saveOnly = toToolDefinitions(runtimeWith({ onSave: async () => undefined })).map(
       (d) => d.name
     );
-    expect(saveOnly.slice(-1)).toEqual(['save']);
+    expect(saveOnly.slice(-3)).toEqual(['save', 'get_editor_mode', 'set_editor_mode']);
 
     const all = toToolDefinitions(
       runtimeWith({
@@ -68,9 +73,33 @@ describe('toToolDefinitions', () => {
         onRunStatus: async () => ({ ok: true, data: { runId: 'r', status: 'completed' } })
       })
     );
-    expect(all.slice(-3).map((d) => d.name)).toEqual(['save', 'run', 'run_status']);
+    expect(all.slice(-5).map((d) => d.name)).toEqual([
+      'save',
+      'run',
+      'run_status',
+      'get_editor_mode',
+      'set_editor_mode'
+    ]);
     expect(all.find((d) => d.name === 'run_status')?.readOnly).toBe(true);
     expect(all.find((d) => d.name === 'run')?.description).toContain('run_status');
+  });
+
+  it('leaves the editor-mode tools out for the Assistant (editorModeTools: false)', () => {
+    const instance = createFlowDropInstance({
+      id: `cat-nm-${Math.random().toString(36).slice(2)}`
+    });
+    instance.workflow.initialize(workflow());
+    const rt = createToolRuntime({
+      instance,
+      nodeTypes: [],
+      approval: 'auto',
+      hooks: { onSave: async () => undefined },
+      editorModeTools: false
+    });
+    const names = toToolDefinitions(rt).map((d) => d.name);
+    expect(names).toContain('save');
+    expect(names).not.toContain('get_editor_mode');
+    expect(names).not.toContain('set_editor_mode');
   });
 
   it('includes view only when a UI handler exists, mirroring registration', () => {
@@ -113,16 +142,32 @@ describe('toToolDefinitions', () => {
         "beautify_layout",
         "inspect_node_layout (ro)",
         "beautify_node",
+        "interface_expose",
+        "interface_add",
+        "interface_remove",
+        "interface_rename",
+        "interface_bind",
+        "interface_set",
+        "ports_exposure",
+        "duplicate_node",
+        "workflow_set",
+        "inspect (ro)",
+        "interface_unbind",
+        "playground_bind",
+        "playground_unbind",
+        "playground_reply",
         "view",
         "batch",
         "save",
         "run",
         "run_status (ro)",
+        "get_editor_mode (ro)",
+        "set_editor_mode",
       ]
     `);
   });
 
-  it('serializes small enough to travel with every turn (10–20 kB expected)', () => {
+  it('serializes small enough to travel with every turn (10–24 kB expected)', () => {
     const defs = toToolDefinitions(
       runtimeWith(
         {
@@ -134,8 +179,11 @@ describe('toToolDefinitions', () => {
       )
     );
     const bytes = catalogueBytes(defs);
-    // Recorded 2026-09-09; a jump past 24 kB means a schema grew and the plan's
-    // "hash it client-side" fallback (§5) is due.
+    // Recorded 2026-09-09 (about 16 kB). The editor-parity tools (interface, ports,
+    // duplicate, workflow, playground) took it to about 25 kB, and folding the
+    // reads into `inspect` and dropping the Console-only tools brought it back
+    // under 24 kB on 2026-11-18. A jump past 24 kB means a schema grew and the
+    // plan's "hash it client-side" fallback (§5) is due.
     expect(bytes).toBeGreaterThan(8_000);
     expect(bytes).toBeLessThan(24_000);
     expect(JSON.parse(JSON.stringify(defs))).toEqual(defs);

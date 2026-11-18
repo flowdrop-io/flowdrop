@@ -215,6 +215,18 @@ function autosaveToastId(fd: FlowDropInstance): string {
 }
 
 /**
+ * Why a save is refused before anything is sent, or `null` when it may go
+ * ahead: the editor is locked, or the host's payload said the user may not save
+ * (`can.save`). The one place that decides; the Console's `save` asks it for
+ * the reason instead of keeping a rule of its own.
+ */
+export function saveRefusal(fd: FlowDropInstance): string | null {
+  if (fd.workflow.locked) return fd.messages().lock.saveRefused;
+  if (fd.workflow.current?.can?.save === false) return 'Saving this workflow is not permitted.';
+  return null;
+}
+
+/**
  * Save the current workflow to the backend.
  *
  * This is the single source of truth for save logic. App.svelte delegates
@@ -281,11 +293,10 @@ async function runSave(fd: FlowDropInstance, options: GlobalSaveOptions): Promis
 
   // A locked workflow is not saved: it cannot have changed, and the host asked for no edits.
   // A person's save says so: a host's own Save button is not disabled by the lock.
-  if (fd.workflow.locked) {
+  const refusal = saveRefusal(fd);
+  if (refusal) {
     if (options.interactive !== false && features.showToasts) {
-      showInfo(fd.messages().lock.saveRefused, {
-        id: `flowdrop:save-locked:${fd.skinScope ?? ''}`
-      });
+      showInfo(refusal, { id: `flowdrop:save-locked:${fd.skinScope ?? ''}` });
     }
     return false;
   }
@@ -618,8 +629,11 @@ async function afterSavedAsCopy(
  * to this function rather than reimplementing the steps.
  *
  * Preserves all metadata fields (format, tags, etc.) consistently with save.
+ *
+ * Resolves `true` when the file was produced, `false` when it was not (no
+ * workflow, or an error, which is reported in a toast). Never rejects.
  */
-export async function globalExportWorkflow(options: GlobalExportOptions = {}): Promise<void> {
+export async function globalExportWorkflow(options: GlobalExportOptions = {}): Promise<boolean> {
   const features = { ...DEFAULT_FEATURES, ...options.features };
 
   try {
@@ -633,7 +647,7 @@ export async function globalExportWorkflow(options: GlobalExportOptions = {}): P
       if (features.showToasts) {
         apiToasts.error('Export workflow', 'No workflow to export');
       }
-      return;
+      return false;
     }
 
     // Build the canonical export object — preserve all metadata fields
@@ -671,8 +685,10 @@ export async function globalExportWorkflow(options: GlobalExportOptions = {}): P
     if (features.showToasts) {
       workflowToasts.exported(finalWorkflow.name);
     }
+    return true;
   } catch (error) {
     const errorObj = error instanceof Error ? error : new Error('Unknown error occurred');
     apiToasts.error('Export workflow', errorObj.message);
+    return false;
   }
 }

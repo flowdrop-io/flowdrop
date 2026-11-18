@@ -36,14 +36,11 @@
     Workflow,
     WorkflowPlayground
   } from '$lib/types/index.js';
-  import { DEFAULT_HISTORY_TURN_LIMIT } from '$lib/types/index.js';
   import {
-    emptyPlaygroundChat,
-    hasKnownInterfaceTurns,
-    interfaceTurnChat,
+    editPlaygroundChat,
     isPlaygroundChatSet,
-    normalizePlaygroundChat,
-    withPlaygroundChat
+    playgroundBindingInEffect,
+    type PlaygroundChatChange
   } from '$lib/utils/playgroundChat.js';
   import {
     findReplyPort,
@@ -73,14 +70,13 @@
   let { workflow, onChange, onMoveTurns }: Props = $props();
   const readOnly = useFormReadOnly();
 
+  const effective = $derived(playgroundBindingInEffect(workflow));
   /** The stored binding, every key present; `null` = not set up. */
-  const stored = $derived(
-    workflow.playground?.chat ? normalizePlaygroundChat(workflow.playground.chat) : null
-  );
+  const stored = $derived(effective.stored);
   /** The binding the deprecated interface `turn` marks declare, when nothing is stored. */
-  const turnChat = $derived(stored === null ? interfaceTurnChat(workflow.interface) : null);
+  const turnChat = $derived(effective.turnChat);
   /** What the controls show: the binding in effect (stored, else the marks), or an empty one. */
-  const chat = $derived(stored ?? turnChat ?? emptyPlaygroundChat());
+  const chat = $derived(effective.chat);
 
   const inputs = $derived(workflow.interface?.inputs ?? []);
   const issues = $derived(playgroundChatIssues(workflow, stored ?? turnChat));
@@ -117,7 +113,7 @@
   });
 
   /** Deprecated `turn` marks left on the interface once settings are stored (ignored). */
-  const leftoverTurns = $derived(stored !== null && hasKnownInterfaceTurns(workflow.interface));
+  const leftoverTurns = $derived(effective.leftoverTurns);
 
   /** Whether either id input is bound: the disclosure is then open. */
   const idsBound = $derived(chat.session_id !== null || chat.message_id !== null);
@@ -144,26 +140,26 @@
     return a.node_id === b.node_id && a.port === b.port;
   }
 
-  function update(patch: Partial<PlaygroundChatBinding>): void {
-    const next = { ...chat, ...patch };
-    // Any edit while known marks are on the interface removes them: else an
-    // edit that clears the binding would let the chat fall back to them.
-    if (onMoveTurns && (turnChat !== null || leftoverTurns)) onMoveTurns(next);
-    else onChange(withPlaygroundChat(workflow.playground, next));
+  /**
+   * Make one edit (`editPlaygroundChat`, the same one the `playground chat`
+   * command makes). Any edit while known marks are on the interface removes
+   * them: else an edit that clears the binding would let the chat fall back
+   * to them.
+   */
+  function edit(change: PlaygroundChatChange): void {
+    const result = editPlaygroundChat(workflow, change);
+    if (!result) return;
+    if (onMoveTurns && result.interface !== undefined) onMoveTurns(result.chat);
+    else onChange(result.playground);
   }
 
   function setInput(key: Exclude<PlaygroundChatInputKey, 'history'>, value: string): void {
-    update({ [key]: value === '' ? null : value });
+    edit({ kind: 'input', key, id: value === '' ? null : value });
   }
 
   function setHistoryInput(value: string): void {
     historyLimitInvalid = false;
-    update({
-      history:
-        value === ''
-          ? null
-          : { input: value, limit: chat.history?.limit ?? DEFAULT_HISTORY_TURN_LIMIT }
-    });
+    edit({ kind: 'input', key: 'history', id: value === '' ? null : value });
   }
 
   function setHistoryLimit(field: HTMLInputElement): void {
@@ -177,12 +173,11 @@
       return;
     }
     historyLimitInvalid = false;
-    update({ history: { ...chat.history, limit: parsed } });
+    edit({ kind: 'limit', limit: parsed });
   }
 
   function toggleReply(reply: PlaygroundReplyPort, on: boolean): void {
-    const others = chat.replies.filter((other) => !sameReply(other, reply));
-    update({ replies: on ? [...others, reply] : others });
+    edit({ kind: 'reply', mode: on ? 'add' : 'remove', reply });
   }
 
   /** An issue in the person's language (`issue.message` is English, for logs). */
@@ -401,7 +396,7 @@
     class="wf-playground__check"
     checked={chat.sub_workflow_replies}
     label={m().playgroundSettings.subWorkflowReplies}
-    onchange={(on) => update({ sub_workflow_replies: on })}
+    onchange={(on) => edit({ kind: 'sub_replies', on })}
   />
 
   {#if halfSet}

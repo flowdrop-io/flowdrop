@@ -240,6 +240,47 @@ export function buildHostToolDescriptors(hooks: HostHooks): HostToolDescriptor[]
   return out;
 }
 
+const SET_EDITOR_MODE_SCHEMA: ToolInputSchema = {
+  type: 'object',
+  properties: {
+    mode: {
+      type: 'string',
+      enum: ['edit', 'test'],
+      description: 'edit builds the workflow; test docks the Playground to try it.'
+    }
+  },
+  required: ['mode'],
+  additionalProperties: false
+};
+
+/**
+ * The editor-mode tools, offered by a runtime unless `editorModeTools: false`
+ * (the in-editor Assistant leaves them out): the Console's `mode` as tools. Switching changes how the editor is shown, not the workflow, so
+ * neither asks for approval.
+ */
+export const EDITOR_MODE_TOOLS: readonly HostToolDescriptor[] = [
+  {
+    verb: 'get_editor_mode',
+    description:
+      'Report the editor mode in effect (edit or test) and whether Test is available, with the reason when it is not. Read-only.',
+    inputSchema: EMPTY_SCHEMA,
+    readOnly: true,
+    consequential: false,
+    ungated: true
+  },
+  {
+    verb: 'set_editor_mode',
+    description:
+      'Switch the editor to edit (build the workflow) or test (the Playground, to try it). ' +
+      'Fails with UNAVAILABLE and the reason when Test is held back, for example before the workflow is saved. ' +
+      'Changes the view only, never the workflow.',
+    inputSchema: SET_EDITOR_MODE_SCHEMA,
+    readOnly: false,
+    consequential: false,
+    ungated: true
+  }
+];
+
 // ============================================================================
 // createToolRuntime
 // ============================================================================
@@ -283,7 +324,10 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
 
   const onUIAction: ((action: UIAction) => void) | undefined = options.onUIAction;
   const descriptors = buildToolDescriptors({ view: Boolean(onUIAction) });
-  const hostTools = buildHostToolDescriptors(hooks);
+  const hostTools = [
+    ...buildHostToolDescriptors(hooks),
+    ...(options.editorModeTools === false ? [] : EDITOR_MODE_TOOLS)
+  ];
   const byVerb = new Map<string, ToolDescriptor>(descriptors.map((d) => [d.verb, d]));
   const hostByVerb = new Map<string, HostToolDescriptor>(hostTools.map((d) => [d.verb, d]));
 
@@ -509,6 +553,27 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     );
   }
 
+  /** `get_editor_mode` / `set_editor_mode`: the instance's mode store, never gated. */
+  function runEditorMode(name: 'get_editor_mode' | 'set_editor_mode', input: unknown): ToolResult {
+    const schema = name === 'set_editor_mode' ? SET_EDITOR_MODE_SCHEMA : EMPTY_SCHEMA;
+    const args = validateOrError(schema, input);
+    if (isToolResult(args)) return args;
+    const modes = instance.editorMode;
+    const blocker = modes.testBlocker;
+    if (name === 'get_editor_mode') {
+      return text({
+        ok: true,
+        mode: modes.effective,
+        testAvailable: blocker === null,
+        ...(blocker !== null && { testUnavailableReason: blocker })
+      });
+    }
+    const target = args.mode as 'edit' | 'test';
+    if (target === 'test' && blocker !== null) return errorResult('UNAVAILABLE', blocker);
+    modes.set(target);
+    return text({ ok: true, mode: modes.effective, message: `Editor is in ${target} mode` });
+  }
+
   // ---- dispatch -----------------------------------------------------------
 
   async function runTool(name: string, input: unknown): Promise<ToolResult> {
@@ -519,6 +584,9 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
       if (name === 'save' && hooks.onSave) return runSave(hooks.onSave, input);
       if (name === 'run' && hooks.onRun) return runRun(hooks.onRun, input);
       if (name === 'run_status' && hooks.onRunStatus) return runRunStatus(hooks.onRunStatus, input);
+      if (name === 'get_editor_mode' || name === 'set_editor_mode') {
+        return runEditorMode(name, input);
+      }
     }
     return errorResult(
       'UNKNOWN_TOOL',
@@ -529,7 +597,7 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
   function preview(name: string, input: unknown): ToolPreview | null {
     const host = hostByVerb.get(name);
     if (host) {
-      const mutating = !host.readOnly;
+      const mutating = !host.readOnly && !host.ungated;
       const refused = name === 'save' && instance.workflow.locked;
       return {
         commands: [],

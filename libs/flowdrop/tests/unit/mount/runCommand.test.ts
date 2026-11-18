@@ -132,10 +132,22 @@ describe('runCommand', () => {
     app.destroy();
   });
 
-  it('refuses session commands', async () => {
+  it('refuses every Console command the same way, naming the tool where there is one', async () => {
     const app = await mountApp();
-    const result = await app.runCommand('session run');
-    expect(result).toMatchObject({ ok: false, code: 'SESSION_REFUSED' });
+    for (const line of ['runs', 'export']) {
+      expect(await app.runCommand(line), line).toMatchObject({
+        ok: false,
+        code: 'CONSOLE_REFUSED'
+      });
+    }
+    // `session` lines keep their 2.18 code.
+    expect(await app.runCommand('session run')).toMatchObject({
+      ok: false,
+      code: 'SESSION_REFUSED'
+    });
+    const mode = await app.runCommand('mode test');
+    expect(mode).toMatchObject({ ok: false, code: 'CONSOLE_REFUSED' });
+    expect(!mode.ok && mode.error).toContain('set_editor_mode');
     app.destroy();
   });
 

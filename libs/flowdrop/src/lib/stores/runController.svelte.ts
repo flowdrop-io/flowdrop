@@ -720,9 +720,11 @@ export class RunController {
   async deleteSession(sessionId: string): Promise<void> {
     try {
       await this.#service.deleteSession(this.#api.config, sessionId, this.#api.authProvider);
+      // removeSession moves `currentSession` on: read whether it was the current one first.
+      const wasCurrent = this.#playground.currentSession?.id === sessionId;
       this.#playground.removeSession(sessionId);
 
-      if (this.#playground.currentSession?.id === sessionId) {
+      if (wasCurrent) {
         this.#service.stopPolling();
       }
     } catch (err) {

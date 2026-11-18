@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { isMutatingCommand, isLayoutCommand } from '../../../src/lib/chat/commandClassifier.js';
+import {
+  isMutatingCommand,
+  isLayoutCommand,
+  isViewCommand
+} from '../../../src/lib/chat/commandClassifier.js';
 import { parseCommand } from '../../../src/lib/commands/parser.js';
 
 describe('isMutatingCommand', () => {
@@ -13,6 +17,10 @@ describe('isMutatingCommand', () => {
       'info',
       'get_config',
       'inspect_node_layout',
+      'interface_list',
+      'ports_list',
+      'workflow_get',
+      'playground_get',
       'help'
     ])('%s is read-only', (commandType) => {
       expect(isMutatingCommand(commandType)).toBe(false);
@@ -33,6 +41,26 @@ describe('isMutatingCommand', () => {
     ])('%s is mutating', (commandType) => {
       expect(isMutatingCommand(commandType)).toBe(true);
     });
+  });
+
+  it.each([
+    'interface_expose',
+    'interface_add',
+    'interface_remove',
+    'interface_rename',
+    'interface_bind',
+    'interface_set',
+    'interface_pull',
+    'interface_move',
+    'ports_exposure',
+    'ports_move',
+    'duplicate_node',
+    'workflow_set',
+    'playground_chat'
+  ])('the editor-parity write %s is mutating, so the assistant confirm gate applies', (type) => {
+    expect(isMutatingCommand(type)).toBe(true);
+    expect(isViewCommand(type)).toBe(false);
+    expect(isLayoutCommand(type)).toBe(false);
   });
 
   it('treats unknown commands as mutating', () => {

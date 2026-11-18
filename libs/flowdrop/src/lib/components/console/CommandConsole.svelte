@@ -16,10 +16,12 @@
     parseCommand,
     executeCommand,
     executeBatch,
-    parseSessionCommand,
-    executeSessionCommand,
-    isSessionLine,
-    SESSION_HELP,
+    parseConsoleLine,
+    executeConsoleCommand,
+    isConsoleLine,
+    consoleHelp,
+    CONSOLE_HELP,
+    type ConsoleHost,
     type UIAction,
     type CommandContext,
     type CommandResultOk,
@@ -48,7 +50,7 @@
     formatHelp
   } from './formatters.js';
 
-  const SESSION_HEADING = 'Session (editor Console only):';
+  const CONSOLE_HEADING = 'Console commands (editor Console only):';
 
   interface Props {
     /** Available node types for command execution */
@@ -57,9 +59,14 @@
     onUIAction?: (action: UIAction) => void;
     /** Id of the panel element, so the toggle strip can point `aria-controls` at it */
     id?: string;
+    /**
+     * What `App` offers the Console's `save` and `export` commands: the navbar's save and export.
+     * Without it those commands say they are unavailable.
+     */
+    editorHost?: ConsoleHost;
   }
 
-  let { nodeTypes, onUIAction, id }: Props = $props();
+  let { nodeTypes, onUIAction, id, editorHost }: Props = $props();
 
   /**
    * Commands the empty state offers. Read-only on purpose: a click runs them,
@@ -108,19 +115,29 @@
   }
 
   /**
-   * Run a `session …` line. These are asynchronous and talk to the backend, so
-   * they have their own lane: the input stays usable while one is in flight and
-   * its result is added when it lands.
+   * Run one Console line (`session`, `mode`, `runs`, `save`, `export`). They are
+   * asynchronous and may talk to the backend, so they have their own path: the
+   * input stays usable while one is in flight and its result is added when it
+   * lands. They run one after another, so two quick lines print in the order
+   * typed.
    */
-  async function handleSessionSubmit(line: string) {
-    const parsed = parseSessionCommand(line);
+  let consoleQueue: Promise<void> = Promise.resolve();
+
+  function enqueueConsoleLine(line: string) {
+    consoleQueue = consoleQueue.then(() => handleConsoleLine(line));
+  }
+
+  async function handleConsoleLine(line: string) {
+    const parsed = parseConsoleLine(line);
     if (!parsed.ok) {
       outputEntries.push({ type: 'error', text: parsed.error });
       return;
     }
-    const result = await executeSessionCommand(parsed.command, fd.runs);
+    const result = await executeConsoleCommand(parsed.command, fd, editorHost ?? {});
     outputEntries.push(
-      result.ok ? { type: 'success', text: result.message } : { type: 'error', text: result.error }
+      result.ok
+        ? { type: result.message.includes('\n') ? 'formatted' : 'success', text: result.message }
+        : { type: 'error', text: result.error }
     );
   }
 
@@ -137,15 +154,25 @@
       return;
     }
 
-    // `help session` is answered here: the editing DSL does not know the verb.
-    if (/^help\s+session$/i.test(trimmed)) {
-      outputEntries.push({ type: 'formatted', text: formatHelp({ commands: SESSION_HELP }) });
+    // `help session`, `help runs open`, `help save`: the Console's one help list answers them;
+    // the editing DSL does not know these verbs.
+    const topic = trimmed.match(/^help\s+(\S.*)$/i)?.[1];
+    if (topic && isConsoleLine(topic)) {
+      const rows = consoleHelp(topic);
+      outputEntries.push(
+        rows.length > 0
+          ? { type: 'formatted', text: formatHelp({ commands: rows }) }
+          : {
+              type: 'error',
+              text: `No Console command "${topic}". Try help ${topic.split(/\s+/)[0]}.`
+            }
+      );
       return;
     }
 
-    // Session commands run in their own, asynchronous lane.
-    if (isSessionLine(trimmed)) {
-      void handleSessionSubmit(trimmed);
+    // Console commands (session, mode, runs, save, export) are asynchronous.
+    if (isConsoleLine(trimmed)) {
+      enqueueConsoleLine(trimmed);
       return;
     }
 
@@ -171,11 +198,11 @@
       } else {
         outputEntries.push({ type: 'success', text: result.message });
       }
-      // The Console also knows the session commands; `help` lists them too.
+      // The Console also has its own commands; `help` lists them too.
       if (parseResult.command.type === 'help' && !parseResult.command.command) {
         outputEntries.push({
           type: 'formatted',
-          text: `${SESSION_HEADING}\n${formatHelp({ commands: SESSION_HELP })}`
+          text: `${CONSOLE_HEADING}\n${formatHelp({ commands: [...CONSOLE_HELP] })}`
         });
       }
     } else {
@@ -186,11 +213,11 @@
   function handleBatchSubmit(lines: string[]) {
     // A batch is all-or-nothing and synchronous; a run is neither. Refuse
     // before anything executes.
-    if (lines.some(isSessionLine)) {
+    if (lines.some((line) => isConsoleLine(line))) {
       for (const line of lines) outputEntries.push({ type: 'input', text: line });
       outputEntries.push({
         type: 'error',
-        text: 'session commands cannot be part of a batch. Nothing was run; send them one at a time.'
+        text: 'Console commands (session, mode, runs, save, export) cannot be part of a batch. Nothing was run; send them one at a time.'
       });
       return;
     }

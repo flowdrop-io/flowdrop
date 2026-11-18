@@ -7,7 +7,15 @@
  * @module commands/parser
  */
 
-import type { BeautifyNodeCommand, BeautifyNodeStrategy, Command, ParseResult } from './types.js';
+import type {
+  BeautifyNodeCommand,
+  BeautifyNodeStrategy,
+  Command,
+  InterfaceField,
+  InterfaceSide,
+  ParseResult
+} from './types.js';
+import { consoleRefusal } from './console.js';
 
 // ============================================================================
 // Parser Rules
@@ -60,6 +68,39 @@ export function countTripleQuotes(input: string): number {
 function parseCoords(x: string, y: string): { x: number; y: number } {
   return { x: Number(x), y: Number(y) };
 }
+
+const dir = (value: string): InterfaceSide => value.toLowerCase() as InterfaceSide;
+
+/** The interface fields `interface set` writes, by lower-case name. */
+const INTERFACE_FIELDS: Record<string, InterfaceField> = {
+  name: 'name',
+  description: 'description',
+  datatype: 'dataType',
+  required: 'required',
+  default: 'default',
+  examples: 'examples'
+};
+const FIELD_ALT = 'name|description|dataType|required|default|examples';
+
+/** A free-text value: `"…"` is JSON-unquoted (so `""` is empty), anything else is verbatim. */
+function textValue(raw: string | undefined): string {
+  const value = (raw ?? '').trim();
+  if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      if (typeof parsed === 'string') return parsed;
+    } catch {
+      // not JSON: keep it as typed
+    }
+  }
+  return value;
+}
+
+/** A `"""…"""` block's content, as `set` unwraps it. */
+const blockValue = (raw: string): string => raw.replace(/^\n|\n$/g, '').replace(/\\"""/g, '"""');
+
+/** An input id or `none`. */
+const inputIdOrNull = (raw: string): string | null => (raw.toLowerCase() === 'none' ? null : raw);
 
 const rules: ParserRule[] = [
   // add <type> at <x>,<y>
@@ -300,6 +341,250 @@ const rules: ParserRule[] = [
       ...gapFlags(m[1])
     })
   },
+  // interface [list]
+  {
+    pattern: /^interface(?:\s+list)?$/i,
+    parse: () => ({ type: 'interface_list' })
+  },
+  // interface expose [input|output] <nid>:<port> [as <id>]
+  {
+    pattern: /^interface\s+expose\s+(?:(input|output)\s+)?(\S+?):(\S+)(?:\s+as\s+(\S+))?$/i,
+    parse: (m) => ({
+      type: 'interface_expose',
+      nodeId: m[2],
+      port: m[3],
+      ...(m[1] ? { side: dir(m[1]) } : {}),
+      ...(m[4] ? { id: m[4] } : {})
+    })
+  },
+  // interface add <side> <id> [<dataType>]
+  {
+    pattern: /^interface\s+add\s+(input|output)\s+(\S+)(?:\s+(\S+))?$/i,
+    parse: (m) => ({
+      type: 'interface_add',
+      side: dir(m[1]),
+      id: m[2],
+      ...(m[3] ? { dataType: m[3] } : {})
+    })
+  },
+  // interface remove <side> <id>
+  {
+    pattern: /^interface\s+remove\s+(input|output)\s+(\S+)$/i,
+    parse: (m) => ({ type: 'interface_remove', side: dir(m[1]), id: m[2] })
+  },
+  // interface rename <side> <id> to <newId>
+  {
+    pattern: /^interface\s+rename\s+(input|output)\s+(\S+)\s+to\s+(\S+)$/i,
+    parse: (m) => ({
+      type: 'interface_rename',
+      side: dir(m[1]),
+      id: m[2],
+      newId: m[3]
+    })
+  },
+  // interface bind <side> <id> to <nid>:<port>
+  {
+    pattern: /^interface\s+bind\s+(input|output)\s+(\S+)\s+to\s+(\S+?):(\S+)$/i,
+    parse: (m) => ({
+      type: 'interface_bind',
+      side: dir(m[1]),
+      id: m[2],
+      target: { nodeId: m[3], port: m[4] }
+    })
+  },
+  // interface unbind <side> <id>
+  {
+    pattern: /^interface\s+unbind\s+(input|output)\s+(\S+)$/i,
+    parse: (m) => ({ type: 'interface_bind', side: dir(m[1]), id: m[2], target: null })
+  },
+  // interface set <side> <id>:<field> """<multiline value>"""
+  {
+    pattern: new RegExp(
+      `^interface\\s+set\\s+(input|output)\\s+(\\S+):(${FIELD_ALT})\\s+"""([\\s\\S]*)"""$`,
+      'i'
+    ),
+    parse: (m) => ({
+      type: 'interface_set',
+      side: dir(m[1]),
+      id: m[2],
+      field: INTERFACE_FIELDS[m[3].toLowerCase()],
+      value: JSON.stringify(blockValue(m[4]))
+    })
+  },
+  // interface set <side> <id>:<field> <value...>   (`none` or "" clears an optional field)
+  {
+    pattern: new RegExp(
+      `^interface\\s+set\\s+(input|output)\\s+(\\S+):(${FIELD_ALT})\\s+(\\S[\\s\\S]*)$`,
+      'i'
+    ),
+    parse: (m) => ({
+      type: 'interface_set',
+      side: dir(m[1]),
+      id: m[2],
+      field: INTERFACE_FIELDS[m[3].toLowerCase()],
+      value: m[4].trim()
+    })
+  },
+  // interface pull <side> <id>
+  {
+    pattern: /^interface\s+pull\s+(input|output)\s+(\S+)$/i,
+    parse: (m) => ({ type: 'interface_pull', side: dir(m[1]), id: m[2] })
+  },
+  // interface move <side> <id> to <position>
+  {
+    pattern: /^interface\s+move\s+(input|output)\s+(\S+)\s+to\s+(\d+)$/i,
+    parse: (m) => ({
+      type: 'interface_move',
+      side: dir(m[1]),
+      id: m[2],
+      position: Number(m[3])
+    })
+  },
+  // ports hide|show [input|output] <nid>:<port>
+  {
+    pattern: /^ports\s+(hide|show)\s+(?:(input|output)\s+)?(\S+?):(\S+)$/i,
+    parse: (m) => ({
+      type: 'ports_exposure',
+      mode: m[1].toLowerCase() as 'hide' | 'show',
+      nodeId: m[3],
+      port: m[4],
+      ...(m[2] ? { side: dir(m[2]) } : {})
+    })
+  },
+  // ports hide|show <nid>
+  {
+    pattern: /^ports\s+(hide|show)\s+([^\s:]+)$/i,
+    parse: (m) => ({
+      type: 'ports_exposure',
+      mode: m[1].toLowerCase() as 'hide' | 'show',
+      nodeId: m[2]
+    })
+  },
+  // ports move [input|output] <nid>:<port> to <position>
+  {
+    pattern: /^ports\s+move\s+(?:(input|output)\s+)?(\S+?):(\S+)\s+to\s+(\d+)$/i,
+    parse: (m) => ({
+      type: 'ports_move',
+      nodeId: m[2],
+      port: m[3],
+      position: Number(m[4]),
+      ...(m[1] ? { side: dir(m[1]) } : {})
+    })
+  },
+  // ports <nid>
+  {
+    pattern: /^ports\s+(?!(?:hide|show|move)\b)([^\s:]+)$/i,
+    parse: (m) => ({ type: 'ports_list', nodeId: m[1] })
+  },
+  // duplicate <nid>
+  {
+    pattern: /^duplicate\s+(\S+)$/i,
+    parse: (m) => ({ type: 'duplicate_node', nodeId: m[1] })
+  },
+  // workflow
+  {
+    pattern: /^workflow$/i,
+    parse: () => ({ type: 'workflow_get' })
+  },
+  // workflow name """<text>"""
+  {
+    pattern: /^workflow\s+name\s+"""([\s\S]*)"""$/i,
+    parse: (m) => ({ type: 'workflow_set', field: 'name', value: blockValue(m[1]) })
+  },
+  // workflow name <text>
+  {
+    pattern: /^workflow\s+name\s+(.+)$/i,
+    parse: (m) => ({ type: 'workflow_set', field: 'name', value: textValue(m[1]) })
+  },
+  // workflow description """<multiline>"""
+  {
+    pattern: /^workflow\s+description\s+"""([\s\S]*)"""$/i,
+    parse: (m) => ({ type: 'workflow_set', field: 'description', value: blockValue(m[1]) })
+  },
+  // workflow description <text>   (`none` or "" clears it; no text is a read)
+  {
+    pattern: /^workflow\s+description\s+(\S[\s\S]*)$/i,
+    parse: (m) => ({
+      type: 'workflow_set',
+      field: 'description',
+      value: /^none$/i.test(m[1].trim()) ? '' : textValue(m[1])
+    })
+  },
+  {
+    pattern: /^workflow\s+description$/i,
+    parse: () => ({ type: 'workflow_get' })
+  },
+  // workflow format <id>
+  {
+    pattern: /^workflow\s+format\s+(\S+)$/i,
+    parse: (m) => ({ type: 'workflow_set', field: 'format', value: m[1] })
+  },
+  // playground [chat]
+  {
+    pattern: /^playground(?:\s+chat)?$/i,
+    parse: () => ({ type: 'playground_get' })
+  },
+  // playground chat off
+  {
+    pattern: /^playground\s+chat\s+off$/i,
+    parse: () => ({ type: 'playground_chat', edit: { kind: 'off' } })
+  },
+  // playground chat move_turns
+  {
+    pattern: /^playground\s+chat\s+move_turns$/i,
+    parse: () => ({ type: 'playground_chat', edit: { kind: 'move_turns' } })
+  },
+  // playground chat message|session_id|message_id <input>|none
+  {
+    pattern: /^playground\s+chat\s+(message|session_id|message_id)\s+(\S+)$/i,
+    parse: (m) => ({
+      type: 'playground_chat',
+      edit: {
+        kind: 'input',
+        key: m[1].toLowerCase() as 'message' | 'session_id' | 'message_id',
+        id: inputIdOrNull(m[2])
+      }
+    })
+  },
+  // playground chat history <input>|none [limit <n>]
+  {
+    pattern: /^playground\s+chat\s+history\s+(\S+)(?:\s+limit\s+(\d+))?$/i,
+    parse: (m) => ({
+      type: 'playground_chat',
+      edit: {
+        kind: 'input',
+        key: 'history',
+        id: inputIdOrNull(m[1]),
+        ...(m[2] !== undefined ? { limit: Number(m[2]) } : {})
+      }
+    })
+  },
+  // playground chat limit <n>
+  {
+    pattern: /^playground\s+chat\s+limit\s+(\d+)$/i,
+    parse: (m) => ({ type: 'playground_chat', edit: { kind: 'limit', limit: Number(m[1]) } })
+  },
+  // playground chat reply add|remove <nid>:<port>
+  {
+    pattern: /^playground\s+chat\s+reply\s+(add|remove)\s+(\S+?):(\S+)$/i,
+    parse: (m) => ({
+      type: 'playground_chat',
+      edit: {
+        kind: 'reply',
+        mode: m[1].toLowerCase() as 'add' | 'remove',
+        nodeId: m[2],
+        port: m[3]
+      }
+    })
+  },
+  // playground chat sub_replies on|off
+  {
+    pattern: /^playground\s+chat\s+sub_replies\s+(on|off)$/i,
+    parse: (m) => ({
+      type: 'playground_chat',
+      edit: { kind: 'sub_replies', on: m[1].toLowerCase() === 'on' }
+    })
+  },
   // canvas fitview | canvas fit
   {
     pattern: /^canvas\s+fit(?:\s*view)?$/i,
@@ -365,16 +650,11 @@ export function parseCommand(input: string): ParseResult {
     };
   }
 
-  // `session …` belongs to the editor Console, not the editing DSL. Say so, so
-  // an agent that reads this error knows the verb is not available to it.
-  if (/^session(\s|$)/i.test(trimmed)) {
-    return {
-      ok: false,
-      error:
-        '`session` commands run only in the editor Console; they are not part of the editing commands.',
-      input
-    };
-  }
+  // The editor Console's own verbs (`session`, `mode`, `runs`, `save`, `export`)
+  // are not editing commands. Say so, naming the WebMCP tool where one exists,
+  // so an agent that reads this error knows what to use instead.
+  const consoleError = consoleRefusal(trimmed);
+  if (consoleError) return { ok: false, error: consoleError, input };
 
   for (const rule of rules) {
     const match = trimmed.match(rule.pattern);
@@ -406,7 +686,12 @@ export function parseCommand(input: string): ParseResult {
     'swap',
     'move',
     'layout',
-    'canvas'
+    'canvas',
+    'interface',
+    'ports',
+    'duplicate',
+    'workflow',
+    'playground'
   ];
 
   if (knownVerbs.includes(verb)) {

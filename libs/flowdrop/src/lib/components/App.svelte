@@ -33,6 +33,8 @@
   } from '$lib/utils/playgroundChat.js';
   import ReadOnlyDetails from '$lib/components/ReadOnlyDetails.svelte';
   import LockFence from '$lib/components/LockFence.svelte';
+  import { testModeBlocker, type ConsoleHost } from '$lib/commands/console.js';
+  import { provideTestBlocker } from '../stores/editorModeStore.svelte.js';
   import CommandConsole from '$lib/components/console/CommandConsole.svelte';
   import ConsoleStrip from '$lib/components/console/ConsoleStrip.svelte';
   import {
@@ -88,7 +90,11 @@
   import { resolveTheme } from '$lib/themes/index.js';
   import { provideInstance } from '../stores/getInstance.svelte.js';
   import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
-  import { globalSaveWorkflow, globalExportWorkflow } from '$lib/services/globalSave.js';
+  import {
+    globalSaveWorkflow,
+    globalExportWorkflow,
+    saveRefusal
+  } from '$lib/services/globalSave.js';
   import { apiToasts, dismissToast, showError, showInfo } from '$lib/services/toastService.js';
   import { workflowLaunchService } from '$lib/services/workflowLaunchService.js';
   import { canOfferRun } from '$lib/utils/runOffer.js';
@@ -421,12 +427,24 @@
    * saved workflow's id). A lock does not remove it: a locked workflow can still
    * be tested, the canvas just stays read-only.
    */
-  const testModeAvailable = $derived(
-    features.testMode && mode === 'edit' && !pipelineId && !!fd.workflow.current?.id
+  const testModeBlockedBy = $derived(
+    testModeBlocker({
+      testModeFeature: !!features.testMode,
+      editable: mode === 'edit',
+      isPipelineView: !!pipelineId,
+      hasSavedWorkflow: !!fd.workflow.current?.id
+    })
   );
-  /** Test mode is in effect: requested, and available. */
-  const testMode = $derived(testModeAvailable && fd.editorMode.isTest);
-  const effectiveEditorMode = $derived<EditorMode>(testMode ? 'test' : 'edit');
+  const testModeAvailable = $derived(testModeBlockedBy === null);
+  // The store answers "which mode is in effect" for everyone: this component,
+  // the Console's `mode` and WebMCP's `get_editor_mode`/`set_editor_mode`. The
+  // reason is registered at init, not in an `$effect`, so the first render (and
+  // SSR) already see it; it is withdrawn when the component is destroyed.
+  const withdrawTestBlocker = provideTestBlocker(fd.editorMode, () => testModeBlockedBy);
+  onDestroy(withdrawTestBlocker);
+  /** Test mode is in effect: requested, and not held back. */
+  const effectiveEditorMode = $derived<EditorMode>(fd.editorMode.effective);
+  const testMode = $derived(effectiveEditorMode === 'test');
 
   /** Narrow screens: the Playground is a drawer over the canvas, not a column. */
   const narrowQuery = new MediaQuery('(max-width: 1199px)');
@@ -826,6 +844,13 @@
   // Registered formats this host offers — the mount-level `workflowFormats`
   // allowlist filters the registry (an unknown id filters to nothing rather
   // than erroring; the field simply hides).
+  // The allowlist is published on the instance too, so the editing commands
+  // (`workflow format`, from the Console, WebMCP or `app.run`) offer the same list.
+  // svelte-ignore state_referenced_locally
+  fd.formats.allowlist = workflowFormats ?? null;
+  $effect.pre(() => {
+    fd.formats.allowlist = workflowFormats ?? null;
+  });
   let workflowFormatOptions = $derived(
     fd.formats
       .getOneOfOptions()
@@ -990,7 +1015,13 @@
       const response = await authenticatedFetch(
         testUrl,
         { method: 'GET' },
-        { config: endpointConfig ?? undefined, endpointKey: 'nodes.list', authProvider }
+        // The base the test URL is built from is the one auth may go to.
+        {
+          config: endpointConfig ?? undefined,
+          endpointKey: 'nodes.list',
+          authProvider,
+          apiBase: baseUrl
+        }
       );
       const data = await response.json();
 
@@ -1405,9 +1436,29 @@
    * All export logic (flush, metadata construction, file download) lives
    * in globalSave.ts — the single source of truth.
    */
-  async function exportWorkflow(): Promise<void> {
-    await globalExportWorkflow({ features, instance: fd });
+  async function exportWorkflow(): Promise<boolean> {
+    return globalExportWorkflow({ features, instance: fd });
   }
+
+  /**
+   * What the Console's `save` and `export` commands reach. The refusal comes
+   * from `saveRefusal`, the rule `globalSaveWorkflow` itself applies.
+   */
+  const consoleEditorHost: ConsoleHost = {
+    save: async () => {
+      const refused = saveRefusal(fd);
+      if (refused) return { ok: false, reason: refused };
+      const saved = await saveWorkflow();
+      return saved
+        ? { ok: true }
+        : {
+            ok: false,
+            reason:
+              'The workflow was not saved. The editor shows the reason (a notification or the save dialog).'
+          };
+    },
+    export: () => exportWorkflow()
+  };
 
   /**
    * Import workflow from a JSON file
@@ -2252,7 +2303,12 @@
 {/snippet}
 
 {#snippet consoleSurfaceBody()}
-  <CommandConsole nodeTypes={nodes} onUIAction={handleConsoleUIAction} id={consolePanelId} />
+  <CommandConsole
+    nodeTypes={nodes}
+    onUIAction={handleConsoleUIAction}
+    id={consolePanelId}
+    editorHost={consoleEditorHost}
+  />
 {/snippet}
 
 <!-- The Console's toggle: a slim strip on the canvas's bottom edge; the panel's header once open -->

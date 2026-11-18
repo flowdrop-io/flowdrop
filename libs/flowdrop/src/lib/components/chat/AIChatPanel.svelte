@@ -292,6 +292,8 @@
       hooks: fd.host.current,
       gate: shared ?? undefined,
       approval: 'confirm',
+      // Test mode hides this panel: the Assistant must not be able to switch the mode itself.
+      editorModeTools: false,
       messages,
       dialogTitle: (name) => messages().chat.tools.confirmTitle({ name })
     });

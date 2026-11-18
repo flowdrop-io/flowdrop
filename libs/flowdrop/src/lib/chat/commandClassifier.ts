@@ -11,7 +11,7 @@
 import type { Command } from '../commands/types.js';
 
 /** Commands that only read workflow state without modifying it */
-const READ_ONLY_COMMANDS = new Set([
+const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set<Command['type']>([
   'list_nodes',
   'list_edges',
   'list_types',
@@ -20,17 +20,23 @@ const READ_ONLY_COMMANDS = new Set([
   'info',
   'get_config',
   'inspect_node_layout',
+  'interface_list',
+  'ports_list',
+  'workflow_get',
+  'playground_get',
   'help'
 ]);
 
 /**
  * Determine whether a DSL command type is mutating (modifies workflow state).
  *
- * Read-only commands (list_nodes, list_edges, list_types, describe_type,
- * search_types, info, get_config, help)
- * return false. All other commands are considered mutating and return true.
+ * The read-only set is the listing and inspecting commands: the node, edge
+ * and type lists, `describe_type`, `search_types`, `info`, `get_config`,
+ * `inspect_node_layout`, `interface_list`, `ports_list`, `workflow_get`,
+ * `playground_get` and `help`. All other commands, including the view
+ * commands, are considered mutating and return true.
  *
- * @param commandType - The command type string (e.g., "add", "list_nodes")
+ * @param commandType - The command type string (e.g., "add_node", "list_nodes")
  * @returns true if the command modifies workflow state, false if read-only
  */
 export function isMutatingCommand(commandType: string): boolean {

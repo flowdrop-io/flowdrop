@@ -10,7 +10,7 @@
 <script lang="ts">
   import type { NodeMetadata } from '$lib/types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { toShortId, resolveNode } from '../../commands/index.js';
+  import { toShortId, resolveNode, CONSOLE_HELP, CONSOLE_VERBS } from '../../commands/index.js';
   import ConsoleAutocomplete, { type Suggestion } from './ConsoleAutocomplete.svelte';
 
   interface Props {
@@ -77,7 +77,12 @@
     'move',
     'layout',
     'canvas',
-    'session'
+    ...CONSOLE_VERBS,
+    'interface',
+    'ports',
+    'duplicate',
+    'workflow',
+    'playground'
   ];
 
   /** Verbs that take a nodeId as their first argument */
@@ -282,9 +287,22 @@
       .map(([key, prop]) => ({
         value: key,
         label: key,
-        detail: typeof prop === 'object' && 'type' in prop ? String(prop.type) : undefined
+        detail:
+          typeof prop === 'object' && 'type' in prop
+            ? Array.isArray(prop.type)
+              ? prop.type.join(' | ')
+              : String(prop.type)
+            : undefined
       }))
       .slice(0, 50);
+  }
+
+  /** The sub-commands of a Console verb, from its help rows (`session send` gives `send`). */
+  function consoleSubcommands(verb: string): Array<{ value: string; detail?: string }> {
+    return CONSOLE_HELP.filter((row) => row.name.startsWith(`${verb} `)).map((row) => ({
+      value: row.name.slice(verb.length + 1),
+      detail: row.description
+    }));
   }
 
   /** Sub-commands for verbs that have them */
@@ -298,13 +316,36 @@
       { value: 'edges', detail: 'List all connections' },
       { value: 'types', detail: 'List available node types' }
     ],
-    session: [
-      { value: 'send', detail: 'Send a chat turn to the test session' },
-      { value: 'run', detail: 'Run the workflow (session run key=value …)' },
-      { value: 'stop', detail: 'Stop the running test session' },
-      { value: 'new', detail: 'Start a fresh test session' },
-      { value: 'status', detail: 'Show the session, its status and latest reply' }
+    // The Console's own verbs: sub-commands and their text come from its one help list.
+    session: consoleSubcommands('session'),
+    mode: [
+      { value: 'edit', detail: 'Switch to Edit mode' },
+      { value: 'test', detail: 'Switch to Test mode (needs a saved workflow)' }
     ],
+    runs: [{ value: 'list', detail: 'List the workflow’s runs' }, ...consoleSubcommands('runs')],
+    interface: [
+      { value: 'list', detail: 'List the workflow interface' },
+      { value: 'expose', detail: 'Expose a node port on the interface' },
+      { value: 'add', detail: 'Add an interface port' },
+      { value: 'remove', detail: 'Remove an interface port' },
+      { value: 'rename', detail: 'Rename an interface port' },
+      { value: 'bind', detail: 'Bind an interface port to a node port' },
+      { value: 'unbind', detail: 'Unbind an interface port' },
+      { value: 'set', detail: 'Set an interface port property' },
+      { value: 'pull', detail: 'Pull the interface from the nodes' },
+      { value: 'move', detail: 'Reorder an interface port' }
+    ],
+    ports: [
+      { value: 'hide', detail: 'Hide a node port' },
+      { value: 'show', detail: 'Show a hidden node port' },
+      { value: 'move', detail: 'Reorder a node port' }
+    ],
+    workflow: [
+      { value: 'name', detail: 'Set the workflow name' },
+      { value: 'description', detail: 'Set the workflow description' },
+      { value: 'set', detail: 'Set a workflow property' }
+    ],
+    playground: [{ value: 'chat', detail: 'Configure the Playground chat binding' }],
     canvas: [
       { value: 'fitview', detail: 'Fit all nodes into the viewport' },
       { value: 'zoom in', detail: 'Zoom in on the canvas' },

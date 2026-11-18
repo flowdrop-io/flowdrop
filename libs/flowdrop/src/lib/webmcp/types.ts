@@ -337,12 +337,18 @@ export type HostHooks = Pick<WebMCPOptions, 'onSave' | 'onRun' | 'onRunStatus'>;
  * not commands.
  */
 export interface HostToolDescriptor {
-  verb: 'save' | 'run' | 'run_status';
+  verb: 'save' | 'run' | 'run_status' | 'get_editor_mode' | 'set_editor_mode';
   description: string;
   inputSchema: ToolInputSchema;
   readOnly: boolean;
   /** Never covered by "don't ask again for edits"; always asks. */
   consequential: boolean;
+  /**
+   * Never passes through the approval gate: the call changes how the editor
+   * is shown, not the workflow (`set_editor_mode`). Absent means gated unless
+   * `readOnly`.
+   */
+  ungated?: boolean;
 }
 
 /**
@@ -392,6 +398,13 @@ export interface ToolRuntimeOptions {
    * runtimes share one gate and still say which surface wants the change.
    */
   dialogTitle?: (editorName: string) => string;
+  /**
+   * Offer `get_editor_mode` / `set_editor_mode`. Default `true`: an outside
+   * agent (WebMCP) may switch the view. The in-editor Assistant passes `false`:
+   * Test mode hides the Assistant, so its own tool call could dismiss the panel
+   * in the middle of its tool loop.
+   */
+  editorModeTools?: boolean;
 }
 
 /**

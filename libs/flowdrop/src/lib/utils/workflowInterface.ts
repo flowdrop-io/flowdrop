@@ -540,6 +540,24 @@ export function pullEntryFieldsFromPort(port: NodePort): Partial<WorkflowInterfa
 }
 
 /**
+ * Merge a patch into an entry. A key the patch sets to `undefined` is removed
+ * rather than kept as an own `undefined` property, so clearing a field (a turn
+ * set back to none, an emptied name) leaves no key behind. Keys the patch does
+ * not mention, including ones this library does not know, are carried over
+ * untouched. Shared by the interface editor and the `interface set` command.
+ */
+export function applyEntryPatch(
+  entry: WorkflowInterfaceEntry,
+  patch: Partial<WorkflowInterfaceEntry>
+): WorkflowInterfaceEntry {
+  const next: WorkflowInterfaceEntry = { ...entry, ...patch };
+  for (const key of Object.keys(patch) as Array<keyof WorkflowInterfaceEntry>) {
+    if (patch[key] === undefined) delete next[key];
+  }
+  return next;
+}
+
+/**
  * Whether a port is intra-graph control flow — the reserved `trigger`
  * dataType, the loopback input, or a `tool` *output* — and therefore never
  * publishable in a workflow's interface.

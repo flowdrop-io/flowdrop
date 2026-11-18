@@ -197,3 +197,62 @@ export function applyPortExposure(
   }
   return next;
 }
+
+/**
+ * A node's config with `ports` set to `ports`, or without the key when the
+ * node ends up with no override (`undefined`). The one way `config.ports` is
+ * written back: the Ports form, the context menu's bulk actions and the
+ * `ports` commands all go through it.
+ */
+export function withPorts(
+  config: Record<string, unknown> | undefined,
+  ports: PortsConfig | undefined
+): Record<string, unknown> {
+  const { ports: _previous, ...rest } = config ?? {};
+  return ports ? { ...rest, ports } : rest;
+}
+
+/**
+ * The node's `config.ports` after one port is shown or hidden (the Ports
+ * form's eye). `undefined` means the node ends up with no override. The
+ * caller checks that hiding is allowed (`hideBlock`).
+ */
+export function setPortExposed(
+  current: PortsConfig | undefined,
+  direction: PortsDirection,
+  allPorts: NodePort[],
+  portId: string,
+  exposed: boolean
+): PortsConfig | undefined {
+  return buildPortsConfig(
+    current,
+    direction,
+    orderPortsFor(allPorts, current?.[direction]),
+    allPorts,
+    (port) => (port.id === portId ? exposed : isPortExposed(port, current?.[direction]))
+  );
+}
+
+/**
+ * The node's `config.ports` after a port moves to a 0-based index within its
+ * direction (the ports in between shift). `null` when nothing would move (the
+ * port is not there, or the index is its own or out of range).
+ */
+export function movePort(
+  current: PortsConfig | undefined,
+  direction: PortsDirection,
+  allPorts: NodePort[],
+  portId: string,
+  toIndex: number
+): { ports: PortsConfig | undefined } | null {
+  const ordered = orderPortsFor(allPorts, current?.[direction]);
+  const from = ordered.findIndex((port) => port.id === portId);
+  if (from === -1 || from === toIndex || toIndex < 0 || toIndex >= ordered.length) return null;
+  const [port] = ordered.splice(from, 1);
+  ordered.splice(toIndex, 0, port);
+  return {
+    ports: buildPortsConfig(current, direction, ordered, allPorts, (p) =>
+      isPortExposed(p, current?.[direction])
+    )
+  };
+}
