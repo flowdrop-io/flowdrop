@@ -205,7 +205,17 @@
 
   /** A required field with `when_missing: skip` says what an empty value does. */
   const whenMissingHint = $derived(
-    required && schema.when_missing === 'skip' ? m().form.field.skippedWhenEmpty : undefined
+    required && schema.when_missing === 'skip' ? m().form.field.skippedWhenNotSet : undefined
+  );
+
+  /**
+   * The ids the input is described by: its description and the hint. The hint's
+   * id is the one `FormFieldWrapper` gives it (`{id}-hint`).
+   */
+  const describedBy = $derived(
+    [descriptionId, whenMissingHint ? `${fieldKey}-hint` : undefined]
+      .filter((id) => id !== undefined)
+      .join(' ') || undefined
   );
 
   /**
@@ -213,7 +223,9 @@
    */
   const enumOptions = $derived.by((): string[] => {
     if (!schema.enum) return [];
-    return schema.enum.map((opt) => String(opt));
+    // `null` is not an option: the null toggle stores it. Mapped to a string it
+    // would be stored as the text "null".
+    return schema.enum.filter((opt) => opt !== null).map((opt) => String(opt));
   });
 
   /**
@@ -323,7 +335,7 @@
         placeholder={schema.placeholder}
         {required}
         {schema}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={isReadOnly}
         height={schema.height as string | undefined}
         darkTheme={schema.darkTheme ?? getResolvedTheme() === 'dark'}
@@ -348,7 +360,7 @@
         autocomplete={schema.autocomplete}
         placeholder={schema.placeholder ?? ''}
         {required}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
@@ -357,7 +369,7 @@
         id={fieldKey}
         value={arrayValue}
         options={enumOptions}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
@@ -367,7 +379,7 @@
         value={stringValue}
         options={enumOptions}
         {required}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
@@ -377,7 +389,7 @@
         value={stringValue}
         placeholder={schema.placeholder ?? defaultPlaceholder(schema.default)}
         {required}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={schema.readOnly === true}
         onChange={(val) => onChange(val)}
       />
@@ -387,7 +399,7 @@
         value={stringValue}
         placeholder={schema.placeholder ?? defaultPlaceholder(schema.default)}
         {required}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={schema.readOnly === true}
         onChange={(val) => onChange(val)}
       />
@@ -400,7 +412,7 @@
         max={schema.maximum}
         step={schema.step}
         {required}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={schema.readOnly === true}
         onChange={(val) => onChange(val)}
       />
@@ -412,7 +424,7 @@
         max={schema.maximum}
         step={schema.step}
         {required}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
@@ -420,7 +432,7 @@
       <FormToggle
         id={fieldKey}
         value={booleanValue}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
@@ -430,7 +442,7 @@
         value={stringValue}
         options={selectOptions}
         {required}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />
@@ -452,7 +464,7 @@
       <FormPorts
         id={fieldKey}
         {value}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         {node}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
@@ -484,7 +496,7 @@
           value={typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
           placeholder={schema.placeholder ?? 'Enter value...'}
           {required}
-          ariaDescribedBy={descriptionId}
+          ariaDescribedBy={describedBy}
           disabled={isReadOnly}
           onChange={(val) => {
             // Try to parse as JSON for object types and for a field with no type
@@ -507,7 +519,7 @@
         id={fieldKey}
         value={stringValue}
         placeholder={schema.placeholder ?? ''}
-        ariaDescribedBy={descriptionId}
+        ariaDescribedBy={describedBy}
         disabled={isReadOnly}
         onChange={(val) => onChange(val)}
       />

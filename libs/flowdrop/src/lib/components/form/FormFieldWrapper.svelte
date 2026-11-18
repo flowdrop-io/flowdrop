@@ -40,7 +40,7 @@
      * or enum lists it). While `on`, the field shows a muted "null" in place of its input.
      */
     nullToggle?: { on: boolean; disabled?: boolean; onToggle: () => void };
-    /** A short plain-text hint under the field (e.g. "Skipped when empty") */
+    /** A short plain-text hint under the field (e.g. "Skipped when not set"); its id is `{id}-hint` */
     hint?: string;
     /** Slot content for the field input */
     children: Snippet;
@@ -75,7 +75,12 @@
 >
   <!-- Field Label -->
   <div class="form-field__label-row">
-    <label class="form-field__label" class:form-field__label--sr={plain} for={id}>
+    <!-- While null is on there is no input to point at, so the label has no `for`. -->
+    <label
+      class="form-field__label"
+      class:form-field__label--sr={plain}
+      for={nullToggle?.on ? undefined : id}
+    >
       <span class="form-field__label-text">
         {label}
       </span>

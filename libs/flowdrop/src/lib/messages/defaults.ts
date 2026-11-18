@@ -127,7 +127,7 @@ export const defaultMessages = {
       nullToggleTitle: 'Store null instead of a value. Turn off to bring the value back.',
       nullValue: 'null',
       // A required field marked when_missing: skip.
-      skippedWhenEmpty: 'Skipped when empty'
+      skippedWhenNotSet: 'Skipped when not set'
     },
 
     toggle: {

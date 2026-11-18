@@ -96,7 +96,7 @@
     docs: {
       description: {
         story:
-          'A field whose type array or enum lists `null` gets a "null" toggle on its label row. The first column is off (the field holds a value), the second is on (the config holds `null`). A required field marked `when_missing: skip` also says it is skipped when empty.'
+          'A field whose type array or enum lists `null` gets a "null" toggle on its label row. The first column is off (the field holds a value), the second is on (the config holds `null`). A required field marked `when_missing: skip` also says it is skipped when not set.'
       }
     }
   }}

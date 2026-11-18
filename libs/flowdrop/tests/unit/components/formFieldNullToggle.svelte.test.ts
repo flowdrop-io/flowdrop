@@ -117,7 +117,7 @@ describe('null toggle behaviour', () => {
 describe('when_missing hint', () => {
   it('shows on a required field with when_missing: skip', () => {
     const t = render({ type: 'string', when_missing: 'skip' }, '', true);
-    expect(t.target.textContent).toContain('Skipped when empty');
+    expect(t.target.textContent).toContain('Skipped when not set');
   });
 
   it('does not show for fail, for an absent when_missing, or when not required', () => {
@@ -130,6 +130,53 @@ describe('when_missing hint', () => {
     expect(
       render({ type: 'string', when_missing: 'skip' }, '', false).target.textContent
     ).not.toContain('Skipped');
+  });
+});
+
+describe('when_missing hint, accessibility', () => {
+  it('is part of the input description, after the description', () => {
+    const t = render(
+      { type: 'string', title: 'Recipient', description: 'Who gets it.', when_missing: 'skip' },
+      '',
+      true
+    );
+    const input = t.target.querySelector('input')!;
+    expect(input.getAttribute('aria-describedby')).toBe('f-description f-hint');
+    expect(t.target.querySelector('#f-hint')?.textContent).toBe('Skipped when not set');
+    expect(t.target.querySelector('#f-description')).not.toBeNull();
+  });
+
+  it('is the only description when the field has no description', () => {
+    const t = render({ type: 'string', title: 'Recipient', when_missing: 'skip' }, '', true);
+    expect(t.target.querySelector('input')!.getAttribute('aria-describedby')).toBe('f-hint');
+  });
+
+  it('leaves no aria-describedby when there is neither', () => {
+    const t = render({ type: 'string', title: 'Recipient' }, '', true);
+    expect(t.target.querySelector('input')!.hasAttribute('aria-describedby')).toBe(false);
+  });
+});
+
+describe('label while null is on', () => {
+  it('points at the input while the input is shown, and at nothing while null is on', () => {
+    const t = render({ type: ['string', 'null'], title: 'Note' }, 'x');
+    const label = () => t.target.querySelector('label')!;
+    expect(label().getAttribute('for')).toBe('f');
+    expect(t.target.querySelector('#f')).not.toBeNull();
+    t.click();
+    expect(t.target.querySelector('#f')).toBeNull();
+    expect(label().hasAttribute('for')).toBe(false);
+  });
+});
+
+describe('enum that lists null', () => {
+  it('offers no "null" option: the null toggle stores null', () => {
+    const t = render({ type: ['string', 'null'], enum: ['a', 'b', null], title: 'Mode' }, 'a');
+    const options = Array.from(t.target.querySelectorAll('select option')).map(
+      (o) => (o as HTMLOptionElement).value
+    );
+    expect(options).toEqual(expect.arrayContaining(['a', 'b']));
+    expect(options).not.toContain('null');
   });
 });
 
