@@ -55,6 +55,8 @@ describe('toEdit / buildConfig / mergeWithDefaults (#72)', () => {
   it('toEdit returns the marker for a clear and the value otherwise', () => {
     expect(toEdit({ type: 'string' }, '')).toBe(REMOVE_KEY);
     expect(toEdit({ type: 'string' }, 'x')).toBe('x');
+    expect(toEdit({ type: ['integer', 'null'] }, undefined)).toBe(REMOVE_KEY);
+    expect(toEdit({ type: ['integer', 'null'] }, null)).toBeNull();
   });
 
   it('merge shows a removed key as empty, even with a default', () => {

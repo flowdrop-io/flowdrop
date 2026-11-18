@@ -9,6 +9,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import FormFieldLight from '$lib/components/form/FormFieldLight.svelte';
+import ConfigForm from '$lib/components/ConfigForm.svelte';
 import { createFlowDropInstance } from '$lib/stores/instanceContainer.svelte.js';
 import { FLOWDROP_INSTANCE_KEY } from '$lib/stores/getInstance.svelte.js';
 import type { FieldSchema } from '$lib/components/form/types.js';
@@ -129,5 +130,45 @@ describe('when_missing hint', () => {
     expect(
       render({ type: 'string', when_missing: 'skip' }, '', false).target.textContent
     ).not.toContain('Skipped');
+  });
+});
+
+describe('null toggle inside ConfigForm', () => {
+  const nullableSchema = {
+    type: 'object',
+    properties: { limit: { type: ['integer', 'null'], title: 'Limit' } }
+  } as never;
+
+  function mountForm(values: Record<string, unknown>) {
+    const onChange = vi.fn();
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    mounted = mount(ConfigForm, {
+      target,
+      props: { schema: nullableSchema, values, onChange, commitMode: 'live' }
+    });
+    flushSync();
+    const toggle = () =>
+      target.querySelector<HTMLButtonElement>('button[aria-label="Set to null"]')!;
+    const last = () => onChange.mock.calls.at(-1)![0] as Record<string, unknown>;
+    return { toggle, last, onChange };
+  }
+
+  it('turning off a null that was loaded removes the key', () => {
+    const { toggle, last } = mountForm({ limit: null });
+    expect(toggle().getAttribute('aria-pressed')).toBe('true');
+    toggle().click();
+    flushSync();
+    expect('limit' in last()).toBe(false);
+  });
+
+  it('turning on stores null, turning off restores the typed value', () => {
+    const { toggle, last } = mountForm({ limit: 5 });
+    toggle().click();
+    flushSync();
+    expect(last().limit).toBeNull();
+    toggle().click();
+    flushSync();
+    expect(last().limit).toBe(5);
   });
 });

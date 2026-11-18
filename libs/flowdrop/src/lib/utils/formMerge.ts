@@ -54,10 +54,12 @@ export function isClearedValue(field: unknown, value: unknown): boolean {
 
 /**
  * What to store in the edits buffer for a value a field emitted: `REMOVE_KEY`
- * for a clear (see `isClearedValue`), the value itself otherwise.
+ * for a clear (see `isClearedValue`) or `undefined`, the value itself otherwise.
  */
 export function toEdit(field: unknown, value: unknown): unknown {
-  return isClearedValue(field, value) ? REMOVE_KEY : value;
+  // `undefined` is a field saying "no value" (the null toggle turned off with
+  // nothing to restore, for one); JSON cannot hold it, so the key leaves too.
+  return value === undefined || isClearedValue(field, value) ? REMOVE_KEY : value;
 }
 
 /**
