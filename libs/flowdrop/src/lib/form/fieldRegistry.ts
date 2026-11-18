@@ -212,12 +212,15 @@ export const enumSelectMatcher: FieldMatcher = (schema) => Boolean(schema.enum &
 export const textareaMatcher: FieldMatcher = (schema) =>
   firstNonNullType(schema.type) === 'string' && schema.format === 'multiline';
 
+/** `number`, `integer` and the deprecated `float` are all edited as numbers. */
+const isNumeric = (type: string | undefined): boolean =>
+  type === 'number' || type === 'integer' || type === 'float';
+
 /**
  * Matcher for range slider fields
  */
 export const rangeMatcher: FieldMatcher = (schema) =>
-  (firstNonNullType(schema.type) === 'number' || firstNonNullType(schema.type) === 'integer') &&
-  schema.format === 'range';
+  isNumeric(firstNonNullType(schema.type)) && schema.format === 'range';
 
 /**
  * Matcher for string text fields
@@ -229,8 +232,7 @@ export const textFieldMatcher: FieldMatcher = (schema) =>
  * Matcher for number fields
  */
 export const numberFieldMatcher: FieldMatcher = (schema) =>
-  (firstNonNullType(schema.type) === 'number' || firstNonNullType(schema.type) === 'integer') &&
-  schema.format !== 'range';
+  isNumeric(firstNonNullType(schema.type)) && schema.format !== 'range';
 
 /**
  * Matcher for boolean toggle fields

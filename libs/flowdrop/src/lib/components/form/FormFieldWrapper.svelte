@@ -40,6 +40,8 @@
      * or enum lists it). While `on`, the field shows a muted "null" in place of its input.
      */
     nullToggle?: { on: boolean; disabled?: boolean; onToggle: () => void };
+    /** The field's type is only `null`: show the muted "null" and no input, with no toggle. */
+    nullOnly?: boolean;
     /** A short plain-text hint under the field (e.g. "Skipped when not set"); its id is `{id}-hint` */
     hint?: string;
     /** Slot content for the field input */
@@ -56,6 +58,7 @@
     inline = false,
     aside,
     nullToggle,
+    nullOnly = false,
     hint,
     children
   }: Props = $props();
@@ -75,11 +78,11 @@
 >
   <!-- Field Label -->
   <div class="form-field__label-row">
-    <!-- While null is on there is no input to point at, so the label has no `for`. -->
+    <!-- While null is shown there is no input to point at, so the label has no `for`. -->
     <label
       class="form-field__label"
       class:form-field__label--sr={plain}
-      for={nullToggle?.on ? undefined : id}
+      for={nullToggle?.on || nullOnly ? undefined : id}
     >
       <span class="form-field__label-text">
         {label}
@@ -95,7 +98,7 @@
         size="sm"
         class="form-field__null-toggle"
         aria-pressed={nullToggle.on}
-        ariaLabel={m().form.field.nullToggleLabel}
+        ariaLabel={m().form.field.nullToggleLabel({ label })}
         title={m().form.field.nullToggleTitle}
         disabled={nullToggle.disabled}
         onclick={nullToggle.onToggle}
@@ -113,7 +116,7 @@
 
   <!-- Field Input Container -->
   <div class="form-field__input-wrapper">
-    {#if nullToggle?.on}
+    {#if nullToggle?.on || nullOnly}
       <div class="form-field__null" data-null-value>{m().form.field.nullValue}</div>
     {:else}
       {@render children()}

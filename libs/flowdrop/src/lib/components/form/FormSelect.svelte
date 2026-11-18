@@ -17,6 +17,11 @@
     value: string;
     /** Available options - can be string[] or FieldOption[] */
     options: FieldOption[] | string[];
+    /**
+     * Label of an empty option (value `''`) put first, which an unset field
+     * shows ("Default (x)", or a dash). Left out: no empty option.
+     */
+    emptyLabel?: string;
     /** Whether the field is required */
     required?: boolean;
     /** Whether the field is disabled (read-only) */
@@ -31,6 +36,7 @@
     id,
     value = '',
     options = [],
+    emptyLabel,
     required = false,
     disabled = false,
     ariaDescribedBy,
@@ -59,6 +65,9 @@
   aria-required={required}
   onchange={handleChange}
 >
+  {#if emptyLabel !== undefined}
+    <option value="">{emptyLabel}</option>
+  {/if}
   {#each normalizedOptions as option (option.value)}
     <option value={option.value}>{option.label}</option>
   {/each}

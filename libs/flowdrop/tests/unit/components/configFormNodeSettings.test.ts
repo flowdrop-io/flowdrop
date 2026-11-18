@@ -22,7 +22,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'svelte/server';
 import ConfigForm from '$lib/components/ConfigForm.svelte';
 import { PORTS_CONFIG_KEY, withPortsControl, withPortsField } from '$lib/utils/nodeFormSchema.js';
-import { mergeWithDefaults } from '$lib/utils/formMerge.js';
+import { mergeValues } from '$lib/utils/formMerge.js';
 import type { ConfigSchema, NodePort, WorkflowNode } from '$lib/types/index.js';
 import type { UISchemaElement } from '$lib/types/uischema.js';
 
@@ -76,9 +76,9 @@ describe('ConfigForm — node-level settings for a node with no config (issue #3
     const node = makeNode({ configSchema: greetingSchema, config: {} });
     const body = render(ConfigForm, { props: { node } }).body;
 
-    // The type's own field falls back to its schema default...
+    // The type's own field is empty and shows its schema default as placeholder...
     expect(body).toContain('id="greeting"');
-    expect(body).toContain('value="hi"');
+    expect(body).toContain('placeholder="hi"');
     // ...and the node-level settings render alongside it.
     expect(body).toContain('fd-ports');
   });
@@ -141,7 +141,7 @@ describe('withPortsField / withPortsControl', () => {
     const schema = withPortsField(greetingSchema, makeNode({ configSchema: greetingSchema }));
 
     expect(schema?.properties[PORTS_CONFIG_KEY].default).toBeUndefined();
-    expect(mergeWithDefaults(schema, {}, {})[PORTS_CONFIG_KEY]).toBeUndefined();
+    expect(mergeValues(schema, {}, {})[PORTS_CONFIG_KEY]).toBeUndefined();
   });
 
   it('leaves a schema that already declares `ports` alone (the backend stays authoritative)', () => {

@@ -139,7 +139,7 @@ describe('a clear still waiting for its blur', () => {
 });
 
 describe('a different node resets the buffer', () => {
-  it('a kept clear does not show on another node with the same schema object', () => {
+  it('an edit does not show on another node with the same schema object', () => {
     const schema = {
       type: 'object',
       properties: { x: { type: 'string', default: 'd' }, y: { type: 'string' } }
@@ -159,14 +159,14 @@ describe('a different node resets the buffer', () => {
     app = mount(ConfigForm, { target, props: props as never });
     flushSync();
     const x = () => target.querySelector<HTMLInputElement>('#x')!;
-    x().value = '';
+    // An edit still in the buffer (no blur yet) belongs to node A.
+    x().value = 'typed';
     x().dispatchEvent(new Event('input', { bubbles: true }));
-    flushSync();
-    x().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
     flushSync();
     props.node = nodeB;
     props.values = { y: 'B' };
     flushSync();
-    expect(x().value).toBe('d');
+    expect(x().value).toBe('');
+    expect(x().placeholder).toBe('d');
   });
 });

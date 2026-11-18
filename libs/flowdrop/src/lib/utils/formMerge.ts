@@ -7,15 +7,21 @@ import { firstNonNullType } from './schemaType.js';
  * per key:
  *
  *   1. `edits[key]` is `REMOVE_KEY` → the field was cleared: show it empty
- *                                    (the key is absent; the default applies)
  *   2. `key in edits`            → use the user's local edit
- *   3. `source[key] !== undefined` → use the prop value (including null/0/false/'')
- *   4. otherwise                  → use the schema field's `default`
+ *   3. otherwise                  → use the prop value (including null/0/false/''),
+ *                                   or `undefined` when the key is absent
+ *
+ * Schema defaults are not merged in: an absent key is an empty field and its
+ * default is shown as placeholder. A default is written into the config only
+ * by `buildConfig`.
  *
  * Keeping this separate from the host components means the test pins the same
  * function the components run, not a parallel implementation.
  */
 export const REMOVE_KEY: unique symbol = Symbol('flowdrop.removeKey');
+
+/** What the merge helpers read of a schema. */
+type SchemaWithProperties = { properties?: Record<string, unknown> };
 
 /** The schema keywords `isClearedValue` reads. */
 type ClearableField = {
@@ -30,9 +36,9 @@ type ClearableField = {
 const DOCUMENT_FORMATS = new Set(['json', 'code', 'markdown', 'template', 'hidden', 'ports']);
 
 /**
- * Whether the author listed `''` as a choice of an `enum` / `oneOf`. A select
- * has no empty placeholder option, so a `''` it emits can only be that choice,
- * and picking it is a value.
+ * Whether the author listed `''` as a choice of an `enum` / `oneOf`. The select
+ * adds its own empty option only when `''` is not already a choice, so a `''` it
+ * emits is that choice when the author listed it, and picking it is a value.
  */
 function selectOffersEmpty(f: ClearableField): boolean {
   if (Array.isArray(f.enum) && f.enum.includes('')) return true;
@@ -68,7 +74,7 @@ export function isClearedValue(field: unknown, value: unknown): boolean {
   // A nullable field (`['string', 'null']`) is cleared like its plain type.
   const kind = firstNonNullType(f.type);
   if (kind === 'string') return true;
-  return (kind === 'number' || kind === 'integer') && f.format !== 'range';
+  return (kind === 'number' || kind === 'integer' || kind === 'float') && f.format !== 'range';
 }
 
 /**
@@ -86,19 +92,37 @@ export function toEdit(field: unknown, value: unknown, exact = false): unknown {
   return isClearedValue(field, value) ? REMOVE_KEY : value;
 }
 
+/** The `default` a property declares, or `undefined` when it has none. */
+function defaultOf(schema: SchemaWithProperties | undefined, key: string): unknown {
+  const property = schema?.properties?.[key] as { default?: unknown } | undefined;
+  return property?.default;
+}
+
+/** A copy of a default, so the config never shares an object with the schema. */
+function copyDefault(value: unknown): unknown {
+  if (typeof value !== 'object' || value === null) return value;
+  try {
+    return structuredClone(value);
+  } catch {
+    return value;
+  }
+}
+
 /**
  * The config to hand to the host: the merged form values over `base`, without
  * the keys the user cleared and without keys that merged to `undefined`. This
  * is the one place the edits buffer's removal marker is turned into an absent
  * key, so `REMOVE_KEY` never reaches `onChange`, `onSave` or the store.
  *
- * It only acts on `edits`: a `''` or `[]` that is already stored is kept.
- *
- * `fillDefaults` says which untouched keys get their default written: `'all'`
- * (a submitted form answer), or a list of keys (a node's config writes only
- * its required keys, which R6.b needs present at save).
+ * Then, for the keys `fillDefaults` names that are absent (never set, or just
+ * cleared), the schema's `default` is written: `'all'` for a submitted form
+ * answer, or a list of keys (a node's config names its required keys, which
+ * R6.b needs present at save). This is the one place a default enters the
+ * config, and it does not depend on whether the form was remounted: the same
+ * key, absent, gets the same result.
  */
 export function buildConfig(
+  schema: SchemaWithProperties | undefined,
   base: Record<string, unknown>,
   merged: Record<string, unknown>,
   edits: Record<string, unknown>,
@@ -106,52 +130,35 @@ export function buildConfig(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(merged)) {
-    if (value === undefined) continue;
-    // A key nobody set (absent from `base`, no edit) only carries its default.
-    // Write it only where asked: an absent key means "not provided", and its
-    // default applies when the node runs (CFG-3).
-    const untouched = !(key in base) && !(key in edits);
-    if (untouched && fillDefaults !== 'all' && !fillDefaults.includes(key)) continue;
-    out[key] = value;
+    if (value !== undefined) out[key] = value;
   }
   for (const key of Object.keys(edits)) {
     if (edits[key] === REMOVE_KEY) delete out[key];
+  }
+  const keys = fillDefaults === 'all' ? Object.keys(schema?.properties ?? {}) : fillDefaults;
+  for (const key of keys) {
+    if (out[key] !== undefined) continue;
+    const fallback = defaultOf(schema, key);
+    if (fallback !== undefined) out[key] = copyDefault(fallback);
   }
   return out;
 }
 
 /**
- * The part of an edits buffer that outlives a commit: the keys the user
- * cleared. Keeping them stops a cleared field from being filled with its
- * default again after the buffer is reset.
+ * The form's view of the values: the config (`source`) with the user's `edits`
+ * on top, for every property the schema renders. A key nobody set is
+ * `undefined`; its default is shown by the field as placeholder, not merged in.
  */
-export function keepRemovals(edits: Record<string, unknown>): Record<string, unknown> {
-  const kept: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(edits)) {
-    if (value === REMOVE_KEY) kept[key] = value;
-  }
-  return kept;
-}
-
-export function mergeWithDefaults(
-  schema: { properties?: Record<string, unknown> } | undefined,
+export function mergeValues(
+  schema: SchemaWithProperties | undefined,
   source: Record<string, unknown>,
   edits: Record<string, unknown>
 ): Record<string, unknown> {
   if (!schema?.properties) return {};
   const merged: Record<string, unknown> = {};
-  for (const [key, field] of Object.entries(schema.properties)) {
-    const fieldConfig = field as Record<string, unknown>;
-    if (key in edits && edits[key] === REMOVE_KEY) {
-      // Cleared: the field shows empty (its default appears as the
-      // placeholder, see FieldFactory), so typing a new value is not
-      // interrupted by the default filling the box back in.
-      merged[key] = undefined;
-    } else if (key in edits) {
-      merged[key] = edits[key];
-    } else {
-      merged[key] = source[key] !== undefined ? source[key] : fieldConfig.default;
-    }
+  for (const key of Object.keys(schema.properties)) {
+    if (key in edits) merged[key] = edits[key] === REMOVE_KEY ? undefined : edits[key];
+    else merged[key] = source[key];
   }
   return merged;
 }

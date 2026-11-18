@@ -7,8 +7,10 @@
  *   spec's "Absent, null and empty" convention rules out.
  * - A required key nobody set gets its default written: R6.b refuses a save
  *   whose config lacks a required key, and a default does not count.
- * - A cleared key stays absent across commits, even with a default, until the
- *   config holds the key again (undo, a change made elsewhere).
+ * - A cleared optional key stays absent across commits and remounts, even with
+ *   a default. A cleared required key gets its default at the commit (there is
+ *   nothing to remember, so it is the same before and after a remount).
+ * - An absent key is an empty field with the default as placeholder.
  *
  * Every test feeds the committed config back into the form, as the editor does.
  */
@@ -71,8 +73,9 @@ describe('defaults in a node config', () => {
     f.blur('other');
     expect(f.last()).toEqual({ other: 'o', mode: 'fast' });
     expect('label' in f.last()).toBe(false);
-    // The optional field still shows its default, which is what applies.
-    expect(f.input('label').value).toBe('fallback');
+    // The optional field is empty and shows its default as placeholder.
+    expect(f.input('label').value).toBe('');
+    expect(f.input('label').placeholder).toBe('fallback');
   });
 
   it('keeps a cleared optional field absent after the next commit', () => {
@@ -87,13 +90,33 @@ describe('defaults in a node config', () => {
     expect(f.input('label').placeholder).toBe('fallback');
   });
 
-  it('keeps a cleared required field absent after the next commit', () => {
+  it('gives a cleared required field its default at the commit, before and after a remount', () => {
     const f = mountForm({ mode: 'slow' });
     f.type('mode', '');
     f.blur('mode');
+    expect(f.last().mode).toBe('fast');
     f.type('other', 'o');
     f.blur('other');
-    expect('mode' in f.last()).toBe(false);
+    expect(f.last().mode).toBe('fast');
+    // A remounted form, opened on a config that lacks the key, does the same.
+    unmount(app!);
+    document.body.innerHTML = '';
+    const g = mountForm({ label: 'mine' });
+    g.type('other', 'o');
+    g.blur('other');
+    expect(g.last().mode).toBe('fast');
+  });
+
+  it('keeps a cleared optional field absent across a remount', () => {
+    const f = mountForm({ label: 'mine' });
+    f.type('label', '');
+    f.blur('label');
+    unmount(app!);
+    document.body.innerHTML = '';
+    const g = mountForm(f.last());
+    g.type('other', 'o');
+    g.blur('other');
+    expect('label' in g.last()).toBe(false);
   });
 
   it('gives a kept clear up when the config holds the key again (undo)', () => {

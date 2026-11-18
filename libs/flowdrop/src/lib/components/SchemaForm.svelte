@@ -60,10 +60,11 @@
   // at runtime via fd.fields, so importing SchemaForm never statically pulls them.
   import FormField from '$lib/components/form/FormFieldLight.svelte';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
-  import type { FieldSchema, FieldChangeMeta } from '$lib/components/form/types.js';
+  import type { FieldSchema } from '$lib/components/form/types.js';
   import { m } from '$lib/messages/index.js';
+  import { createNullMemory } from '$lib/utils/nullMemory.svelte.js';
   import {
-    mergeWithDefaults,
+    mergeValues,
     cascadeClearAutocompleteDependents,
     toEdit,
     buildConfig
@@ -193,7 +194,10 @@
    */
   let edits = $state<Record<string, unknown>>({});
 
-  const formValues = $derived(mergeWithDefaults(schema, values, edits));
+  /** What each field held before its null toggle set it to `null` (the form owns the record). */
+  const nullMemory = createNullMemory();
+
+  const formValues = $derived(mergeValues(schema, values, edits));
 
   setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => formValues);
 
@@ -206,7 +210,14 @@
     if (schema !== prevSchemaRef) {
       prevSchemaRef = schema;
       edits = {};
+      nullMemory.clear();
     }
+  });
+
+  // A remembered "value before null" belongs to the toggle that wrote the
+  // `null`; once `values` holds something else for that key, drop it.
+  $effect.pre(() => {
+    nullMemory.sync(values, edits);
   });
 
   /**
@@ -227,9 +238,10 @@
    * @param key - Field key that changed
    * @param value - New field value
    */
-  function handleFieldChange(key: string, value: unknown, meta?: FieldChangeMeta): void {
+  function handleFieldChange(key: string, reported: unknown): void {
     const previous = formValues[key];
-    edits[key] = toEdit(schema?.properties?.[key], value, meta?.restore === true);
+    const { value, exact } = nullMemory.interpret(key, reported, previous);
+    edits[key] = toEdit(schema?.properties?.[key], value, exact);
 
     // Cascade-clear any autocomplete whose `params` references this field.
     // Only runs on user-driven edits; undo/redo and external value-prop
@@ -243,7 +255,7 @@
 
     // Notify parent of the change
     if (onChange) {
-      onChange(buildConfig({}, formValues, edits));
+      onChange(buildConfig(schema, {}, formValues, edits));
     }
   }
 
@@ -258,7 +270,7 @@
 
     // The saved values are built from the same state `onChange` reports; nothing is
     // read back from the DOM (an autocomplete's search box holds search text only).
-    const updatedValues: Record<string, unknown> = buildConfig({}, formValues, edits);
+    const updatedValues: Record<string, unknown> = buildConfig(schema, {}, formValues, edits);
 
     // Preserve hidden field values from original values if not collected from form
     if (values && schema?.properties) {
@@ -326,7 +338,7 @@
             value={formValues[key]}
             {required}
             animationIndex={index}
-            onChange={(val, meta) => handleFieldChange(key, val, meta)}
+            onChange={(val) => handleFieldChange(key, val)}
           />
         {/each}
       {/if}

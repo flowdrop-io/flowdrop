@@ -59,14 +59,14 @@
   import FormArray from './FormArray.svelte';
   import FormPorts from './FormPorts.svelte';
   import FormAutocomplete from './FormAutocomplete.svelte';
-  import { schemaAdmitsNull } from '$lib/utils/schemaType.js';
+  import { schemaAdmitsNull, typeIsNullOnly } from '$lib/utils/schemaType.js';
   import { m } from '$lib/messages/index.js';
   import { humanizeKey } from './humanizeKey.js';
   import { useFormReadOnly } from './readOnly.js';
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
   import type { FormFieldFactoryProps } from './types.js';
-  import { getSchemaOptions } from './types.js';
+  import { getSchemaOptions, normalizeOptions, type FieldOption } from './types.js';
   import {
     resolveBaseFieldType,
     resolveHeavyEditorKind,
@@ -185,22 +185,19 @@
   /**
    * The "null" toggle: offered only where `null` is a valid value (the type
    * lists it or the enum does). Anywhere else saving `null` would fail validation.
-   * A config that already holds `null` shows it on.
+   * A config that already holds `null` shows it on. The field only reports the
+   * toggle: `null` when it goes on, `undefined` ("no value") when it goes off.
+   * What comes back, if anything, is the form's business: it remembers the value
+   * from before.
+   *
+   * A field whose type is only `null` has one possible value: it shows the muted
+   * "null" and has no toggle and no editor.
    */
-  const nullable = $derived(schemaAdmitsNull(schema));
+  const nullOnly = $derived(typeIsNullOnly(schema.type));
+  const nullable = $derived(!nullOnly && schemaAdmitsNull(schema));
   const isNull = $derived(value === null);
-  // The value the field had before it was set to null, to bring back when the
-  // toggle goes off. Absent (never held a value) -> the key goes back to absent.
-  let beforeNull: { value: unknown } | undefined;
   function toggleNull() {
-    if (isNull) {
-      const back = beforeNull;
-      beforeNull = undefined;
-      onChange(back ? back.value : undefined, { restore: true });
-      return;
-    }
-    beforeNull = value === undefined ? undefined : { value };
-    onChange(null);
+    onChange(isNull ? undefined : null);
   }
 
   /**
@@ -245,6 +242,8 @@
   const stringValue = $derived(String(value ?? ''));
   const numberValue = $derived(value as number | string);
   const booleanValue = $derived(Boolean(value ?? schema.default ?? false));
+  // A slider has no placeholder: an absent value shows at the default.
+  const rangeValue = $derived((value ?? schema.default) as number | string);
   const arrayValue = $derived.by((): string[] => {
     if (Array.isArray(value)) {
       return value.map((v) => String(v));
@@ -303,6 +302,19 @@
   });
 
   /**
+   * The label of a select's empty option, which an absent value shows: the
+   * default ("Default (x)", x as the option's label) when the schema has one,
+   * else a dash. `undefined` (no empty option) when `''` is one of the choices.
+   */
+  function selectEmptyLabel(options: string[] | FieldOption[]): string | undefined {
+    const normalized = normalizeOptions(options);
+    if (normalized.some((option) => option.value === '')) return undefined;
+    if (schema.default === undefined || schema.default === null) return '—';
+    const match = normalized.find((option) => option.value === String(schema.default));
+    return m().form.field.defaultOption({ value: match?.label ?? String(schema.default) });
+  }
+
+  /**
    * A field's schema default as placeholder text, so an emptied field (whose
    * key is then absent and whose default applies) shows what will be used.
    */
@@ -324,6 +336,7 @@
         : undefined}
     plain={fieldType === 'ports'}
     inline={fieldType === 'toggle'}
+    {nullOnly}
     nullToggle={nullable && fieldType !== 'ports'
       ? { on: isNull, disabled: isReadOnly, onToggle: toggleNull }
       : undefined}
@@ -383,6 +396,7 @@
         id={fieldKey}
         value={stringValue}
         options={enumOptions}
+        emptyLabel={selectEmptyLabel(enumOptions)}
         {required}
         ariaDescribedBy={describedBy}
         disabled={isReadOnly}
@@ -424,7 +438,7 @@
     {:else if fieldType === 'range'}
       <FormRangeField
         id={fieldKey}
-        value={numberValue}
+        value={rangeValue}
         min={schema.minimum}
         max={schema.maximum}
         step={schema.step}
@@ -446,6 +460,7 @@
         id={fieldKey}
         value={stringValue}
         options={selectOptions}
+        emptyLabel={selectEmptyLabel(selectOptions)}
         {required}
         ariaDescribedBy={describedBy}
         disabled={isReadOnly}

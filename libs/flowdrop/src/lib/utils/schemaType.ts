@@ -1,19 +1,30 @@
+import type { PropertyTypeWord } from '$lib/types/index.js';
+
 /**
  * Reading a property's `type`, which is a JSON Schema type word, an array of
  * them (`null` included) or absent.
  */
+
+/** A type word other than `null`: what a field is edited as. */
+export type EditableTypeWord = Exclude<PropertyTypeWord, 'null'>;
 
 /**
  * The type a property is edited and shown as: the word itself, or for an array
  * the first member that is not `null`. An empty array, an array of only `null`
  * and an absent `type` have none (`undefined`): the property takes any JSON value.
  */
-export function firstNonNullType(type: unknown): string | undefined {
-  if (typeof type === 'string') return type === 'null' ? undefined : type;
+export function firstNonNullType(type: unknown): EditableTypeWord | undefined {
+  if (typeof type === 'string') return type === 'null' ? undefined : (type as EditableTypeWord);
   if (Array.isArray(type)) {
-    return type.find((t): t is string => typeof t === 'string' && t !== 'null');
+    return type.find((t): t is EditableTypeWord => typeof t === 'string' && t !== 'null');
   }
   return undefined;
+}
+
+/** Whether `type` names `null` and nothing else (`'null'`, `['null']`): the one value is `null`. */
+export function typeIsNullOnly(type: unknown): boolean {
+  if (type === 'null') return true;
+  return Array.isArray(type) && type.length > 0 && type.every((t) => t === 'null');
 }
 
 /** Whether a schema's `type` is, or lists, `null`. */

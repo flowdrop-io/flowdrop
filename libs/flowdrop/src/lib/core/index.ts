@@ -128,7 +128,6 @@ export type {
   MarkdownEditorFieldProps,
   TemplateEditorFieldProps,
   FormFieldFactoryProps,
-  FieldChangeMeta,
   FormFieldWrapperProps
 } from '../components/form/types.js';
 
@@ -330,6 +329,7 @@ export {
 
 // Reading a property's `type` (a type word, an array with `null`, or absent)
 export { firstNonNullType, typeAdmitsNull, schemaAdmitsNull } from '../utils/schemaType.js';
+export type { EditableTypeWord } from '../utils/schemaType.js';
 
 // Node type utilities
 export {

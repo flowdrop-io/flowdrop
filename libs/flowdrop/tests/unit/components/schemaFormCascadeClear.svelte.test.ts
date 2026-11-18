@@ -24,7 +24,7 @@
 import { describe, it, expect } from 'vitest';
 import { flushSync } from 'svelte';
 import {
-  mergeWithDefaults,
+  mergeValues,
   cascadeClearAutocompleteDependents,
   REMOVE_KEY
 } from '$lib/utils/formMerge.js';
@@ -183,7 +183,7 @@ describe('SchemaForm / ConfigForm undo invariant (issue #33)', () => {
       });
       const edits = $state<Record<string, unknown>>({});
 
-      const formValues = $derived(mergeWithDefaults(schema, values, edits));
+      const formValues = $derived(mergeValues(schema, values, edits));
       const read = () => formValues;
 
       // Sanity: starting state shows all three values.
@@ -240,7 +240,7 @@ describe('SchemaForm / ConfigForm undo invariant (issue #33)', () => {
       });
       const edits = $state<Record<string, unknown>>({});
 
-      const formValues = $derived(mergeWithDefaults(schema, values, edits));
+      const formValues = $derived(mergeValues(schema, values, edits));
       const read = () => formValues;
 
       // User-driven change + commit: store catches up, edits buffer is

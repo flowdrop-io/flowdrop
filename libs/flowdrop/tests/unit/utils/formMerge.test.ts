@@ -4,7 +4,7 @@ import {
   isClearedValue,
   toEdit,
   buildConfig,
-  mergeWithDefaults
+  mergeValues
 } from '$lib/utils/formMerge.js';
 
 const ac = { type: 'string', format: 'autocomplete', autocomplete: { url: '/x' } };
@@ -49,7 +49,7 @@ describe('isClearedValue (#72)', () => {
   });
 });
 
-describe('toEdit / buildConfig / mergeWithDefaults (#72)', () => {
+describe('toEdit / buildConfig / mergeValues (#72)', () => {
   const schema = {
     properties: {
       a: { type: 'string' },
@@ -65,26 +65,36 @@ describe('toEdit / buildConfig / mergeWithDefaults (#72)', () => {
     expect(toEdit({ type: ['integer', 'null'] }, null)).toBeNull();
   });
 
-  it('merge shows a removed key as empty, even with a default', () => {
-    expect(mergeWithDefaults(schema, { a: 'x', b: 'y' }, { a: REMOVE_KEY, b: REMOVE_KEY })).toEqual(
-      {
-        a: undefined,
-        b: undefined,
-        c: undefined
-      }
-    );
+  it('merge shows a removed key as empty and an absent key as undefined (no default merged)', () => {
+    expect(mergeValues(schema, { a: 'x', b: 'y' }, { a: REMOVE_KEY, b: REMOVE_KEY })).toEqual({
+      a: undefined,
+      b: undefined,
+      c: undefined
+    });
+    expect(mergeValues(schema, {}, {})).toEqual({ a: undefined, b: undefined, c: undefined });
   });
 
-  it('buildConfig drops removed keys (even with a default) and undefined merges', () => {
+  it('buildConfig drops removed keys and undefined merges; "all" refills defaults, a list only its keys', () => {
     const source = { a: 'x', b: 'y', extra: 1 };
     const edits = { a: REMOVE_KEY, b: REMOVE_KEY };
-    const out = buildConfig(source, mergeWithDefaults(schema, source, edits), edits);
-    expect(out).toStrictEqual({ extra: 1 });
+    const merged = mergeValues(schema, source, edits);
+    expect(buildConfig(schema, source, merged, edits, [])).toStrictEqual({ extra: 1 });
+    expect(buildConfig(schema, source, merged, edits, ['c'])).toStrictEqual({ extra: 1 });
+    expect(buildConfig(schema, source, merged, edits, ['b'])).toStrictEqual({ extra: 1, b: 'd' });
+    expect(buildConfig(schema, source, merged, edits, 'all')).toStrictEqual({ extra: 1, b: 'd' });
   });
 
   it('buildConfig keeps a stored empty value that was not cleared', () => {
     const source = { a: '', c: [] };
-    const out = buildConfig(source, mergeWithDefaults(schema, source, {}), {});
-    expect(out).toStrictEqual({ a: '', b: 'd', c: [] });
+    const merged = mergeValues(schema, source, {});
+    expect(buildConfig(schema, source, merged, {}, [])).toStrictEqual({ a: '', c: [] });
+    expect(buildConfig(schema, source, merged, {})).toStrictEqual({ a: '', b: 'd', c: [] });
+  });
+
+  it('buildConfig does not share a default object with the schema', () => {
+    const s = { properties: { list: { type: 'array', default: [1] } } };
+    const out = buildConfig(s, {}, mergeValues(s, {}, {}), {}) as { list: number[] };
+    expect(out.list).toEqual([1]);
+    expect(out.list).not.toBe(s.properties.list.default);
   });
 });

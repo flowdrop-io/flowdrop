@@ -61,7 +61,6 @@ describe('one field factory', () => {
     ['object without format', { type: 'object' }],
     ['object with a format nothing renders', { type: 'object', format: 'key-value' }],
     ['no type', {}],
-    ['a null-only type array', { type: ['null'] }],
     ['an object type array', { type: ['object', 'null'] }]
   ] as [string, FieldSchema][])(
     '%s: Full has the editor built in, Light shows the registration hint',
@@ -70,6 +69,25 @@ describe('one field factory', () => {
       expect(html(FormFieldLight, schema)).toContain('Editor component not registered');
     }
   );
+
+  it('a null-only type shows the muted null, with no editor and no hint', () => {
+    for (const type of ['null', ['null']] as const) {
+      const schema = { type } as FieldSchema;
+      expect(html(FormFieldFull, schema)).toContain('data-null-value');
+      expect(html(FormFieldFull, schema)).not.toContain('Editor component not registered');
+      expect(html(FormFieldLight, schema)).not.toContain('Editor component not registered');
+    }
+  });
+
+  it('a deprecated float renders as a number field', () => {
+    expect(html(FormFieldLight, { type: 'float' })).toContain('type="number"');
+  });
+
+  it('a select with a default offers it as the empty option', () => {
+    const body = html(FormFieldLight, { type: 'string', enum: ['a', 'b'], default: 'b' });
+    expect(body).toContain('Default (b)');
+    expect(html(FormFieldLight, { type: 'string', enum: ['a', ''] })).not.toContain('value="">—');
+  });
 
   it('a component registered on the instance wins over the bundled editor', () => {
     const instance = createFlowDropInstance();

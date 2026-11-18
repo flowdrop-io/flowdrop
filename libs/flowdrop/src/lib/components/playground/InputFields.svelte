@@ -48,10 +48,20 @@
       .map(([key]) => key)
   );
 
+  /** Edited as JSON: an array, an object, or no usable type (any JSON value), as `ConfigForm` does. */
   function isJson(property: ConfigProperty): boolean {
-    return (
-      firstNonNullType(property.type) === 'array' || firstNonNullType(property.type) === 'object'
-    );
+    const kind = firstNonNullType(property.type);
+    return kind === 'array' || kind === 'object' || kind === undefined;
+  }
+
+  /** A chip's text as the value it fills in: as written for text and JSON, parsed otherwise; bad JSON stays text. */
+  function exampleValue(property: ConfigProperty, text: string): unknown {
+    if (isJson(property) || firstNonNullType(property.type) === 'string') return text;
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
   }
 
   function isMultiline(property: ConfigProperty): boolean {
@@ -136,11 +146,7 @@
       help={property.description}
       required={schema.required?.includes(key)}
       examples={chips}
-      onexample={(text) =>
-        set(
-          key,
-          isJson(property) || firstNonNullType(property.type) === 'string' ? text : JSON.parse(text)
-        )}
+      onexample={(text) => set(key, exampleValue(property, text))}
     >
       {#snippet children(ctx)}
         {#if property.enum && !property.multiple}

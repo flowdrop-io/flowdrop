@@ -21,7 +21,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { flushSync } from 'svelte';
-import { mergeWithDefaults } from '$lib/utils/formMerge.js';
+import { mergeValues } from '$lib/utils/formMerge.js';
 
 type Schema = {
   type: 'object';
@@ -44,7 +44,7 @@ describe('SchemaForm / ConfigForm merge invariant (issue #31)', () => {
       });
       const edits = $state<Record<string, unknown>>({});
 
-      const formValues = $derived(mergeWithDefaults(schema, values, edits));
+      const formValues = $derived(mergeValues(schema, values, edits));
       const read = () => formValues;
 
       // Snapshotting at construction time — equivalent to a child component
@@ -70,7 +70,7 @@ describe('SchemaForm / ConfigForm merge invariant (issue #31)', () => {
       });
       const edits = $state<Record<string, unknown>>({});
 
-      const formValues = $derived(mergeWithDefaults(schema, values, edits));
+      const formValues = $derived(mergeValues(schema, values, edits));
       const read = () => formValues;
 
       edits.issue_type = 'task';
@@ -80,7 +80,7 @@ describe('SchemaForm / ConfigForm merge invariant (issue #31)', () => {
     cleanup();
   });
 
-  it('falls back to schema defaults when neither prop nor edit provides a value', () => {
+  it('leaves a key neither prop nor edit provides absent: the default is not merged in', () => {
     const cleanup = $effect.root(() => {
       const schema: Schema = {
         type: 'object',
@@ -92,10 +92,10 @@ describe('SchemaForm / ConfigForm merge invariant (issue #31)', () => {
       const values = $state<Record<string, unknown>>({});
       const edits = $state<Record<string, unknown>>({});
 
-      const formValues = $derived(mergeWithDefaults(schema, values, edits));
+      const formValues = $derived(mergeValues(schema, values, edits));
       const read = () => formValues;
 
-      expect(read()).toEqual({ enabled: true, label: 'untitled' });
+      expect(read()).toEqual({ enabled: undefined, label: undefined });
     });
     cleanup();
   });
@@ -117,7 +117,7 @@ describe('SchemaForm / ConfigForm merge invariant (issue #31)', () => {
       });
       const edits = $state<Record<string, unknown>>({});
 
-      const formValues = $derived(mergeWithDefaults(schema, values, edits));
+      const formValues = $derived(mergeValues(schema, values, edits));
       const read = () => formValues;
 
       expect(read()).toEqual({ enabled: false, count: 0, label: '' });
@@ -136,7 +136,7 @@ describe('SchemaForm / ConfigForm merge invariant (issue #31)', () => {
       let values = $state<Record<string, unknown>>({ account: 'acc-1' });
       const edits = $state<Record<string, unknown>>({});
 
-      const formValues = $derived(mergeWithDefaults(schema, values, edits));
+      const formValues = $derived(mergeValues(schema, values, edits));
       const read = () => formValues;
 
       edits.account = 'acc-99';
@@ -164,7 +164,7 @@ describe('SchemaForm / ConfigForm merge invariant (issue #31)', () => {
       const values = $state<Record<string, unknown>>({ field: 'a' });
       let edits = $state<Record<string, unknown>>({});
 
-      const formValues = $derived(mergeWithDefaults(schema, values, edits));
+      const formValues = $derived(mergeValues(schema, values, edits));
       const read = () => formValues;
 
       // 1. User types 'b'

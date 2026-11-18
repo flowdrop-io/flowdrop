@@ -69,9 +69,9 @@ describe('null toggle visibility', () => {
   });
 
   it('is a labelled button with a tooltip', () => {
-    const btn = render({ type: ['string', 'null'] }, 'x').toggle()!;
+    const btn = render({ type: ['string', 'null'], title: 'Field' }, 'x').toggle()!;
     expect(btn.tagName).toBe('BUTTON');
-    expect(btn.getAttribute('aria-label')).toBe('Set to null');
+    expect(btn.getAttribute('aria-label')).toBe('Set Field to null');
     expect(btn.getAttribute('title')).toBeTruthy();
     expect(btn.getAttribute('aria-pressed')).toBe('false');
   });
@@ -88,35 +88,34 @@ describe('null toggle behaviour', () => {
     expect(t.target.querySelector('[data-null-value]')?.textContent).toBe('null');
   });
 
-  it('turning it off brings the previous value back', () => {
+  it('only reports the toggle: null when it goes on, undefined when it goes off', () => {
     const t = render({ type: ['integer', 'null'] }, 7);
     t.click();
-    t.click();
-    expect(t.onChange).toHaveBeenLastCalledWith(7);
-    expect(t.toggle()!.getAttribute('aria-pressed')).toBe('false');
-  });
-
-  it('turning it off with no previous value leaves the key absent', () => {
-    const t = render({ type: ['string', 'null'] }, undefined);
-    t.click();
     expect(t.onChange).toHaveBeenLastCalledWith(null);
+    expect(t.toggle()!.getAttribute('aria-pressed')).toBe('true');
     t.click();
+    // What comes back is the form's decision (it owns the value before null).
     expect(t.onChange).toHaveBeenLastCalledWith(undefined);
   });
 
-  it('keeps an empty string as a previous value, not as absent', () => {
-    const t = render({ type: ['string', 'null'] }, '');
-    t.click();
-    t.click();
-    expect(t.onChange).toHaveBeenLastCalledWith('');
-  });
-
-  it('shows on for a config that already holds null, and off restores absent', () => {
+  it('shows on for a config that already holds null, and reports off as undefined', () => {
     const t = render({ type: ['string', 'null'] }, null);
     expect(t.toggle()!.getAttribute('aria-pressed')).toBe('true');
     expect(t.target.querySelector('[data-null-value]')).not.toBeNull();
     t.click();
     expect(t.onChange).toHaveBeenLastCalledWith(undefined);
+  });
+});
+
+describe('type: null only', () => {
+  it('shows the muted null and neither a toggle nor an editor', () => {
+    for (const type of ['null', ['null']] as const) {
+      const t = render({ type } as FieldSchema, undefined);
+      expect(t.toggle()).toBeNull();
+      expect(t.target.querySelector('[data-null-value]')?.textContent).toBe('null');
+      expect(t.target.querySelector('input, textarea, select, .cm-editor')).toBeNull();
+      unmount(mounted!);
+    }
   });
 });
 
@@ -193,6 +192,36 @@ describe('null toggle inside ConfigForm', () => {
     properties: { limit: { type: ['integer', 'null'], title: 'Limit' } }
   } as never;
 
+  const noteSchema = {
+    type: 'object',
+    properties: { note: { type: ['string', 'null'], title: 'Note' } }
+  } as never;
+
+  /** A form fed back its own commits, as the editor does. */
+  function mountFed(
+    values: Record<string, unknown>,
+    schema: never,
+    commitMode: 'live' | 'blur' = 'live'
+  ) {
+    const onChange = vi.fn();
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    const props = $state<Record<string, unknown>>({
+      schema,
+      values,
+      commitMode,
+      onChange: (c: Record<string, unknown>, meta?: unknown) => {
+        onChange(c, meta);
+        props.values = c;
+      }
+    });
+    mounted = mount(ConfigForm, { target, props: props as never });
+    flushSync();
+    const toggle = () => target.querySelector<HTMLButtonElement>('button[aria-pressed]')!;
+    const last = () => onChange.mock.calls.at(-1)![0] as Record<string, unknown>;
+    return { target, props, toggle, last, onChange };
+  }
+
   function mountForm(values: Record<string, unknown>) {
     const onChange = vi.fn();
     const target = document.createElement('div');
@@ -203,7 +232,7 @@ describe('null toggle inside ConfigForm', () => {
     });
     flushSync();
     const toggle = () =>
-      target.querySelector<HTMLButtonElement>('button[aria-label="Set to null"]')!;
+      target.querySelector<HTMLButtonElement>('button[aria-label="Set Limit to null"]')!;
     const last = () => onChange.mock.calls.at(-1)![0] as Record<string, unknown>;
     return { toggle, last, onChange };
   }
@@ -224,5 +253,92 @@ describe('null toggle inside ConfigForm', () => {
     toggle().click();
     flushSync();
     expect(last().limit).toBe(5);
+  });
+
+  it('keeps an empty string as the value before null, not as absent', () => {
+    const f = mountFed({ note: '' }, noteSchema);
+    f.toggle().click();
+    flushSync();
+    expect(f.last().note).toBeNull();
+    f.toggle().click();
+    flushSync();
+    expect(f.last().note).toBe('');
+  });
+
+  it('turning off with nothing set before gives a required key its default, else leaves it absent', () => {
+    const f = mountFed({}, {
+      type: 'object',
+      required: ['a'],
+      properties: {
+        a: { type: ['string', 'null'], title: 'A', default: 'dflt' },
+        b: { type: ['string', 'null'], title: 'B', default: 'dflt' }
+      }
+    } as never);
+    const toggleOf = (label: string) =>
+      f.target.querySelector<HTMLButtonElement>(`button[aria-label="Set ${label} to null"]`)!;
+    for (const label of ['A', 'B']) {
+      toggleOf(label).click();
+      flushSync();
+      toggleOf(label).click();
+      flushSync();
+    }
+    expect(f.last().a).toBe('dflt');
+    expect('b' in f.last()).toBe(false);
+  });
+
+  it('forgets the value before null when the config changes from outside (F-S1)', () => {
+    const f = mountFed({ limit: 5 }, nullableSchema);
+    f.toggle().click(); // null on, remembers 5
+    flushSync();
+    f.toggle().dispatchEvent(new FocusEvent('focusout', { bubbles: true })); // session ends
+    flushSync();
+    f.props.values = { limit: 5 }; // undo: the config holds a value again
+    flushSync();
+    f.props.values = { limit: 9 }; // typed since
+    flushSync();
+    f.props.values = { limit: null }; // set to null from outside
+    flushSync();
+    expect(f.toggle().getAttribute('aria-pressed')).toBe('true');
+    f.toggle().click();
+    flushSync();
+    expect('limit' in f.last()).toBe(false);
+  });
+
+  it('makes the toggle its own undo step in live mode', () => {
+    const f = mountFed({ limit: 5 }, nullableSchema);
+    f.toggle().click();
+    flushSync();
+    const metas = f.onChange.mock.calls.map((c) => c[1]);
+    expect(metas.at(-2)).toEqual({ fieldKey: 'limit#null' });
+    expect(metas.at(-1)).toEqual({ commit: true });
+  });
+
+  it('does the same before and after a remount: a cleared required key gets its default', () => {
+    const schema = {
+      type: 'object',
+      required: ['r'],
+      properties: { r: { type: 'string', default: 'd' }, o: { type: 'string' } }
+    } as never;
+    const run = (values: Record<string, unknown>) => {
+      const f = mountFed(values, schema, 'blur');
+      const input = (id: string) => f.target.querySelector<HTMLInputElement>(`#${id}`)!;
+      return { f, input };
+    };
+    const { f, input } = run({ r: 'x' });
+    input('r').value = '';
+    input('r').dispatchEvent(new Event('input', { bubbles: true }));
+    flushSync();
+    input('r').dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    flushSync();
+    const before = f.last();
+    unmount(mounted!);
+    const again = run(before);
+    again.input('o').value = 'z';
+    again.input('o').dispatchEvent(new Event('input', { bubbles: true }));
+    flushSync();
+    again.input('o').dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    flushSync();
+    expect(before.r).toBe('d');
+    expect(again.f.last().r).toBe('d');
   });
 });

@@ -51,7 +51,6 @@ export type {
   AutocompleteFieldProps,
   FieldSchema,
   FormFieldFactoryProps,
-  FieldChangeMeta,
   FormFieldWrapperProps,
   SchemaFormProps,
   AutocompleteConfig

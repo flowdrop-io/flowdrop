@@ -8,6 +8,7 @@
 
 import type {
   AutocompleteConfig,
+  PropertyTypeWord,
   TemplateVariablesConfig,
   WorkflowNode,
   WorkflowEdge
@@ -263,7 +264,7 @@ export type { AutocompleteConfig } from '$lib/types/index.js';
  */
 export interface FieldSchema {
   /** The field type from JSON Schema: a type word, an array of them (`null` included), or absent. */
-  type?: FieldType | string | string[];
+  type?: PropertyTypeWord | PropertyTypeWord[];
   /** What a missing required parameter does: `fail` (default) or `skip` the node. */
   when_missing?: 'fail' | 'skip';
   /** Display title for the field */
@@ -378,17 +379,12 @@ export interface FormFieldFactoryProps {
    */
   itemRef?: ItemRef;
   /**
-   * Callback when the field value changes. `meta.restore` marks a value the
-   * field held before and is putting back (the null toggle turned off), so the
-   * form stores it as it is instead of applying its clear rule.
+   * Callback when the field value changes. A field with a "null" toggle reports
+   * the toggle going on as `null` and going off as `undefined` ("no value"); the
+   * form that owns the field decides what to store (it remembers the value from
+   * before the toggle went on).
    */
-  onChange: (value: unknown, meta?: FieldChangeMeta) => void;
-}
-
-/** Extra information a field gives with a value change. */
-export interface FieldChangeMeta {
-  /** The value is one the field held before: store it exactly, do not treat `''` as a clear. */
-  restore?: boolean;
+  onChange: (value: unknown) => void;
 }
 
 /**

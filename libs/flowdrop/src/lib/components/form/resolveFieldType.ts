@@ -56,7 +56,7 @@ export function resolveBaseFieldType(schema: FieldSchema): BaseFieldType | null 
   }
 
   // Range slider for number/integer with format: "range"
-  if ((type === 'number' || type === 'integer') && schema.format === 'range') {
+  if ((type === 'number' || type === 'integer' || type === 'float') && schema.format === 'range') {
     return 'range';
   }
 
@@ -65,8 +65,8 @@ export function resolveBaseFieldType(schema: FieldSchema): BaseFieldType | null 
     return 'text';
   }
 
-  // Number or integer -> number field
-  if (type === 'number' || type === 'integer') {
+  // Number, integer or the deprecated `float` -> number field
+  if (type === 'number' || type === 'integer' || type === 'float') {
     return 'number';
   }
 

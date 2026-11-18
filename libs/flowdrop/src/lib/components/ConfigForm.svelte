@@ -12,7 +12,7 @@
 
 <script lang="ts">
   import { firstNonNullType } from '$lib/utils/schemaType.js';
-  import { setContext, untrack } from 'svelte';
+  import { setContext } from 'svelte';
   import Icon from '@iconify/svelte';
   import type {
     ConfigSchema,
@@ -28,7 +28,7 @@
   import FormField from '$lib/components/form/FormFieldLight.svelte';
   import { buildItemRef, isFieldWired, parseItemRef } from '$lib/utils/itemRef.js';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
-  import type { FieldSchema, FieldChangeMeta } from '$lib/components/form/types.js';
+  import type { FieldSchema } from '$lib/components/form/types.js';
   import {
     getEffectiveConfigEditOptions,
     fetchDynamicSchema,
@@ -42,13 +42,12 @@
   import { getAvailableVariables } from '$lib/services/variableService.js';
   import { logger } from '../utils/logger.js';
   import {
-    mergeWithDefaults,
-    keepRemovals,
+    mergeValues,
     cascadeClearAutocompleteDependents,
     toEdit,
-    buildConfig,
-    REMOVE_KEY
+    buildConfig
   } from '$lib/utils/formMerge.js';
+  import { createNullMemory } from '$lib/utils/nullMemory.svelte.js';
   import { applyFetchedSchema } from '$lib/utils/schemaMerge.js';
   import {
     PORTS_CONFIG_KEY,
@@ -308,38 +307,32 @@
    */
   let edits = $state<Record<string, unknown>>({});
 
-  const configValues = $derived(mergeWithDefaults(configSchema, initialConfig, edits));
+  const configValues = $derived(mergeValues(configSchema, initialConfig, edits));
 
   /**
-   * The keys whose default is written into the config when nobody set them:
+   * The keys whose default is written into the config when they are absent:
    * the required ones, which must be present for the save to be accepted
    * (R6.b). An optional key nobody set stays absent; its default applies when
-   * the node runs, and the field shows it.
+   * the node runs, and the field shows it as placeholder.
+   *
+   * The rule is the same whether the key was never set or was cleared, and
+   * before or after the form is remounted: at a commit, an absent required key
+   * takes its default (and one with no default stays absent).
    */
   const requiredKeys = $derived<readonly string[]>(configSchema?.required ?? []);
 
   setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => configValues);
 
   /**
-   * Keys whose clear has been handed to the host (`commitEdits`). Only these
-   * yield when the config holds the key again: a clear still waiting for its
-   * blur belongs to the person who just made it, and an outside change must
-   * not refill the field under them. Plain set: only the effect below reads it.
+   * What each field held before its null toggle set it to `null`. The form owns
+   * this record; a field only reports the toggle going on (`null`) or off
+   * (`undefined`).
    */
-  const committedClears = new Set<string>();
-
-  /**
-   * What each field held before the null toggle set it to `null`: the stored
-   * (or edited) value, or `undefined` when the key was not set. The toggle's
-   * "off" brings this back, so a field that only showed its default does not
-   * start storing it, and the record survives a remount of the field.
-   */
-  const beforeNull = new Map<string, { value: unknown } | undefined>();
+  const nullMemory = createNullMemory();
 
   function resetEdits(): void {
     edits = {};
-    committedClears.clear();
-    beforeNull.clear();
+    nullMemory.clear();
   }
 
   // Drop edits when the schema reference changes — covers dynamic-schema load
@@ -361,23 +354,11 @@
     }
   });
 
-  // A kept clear (see commitEdits) yields to the config once the config holds
-  // that key again, e.g. after undo or a change made elsewhere; otherwise the
-  // clear would hide the restored value and remove it on the next commit.
+  // A remembered "value before null" belongs to the toggle that wrote the
+  // `null`. Once the config holds something else for that key (undo, the
+  // console, WebMCP, the Assistant), the record is stale: drop it.
   $effect.pre(() => {
-    const config = initialConfig;
-    untrack(() => {
-      const stale = Object.keys(edits).filter(
-        (key) => edits[key] === REMOVE_KEY && committedClears.has(key) && config[key] !== undefined
-      );
-      if (stale.length === 0) return;
-      const next = { ...edits };
-      for (const key of stale) {
-        delete next[key];
-        committedClears.delete(key);
-      }
-      edits = next;
-    });
+    nullMemory.sync(initialConfig, edits);
   });
 
   /**
@@ -593,36 +574,16 @@
    * runs only on user-driven edits via this codepath; undo/redo and external
    * config replacement flow through `initialConfig` and don't trigger it (#33).
    */
-  function handleFieldChange(key: string, value: unknown, meta?: FieldChangeMeta): void {
+  function handleFieldChange(key: string, reported: unknown): void {
     const previous = configValues[key];
-    if (value === null && meta?.restore !== true && previous !== null) {
-      // The null toggle is going on: note what the key holds now, for "off".
-      // Every null-on overwrites the record, so one left over from before an
-      // undo can never come back.
-      const stored = key in edits ? edits[key] : initialConfig[key];
-      beforeNull.set(
-        key,
-        stored === undefined || stored === REMOVE_KEY ? undefined : { value: stored }
-      );
-    }
-    if (meta?.restore === true) {
-      // The null toggle is going off. Only the form's own record counts: the
-      // field may still remember a value from another node it showed before.
-      // No record, or nothing stored before null: the key leaves, except a
-      // required key, which gets its default as an untouched one would (R6.b).
-      const before = beforeNull.get(key);
-      beforeNull.delete(key);
-      const fallback = requiredKeys.includes(key)
-        ? (configSchema?.properties?.[key] as { default?: unknown } | undefined)?.default
-        : undefined;
-      value = before ? before.value : fallback;
-    }
-    committedClears.delete(key);
-    edits[key] = toEdit(configSchema?.properties?.[key], value, meta?.restore === true);
+    // The null toggle going on (`null`) or off (`undefined`), as its field reports it.
+    const nullToggled =
+      reported === null ? previous !== null : reported === undefined && previous === null;
+    const { value, exact } = nullMemory.interpret(key, reported, previous);
+    edits[key] = toEdit(configSchema?.properties?.[key], value, exact);
     if (previous === value) return;
     const dependents = cascadeClearAutocompleteDependents(configSchema, key);
     for (const [depKey, depValue] of Object.entries(dependents)) {
-      committedClears.delete(depKey);
       edits[depKey] = depValue;
     }
 
@@ -632,7 +593,14 @@
       // focus event, so WebKit not focusing checkboxes/selects on click (#38)
       // is a non-issue. Keep the edits buffer until the session ends (blur) so
       // fast typing never briefly reverts on the parent's value round-trip.
-      commitEdits({ fieldKey: key }, false);
+      if (nullToggled) {
+        // The toggle is its own undo step: a different session key closes the
+        // field's typing session, and the flush right after closes the toggle's.
+        commitEdits({ fieldKey: `${key}#null` }, false);
+        commitEdits({ commit: true }, false);
+      } else {
+        commitEdits({ fieldKey: key }, false);
+      }
       return;
     }
 
@@ -641,10 +609,9 @@
     // commit immediately — WebKit doesn't focus them on click, so no focus-out
     // ever fires and the edit would otherwise be lost on save (#38).
     // The null toggle is a button too, so it commits at once as well: turning
-    // null on (`null`) or off (a restore) on a text or number field would
+    // null on or off on a text or number field would
     // otherwise wait for a focus-out that WebKit never fires.
     const prop = configSchema?.properties?.[key];
-    const nullToggled = value === null || meta?.restore === true;
     if (
       nullToggled ||
       (prop && (firstNonNullType(prop.type) === 'boolean' || Array.isArray(prop.enum)))
@@ -670,13 +637,8 @@
     // (e.g. after a dynamic schema narrows the field set) pass through untouched
     // instead of being silently dropped; `configValues` then wins for every
     // field the schema actually renders.
-    onChange(buildConfig(initialConfig, configValues, edits, requiredKeys), meta);
-    for (const key of Object.keys(edits)) {
-      if (edits[key] === REMOVE_KEY) committedClears.add(key);
-    }
-    // Keep the clears: a cleared field must not be filled with its default
-    // again when the config comes back without its key.
-    if (clearBuffer) edits = keepRemovals(edits);
+    onChange(buildConfig(configSchema, initialConfig, configValues, edits, requiredKeys), meta);
+    if (clearBuffer) edits = {};
   }
 
   /**
@@ -701,6 +663,7 @@
     // Start from `initialConfig` so keys the active schema doesn't own survive
     // the save (see handleFormBlur).
     const updatedConfig: Record<string, unknown> = buildConfig(
+      configSchema,
       initialConfig,
       configValues,
       edits,
@@ -943,7 +906,7 @@
                 edges={workflowEdges}
                 {workflowId}
                 {authProvider}
-                onChange={(val, meta) => handleFieldChange(key, val, meta)}
+                onChange={(val) => handleFieldChange(key, val)}
               />
             {/if}
           {/each}
