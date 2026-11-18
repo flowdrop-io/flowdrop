@@ -23,7 +23,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { flushSync } from 'svelte';
-import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
+import {
+  mergeWithDefaults,
+  cascadeClearAutocompleteDependents,
+  REMOVE_KEY
+} from '$lib/utils/formMerge.js';
 
 type AutocompleteSchema = {
   type: 'object';
@@ -49,7 +53,7 @@ describe('cascadeClearAutocompleteDependents (issue #33)', () => {
     expect(cascadeClearAutocompleteDependents(schema, 'account')).toEqual({});
   });
 
-  it('clears immediate dependents to "" (single-value autocomplete)', () => {
+  it('marks immediate dependents for removal (single-value autocomplete)', () => {
     const schema: AutocompleteSchema = {
       type: 'object',
       properties: {
@@ -61,11 +65,11 @@ describe('cascadeClearAutocompleteDependents (issue #33)', () => {
       }
     };
     expect(cascadeClearAutocompleteDependents(schema, 'account')).toEqual({
-      project: ''
+      project: REMOVE_KEY
     });
   });
 
-  it('clears multi-select dependents to []', () => {
+  it('marks multi-select dependents for removal, not [] (#72)', () => {
     const schema: AutocompleteSchema = {
       type: 'object',
       properties: {
@@ -77,7 +81,7 @@ describe('cascadeClearAutocompleteDependents (issue #33)', () => {
       }
     };
     expect(cascadeClearAutocompleteDependents(schema, 'account')).toEqual({
-      assignees: []
+      assignees: REMOVE_KEY
     });
   });
 
@@ -101,9 +105,9 @@ describe('cascadeClearAutocompleteDependents (issue #33)', () => {
       }
     };
     expect(cascadeClearAutocompleteDependents(schema, 'organization')).toEqual({
-      project: '',
-      issue_type: '',
-      assignee: ''
+      project: REMOVE_KEY,
+      issue_type: REMOVE_KEY,
+      assignee: REMOVE_KEY
     });
   });
 
@@ -124,7 +128,7 @@ describe('cascadeClearAutocompleteDependents (issue #33)', () => {
       }
     };
     expect(cascadeClearAutocompleteDependents(schema, 'account')).toEqual({
-      project: ''
+      project: REMOVE_KEY
     });
   });
 
@@ -201,8 +205,8 @@ describe('SchemaForm / ConfigForm undo invariant (issue #33)', () => {
 
       expect(read()).toEqual({
         organization: 'globex',
-        project: '',
-        issue_type: ''
+        project: undefined,
+        issue_type: undefined
       });
     });
     cleanup();
@@ -247,14 +251,14 @@ describe('SchemaForm / ConfigForm undo invariant (issue #33)', () => {
       flushSync();
       expect(read()).toEqual({
         organization: 'globex',
-        project: '',
-        issue_type: ''
+        project: undefined,
+        issue_type: undefined
       });
 
       // Commit boundary — parent absorbs the new values, edits discharged.
       values.organization = 'globex';
-      values.project = '';
-      values.issue_type = '';
+      delete values.project;
+      delete values.issue_type;
       edits.organization = undefined as unknown as string;
       delete edits.organization;
       delete edits.project;

@@ -40,7 +40,12 @@
   import { provideInstance } from '$lib/stores/getInstance.svelte.js';
   import { getAvailableVariables } from '$lib/services/variableService.js';
   import { logger } from '../utils/logger.js';
-  import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
+  import {
+    mergeWithDefaults,
+    cascadeClearAutocompleteDependents,
+    toEdit,
+    buildConfig
+  } from '$lib/utils/formMerge.js';
   import { applyFetchedSchema } from '$lib/utils/schemaMerge.js';
   import {
     PORTS_CONFIG_KEY,
@@ -533,7 +538,7 @@
    */
   function handleFieldChange(key: string, value: unknown): void {
     const previous = configValues[key];
-    edits[key] = value;
+    edits[key] = toEdit(configSchema?.properties?.[key], value);
     if (previous === value) return;
     const dependents = cascadeClearAutocompleteDependents(configSchema, key);
     for (const [depKey, depValue] of Object.entries(dependents)) {
@@ -577,7 +582,7 @@
     // (e.g. after a dynamic schema narrows the field set) pass through untouched
     // instead of being silently dropped; `configValues` then wins for every
     // field the schema actually renders.
-    onChange({ ...initialConfig, ...configValues }, meta);
+    onChange(buildConfig(initialConfig, configValues, edits), meta);
     if (clearBuffer) edits = {};
   }
 
@@ -602,7 +607,16 @@
     // (see handleFormBlur); `configValues` and the DOM scrape below then take
     // precedence for every field the schema renders.
     const form = document.querySelector('.config-form');
-    const updatedConfig: Record<string, unknown> = { ...initialConfig, ...configValues };
+    const updatedConfig: Record<string, unknown> = buildConfig(initialConfig, configValues, edits);
+
+    // A blank box for a key the config does not hold (never filled, or cleared and
+    // removed) stays absent, and a blank search box never replaces a stored list;
+    // an empty value that is stored is kept as it is.
+    const setScraped = (id: string, value: unknown): void => {
+      if (value === '' && (updatedConfig[id] === undefined || Array.isArray(updatedConfig[id])))
+        return;
+      updatedConfig[id] = value;
+    };
 
     if (form) {
       const inputs = form.querySelectorAll('input, select, textarea');
@@ -616,7 +630,7 @@
             inputEl instanceof HTMLInputElement &&
             (inputEl.type === 'number' || inputEl.type === 'range')
           ) {
-            updatedConfig[inputEl.id] = inputEl.value ? Number(inputEl.value) : inputEl.value;
+            setScraped(inputEl.id, inputEl.value ? Number(inputEl.value) : inputEl.value);
           } else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
             // Parse hidden field values that might be JSON
             try {
@@ -624,10 +638,10 @@
               updatedConfig[inputEl.id] = parsed;
             } catch {
               // If not JSON, use raw value
-              updatedConfig[inputEl.id] = inputEl.value;
+              setScraped(inputEl.id, inputEl.value);
             }
           } else {
-            updatedConfig[inputEl.id] = inputEl.value;
+            setScraped(inputEl.id, inputEl.value);
           }
         }
       });

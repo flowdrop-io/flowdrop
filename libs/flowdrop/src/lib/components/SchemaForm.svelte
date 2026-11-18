@@ -62,7 +62,12 @@
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
   import type { FieldSchema } from '$lib/components/form/types.js';
   import { m } from '$lib/messages/index.js';
-  import { mergeWithDefaults, cascadeClearAutocompleteDependents } from '$lib/utils/formMerge.js';
+  import {
+    mergeWithDefaults,
+    cascadeClearAutocompleteDependents,
+    toEdit,
+    buildConfig
+  } from '$lib/utils/formMerge.js';
 
   /**
    * Props interface for SchemaForm component
@@ -229,7 +234,7 @@
    */
   function handleFieldChange(key: string, value: unknown): void {
     const previous = formValues[key];
-    edits[key] = value;
+    edits[key] = toEdit(schema?.properties?.[key], value);
 
     // Cascade-clear any autocomplete whose `params` references this field.
     // Only runs on user-driven edits; undo/redo and external value-prop
@@ -243,7 +248,7 @@
 
     // Notify parent of the change
     if (onChange) {
-      onChange({ ...formValues });
+      onChange(buildConfig({}, formValues, edits));
     }
   }
 
@@ -257,7 +262,16 @@
     }
 
     // Collect all form values including hidden fields
-    const updatedValues: Record<string, unknown> = { ...formValues };
+    const updatedValues: Record<string, unknown> = buildConfig({}, formValues, edits);
+
+    // A blank box for a key the config does not hold (never filled, or cleared and
+    // removed) stays absent, and a blank search box never replaces a stored list;
+    // an empty value that is stored is kept as it is.
+    const setScraped = (id: string, value: unknown): void => {
+      if (value === '' && (updatedValues[id] === undefined || Array.isArray(updatedValues[id])))
+        return;
+      updatedValues[id] = value;
+    };
 
     if (formRef) {
       const inputs = formRef.querySelectorAll('input, select, textarea');
@@ -270,7 +284,7 @@
             inputEl instanceof HTMLInputElement &&
             (inputEl.type === 'number' || inputEl.type === 'range')
           ) {
-            updatedValues[inputEl.id] = inputEl.value ? Number(inputEl.value) : inputEl.value;
+            setScraped(inputEl.id, inputEl.value ? Number(inputEl.value) : inputEl.value);
           } else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
             // Parse hidden field values that might be JSON
             try {
@@ -278,10 +292,10 @@
               updatedValues[inputEl.id] = parsed;
             } catch {
               // If not JSON, use raw value
-              updatedValues[inputEl.id] = inputEl.value;
+              setScraped(inputEl.id, inputEl.value);
             }
           } else {
-            updatedValues[inputEl.id] = inputEl.value;
+            setScraped(inputEl.id, inputEl.value);
           }
         }
       });
