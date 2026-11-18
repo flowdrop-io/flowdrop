@@ -3545,6 +3545,15 @@ components:
             referenced sibling field is appended as a query parameter.
             When any dependency field changes, the autocomplete clears its
             current value and invalidates the suggestion cache.
+        valueParam:
+          type: string
+          description: |
+            Query parameter name for looking up a stored value's label.
+            When set, a value with no known label is looked up with
+            `<url>?<valueParam>=<value>` (plus the `params`), one request per
+            value, whatever `fetchOnFocus` and `minChars` say. The response has
+            the same shape as a search. Without it, labels come from the empty
+            query (only with `fetchOnFocus` and `minChars: 0`).
       required:
         - url
     ConfigSchema:

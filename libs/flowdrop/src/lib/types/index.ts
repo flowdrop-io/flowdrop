@@ -482,6 +482,19 @@ export interface AutocompleteConfig {
    * therefore need to clear dependents themselves.
    */
   params?: Record<string, string>;
+
+  /**
+   * Query parameter name for looking up a stored value's label.
+   *
+   * When set, each selected value with no known label is looked up with
+   * `<url>?<valueParam>=<value>` (plus the dependency `params`), one request
+   * per value, whatever `fetchOnFocus` and `minChars` say. The response has
+   * the same shape as a search (mapped with `labelField` / `valueField`).
+   * Without it, labels come from the empty query, which runs only with
+   * `fetchOnFocus: true` and `minChars: 0` and labels only the values in
+   * that first response.
+   */
+  valueParam?: string;
 }
 
 /**

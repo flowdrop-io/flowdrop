@@ -258,17 +258,18 @@ Autocomplete fields fetch suggestions from a remote API as the user types.
 
 ### Autocomplete Options
 
-| Option          | Type      | Default   | Description                          |
-| --------------- | --------- | --------- | ------------------------------------ |
-| `url`           | `string`  | —         | Endpoint for suggestions (see below) |
-| `queryParam`    | `string`  | `"q"`     | Query parameter name                 |
-| `minChars`      | `number`  | `0`       | Minimum characters before fetching   |
-| `debounceMs`    | `number`  | `300`     | Debounce delay in ms                 |
-| `labelField`    | `string`  | `"label"` | Response field for display text      |
-| `valueField`    | `string`  | `"value"` | Response field for stored value      |
-| `allowFreeText` | `boolean` | `false`   | Allow values not in suggestions      |
-| `fetchOnFocus`  | `boolean` | `false`   | Fetch all options when field focused |
-| `multiple`      | `boolean` | `false`   | Allow multiple selections (tags)     |
+| Option          | Type      | Default   | Description                                                                 |
+| --------------- | --------- | --------- | --------------------------------------------------------------------------- |
+| `url`           | `string`  | —         | Endpoint for suggestions (see below)                                        |
+| `queryParam`    | `string`  | `"q"`     | Query parameter name                                                        |
+| `minChars`      | `number`  | `0`       | Minimum characters before fetching                                          |
+| `debounceMs`    | `number`  | `300`     | Debounce delay in ms                                                        |
+| `labelField`    | `string`  | `"label"` | Response field for display text                                             |
+| `valueField`    | `string`  | `"value"` | Response field for stored value                                             |
+| `allowFreeText` | `boolean` | `false`   | Allow values not in suggestions                                             |
+| `fetchOnFocus`  | `boolean` | `false`   | Fetch all options when field focused                                        |
+| `multiple`      | `boolean` | `false`   | Allow multiple selections (tags)                                            |
+| `valueParam`    | `string`  | —         | Query parameter to look up a stored value's label (`?<valueParam>=<value>`) |
 
 **How `url` is resolved**, by its form:
 

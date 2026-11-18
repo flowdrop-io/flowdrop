@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Autocomplete looks up the labels of preset values by value.** The new optional `AutocompleteConfig.valueParam` (also in the JSON Schema and the OpenAPI spec) names a query parameter: a selected value with no known label is then looked up with `<url>?<valueParam>=<value>` (plus the dependency `params`), one request per value, whatever `fetchOnFocus` and `minChars` say. The response has the same shape as a search. Before, labels came only from the empty query's first page, so a value outside it showed its raw value (for example a UUID). Without `valueParam`, nothing changes.
+
 ## [2.18.0] - 2026-11-10
 
 ### Added

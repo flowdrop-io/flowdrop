@@ -333,3 +333,83 @@ describe('FormAutocomplete requests in flight', () => {
     expect(target.querySelector('.form-autocomplete__spinner')).not.toBeNull();
   });
 });
+
+/**
+ * Issue #78: an endpoint that returns only its first page leaves preset
+ * values outside it unlabelled. With `valueParam`, each value without a label
+ * is looked up by value instead, whatever `fetchOnFocus` / `minChars` say.
+ */
+describe('FormAutocomplete label lookup by value (valueParam)', () => {
+  beforeEach(() => {
+    fetchMock = vi.fn(async (input: RequestInfo) => {
+      const value = new URL(String(input), 'http://x').searchParams.get('value');
+      const body = OPTIONS.filter((o) => o.value === value);
+      return new Response(JSON.stringify(body), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  afterEach(() => {
+    if (mounted) unmount(mounted);
+    mounted = null;
+    document.body.innerHTML = '';
+    vi.unstubAllGlobals();
+  });
+
+  const urls = () => fetchMock.mock.calls.map(([input]) => String(input));
+
+  it('sends one request per value, even without fetchOnFocus', async () => {
+    const target = render(['org-acme', 'org-globex'], {
+      multiple: true,
+      valueParam: 'value',
+      fetchOnFocus: false,
+      minChars: 3
+    });
+    await settle();
+    expect(urls()).toEqual(['/suggest?value=org-acme', '/suggest?value=org-globex']);
+    expect(tags(target)).toEqual(['Acme Corp', 'Globex Industries']);
+  });
+
+  it('passes the dependency params and encodes the value', async () => {
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    mounted = mount(FormAutocomplete, {
+      target,
+      props: {
+        id: 'f',
+        value: 'a b&c',
+        autocomplete: { url: '/suggest?x=1', valueParam: 'value', params: { org: 'org' } },
+        onChange: vi.fn()
+      },
+      context: new Map([['flowdrop:getFormValues', () => ({ org: 'acme' })]])
+    });
+    await settle();
+    expect(urls()).toEqual(['/suggest?x=1&value=a%20b%26c&org=acme']);
+  });
+
+  it('does not retry a value the endpoint does not know', async () => {
+    const target = render('org-unknown', { valueParam: 'value' });
+    await settle();
+    expect(tags(target)).toEqual(['org-unknown']);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks only for values without a label', async () => {
+    const props = $state({
+      id: 'f',
+      value: ['org-acme'] as string[],
+      autocomplete: { url: '/suggest', multiple: true, valueParam: 'value' },
+      onChange: vi.fn()
+    });
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    mounted = mount(FormAutocomplete, { target, props });
+    await settle();
+    props.value = ['org-acme', 'org-globex'];
+    await settle();
+    expect(urls()).toEqual(['/suggest?value=org-acme', '/suggest?value=org-globex']);
+    expect(tags(target)).toEqual(['Acme Corp', 'Globex Industries']);
+  });
+});
