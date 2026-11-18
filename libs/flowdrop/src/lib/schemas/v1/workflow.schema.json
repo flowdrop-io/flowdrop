@@ -165,6 +165,10 @@
             "type": "string"
           },
           "description": "Map of URL query parameter names to sibling form field names.\nWhen fetching autocomplete options, the current value of each\nreferenced sibling field is appended as a query parameter.\nWhen any dependency field changes, the autocomplete clears its\ncurrent value and invalidates the suggestion cache.\n"
+        },
+        "valueParam": {
+          "type": "string",
+          "description": "Query parameter name for looking up a stored value's label.\nWhen set, a value with no known label is looked up with\n`<url>?<valueParam>=<value>` (plus the `params`), one request per\nvalue, whatever `fetchOnFocus` and `minChars` say. The response has\nthe same shape as a search. Without it, labels come from the empty\nquery (only with `fetchOnFocus` and `minChars: 0`).\n"
         }
       },
       "required": [

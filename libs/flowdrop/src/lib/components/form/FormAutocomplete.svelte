@@ -106,6 +106,7 @@
   const allowFreeText = $derived(autocomplete.allowFreeText ?? false);
   const multiple = $derived(autocomplete.multiple ?? false);
   const params = $derived(autocomplete.params ?? {});
+  const valueParam = $derived(autocomplete.valueParam);
 
   // Component state
   let inputElement: HTMLInputElement | undefined = $state(undefined);
@@ -217,11 +218,12 @@
 
   /**
    * Build the full URL for fetching suggestions
-   * @param query - The search query
+   * @param query - The search query (or the value to look up)
+   * @param param - The query parameter that carries it
    * @returns Full URL with query parameter, or null when the configured URL
    *   is refused (logged once per field)
    */
-  function buildUrl(query: string): string | null {
+  function buildUrl(query: string, param: string = queryParam): string | null {
     // A URL without a leading slash resolves against SchemaForm's `baseUrl`
     // prop when one is given, else the instance's API base. The prop also goes
     // in front of `/path` URLs.
@@ -249,7 +251,7 @@
     const hashAt = url.indexOf('#');
     const path = hashAt === -1 ? url : url.slice(0, hashAt);
     const separator = path.includes('?') ? '&' : '?';
-    let fullUrl = `${path}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
+    let fullUrl = `${path}${separator}${encodeURIComponent(param)}=${encodeURIComponent(query)}`;
 
     for (const [paramName, val] of Object.entries(depParamValues)) {
       fullUrl += `&${encodeURIComponent(paramName)}=${encodeURIComponent(val)}`;
@@ -692,20 +694,24 @@
   });
 
   /**
-   * Look up labels for values the cache does not know, with the empty query
-   * the field would send on focus. Its own request: it never touches the
-   * suggestions, the loading state or the error, so it cannot disturb a
-   * search the user is running, and a search cannot cancel it.
+   * Look up labels for values the cache does not know: with `valueParam`, one
+   * request per value (`?<valueParam>=<value>`); without it, the empty query
+   * the field would send on focus. Its own requests: they never touch the
+   * suggestions, the loading state or the error, so they cannot disturb a
+   * search the user is running, and a search cannot cancel them.
+   * @param missing - The values without a label
    */
-  async function lookupLabels(): Promise<void> {
+  async function lookupLabels(missing: string[]): Promise<void> {
     labelController?.abort();
-    const requestUrl = buildUrl('');
-    if (requestUrl === null) return;
+    const built = valueParam ? missing.map((val) => buildUrl(val, valueParam)) : [buildUrl('')];
+    const urls = built.filter((u): u is string => u !== null);
+    // buildUrl refuses the configured URL, not a value: all or none are null.
+    if (urls.length !== built.length) return;
     const controller = new AbortController();
     labelController = controller;
     const fingerprint = depFingerprint;
     const timeoutId = setTimeout(() => controller.abort(timeoutError()), 5000);
-    try {
+    const lookup = async (requestUrl: string): Promise<void> => {
       const response = await authenticatedFetch(
         requestUrl,
         { method: 'GET', signal: controller.signal },
@@ -718,9 +724,15 @@
       // Labels fetched for other dependency values would be wrong now.
       if (controller.signal.aborted || fingerprint !== depFingerprint) return;
       for (const opt of mapped) labelCache.set(opt.value, opt.label);
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-      logger.warn('[FormAutocomplete] Label lookup failed:', err);
+    };
+    try {
+      const results = await Promise.allSettled(urls.map(lookup));
+      for (const result of results) {
+        if (result.status === 'fulfilled') continue;
+        const err: unknown = result.reason;
+        if (err instanceof Error && err.name === 'AbortError') continue;
+        logger.warn('[FormAutocomplete] Label lookup failed:', err);
+      }
     } finally {
       clearTimeout(timeoutId);
       if (labelController === controller) labelController = null;
@@ -729,17 +741,17 @@
 
   // Labels are otherwise only learned from suggestions, so a preloaded value
   // (form open, undo, external edit) would show its raw value until the user
-  // focuses the field. When the config allows an empty query, look the labels
-  // up once per set of unknown values and dependency values, so a value the
-  // endpoint does not return is not retried in a loop.
+  // focuses the field. With `valueParam`, or when the config allows an empty
+  // query, look the labels up once per set of unknown values and dependency
+  // values, so a value the endpoint does not return is not retried in a loop.
   $effect(() => {
-    if (!fetchOnFocus || minChars > 0) return;
+    if (!valueParam && (!fetchOnFocus || minChars > 0)) return;
     const missing = selectedValues.filter((val) => !labelCache.has(val) && !typed.has(val));
     if (missing.length === 0) return;
     const key = `${depFingerprint}|${missing.join('\u0000')}`;
     if (key === labelLookupKey) return;
     labelLookupKey = key;
-    untrack(() => lookupLabels());
+    untrack(() => lookupLabels(missing));
   });
 
   /**
