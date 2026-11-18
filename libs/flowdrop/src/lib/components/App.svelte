@@ -79,6 +79,7 @@
   import { createEndpointConfig } from '$lib/config/endpoints.js';
   import type { EndpointConfig } from '$lib/config/endpoints.js';
   import { authenticatedFetch } from '$lib/utils/fetchWithAuth.js';
+  import { splitWorkflowSettings } from '$lib/utils/workflowSettings.js';
   import type { AuthProvider } from '$lib/types/auth.js';
   import type { FlowDropEventHandlers, FlowDropFeatures } from '$lib/types/events.js';
   import { mergeFeatures } from '$lib/types/events.js';
@@ -2102,15 +2103,15 @@
           }
 
           // Extract built-in fields; everything else belongs in workflow.config
-          const { name, description, format: _format, ...customConfig } = config;
+          const { name, description, customConfig } = splitWorkflowSettings(config);
           fd.workflow.batchUpdate({
-            name: name as string,
-            description: description as string | undefined,
+            name,
+            description,
             metadata: {
               ...wf.metadata,
               format: newFormat
             },
-            ...(workflowSettingsSchema && { config: customConfig as Record<string, unknown> })
+            ...(workflowSettingsSchema && { config: customConfig })
           });
         }
       }}
