@@ -3279,15 +3279,48 @@ components:
         - `oneOf` with `const`/`title` for labeled options
       properties:
         type:
+          description: |
+            JSON Schema type: one type word, or an array of type words with `null`
+            included for a nullable value, for example `["string", "null"]`.
+            Optional. When absent the property accepts any JSON value.
+            For a type array, editors use the first member that is not `null`.
+          oneOf:
+            - type: string
+              enum:
+                - string
+                - number
+                - boolean
+                - array
+                - object
+                - integer
+                - 'null'
+            - type: array
+              items:
+                type: string
+                enum:
+                  - string
+                  - number
+                  - boolean
+                  - array
+                  - object
+                  - integer
+                  - 'null'
+        x-data-type:
+          type: string
+          description: |
+            A port lane name that overrides the lane derived from `type`. It applies only
+            when the served port configuration declares that lane; otherwise it is ignored.
+            With no `type` the lane is the sink (`mixed`), not `string`.
+        when_missing:
           type: string
           enum:
-            - string
-            - number
-            - boolean
-            - array
-            - object
-            - integer
-          description: JSON Schema type
+            - fail
+            - skip
+          default: fail
+          description: |
+            What happens when this required parameter is missing at run time: `fail`
+            fails the node, `skip` skips it. Has no effect on a parameter that is not
+            required. An unknown or absent value counts as `fail`.
         title:
           type: string
           description: Display title for the property
@@ -3475,8 +3508,6 @@ components:
             Example template string shown as a placeholder hint.
             Applies to `template` fields.
           example: 'Hello {{ name }}, your order #{{ order_id }} is ready!'
-      required:
-        - type
     AutocompleteConfig:
       type: object
       description: |

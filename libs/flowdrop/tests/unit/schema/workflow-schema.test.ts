@@ -93,6 +93,31 @@ describe('Workflow JSON Schema', () => {
     });
   });
 
+  describe('ConfigProperty (#74)', () => {
+    const props = schema.$defs.ConfigProperty.properties;
+    const words = ['string', 'number', 'boolean', 'array', 'object', 'integer', 'null'];
+
+    it('takes a type word or an array of type words, null included', () => {
+      const [word, list] = props.type.oneOf;
+      expect(word.enum).toEqual(words);
+      expect(list.type).toBe('array');
+      expect(list.items.enum).toEqual(words);
+    });
+
+    it('does not require a type', () => {
+      expect(schema.$defs.ConfigProperty.required ?? []).not.toContain('type');
+    });
+
+    it('declares x-data-type as a string', () => {
+      expect(props['x-data-type'].type).toBe('string');
+    });
+
+    it('declares when_missing as fail or skip, defaulting to fail', () => {
+      expect(props.when_missing.enum).toEqual(['fail', 'skip']);
+      expect(props.when_missing.default).toBe('fail');
+    });
+  });
+
   describe('key definition structures', () => {
     it('WorkflowNode should require id, type, position, and data', () => {
       const def = schema.$defs.WorkflowNode;

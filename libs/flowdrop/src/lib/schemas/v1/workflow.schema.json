@@ -211,16 +211,49 @@
       "description": "JSON Schema property definition for node configuration.\nFollows JSON Schema draft-07 specification with FlowDrop extensions for UI rendering.\n\nFor select/dropdown fields, use standard JSON Schema patterns:\n- `enum` for simple value lists (no labels)\n- `oneOf` with `const`/`title` for labeled options\n",
       "properties": {
         "type": {
+          "description": "JSON Schema type: one type word, or an array of type words with `null`\nincluded for a nullable value, for example `[\"string\", \"null\"]`.\nOptional. When absent the property accepts any JSON value.\nFor a type array, editors use the first member that is not `null`.\n",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "string",
+                "number",
+                "boolean",
+                "array",
+                "object",
+                "integer",
+                "null"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "string",
+                  "number",
+                  "boolean",
+                  "array",
+                  "object",
+                  "integer",
+                  "null"
+                ]
+              }
+            }
+          ]
+        },
+        "x-data-type": {
+          "type": "string",
+          "description": "A port lane name that overrides the lane derived from `type`. It applies only\nwhen the served port configuration declares that lane; otherwise it is ignored.\nWith no `type` the lane is the sink (`mixed`), not `string`.\n"
+        },
+        "when_missing": {
           "type": "string",
           "enum": [
-            "string",
-            "number",
-            "boolean",
-            "array",
-            "object",
-            "integer"
+            "fail",
+            "skip"
           ],
-          "description": "JSON Schema type"
+          "default": "fail",
+          "description": "What happens when this required parameter is missing at run time: `fail`\nfails the node, `skip` skips it. Has no effect on a parameter that is not\nrequired. An unknown or absent value counts as `fail`.\n"
         },
         "title": {
           "type": "string",
@@ -380,10 +413,7 @@
           "type": "string",
           "description": "Example template string shown as a placeholder hint.\nApplies to `template` fields.\n"
         }
-      },
-      "required": [
-        "type"
-      ]
+      }
     },
     "ConfigSchema": {
       "type": "object",
