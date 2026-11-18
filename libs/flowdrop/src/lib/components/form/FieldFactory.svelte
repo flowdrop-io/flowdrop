@@ -203,9 +203,14 @@
     onChange(null);
   }
 
-  /** A required field with `when_missing: skip` says what an empty value does. */
+  /**
+   * A field with `when_missing: skip` says what an empty value does. Not gated
+   * on `required`: a connectable required parameter is not in the config
+   * schema's `required` list, and the backend sends the flag only on required
+   * parameters (CFG-20).
+   */
   const whenMissingHint = $derived(
-    required && schema.when_missing === 'skip' ? m().form.field.skippedWhenNotSet : undefined
+    schema.when_missing === 'skip' ? m().form.field.skippedWhenNotSet : undefined
   );
 
   /**

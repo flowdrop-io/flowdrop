@@ -3,7 +3,7 @@
  * On stores null and shows a muted "null" in place of the input; off brings the
  * earlier value back, or, when there was none, leaves the key absent. Fields that
  * do not admit null have no toggle, since saving null there would fail validation.
- * A required field with `when_missing: skip` carries a short hint. Mounted for
+ * A field with `when_missing: skip` carries a short hint. Mounted for
  * real (client build, happy-dom).
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
@@ -121,21 +121,22 @@ describe('null toggle behaviour', () => {
 });
 
 describe('when_missing hint', () => {
-  it('shows on a required field with when_missing: skip', () => {
+  it('shows with when_missing: skip, required in the schema or not', () => {
     const t = render({ type: 'string', when_missing: 'skip' }, '', true);
     expect(t.target.textContent).toContain('Skipped when not set');
+    unmount(mounted!);
+    // a connectable required parameter is not in the config schema's `required`
+    expect(
+      render({ type: 'string', when_missing: 'skip' }, '', false).target.textContent
+    ).toContain('Skipped when not set');
   });
 
-  it('does not show for fail, for an absent when_missing, or when not required', () => {
+  it('does not show for fail or for an absent when_missing', () => {
     expect(
       render({ type: 'string', when_missing: 'fail' }, '', true).target.textContent
     ).not.toContain('Skipped');
     unmount(mounted!);
     expect(render({ type: 'string' }, '', true).target.textContent).not.toContain('Skipped');
-    unmount(mounted!);
-    expect(
-      render({ type: 'string', when_missing: 'skip' }, '', false).target.textContent
-    ).not.toContain('Skipped');
   });
 });
 
