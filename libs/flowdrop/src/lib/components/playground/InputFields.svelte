@@ -10,6 +10,7 @@
 -->
 
 <script lang="ts">
+  import { firstNonNullType } from '$lib/utils/schemaType.js';
   import Field from '../primitives/Field.svelte';
   import Checkbox from '../primitives/Checkbox.svelte';
   import Select from '../primitives/Select.svelte';
@@ -35,6 +36,12 @@
   const labels = $derived(m().playground.inputForm);
   const MAX_EXAMPLES = 5;
 
+  /** The small type tag beside a label: none for plain strings, `a | b` for a type array. */
+  function tagFor(type: ConfigProperty['type']): string | undefined {
+    if (type === 'string' || type === undefined) return undefined;
+    return Array.isArray(type) ? type.join(' | ') : type;
+  }
+
   const keys = $derived(
     Object.entries(schema.properties ?? {})
       .filter(([, property]) => property.format !== 'hidden')
@@ -42,12 +49,14 @@
   );
 
   function isJson(property: ConfigProperty): boolean {
-    return property.type === 'array' || property.type === 'object';
+    return (
+      firstNonNullType(property.type) === 'array' || firstNonNullType(property.type) === 'object'
+    );
   }
 
   function isMultiline(property: ConfigProperty): boolean {
     return (
-      property.type === 'string' &&
+      firstNonNullType(property.type) === 'string' &&
       (property.format === 'multiline' ||
         (typeof property.maxLength === 'number' && property.maxLength > 200))
     );
@@ -66,7 +75,7 @@
   }
 
   function exampleTexts(key: string, property: ConfigProperty): string[] {
-    if (property.enum || property.type === 'boolean') return [];
+    if (property.enum || firstNonNullType(property.type) === 'boolean') return [];
     const fromSchema = Array.isArray(property.examples) ? (property.examples as unknown[]) : [];
     const candidates = [...(examples[key] ?? fromSchema), property.default];
     const texts = candidates
@@ -123,12 +132,15 @@
     {@const chips = exampleTexts(key, property)}
     <Field
       label={property.title ?? key}
-      typeTag={property.type === 'string' ? undefined : property.enum ? undefined : property.type}
+      typeTag={property.enum ? undefined : tagFor(property.type)}
       help={property.description}
       required={schema.required?.includes(key)}
       examples={chips}
       onexample={(text) =>
-        set(key, isJson(property) || property.type === 'string' ? text : JSON.parse(text))}
+        set(
+          key,
+          isJson(property) || firstNonNullType(property.type) === 'string' ? text : JSON.parse(text)
+        )}
     >
       {#snippet children(ctx)}
         {#if property.enum && !property.multiple}
@@ -140,7 +152,7 @@
             value={String(enumIndex(property, values[key]))}
             onValueChange={(index) => setEnum(key, property, index)}
           />
-        {:else if property.type === 'boolean'}
+        {:else if firstNonNullType(property.type) === 'boolean'}
           <Checkbox
             id={ctx.id}
             aria-describedby={ctx.describedBy}
@@ -149,12 +161,12 @@
               (values[key] === undefined && property.default === true)}
             onchange={(on) => set(key, on)}
           />
-        {:else if property.type === 'number' || property.type === 'integer'}
+        {:else if firstNonNullType(property.type) === 'number' || firstNonNullType(property.type) === 'integer'}
           <input
             id={ctx.id}
             class="input-fields__control"
             type="number"
-            step={property.type === 'integer' ? 1 : 'any'}
+            step={firstNonNullType(property.type) === 'integer' ? 1 : 'any'}
             min={property.minimum}
             max={property.maximum}
             placeholder={placeholder(property)}

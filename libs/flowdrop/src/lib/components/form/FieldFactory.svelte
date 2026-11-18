@@ -47,6 +47,7 @@
 -->
 
 <script lang="ts">
+  import { firstNonNullType } from '$lib/utils/schemaType.js';
   import FormFieldWrapper from './FormFieldWrapper.svelte';
   import FormTextField from './FormTextField.svelte';
   import FormTextarea from './FormTextarea.svelte';
@@ -454,8 +455,9 @@
           ariaDescribedBy={descriptionId}
           disabled={isReadOnly}
           onChange={(val) => {
-            // Try to parse as JSON for object types
-            if (schema.type === 'object' || schema.format === 'json') {
+            // Try to parse as JSON for object types and for a field with no type
+            const kind = firstNonNullType(schema.type);
+            if (kind === 'object' || kind === undefined || schema.format === 'json') {
               try {
                 onChange(JSON.parse(val));
               } catch {

@@ -262,8 +262,10 @@ export type { AutocompleteConfig } from '$lib/types/index.js';
  * - `oneOf` with `const`/`title` for labeled options
  */
 export interface FieldSchema {
-  /** The field type from JSON Schema */
-  type: FieldType | string;
+  /** The field type from JSON Schema: a type word, an array of them (`null` included), or absent. */
+  type?: FieldType | string | string[];
+  /** What a missing required parameter does: `fail` (default) or `skip` the node. */
+  when_missing?: 'fail' | 'skip';
   /** Display title for the field */
   title?: string;
   /** Description for help text */

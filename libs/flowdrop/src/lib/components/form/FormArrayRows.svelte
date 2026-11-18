@@ -12,6 +12,7 @@
 -->
 
 <script lang="ts">
+  import { firstNonNullType } from '$lib/utils/schemaType.js';
   import Icon from '@iconify/svelte';
   import Input from '../Input.svelte';
   import Select from '../primitives/Select.svelte';
@@ -186,7 +187,7 @@
                     <option value={String(option)}>{String(option)}</option>
                   {/each}
                 </Select>
-              {:else if schema.type === 'boolean'}
+              {:else if firstNonNullType(schema.type) === 'boolean'}
                 <Switch
                   id={cellId}
                   label={label(key, schema)}
@@ -194,7 +195,7 @@
                   onchange={(checked) => onUpdate(index, key, checked)}
                   {disabled}
                 />
-              {:else if schema.type === 'number' || schema.type === 'integer'}
+              {:else if firstNonNullType(schema.type) === 'number' || firstNonNullType(schema.type) === 'integer'}
                 <Input
                   id={cellId}
                   data-col={col}

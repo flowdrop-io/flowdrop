@@ -11,6 +11,7 @@
 -->
 
 <script lang="ts">
+  import { firstNonNullType } from '$lib/utils/schemaType.js';
   import { setContext } from 'svelte';
   import Icon from '@iconify/svelte';
   import type {
@@ -560,7 +561,7 @@
     // commit immediately — WebKit doesn't focus them on click, so no focus-out
     // ever fires and the edit would otherwise be lost on save (#38).
     const prop = configSchema?.properties?.[key];
-    if (prop && (prop.type === 'boolean' || Array.isArray(prop.enum))) {
+    if (prop && (firstNonNullType(prop.type) === 'boolean' || Array.isArray(prop.enum))) {
       commitEdits();
     }
   }
@@ -860,7 +861,7 @@
             {@const fieldSchema = toFieldSchema(field as Record<string, unknown>)}
             {@const required = isFieldRequired(key)}
             {@const itemRef =
-              fieldSchema.type === 'array'
+              firstNonNullType(fieldSchema.type) === 'array'
                 ? buildItemRef(
                     configSchema.properties,
                     key,

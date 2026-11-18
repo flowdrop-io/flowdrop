@@ -22,6 +22,8 @@
  * ```
  */
 
+import { firstNonNullType } from '$lib/utils/schemaType.js';
+import { resolveHeavyEditorKind } from '../components/form/resolveFieldType.js';
 import type { FieldComponent, FieldComponentRegistry } from './fieldRegistry.js';
 import type { FieldSchema } from '../components/form/types.js';
 
@@ -34,7 +36,7 @@ export type { CodeEditorFieldProps, TemplateEditorFieldProps } from '../componen
 
 /**
  * Matcher for code/JSON editor fields
- * Matches: format "json", "code", or type "object" without specific format
+ * Matches: format "json", "code", type "object" without specific format, or no type
  */
 export function codeEditorFieldMatcher(schema: FieldSchema): boolean {
   // JSON/code format
@@ -43,7 +45,15 @@ export function codeEditorFieldMatcher(schema: FieldSchema): boolean {
   }
 
   // Object type without specific format (render as JSON editor)
-  if (schema.type === 'object' && !schema.format) {
+  if (firstNonNullType(schema.type) === 'object' && !schema.format) {
+    return true;
+  }
+
+  // No usable type: any JSON value, so edited as JSON (unless it lists options)
+  if (
+    firstNonNullType(schema.type) === undefined &&
+    resolveHeavyEditorKind(schema) === 'code-editor'
+  ) {
     return true;
   }
 

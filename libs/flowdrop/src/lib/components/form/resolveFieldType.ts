@@ -1,4 +1,5 @@
 import type { FieldSchema } from './types.js';
+import { firstNonNullType } from '$lib/utils/schemaType.js';
 
 /**
  * The dependency-free field kinds — everything that does not pull in a heavy
@@ -23,10 +24,17 @@ export type BaseFieldType =
  * overrides) first and its fallback last. Its one caller is the internal
  * `FieldFactory`, which both `FormFieldLight` and `FormFieldFull` render.
  *
+ * A `type` array is read by its first member that is not `null` (spec SCH-9), so
+ * `['integer', 'null']` is a number field. A schema with no usable type (absent,
+ * empty array, only `null`) gets `null` here and is edited as JSON by
+ * `resolveHeavyEditorKind`, because it accepts any JSON value (SCH-10).
+ *
  * Order matters: `enum` and `oneOf` are checked before the primitive `type`
  * branches because option schemas frequently carry `type: 'string'`.
  */
 export function resolveBaseFieldType(schema: FieldSchema): BaseFieldType | null {
+  const type = firstNonNullType(schema.type);
+
   // Enum with multiple selection -> checkbox group
   if (schema.enum && schema.multiple) {
     return 'checkbox-group';
@@ -43,36 +51,41 @@ export function resolveBaseFieldType(schema: FieldSchema): BaseFieldType | null 
   }
 
   // Multiline string -> textarea
-  if (schema.type === 'string' && schema.format === 'multiline') {
+  if (type === 'string' && schema.format === 'multiline') {
     return 'textarea';
   }
 
   // Range slider for number/integer with format: "range"
-  if ((schema.type === 'number' || schema.type === 'integer') && schema.format === 'range') {
+  if ((type === 'number' || type === 'integer') && schema.format === 'range') {
     return 'range';
   }
 
   // String -> text field
-  if (schema.type === 'string') {
+  if (type === 'string') {
     return 'text';
   }
 
   // Number or integer -> number field
-  if (schema.type === 'number' || schema.type === 'integer') {
+  if (type === 'number' || type === 'integer') {
     return 'number';
   }
 
   // Boolean -> toggle
-  if (schema.type === 'boolean') {
+  if (type === 'boolean') {
     return 'toggle';
   }
 
   // Array -> array field
-  if (schema.type === 'array') {
+  if (type === 'array') {
     return 'array';
   }
 
   return null;
+}
+
+/** Whether the schema lists its own options, which a select renders whatever the type. */
+function hasOptions(schema: FieldSchema): boolean {
+  return !!schema.enum || (Array.isArray(schema.oneOf) && schema.oneOf.length > 0);
 }
 
 /** The editors too heavy for the light `/form` entry (CodeMirror and friends). */
@@ -86,8 +99,12 @@ const OBJECT_FORMATS_WITH_OWN_FIELD = new Set(['hidden', 'autocomplete', 'ports'
  * renders it from the field registry, or from the statically bundled set that
  * `FormFieldFull` passes in, or as a plain textarea with a registration hint.
  * A registered component for the schema wins before this is consulted.
+ * A schema with no type (see `resolveBaseFieldType`) is edited as JSON too, unless it
+ * lists `enum`/`oneOf` options.
  */
 export function resolveHeavyEditorKind(schema: FieldSchema): HeavyEditorKind | null {
+  const type = firstNonNullType(schema.type);
+
   if (schema.format === 'json' || schema.format === 'code') {
     return 'code-editor';
   }
@@ -103,7 +120,10 @@ export function resolveHeavyEditorKind(schema: FieldSchema): HeavyEditorKind | n
   // An object is edited as JSON unless its format is one the factory renders
   // itself. An unknown format must not fall through to a text field, which
   // would show "[object Object]" and save a string over the object.
-  if (schema.type === 'object' && !OBJECT_FORMATS_WITH_OWN_FIELD.has(schema.format ?? '')) {
+  if (
+    (type === 'object' || (type === undefined && !hasOptions(schema))) &&
+    !OBJECT_FORMATS_WITH_OWN_FIELD.has(schema.format ?? '')
+  ) {
     return 'code-editor';
   }
 

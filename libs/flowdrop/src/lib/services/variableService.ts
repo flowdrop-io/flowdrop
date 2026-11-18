@@ -22,6 +22,7 @@ import type {
 import type { EndpointConfig } from '../config/endpoints.js';
 import type { PortCompatibilityChecker } from '../utils/connections.js';
 import { logger } from '../utils/logger.js';
+import { firstNonNullType } from '../utils/schemaType.js';
 
 /**
  * Converts a JSON Schema property type to a TemplateVariableType.
@@ -70,13 +71,13 @@ function propertyToTemplateVariable(
     name,
     label: property.title ?? name,
     description: property.description,
-    type: toTemplateVariableType(property.type),
+    type: toTemplateVariableType(firstNonNullType(property.type)),
     sourcePort,
     sourceNode
   };
 
   // Handle nested object properties
-  if (property.type === 'object' && property.properties) {
+  if (firstNonNullType(property.type) === 'object' && property.properties) {
     variable.properties = {};
     for (const [propName, propValue] of Object.entries(property.properties)) {
       variable.properties[propName] = propertyToTemplateVariable(
@@ -89,7 +90,7 @@ function propertyToTemplateVariable(
   }
 
   // Handle array items
-  if (property.type === 'array' && property.items) {
+  if (firstNonNullType(property.type) === 'array' && property.items) {
     variable.items = propertyToTemplateVariable(
       'item',
       property.items as BaseProperty,

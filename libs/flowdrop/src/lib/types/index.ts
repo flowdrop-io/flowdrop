@@ -935,11 +935,32 @@ export interface NodeAgentGuidance {
   pairsWith?: string[];
 }
 
+/** The type words a property's `type` may hold (JSON Schema's seven, plus two legacy spellings). */
+export type PropertyTypeWord =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'array'
+  | 'object'
+  | 'integer'
+  | 'null'
+  | 'mixed'
+  | 'float';
+
 /**
  * Common base interface for all schema properties
  */
 export interface BaseProperty {
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer' | 'mixed' | 'float';
+  /**
+   * A JSON Schema type word, an array of them (`null` included, e.g.
+   * `['string', 'null']`), or absent (any JSON value). `mixed` and `float` are
+   * accepted for older schemas.
+   */
+  type?: PropertyTypeWord | PropertyTypeWord[];
+  /** What a missing required parameter does: `fail` (default) or `skip` the node. */
+  when_missing?: 'fail' | 'skip';
+  /** A port lane name that overrides the lane derived from `type`. */
+  'x-data-type'?: string;
   description?: string;
   title?: string;
   default?: unknown;
@@ -969,7 +990,6 @@ export interface BaseSchema {
  * Configuration schema property with specific attributes
  */
 export interface ConfigProperty extends BaseProperty {
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'integer';
   title?: string;
   description?: string;
   default?: unknown;

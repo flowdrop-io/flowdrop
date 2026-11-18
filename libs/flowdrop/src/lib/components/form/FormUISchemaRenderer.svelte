@@ -8,6 +8,7 @@
 -->
 
 <script lang="ts">
+  import { firstNonNullType } from '$lib/utils/schemaType.js';
   import type { UISchemaElement } from '$lib/types/uischema.js';
   import type { ConfigSchema, WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
   import type { FieldSchema } from './types.js';
@@ -94,7 +95,7 @@
   {#if key && schema.properties[key] && !parseItemRef(schema.properties[key])}
     {@const fieldSchema = toFieldSchema(schema.properties[key] as Record<string, unknown>)}
     {@const itemRef =
-      fieldSchema.type === 'array'
+      firstNonNullType(fieldSchema.type) === 'array'
         ? buildItemRef(
             schema.properties,
             key,

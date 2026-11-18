@@ -38,6 +38,7 @@ import {
 } from '../utils/workflowInterface.js';
 import { resolvePlaygroundChat, type ResolvedPlaygroundChat } from '../utils/playgroundChat.js';
 import { logger } from '../utils/logger.js';
+import { firstNonNullType } from '../utils/schemaType.js';
 
 /** Which workflow and run a set of node statuses was loaded for. */
 export interface NodeStatusScope {
@@ -507,7 +508,7 @@ export class PlaygroundStore {
                 nodeId: node.id,
                 fieldId: key,
                 label: schema.title || key,
-                type: schema.type || 'string',
+                type: firstNonNullType(schema.type) ?? 'string',
                 defaultValue: node.data.config?.[key] ?? schema.default,
                 required: configSchema.required?.includes(key) ?? false,
                 schema

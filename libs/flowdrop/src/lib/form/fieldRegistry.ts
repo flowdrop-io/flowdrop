@@ -25,6 +25,7 @@
  * ```
  */
 
+import { firstNonNullType } from '$lib/utils/schemaType.js';
 import { DEV } from 'esm-env';
 import type { Component } from 'svelte';
 import type { FieldSchema } from '../components/form/types.js';
@@ -209,30 +210,32 @@ export const enumSelectMatcher: FieldMatcher = (schema) => Boolean(schema.enum &
  * Matcher for multiline textarea fields
  */
 export const textareaMatcher: FieldMatcher = (schema) =>
-  schema.type === 'string' && schema.format === 'multiline';
+  firstNonNullType(schema.type) === 'string' && schema.format === 'multiline';
 
 /**
  * Matcher for range slider fields
  */
 export const rangeMatcher: FieldMatcher = (schema) =>
-  (schema.type === 'number' || schema.type === 'integer') && schema.format === 'range';
+  (firstNonNullType(schema.type) === 'number' || firstNonNullType(schema.type) === 'integer') &&
+  schema.format === 'range';
 
 /**
  * Matcher for string text fields
  */
 export const textFieldMatcher: FieldMatcher = (schema) =>
-  schema.type === 'string' && !schema.format;
+  firstNonNullType(schema.type) === 'string' && !schema.format;
 
 /**
  * Matcher for number fields
  */
 export const numberFieldMatcher: FieldMatcher = (schema) =>
-  (schema.type === 'number' || schema.type === 'integer') && schema.format !== 'range';
+  (firstNonNullType(schema.type) === 'number' || firstNonNullType(schema.type) === 'integer') &&
+  schema.format !== 'range';
 
 /**
  * Matcher for boolean toggle fields
  */
-export const toggleMatcher: FieldMatcher = (schema) => schema.type === 'boolean';
+export const toggleMatcher: FieldMatcher = (schema) => firstNonNullType(schema.type) === 'boolean';
 
 /**
  * Matcher for select fields with labeled options (JSON Schema oneOf pattern)
@@ -249,7 +252,7 @@ export const selectOptionsMatcher: FieldMatcher = (schema) =>
  * Matcher for array fields
  */
 export const arrayMatcher: FieldMatcher = (schema) =>
-  schema.type === 'array' && Boolean(schema.items);
+  firstNonNullType(schema.type) === 'array' && Boolean(schema.items);
 
 /**
  * Matcher for autocomplete fields

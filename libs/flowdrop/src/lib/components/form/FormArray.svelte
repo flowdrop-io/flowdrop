@@ -18,6 +18,7 @@
   import Textarea from '../Textarea.svelte';
   import IconButton from '../primitives/IconButton.svelte';
   import Button from '../primitives/Button.svelte';
+  import { firstNonNullType } from '$lib/utils/schemaType.js';
   import { humanizeKey } from './humanizeKey.js';
   import type { FieldSchema } from './types.js';
   import FormArrayRows from './FormArrayRows.svelte';
@@ -104,17 +105,17 @@
    * Determine if items are simple (primitive) or complex (objects)
    */
   const isSimpleType = $derived(
-    itemSchema.type === 'string' ||
-      itemSchema.type === 'number' ||
-      itemSchema.type === 'integer' ||
-      itemSchema.type === 'boolean'
+    firstNonNullType(itemSchema.type) === 'string' ||
+      firstNonNullType(itemSchema.type) === 'number' ||
+      firstNonNullType(itemSchema.type) === 'integer' ||
+      firstNonNullType(itemSchema.type) === 'boolean'
   );
 
   const isScalar = (schema: FieldSchema): boolean =>
-    (schema.type === 'string' ||
-      schema.type === 'number' ||
-      schema.type === 'integer' ||
-      schema.type === 'boolean') &&
+    (firstNonNullType(schema.type) === 'string' ||
+      firstNonNullType(schema.type) === 'number' ||
+      firstNonNullType(schema.type) === 'integer' ||
+      firstNonNullType(schema.type) === 'boolean') &&
     schema.format !== 'multiline';
 
   /**
@@ -122,7 +123,7 @@
    * Anything bigger falls back to a collapsible sub-form per item.
    */
   const rowColumns = $derived.by((): Array<[string, FieldSchema]> | undefined => {
-    if (itemSchema.type !== 'object' || !itemSchema.properties) return undefined;
+    if (firstNonNullType(itemSchema.type) !== 'object' || !itemSchema.properties) return undefined;
     const entries = Object.entries(itemSchema.properties) as Array<[string, FieldSchema]>;
     if (entries.length < 1 || entries.length > 2) return undefined;
     return entries.every(([, schema]) => isScalar(schema)) ? entries : undefined;
@@ -142,7 +143,7 @@
       return itemSchema.default;
     }
 
-    switch (itemSchema.type) {
+    switch (firstNonNullType(itemSchema.type)) {
       case 'string':
         return '';
       case 'number':
@@ -158,7 +159,7 @@
             if (propSchema.default !== undefined) {
               defaultObj[key] = propSchema.default;
             } else {
-              defaultObj[key] = getDefaultForType(propSchema.type);
+              defaultObj[key] = getDefaultForType(firstNonNullType(propSchema.type));
             }
           });
           return defaultObj;
@@ -428,7 +429,7 @@
           >
             {#if isSimpleType}
               <!-- Simple type: render inline input -->
-              {#if itemSchema.type === 'string'}
+              {#if firstNonNullType(itemSchema.type) === 'string'}
                 {#if itemSchema.format === 'multiline'}
                   <Textarea
                     value={String(item ?? '')}
@@ -446,7 +447,7 @@
                     {disabled}
                   />
                 {/if}
-              {:else if itemSchema.type === 'number' || itemSchema.type === 'integer'}
+              {:else if firstNonNullType(itemSchema.type) === 'number' || firstNonNullType(itemSchema.type) === 'integer'}
                 <Input
                   type="number"
                   class="flowdrop-input--numeric"
@@ -460,7 +461,7 @@
                   }}
                   {disabled}
                 />
-              {:else if itemSchema.type === 'boolean'}
+              {:else if firstNonNullType(itemSchema.type) === 'boolean'}
                 <Switch
                   checked={Boolean(item)}
                   label={item ? t.yes : t.no}
@@ -488,7 +489,7 @@
                   {disabled}
                 />
               {/if}
-            {:else if itemSchema.type === 'object' && itemSchema.properties}
+            {:else if firstNonNullType(itemSchema.type) === 'object' && itemSchema.properties}
               <!-- Complex type: render sub-form for object properties -->
               {#if !isCollapsed(index)}
                 <div class="form-array__subform">
@@ -523,7 +524,7 @@
                               <option value={String(option)}>{String(option)}</option>
                             {/each}
                           </Select>
-                        {:else if propFieldSchema.type === 'string' && propFieldSchema.format === 'multiline'}
+                        {:else if firstNonNullType(propFieldSchema.type) === 'string' && propFieldSchema.format === 'multiline'}
                           <Textarea
                             id="{id}-{index}-{propKey}"
                             value={String(propValue ?? '')}
@@ -533,7 +534,7 @@
                               updateObjectProperty(index, propKey, e.currentTarget.value)}
                             {disabled}
                           />
-                        {:else if propFieldSchema.type === 'string'}
+                        {:else if firstNonNullType(propFieldSchema.type) === 'string'}
                           <Input
                             id="{id}-{index}-{propKey}"
                             type="text"
@@ -543,7 +544,7 @@
                               updateObjectProperty(index, propKey, e.currentTarget.value)}
                             {disabled}
                           />
-                        {:else if propFieldSchema.type === 'number' || propFieldSchema.type === 'integer'}
+                        {:else if firstNonNullType(propFieldSchema.type) === 'number' || firstNonNullType(propFieldSchema.type) === 'integer'}
                           <Input
                             id="{id}-{index}-{propKey}"
                             type="number"
@@ -558,7 +559,7 @@
                             }}
                             {disabled}
                           />
-                        {:else if propFieldSchema.type === 'boolean'}
+                        {:else if firstNonNullType(propFieldSchema.type) === 'boolean'}
                           <Switch
                             id="{id}-{index}-{propKey}"
                             checked={Boolean(propValue)}
