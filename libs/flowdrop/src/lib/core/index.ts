@@ -64,6 +64,7 @@ export type {
   // Config Schema
   ConfigSchema,
   ConfigProperty,
+  PropertyTypeWord,
   // Admin/Edit configuration types
   HttpMethod,
   DynamicSchemaEndpoint,
@@ -127,6 +128,7 @@ export type {
   MarkdownEditorFieldProps,
   TemplateEditorFieldProps,
   FormFieldFactoryProps,
+  FieldChangeMeta,
   FormFieldWrapperProps
 } from '../components/form/types.js';
 
@@ -325,6 +327,9 @@ export {
   mergeConfig,
   validateConfig
 } from '../utils/config.js';
+
+// Reading a property's `type` (a type word, an array with `null`, or absent)
+export { firstNonNullType, typeAdmitsNull, schemaAdmitsNull } from '../utils/schemaType.js';
 
 // Node type utilities
 export {

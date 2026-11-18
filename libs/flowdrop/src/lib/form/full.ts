@@ -61,6 +61,7 @@ export type {
   CheckboxGroupFieldProps,
   ArrayFieldProps,
   FormFieldFactoryProps,
+  FieldChangeMeta,
   FormFieldWrapperProps,
   FieldComponentProps,
   FieldMatcher,

@@ -935,7 +935,11 @@ export interface NodeAgentGuidance {
   pairsWith?: string[];
 }
 
-/** The type words a property's `type` may hold (JSON Schema's seven, plus two legacy spellings). */
+/**
+ * The type words a property's `type` may hold: JSON Schema's seven, plus two
+ * legacy spellings. Read a property's type with `firstNonNullType`, since
+ * `type` may also be an array or absent.
+ */
 export type PropertyTypeWord =
   | 'string'
   | 'number'
@@ -944,7 +948,9 @@ export type PropertyTypeWord =
   | 'object'
   | 'integer'
   | 'null'
+  /** @deprecated A lane name, not a JSON Schema type (SCH-34). Use `x-data-type` for a lane. */
   | 'mixed'
+  /** @deprecated A lane name, not a JSON Schema type (SCH-34). Use `number`. */
   | 'float';
 
 /**

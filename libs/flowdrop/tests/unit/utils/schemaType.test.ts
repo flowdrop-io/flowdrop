@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { firstNonNullType, schemaAdmitsNull, typeAdmitsNull } from '$lib/utils/schemaType.js';
 
 describe('firstNonNullType', () => {
@@ -31,5 +31,20 @@ describe('schemaAdmitsNull', () => {
     expect(schemaAdmitsNull({ type: ['string', 'integer'] })).toBe(false);
     expect(schemaAdmitsNull({ type: 'string', enum: ['a', 'b'] })).toBe(false);
     expect(schemaAdmitsNull({})).toBe(false);
+  });
+});
+
+describe('public entry point', () => {
+  it('exports the type readers from @flowdrop/flowdrop/core', async () => {
+    // The core entry reads the colour scheme while it loads.
+    vi.stubGlobal('matchMedia', () => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {}
+    }));
+    const core = await import('$lib/core/index.js');
+    expect(core.firstNonNullType).toBe(firstNonNullType);
+    expect(core.typeAdmitsNull).toBe(typeAdmitsNull);
+    expect(core.schemaAdmitsNull).toBe(schemaAdmitsNull);
   });
 });
