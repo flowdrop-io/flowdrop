@@ -4,8 +4,8 @@
  * Produces the view of form values that children read via context. Precedence
  * per key:
  *
- *   1. `edits[key]` is `REMOVE_KEY` → the field was cleared: show the schema
- *                                    field's `default` (the key is absent)
+ *   1. `edits[key]` is `REMOVE_KEY` → the field was cleared: show it empty
+ *                                    (the key is absent; the default applies)
  *   2. `key in edits`            → use the user's local edit
  *   3. `source[key] !== undefined` → use the prop value (including null/0/false/'')
  *   4. otherwise                  → use the schema field's `default`
@@ -93,7 +93,10 @@ export function mergeWithDefaults(
   for (const [key, field] of Object.entries(schema.properties)) {
     const fieldConfig = field as Record<string, unknown>;
     if (key in edits && edits[key] === REMOVE_KEY) {
-      merged[key] = fieldConfig.default;
+      // Cleared: the field shows empty (its default appears as the
+      // placeholder, see FieldFactory), so typing a new value is not
+      // interrupted by the default filling the box back in.
+      merged[key] = undefined;
     } else if (key in edits) {
       merged[key] = edits[key];
     } else {

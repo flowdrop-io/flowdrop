@@ -301,10 +301,20 @@ describe('the host never sees the removal marker', () => {
 });
 
 describe('a cleared field with a schema default', () => {
-  it('shows the default and leaves the key absent', () => {
+  it('stays empty, shows the default as placeholder and leaves the key absent', () => {
     const { target, last } = mountConfigForm({ ...stored, label: 'mine' });
     type(target, 'label', '');
     expect('label' in last()).toBe(false);
-    expect(target.querySelector<HTMLInputElement>('#label')!.value).toBe('fallback');
+    const input = target.querySelector<HTMLInputElement>('#label')!;
+    expect(input.value).toBe('');
+    expect(input.placeholder).toBe('fallback');
+  });
+
+  it('lets a new value be typed after the clear', () => {
+    const { target, last } = mountConfigForm({ ...stored, label: 'mine' });
+    type(target, 'label', '');
+    type(target, 'label', 'n');
+    expect(last().label).toBe('n');
+    expect(target.querySelector<HTMLInputElement>('#label')!.value).toBe('n');
   });
 });

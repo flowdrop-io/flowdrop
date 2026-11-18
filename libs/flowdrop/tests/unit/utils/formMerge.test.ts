@@ -57,11 +57,11 @@ describe('toEdit / buildConfig / mergeWithDefaults (#72)', () => {
     expect(toEdit({ type: 'string' }, 'x')).toBe('x');
   });
 
-  it('merge shows the default for a removed key', () => {
+  it('merge shows a removed key as empty, even with a default', () => {
     expect(mergeWithDefaults(schema, { a: 'x', b: 'y' }, { a: REMOVE_KEY, b: REMOVE_KEY })).toEqual(
       {
         a: undefined,
-        b: 'd',
+        b: undefined,
         c: undefined
       }
     );

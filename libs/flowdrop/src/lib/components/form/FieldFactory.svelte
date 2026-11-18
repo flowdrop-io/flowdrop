@@ -255,6 +255,14 @@
     const help = text.slice(cut + 1).trim();
     return { note, help: help || undefined };
   });
+
+  /**
+   * A field's schema default as placeholder text, so an emptied field (whose
+   * key is then absent and whose default applies) shows what will be used.
+   */
+  function defaultPlaceholder(value: unknown): string {
+    return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+  }
 </script>
 
 {#if fieldType !== 'hidden'}
@@ -334,7 +342,7 @@
       <FormTextarea
         id={fieldKey}
         value={stringValue}
-        placeholder={schema.placeholder ?? ''}
+        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default)}
         {required}
         ariaDescribedBy={descriptionId}
         disabled={schema.readOnly === true}
@@ -344,7 +352,7 @@
       <FormTextField
         id={fieldKey}
         value={stringValue}
-        placeholder={schema.placeholder ?? ''}
+        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default)}
         {required}
         ariaDescribedBy={descriptionId}
         disabled={schema.readOnly === true}
@@ -354,7 +362,7 @@
       <FormNumberField
         id={fieldKey}
         value={numberValue}
-        placeholder={schema.placeholder ?? ''}
+        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default)}
         min={schema.minimum}
         max={schema.maximum}
         step={schema.step}
