@@ -53,6 +53,7 @@ import type {
 } from '../types/index.js';
 import { isMutatingCommand, isViewCommand } from '../chat/commandClassifier.js';
 import { generateNodeId } from '../utils/nodeIds.js';
+import { typeAdmitsNull } from '../utils/schemaType.js';
 import { extractConfigDefaults } from '../utils/nodeIds.js';
 import { computeAutoPosition } from './positioner.js';
 import { buildHandleId, extractPortId } from '../utils/handleIds.js';
@@ -471,19 +472,21 @@ function validateConfigValue(
     }
   }
 
-  // Type validation
-  if (property.type) {
-    const actualType = Array.isArray(value) ? 'array' : typeof value;
-    // `type` is a type word or an array of them (e.g. ['string', 'boolean']).
-    const declaredTypes: string[] = Array.isArray(property.type) ? property.type : [property.type];
+  // Type validation. `type` is a type word, an array of them (e.g. ['string',
+  // 'boolean']), or absent; an empty array or no usable word puts no constraint
+  // on the value (R6.d).
+  const declaredTypes: string[] = (
+    Array.isArray(property.type) ? property.type : property.type ? [property.type] : []
+  ).filter((t): t is string => typeof t === 'string');
+  if (declaredTypes.length > 0) {
+    const actualType = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
     const expectedTypes: string[] = declaredTypes.map((t) => (t === 'integer' ? 'number' : t));
 
-    // Only warn if there's a genuine mismatch (null/object handled specially)
-    if (
-      value !== null &&
-      !expectedTypes.includes(actualType) &&
-      !(expectedTypes.includes('object') && actualType === 'object')
-    ) {
+    // `null` is a value like any other (R6.i): it fails `type` unless the type
+    // lists `null`. A JSON object is typeof 'object', so it matches 'object'.
+    const matches =
+      value === null ? typeAdmitsNull(property.type) : expectedTypes.includes(actualType);
+    if (!matches) {
       warnings.push({
         type: 'type_mismatch',
         message: `Expected type ${expectedTypes.map((t) => `'${t}'`).join(' or ')} but got '${actualType}'`,

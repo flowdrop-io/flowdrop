@@ -632,6 +632,12 @@ describe('executeCommand — set_config validation', () => {
         },
         count: {
           type: ['integer'] as unknown as ConfigProperty['type']
+        },
+        anything: { type: [] as unknown as ConfigProperty['type'] },
+        maybe: { type: ['string', 'null'] as unknown as ConfigProperty['type'] },
+        maybeMode: {
+          type: ['string', 'null'] as unknown as ConfigProperty['type'],
+          enum: ['a', null]
         }
       }
     }
@@ -959,6 +965,46 @@ describe('executeCommand — set_config validation', () => {
     if (!result.ok) return;
     const data = result.data as import('../../../src/lib/commands/types.js').SetConfigResultData;
     expect(data.warnings).toBeUndefined();
+  });
+
+  const warningsFor = (key: string, value: string) => {
+    const node = createMockNode('agentspec.llm_node.1', enumMetadata, {
+      data: { label: 'LLM Node', config: {}, metadata: enumMetadata }
+    });
+    const context = createMockContext(
+      createMockWorkflow([node]),
+      nodeTypes,
+      createMockDispatch()
+    );
+    const result = executeCommand(
+      { type: 'set_config', nodeId: 'llm_node.1', key, value },
+      context
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return [];
+    const data = result.data as import('../../../src/lib/commands/types.js').SetConfigResultData;
+    return data.warnings ?? [];
+  };
+
+  it('puts no type constraint on a property whose type is an empty array (R6.d)', () => {
+    expect(warningsFor('anything', 'hello')).toEqual([]);
+    expect(warningsFor('anything', '5')).toEqual([]);
+    expect(warningsFor('anything', 'null')).toEqual([]);
+  });
+
+  it('fails null against a type that does not admit null (R6.i)', () => {
+    const warnings = warningsFor('temperature', 'null');
+    expect(warnings.map((w) => w.type)).toEqual(['type_mismatch']);
+    expect(warnings[0].actualType).toBe('null');
+  });
+
+  it('accepts null for a type array that lists null, and an enum that lists null', () => {
+    expect(warningsFor('maybe', 'null')).toEqual([]);
+    expect(warningsFor('maybeMode', 'null')).toEqual([]);
+  });
+
+  it('fails null against an enum that does not list it', () => {
+    expect(warningsFor('model', 'null').map((w) => w.type)).toContain('enum');
   });
 });
 
