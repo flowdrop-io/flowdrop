@@ -30,7 +30,8 @@ const schema: ConfigSchema = {
     note: { type: 'string', title: 'Note' },
     body: { type: 'string', format: 'multiline', title: 'Body' },
     count: { type: 'number', title: 'Count' },
-    mode: { type: 'string', title: 'Mode', enum: ['', 'fast', 'slow'] },
+    mode: { type: 'string', title: 'Mode', enum: ['fast', 'slow'] },
+    level: { type: 'string', title: 'Level', enum: ['', 'low', 'high'] },
     flag: { type: 'boolean', title: 'Flag' },
     payload: { type: 'string', title: 'Payload' },
     project: {
@@ -85,6 +86,7 @@ const stored: Config = {
   body: 'b',
   count: 3,
   mode: 'fast',
+  level: 'low',
   flag: true,
   payload: '{"a":1}',
   project: 'ama',
@@ -130,10 +132,16 @@ describe('a person clearing a field by hand removes its key', () => {
     expect('count' in last()).toBe(false);
   });
 
-  it('select, when the empty choice is picked', () => {
+  it('select, when an empty value comes out of one with no empty option', () => {
     const { target, last } = mountConfigForm(stored);
     type(target, 'mode', '', 'change');
     expect('mode' in last()).toBe(false);
+  });
+
+  it('select keeps an empty option the author listed, as a value', () => {
+    const { target, last } = mountConfigForm(stored);
+    type(target, 'level', '', 'change');
+    expect(last().level).toBe('');
   });
 
   it('select keeps a real choice', () => {

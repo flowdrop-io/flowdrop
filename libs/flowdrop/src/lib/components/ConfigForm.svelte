@@ -320,17 +320,44 @@
 
   setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => configValues);
 
+  /**
+   * Keys whose clear has been handed to the host (`commitEdits`). Only these
+   * yield when the config holds the key again: a clear still waiting for its
+   * blur belongs to the person who just made it, and an outside change must
+   * not refill the field under them. Plain set: only the effect below reads it.
+   */
+  const committedClears = new Set<string>();
+
+  /**
+   * What each field held before the null toggle set it to `null`: the stored
+   * (or edited) value, or `undefined` when the key was not set. The toggle's
+   * "off" brings this back, so a field that only showed its default does not
+   * start storing it, and the record survives a remount of the field.
+   */
+  const beforeNull = new Map<string, { value: unknown } | undefined>();
+
+  function resetEdits(): void {
+    edits = {};
+    committedClears.clear();
+    beforeNull.clear();
+  }
+
   // Drop edits when the schema reference changes — covers dynamic-schema load
   // (configSchema flips from undefined → loaded) and "different node opened"
-  // (node prop change → metadata.configSchema reference change). Identity
-  // comparison only — value churn in `initialConfig` preserves in-flight edits.
+  // (node prop change → metadata.configSchema reference change) — or when a
+  // different node is shown (two nodes of one type share the schema object).
+  // Identity comparison only — value churn in `initialConfig` preserves in-flight edits.
   // capturing the initial derived reference is intentional; later changes are picked up by the effect below
   // svelte-ignore state_referenced_locally
   let prevSchemaRef = configSchema;
+  // svelte-ignore state_referenced_locally
+  let prevNodeId = node?.id;
   $effect.pre(() => {
-    if (configSchema !== prevSchemaRef) {
+    const id = node?.id;
+    if (configSchema !== prevSchemaRef || id !== prevNodeId) {
       prevSchemaRef = configSchema;
-      edits = {};
+      prevNodeId = id;
+      resetEdits();
     }
   });
 
@@ -341,11 +368,14 @@
     const config = initialConfig;
     untrack(() => {
       const stale = Object.keys(edits).filter(
-        (key) => edits[key] === REMOVE_KEY && config[key] !== undefined
+        (key) => edits[key] === REMOVE_KEY && committedClears.has(key) && config[key] !== undefined
       );
       if (stale.length === 0) return;
       const next = { ...edits };
-      for (const key of stale) delete next[key];
+      for (const key of stale) {
+        delete next[key];
+        committedClears.delete(key);
+      }
       edits = next;
     });
   });
@@ -565,10 +595,25 @@
    */
   function handleFieldChange(key: string, value: unknown, meta?: FieldChangeMeta): void {
     const previous = configValues[key];
+    if (value === null && meta?.restore !== true && !beforeNull.has(key)) {
+      // The null toggle is going on: note what the key held, for "off".
+      const stored = key in edits ? edits[key] : initialConfig[key];
+      beforeNull.set(
+        key,
+        stored === undefined || stored === REMOVE_KEY ? undefined : { value: stored }
+      );
+    }
+    if (meta?.restore === true && beforeNull.has(key)) {
+      const before = beforeNull.get(key);
+      beforeNull.delete(key);
+      value = before ? before.value : undefined;
+    }
+    committedClears.delete(key);
     edits[key] = toEdit(configSchema?.properties?.[key], value, meta?.restore === true);
     if (previous === value) return;
     const dependents = cascadeClearAutocompleteDependents(configSchema, key);
     for (const [depKey, depValue] of Object.entries(dependents)) {
+      committedClears.delete(depKey);
       edits[depKey] = depValue;
     }
 
@@ -617,6 +662,9 @@
     // instead of being silently dropped; `configValues` then wins for every
     // field the schema actually renders.
     onChange(buildConfig(initialConfig, configValues, edits, requiredKeys), meta);
+    for (const key of Object.keys(edits)) {
+      if (edits[key] === REMOVE_KEY) committedClears.add(key);
+    }
     // Keep the clears: a cleared field must not be filled with its default
     // again when the config comes back without its key.
     if (clearBuffer) edits = keepRemovals(edits);

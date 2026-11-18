@@ -30,11 +30,26 @@ type ClearableField = {
 const DOCUMENT_FORMATS = new Set(['json', 'code', 'markdown', 'template', 'hidden', 'ports']);
 
 /**
+ * Whether the author listed `''` as a choice of an `enum` / `oneOf`. A select
+ * has no empty placeholder option, so a `''` it emits can only be that choice,
+ * and picking it is a value.
+ */
+function selectOffersEmpty(f: ClearableField): boolean {
+  if (Array.isArray(f.enum) && f.enum.includes('')) return true;
+  return (
+    Array.isArray(f.oneOf) &&
+    f.oneOf.some(
+      (o) => typeof o === 'object' && o !== null && (o as { const?: unknown }).const === ''
+    )
+  );
+}
+
+/**
  * Whether `value`, just emitted by a field, is that field being emptied by a
  * person (or by the autocomplete cascade) rather than a value of its own.
  *
  * Covered: text and textarea (`''`), number and integer (`''`, what the number
- * box emits when cleared), a select's empty choice (`''`, `enum` and `oneOf`),
+ * box emits when cleared), a select's `''` when `''` is not one of its options (`enum` and `oneOf`),
  * and an autocomplete (`''`, or `[]` once no items are left).
  *
  * Not covered, because the empty value there is a real value: `false` on a
@@ -49,7 +64,7 @@ export function isClearedValue(field: unknown, value: unknown): boolean {
     return value === '' || (Array.isArray(value) && value.length === 0);
   }
   if (value !== '') return false;
-  if (f.enum || f.oneOf) return true;
+  if (f.enum || f.oneOf) return !selectOffersEmpty(f);
   // A nullable field (`['string', 'null']`) is cleared like its plain type.
   const kind = firstNonNullType(f.type);
   if (kind === 'string') return true;

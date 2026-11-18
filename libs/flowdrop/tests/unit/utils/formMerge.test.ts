@@ -15,8 +15,8 @@ describe('isClearedValue (#72)', () => {
     ['textarea', { type: 'string', format: 'multiline' }, ''],
     ['number', { type: 'number' }, ''],
     ['integer', { type: 'integer' }, ''],
-    ['select (enum)', { type: 'string', enum: ['', 'a'] }, ''],
-    ['select (oneOf)', { type: 'string', oneOf: [{ const: 'a' }] }, ''],
+    ['select (enum, no empty option)', { type: 'string', enum: ['a', 'b'] }, ''],
+    ['select (oneOf, no empty option)', { type: 'string', oneOf: [{ const: 'a' }] }, ''],
     ['autocomplete single', ac, ''],
     ['autocomplete multiple', { ...ac, type: 'array' }, []]
   ])('%s: empty is a clear', (_n, field, value) => {
@@ -24,6 +24,12 @@ describe('isClearedValue (#72)', () => {
   });
 
   it.each([
+    ['select (enum listing an empty option)', { type: 'string', enum: ['', 'a'] }, ''],
+    [
+      'select (oneOf listing an empty option)',
+      { type: 'string', oneOf: [{ const: '' }, { const: 'a' }] },
+      ''
+    ],
     ['checkbox false', { type: 'boolean' }, false],
     ['null', { type: 'string' }, null],
     ['a value', { type: 'string' }, 'a'],
