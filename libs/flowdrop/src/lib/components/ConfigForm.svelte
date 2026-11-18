@@ -12,7 +12,7 @@
 
 <script lang="ts">
   import { firstNonNullType } from '$lib/utils/schemaType.js';
-  import { setContext } from 'svelte';
+  import { setContext, untrack } from 'svelte';
   import Icon from '@iconify/svelte';
   import type {
     ConfigSchema,
@@ -43,9 +43,11 @@
   import { logger } from '../utils/logger.js';
   import {
     mergeWithDefaults,
+    keepRemovals,
     cascadeClearAutocompleteDependents,
     toEdit,
-    buildConfig
+    buildConfig,
+    REMOVE_KEY
   } from '$lib/utils/formMerge.js';
   import { applyFetchedSchema } from '$lib/utils/schemaMerge.js';
   import {
@@ -308,6 +310,14 @@
 
   const configValues = $derived(mergeWithDefaults(configSchema, initialConfig, edits));
 
+  /**
+   * The keys whose default is written into the config when nobody set them:
+   * the required ones, which must be present for the save to be accepted
+   * (R6.b). An optional key nobody set stays absent; its default applies when
+   * the node runs, and the field shows it.
+   */
+  const requiredKeys = $derived<readonly string[]>(configSchema?.required ?? []);
+
   setContext<() => Record<string, unknown>>('flowdrop:getFormValues', () => configValues);
 
   // Drop edits when the schema reference changes — covers dynamic-schema load
@@ -322,6 +332,22 @@
       prevSchemaRef = configSchema;
       edits = {};
     }
+  });
+
+  // A kept clear (see commitEdits) yields to the config once the config holds
+  // that key again, e.g. after undo or a change made elsewhere; otherwise the
+  // clear would hide the restored value and remove it on the next commit.
+  $effect.pre(() => {
+    const config = initialConfig;
+    untrack(() => {
+      const stale = Object.keys(edits).filter(
+        (key) => edits[key] === REMOVE_KEY && config[key] !== undefined
+      );
+      if (stale.length === 0) return;
+      const next = { ...edits };
+      for (const key of stale) delete next[key];
+      edits = next;
+    });
   });
 
   /**
@@ -590,8 +616,10 @@
     // (e.g. after a dynamic schema narrows the field set) pass through untouched
     // instead of being silently dropped; `configValues` then wins for every
     // field the schema actually renders.
-    onChange(buildConfig(initialConfig, configValues, edits), meta);
-    if (clearBuffer) edits = {};
+    onChange(buildConfig(initialConfig, configValues, edits, requiredKeys), meta);
+    // Keep the clears: a cleared field must not be filled with its default
+    // again when the config comes back without its key.
+    if (clearBuffer) edits = keepRemovals(edits);
   }
 
   /**
@@ -615,7 +643,12 @@
     // DOM (an autocomplete's search box holds search text, not the value).
     // Start from `initialConfig` so keys the active schema doesn't own survive
     // the save (see handleFormBlur).
-    const updatedConfig: Record<string, unknown> = buildConfig(initialConfig, configValues, edits);
+    const updatedConfig: Record<string, unknown> = buildConfig(
+      initialConfig,
+      configValues,
+      edits,
+      requiredKeys
+    );
 
     // Preserve hidden field values from original config if not collected from form
     if (initialConfig && configSchema?.properties) {

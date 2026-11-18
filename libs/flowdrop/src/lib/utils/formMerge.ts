@@ -78,20 +78,44 @@ export function toEdit(field: unknown, value: unknown, exact = false): unknown {
  * key, so `REMOVE_KEY` never reaches `onChange`, `onSave` or the store.
  *
  * It only acts on `edits`: a `''` or `[]` that is already stored is kept.
+ *
+ * `fillDefaults` says which untouched keys get their default written: `'all'`
+ * (a submitted form answer), or a list of keys (a node's config writes only
+ * its required keys, which R6.b needs present at save).
  */
 export function buildConfig(
   base: Record<string, unknown>,
   merged: Record<string, unknown>,
-  edits: Record<string, unknown>
+  edits: Record<string, unknown>,
+  fillDefaults: 'all' | readonly string[] = 'all'
 ): Record<string, unknown> {
   const out: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(merged)) {
-    if (value !== undefined) out[key] = value;
+    if (value === undefined) continue;
+    // A key nobody set (absent from `base`, no edit) only carries its default.
+    // Write it only where asked: an absent key means "not provided", and its
+    // default applies when the node runs (CFG-3).
+    const untouched = !(key in base) && !(key in edits);
+    if (untouched && fillDefaults !== 'all' && !fillDefaults.includes(key)) continue;
+    out[key] = value;
   }
   for (const key of Object.keys(edits)) {
     if (edits[key] === REMOVE_KEY) delete out[key];
   }
   return out;
+}
+
+/**
+ * The part of an edits buffer that outlives a commit: the keys the user
+ * cleared. Keeping them stops a cleared field from being filled with its
+ * default again after the buffer is reset.
+ */
+export function keepRemovals(edits: Record<string, unknown>): Record<string, unknown> {
+  const kept: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(edits)) {
+    if (value === REMOVE_KEY) kept[key] = value;
+  }
+  return kept;
 }
 
 export function mergeWithDefaults(
