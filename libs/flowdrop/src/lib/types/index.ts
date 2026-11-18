@@ -416,6 +416,21 @@ export interface AutocompleteConfig {
   queryParam?: string;
 
   /**
+   * Query parameter that asks the endpoint for one saved value, so the field
+   * can show its label after a reload.
+   *
+   * When set and the field holds a value with no known label, the field sends
+   * `GET url?{valueParam}=<value>` once on mount (once per value in `multiple`
+   * mode) and uses the entry in the response whose value matches as the label.
+   * An empty response or an unknown value leaves the raw value shown. It works
+   * whether or not `fetchOnFocus` is set. The request follows the same URL and
+   * auth rules as the suggestions request.
+   *
+   * Without it, labels come from suggestions (see `fetchOnFocus`).
+   */
+  valueParam?: string;
+
+  /**
    * Minimum number of characters before fetching suggestions.
    * Set to 0 to fetch immediately on focus (when fetchOnFocus is true).
    * @default 0

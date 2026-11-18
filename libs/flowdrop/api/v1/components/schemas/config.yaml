@@ -351,6 +351,17 @@ AutocompleteConfig:
       type: string
       default: q
       description: Query parameter name to pass the search term
+    valueParam:
+      type: string
+      description: |
+        Query parameter that asks the endpoint for one saved value, so the
+        field can show its label after a reload. When set and the field holds a
+        value with no known label, the field sends `GET url?{valueParam}=<value>`
+        once on mount (once per value when `multiple`) and uses the response
+        entry whose value matches as the label. An empty response or an unknown
+        value leaves the raw value shown. Without it, labels come from
+        suggestions.
+      example: value
     minChars:
       type: integer
       default: 0

@@ -106,6 +106,7 @@
   const allowFreeText = $derived(autocomplete.allowFreeText ?? false);
   const multiple = $derived(autocomplete.multiple ?? false);
   const params = $derived(autocomplete.params ?? {});
+  const valueParam = $derived(autocomplete.valueParam || undefined);
 
   // Component state
   let inputElement: HTMLInputElement | undefined = $state(undefined);
@@ -123,6 +124,11 @@
   // lookupLabels and the effect that calls it).
   let labelController: AbortController | null = null;
   let labelLookupKey = '';
+  // With `valueParam`: one request per value, so each has its own controller
+  // (and timeout); `lookedUp` holds the values already asked for, so one the
+  // endpoint does not know is not asked again.
+  const valueControllers = new Set<AbortController>();
+  const lookedUp = new Set<string>();
   // Values typed into this field rather than loaded from outside; no endpoint
   // has a label for them, so the label lookup skips them.
   const typed = new Set<string>();
@@ -218,10 +224,11 @@
   /**
    * Build the full URL for fetching suggestions
    * @param query - The search query
+   * @param param - Name of the query parameter that carries `query`
    * @returns Full URL with query parameter, or null when the configured URL
    *   is refused (logged once per field)
    */
-  function buildUrl(query: string): string | null {
+  function buildUrl(query: string, param: string = queryParam): string | null {
     // A URL without a leading slash resolves against SchemaForm's `baseUrl`
     // prop when one is given, else the instance's API base. The prop also goes
     // in front of `/path` URLs.
@@ -249,7 +256,7 @@
     const hashAt = url.indexOf('#');
     const path = hashAt === -1 ? url : url.slice(0, hashAt);
     const separator = path.includes('?') ? '&' : '?';
-    let fullUrl = `${path}${separator}${encodeURIComponent(queryParam)}=${encodeURIComponent(query)}`;
+    let fullUrl = `${path}${separator}${encodeURIComponent(param)}=${encodeURIComponent(query)}`;
 
     for (const [paramName, val] of Object.entries(depParamValues)) {
       fullUrl += `&${encodeURIComponent(paramName)}=${encodeURIComponent(val)}`;
@@ -685,10 +692,12 @@
     // not on undo/redo, programmatic resets, or collaborative edits (#33).
     abortController?.abort();
     labelController?.abort();
+    abortValueLookups();
     suggestions = [];
     labelCache.clear();
     // The cleared labels need a new lookup, even for a key looked up before.
     labelLookupKey = '';
+    lookedUp.clear();
   });
 
   /**
@@ -727,13 +736,72 @@
     }
   }
 
+  function abortValueLookups(): void {
+    for (const controller of valueControllers) controller.abort();
+    valueControllers.clear();
+  }
+
+  /**
+   * With `valueParam`: ask the endpoint for each value's own option
+   * (`url?{valueParam}=<value>`), one request per value, and cache the label of
+   * the entry whose value matches. An empty or unrelated answer, or a failed
+   * request, leaves the raw value shown. Same URL resolution, auth and abort
+   * rules as the field's other requests.
+   */
+  async function lookupValueLabels(values: string[]): Promise<void> {
+    const name = valueParam;
+    if (!name) return;
+    const fingerprint = depFingerprint;
+    await Promise.all(
+      values.map(async (val) => {
+        const requestUrl = buildUrl(val, name);
+        if (requestUrl === null) return;
+        const controller = new AbortController();
+        valueControllers.add(controller);
+        const timeoutId = setTimeout(() => controller.abort(timeoutError()), 5000);
+        try {
+          const response = await authenticatedFetch(
+            requestUrl,
+            { method: 'GET', signal: controller.signal },
+            { authProvider: currentAuthProvider(requestUrl) }
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          const mapped = mapResponse(await response.json());
+          if (controller.signal.aborted || fingerprint !== depFingerprint) return;
+          const match = mapped.find((opt) => opt.value === val);
+          if (match) labelCache.set(val, match.label);
+        } catch (err) {
+          if (err instanceof Error && err.name === 'AbortError') return;
+          logger.warn('[FormAutocomplete] Label lookup failed:', err);
+        } finally {
+          clearTimeout(timeoutId);
+          valueControllers.delete(controller);
+        }
+      })
+    );
+  }
+
+  // With `valueParam`, each value without a label is looked up once, whether
+  // or not the field fetches on focus.
+  $effect(() => {
+    if (!valueParam) return;
+    const missing = selectedValues.filter(
+      (val) => !labelCache.has(val) && !typed.has(val) && !lookedUp.has(val)
+    );
+    if (missing.length === 0) return;
+    for (const val of missing) lookedUp.add(val);
+    untrack(() => lookupValueLabels(missing));
+  });
+
   // Labels are otherwise only learned from suggestions, so a preloaded value
   // (form open, undo, external edit) would show its raw value until the user
   // focuses the field. When the config allows an empty query, look the labels
   // up once per set of unknown values and dependency values, so a value the
   // endpoint does not return is not retried in a loop.
   $effect(() => {
-    if (!fetchOnFocus || minChars > 0) return;
+    if (valueParam || !fetchOnFocus || minChars > 0) return;
     const missing = selectedValues.filter((val) => !labelCache.has(val) && !typed.has(val));
     if (missing.length === 0) return;
     const key = `${depFingerprint}|${missing.join('\u0000')}`;
@@ -756,6 +824,7 @@
         abortController.abort();
       }
       labelController?.abort();
+      abortValueLookups();
     };
   });
 </script>

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `MenuItem` takes `danger: true` for a destructive item such as Delete (#62): label and icon in `--fd-error`, with an error-tinted wash (`--fd-error-muted`) on hover and focus. Behaviour and ARIA are unchanged. The editor's own Delete row (array fields), Remove (interface entry) and Remove from interface (Ports tab) items use it, as the canvas context menu already does.
 
+- Autocomplete takes an optional `valueParam` (#51). When it is set and the field holds a value with no known label, the field sends `GET url?{valueParam}=<value>` once on mount (one request per value with `multiple`) and shows the label of the response entry whose value matches. An empty response or an unknown value leaves the raw value shown. The request uses the same URL resolution and `AuthProvider` rules as the suggestions request, and the parameter is added before any `#fragment`. Without `valueParam`, nothing changes.
+
 ### Fixed
 
 - API variable requests send the `AuthProvider`'s headers only to the page's own origin or under the API base, and headers set on the endpoint win over the provider's. Before, the provider's headers went to whatever host the endpoint named and overrode the endpoint's own.
