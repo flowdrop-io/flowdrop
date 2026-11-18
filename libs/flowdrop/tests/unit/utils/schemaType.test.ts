@@ -20,10 +20,11 @@ describe('firstNonNullType', () => {
 });
 
 describe('schemaAdmitsNull', () => {
-  it('admits null when the type lists it or the enum does', () => {
+  it('admits null when type and enum both allow it and one of them names it', () => {
     expect(typeAdmitsNull(['string', 'null'])).toBe(true);
     expect(schemaAdmitsNull({ type: ['string', 'null'] })).toBe(true);
-    expect(schemaAdmitsNull({ type: 'string', enum: ['a', null] })).toBe(true);
+    expect(schemaAdmitsNull({ enum: ['a', null] })).toBe(true);
+    expect(schemaAdmitsNull({ type: ['string', 'null'], enum: ['a', null] })).toBe(true);
   });
 
   it('does not admit null otherwise, including an absent type', () => {
@@ -31,6 +32,9 @@ describe('schemaAdmitsNull', () => {
     expect(schemaAdmitsNull({ type: ['string', 'integer'] })).toBe(false);
     expect(schemaAdmitsNull({ type: 'string', enum: ['a', 'b'] })).toBe(false);
     expect(schemaAdmitsNull({})).toBe(false);
+    // R6.i: null must pass type AND enum.
+    expect(schemaAdmitsNull({ type: 'string', enum: ['a', null] })).toBe(false);
+    expect(schemaAdmitsNull({ type: ['string', 'null'], enum: ['a', 'b'] })).toBe(false);
   });
 });
 

@@ -118,7 +118,7 @@
       fieldKey="retries_off"
     />
     <FieldInEditor
-      schema={{ type: 'string', enum: ['fast', 'slow', null], title: 'Mode (on)' }}
+      schema={{ type: ['string', 'null'], enum: ['fast', 'slow', null], title: 'Mode (on)' }}
       value={null}
       fieldKey="mode_on"
     />

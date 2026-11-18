@@ -52,7 +52,13 @@ describe('null toggle visibility', () => {
   });
 
   it('shows on an enum that lists null', () => {
-    expect(render({ type: 'string', enum: ['a', null] }, 'a').toggle()).not.toBeNull();
+    expect(render({ type: ['string', 'null'], enum: ['a', null] }, 'a').toggle()).not.toBeNull();
+    expect(render({ enum: ['a', null] } as FieldSchema, 'a').toggle()).not.toBeNull();
+  });
+
+  it('does not show where type or enum would refuse null (R6.i)', () => {
+    expect(render({ type: 'string', enum: ['a', null] }, 'a').toggle()).toBeNull();
+    expect(render({ type: ['string', 'null'], enum: ['a', 'b'] }, 'a').toggle()).toBeNull();
   });
 
   it('does not show where null is not admitted', () => {
