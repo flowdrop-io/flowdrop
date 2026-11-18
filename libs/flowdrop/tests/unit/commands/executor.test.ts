@@ -971,11 +971,7 @@ describe('executeCommand — set_config validation', () => {
     const node = createMockNode('agentspec.llm_node.1', enumMetadata, {
       data: { label: 'LLM Node', config: {}, metadata: enumMetadata }
     });
-    const context = createMockContext(
-      createMockWorkflow([node]),
-      nodeTypes,
-      createMockDispatch()
-    );
+    const context = createMockContext(createMockWorkflow([node]), nodeTypes, createMockDispatch());
     const result = executeCommand(
       { type: 'set_config', nodeId: 'llm_node.1', key, value },
       context

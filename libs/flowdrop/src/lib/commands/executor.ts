@@ -475,9 +475,9 @@ function validateConfigValue(
   // Type validation. `type` is a type word, an array of them (e.g. ['string',
   // 'boolean']), or absent; an empty array or no usable word puts no constraint
   // on the value (R6.d).
-  const declaredTypes: string[] = (
+  const declaredTypes = (
     Array.isArray(property.type) ? property.type : property.type ? [property.type] : []
-  ).filter((t): t is string => typeof t === 'string');
+  ).filter((t: unknown) => typeof t === 'string') as string[];
   if (declaredTypes.length > 0) {
     const actualType = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value;
     const expectedTypes: string[] = declaredTypes.map((t) => (t === 'integer' ? 'number' : t));
