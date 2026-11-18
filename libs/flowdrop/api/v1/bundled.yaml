@@ -3295,6 +3295,8 @@ components:
                 - integer
                 - 'null'
             - type: array
+              minItems: 1
+              uniqueItems: true
               items:
                 type: string
                 enum:

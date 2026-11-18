@@ -104,6 +104,12 @@ describe('Workflow JSON Schema', () => {
       expect(list.items.enum).toEqual(words);
     });
 
+    it('needs at least one distinct type word in a type array', () => {
+      const [, list] = props.type.oneOf;
+      expect(list.minItems).toBe(1);
+      expect(list.uniqueItems).toBe(true);
+    });
+
     it('does not require a type', () => {
       expect(schema.$defs.ConfigProperty.required ?? []).not.toContain('type');
     });
