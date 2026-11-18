@@ -60,7 +60,7 @@
   // at runtime via fd.fields, so importing SchemaForm never statically pulls them.
   import FormField from '$lib/components/form/FormFieldLight.svelte';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
-  import type { FieldSchema } from '$lib/components/form/types.js';
+  import type { FieldSchema, FieldChangeMeta } from '$lib/components/form/types.js';
   import { m } from '$lib/messages/index.js';
   import {
     mergeWithDefaults,
@@ -187,11 +187,6 @@
   setContext<() => string>('flowdrop:getBaseUrl', () => baseUrl);
 
   /**
-   * Reference to this component's form element
-   */
-  let formRef: HTMLFormElement | undefined = $state();
-
-  /**
    * User edits — only keys the user has changed since the current schema
    * was loaded. formValues is derived from props + edits, never synchronised
    * via an effect, so children mount with the correct values already in place.
@@ -232,9 +227,9 @@
    * @param key - Field key that changed
    * @param value - New field value
    */
-  function handleFieldChange(key: string, value: unknown): void {
+  function handleFieldChange(key: string, value: unknown, meta?: FieldChangeMeta): void {
     const previous = formValues[key];
-    edits[key] = toEdit(schema?.properties?.[key], value);
+    edits[key] = toEdit(schema?.properties?.[key], value, meta?.restore === true);
 
     // Cascade-clear any autocomplete whose `params` references this field.
     // Only runs on user-driven edits; undo/redo and external value-prop
@@ -261,45 +256,9 @@
       return;
     }
 
-    // Collect all form values including hidden fields
+    // The saved values are built from the same state `onChange` reports; nothing is
+    // read back from the DOM (an autocomplete's search box holds search text only).
     const updatedValues: Record<string, unknown> = buildConfig({}, formValues, edits);
-
-    // A blank box for a key the config does not hold (never filled, or cleared and
-    // removed) stays absent, and a blank search box never replaces a stored list;
-    // an empty value that is stored is kept as it is.
-    const setScraped = (id: string, value: unknown): void => {
-      if (value === '' && (updatedValues[id] === undefined || Array.isArray(updatedValues[id])))
-        return;
-      updatedValues[id] = value;
-    };
-
-    if (formRef) {
-      const inputs = formRef.querySelectorAll('input, select, textarea');
-      inputs.forEach((input: Element) => {
-        const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-        if (inputEl.id) {
-          if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
-            updatedValues[inputEl.id] = inputEl.checked;
-          } else if (
-            inputEl instanceof HTMLInputElement &&
-            (inputEl.type === 'number' || inputEl.type === 'range')
-          ) {
-            setScraped(inputEl.id, inputEl.value ? Number(inputEl.value) : inputEl.value);
-          } else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
-            // Parse hidden field values that might be JSON
-            try {
-              const parsed = JSON.parse(inputEl.value);
-              updatedValues[inputEl.id] = parsed;
-            } catch {
-              // If not JSON, use raw value
-              setScraped(inputEl.id, inputEl.value);
-            }
-          } else {
-            setScraped(inputEl.id, inputEl.value);
-          }
-        }
-      });
-    }
 
     // Preserve hidden field values from original values if not collected from form
     if (values && schema?.properties) {
@@ -338,7 +297,6 @@
 
 {#if schema?.properties}
   <form
-    bind:this={formRef}
     class="flowdrop-scope schema-form {className}"
     class:schema-form--loading={loading}
     class:schema-form--disabled={disabled}
@@ -368,7 +326,7 @@
             value={formValues[key]}
             {required}
             animationIndex={index}
-            onChange={(val) => handleFieldChange(key, val)}
+            onChange={(val, meta) => handleFieldChange(key, val, meta)}
           />
         {/each}
       {/if}

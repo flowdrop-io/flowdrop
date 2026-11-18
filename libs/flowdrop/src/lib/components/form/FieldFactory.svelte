@@ -196,7 +196,7 @@
     if (isNull) {
       const back = beforeNull;
       beforeNull = undefined;
-      onChange(back ? back.value : undefined);
+      onChange(back ? back.value : undefined, { restore: true });
       return;
     }
     beforeNull = value === undefined ? undefined : { value };

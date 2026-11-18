@@ -1,3 +1,5 @@
+import { firstNonNullType } from './schemaType.js';
+
 /**
  * Form value merge — shared by `SchemaForm` and `ConfigForm`.
  *
@@ -48,18 +50,25 @@ export function isClearedValue(field: unknown, value: unknown): boolean {
   }
   if (value !== '') return false;
   if (f.enum || f.oneOf) return true;
-  if (f.type === 'string') return true;
-  return (f.type === 'number' || f.type === 'integer') && f.format !== 'range';
+  // A nullable field (`['string', 'null']`) is cleared like its plain type.
+  const kind = firstNonNullType(f.type);
+  if (kind === 'string') return true;
+  return (kind === 'number' || kind === 'integer') && f.format !== 'range';
 }
 
 /**
  * What to store in the edits buffer for a value a field emitted: `REMOVE_KEY`
  * for a clear (see `isClearedValue`) or `undefined`, the value itself otherwise.
+ * With `exact` the clear rule is skipped: a restored `''` is kept.
  */
-export function toEdit(field: unknown, value: unknown): unknown {
+export function toEdit(field: unknown, value: unknown, exact = false): unknown {
   // `undefined` is a field saying "no value" (the null toggle turned off with
   // nothing to restore, for one); JSON cannot hold it, so the key leaves too.
-  return value === undefined || isClearedValue(field, value) ? REMOVE_KEY : value;
+  if (value === undefined) return REMOVE_KEY;
+  // `exact`: the value is one the field held before (the null toggle turned off
+  // brings it back), not something a person just typed. A stored `''` stays `''`.
+  if (exact) return value;
+  return isClearedValue(field, value) ? REMOVE_KEY : value;
 }
 
 /**

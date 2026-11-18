@@ -28,7 +28,7 @@
   import FormField from '$lib/components/form/FormFieldLight.svelte';
   import { buildItemRef, isFieldWired, parseItemRef } from '$lib/utils/itemRef.js';
   import FormUISchemaRenderer from '$lib/components/form/FormUISchemaRenderer.svelte';
-  import type { FieldSchema } from '$lib/components/form/types.js';
+  import type { FieldSchema, FieldChangeMeta } from '$lib/components/form/types.js';
   import {
     getEffectiveConfigEditOptions,
     fetchDynamicSchema,
@@ -537,9 +537,9 @@
    * runs only on user-driven edits via this codepath; undo/redo and external
    * config replacement flow through `initialConfig` and don't trigger it (#33).
    */
-  function handleFieldChange(key: string, value: unknown): void {
+  function handleFieldChange(key: string, value: unknown, meta?: FieldChangeMeta): void {
     const previous = configValues[key];
-    edits[key] = toEdit(configSchema?.properties?.[key], value);
+    edits[key] = toEdit(configSchema?.properties?.[key], value, meta?.restore === true);
     if (previous === value) return;
     const dependents = cascadeClearAutocompleteDependents(configSchema, key);
     for (const [depKey, depValue] of Object.entries(dependents)) {
@@ -560,8 +560,15 @@
     // field, not per keystroke). Discrete controls (checkbox/toggle, enum)
     // commit immediately — WebKit doesn't focus them on click, so no focus-out
     // ever fires and the edit would otherwise be lost on save (#38).
+    // The null toggle is a button too, so it commits at once as well: turning
+    // null on (`null`) or off (a restore) on a text or number field would
+    // otherwise wait for a focus-out that WebKit never fires.
     const prop = configSchema?.properties?.[key];
-    if (prop && (firstNonNullType(prop.type) === 'boolean' || Array.isArray(prop.enum))) {
+    const nullToggled = value === null || meta?.restore === true;
+    if (
+      nullToggled ||
+      (prop && (firstNonNullType(prop.type) === 'boolean' || Array.isArray(prop.enum)))
+    ) {
       commitEdits();
     }
   }
@@ -603,50 +610,12 @@
    * Collects config values and optionally saves the workflow.
    */
   async function handleSave(): Promise<void> {
-    // Collect all form values including hidden fields. Start from
-    // `initialConfig` so keys the active schema doesn't own survive the save
-    // (see handleFormBlur); `configValues` and the DOM scrape below then take
-    // precedence for every field the schema renders.
-    const form = document.querySelector('.config-form');
+    // The saved config is built from the same state `onChange` reports. Every
+    // field reports each change as it happens, so nothing is read back from the
+    // DOM (an autocomplete's search box holds search text, not the value).
+    // Start from `initialConfig` so keys the active schema doesn't own survive
+    // the save (see handleFormBlur).
     const updatedConfig: Record<string, unknown> = buildConfig(initialConfig, configValues, edits);
-
-    // A blank box for a key the config does not hold (never filled, or cleared and
-    // removed) stays absent, and a blank search box never replaces a stored list;
-    // an empty value that is stored is kept as it is.
-    const setScraped = (id: string, value: unknown): void => {
-      if (value === '' && (updatedConfig[id] === undefined || Array.isArray(updatedConfig[id])))
-        return;
-      updatedConfig[id] = value;
-    };
-
-    if (form) {
-      const inputs = form.querySelectorAll('input, select, textarea');
-      inputs.forEach((input: Element) => {
-        const inputEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-        // Skip UI extension fields (prefixed with ext-)
-        if (inputEl.id && !inputEl.id.startsWith('ext-')) {
-          if (inputEl instanceof HTMLInputElement && inputEl.type === 'checkbox') {
-            updatedConfig[inputEl.id] = inputEl.checked;
-          } else if (
-            inputEl instanceof HTMLInputElement &&
-            (inputEl.type === 'number' || inputEl.type === 'range')
-          ) {
-            setScraped(inputEl.id, inputEl.value ? Number(inputEl.value) : inputEl.value);
-          } else if (inputEl instanceof HTMLInputElement && inputEl.type === 'hidden') {
-            // Parse hidden field values that might be JSON
-            try {
-              const parsed = JSON.parse(inputEl.value);
-              updatedConfig[inputEl.id] = parsed;
-            } catch {
-              // If not JSON, use raw value
-              setScraped(inputEl.id, inputEl.value);
-            }
-          } else {
-            setScraped(inputEl.id, inputEl.value);
-          }
-        }
-      });
-    }
 
     // Preserve hidden field values from original config if not collected from form
     if (initialConfig && configSchema?.properties) {
@@ -884,7 +853,7 @@
                 edges={workflowEdges}
                 {workflowId}
                 {authProvider}
-                onChange={(val) => handleFieldChange(key, val)}
+                onChange={(val, meta) => handleFieldChange(key, val, meta)}
               />
             {/if}
           {/each}

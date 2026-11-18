@@ -377,8 +377,18 @@ export interface FormFieldFactoryProps {
    * array shows it as a row mark. Set by the form, not by schema authors.
    */
   itemRef?: ItemRef;
-  /** Callback when the field value changes */
-  onChange: (value: unknown) => void;
+  /**
+   * Callback when the field value changes. `meta.restore` marks a value the
+   * field held before and is putting back (the null toggle turned off), so the
+   * form stores it as it is instead of applying its clear rule.
+   */
+  onChange: (value: unknown, meta?: FieldChangeMeta) => void;
+}
+
+/** Extra information a field gives with a value change. */
+export interface FieldChangeMeta {
+  /** The value is one the field held before: store it exactly, do not treat `''` as a clear. */
+  restore?: boolean;
 }
 
 /**

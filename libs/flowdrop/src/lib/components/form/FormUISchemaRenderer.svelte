@@ -11,7 +11,7 @@
   import { firstNonNullType } from '$lib/utils/schemaType.js';
   import type { UISchemaElement } from '$lib/types/uischema.js';
   import type { ConfigSchema, WorkflowNode, WorkflowEdge, AuthProvider } from '$lib/types/index.js';
-  import type { FieldSchema } from './types.js';
+  import type { FieldSchema, FieldChangeMeta } from './types.js';
   import { resolveScopeToKey } from '$lib/utils/uischema.js';
   import { buildItemRef, isFieldWired, parseItemRef } from '$lib/utils/itemRef.js';
   // Use the registry-based light field factory so the UISchema renderer (and
@@ -32,7 +32,7 @@
     /** Base animation index for staggered animations */
     animationIndexBase?: number;
     /** Callback when a field value changes */
-    onFieldChange: (key: string, value: unknown) => void;
+    onFieldChange: (key: string, value: unknown, meta?: FieldChangeMeta) => void;
     /** Convert a property to FieldSchema (handles template variable injection etc.) */
     toFieldSchema: (property: Record<string, unknown>) => FieldSchema;
     /** Current workflow node (optional, passed through to FormField) */
@@ -116,7 +116,7 @@
       {workflowId}
       {authProvider}
       {itemRef}
-      onChange={(val) => onFieldChange(key, val)}
+      onChange={(val, meta) => onFieldChange(key, val, meta)}
     />
   {/if}
 {:else if element.type === 'VerticalLayout'}
