@@ -595,18 +595,27 @@
    */
   function handleFieldChange(key: string, value: unknown, meta?: FieldChangeMeta): void {
     const previous = configValues[key];
-    if (value === null && meta?.restore !== true && !beforeNull.has(key)) {
-      // The null toggle is going on: note what the key held, for "off".
+    if (value === null && meta?.restore !== true && previous !== null) {
+      // The null toggle is going on: note what the key holds now, for "off".
+      // Every null-on overwrites the record, so one left over from before an
+      // undo can never come back.
       const stored = key in edits ? edits[key] : initialConfig[key];
       beforeNull.set(
         key,
         stored === undefined || stored === REMOVE_KEY ? undefined : { value: stored }
       );
     }
-    if (meta?.restore === true && beforeNull.has(key)) {
+    if (meta?.restore === true) {
+      // The null toggle is going off. Only the form's own record counts: the
+      // field may still remember a value from another node it showed before.
+      // No record, or nothing stored before null: the key leaves, except a
+      // required key, which gets its default as an untouched one would (R6.b).
       const before = beforeNull.get(key);
       beforeNull.delete(key);
-      value = before ? before.value : undefined;
+      const fallback = requiredKeys.includes(key)
+        ? (configSchema?.properties?.[key] as { default?: unknown } | undefined)?.default
+        : undefined;
+      value = before ? before.value : fallback;
     }
     committedClears.delete(key);
     edits[key] = toEdit(configSchema?.properties?.[key], value, meta?.restore === true);
