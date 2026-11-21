@@ -126,7 +126,7 @@
         },
         "valueParam": {
           "type": "string",
-          "description": "Query parameter that asks the endpoint for one saved value, so the\nfield can show its label after a reload. When set and the field holds a\nvalue with no known label, the field sends `GET url?{valueParam}=<value>`\nonce on mount (once per value when `multiple`) and uses the response\nentry whose value matches as the label. An empty response or an unknown\nvalue leaves the raw value shown. Without it, labels come from\nsuggestions.\n"
+          "description": "Query parameter that asks the endpoint for one saved value, so the\nfield can show its label after a reload. When set and the field holds a\nvalue with no known label, the field sends `GET url?{valueParam}=<value>`\n(one request per value when `multiple`) and uses the response entry\nwhose value matches as the label. A value is asked for again when it\nchanges or when the field is shown again; answers are kept for 5\nminutes per editor instance. An empty response or an unknown value\nleaves the raw value shown. Without it, labels come from suggestions.\n"
         },
         "minChars": {
           "type": "integer",
@@ -211,7 +211,7 @@
       "description": "JSON Schema property definition for node configuration.\nFollows JSON Schema draft-07 specification with FlowDrop extensions for UI rendering.\n\nFor select/dropdown fields, use standard JSON Schema patterns:\n- `enum` for simple value lists (no labels)\n- `oneOf` with `const`/`title` for labeled options\n",
       "properties": {
         "type": {
-          "description": "JSON Schema type: one type word, or an array of type words with `null`\nincluded for a nullable value, for example `[\"string\", \"null\"]`.\nOptional. When absent the property accepts any JSON value.\nFor a type array, editors use the first member that is not `null`.\n",
+          "description": "JSON Schema type: one type word, or an array of type words with `null`\nincluded for a nullable value, for example `[\"string\", \"null\"]`.\nOptional. When absent the property accepts any JSON value.\nA field with one non-null type word (alone or with `null`) is edited\nwith that word's editor. With several non-null words, an absent type or\na word no editor exists for, it is edited as JSON.\n",
           "oneOf": [
             {
               "type": "string",

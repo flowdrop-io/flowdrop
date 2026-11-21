@@ -420,9 +420,11 @@ export interface AutocompleteConfig {
    * can show its label after a reload.
    *
    * When set and the field holds a value with no known label, the field sends
-   * `GET url?{valueParam}=<value>` once on mount (once per value in `multiple`
-   * mode) and uses the entry in the response whose value matches as the label.
-   * An empty response or an unknown value leaves the raw value shown. It works
+   * `GET url?{valueParam}=<value>` (one request per value in `multiple` mode)
+   * and uses the entry in the response whose value matches as the label.
+   * A value is asked for again when it changes or when the field is shown
+   * again, and answers are kept for 5 minutes per editor instance. An empty
+   * response or an unknown value leaves the raw value shown. It works
    * whether or not `fetchOnFocus` is set. The request follows the same URL and
    * auth rules as the suggestions request.
    *

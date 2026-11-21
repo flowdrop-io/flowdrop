@@ -3283,7 +3283,9 @@ components:
             JSON Schema type: one type word, or an array of type words with `null`
             included for a nullable value, for example `["string", "null"]`.
             Optional. When absent the property accepts any JSON value.
-            For a type array, editors use the first member that is not `null`.
+            A field with one non-null type word (alone or with `null`) is edited
+            with that word's editor. With several non-null words, an absent type or
+            a word no editor exists for, it is edited as JSON.
           oneOf:
             - type: string
               enum:
@@ -3540,10 +3542,11 @@ components:
             Query parameter that asks the endpoint for one saved value, so the
             field can show its label after a reload. When set and the field holds a
             value with no known label, the field sends `GET url?{valueParam}=<value>`
-            once on mount (once per value when `multiple`) and uses the response
-            entry whose value matches as the label. An empty response or an unknown
-            value leaves the raw value shown. Without it, labels come from
-            suggestions.
+            (one request per value when `multiple`) and uses the response entry
+            whose value matches as the label. A value is asked for again when it
+            changes or when the field is shown again; answers are kept for 5
+            minutes per editor instance. An empty response or an unknown value
+            leaves the raw value shown. Without it, labels come from suggestions.
           example: value
         minChars:
           type: integer

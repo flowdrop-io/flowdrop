@@ -130,7 +130,7 @@ export const defaultMessages = {
       notSet: 'Not set',
       // The empty option of a select whose schema has a default; the value is that default's label.
       defaultOption: ({ value }: { value: string }) => `Default (${value})`,
-      // A required field marked when_missing: skip.
+      // The hint of any field marked when_missing: skip, whether or not a value is stored.
       skippedWhenNotSet: 'Skipped when not set'
     },
 
