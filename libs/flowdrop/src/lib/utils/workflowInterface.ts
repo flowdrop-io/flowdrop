@@ -35,7 +35,7 @@ import {
   WORKFLOW_INTERFACE_INPUT_TURNS,
   WORKFLOW_INTERFACE_OUTPUT_TURNS
 } from '$lib/types/index.js';
-import { interfaceIdShapeError } from '$lib/utils/interfaceTags.js';
+import { interfaceIdShapeError, foldToInterfaceId } from '$lib/utils/interfaceTags.js';
 import { isPortExposed } from '$lib/utils/portUtils.js';
 import { LOOPBACK_PORT_NAME } from '$lib/utils/connections.js';
 import { PORTS_CONFIG_KEY } from '$lib/utils/nodeFormSchema.js';
@@ -809,7 +809,8 @@ export function suggestEntryFromBindablePort(
     .replace(/^_+|_+$/g, '')
     .slice(0, 40)
     .replace(/_+$/g, '');
-  const base = generic && fromLabel ? fromLabel : port.id;
+  // Folded to the id alphabet: a port id like `userQuery` would be refused as typed.
+  const base = foldToInterfaceId(generic && fromLabel ? fromLabel : port.id, direction ?? 'input');
 
   const taken = new Set(existingIds);
   let id = base;

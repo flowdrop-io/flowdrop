@@ -104,7 +104,8 @@
     entryAtPort,
     exposePortAsEntry,
     removeInterfaceEntry,
-    renameInterfaceEntry
+    renameInterfaceEntry,
+    seedInterfaceId
   } from '../utils/interfaceTags.js';
   import { extractDirection, extractPortId } from '../utils/handleIds.js';
   import { logger } from '../utils/logger.js';
@@ -1401,8 +1402,19 @@
 
   const interfaceMenuActions: InterfaceMenuActions = {
     expose(target: PortTarget) {
-      // The port id is the starting name; the person edits it in the ghost tag.
-      tagEdit = { mode: 'expose', ...target, value: target.portId };
+      // The port id, folded to the id alphabet, is the starting name; the person
+      // edits it in the ghost tag.
+      const wf = fd.workflow.current?.interface;
+      const taken = (target.direction === 'input' ? wf?.inputs : wf?.outputs) ?? [];
+      tagEdit = {
+        mode: 'expose',
+        ...target,
+        value: seedInterfaceId(
+          target.portId,
+          target.direction,
+          taken.map((e) => e.id)
+        )
+      };
     },
     rename(target: PortTarget) {
       const workflow = fd.workflow.current;

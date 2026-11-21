@@ -17,6 +17,7 @@ import {
   entryAtPort,
   exposableCandidate,
   exposePortAsEntry,
+  foldToInterfaceId,
   inputHasIncomingEdge,
   moveInterfaceEntry,
   patchInterfaceEntry,
@@ -243,7 +244,8 @@ export function executeInterfaceExpose(
     );
   }
 
-  const id = (command.id ?? command.port).trim();
+  // The default id is the port id folded to the id alphabet (`userQuery` -> `user_query`).
+  const id = (command.id ?? foldToInterfaceId(command.port, direction)).trim();
   const reason = validateInterfaceId(id, direction, workflow.interface);
   if (reason) return idError(reason, direction, id, command.id === undefined);
 

@@ -1032,6 +1032,22 @@ describe('entryFromBindablePort', () => {
     });
   });
 
+  it('folds a seeded id to the id alphabet before suffixing', () => {
+    const camel = { ...candidate, port: { ...candidate.port, id: 'userQuery' } };
+    expect(entryFromBindablePort(camel, []).id).toBe('user_query');
+    expect(entryFromBindablePort(camel, ['user_query']).id).toBe('user_query_2');
+    for (const [raw, id] of [
+      ['Max.Tokens', 'max_tokens'],
+      ['my port!', 'my_port'],
+      ['__interrupt_id__', 'interrupt_id'],
+      ['???', 'input']
+    ]) {
+      const c = { ...candidate, port: { ...candidate.port, id: raw } };
+      expect(entryFromBindablePort(c, [], undefined, 'input').id).toBe(id);
+    }
+    expect(entryFromBindablePort(camel, [], undefined, 'output').id).toBe('user_query');
+  });
+
   it('suffixes the id until it is unique among the existing entries', () => {
     expect(entryFromBindablePort(candidate, ['subject']).id).toBe('subject_2');
     expect(entryFromBindablePort(candidate, ['subject', 'subject_2']).id).toBe('subject_3');

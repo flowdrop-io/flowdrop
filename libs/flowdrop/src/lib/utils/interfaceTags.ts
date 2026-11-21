@@ -62,6 +62,46 @@ export function isReservedInterfaceId(id: string): boolean {
 }
 
 /**
+ * Fold any text (a port id such as `userQuery`, a node label) into the id
+ * alphabet `a-z`, `0-9`, `_`, `-` so a seeded id passes R4.a at once.
+ * camelCase is split (`userQuery` -> `user_query`, `HTTPResponse` ->
+ * `http_response`), accents fold to their base letter, spaces and dots become
+ * `_`, every other character is dropped. Never empty and never reserved:
+ * `fallback` answers instead.
+ */
+export function foldToInterfaceId(raw: string, fallback: string): string {
+  const folded = raw
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ß/g, 'ss')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .toLowerCase()
+    .replace(/[\s.]+/g, '_')
+    .replace(/[^a-z0-9_-]+/g, '')
+    .replace(/_{2,}/g, '_')
+    .replace(/^[_-]+|[_-]+$/g, '');
+  return folded === '' || isReservedInterfaceId(folded) ? fallback : folded;
+}
+
+/**
+ * A valid id to seed a new entry with: `raw` folded by {@link foldToInterfaceId}
+ * (falling back to `input` / `output`), then a numeric suffix (`_2`, `_3`, ...)
+ * only while the folded id is in `taken`.
+ */
+export function seedInterfaceId(
+  raw: string,
+  direction: InterfaceDirection,
+  taken: Iterable<string> = []
+): string {
+  const base = foldToInterfaceId(raw, direction);
+  const used = new Set(taken);
+  let id = base;
+  for (let n = 2; used.has(id); n += 1) id = `${base}_${n}`;
+  return id;
+}
+
+/**
  * Check an id by its own shape: the R4.a alphabet and the reserved names.
  * Does not trim; the caller decides what whitespace means.
  */

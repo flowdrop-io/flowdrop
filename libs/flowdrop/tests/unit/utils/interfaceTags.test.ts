@@ -10,6 +10,9 @@ import {
   entryAtPort,
   estimateInterfaceTagWidth,
   exposePortAsEntry,
+  foldToInterfaceId,
+  seedInterfaceId,
+  INTERFACE_ID_PATTERN,
   inputHasIncomingEdge,
   interfaceTagModels,
   interfaceTagReserve,
@@ -352,5 +355,34 @@ describe('reservedInputTagModels', () => {
   it('reserves room beside the trigger for its tag', () => {
     const wf = workflow({ nodes: [trigger('t1')] });
     expect(interfaceTagReserve(wf).get('t1')?.left).toBeGreaterThan(0);
+  });
+});
+
+describe('foldToInterfaceId / seedInterfaceId', () => {
+  it.each([
+    ['userQuery', 'user_query'],
+    ['HTTPResponse', 'http_response'],
+    ['max.tokens', 'max_tokens'],
+    ['Max Tokens', 'max_tokens'],
+    ['Übersetzung', 'ubersetzung'],
+    ['a/b:c', 'abc'],
+    ['kebab-case', 'kebab-case'],
+    ['_x_', 'x']
+  ])('folds %s to %s', (raw, id) => {
+    expect(foldToInterfaceId(raw, 'input')).toBe(id);
+    expect(INTERFACE_ID_PATTERN.test(id)).toBe(true);
+  });
+
+  it('is never empty and never reserved', () => {
+    expect(foldToInterfaceId('', 'input')).toBe('input');
+    expect(foldToInterfaceId('!!!', 'output')).toBe('output');
+    // Edge underscores are trimmed, so the reserved name never survives the fold.
+    expect(foldToInterfaceId('__interrupt_id__', 'output')).toBe('interrupt_id');
+  });
+
+  it('suffixes only on a collision and falls back by direction', () => {
+    expect(seedInterfaceId('userQuery', 'input', [])).toBe('user_query');
+    expect(seedInterfaceId('userQuery', 'input', ['user_query'])).toBe('user_query_2');
+    expect(seedInterfaceId('?', 'output', ['output'])).toBe('output_2');
   });
 });

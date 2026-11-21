@@ -3634,6 +3634,30 @@ describe('editor parity commands', () => {
       expect(next.inputs).toBeUndefined();
     });
 
+    it('folds the default id from a camelCase port to the id alphabet', () => {
+      const camelType = createMockMetadata('agentspec.camel', 'Camel', {
+        inputs: [{ id: 'userQuery', name: 'User query', type: 'input', dataType: 'string' }],
+        outputs: []
+      });
+      const camel = {
+        ...createMockWorkflow([createMockNode('agentspec.camel.1', camelType)], []),
+        interface: {}
+      } as Workflow;
+      const dispatch = createMockDispatch();
+      dispatch.editInterface = vi.fn();
+      const context: CommandContext = {
+        ...createMockContext(camel, [camelType], dispatch),
+        isLocked: undefined
+      };
+      const result = executeCommand(
+        { type: 'interface_expose', nodeId: 'camel.1', port: 'userQuery' } as Command,
+        context
+      );
+      expect(result.ok).toBe(true);
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.inputs[0]).toMatchObject({ id: 'user_query' });
+    });
+
     it('takes the id from `as`', () => {
       const { dispatch, run } = setup(wf());
       run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'prompt', id: 'question' });
