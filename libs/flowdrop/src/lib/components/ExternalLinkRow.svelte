@@ -22,7 +22,8 @@
      * Handle a plain left click instead of following the link. The href stays,
      * so middle-click, modified clicks and "copy link" work as for any link.
      * With an empty `href` there is nothing to follow: the row renders as a
-     * button and every click goes to `onActivate`.
+     * button and every click goes to `onActivate`. With neither an `href` nor
+     * `onActivate` the row renders nothing.
      */
     onActivate?: () => void;
   }
@@ -44,33 +45,35 @@
   <Icon icon="mdi:arrow-top-right" aria-hidden="true" />
 {/snippet}
 
-<div class="external-link-row">
-  {#if prefix}<span class="external-link-row__prefix">{prefix}</span>{/if}
-  {#if href}
-    <a
-      class="external-link-row__link"
-      {href}
-      target={newTab ? '_blank' : undefined}
-      rel={newTab ? 'noopener noreferrer' : undefined}
-      title={title ?? name}
-      onclick={handleClick}
-      data-testid="external-config-link"
-    >
-      {@render content()}
-    </a>
-  {:else if onActivate}
-    <Button
-      variant="ghost"
-      size="sm"
-      class="external-link-row__link external-link-row__link--button"
-      title={title ?? name}
-      onclick={() => onActivate()}
-      data-testid="external-config-link"
-    >
-      {@render content()}
-    </Button>
-  {/if}
-</div>
+{#if href || onActivate}
+  <div class="external-link-row">
+    {#if prefix}<span class="external-link-row__prefix">{prefix}</span>{/if}
+    {#if href}
+      <a
+        class="external-link-row__link"
+        {href}
+        target={newTab ? '_blank' : undefined}
+        rel={newTab ? 'noopener noreferrer' : undefined}
+        title={title ?? name}
+        onclick={handleClick}
+        data-testid="external-config-link"
+      >
+        {@render content()}
+      </a>
+    {:else if onActivate}
+      <Button
+        variant="ghost"
+        size="sm"
+        class="external-link-row__link external-link-row__link--button"
+        title={title ?? name}
+        onclick={() => onActivate()}
+        data-testid="external-config-link"
+      >
+        {@render content()}
+      </Button>
+    {/if}
+  </div>
+{/if}
 
 <style>
   .external-link-row {
