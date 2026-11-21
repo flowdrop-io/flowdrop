@@ -47,6 +47,14 @@
     disabled?: boolean;
     /** ARIA description ID */
     ariaDescribedBy?: string;
+    /**
+     * The field's schema. A string that already parses as JSON is shown as it is
+     * only for `format: "json"` / `"code"`, where the text is the JSON. For any
+     * other field (absent type, several types) the stored string is a string, so
+     * it is shown JSON-quoted (`"5"`, `"null"`) and editing it does not turn it
+     * into a number or `null`. Without a schema, the raw shortcut applies.
+     */
+    schema?: { format?: string };
     /** Callback when value changes */
     onChange: (value: unknown) => void;
   }
@@ -61,6 +69,7 @@
     autoFormat = true,
     disabled = false,
     ariaDescribedBy,
+    schema,
     onChange
   }: Props = $props();
 
@@ -83,13 +92,15 @@
    * Convert value to JSON string for editor display
    */
   function valueToString(val: unknown): string {
+    const rawJsonStrings = !schema || schema.format === 'json' || schema.format === 'code';
     if (val === undefined || val === null) {
       return '';
     }
     if (typeof val === 'string') {
-      // If the string is already a valid JSON representation (e.g. '{"a":1}' or '"foo"'),
-      // use it as-is to avoid double-encoding
+      // For a json/code format field, a string that is already a valid JSON
+      // representation (e.g. '{"a":1}' or '"foo"') is used as-is to avoid double-encoding
       try {
+        if (!rawJsonStrings) return JSON.stringify(val);
         JSON.parse(val);
         return val;
       } catch {

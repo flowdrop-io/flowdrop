@@ -213,6 +213,19 @@
   );
 
   /**
+   * The text of the textarea that stands in for an unregistered code editor. A
+   * `format: json` / `code` string is the JSON text and shows as it is; a string
+   * in any other field (absent or several types) is a string value, so it is
+   * JSON-quoted and a later edit does not change its type. Other fallbacks
+   * (markdown, template) edit plain text.
+   */
+  const fallbackText = $derived.by(() => {
+    if (typeof value !== 'string') return value === undefined ? '' : JSON.stringify(value, null, 2);
+    if (fieldType !== 'code-editor-fallback') return value;
+    return schema.format === 'json' || schema.format === 'code' ? value : JSON.stringify(value);
+  });
+
+  /**
    * The ids the input is described by: its description and the hint. The hint's
    * id is the one `FormFieldWrapper` gives it (`{id}-hint`).
    */
@@ -534,7 +547,7 @@
         <!-- Provide a basic textarea fallback for editing -->
         <FormTextarea
           id={fieldKey}
-          value={typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
+          value={fallbackText}
           placeholder={schema.placeholder ?? 'Enter value...'}
           {required}
           ariaDescribedBy={describedBy}
