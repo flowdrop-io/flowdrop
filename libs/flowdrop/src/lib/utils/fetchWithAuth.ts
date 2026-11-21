@@ -166,7 +166,24 @@ async function buildHeaders(
   return Object.fromEntries(merged.values());
 }
 
-const pendingRefreshes = new WeakMap<AuthProvider, Promise<boolean>>();
+interface RefreshState {
+  /** Refreshes that have finished (successfully or not). */
+  completed: number;
+  /** What the latest finished refresh reported. */
+  lastResult: boolean;
+  inflight?: Promise<boolean>;
+}
+
+const refreshStates = new WeakMap<AuthProvider, RefreshState>();
+
+function stateOf(authProvider: AuthProvider): RefreshState {
+  let state = refreshStates.get(authProvider);
+  if (!state) {
+    state = { completed: 0, lastResult: false };
+    refreshStates.set(authProvider, state);
+  }
+  return state;
+}
 
 /**
  * Call the provider's `onUnauthorized()`, sharing one call between every
@@ -179,14 +196,31 @@ const pendingRefreshes = new WeakMap<AuthProvider, Promise<boolean>>();
  */
 export function refreshAuth(authProvider: AuthProvider): Promise<boolean> {
   if (!authProvider.onUnauthorized) return Promise.resolve(false);
-  let pending = pendingRefreshes.get(authProvider);
-  if (!pending) {
-    pending = authProvider.onUnauthorized().finally(() => {
-      pendingRefreshes.delete(authProvider);
+  const state = stateOf(authProvider);
+  if (!state.inflight) {
+    const finish = (result: boolean) => {
+      state.completed += 1;
+      state.lastResult = result;
+      state.inflight = undefined;
+      return result;
+    };
+    state.inflight = authProvider.onUnauthorized().then(finish, (error) => {
+      finish(false);
+      throw error;
     });
-    pendingRefreshes.set(authProvider, pending);
   }
-  return pending;
+  return state.inflight;
+}
+
+/**
+ * Whether to retry after a `401`. A request sent before a refresh finished
+ * does not start another one: it takes that refresh's result and retries with
+ * the fresh headers. Otherwise it joins the refresh in flight or starts one.
+ */
+function refreshedSince(authProvider: AuthProvider, completedAtSend: number): Promise<boolean> {
+  const state = stateOf(authProvider);
+  if (state.completed > completedAtSend) return Promise.resolve(state.lastResult);
+  return refreshAuth(authProvider);
 }
 
 /**
@@ -212,12 +246,14 @@ export async function authenticatedFetch(
     const redirect = provider && init.redirect === undefined ? { redirect: 'error' as const } : {};
     return fetch(url, { ...base, ...redirect, headers });
   };
+  const completedAtSend = provider ? stateOf(provider).completed : 0;
   const headers = await buildHeaders(init, opts, !!provider);
   let response = await attempt(headers);
 
-  // 401 → let the provider refresh, then retry once with fresh headers.
+  // 401 → let the provider refresh, then retry once with fresh headers. A
+  // refresh that finished after this request was sent counts: no second one.
   if (response.status === 401 && provider?.onUnauthorized) {
-    const refreshed = await refreshAuth(provider);
+    const refreshed = await refreshedSince(provider, completedAtSend);
     if (refreshed) {
       const retryHeaders = await buildHeaders(init, opts, true);
       response = await attempt(retryHeaders);

@@ -364,6 +364,71 @@ describe('authenticatedFetch', () => {
     });
   });
 
+  describe('refresh counting', () => {
+    it('refreshes once for two requests whose 401s arrive at different times', async () => {
+      let token = 'stale';
+      const onUnauthorized = vi.fn(async () => {
+        token = 'fresh';
+        return true;
+      });
+      const authProvider: AuthProvider = {
+        getAuthHeaders: async () => ({ Authorization: `Bearer ${token}` }),
+        onUnauthorized
+      };
+      // Request 1's 401 comes back at once; request 2's only after the refresh finished.
+      let releaseSecond!: () => void;
+      const gate = new Promise<void>((r) => (releaseSecond = r));
+      fetchMock.mockImplementation(async (url: string, init: RequestInit) => {
+        const fresh = (init.headers as Record<string, string>).Authorization === 'Bearer fresh';
+        if (fresh) return ok();
+        if (url.endsWith('/2')) await gate;
+        return unauthorized();
+      });
+
+      const first = authenticatedFetch('https://api.example.com/1', {}, { authProvider });
+      const second = authenticatedFetch('https://api.example.com/2', {}, { authProvider });
+      expect((await first).status).toBe(200);
+      expect(onUnauthorized).toHaveBeenCalledTimes(1);
+      releaseSecond();
+      expect((await second).status).toBe(200);
+
+      expect(onUnauthorized).toHaveBeenCalledTimes(1);
+      // two stale sends + two fresh retries
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
+
+    it('does not ask again after a refresh that failed, and does not retry', async () => {
+      const onUnauthorized = vi.fn().mockResolvedValue(false);
+      const authProvider: AuthProvider = { getAuthHeaders: async () => ({}), onUnauthorized };
+      let releaseSecond!: () => void;
+      const gate = new Promise<void>((r) => (releaseSecond = r));
+      fetchMock.mockImplementation(async (url: string) => {
+        if (url.endsWith('/2')) await gate;
+        return unauthorized();
+      });
+      const first = authenticatedFetch('https://api.example.com/1', {}, { authProvider });
+      const second = authenticatedFetch('https://api.example.com/2', {}, { authProvider });
+      await first;
+      releaseSecond();
+      expect((await second).status).toBe(401);
+      expect(onUnauthorized).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('retries at most once per request', async () => {
+      fetchMock.mockResolvedValue(unauthorized());
+      const onUnauthorized = vi.fn().mockResolvedValue(true);
+      const response = await authenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        { authProvider: { getAuthHeaders: async () => ({}), onUnauthorized } }
+      );
+      expect(response.status).toBe(401);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(onUnauthorized).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('header merging', () => {
     it('lets endpoint and request headers win over the provider, ignoring case', async () => {
       fetchMock.mockResolvedValue(ok());
