@@ -349,6 +349,7 @@ export async function fetchDynamicSchema(
     // authenticatedFetch sends the provider's headers only to the page's own
     // origin or under the API base; an endpoint on another host gets none.
     const response = await authenticatedFetch(url, fetchOptions, {
+      urlSource: 'backend-supplied',
       authProvider,
       apiBase: endpointConfig?.baseUrl,
       timeoutMs: timeout

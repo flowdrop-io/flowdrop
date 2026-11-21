@@ -31,10 +31,12 @@ interface AuthenticatedFetchBase {
    * only where a request must go out without the host's auth. An optional key
    * let calls forget it, which is how requests reached backends without auth.
    *
-   * The provider is used only when the final request URL is on the page's own
-   * origin or under the API base (see `apiBase`). For any other URL the
-   * request goes out without the provider's headers and its `onUnauthorized`
-   * and `onForbidden` hooks are not called. Callers do not check this.
+   * Whether the provider is used for a URL depends on `urlSource` (see
+   * {@link AuthenticatedFetchOptions}): a URL the host configured always gets
+   * it; a URL the backend supplied gets it only on the page's own origin or
+   * under the API base. When it is not used, the request goes out without the
+   * provider's headers and its `onUnauthorized` and `onForbidden` hooks are not
+   * called. Callers do not check this.
    */
   authProvider: AuthProvider | undefined;
   /** Endpoint key identifying which static headers to apply (with `config`). */
@@ -51,23 +53,29 @@ interface AuthenticatedFetchBase {
 }
 
 /**
- * Options for {@link authenticatedFetch}. Besides the base fields, a call must
- * say where the provider's headers may go, with one of:
+ * Options for {@link authenticatedFetch}. Besides the base fields, every call
+ * says who chose the URL, with `urlSource`:
  *
- * - `config`: the endpoint configuration; its `baseUrl` is the API base and,
- *   with `endpointKey`, its static headers apply.
- * - `apiBase`: the API base (relative or absolute) for a request that is not
- *   tied to a configured endpoint. `undefined` says there is none: only the
- *   page's own origin then qualifies.
- *
- * The type refuses a call with neither, so a caller cannot leave the origin
- * rule without a base by accident (which would drop the provider's headers for
- * an API on another origin than the page).
+ * - `'host-configured'`: the URL was built from the host's own configuration
+ *   (`EndpointConfig`: `buildEndpointUrl`, an absolute endpoint template, a
+ *   per-endpoint `baseUrl` such as `signals.baseUrl`). The provider's headers
+ *   always go with it, whatever origin the host chose. `config` (with
+ *   `endpointKey`) adds the endpoint's static headers.
+ * - `'backend-supplied'`: the URL came from a response or a schema the backend
+ *   sent (autocomplete URLs, dynamic schema URLs, API variable URLs, the
+ *   save-as-copy URL). The provider's headers go only to the page's own origin
+ *   or under the API base, so a backend cannot point the editor at another
+ *   host and collect the host's credentials. The API base is `apiBase`, or
+ *   `config.baseUrl`; `apiBase: undefined` says there is none (only the page's
+ *   own origin qualifies). The type refuses a call with neither.
  */
 export type AuthenticatedFetchOptions = AuthenticatedFetchBase &
   (
-    | { config: EndpointConfig; apiBase?: string }
-    | { config?: EndpointConfig; apiBase: string | undefined }
+    | { urlSource: 'host-configured'; config?: EndpointConfig }
+    | ({ urlSource: 'backend-supplied' } & (
+        | { config: EndpointConfig; apiBase?: string }
+        | { config?: EndpointConfig; apiBase: string | undefined }
+      ))
   );
 
 /** One signal that aborts when any of the given ones does. */
@@ -108,11 +116,13 @@ function headerPairs(init: HeadersInit | undefined | null): [string, string][] {
 }
 
 /**
- * Whether the provider may be used for this URL: the final URL, resolved
- * against the page, is on the page's own origin or under the API base.
+ * Whether the provider may be used for this URL. A host-configured URL always
+ * may. A backend-supplied one may when the requested URL, resolved against the
+ * page, is on the page's own origin or under the API base.
  */
 function providerAllowed(url: string, opts: AuthenticatedFetchOptions): boolean {
   if (!opts.authProvider) return false;
+  if (opts.urlSource === 'host-configured') return true;
   const pageUrl = typeof location === 'undefined' ? undefined : location.href;
   const apiBase = opts.apiBase ?? opts.config?.baseUrl ?? '';
   return mayCarryInstanceAuth(url, apiBase, pageUrl);
@@ -192,8 +202,8 @@ export async function authenticatedFetch(
   init: RequestInit,
   opts: AuthenticatedFetchOptions
 ): Promise<Response> {
-  // Decided once, on the final URL: a request to another host gets neither the
-  // provider's headers nor its 401/403 hooks.
+  // Decided once, on the final URL (see `urlSource`): a backend-supplied URL
+  // on another host gets neither the provider's headers nor its 401/403 hooks.
   const provider = providerAllowed(url, opts) ? opts.authProvider : undefined;
   const headers = await buildHeaders(init, opts, !!provider);
   let response = await fetch(url, { ...attemptInit(init, opts), headers });

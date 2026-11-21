@@ -252,6 +252,7 @@
       requestUrl,
       { method: 'GET', signal },
       {
+        urlSource: 'backend-supplied',
         authProvider: fromForm ?? fd?.api.authProvider,
         apiBase: fromForm ? getBaseUrl?.() || instanceBase : instanceBase,
         timeoutMs: REQUEST_TIMEOUT_MS

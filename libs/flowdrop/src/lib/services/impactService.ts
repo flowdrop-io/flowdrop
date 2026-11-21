@@ -132,7 +132,7 @@ export async function checkImpact(
     const response = await authenticatedFetch(
       buildEndpointUrl(config, path, { id: workflowId }),
       { method: 'POST', body: JSON.stringify(draft) },
-      { config, endpointKey: 'workflows.impact', authProvider }
+      { config, endpointKey: 'workflows.impact', urlSource: 'host-configured', authProvider }
     );
     // 404/405: no such route. 401/403: a backend that answers an unknown route
     // with a login or access refusal. The route ships in the default endpoints,
@@ -193,7 +193,13 @@ export async function saveAsCopy(
     { method: 'POST', body: JSON.stringify(draft) },
     // `resolveRequestUrl` accepts the API's whole origin for a copy URL (as in
     // 2.18), so the provider's headers may go anywhere on that origin too.
-    { config, endpointKey: 'workflows.copy', authProvider, apiBase: apiOrigin(config.baseUrl) }
+    {
+      config,
+      endpointKey: 'workflows.copy',
+      urlSource: 'backend-supplied',
+      authProvider,
+      apiBase: apiOrigin(config.baseUrl)
+    }
   );
   if (!response.ok) throw new Error(await errorMessage(response));
   const body = (await response.json().catch(() => null)) as {

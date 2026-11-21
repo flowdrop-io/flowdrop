@@ -76,6 +76,7 @@ async function settingsRequest<T>(
   const response = await authenticatedFetch(url, options, {
     config: endpointConfig,
     endpointKey,
+    urlSource: 'host-configured',
     authProvider
   });
 

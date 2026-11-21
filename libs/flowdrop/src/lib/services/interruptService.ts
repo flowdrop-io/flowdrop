@@ -122,6 +122,7 @@ export class InterruptService {
     const response = await authenticatedFetch(url, options, {
       config,
       endpointKey: 'interrupts',
+      urlSource: 'host-configured',
       authProvider
     });
 

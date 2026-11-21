@@ -202,7 +202,7 @@ class PipelineSignalService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(options.reason ? { reason: options.reason } : {})
       },
-      { config, endpointKey: 'signals', authProvider }
+      { config, endpointKey: 'signals', urlSource: 'host-configured', authProvider }
     );
 
     if (response.ok) {

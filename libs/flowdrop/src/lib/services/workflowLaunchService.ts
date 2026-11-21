@@ -114,7 +114,7 @@ class WorkflowLaunchService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       },
-      { config, endpointKey: 'workflows', authProvider }
+      { config, endpointKey: 'workflows', urlSource: 'host-configured', authProvider }
     );
 
     const payload = (await response.json().catch(() => ({}))) as {

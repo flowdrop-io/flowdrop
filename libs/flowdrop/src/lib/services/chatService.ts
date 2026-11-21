@@ -76,6 +76,7 @@ export class ChatService {
     const response = await authenticatedFetch(url, options, {
       config,
       endpointKey: 'chat',
+      urlSource: 'host-configured',
       authProvider
     });
 
@@ -218,7 +219,7 @@ export class ChatService {
     await authenticatedFetch(
       url,
       { method: 'DELETE' },
-      { config, endpointKey: 'chat', authProvider }
+      { config, endpointKey: 'chat', urlSource: 'host-configured', authProvider }
     );
   }
 }

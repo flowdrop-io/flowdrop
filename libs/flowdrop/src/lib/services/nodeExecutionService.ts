@@ -93,7 +93,12 @@ export class NodeExecutionService {
       const response = await authenticatedFetch(
         url,
         { method: 'GET' },
-        { config: endpointConfig, endpointKey: 'pipelines.get', authProvider }
+        {
+          config: endpointConfig,
+          endpointKey: 'pipelines.get',
+          urlSource: 'host-configured',
+          authProvider
+        }
       );
 
       if (!response.ok) {
@@ -171,7 +176,12 @@ export class NodeExecutionService {
     const response = await authenticatedFetch(
       url,
       { method: 'GET' },
-      { config: endpointConfig, endpointKey: 'pipelines.get', authProvider }
+      {
+        config: endpointConfig,
+        endpointKey: 'pipelines.get',
+        urlSource: 'host-configured',
+        authProvider
+      }
     );
 
     if (!response.ok) {
@@ -224,7 +234,7 @@ export class NodeExecutionService {
       const response = await authenticatedFetch(
         url,
         { method: 'GET' },
-        { config: endpointConfig, authProvider }
+        { config: endpointConfig, urlSource: 'host-configured', authProvider }
       );
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

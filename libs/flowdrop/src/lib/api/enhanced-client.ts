@@ -237,6 +237,7 @@ export class EnhancedFlowDropApiClient {
         const response = await authenticatedFetch(url, init, {
           config: this.config,
           endpointKey,
+          urlSource: 'host-configured',
           authProvider: this.authProvider,
           timeoutMs
         });

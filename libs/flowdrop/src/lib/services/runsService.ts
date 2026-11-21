@@ -57,7 +57,7 @@ export async function listRuns(
   const response = await authenticatedFetch(
     url,
     { method: 'GET' },
-    { config, endpointKey: 'pipelines.list', authProvider }
+    { config, endpointKey: 'pipelines.list', urlSource: 'host-configured', authProvider }
   );
   if (!response.ok) throw new Error(await message(response));
   const body = (await response.json()) as { success?: boolean; data?: unknown; error?: string };
@@ -75,7 +75,7 @@ export async function readRunStatus(
   const response = await authenticatedFetch(
     url,
     { method: 'GET' },
-    { config, endpointKey: 'pipelines.status', authProvider }
+    { config, endpointKey: 'pipelines.status', urlSource: 'host-configured', authProvider }
   );
   if (!response.ok) return undefined;
   const body = (await response.json().catch(() => null)) as {
@@ -98,7 +98,7 @@ export async function readRunState(
   const response = await authenticatedFetch(
     url,
     { method: 'GET' },
-    { config, endpointKey: 'pipelines.status', authProvider }
+    { config, endpointKey: 'pipelines.status', urlSource: 'host-configured', authProvider }
   );
   if (!response.ok) return undefined;
   const body = (await response.json().catch(() => null)) as {
@@ -118,7 +118,7 @@ export async function rerunRun(
   const response = await authenticatedFetch(
     buildEndpointUrl(config, path, { id: pipelineId }),
     { method: 'POST', body: JSON.stringify({}) },
-    { config, endpointKey: 'pipelines.rerun', authProvider }
+    { config, endpointKey: 'pipelines.rerun', urlSource: 'host-configured', authProvider }
   );
   if (!response.ok) return { ok: false, message: await message(response) };
   const body = (await response.json().catch(() => null)) as {
@@ -150,7 +150,7 @@ export async function cancelRun(
   const response = await authenticatedFetch(
     buildEndpointUrl(config, path, { id: pipelineId }),
     { method: 'POST', body: JSON.stringify({}) },
-    { config, endpointKey: 'pipelines.cancel', authProvider }
+    { config, endpointKey: 'pipelines.cancel', urlSource: 'host-configured', authProvider }
   );
   if (!response.ok) return { ok: false, message: await message(response) };
   return { ok: true, pipelineId };

@@ -23,7 +23,12 @@ export async function fetchPortConfig(
     const response = await authenticatedFetch(
       url,
       {},
-      { config: endpointConfig, endpointKey: 'portConfig', authProvider }
+      {
+        config: endpointConfig,
+        endpointKey: 'portConfig',
+        urlSource: 'host-configured',
+        authProvider
+      }
     );
 
     if (!response.ok) {

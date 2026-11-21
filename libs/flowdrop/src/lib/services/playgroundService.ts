@@ -150,6 +150,7 @@ export class PlaygroundService {
     const response = await authenticatedFetch(url, options, {
       config,
       endpointKey,
+      urlSource: 'host-configured',
       authProvider
     });
 
@@ -536,7 +537,7 @@ export class PlaygroundService {
     const response = await authenticatedFetch(
       url,
       {},
-      { config, endpointKey: 'sessions', authProvider }
+      { config, endpointKey: 'sessions', urlSource: 'host-configured', authProvider }
     );
     if (response.status === 404 || response.status === 405 || response.status === 501) {
       return null;

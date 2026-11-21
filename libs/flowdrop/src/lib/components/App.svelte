@@ -1015,12 +1015,12 @@
       const response = await authenticatedFetch(
         testUrl,
         { method: 'GET' },
-        // The base the test URL is built from is the one auth may go to.
+        // The test URL is built from the host's own configuration.
         {
           config: endpointConfig ?? undefined,
           endpointKey: 'nodes.list',
-          authProvider,
-          apiBase: baseUrl
+          urlSource: 'host-configured',
+          authProvider
         }
       );
       const data = await response.json();

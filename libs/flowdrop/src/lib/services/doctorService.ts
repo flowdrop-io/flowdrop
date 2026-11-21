@@ -100,7 +100,7 @@ export async function diagnoseDraft(
     const response = await authenticatedFetch(
       buildEndpointUrl(config, path, { id: workflowId }),
       { method: 'POST', body: JSON.stringify(draft) },
-      { config, endpointKey: 'workflows.diagnose', authProvider }
+      { config, endpointKey: 'workflows.diagnose', urlSource: 'host-configured', authProvider }
     );
     if (response.status === 404) return { status: 'unavailable' };
     if (!response.ok) return { status: 'error', message: await errorMessage(response) };
@@ -137,7 +137,7 @@ export async function requestRemedy(
     const response = await authenticatedFetch(
       buildEndpointUrl(config, path, { id: workflowId }),
       { method: 'POST', body: JSON.stringify(request) },
-      { config, endpointKey: 'workflows.remedy', authProvider }
+      { config, endpointKey: 'workflows.remedy', urlSource: 'host-configured', authProvider }
     );
     if (response.status === 409) return { status: 'conflict' };
     if (!response.ok) return { status: 'error', message: await errorMessage(response) };

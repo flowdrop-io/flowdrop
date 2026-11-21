@@ -23,7 +23,12 @@ export async function fetchCategories(
     const response = await authenticatedFetch(
       url,
       {},
-      { config: endpointConfig, endpointKey: 'categories', authProvider }
+      {
+        config: endpointConfig,
+        endpointKey: 'categories',
+        urlSource: 'host-configured',
+        authProvider
+      }
     );
 
     if (!response.ok) {

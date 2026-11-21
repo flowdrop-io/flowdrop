@@ -11,9 +11,21 @@ import {
 import { createEndpointConfig } from '$lib/config/endpoints.js';
 import type { AuthProvider } from '$lib/types/auth.js';
 
-/** The tests' API lives at api.example.com, which the base names unless a test says otherwise. */
-const authenticatedFetch = (url: string, init: RequestInit, opts: AuthenticatedFetchOptions) =>
-  rawAuthenticatedFetch(url, init, { apiBase: 'https://api.example.com', ...opts });
+/**
+ * The tests' API lives at api.example.com, which the base names unless a test
+ * says otherwise. URLs count as backend-supplied (the origin rule applies)
+ * unless a test says `urlSource`.
+ */
+const authenticatedFetch = (
+  url: string,
+  init: RequestInit,
+  opts: Omit<AuthenticatedFetchOptions, 'urlSource'> & { urlSource?: string }
+) =>
+  rawAuthenticatedFetch(url, init, {
+    urlSource: 'backend-supplied',
+    apiBase: 'https://api.example.com',
+    ...opts
+  } as AuthenticatedFetchOptions);
 
 describe('authenticatedFetch', () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -229,9 +241,17 @@ describe('authenticatedFetch', () => {
       await rawAuthenticatedFetch(
         'https://api.example.com/v1/x',
         {},
-        { authProvider: provider(), apiBase: 'https://api.example.com/v1' }
+        {
+          urlSource: 'backend-supplied',
+          authProvider: provider(),
+          apiBase: 'https://api.example.com/v1'
+        }
       );
-      await rawAuthenticatedFetch('/local', {}, { authProvider: provider() });
+      await rawAuthenticatedFetch(
+        '/local',
+        {},
+        { urlSource: 'backend-supplied', authProvider: provider(), apiBase: undefined }
+      );
       expect(headersOf(0).Authorization).toBe('Bearer t1');
       expect(headersOf(1).Authorization).toBe('Bearer t1');
     });
@@ -243,12 +263,12 @@ describe('authenticatedFetch', () => {
       await rawAuthenticatedFetch(
         'https://evil.example.net/x',
         {},
-        { authProvider: p, apiBase: 'https://api.example.com/v1' }
+        { urlSource: 'backend-supplied', authProvider: p, apiBase: 'https://api.example.com/v1' }
       );
       await rawAuthenticatedFetch(
         'https://api.example.com/other',
         {},
-        { authProvider: p, apiBase: 'https://api.example.com/v1' }
+        { urlSource: 'backend-supplied', authProvider: p, apiBase: 'https://api.example.com/v1' }
       );
       expect(headersOf(0).Authorization).toBeUndefined();
       expect(headersOf(1).Authorization).toBeUndefined();
@@ -263,7 +283,7 @@ describe('authenticatedFetch', () => {
       await rawAuthenticatedFetch(
         'https://api.example.com/v1/a',
         {},
-        { authProvider: provider(), config }
+        { urlSource: 'backend-supplied', authProvider: provider(), config }
       );
       expect(headersOf().Authorization).toBe('Bearer t1');
     });
@@ -271,11 +291,47 @@ describe('authenticatedFetch', () => {
     it('refuses an opaque page origin', async () => {
       fetchMock.mockResolvedValue(ok());
       vi.stubGlobal('location', { href: 'data:text/html,x' });
-      await rawAuthenticatedFetch('data:text/plain,y', {}, { authProvider: provider() }).catch(
-        () => undefined
-      );
+      await rawAuthenticatedFetch(
+        'data:text/plain,y',
+        {},
+        { urlSource: 'backend-supplied', authProvider: provider(), apiBase: undefined }
+      ).catch(() => undefined);
       const sent = fetchMock.mock.calls[0]?.[1].headers as Record<string, string> | undefined;
       expect(sent?.Authorization).toBeUndefined();
+    });
+  });
+
+  describe('host-configured URLs', () => {
+    const provider = (): AuthProvider => ({
+      getAuthHeaders: async () => ({ Authorization: 'Bearer t1' }),
+      onUnauthorized: vi.fn().mockResolvedValue(true),
+      onForbidden: vi.fn()
+    });
+
+    it('sends the provider headers to any origin the host configured', async () => {
+      fetchMock.mockResolvedValue(ok());
+      vi.stubGlobal('location', { href: 'https://app.example.com/editor' });
+      const config = createEndpointConfig('https://api.example.com/v1');
+      await rawAuthenticatedFetch(
+        'https://signals.example.net/pipelines/1/pause',
+        {},
+        { urlSource: 'host-configured', config, authProvider: provider() }
+      );
+      expect(headersOf().Authorization).toBe('Bearer t1');
+    });
+
+    it('calls onUnauthorized and onForbidden for them', async () => {
+      vi.stubGlobal('location', { href: 'https://app.example.com/editor' });
+      const p = provider();
+      fetchMock.mockResolvedValueOnce(unauthorized()).mockResolvedValueOnce(forbidden());
+      await rawAuthenticatedFetch(
+        'https://signals.example.net/x',
+        {},
+        { urlSource: 'host-configured', authProvider: p }
+      );
+      expect(p.onUnauthorized).toHaveBeenCalledOnce();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(p.onForbidden).toHaveBeenCalledOnce();
     });
   });
 
@@ -335,10 +391,18 @@ describe('authenticatedFetch', () => {
     });
   });
 
-  it('refuses, at the type level, a call that names neither config nor apiBase', () => {
+  it('refuses, at the type level, a call without urlSource or without a base for a backend-supplied URL', () => {
     const call = () =>
-      // @ts-expect-error -- one of `config` or `apiBase` is required
+      // @ts-expect-error -- a backend-supplied URL needs `config` or `apiBase`
+      rawAuthenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        { urlSource: 'backend-supplied', authProvider: undefined }
+      );
+    const bare = () =>
+      // @ts-expect-error -- every call says who chose the URL
       rawAuthenticatedFetch('https://api.example.com/p', {}, { authProvider: undefined });
+    expect(typeof bare).toBe('function');
     expect(typeof call).toBe('function');
   });
 });

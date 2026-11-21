@@ -232,6 +232,7 @@ export async function fetchVariableSchema(
       url,
       { ...fetchOptions, headers: { ...endpoint.headers } },
       {
+        urlSource: 'backend-supplied',
         authProvider,
         apiBase: endpointConfig?.baseUrl,
         timeoutMs: timeout,
