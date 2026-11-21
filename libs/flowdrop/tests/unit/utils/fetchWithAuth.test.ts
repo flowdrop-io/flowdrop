@@ -236,7 +236,11 @@ describe('authenticatedFetch', () => {
 
     it('sends the provider headers to the API base and, with no base, to the page origin only', async () => {
       fetchMock.mockResolvedValue(ok());
-      vi.stubGlobal('location', { href: 'https://app.example.com/editor' });
+      vi.stubGlobal('location', {
+        href: 'https://app.example.com/editor',
+        origin: 'https://app.example.com'
+      });
+      vi.stubGlobal('document', { baseURI: 'https://app.example.com/editor' });
       await rawAuthenticatedFetch(
         'https://api.example.com/v1/x',
         {},
@@ -255,9 +259,12 @@ describe('authenticatedFetch', () => {
       expect(headersOf(1).Authorization).toBe('Bearer t1');
     });
 
-    it('judges a relative backend-supplied URL by the document base, which is where fetch sends it', async () => {
+    it('resolves a relative backend-supplied URL against the document base, but takes the page origin from the address bar', async () => {
       fetchMock.mockResolvedValue(ok());
-      vi.stubGlobal('location', { href: 'https://app.example.com/editor' });
+      vi.stubGlobal('location', {
+        href: 'https://app.example.com/editor',
+        origin: 'https://app.example.com'
+      });
       vi.stubGlobal('document', { baseURI: 'https://cdn.example.net/assets/' });
       const p = provider();
       const call = (url: string) =>
@@ -266,12 +273,35 @@ describe('authenticatedFetch', () => {
           {},
           { urlSource: 'backend-supplied', authProvider: p, apiBase: undefined }
         );
-      // fetch sends 'data/list' to cdn.example.net: that is the origin judged.
+      // fetch sends 'data/list' to cdn.example.net, which is not the page's origin.
       await call('data/list');
-      expect(headersOf(0).Authorization).toBe('Bearer t1');
-      // The address bar's host is no longer the page's origin for this rule.
-      await call('https://app.example.com/data/list');
+      expect(headersOf(0).Authorization).toBeUndefined();
+      await call('/data/list');
       expect(headersOf(1).Authorization).toBeUndefined();
+      // An absolute URL on the address bar's origin is the page's own.
+      await call('https://app.example.com/data/list');
+      expect(headersOf(2).Authorization).toBe('Bearer t1');
+    });
+
+    it('gives a page with an opaque origin, or a srcdoc frame, no origin of its own', async () => {
+      fetchMock.mockResolvedValue(ok());
+      const p = provider();
+      const call = (url: string) =>
+        rawAuthenticatedFetch(
+          url,
+          {},
+          { urlSource: 'backend-supplied', authProvider: p, apiBase: undefined }
+        );
+      // A sandboxed page: the origin is "null", whatever the address.
+      vi.stubGlobal('location', { href: 'https://app.example.com/editor', origin: 'null' });
+      vi.stubGlobal('document', { baseURI: 'https://app.example.com/editor' });
+      await call('/x');
+      await call('https://app.example.com/x');
+      // A srcdoc frame reports its parent's origin, but is not that page.
+      vi.stubGlobal('location', { href: 'about:srcdoc', origin: 'https://app.example.com' });
+      await call('https://app.example.com/x');
+      await call('/x');
+      for (let i = 0; i < 4; i++) expect(headersOf(i).Authorization).toBeUndefined();
     });
 
     it('sends no provider headers, and calls no hooks, to another host or outside the base path', async () => {

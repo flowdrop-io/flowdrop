@@ -166,4 +166,13 @@ describe('mayCarryInstanceAuth', () => {
     expect(mayCarryInstanceAuth('data:text/plain,x', '', 'data:text/html,y')).toBe(false);
     expect(mayCarryInstanceAuth('/x', '', 'file:///tmp/page.html')).toBe(false);
   });
+
+  it('takes the page origin apart from the base that relative URLs resolve against', () => {
+    const base = 'https://cdn.test/assets/';
+    const origin = 'https://site.test';
+    expect(mayCarryInstanceAuth('/x', '', base, origin)).toBe(false);
+    expect(mayCarryInstanceAuth('https://site.test/x', '', base, origin)).toBe(true);
+    expect(mayCarryInstanceAuth('https://site.test/x', '', base, null)).toBe(false);
+    expect(mayCarryInstanceAuth('https://site.test/x', '', base, 'null')).toBe(false);
+  });
 });

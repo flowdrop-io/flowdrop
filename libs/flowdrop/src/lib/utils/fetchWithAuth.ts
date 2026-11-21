@@ -140,21 +140,31 @@ function headerPairs(init: HeadersInit | undefined | null): [string, string][] {
 /**
  * Whether the provider may be used for this URL. A host-configured URL always
  * may. A backend-supplied one may when the requested URL, resolved against the
- * page, is on the page's own origin or under the API base.
+ * document's base, is on the page's own origin or under the API base.
  */
 function providerAllowed(url: string, opts: AuthenticatedFetchOptions): boolean {
   if (!opts.authProvider) return false;
   if (opts.urlSource === 'host-configured') return true;
-  // The page's base is what `fetch` resolves a relative URL against (a `<base>`
-  // element moves it away from `location.href`), so the origin rule uses it too.
-  const pageUrl =
+  // A relative URL is resolved against the document's base, as `fetch` does (a
+  // `<base>` element moves it away from `location.href`). The page's origin is
+  // the address bar's, not the base's: a `<base>` pointing at a CDN does not make
+  // the CDN the page.
+  const hasLocation = typeof location !== 'undefined';
+  const baseUrl =
     typeof document !== 'undefined' && document.baseURI
       ? document.baseURI
-      : typeof location === 'undefined'
-        ? undefined
-        : location.href;
+      : hasLocation
+        ? location.href
+        : undefined;
+  // A srcdoc frame reports its parent's origin but is not the page the editor was
+  // served from: it has none.
+  const pageOrigin = !hasLocation
+    ? undefined
+    : location.href.startsWith('about:')
+      ? null
+      : (location.origin ?? new URL(location.href).origin);
   const apiBase = opts.apiBase ?? opts.config?.baseUrl ?? '';
-  return mayCarryInstanceAuth(url, apiBase, pageUrl);
+  return mayCarryInstanceAuth(url, apiBase, baseUrl, pageOrigin);
 }
 
 /**

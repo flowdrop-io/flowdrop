@@ -97,30 +97,37 @@ export function isAbsoluteUrl(url: string): boolean {
  * origin, or to the API base's origin under the base path. Decided on the URL
  * the browser actually fetches, not on its text.
  *
+ * Two inputs name "the page", because they are two things: relative URLs
+ * resolve against the document's base (which a `<base>` element moves, and
+ * which `fetch` follows), while the page's origin is the address bar's.
+ *
  * @param requestUrl - The URL that is fetched
  * @param apiBase - The API base (`endpointConfig.baseUrl`), relative or absolute
- * @param pageUrl - The page's URL (`location.href`); without one (SSR) only an
- *   absolute URL under an absolute API base qualifies
+ * @param baseUrl - What a relative URL resolves against (`document.baseURI`);
+ *   without one (SSR) only an absolute URL under an absolute API base qualifies
+ * @param pageOrigin - The page's origin (`location.origin`). Left out, it is
+ *   the origin of `baseUrl`. An opaque origin (`"null"`: file:, data:,
+ *   sandboxed pages, `about:srcdoc` frames) or `null` means the page has none,
+ *   and no URL counts as being on it.
  */
 export function mayCarryInstanceAuth(
   requestUrl: string,
   apiBase: string,
-  pageUrl: string | undefined
+  baseUrl: string | undefined,
+  pageOrigin?: string | null
 ): boolean {
   try {
-    const target = new URL(requestUrl, pageUrl);
+    const target = new URL(requestUrl, baseUrl);
     // An opaque origin ("null": file:, data:, sandboxed pages) equals no other.
     if (target.origin === 'null') return false;
-    if (pageUrl) {
-      const pageOrigin = new URL(pageUrl).origin;
-      if (pageOrigin !== 'null' && target.origin === pageOrigin) return true;
-    }
+    const origin = pageOrigin === undefined && baseUrl ? new URL(baseUrl).origin : pageOrigin;
+    if (origin && origin !== 'null' && target.origin === origin) return true;
     if (!apiBase) return false;
     // The base's own query and fragment are not part of the path prefix.
-    const root = new URL(`${apiBase.replace(/[?#].*$/s, '').replace(/\/+$/, '')}/`, pageUrl);
+    const root = new URL(`${apiBase.replace(/[?#].*$/s, '').replace(/\/+$/, '')}/`, baseUrl);
     return target.origin === root.origin && target.pathname.startsWith(root.pathname);
   } catch {
-    // Not parseable against the page (or no page at all): no instance auth.
+    // Not parseable against the base (or no base at all): no instance auth.
     return false;
   }
 }
