@@ -598,8 +598,10 @@
       if (nullToggled) {
         // The toggle is its own undo step: a different session key closes the
         // field's typing session, and the flush right after closes the toggle's.
+        // The closing flush clears the buffer, as a blur does: the toggle is done,
+        // so a later edit elsewhere (after a host undo, say) must not resend it.
         commitEdits({ fieldKey: `${key}#null` }, false);
-        commitEdits({ commit: true }, false);
+        commitEdits({ commit: true });
       } else {
         commitEdits({ fieldKey: key }, false);
       }

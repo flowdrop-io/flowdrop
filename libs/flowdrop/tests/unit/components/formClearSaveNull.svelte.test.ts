@@ -100,6 +100,8 @@ describe.each<Kind>(['config', 'schema'])('%s form: nullable fields', (kind) => 
     nullToggle(t.target, 'Note').click();
     flushSync();
     expect(t.last().nnote).toBeNull();
+    t.props.values = t.last(); // the host takes the commit, as the editor does
+    flushSync();
     nullToggle(t.target, 'Note').click();
     flushSync();
     expect(t.last().nnote).toBe('');
@@ -108,6 +110,8 @@ describe.each<Kind>(['config', 'schema'])('%s form: nullable fields', (kind) => 
   it('null on then off over a value restores the value', () => {
     const t = mountForm(kind, { ncount: 4 });
     nullToggle(t.target, 'Count').click();
+    flushSync();
+    t.props.values = t.last(); // the host takes the commit, as the editor does
     flushSync();
     nullToggle(t.target, 'Count').click();
     flushSync();

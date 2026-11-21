@@ -246,7 +246,7 @@ describe('null toggle inside ConfigForm', () => {
   });
 
   it('turning on stores null, turning off restores the typed value', () => {
-    const { toggle, last } = mountForm({ limit: 5 });
+    const { toggle, last } = mountFed({ limit: 5 }, nullableSchema);
     toggle().click();
     flushSync();
     expect(last().limit).toBeNull();
@@ -311,6 +311,27 @@ describe('null toggle inside ConfigForm', () => {
     const metas = f.onChange.mock.calls.map((c) => c[1]);
     expect(metas.at(-2)).toEqual({ fieldKey: 'limit#null' });
     expect(metas.at(-1)).toEqual({ commit: true });
+  });
+
+  it('does not resend a toggled null after a host undo and an edit in another field', () => {
+    const f = mountFed({ limit: 5, other: '' }, {
+      type: 'object',
+      properties: {
+        limit: { type: ['integer', 'null'], title: 'Limit' },
+        other: { type: 'string', title: 'Other' }
+      }
+    } as never);
+    f.toggle().click();
+    flushSync();
+    expect(f.last().limit).toBeNull();
+    f.props.values = { limit: 5, other: '' }; // the host undoes the toggle
+    flushSync();
+    const other = f.target.querySelector<HTMLInputElement>('#other')!;
+    other.value = 'typed';
+    other.dispatchEvent(new Event('input', { bubbles: true }));
+    flushSync();
+    expect(f.last().other).toBe('typed');
+    expect(f.last().limit).toBe(5);
   });
 
   it('does the same before and after a remount: a cleared required key gets its default', () => {
