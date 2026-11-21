@@ -44,10 +44,12 @@ interface AuthenticatedFetchBase {
   /** Base headers for requests not tied to a configured endpoint. */
   baseHeaders?: Record<string, string>;
   /**
-   * Abort each attempt after this many milliseconds. The retry after a `401`
+   * Abort each attempt when the response headers have not arrived after this
+   * many milliseconds; reading the body is not timed. The retry after a `401`
    * gets its own timeout, so a login the provider shows in `onUnauthorized`
    * does not use up the retry's time. A caller's own `init.signal` is combined
-   * with it: either one aborts the attempt.
+   * with it: either one aborts the attempt, and the caller's still covers the
+   * body.
    */
   timeoutMs?: number;
 }
@@ -92,11 +94,30 @@ function anySignal(signals: AbortSignal[]): AbortSignal {
   return controller.signal;
 }
 
-/** The attempt's init: the caller's signal combined with its own timeout. */
-function attemptInit(init: RequestInit, opts: AuthenticatedFetchOptions): RequestInit {
-  if (opts.timeoutMs === undefined) return init;
-  const timeout = AbortSignal.timeout(opts.timeoutMs);
-  return { ...init, signal: init.signal ? anySignal([init.signal, timeout]) : timeout };
+/**
+ * Send one attempt. With `timeoutMs`, the attempt aborts (with a `TimeoutError`
+ * reason, as `AbortSignal.timeout` does) when the response headers have not
+ * arrived in time. The timer stops once they have, so reading a slow body is
+ * not cut off; the caller's own `init.signal` still covers the body. A manual
+ * controller and timer serve every browser, including those without
+ * `AbortSignal.timeout`.
+ */
+async function sendAttempt(url: string, init: RequestInit, opts: AuthenticatedFetchOptions) {
+  if (opts.timeoutMs === undefined) return fetch(url, init);
+  const timeout = new AbortController();
+  const timer = setTimeout(
+    () =>
+      timeout.abort(
+        new DOMException(`The operation timed out after ${opts.timeoutMs}ms`, 'TimeoutError')
+      ),
+    opts.timeoutMs
+  );
+  try {
+    const signal = init.signal ? anySignal([init.signal, timeout.signal]) : timeout.signal;
+    return await fetch(url, { ...init, signal });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** JSON defaults for requests not tied to a configured endpoint. */
@@ -252,10 +273,9 @@ export async function authenticatedFetch(
     headers: Record<string, string>;
     providerAdded: boolean;
   }): Promise<Response> => {
-    const base = attemptInit(init, opts);
     const redirect =
       built.providerAdded && init.redirect === undefined ? { redirect: 'error' as const } : {};
-    return fetch(url, { ...base, ...redirect, headers: built.headers });
+    return sendAttempt(url, { ...init, ...redirect, headers: built.headers }, opts);
   };
   const completedAtSend = provider ? stateOf(provider).completed : 0;
   let response = await attempt(await buildHeaders(init, opts, !!provider));

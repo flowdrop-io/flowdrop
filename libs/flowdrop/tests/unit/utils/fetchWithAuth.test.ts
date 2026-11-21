@@ -110,7 +110,7 @@ describe('authenticatedFetch', () => {
 
   it('gives the retry after a 401 its own timeout', async () => {
     fetchMock.mockResolvedValueOnce(unauthorized()).mockResolvedValueOnce(ok());
-    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    const timer = vi.spyOn(globalThis, 'setTimeout');
 
     await authenticatedFetch(
       'https://api.example.com/p',
@@ -124,13 +124,12 @@ describe('authenticatedFetch', () => {
       }
     );
 
-    expect(timeout).toHaveBeenCalledTimes(2);
-    expect(timeout).toHaveBeenCalledWith(5000);
+    expect(timer.mock.calls.filter(([, ms]) => ms === 5000)).toHaveLength(2);
     const first = fetchMock.mock.calls[0][1].signal;
     const second = fetchMock.mock.calls[1][1].signal;
     expect(first).toBeInstanceOf(AbortSignal);
     expect(second).not.toBe(first);
-    timeout.mockRestore();
+    timer.mockRestore();
   });
 
   it('shares one onUnauthorized call between concurrent 401s', async () => {
@@ -502,6 +501,117 @@ describe('authenticatedFetch', () => {
       );
       expect(Object.values(headersOf())).toContain('Bearer own');
       expect(Object.values(headersOf())).not.toContain('Bearer provider');
+    });
+  });
+
+  describe('timeout', () => {
+    afterEach(() => vi.useRealTimers());
+
+    /** A fetch that rejects with the signal's reason once it aborts. */
+    const hangingFetch = (_u: string, init: RequestInit) =>
+      new Promise((_res, rej) => {
+        init.signal?.addEventListener('abort', () => rej(init.signal?.reason));
+      });
+
+    it('times out a fetch whose headers do not arrive, with a TimeoutError', async () => {
+      vi.useFakeTimers();
+      fetchMock.mockImplementation(hangingFetch);
+      const pending = authenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        { authProvider: undefined, timeoutMs: 1000 }
+      );
+      const caught = pending.catch((e) => e);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(await caught).toMatchObject({ name: 'TimeoutError' });
+    });
+
+    it('works when AbortSignal.timeout is missing (older Safari)', async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal(
+        'AbortSignal',
+        Object.assign(function () {}, { timeout: undefined })
+      );
+      fetchMock.mockImplementation(hangingFetch);
+      const caught = authenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        { authProvider: undefined, timeoutMs: 1000 }
+      ).catch((e) => e);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(await caught).toMatchObject({ name: 'TimeoutError' });
+    });
+
+    it('does not time out the body once the headers arrived', async () => {
+      vi.useFakeTimers();
+      let release!: () => void;
+      const gate = new Promise<void>((r) => (release = r));
+      fetchMock.mockImplementation(async () => {
+        const body = new ReadableStream({
+          async start(controller) {
+            await gate;
+            controller.enqueue(new TextEncoder().encode('{"a":1}'));
+            controller.close();
+          }
+        });
+        return new Response(body, { status: 200 });
+      });
+      const response = await authenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        { authProvider: undefined, timeoutMs: 1000 }
+      );
+      await vi.advanceTimersByTimeAsync(5000);
+      release();
+      expect(await response.json()).toEqual({ a: 1 });
+    });
+
+    it('still stops a body read when the caller aborts after the headers', async () => {
+      const caller = new AbortController();
+      fetchMock.mockImplementation(async (_u: string, init: RequestInit) => {
+        const body = new ReadableStream({
+          start(controller) {
+            init.signal?.addEventListener('abort', () => controller.error(init.signal?.reason));
+          }
+        });
+        return new Response(body, { status: 200 });
+      });
+      const response = await authenticatedFetch(
+        'https://api.example.com/p',
+        { signal: caller.signal },
+        { authProvider: undefined, timeoutMs: 60_000 }
+      );
+      const reading = response.text().catch((e) => e);
+      caller.abort(new DOMException('stop', 'AbortError'));
+      expect(await reading).toMatchObject({ name: 'AbortError' });
+    });
+
+    it('gives the retry after a 401 a fresh timer, not the first one left running', async () => {
+      vi.useFakeTimers();
+      fetchMock.mockResolvedValueOnce(unauthorized()).mockImplementationOnce(hangingFetch);
+      const caught = authenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        {
+          authProvider: {
+            getAuthHeaders: async () => ({}),
+            onUnauthorized: async () => {
+              await new Promise((r) => setTimeout(r, 900));
+              return true;
+            }
+          },
+          timeoutMs: 1000
+        }
+      ).catch((e) => e);
+      // 900ms of login, then 1000ms for the retry: it must not abort early.
+      await vi.advanceTimersByTimeAsync(900 + 999);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      let settled = false;
+      void caught.then(() => (settled = true));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(await caught).toMatchObject({ name: 'TimeoutError' });
     });
   });
 
