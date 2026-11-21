@@ -202,18 +202,25 @@ export async function authenticatedFetch(
   init: RequestInit,
   opts: AuthenticatedFetchOptions
 ): Promise<Response> {
-  // Decided once, on the final URL (see `urlSource`): a backend-supplied URL
-  // on another host gets neither the provider's headers nor its 401/403 hooks.
+  // Decided once, on the requested URL (see `urlSource`): a backend-supplied
+  // URL on another host gets neither the provider's headers nor its 401/403
+  // hooks. Redirects are not followed while the headers are attached (below),
+  // so a redirect cannot carry them to another host.
   const provider = providerAllowed(url, opts) ? opts.authProvider : undefined;
+  const attempt = (headers: Record<string, string>): Promise<Response> => {
+    const base = attemptInit(init, opts);
+    const redirect = provider && init.redirect === undefined ? { redirect: 'error' as const } : {};
+    return fetch(url, { ...base, ...redirect, headers });
+  };
   const headers = await buildHeaders(init, opts, !!provider);
-  let response = await fetch(url, { ...attemptInit(init, opts), headers });
+  let response = await attempt(headers);
 
   // 401 → let the provider refresh, then retry once with fresh headers.
   if (response.status === 401 && provider?.onUnauthorized) {
     const refreshed = await refreshAuth(provider);
     if (refreshed) {
       const retryHeaders = await buildHeaders(init, opts, true);
-      response = await fetch(url, { ...attemptInit(init, opts), headers: retryHeaders });
+      response = await attempt(retryHeaders);
     }
   }
 

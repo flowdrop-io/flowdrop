@@ -335,6 +335,35 @@ describe('authenticatedFetch', () => {
     });
   });
 
+  describe('redirects', () => {
+    const provider: AuthProvider = { getAuthHeaders: async () => ({ 'X-API-Key': 'k' }) };
+
+    it('refuses redirects while the provider headers are attached', async () => {
+      fetchMock.mockResolvedValue(ok());
+      await authenticatedFetch('https://api.example.com/p', {}, { authProvider: provider });
+      expect(fetchMock.mock.calls[0][1].redirect).toBe('error');
+    });
+
+    it('respects a redirect mode the caller set', async () => {
+      fetchMock.mockResolvedValue(ok());
+      await authenticatedFetch(
+        'https://api.example.com/p',
+        { redirect: 'follow' },
+        { authProvider: provider }
+      );
+      expect(fetchMock.mock.calls[0][1].redirect).toBe('follow');
+    });
+
+    it('leaves the redirect mode alone when no provider headers are attached', async () => {
+      fetchMock.mockResolvedValue(ok());
+      vi.stubGlobal('location', { href: 'https://app.example.com/' });
+      await authenticatedFetch('https://other.example.net/p', {}, { authProvider: provider });
+      await authenticatedFetch('https://api.example.com/p', {}, { authProvider: undefined });
+      expect(fetchMock.mock.calls[0][1].redirect).toBeUndefined();
+      expect(fetchMock.mock.calls[1][1].redirect).toBeUndefined();
+    });
+  });
+
   describe('header merging', () => {
     it('lets endpoint and request headers win over the provider, ignoring case', async () => {
       fetchMock.mockResolvedValue(ok());
