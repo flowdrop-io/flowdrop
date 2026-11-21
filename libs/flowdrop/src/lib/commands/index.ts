@@ -88,6 +88,8 @@ export type {
   SetConfigResultData,
   HelpResultData,
   SwapNodeResultData,
+  LayoutCounts,
+  LayoutResultData,
   CommandResultData,
   CommandResultOk,
   CommandResultError,
