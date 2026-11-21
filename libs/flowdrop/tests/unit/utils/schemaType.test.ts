@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { firstNonNullType, schemaAdmitsNull, typeAdmitsNull } from '$lib/utils/schemaType.js';
+import {
+  editorTypeWord,
+  firstNonNullType,
+  schemaAdmitsNull,
+  typeAdmitsNull
+} from '$lib/utils/schemaType.js';
 
 describe('firstNonNullType', () => {
   it('returns a type word as is', () => {
@@ -53,4 +58,35 @@ describe('public entry point', () => {
     // A cold import of the whole entry point: well under a second alone, but
     // slow on a loaded test box running every worker.
   }, 30_000);
+});
+
+describe('editorTypeWord', () => {
+  it('is the one non-null word, with or without null', () => {
+    expect(editorTypeWord('string')).toBe('string');
+    expect(editorTypeWord(['integer', 'null'])).toBe('integer');
+    expect(editorTypeWord(['null', 'boolean'])).toBe('boolean');
+    expect(editorTypeWord(['string', 'string'])).toBe('string');
+  });
+
+  it('has none for more than one non-null word', () => {
+    expect(editorTypeWord(['boolean', 'string'])).toBeUndefined();
+    expect(editorTypeWord(['array', 'object'])).toBeUndefined();
+    expect(editorTypeWord(['string', 'number', 'null'])).toBeUndefined();
+  });
+
+  it('has none for no usable type or a word no editor exists for', () => {
+    expect(editorTypeWord(undefined)).toBeUndefined();
+    expect(editorTypeWord([])).toBeUndefined();
+    expect(editorTypeWord('null')).toBeUndefined();
+    expect(editorTypeWord('mixed')).toBeUndefined();
+    expect(editorTypeWord('json')).toBeUndefined();
+    expect(editorTypeWord(['mixed', 'null'])).toBeUndefined();
+  });
+});
+
+describe('schemaAdmitsNull and oneOf', () => {
+  it('a oneOf const null alone does not admit null: the server checks type and enum only', () => {
+    expect(schemaAdmitsNull({ type: 'string', oneOf: [{ const: null }] } as never)).toBe(false);
+    expect(schemaAdmitsNull({ oneOf: [{ const: 'a' }, { const: null }] } as never)).toBe(false);
+  });
 });

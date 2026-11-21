@@ -113,3 +113,31 @@ describe('resolveHeavyEditorKind with type arrays and no type', () => {
     expect(resolveHeavyEditorKind({ type: 'string', format: 'json' })).toBe('code-editor');
   });
 });
+
+describe('a type array with more than one non-null word, or a word no editor exists for', () => {
+  it.each([
+    ['boolean and string', ['boolean', 'string']],
+    ['array and object', ['array', 'object']],
+    ['three words and null', ['string', 'number', 'null']],
+    ['mixed', 'mixed'],
+    ['json', 'json'],
+    ['an unknown word', 'banana'],
+    ['an unknown word with null', ['banana', 'null']]
+  ] as [string, FieldSchema['type']][])(
+    '%s is edited as JSON, never as a text field',
+    (_, type) => {
+      expect(resolveBaseFieldType({ type })).toBeNull();
+      expect(resolveHeavyEditorKind({ type })).toBe('code-editor');
+    }
+  );
+
+  it('keeps the options of an enum or oneOf', () => {
+    expect(resolveHeavyEditorKind({ type: ['boolean', 'string'], enum: ['a'] })).toBeNull();
+    expect(resolveBaseFieldType({ type: ['boolean', 'string'], enum: ['a'] })).toBe('select-enum');
+  });
+
+  it('keeps the editor of one word plus null', () => {
+    expect(resolveBaseFieldType({ type: ['boolean', 'null'] })).toBe('toggle');
+    expect(resolveHeavyEditorKind({ type: ['object', 'null'] })).toBe('code-editor');
+  });
+});

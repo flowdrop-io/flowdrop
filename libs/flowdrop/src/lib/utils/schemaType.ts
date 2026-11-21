@@ -21,6 +21,35 @@ export function firstNonNullType(type: unknown): EditableTypeWord | undefined {
   return undefined;
 }
 
+/** The type words an editor exists for. Any other word is edited as JSON. */
+const EDITABLE_WORDS: ReadonlySet<string> = new Set([
+  'string',
+  'number',
+  'integer',
+  'float',
+  'boolean',
+  'array',
+  'object'
+]);
+
+/**
+ * The one type word a field is edited as, or `undefined` when it has none and is
+ * edited as JSON: no usable type (absent, empty, only `null`), more than one
+ * non-null word (`['boolean', 'string']`, `['array', 'object']`: either could be
+ * the stored value, and a switch or an array editor would overwrite the other
+ * kind), or a word no editor exists for (`mixed`, `json`, a typo). One non-null
+ * word plus an optional `null` keeps that word's editor. Spec SCH-9 governs the
+ * lane of a port, not which editor a config field gets.
+ */
+export function editorTypeWord(type: unknown): EditableTypeWord | undefined {
+  const words = (Array.isArray(type) ? type : [type]).filter(
+    (t): t is string => typeof t === 'string' && t !== 'null'
+  );
+  const distinct = [...new Set(words)];
+  if (distinct.length !== 1) return undefined;
+  return EDITABLE_WORDS.has(distinct[0]) ? (distinct[0] as EditableTypeWord) : undefined;
+}
+
 /** Whether `type` names `null` and nothing else (`'null'`, `['null']`): the one value is `null`. */
 export function typeIsNullOnly(type: unknown): boolean {
   if (type === 'null') return true;
@@ -38,6 +67,8 @@ export function typeAdmitsNull(type: unknown): boolean {
  * (or there is no type) and, where there is an `enum`, it lists `null`. The
  * schema must also name `null` in one of them; a schema with neither `type`
  * nor `enum` accepts any JSON value through its editor and needs no toggle.
+ * A `oneOf` member `{ const: null }` does not count: the server checks `type`
+ * and `enum` only, so a `oneOf` alone must not offer a toggle.
  */
 export function schemaAdmitsNull(schema: { type?: unknown; enum?: unknown[] }): boolean {
   const hasType =

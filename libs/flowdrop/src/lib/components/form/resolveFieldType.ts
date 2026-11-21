@@ -1,5 +1,5 @@
 import type { FieldSchema } from './types.js';
-import { firstNonNullType } from '$lib/utils/schemaType.js';
+import { editorTypeWord } from '$lib/utils/schemaType.js';
 
 /**
  * The dependency-free field kinds — everything that does not pull in a heavy
@@ -24,16 +24,19 @@ export type BaseFieldType =
  * overrides) first and its fallback last. Its one caller is the internal
  * `FieldFactory`, which both `FormFieldLight` and `FormFieldFull` render.
  *
- * A `type` array is read by its first member that is not `null` (spec SCH-9), so
- * `['integer', 'null']` is a number field. A schema with no usable type (absent,
- * empty array, only `null`) gets `null` here and is edited as JSON by
- * `resolveHeavyEditorKind`, because it accepts any JSON value (SCH-10).
+ * A field is edited by its one non-null type word, so `['integer', 'null']` is a
+ * number field. A schema with no such word gets `null` here and is edited as
+ * JSON by `resolveHeavyEditorKind`: an absent, empty or null-only type (any JSON
+ * value, SCH-10), more than one non-null word (`['boolean', 'string']`: no single
+ * editor fits both kinds of value) or a word no editor exists for (`mixed`,
+ * `json`, a typo). SCH-9 governs the lane (data type) of a port, not which
+ * editor a config field gets.
  *
  * Order matters: `enum` and `oneOf` are checked before the primitive `type`
  * branches because option schemas frequently carry `type: 'string'`.
  */
 export function resolveBaseFieldType(schema: FieldSchema): BaseFieldType | null {
-  const type = firstNonNullType(schema.type);
+  const type = editorTypeWord(schema.type);
 
   // Enum with multiple selection -> checkbox group
   if (schema.enum && schema.multiple) {
@@ -99,11 +102,12 @@ const OBJECT_FORMATS_WITH_OWN_FIELD = new Set(['hidden', 'autocomplete', 'ports'
  * renders it from the field registry, or from the statically bundled set that
  * `FormFieldFull` passes in, or as a plain textarea with a registration hint.
  * A registered component for the schema wins before this is consulted.
- * A schema with no type (see `resolveBaseFieldType`) is edited as JSON too, unless it
- * lists `enum`/`oneOf` options.
+ * A schema with no single editable type (see `resolveBaseFieldType`) is edited as
+ * JSON too, unless it lists `enum`/`oneOf` options. That includes a type word no
+ * editor exists for: it is never a text field.
  */
 export function resolveHeavyEditorKind(schema: FieldSchema): HeavyEditorKind | null {
-  const type = firstNonNullType(schema.type);
+  const type = editorTypeWord(schema.type);
 
   if (schema.format === 'json' || schema.format === 'code') {
     return 'code-editor';
@@ -117,9 +121,11 @@ export function resolveHeavyEditorKind(schema: FieldSchema): HeavyEditorKind | n
     return 'template-editor';
   }
 
-  // An object is edited as JSON unless its format is one the factory renders
-  // itself. An unknown format must not fall through to a text field, which
-  // would show "[object Object]" and save a string over the object.
+  // An object, or a field with no single editable type (see `editorTypeWord`:
+  // absent, several words, a word no editor exists for), is edited as JSON unless
+  // its format is one the factory renders itself. An unknown format or type word
+  // must not fall through to a text field, which would show "[object Object]"
+  // and save a string over the object.
   if (
     (type === 'object' || (type === undefined && !hasOptions(schema))) &&
     !OBJECT_FORMATS_WITH_OWN_FIELD.has(schema.format ?? '')

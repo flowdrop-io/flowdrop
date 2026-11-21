@@ -22,7 +22,7 @@
  * ```
  */
 
-import { firstNonNullType } from '$lib/utils/schemaType.js';
+import { editorTypeWord } from '$lib/utils/schemaType.js';
 import { resolveHeavyEditorKind } from '../components/form/resolveFieldType.js';
 import type { FieldComponent, FieldComponentRegistry } from './fieldRegistry.js';
 import type { FieldSchema } from '../components/form/types.js';
@@ -45,13 +45,13 @@ export function codeEditorFieldMatcher(schema: FieldSchema): boolean {
   }
 
   // Object type without specific format (render as JSON editor)
-  if (firstNonNullType(schema.type) === 'object' && !schema.format) {
+  if (editorTypeWord(schema.type) === 'object' && !schema.format) {
     return true;
   }
 
   // No usable type: any JSON value, so edited as JSON (unless it lists options)
   if (
-    firstNonNullType(schema.type) === undefined &&
+    editorTypeWord(schema.type) === undefined &&
     resolveHeavyEditorKind(schema) === 'code-editor'
   ) {
     return true;

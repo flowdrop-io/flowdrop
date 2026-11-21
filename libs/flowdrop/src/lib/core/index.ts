@@ -328,7 +328,12 @@ export {
 } from '../utils/config.js';
 
 // Reading a property's `type` (a type word, an array with `null`, or absent)
-export { firstNonNullType, typeAdmitsNull, schemaAdmitsNull } from '../utils/schemaType.js';
+export {
+  firstNonNullType,
+  editorTypeWord,
+  typeAdmitsNull,
+  schemaAdmitsNull
+} from '../utils/schemaType.js';
 export type { EditableTypeWord } from '../utils/schemaType.js';
 
 // Node type utilities

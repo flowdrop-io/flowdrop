@@ -121,6 +121,17 @@ export {
   getSchemaOptions
 } from '../components/form/types.js';
 
+// Reading a property's `type` (a word, an array with `null`, or absent), for the
+// matchers below: `editorTypeWord` is what the built-in matchers use.
+export {
+  firstNonNullType,
+  editorTypeWord,
+  typeAdmitsNull,
+  schemaAdmitsNull
+} from '../utils/schemaType.js';
+export type { EditableTypeWord } from '../utils/schemaType.js';
+export type { PropertyTypeWord } from '../types/index.js';
+
 // ============================================================================
 // Field Registry (for dynamic field registration)
 // ============================================================================
