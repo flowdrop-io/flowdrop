@@ -68,8 +68,9 @@ interface AuthenticatedFetchBase {
  *   save-as-copy URL). The provider's headers go only to the page's own origin
  *   or under the API base, so a backend cannot point the editor at another
  *   host and collect the host's credentials. The API base is `apiBase`, or
- *   `config.baseUrl`; `apiBase: undefined` says there is none (only the page's
- *   own origin qualifies). The type refuses a call with neither.
+ *   `config.baseUrl` when `apiBase` is `undefined` or left out; with neither,
+ *   only the page's own origin qualifies. The type refuses a call that names
+ *   neither key.
  */
 export type AuthenticatedFetchOptions = AuthenticatedFetchBase &
   (
@@ -144,7 +145,14 @@ function headerPairs(init: HeadersInit | undefined | null): [string, string][] {
 function providerAllowed(url: string, opts: AuthenticatedFetchOptions): boolean {
   if (!opts.authProvider) return false;
   if (opts.urlSource === 'host-configured') return true;
-  const pageUrl = typeof location === 'undefined' ? undefined : location.href;
+  // The page's base is what `fetch` resolves a relative URL against (a `<base>`
+  // element moves it away from `location.href`), so the origin rule uses it too.
+  const pageUrl =
+    typeof document !== 'undefined' && document.baseURI
+      ? document.baseURI
+      : typeof location === 'undefined'
+        ? undefined
+        : location.href;
   const apiBase = opts.apiBase ?? opts.config?.baseUrl ?? '';
   return mayCarryInstanceAuth(url, apiBase, pageUrl);
 }

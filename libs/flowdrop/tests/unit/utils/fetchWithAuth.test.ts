@@ -255,6 +255,25 @@ describe('authenticatedFetch', () => {
       expect(headersOf(1).Authorization).toBe('Bearer t1');
     });
 
+    it('judges a relative backend-supplied URL by the document base, which is where fetch sends it', async () => {
+      fetchMock.mockResolvedValue(ok());
+      vi.stubGlobal('location', { href: 'https://app.example.com/editor' });
+      vi.stubGlobal('document', { baseURI: 'https://cdn.example.net/assets/' });
+      const p = provider();
+      const call = (url: string) =>
+        rawAuthenticatedFetch(
+          url,
+          {},
+          { urlSource: 'backend-supplied', authProvider: p, apiBase: undefined }
+        );
+      // fetch sends 'data/list' to cdn.example.net: that is the origin judged.
+      await call('data/list');
+      expect(headersOf(0).Authorization).toBe('Bearer t1');
+      // The address bar's host is no longer the page's origin for this rule.
+      await call('https://app.example.com/data/list');
+      expect(headersOf(1).Authorization).toBeUndefined();
+    });
+
     it('sends no provider headers, and calls no hooks, to another host or outside the base path', async () => {
       fetchMock.mockResolvedValue(unauthorized());
       vi.stubGlobal('location', { href: 'https://app.example.com/editor' });
