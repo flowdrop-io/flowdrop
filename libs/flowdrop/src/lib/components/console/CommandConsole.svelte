@@ -124,7 +124,15 @@
   let consoleQueue: Promise<void> = Promise.resolve();
 
   function enqueueConsoleLine(line: string) {
-    consoleQueue = consoleQueue.then(() => handleConsoleLine(line));
+    // A line that throws is reported as a failed line and does not stop the ones queued after it.
+    consoleQueue = consoleQueue
+      .then(() => handleConsoleLine(line))
+      .catch((err: unknown) => {
+        outputEntries.push({
+          type: 'error',
+          text: err instanceof Error ? err.message : String(err)
+        });
+      });
   }
 
   async function handleConsoleLine(line: string) {
