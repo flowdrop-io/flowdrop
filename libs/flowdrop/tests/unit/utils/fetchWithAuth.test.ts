@@ -9,7 +9,7 @@ import {
   type AuthenticatedFetchOptions
 } from '$lib/utils/fetchWithAuth.js';
 import { createEndpointConfig } from '$lib/config/endpoints.js';
-import type { AuthProvider } from '$lib/types/auth.js';
+import { NoAuthProvider, type AuthProvider } from '$lib/types/auth.js';
 
 /**
  * The tests' API lives at api.example.com, which the base names unless a test
@@ -361,6 +361,46 @@ describe('authenticatedFetch', () => {
       await authenticatedFetch('https://api.example.com/p', {}, { authProvider: undefined });
       expect(fetchMock.mock.calls[0][1].redirect).toBeUndefined();
       expect(fetchMock.mock.calls[1][1].redirect).toBeUndefined();
+    });
+
+    it('leaves the redirect mode alone for a provider with no headers to send', async () => {
+      fetchMock.mockResolvedValue(ok());
+      await authenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        { authProvider: { getAuthHeaders: async () => ({}) } }
+      );
+      expect('redirect' in fetchMock.mock.calls[0][1]).toBe(false);
+    });
+
+    it('leaves the redirect mode alone for the no-auth fallback provider', async () => {
+      fetchMock.mockResolvedValue(ok());
+      await authenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        { authProvider: new NoAuthProvider() }
+      );
+      expect('redirect' in fetchMock.mock.calls[0][1]).toBe(false);
+    });
+
+    it('refuses redirects on the retry when the provider has headers by then', async () => {
+      fetchMock.mockResolvedValueOnce(unauthorized()).mockResolvedValueOnce(ok());
+      let token = '';
+      await authenticatedFetch(
+        'https://api.example.com/p',
+        {},
+        {
+          authProvider: {
+            getAuthHeaders: async () => (token ? { Authorization: token } : {}),
+            onUnauthorized: async () => {
+              token = 'Bearer fresh';
+              return true;
+            }
+          }
+        }
+      );
+      expect('redirect' in fetchMock.mock.calls[0][1]).toBe(false);
+      expect(fetchMock.mock.calls[1][1].redirect).toBe('error');
     });
   });
 

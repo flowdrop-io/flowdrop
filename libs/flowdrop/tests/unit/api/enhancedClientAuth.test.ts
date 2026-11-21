@@ -42,6 +42,14 @@ describe('EnhancedFlowDropApiClient request path', () => {
     expect((sent().headers as Record<string, string>).Authorization).toBe('Bearer provider');
   });
 
+  it('leaves the redirect mode alone without an auth provider, and refuses redirects with one', async () => {
+    const config = createEndpointConfig('/api/flowdrop');
+    await new EnhancedFlowDropApiClient(config).getAvailableNodes();
+    expect('redirect' in sent()).toBe(false);
+    await new EnhancedFlowDropApiClient(config, provider).getAvailableNodes();
+    expect(sent(1).redirect).toBe('error');
+  });
+
   it('gives every attempt its own timeout signal', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('network')).mockResolvedValueOnce(okNodes());
     const config = createEndpointConfig('/api/flowdrop', {

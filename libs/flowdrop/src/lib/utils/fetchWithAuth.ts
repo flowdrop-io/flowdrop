@@ -143,13 +143,15 @@ function providerAllowed(url: string, opts: AuthenticatedFetchOptions): boolean 
  * Headers set for the endpoint (3) or the request (4) therefore always win
  * over the provider's, the same rule `endpoint.headers` follows in the
  * dynamic-schema and variable services. Re-invoked for the retry so a refreshed
- * token is picked up.
+ * token is picked up. `providerAdded` says whether the provider contributed at
+ * least one header (a provider with nothing to send, such as the no-auth
+ * fallback, has nothing to protect from a redirect).
  */
 async function buildHeaders(
   init: RequestInit,
   opts: AuthenticatedFetchOptions,
   useProvider: boolean
-): Promise<Record<string, string>> {
+): Promise<{ headers: Record<string, string>; providerAdded: boolean }> {
   // Keyed by lower-case name; the last name spelling set is the one sent.
   const merged = new Map<string, [string, string]>();
   const set = (pairs: Iterable<[string, string]>) => {
@@ -159,11 +161,16 @@ async function buildHeaders(
   const keyed = opts.config && opts.endpointKey;
   set(keyed ? [['Content-Type', 'application/json']] : Object.entries(DEFAULT_HEADERS));
   set(headerPairs(opts.baseHeaders));
-  if (useProvider && opts.authProvider) set(headerPairs(await opts.authProvider.getAuthHeaders()));
+  let providerAdded = false;
+  if (useProvider && opts.authProvider) {
+    const fromProvider = headerPairs(await opts.authProvider.getAuthHeaders());
+    providerAdded = fromProvider.length > 0;
+    set(fromProvider);
+  }
   if (keyed) set(headerPairs(opts.config?.headers?.[opts.endpointKey as string]));
   set(headerPairs(init.headers));
 
-  return Object.fromEntries(merged.values());
+  return { headers: Object.fromEntries(merged.values()), providerAdded };
 }
 
 interface RefreshState {
@@ -238,25 +245,27 @@ export async function authenticatedFetch(
 ): Promise<Response> {
   // Decided once, on the requested URL (see `urlSource`): a backend-supplied
   // URL on another host gets neither the provider's headers nor its 401/403
-  // hooks. Redirects are not followed while the headers are attached (below),
+  // hooks. Redirects are not followed while provider headers are attached (below),
   // so a redirect cannot carry them to another host.
   const provider = providerAllowed(url, opts) ? opts.authProvider : undefined;
-  const attempt = (headers: Record<string, string>): Promise<Response> => {
+  const attempt = (built: {
+    headers: Record<string, string>;
+    providerAdded: boolean;
+  }): Promise<Response> => {
     const base = attemptInit(init, opts);
-    const redirect = provider && init.redirect === undefined ? { redirect: 'error' as const } : {};
-    return fetch(url, { ...base, ...redirect, headers });
+    const redirect =
+      built.providerAdded && init.redirect === undefined ? { redirect: 'error' as const } : {};
+    return fetch(url, { ...base, ...redirect, headers: built.headers });
   };
   const completedAtSend = provider ? stateOf(provider).completed : 0;
-  const headers = await buildHeaders(init, opts, !!provider);
-  let response = await attempt(headers);
+  let response = await attempt(await buildHeaders(init, opts, !!provider));
 
   // 401 → let the provider refresh, then retry once with fresh headers. A
   // refresh that finished after this request was sent counts: no second one.
   if (response.status === 401 && provider?.onUnauthorized) {
     const refreshed = await refreshedSince(provider, completedAtSend);
     if (refreshed) {
-      const retryHeaders = await buildHeaders(init, opts, true);
-      response = await attempt(retryHeaders);
+      response = await attempt(await buildHeaders(init, opts, true));
     }
   }
 
