@@ -337,22 +337,27 @@
   /**
    * The label of a select's empty option, which an absent value shows: the
    * default ("Default (x)", x as the option's label) when the schema has one,
-   * else a dash. `undefined` (no empty option) when `''` is one of the choices.
+   * else a dash. A stored `''` is not absent, so it shows the dash, not the
+   * default. `undefined` (no empty option) when `''` is one of the choices.
    */
   function selectEmptyLabel(options: string[] | FieldOption[]): string | undefined {
     const normalized = normalizeOptions(options);
     if (normalized.some((option) => option.value === '')) return undefined;
-    if (schema.default === undefined || schema.default === null) return '—';
+    if (value !== undefined || schema.default === undefined || schema.default === null) return '—';
     const match = normalized.find((option) => option.value === String(schema.default));
     return m().form.field.defaultOption({ value: match?.label ?? String(schema.default) });
   }
 
   /**
    * A field's schema default as placeholder text, so an emptied field (whose
-   * key is then absent and whose default applies) shows what will be used.
+   * key is then absent and whose default applies) shows what will be used. Only an
+   * absent value does: a stored `''` is a value and beats the default.
    */
-  function defaultPlaceholder(value: unknown): string {
-    return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+  function defaultPlaceholder(defaultValue: unknown, current: unknown): string {
+    if (current !== undefined) return '';
+    return typeof defaultValue === 'string' || typeof defaultValue === 'number'
+      ? String(defaultValue)
+      : '';
   }
 </script>
 
@@ -440,7 +445,7 @@
       <FormTextarea
         id={fieldKey}
         value={stringValue}
-        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default)}
+        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default, value)}
         {required}
         ariaDescribedBy={describedBy}
         disabled={schema.readOnly === true}
@@ -450,7 +455,7 @@
       <FormTextField
         id={fieldKey}
         value={stringValue}
-        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default)}
+        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default, value)}
         {required}
         ariaDescribedBy={describedBy}
         disabled={schema.readOnly === true}
@@ -460,7 +465,7 @@
       <FormNumberField
         id={fieldKey}
         value={numberValue}
-        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default)}
+        placeholder={schema.placeholder ?? defaultPlaceholder(schema.default, value)}
         min={schema.minimum}
         max={schema.maximum}
         step={schema.step}
