@@ -3485,6 +3485,16 @@ describe('executeCommand — locked editor', () => {
     expect(!real.ok && real.code).toBe('LOCKED');
   });
 
+  it('does not let dryRun on another command through', () => {
+    const { dispatch, context } = lockedContext();
+    const result = executeCommand(
+      { type: 'delete_node', nodeId: 'n1', dryRun: true } as unknown as Command,
+      context
+    );
+    expect(!result.ok && result.code).toBe('LOCKED');
+    expect(dispatch.removeNode).not.toHaveBeenCalled();
+  });
+
   it('still runs reads and view commands', () => {
     const { context } = lockedContext();
     expect(executeCommand({ type: 'list_nodes' } as Command, context).ok).toBe(true);

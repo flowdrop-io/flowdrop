@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   isMutatingCommand,
   isLayoutCommand,
-  isViewCommand
+  isViewCommand,
+  isDocumentChange
 } from '../../../src/lib/chat/commandClassifier.js';
 import { parseCommand } from '../../../src/lib/commands/parser.js';
 
@@ -103,5 +104,39 @@ describe('isLayoutCommand', () => {
     expect(fitview.ok).toBe(true);
     if (!fitview.ok) return;
     expect(isLayoutCommand(fitview.command.type)).toBe(false);
+  });
+});
+
+describe('isDocumentChange', () => {
+  it('honours dryRun only for the two layout previews', () => {
+    expect(isDocumentChange({ type: 'beautify_layout', dryRun: true })).toBe(false);
+    expect(isDocumentChange({ type: 'beautify_node', dryRun: true })).toBe(false);
+    expect(isDocumentChange({ type: 'beautify_layout' })).toBe(true);
+  });
+
+  it.each(['delete_node', 'add_node', 'set_config', 'clear', 'auto_layout', 'interface_set'])(
+    '%s with dryRun: true is still a change',
+    (type) => {
+      expect(isDocumentChange({ type, dryRun: true })).toBe(true);
+    }
+  );
+
+  it('reads and view commands are never changes', () => {
+    expect(isDocumentChange({ type: 'list_nodes' })).toBe(false);
+    expect(isDocumentChange({ type: 'canvas_zoom_in' })).toBe(false);
+  });
+
+  it('decides the assistant panel: a parsed dry run auto-runs, a layout opt-out skips only real runs', () => {
+    const dry = parseCommand('layout beautify --dry-run');
+    const real = parseCommand('layout beautify');
+    if (!dry.ok || !real.ok) throw new Error('layout beautify should parse');
+    // Approval gate: `!isDocumentChange` runs without asking.
+    expect(isDocumentChange(dry.command)).toBe(false);
+    expect(isDocumentChange(real.command)).toBe(true);
+    // Layout opt-out: `isLayoutCommand && isDocumentChange` skips.
+    const skipped = (c: { type: string; dryRun?: boolean }) =>
+      isLayoutCommand(c.type) && isDocumentChange(c);
+    expect(skipped(real.command)).toBe(true);
+    expect(skipped(dry.command)).toBe(false);
   });
 });

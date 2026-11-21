@@ -97,14 +97,22 @@ export function isViewCommand(commandType: string): boolean {
   return VIEW_COMMANDS.has(commandType);
 }
 
+/** Commands whose `dryRun` flag really is a preview: they report and change nothing. */
+const DRY_RUN_COMMANDS: ReadonlySet<string> = new Set(['beautify_layout', 'beautify_node']);
+
 /**
  * Whether running a command would change the user's workflow document: it is
- * mutating, is not a view command, and is not a dry run (a dry run reports
- * what it would do and changes nothing). The lock check, the approval gate
- * and the layout opt-out all ask this one question.
+ * mutating and is not a view command. The lock check, the approval gate and
+ * the layout opt-out all ask this one question.
+ *
+ * `dryRun` is honoured only where the command is a preview
+ * (`beautify_layout`, `beautify_node`). On any other command the flag is
+ * ignored, so a `delete_node` with `dryRun: true` is still a change and a
+ * locked or read-only editor refuses it.
  *
  * @param command - The command, or any object with a `type` (and optional `dryRun`)
  */
 export function isDocumentChange(command: { type: string; dryRun?: boolean }): boolean {
-  return command.dryRun !== true && isMutatingCommand(command.type) && !isViewCommand(command.type);
+  if (command.dryRun === true && DRY_RUN_COMMANDS.has(command.type)) return false;
+  return isMutatingCommand(command.type) && !isViewCommand(command.type);
 }
