@@ -5,7 +5,8 @@
  * isOneOfArray, and oneOfToOptions from form/types.ts
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
+import { editorTypeWord } from '$lib/utils/schemaType.js';
 import {
   normalizeOptions,
   getSchemaOptions,
@@ -161,5 +162,21 @@ describe('getSchemaOptions', () => {
   it('should return empty array for empty oneOf', () => {
     const schema: FieldSchema = { type: 'string', oneOf: [] };
     expect(getSchemaOptions(schema)).toEqual([]);
+  });
+});
+
+describe('FieldSchema.type', () => {
+  it('accepts a host-defined type word and a list of words', () => {
+    // Compile-only: svelte-check fails these lines if the type is closed again.
+    const custom: FieldSchema = { type: 'color' };
+    const list: FieldSchema = { type: ['color', 'null'] };
+    const known: FieldSchema = { type: ['string', 'null'] };
+    expect([custom.type, list.type, known.type]).toHaveLength(3);
+    expectTypeOf(custom.type).toEqualTypeOf<FieldSchema['type']>();
+  });
+
+  it('edits an unknown word as JSON: no editor type word', () => {
+    expect(editorTypeWord('color')).toBeUndefined();
+    expect(editorTypeWord(['color', 'null'])).toBeUndefined();
   });
 });

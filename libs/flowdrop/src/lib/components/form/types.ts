@@ -263,8 +263,17 @@ export type { AutocompleteConfig } from '$lib/types/index.js';
  * - `oneOf` with `const`/`title` for labeled options
  */
 export interface FieldSchema {
-  /** The field type from JSON Schema: a type word, an array of them (`null` included), or absent. */
-  type?: PropertyTypeWord | PropertyTypeWord[];
+  /**
+   * The field type from JSON Schema: a type word, an array of them (`null`
+   * included), or absent. A host's own word (`'color'`) is accepted so a
+   * registered field can match on it; with no registered field it is edited as JSON.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- keeps the known words suggested while accepting any string
+  type?:
+    | PropertyTypeWord
+    | PropertyTypeWord[]
+    | (string & {})
+    | (PropertyTypeWord | (string & {}))[];
   /** What a missing required parameter does: `fail` (default) or `skip` the node. */
   when_missing?: 'fail' | 'skip';
   /** Display title for the field */
