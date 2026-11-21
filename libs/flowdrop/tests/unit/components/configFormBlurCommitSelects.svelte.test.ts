@@ -76,4 +76,15 @@ describe('blur commit mode', () => {
     flushSync();
     expect(calls.at(-1)).toEqual({ on: true });
   });
+
+  it('leaves a select with an empty enum to commit on focus-out', () => {
+    const { target, calls } = mountBlur(
+      { type: 'object', properties: { a: { type: 'string', enum: [] } } },
+      { a: 'x' }
+    );
+    const select = target.querySelector<HTMLSelectElement>('select')!;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    flushSync();
+    expect(calls).toEqual([]);
+  });
 });

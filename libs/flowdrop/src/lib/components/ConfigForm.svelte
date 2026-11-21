@@ -200,6 +200,15 @@
     return configEditOptions.preferDynamicSchema === true;
   });
 
+  /** Last layered schema with the inputs it was built from (see `typeConfigSchema`). */
+  let mergedSchemaMemo: {
+    staticSchema: unknown;
+    fetched: ConfigSchema;
+    strategy: unknown;
+    target: string;
+    result: ConfigSchema | undefined;
+  } | null = null;
+
   /**
    * The node type's own configuration schema: direct prop, node metadata, or a
    * dynamically fetched one layered on top.
@@ -212,9 +221,31 @@
     // static schema, the fetched schema is the form.
     if (fetchedDynamicSchema) {
       const endpoint = configEditOptions?.dynamicSchema;
-      return endpoint
-        ? applyFetchedSchema(staticSchema, fetchedDynamicSchema, endpoint)
-        : fetchedDynamicSchema;
+      if (!endpoint) return fetchedDynamicSchema;
+      // applyFetchedSchema returns a new object on every call, and this derived
+      // re-runs whenever the node object is replaced (every live commit). Reuse the
+      // last result while its inputs are the same references, so the schema's
+      // identity only moves when the schema does.
+      const target = endpoint.target == null ? '' : JSON.stringify(endpoint.target);
+      const hit = mergedSchemaMemo;
+      if (
+        hit &&
+        hit.staticSchema === staticSchema &&
+        hit.fetched === fetchedDynamicSchema &&
+        hit.strategy === endpoint.mergeStrategy &&
+        hit.target === target
+      ) {
+        return hit.result;
+      }
+      const result = applyFetchedSchema(staticSchema, fetchedDynamicSchema, endpoint);
+      mergedSchemaMemo = {
+        staticSchema,
+        fetched: fetchedDynamicSchema,
+        strategy: endpoint.mergeStrategy,
+        target,
+        result
+      };
+      return result;
     }
     return staticSchema;
   });
@@ -623,8 +654,8 @@
       nullToggled ||
       (prop &&
         (editorTypeWord(prop.type) === 'boolean' ||
-          Array.isArray(prop.enum) ||
-          Array.isArray(prop.oneOf)))
+          (Array.isArray(prop.enum) && prop.enum.length > 0) ||
+          (Array.isArray(prop.oneOf) && prop.oneOf.length > 0)))
     ) {
       commitEdits();
     }
