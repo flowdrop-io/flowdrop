@@ -256,9 +256,11 @@ describe('validateToolArgs', () => {
   it('interface_set takes a string for name, description and dataType (an empty one clears)', () => {
     for (const field of ['name', 'description', 'dataType']) {
       for (const value of [null, 1, true, { a: 1 }, ['x']]) {
-        expect(() => run('interface_set', { side: 'input', id: 'q', field, value })).toThrow(
-          /takes a string; pass "" to clear it/
-        );
+        const attempt = () => run('interface_set', { side: 'input', id: 'q', field, value });
+        expect(attempt).toThrow(/takes a string/);
+        // A data type cannot be cleared, so it is not told to pass "".
+        if (field === 'dataType') expect(attempt).not.toThrow(/clear it/);
+        else expect(attempt).toThrow(/pass "" to clear it/);
       }
       expect(run('interface_set', { side: 'input', id: 'q', field, value: '' })).toEqual([
         { type: 'interface_set', side: 'input', id: 'q', field, value: '""' }

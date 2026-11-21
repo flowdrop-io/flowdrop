@@ -687,8 +687,10 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
       // The text fields take a string only: `null` would be stored as the text
       // "null". An empty string is how an optional one is cleared.
       if (TEXT_INTERFACE_FIELDS.has(a.field as string) && typeof a.value !== 'string') {
+        // dataType cannot be cleared, so the hint to pass "" is left out for it.
+        const hint = a.field === 'dataType' ? '' : '; pass "" to clear it';
         throw new ToolArgumentError(
-          `${String(a.field)} takes a string; pass "" to clear it (null or a non-string is not accepted)`
+          `${String(a.field)} takes a string${hint} (null or a non-string is not accepted)`
         );
       }
       return {
