@@ -1029,7 +1029,7 @@
           config: endpointConfig ?? undefined,
           endpointKey: 'nodes.list',
           urlSource: 'host-configured',
-          authProvider
+          authProvider: fd.api.authProvider
         }
       );
       const data = await response.json();
