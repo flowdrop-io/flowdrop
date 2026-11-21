@@ -27,7 +27,7 @@ import type { MessagesOverride } from '../messages/types.js';
 
 /** One property of a tool's input schema. */
 export interface ToolSchemaProperty {
-  type?: 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array';
+  type?: 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null';
   description?: string;
   enum?: readonly string[];
   properties?: Record<string, ToolSchemaProperty>;

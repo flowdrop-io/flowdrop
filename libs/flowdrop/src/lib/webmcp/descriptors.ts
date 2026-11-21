@@ -186,7 +186,8 @@ const configValue: ToolSchemaProperty = {
     { type: 'number' },
     { type: 'boolean' },
     { type: 'object' },
-    { type: 'array' }
+    { type: 'array' },
+    { type: 'null' }
   ]
 };
 

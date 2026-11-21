@@ -59,6 +59,8 @@ function matchesType(value: unknown, type: NonNullable<ToolSchemaProperty['type'
       return typeOf(value) === 'object';
     case 'array':
       return Array.isArray(value);
+    case 'null':
+      return value === null;
   }
 }
 

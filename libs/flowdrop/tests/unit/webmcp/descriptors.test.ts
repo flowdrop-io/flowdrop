@@ -253,13 +253,15 @@ describe('validateToolArgs', () => {
     expect(() => run('list_nodes', 'x')).toThrow(/arguments must be an object/);
   });
 
-  it('set_config accepts every primitive shape and rejects null', () => {
-    for (const value of ['a', 1, true, { a: 1 }, [1]]) {
+  it('set_config and interface_set accept every primitive shape and null', () => {
+    for (const value of ['a', 1, true, { a: 1 }, [1], null]) {
       expect(() => run('set_config', { nodeId: 'a.1', key: 'k', value })).not.toThrow();
+      expect(() =>
+        run('interface_set', { side: 'input', id: 'q', field: 'default', value })
+      ).not.toThrow();
     }
-    expect(() => run('set_config', { nodeId: 'a.1', key: 'k', value: null })).toThrow(
-      /value: expected one of/
-    );
+    expect(() => run('set_config', { nodeId: 'a.1', key: 'k' })).toThrow(/value/);
+    expect(() => run('set_config', { nodeId: 'a.1', key: 'k', value: undefined })).toThrow(/value/);
   });
 });
 
