@@ -80,6 +80,8 @@ export { default as Logo } from '../components/Logo.svelte';
 
 // Console Components
 export { default as CommandConsole } from '../components/console/CommandConsole.svelte';
+/** What `App` offers the Console beyond the instance: the type of `CommandConsole`'s `editorHost` prop. */
+export type { ConsoleHost } from '../commands/console.js';
 
 // ============================================================================
 // Mount Functions
