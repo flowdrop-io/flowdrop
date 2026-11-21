@@ -366,3 +366,21 @@ describe('mountWorkflowEditor().runCommand', () => {
     app.destroy();
   });
 });
+
+describe('runCommand on a read-only mount', () => {
+  it('still runs a change a host sends (a host can lay out a model it only displays)', async () => {
+    const app = await mountApp(makeWorkflow(), { mode: 'readonly' });
+    const result = await app.runCommand('rename a.1 Shown');
+    expect(result.ok).toBe(true);
+    expect(labelOf(app, 'a.1')).toBe('Shown');
+    app.destroy();
+  });
+
+  it('a lock still refuses it', async () => {
+    const app = await mountApp(makeWorkflow(), { mode: 'readonly' });
+    app.instance.lock.set({ reasons: [{ kind: 'in_use', message: 'In use.' }], actions: [] });
+    const result = await app.runCommand('rename a.1 Nope');
+    expect(!result.ok && result.code).toBe('LOCKED');
+    app.destroy();
+  });
+});

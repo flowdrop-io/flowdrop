@@ -8,7 +8,7 @@
   import { getBehaviorSettings } from '../../stores/settingsStore.svelte.js';
   import { extractCommands } from '../../chat/responseParser.js';
   import { buildApiHistory } from '../../chat/historyBuilder.js';
-  import { isMutatingCommand, isLayoutCommand } from '../../chat/commandClassifier.js';
+  import { isDocumentChange, isLayoutCommand } from '../../chat/commandClassifier.js';
   import { parseCommand } from '../../commands/parser.js';
   import { executeCommand } from '../../commands/index.js';
   import { createStoreCommandContext } from '../../commands/storeIntegration.svelte.js';
@@ -264,7 +264,7 @@
   }
 
   function getCommandContext() {
-    return createStoreCommandContext(nodeTypes, onUIAction, fd);
+    return createStoreCommandContext(nodeTypes, onUIAction, fd, { agent: true });
   }
 
   // =========================================================================
@@ -516,7 +516,7 @@
         continue;
       }
 
-      if (!isMutatingCommand(parsed.command.type)) {
+      if (!isDocumentChange(parsed.command)) {
         // Auto-execute read-only commands
         if (context) {
           const result = executeCommand(parsed.command, context);
@@ -605,7 +605,11 @@
         parseErrors.push({ raw: item.raw, error: parsed.error });
         continue;
       }
-      if (!allowLayoutChanges && isLayoutCommand(parsed.command.type)) {
+      if (
+        !allowLayoutChanges &&
+        isLayoutCommand(parsed.command.type) &&
+        isDocumentChange(parsed.command)
+      ) {
         item.status = 'skipped';
         item.result = t.commandPreview.layoutSkipped;
         continue;

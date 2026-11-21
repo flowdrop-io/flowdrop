@@ -18,12 +18,18 @@ import { resolveComponentName } from '../utils/nodeTypes.js';
  * @param onUIAction - Optional callback for UI-side actions (open config panel, select node)
  * @param instance - The FlowDrop instance to operate on; defaults to the
  *   page-default instance when omitted
+ * @param options.agent - The caller is an agent (the AI Assistant, WebMCP), not
+ *   the host or the user. An agent's context also refuses changes while the
+ *   editor is mounted read-only (`fd.readOnly`); the host's own `runCommand`
+ *   and the Console are not agents and only answer to the lock, so a host can
+ *   lay out a model it only displays.
  * @returns CommandContext connected to live stores, or null if no workflow is loaded
  */
 export function createStoreCommandContext(
   nodeTypes: NodeMetadata[],
   onUIAction?: (action: UIAction) => void,
-  instance?: FlowDropInstance
+  instance?: FlowDropInstance,
+  options?: { agent?: boolean }
 ): CommandContext | null {
   const fd = instance ?? getDefaultInstance();
   const readWorkflow = () => fd.workflow.current;
@@ -100,7 +106,7 @@ export function createStoreCommandContext(
     nodeTypes,
     typeMap: buildTypeMap(nodeTypes),
     dispatch,
-    isLocked: () => fd.workflow.locked || fd.readOnly,
+    isLocked: () => fd.workflow.locked || (options?.agent === true && fd.readOnly),
     // The formats the host allows (the `workflowFormats` mount prop), not every registered one.
     formatOptions: () => fd.allowedFormatOptions().map((option) => option.const),
     // Node layout reads the canvas's measurement; without a canvas it falls back to computed geometry.

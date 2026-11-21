@@ -170,9 +170,12 @@ describe('editor-parity commands on the real store', () => {
     expect(executeCommand(parse('interface list'), locked).ok).toBe(true);
   });
 
-  it('refuses writes while the host mounted the editor in a mode other than edit', () => {
+  it('refuses an agent while the host mounted the editor in a mode other than edit, not the host', () => {
     fd.readOnly = true;
-    const ctx = createStoreCommandContext(nodeTypes, undefined, fd);
+    const hostCtx = createStoreCommandContext(nodeTypes, undefined, fd);
+    if (!hostCtx) throw new Error('no context');
+    expect(executeCommand(parse('interface add input h'), hostCtx).ok).toBe(true);
+    const ctx = createStoreCommandContext(nodeTypes, undefined, fd, { agent: true });
     if (!ctx) throw new Error('no context');
     const before = JSON.stringify(fd.workflow.current);
     const result = executeCommand(parse('interface add input q'), ctx);

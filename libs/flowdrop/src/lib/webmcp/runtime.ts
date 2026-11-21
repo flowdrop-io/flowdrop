@@ -369,7 +369,9 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
       });
     }
 
-    const context = createStoreCommandContext(nodeTypes(), onUIAction, instance);
+    const context = createStoreCommandContext(nodeTypes(), onUIAction, instance, {
+      agent: true
+    });
     if (!context) return errorResult('NO_WORKFLOW', 'No workflow is loaded in this editor');
 
     // A locked editor refuses every change: say so now, do not ask first and refuse after.
