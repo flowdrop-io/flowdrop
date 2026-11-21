@@ -216,14 +216,12 @@ function autosaveToastId(fd: FlowDropInstance): string {
 
 /**
  * Why a save is refused before anything is sent, or `null` when it may go
- * ahead: the editor is locked, was mounted read-only (`mode` other than
- * `edit`), or the host's payload said the user may not save
+ * ahead: the editor is locked, or the host's payload said the user may not save
  * (`can.save`). The one place that decides; the Console's `save` asks it for
  * the reason instead of keeping a rule of its own.
  */
 export function saveRefusal(fd: FlowDropInstance): string | null {
   if (fd.workflow.locked) return fd.messages().lock.saveRefused;
-  if (fd.readOnly) return fd.messages().lock.saveReadOnly;
   if (fd.workflow.current?.can?.save === false) return fd.messages().lock.saveForbidden;
   return null;
 }

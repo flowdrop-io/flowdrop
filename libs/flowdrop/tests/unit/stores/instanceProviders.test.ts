@@ -123,14 +123,12 @@ describe('read-only scope', () => {
     fd.destroy();
   });
 
-  it('save is refused on a read-only editor', () => {
+  it("read-only does not refuse the host's own save", () => {
     const fd = createFlowDropInstance({ id: 'scope-3' });
     fd.workflow.initialize(wf);
-    expect(saveRefusal(fd)).toBeNull();
     const withdraw = fd.provideReadOnly(() => true);
-    expect(saveRefusal(fd)).toMatch(/read-only/);
-    withdraw();
     expect(saveRefusal(fd)).toBeNull();
+    withdraw();
     fd.destroy();
   });
 });
