@@ -1,4 +1,4 @@
-import { firstNonNullType } from './schemaType.js';
+import { editorTypeWord } from './schemaType.js';
 
 /**
  * Form value merge — shared by `SchemaForm` and `ConfigForm`.
@@ -71,8 +71,9 @@ export function isClearedValue(field: unknown, value: unknown): boolean {
   }
   if (value !== '') return false;
   if (f.enum || f.oneOf) return !selectOffersEmpty(f);
-  // A nullable field (`['string', 'null']`) is cleared like its plain type.
-  const kind = firstNonNullType(f.type);
+  // A nullable field (`['string', 'null']`) is cleared like its plain type; a field
+  // edited as JSON (several non-null words, no type) has no such clear.
+  const kind = editorTypeWord(f.type);
   if (kind === 'string') return true;
   return (kind === 'number' || kind === 'integer' || kind === 'float') && f.format !== 'range';
 }
