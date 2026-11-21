@@ -421,7 +421,8 @@ export async function fetchDynamicSchema(
  * @param workflowId - Optional workflow ID for context
  * @param callbackUrl - Optional callback URL to append
  * @returns The resolved URL string, or `''` when the URL is neither http(s) nor
- *   relative (another scheme is never opened)
+ *   relative (another scheme is never opened). Unlike `allowedLinkTarget()`, any
+ *   relative URL is kept here (paths, `?query`, `//host`).
  *
  * @example
  * ```typescript
@@ -432,6 +433,10 @@ export async function fetchDynamicSchema(
  *
  * const url = resolveExternalEditUrl(link, node, workflowId);
  * // Returns "https://admin.example.com/nodes/llm-node/edit/node-1"
+ *
+ * if (url === '') {
+ *   // No link: the URL was neither http(s) nor relative.
+ * }
  * ```
  */
 export function resolveExternalEditUrl(
