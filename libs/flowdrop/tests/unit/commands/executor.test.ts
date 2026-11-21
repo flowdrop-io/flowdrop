@@ -3665,13 +3665,24 @@ describe('editor parity commands', () => {
       expect(next.inputs[0]).toMatchObject({ id: 'question', dataType: 'string' });
     });
 
-    it('refuses a taken id and suggests `as`', () => {
+    it('suffixes the default id while it is taken, as the canvas does', () => {
       const { dispatch, run } = setup(
         wf({ interface: { outputs: [{ id: 'raw', dataType: 'string', bindings: [] }] } })
       );
-      const err = errorOf(run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'raw' }));
+      const result = run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'raw' });
+      expect(result.ok).toBe(true);
+      const [next] = (dispatch.editInterface as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(next.outputs.map((e: { id: string }) => e.id)).toEqual(['raw', 'raw_2']);
+    });
+
+    it('refuses a taken id given with `as`', () => {
+      const { dispatch, run } = setup(
+        wf({ interface: { outputs: [{ id: 'raw', dataType: 'string', bindings: [] }] } })
+      );
+      const err = errorOf(
+        run({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'raw', id: 'raw' })
+      );
       expect(err.code).toBe('INVALID_ARGUMENT');
-      expect(err.error).toContain('as <id>');
       expect(dispatch.editInterface).not.toHaveBeenCalled();
     });
 

@@ -40,6 +40,7 @@
     inputHasIncomingEdge,
     removeInterfaceEntry,
     renameInterfaceEntry,
+    seedInterfaceId,
     validateInterfaceId,
     type InterfaceDirection
   } from '$lib/utils/interfaceTags.js';
@@ -133,7 +134,20 @@
         icon: 'mdi:tag-arrow-right-outline',
         testId: 'port-interface-expose',
         disabled: dir === 'input' && inputHasIncomingEdge(workflow, node.id, port.id),
-        onselect: () => (nameEdit = { direction, portId: port.id, mode: 'expose', value: port.id })
+        onselect: () => {
+          const wf = workflow.interface;
+          const taken = (dir === 'input' ? wf?.inputs : wf?.outputs) ?? [];
+          nameEdit = {
+            direction,
+            portId: port.id,
+            mode: 'expose',
+            value: seedInterfaceId(
+              port.id,
+              dir,
+              taken.map((e) => e.id)
+            )
+          };
+        }
       }
     ];
   }

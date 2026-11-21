@@ -17,12 +17,12 @@ import {
   entryAtPort,
   exposableCandidate,
   exposePortAsEntry,
-  foldToInterfaceId,
   inputHasIncomingEdge,
   moveInterfaceEntry,
   patchInterfaceEntry,
   removeInterfaceEntry,
   renameInterfaceEntry,
+  seedInterfaceId,
   validateInterfaceId,
   type InterfaceEditResult
 } from '../utils/interfaceTags.js';
@@ -244,8 +244,18 @@ export function executeInterfaceExpose(
     );
   }
 
-  // The default id is the port id folded to the id alphabet (`userQuery` -> `user_query`).
-  const id = (command.id ?? foldToInterfaceId(command.port, direction)).trim();
+  // The default id is the one the canvas offers: the port id folded to the id
+  // alphabet (`userQuery` -> `user_query`), suffixed (`_2`, ...) while it is taken.
+  const taken =
+    (direction === 'input' ? workflow.interface?.inputs : workflow.interface?.outputs) ?? [];
+  const id = (
+    command.id ??
+    seedInterfaceId(
+      command.port,
+      direction,
+      taken.map((e) => e.id)
+    )
+  ).trim();
   const reason = validateInterfaceId(id, direction, workflow.interface);
   if (reason) return idError(reason, direction, id, command.id === undefined);
 
