@@ -130,7 +130,7 @@ function mockRuns(
     session?: { id: string; name: string } | null;
     status?: string;
     isExecuting?: boolean;
-    turnInputs?: unknown;
+    entries?: Array<{ id: string; name?: string; dataType: string; required?: boolean }>;
     messages?: Array<Record<string, unknown>>;
     canLaunch?: boolean;
     takeTurn?: boolean;
@@ -164,7 +164,11 @@ function mockRuns(
           },
     isExecuting: overrides.isExecuting ?? false,
     turnPending: false,
-    turnInputs: overrides.turnInputs ?? { ok: true, inputs: {} },
+    turnInputs: { ok: true, inputs: {} },
+    interfaceFormEntries: overrides.entries ?? [
+      { id: 'existing', dataType: 'string' },
+      { id: 'topic', dataType: 'string' }
+    ],
     get formValues() {
       return state.formValues;
     },
@@ -296,25 +300,37 @@ describe('execute session commands', () => {
     });
 
     it('names the missing required inputs', async () => {
-      const { runs, mock } = mockRuns({
+      const { runs, mock, playground } = mockRuns({
         mode: 'form',
-        turnInputs: {
-          ok: false,
-          missing: [{ id: 'topic', name: 'Topic' }, { id: 'n' }],
-          invalid: []
-        }
+        entries: [
+          { id: 'topic', name: 'Topic', dataType: 'string', required: true },
+          { id: 'n', dataType: 'number', required: true }
+        ]
       });
       const result = await run('session run', runs);
       expect(!result.ok && result.error).toContain('Topic, n');
       expect(mock.takeTurn).not.toHaveBeenCalled();
+      expect(playground.setFormValues).not.toHaveBeenCalled();
+    });
+
+    it('refuses keys that are not interface inputs by name and leaves the form alone', async () => {
+      const { runs, mock, playground, state } = mockRuns({ mode: 'form' });
+      state.formValues = { topic: 'keep' };
+      const result = await run('session run tpoic=x topic=new other=1', runs);
+      expect(result).toMatchObject({ ok: false, code: 'CONSOLE_REFUSED' });
+      expect(!result.ok && result.error).toContain('tpoic, other');
+      expect(playground.setFormValues).not.toHaveBeenCalled();
+      expect(state.formValues).toEqual({ topic: 'keep' });
+      expect(mock.takeTurn).not.toHaveBeenCalled();
     });
 
     it('names the inputs whose text is not JSON of their type', async () => {
-      const { runs, mock } = mockRuns({
+      const { runs, mock, playground } = mockRuns({
         mode: 'form',
-        turnInputs: { ok: false, missing: [], invalid: [{ id: 'values', name: 'Values' }] }
+        entries: [{ id: 'values', name: 'Values', dataType: 'array' }]
       });
       const result = await run('session run values=2,3', runs);
+      expect(playground.setFormValues).not.toHaveBeenCalled();
       expect(!result.ok && result.error).toContain('Not valid JSON for its type: Values');
       expect(!result.ok && result.error).not.toContain('Missing');
       expect(mock.takeTurn).not.toHaveBeenCalled();

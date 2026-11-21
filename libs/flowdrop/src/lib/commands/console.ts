@@ -28,6 +28,7 @@ import type { FlowDropInstance } from '../stores/instanceContainer.svelte.js';
 import type { RunController } from '../stores/runController.svelte.js';
 import { countTripleQuotes } from './parser.js';
 import { resolveIdPrefix } from './helpers.js';
+import { collectInterfaceInputs } from '../utils/workflowInterface.js';
 import { isPlaygroundChatSet } from '../utils/playgroundChat.js';
 import { resolveSessionEndpoint } from '../config/endpoints.js';
 import { cancelRun, listRuns, rerunRun, runsSupport } from '../services/runsService.js';
@@ -336,11 +337,24 @@ async function run(inputs: Record<string, string>, runs: RunController): Promise
 
   const mode = playground.inputMode;
   if (mode === 'form' || mode === 'run') {
-    playground.setFormValues({ ...playground.formValues, ...inputs });
-    const turnInputs = playground.turnInputs;
+    // Check against a local merge first: a refused run leaves the form as it was.
+    const entries = playground.interfaceFormEntries;
+    const known = new Set(entries.map((entry) => entry.id));
+    const unknown = Object.keys(inputs).filter((key) => !known.has(key));
+    if (unknown.length > 0) {
+      return failure(
+        `Not interface inputs of this workflow: ${unknown.join(', ')}. Available: ${
+          entries.map((entry) => entry.id).join(', ') || 'none'
+        }.`,
+        'CONSOLE_REFUSED'
+      );
+    }
+    const merged = { ...playground.formValues, ...inputs };
+    const turnInputs = collectInterfaceInputs(entries, merged);
     if (!turnInputs.ok) {
       return failure(refusedInputs(turnInputs), 'CONSOLE_REFUSED');
     }
+    playground.setFormValues(merged);
     const accepted = await runs.takeTurn({});
     if (!accepted) return refusal(runs, 'The run was not accepted.');
     return { ok: true, message: acceptedMessage(runs, 'Run started in') };
