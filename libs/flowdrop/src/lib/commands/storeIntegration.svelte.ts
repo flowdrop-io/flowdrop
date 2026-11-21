@@ -100,9 +100,9 @@ export function createStoreCommandContext(
     nodeTypes,
     typeMap: buildTypeMap(nodeTypes),
     dispatch,
-    isLocked: () => fd.workflow.locked,
+    isLocked: () => fd.workflow.locked || fd.readOnly,
     // The formats the host allows (the `workflowFormats` mount prop), not every registered one.
-    formatOptions: () => fd.formats.getAllowedOptions().map((option) => option.const),
+    formatOptions: () => fd.allowedFormatOptions().map((option) => option.const),
     // Node layout reads the canvas's measurement; without a canvas it falls back to computed geometry.
     measureNode: (nodeId) => fd.measureNode?.(nodeId),
     visualType: (node: WorkflowNode) => {

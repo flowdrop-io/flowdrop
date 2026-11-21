@@ -63,7 +63,7 @@ describe('workflow format offers only what the host allows', () => {
   function setup(allowlist: string[] | null) {
     const fd = createFlowDropInstance({ id: `fmt-${Math.random().toString(36).slice(2)}` });
     fd.workflow.initialize(createTestWorkflow({ nodes: [] }));
-    fd.formats.allowlist = allowlist;
+    fd.formatAllowlist = allowlist;
     const context = createStoreCommandContext([], undefined, fd);
     if (!context) throw new Error('no context');
     const run = (line: string) => {
@@ -87,5 +87,15 @@ describe('workflow format offers only what the host allows', () => {
     const { context, run } = setup(null);
     expect(context.formatOptions?.()).toContain('agentspec');
     expect(run('workflow format agentspec').ok).toBe(true);
+  });
+
+  it('keeps the allowlist on the instance, not on the public registry', () => {
+    const { fd } = setup(['flowdrop']);
+    expect(fd.allowedFormatOptions().map((o) => o.const)).toEqual(['flowdrop']);
+    expect(fd.formats.getOneOfOptions().length).toBeGreaterThan(1);
+    expect('allowlist' in fd.formats).toBe(false);
+    expect('getAllowedOptions' in fd.formats).toBe(false);
+    fd.formatAllowlist = null;
+    expect(fd.allowedFormatOptions().length).toBeGreaterThan(1);
   });
 });

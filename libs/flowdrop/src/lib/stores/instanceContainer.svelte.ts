@@ -191,6 +191,27 @@ export interface FlowDropInstance {
    */
   skinScope: string | null;
   /**
+   * The formats the host allows (the `workflowFormats` mount prop), or `null`
+   * for no restriction. Set by `App` while it is mounted and cleared when it
+   * unmounts. Reactive. Read through {@link allowedFormatOptions}.
+   * @internal
+   */
+  formatAllowlist: readonly string[] | null;
+  /**
+   * The formats the format picker and `workflow format` offer: the registered
+   * ones narrowed to {@link formatAllowlist}.
+   * @internal
+   */
+  allowedFormatOptions(): Array<{ const: string; title: string }>;
+  /**
+   * Whether the host's `mode` is anything other than `'edit'`. Set by `App`
+   * while it is mounted and cleared when it unmounts. While true the tool
+   * runtimes (WebMCP, the AI Assistant, the command executor) refuse edits the
+   * way they do for a locked workflow. Reactive.
+   * @internal
+   */
+  readOnly: boolean;
+  /**
    * How the mounted canvas measured a node (size and handle centres from its
    * top-left), registered by the editor while its canvas is mounted. Node
    * layout commands read it so they work from the geometry on screen; without
@@ -338,6 +359,10 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   // Reactive, so the loopback lanes recompute once the canvas registers its measurement.
   let measureNodeFn = $state.raw<((nodeId: string) => MeasuredCard | undefined) | null>(null);
 
+  const instanceFormats = new WorkflowFormatRegistry(getBuiltinFormatAdapters());
+  let formatAllowlist = $state.raw<readonly string[] | null>(null);
+  let readOnlyFlag = $state(false);
+
   const cleanups: Array<() => void> = [
     () => historyBindings.cleanup(),
     () => historyBindings.setOnRestoreCallback(null),
@@ -377,7 +402,7 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
       defaultType: 'workflowNode'
     }),
     fields: new FieldComponentRegistry(),
-    formats: new WorkflowFormatRegistry(getBuiltinFormatAdapters()),
+    formats: instanceFormats,
     categories: new CategoriesStore(),
     portCoordinates: new PortCoordinateStore(),
     portCompatibility: new PortCompatibilityChecker(DEFAULT_PORT_CONFIG),
@@ -402,6 +427,24 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     }),
     approvalGate: null,
     skinScope: null,
+    get formatAllowlist() {
+      return formatAllowlist;
+    },
+    set formatAllowlist(list) {
+      formatAllowlist = list;
+    },
+    allowedFormatOptions() {
+      const allowed = formatAllowlist;
+      return instanceFormats
+        .getOneOfOptions()
+        .filter((option) => !allowed || allowed.includes(option.const));
+    },
+    get readOnly() {
+      return readOnlyFlag;
+    },
+    set readOnly(value) {
+      readOnlyFlag = value;
+    },
     get measureNode() {
       return measureNodeFn;
     },

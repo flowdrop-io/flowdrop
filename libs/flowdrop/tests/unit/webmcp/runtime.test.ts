@@ -257,6 +257,57 @@ describe('a locked editor', () => {
   });
 });
 
+describe('an editor mounted with a mode other than edit', () => {
+  it('answers LOCKED to a change and to save, without asking, and still runs a read', async () => {
+    const approval = vi.fn(async () => true);
+    const onSave = vi.fn(async () => undefined);
+    const { instance, runtime } = setup({ approval, hooks: { onSave } });
+    instance.readOnly = true;
+    const res = await runtime.runTool('add_node', { nodeTypeId: 'text_input' });
+    expect(res.isError).toBe(true);
+    expect(parse(res).code).toBe('LOCKED');
+    expect(parse(await runtime.runTool('save', {})).code).toBe('LOCKED');
+    expect(approval).not.toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(instance.workflow.current?.nodes).toHaveLength(0);
+    expect(instance.workflow.locked).toBe(false);
+    expect(parse(await runtime.runTool('list_nodes', {})).code).not.toBe('LOCKED');
+  });
+
+  it('works again once the flag is cleared', async () => {
+    const { instance, runtime } = setup();
+    instance.readOnly = true;
+    instance.readOnly = false;
+    expect(parse(await runtime.runTool('add_node', { nodeTypeId: 'text_input' })).ok).toBe(true);
+  });
+});
+
+describe('a dry run', () => {
+  it('is not a document change: it runs on a locked editor without asking', async () => {
+    const approval = vi.fn(async () => true);
+    const { instance, runtime } = setup({ approval });
+    instance.lock.set({ reasons: [{ kind: 'in_use', message: 'In use.' }] });
+    const res = await runtime.runTool('beautify_layout', { dryRun: true });
+    expect(parse(res).code).not.toBe('LOCKED');
+    expect(approval).not.toHaveBeenCalled();
+    expect(runtime.preview('beautify_layout', { dryRun: true })).toMatchObject({
+      mutating: false,
+      asks: false
+    });
+    // The real run is still refused.
+    expect(parse(await runtime.runTool('beautify_layout', {})).code).toBe('LOCKED');
+  });
+
+  it('is not skipped by the layout opt-out', () => {
+    const { runtime } = setup();
+    updateSettings({ behavior: { chatAllowLayoutChanges: false } });
+    const dry = runtime.preview('beautify_layout', { dryRun: true });
+    expect(dry?.skipped).toEqual([]);
+    expect(dry?.commands.map((c) => c.type)).toEqual(['beautify_layout']);
+    expect(runtime.preview('beautify_layout', {})?.skipped).toHaveLength(1);
+  });
+});
+
 describe('buildHostToolDescriptors', () => {
   it('run_status needs both onRun and onRunStatus', () => {
     const statusOnly = buildHostToolDescriptors({

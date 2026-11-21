@@ -169,4 +169,19 @@ describe('editor-parity commands on the real store', () => {
     expect(JSON.stringify(fd.workflow.current)).toBe(before);
     expect(executeCommand(parse('interface list'), locked).ok).toBe(true);
   });
+
+  it('refuses writes while the host mounted the editor in a mode other than edit', () => {
+    fd.readOnly = true;
+    const ctx = createStoreCommandContext(nodeTypes, undefined, fd);
+    if (!ctx) throw new Error('no context');
+    const before = JSON.stringify(fd.workflow.current);
+    const result = executeCommand(parse('interface add input q'), ctx);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('LOCKED');
+    expect(JSON.stringify(fd.workflow.current)).toBe(before);
+    expect(fd.workflow.locked).toBe(false);
+    expect(executeCommand(parse('interface list'), ctx).ok).toBe(true);
+    fd.readOnly = false;
+    expect(executeCommand(parse('interface add input q'), ctx).ok).toBe(true);
+  });
 });

@@ -3477,6 +3477,14 @@ describe('executeCommand — locked editor', () => {
     expect(dispatch.removeNode).not.toHaveBeenCalled();
   });
 
+  it('lets a dry run through: it changes nothing', () => {
+    const { context } = lockedContext();
+    const dry = executeCommand({ type: 'beautify_layout', dryRun: true } as Command, context);
+    if (!dry.ok) expect(dry.code).not.toBe('LOCKED');
+    const real = executeCommand({ type: 'beautify_layout' } as Command, context);
+    expect(!real.ok && real.code).toBe('LOCKED');
+  });
+
   it('still runs reads and view commands', () => {
     const { context } = lockedContext();
     expect(executeCommand({ type: 'list_nodes' } as Command, context).ok).toBe(true);

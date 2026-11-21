@@ -417,6 +417,16 @@
   // the same as `mode="locked"` while it lasts.
   const effectiveMode = $derived(fd.lock.isLocked ? 'locked' : mode);
   const canvasEditable = $derived(effectiveMode === 'edit');
+  // The tool runtimes (WebMCP, the AI Assistant, commands) refuse edits while
+  // the host's mode is not 'edit', as they do for a locked workflow.
+  // svelte-ignore state_referenced_locally
+  fd.readOnly = mode !== 'edit';
+  $effect.pre(() => {
+    fd.readOnly = mode !== 'edit';
+  });
+  onDestroy(() => {
+    fd.readOnly = false;
+  });
   // Save's unsaved marker follows the host's mode, not the lock: edits made
   // before a lock arrived are still unsaved (the leave prompt and Run say so).
   const showUnsaved = $derived(mode === 'edit' && fd.workflow.isDirty);
@@ -847,15 +857,14 @@
   // The allowlist is published on the instance too, so the editing commands
   // (`workflow format`, from the Console, WebMCP or `app.run`) offer the same list.
   // svelte-ignore state_referenced_locally
-  fd.formats.allowlist = workflowFormats ?? null;
+  fd.formatAllowlist = workflowFormats ?? null;
   $effect.pre(() => {
-    fd.formats.allowlist = workflowFormats ?? null;
+    fd.formatAllowlist = workflowFormats ?? null;
   });
-  let workflowFormatOptions = $derived(
-    fd.formats
-      .getOneOfOptions()
-      .filter((option) => !workflowFormats || workflowFormats.includes(option.const))
-  );
+  onDestroy(() => {
+    fd.formatAllowlist = null;
+  });
+  let workflowFormatOptions = $derived(fd.allowedFormatOptions());
 
   // Workflow configuration schema (derived to pick up dynamic format options)
   let workflowConfigSchema: ConfigSchema = $derived.by(() => {

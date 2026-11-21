@@ -21,7 +21,7 @@ import type { NodeMetadata } from '../types/index.js';
 import type { Command, CommandResult, UIAction } from '../commands/types.js';
 import { executeBatch } from '../commands/batch.js';
 import { createStoreCommandContext } from '../commands/storeIntegration.svelte.js';
-import { isLayoutCommand, isMutatingCommand, isViewCommand } from '../chat/commandClassifier.js';
+import { isDocumentChange, isLayoutCommand } from '../chat/commandClassifier.js';
 import { getBehaviorSettings } from '../stores/settingsStore.svelte.js';
 import { errorDetails } from '../api/enhanced-client.js';
 import { buildToolDescriptors } from './descriptors.js';
@@ -133,7 +133,7 @@ function stripResult(result: CommandResult): Record<string, unknown> {
  * whole when any of its items is.
  */
 function needsApproval(commands: Command[]): boolean {
-  return commands.some((c) => isMutatingCommand(c.type) && !isViewCommand(c.type));
+  return commands.some((c) => isDocumentChange(c));
 }
 
 /**
@@ -146,7 +146,7 @@ function applyLayoutOptOut(commands: Command[]): { commands: Command[]; skipped:
   if (getBehaviorSettings().chatAllowLayoutChanges) return { commands, skipped: [] };
   const skipped: Command[] = [];
   const kept = commands.filter((c) => {
-    if (isLayoutCommand(c.type)) {
+    if (isLayoutCommand(c.type) && isDocumentChange(c)) {
       skipped.push(c);
       return false;
     }
@@ -293,6 +293,8 @@ export const EDITOR_MODE_TOOLS: readonly HostToolDescriptor[] = [
  */
 export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
   const { instance } = options;
+  /** A locked workflow, or an editor the host mounted with a `mode` other than `edit`: no edits. */
+  const isReadOnly = (): boolean => instance.workflow.locked || instance.readOnly;
   // `run` and `run_status` go through the instance's run controller, so a run
   // an agent starts is the run the editor's run bar shows. The wrapped hooks
   // answer exactly as the host's do.
@@ -369,7 +371,7 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     if (!context) return errorResult('NO_WORKFLOW', 'No workflow is loaded in this editor');
 
     // A locked editor refuses every change: say so now, do not ask first and refuse after.
-    if (instance.workflow.locked && needsApproval(commands)) return lockedResult();
+    if (isReadOnly() && needsApproval(commands)) return lockedResult();
 
     // D3: reads and view changes run; document changes wait for the gate.
     if (needsApproval(commands)) {
@@ -465,7 +467,7 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     }
 
     // The editor refuses a save while locked; do not ask for approval first.
-    if (instance.workflow.locked) return lockedResult();
+    if (isReadOnly()) return lockedResult();
 
     const refused = await askHostGate('save');
     if (refused) return refused;
@@ -598,7 +600,7 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     const host = hostByVerb.get(name);
     if (host) {
       const mutating = !host.readOnly && !host.ungated;
-      const refused = name === 'save' && instance.workflow.locked;
+      const refused = name === 'save' && isReadOnly();
       return {
         commands: [],
         skipped: [],
@@ -618,7 +620,7 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
       skipped,
       mutating,
       consequential: false,
-      asks: gate.asks && mutating && !gate.editsPreApproved && !instance.workflow.locked
+      asks: gate.asks && mutating && !gate.editsPreApproved && !isReadOnly()
     };
   }
 

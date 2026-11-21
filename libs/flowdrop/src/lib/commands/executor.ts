@@ -51,7 +51,7 @@ import type {
   WorkflowEdge,
   WorkflowInterfaceEntry
 } from '../types/index.js';
-import { isMutatingCommand, isViewCommand } from '../chat/commandClassifier.js';
+import { isDocumentChange } from '../chat/commandClassifier.js';
 import { generateNodeId } from '../utils/nodeIds.js';
 import { typeAdmitsNull } from '../utils/schemaType.js';
 import { extractConfigDefaults } from '../utils/nodeIds.js';
@@ -1955,7 +1955,7 @@ function executeCanvasResetView(context: CommandContext): CommandResult {
  */
 export function executeCommand(command: Command, context: CommandContext): CommandResult {
   // A locked editor refuses every change; say so instead of failing silently.
-  if (context.isLocked?.() && isMutatingCommand(command.type) && !isViewCommand(command.type)) {
+  if (context.isLocked?.() && isDocumentChange(command)) {
     return {
       ok: false,
       code: 'LOCKED',

@@ -171,17 +171,4 @@ export class WorkflowFormatRegistry extends BaseRegistry<string, WorkflowFormatA
       title: adapter.name
     }));
   }
-
-  /**
-   * The formats this editor's host allows (the mount prop `workflowFormats`),
-   * or `null` for no restriction. Published by `App`; read by the editing
-   * commands, so `workflow format` offers what the format picker offers.
-   */
-  allowlist: readonly string[] | null = null;
-
-  /** {@link getOneOfOptions} narrowed to the host's {@link allowlist}. */
-  getAllowedOptions(): Array<{ const: string; title: string }> {
-    const allowed = this.allowlist;
-    return this.getOneOfOptions().filter((option) => !allowed || allowed.includes(option.const));
-  }
 }

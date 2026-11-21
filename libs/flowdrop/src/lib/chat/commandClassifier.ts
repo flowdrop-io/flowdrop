@@ -96,3 +96,15 @@ const VIEW_COMMANDS: ReadonlySet<string> = new Set(VIEW_COMMAND_TYPES);
 export function isViewCommand(commandType: string): boolean {
   return VIEW_COMMANDS.has(commandType);
 }
+
+/**
+ * Whether running a command would change the user's workflow document: it is
+ * mutating, is not a view command, and is not a dry run (a dry run reports
+ * what it would do and changes nothing). The lock check, the approval gate
+ * and the layout opt-out all ask this one question.
+ *
+ * @param command - The command, or any object with a `type` (and optional `dryRun`)
+ */
+export function isDocumentChange(command: { type: string; dryRun?: boolean }): boolean {
+  return command.dryRun !== true && isMutatingCommand(command.type) && !isViewCommand(command.type);
+}
