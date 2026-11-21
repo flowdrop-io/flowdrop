@@ -7,8 +7,10 @@
  *
  * - HTML written in the source is shown as text.
  * - Links and images keep only http(s), root-relative and fragment targets;
- *   for any other target the label is shown as text. Images are shown as a
- *   link to their source.
+ *   for any other target the label is shown as text. Relative paths
+ *   (`docs/page`, `./x`, `?q=1`), protocol-relative `//host` and other schemes
+ *   such as `mailto:` are not kept. Images are shown as a link to their source;
+ *   an image inside a link shows its alt text within that link.
  * - Links carry `rel="noopener noreferrer"`.
  * - `headingOffset` moves headings down, up to h6, for pages that already own
  *   the upper levels.
@@ -20,7 +22,7 @@ import { sanitizeHtml } from './sanitize.js';
 
 /** Options for {@link renderMarkdown}. */
 export interface RenderMarkdownOptions {
-  /** Added to each heading level; the result is capped at 6. Default: 0. */
+  /** Added to each heading level; the result is capped at 6. Non-numbers count as 0. Default: 0. */
   headingOffset?: number;
 }
 
@@ -43,7 +45,9 @@ const escapeAttribute = (s: string): string =>
 /**
  * The link rule of {@link renderMarkdown}, for host pages that build their own
  * links: returns the trimmed target when it is http(s), root-relative or a
- * fragment and holds no control character, otherwise null.
+ * fragment and holds no control character, otherwise null. Relative paths
+ * (`docs/page`, `./x`, `?q=1`), protocol-relative `//host` and other schemes
+ * such as `mailto:` are not kept; the label shows as text.
  *
  * @param href - The candidate target.
  * @returns The trimmed target, or null.
@@ -67,6 +71,13 @@ export function allowedLinkTarget(href: string | null | undefined): string | nul
  */
 function createParser(headingOffset: number): Marked {
   const parser = new Marked({ gfm: true, breaks: false, async: false });
+  /** Greater than 0 while the label of a link is being rendered. */
+  let linkDepth = 0;
+  const anchor = (target: string, label: string, title: string | null | undefined): string => {
+    const titleAttribute = title ? ` title="${escapeAttribute(title)}"` : '';
+    const text = label === '' ? escapeText(target) : label;
+    return `<a href="${escapeAttribute(target)}"${titleAttribute} rel="noopener noreferrer">${text}</a>`;
+  };
   parser.use({
     renderer: {
       html(token: Tokens.HTML | Tokens.Tag): string {
@@ -77,20 +88,29 @@ function createParser(headingOffset: number): Marked {
         return `<h${level}>${this.parser.parseInline(token.tokens)}</h${level}>\n`;
       },
       link(token: Tokens.Link): string {
-        const label = this.parser.parseInline(token.tokens);
+        let label: string;
+        linkDepth++;
+        try {
+          label = this.parser.parseInline(token.tokens);
+        } finally {
+          linkDepth--;
+        }
         const target = allowedLinkTarget(token.href);
         if (target === null) {
           return label;
         }
-        return `<a href="${escapeAttribute(target)}" rel="noopener noreferrer">${label}</a>`;
+        return anchor(target, label, token.title);
       },
       image(token: Tokens.Image): string {
         const label = escapeText(token.text);
+        if (linkDepth > 0) {
+          return label;
+        }
         const target = allowedLinkTarget(token.href);
         if (target === null) {
           return label;
         }
-        return `<a href="${escapeAttribute(target)}" rel="noopener noreferrer">${label}</a>`;
+        return anchor(target, label, token.title);
       }
     }
   });
@@ -118,7 +138,8 @@ export function renderMarkdown(source: string, options: RenderMarkdownOptions = 
   if (text === '') {
     return '';
   }
-  const offset = Math.max(0, Math.trunc(options.headingOffset ?? 0));
+  const n = Number(options.headingOffset ?? 0);
+  const offset = Number.isFinite(n) ? Math.min(Math.max(Math.trunc(n), 0), 5) : 0;
   let parser = parsers.get(offset);
   if (!parser) {
     parser = createParser(offset);

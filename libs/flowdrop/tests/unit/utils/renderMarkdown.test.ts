@@ -118,6 +118,47 @@ describe('renderMarkdown', () => {
     expect(el.textContent).toContain('bad');
   });
 
+  it('renders an image inside a link as its alt text within that link', () => {
+    expect(renderMarkdown('[![build](https://x.test/badge.svg)](https://ci.test)')).toBe(
+      '<p><a href="https://ci.test" rel="noopener noreferrer">build</a></p>\n'
+    );
+  });
+
+  it('uses the target as the label of a link or image with no label', () => {
+    expect(renderMarkdown('[](https://x.test)')).toBe(
+      '<p><a href="https://x.test" rel="noopener noreferrer">https://x.test</a></p>\n'
+    );
+    expect(renderMarkdown('[![](https://x.test/a.png)](https://ci.test)')).toBe(
+      '<p><a href="https://ci.test" rel="noopener noreferrer">https://ci.test</a></p>\n'
+    );
+    expect(renderMarkdown('![](https://x.test/a.png)')).toBe(
+      '<p><a href="https://x.test/a.png" rel="noopener noreferrer">https://x.test/a.png</a></p>\n'
+    );
+  });
+
+  it('keeps a link title, escaped', () => {
+    expect(renderMarkdown('[t](https://x.test "hello")')).toBe(
+      '<p><a href="https://x.test" title="hello" rel="noopener noreferrer">t</a></p>\n'
+    );
+    const el = parse(renderMarkdown('[t](https://x.test \'say "hi" <b>\')'));
+    const a = el.querySelector('a');
+    expect(a?.getAttribute('title')).toBe('say "hi" <b>');
+    expect(a?.getAttributeNames().sort()).toEqual(['href', 'rel', 'title']);
+  });
+
+  it('treats a non-numeric headingOffset as 0 and caps it at 5', () => {
+    const level = (offset: unknown): string | undefined =>
+      parse(renderMarkdown('# A', { headingOffset: offset as number })).querySelector(
+        'h1, h2, h3, h4, h5, h6'
+      )?.localName;
+    expect(level(NaN)).toBe('h1');
+    expect(level('abc')).toBe('h1');
+    expect(level('2')).toBe('h3');
+    expect(level(99)).toBe('h6');
+    expect(level(-3)).toBe('h1');
+    expect(renderMarkdown('# A', { headingOffset: NaN })).toBe('<h1>A</h1>\n');
+  });
+
   it('keeps a code span in a link target inside the href value', () => {
     const el = parse(renderMarkdown('[x](https://example.com/`y"onmouseover="alert(1)`)'));
     for (const node of Array.from(el.querySelectorAll('*'))) {
