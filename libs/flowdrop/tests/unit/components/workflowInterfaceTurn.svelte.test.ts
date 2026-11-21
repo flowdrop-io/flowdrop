@@ -409,3 +409,42 @@ describe('input id edits reported for the chat binding', () => {
     expect(onChange.mock.lastCall).toHaveLength(1);
   });
 });
+
+describe('interface id typed on the card', () => {
+  function idField(target: HTMLElement): HTMLInputElement {
+    return target.querySelector<HTMLInputElement>('input.wf-interface__id')!;
+  }
+  function type(field: HTMLInputElement, value: string): void {
+    field.value = value;
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+    flushSync();
+  }
+
+  it.each([
+    ['Total', 'lowercase letters'],
+    ['a b', 'lowercase letters'],
+    ['__interrupt_id__', 'reserved']
+  ])('refuses %j with a message and keeps the stored id', (value, text) => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'e' })] });
+    const field = idField(target);
+    type(field, value);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(field.value).toBe('e');
+    expect(target.querySelector('[data-testid="wf-id-refusal"]')?.textContent).toContain(text);
+  });
+
+  it('trims surrounding spaces and accepts a valid id', () => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'e' })] });
+    type(idField(target), '  new_id-2 ');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0]?.inputs?.[0].id).toBe('new_id-2');
+    expect(target.querySelector('[data-testid="wf-id-refusal"]')).toBeNull();
+  });
+
+  it('shows a stored bad id and lets it be renamed to a valid one', () => {
+    const { target, onChange } = render({ inputs: [entry({ id: 'Total' })] });
+    expect(idField(target).value).toBe('Total');
+    type(idField(target), 'total');
+    expect(onChange.mock.calls[0][0]?.inputs?.[0].id).toBe('total');
+  });
+});

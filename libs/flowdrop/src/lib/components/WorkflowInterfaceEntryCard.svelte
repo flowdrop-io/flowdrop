@@ -31,6 +31,7 @@
   import { getDataTypeColorToken, getPortColorToken } from '$lib/utils/colors.js';
   import InterfaceTag from '$lib/components/InterfaceTag.svelte';
   import { m } from '$lib/messages/index.js';
+  import { interfaceIdShapeError } from '$lib/utils/interfaceTags.js';
   import {
     DEFAULT_HISTORY_TURN_LIMIT,
     type PortDataTypeConfig,
@@ -124,6 +125,41 @@
   let fieldsOpen = $state(
     initiallyOpen || status?.status === 'type-mismatch' || turnTakenBy !== undefined
   );
+
+  /** Why the id just typed was refused; the field goes back to the stored id. */
+  let idRefusal = $state<{ reason: 'format' | 'reserved'; id: string } | null>(null);
+  const idRefusalText = $derived(
+    !idRefusal
+      ? null
+      : idRefusal.reason === 'reserved'
+        ? m().workflowInterface.tagIdReserved({ id: idRefusal.id })
+        : m().workflowInterface.tagIdFormat
+  );
+
+  /**
+   * Commit a typed id. An empty field goes back to the old id (the chat binding
+   * would lose the input for good otherwise); surrounding spaces are trimmed;
+   * anything outside the exposure-name alphabet or reserved is refused with the
+   * reason, not rewritten. Keeping the stored id is always fine, even when it
+   * breaks the rules (the Interface tab reports it).
+   */
+  function commitId(input: HTMLInputElement): void {
+    const value = input.value.trim();
+    if (value === '' || value === entry.id) {
+      idRefusal = null;
+      input.value = entry.id;
+      return;
+    }
+    const shape = interfaceIdShapeError(value);
+    if (shape) {
+      idRefusal = { reason: shape, id: value };
+      input.value = entry.id;
+      return;
+    }
+    idRefusal = null;
+    input.value = value;
+    onPatch({ id: value });
+  }
 
   /** Statuses still explained in the footer (the rest render inline or as the dot). */
   const FOOTER_STATUSES = new Set(['unbound', 'dangling', 'hidden', 'over-bound']);
@@ -329,12 +365,7 @@
         spellcheck="false"
         disabled={readOnly}
         value={entry.id}
-        onchange={(e) => {
-          // An input needs an id: an emptied field goes back to the old one
-          // (else the chat binding would lose the input for good).
-          if (e.currentTarget.value.trim() === '') e.currentTarget.value = entry.id;
-          else onPatch({ id: e.currentTarget.value });
-        }}
+        onchange={(e) => commitId(e.currentTarget)}
       />
     </InterfaceTag>
     <!-- The bound port, said back the way the canvas says it: node › port and
@@ -403,6 +434,15 @@
       items={rowMenu}
     />
   </div>
+  {#if idRefusalText}
+    <span
+      class="wf-interface__inline wf-interface__inline--error"
+      role="alert"
+      data-testid="wf-id-refusal"
+    >
+      {idRefusalText}
+    </span>
+  {/if}
   {#if isInput && alreadyConnected}
     <span class="wf-interface__inline wf-interface__inline--error">
       {m().workflowInterface.alreadyConnectedInline({ source: conflictingSource ?? '' })}

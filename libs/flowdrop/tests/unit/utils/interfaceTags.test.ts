@@ -112,6 +112,25 @@ describe('validateInterfaceId', () => {
   it('allows an entry to keep its own id', () => {
     expect(validateInterfaceId('amount', 'input', wf.interface, 'amount')).toBeNull();
   });
+
+  it.each([
+    ['Total', 'format'],
+    ['my.query', 'format'],
+    ['é', 'format'],
+    ['a b', 'format'],
+    ['__interrupt_id__', 'reserved'],
+    ['__anything', null],
+    [' a', null],
+    ['ok_id-2', null],
+    ['a', null]
+  ] as const)('checks the exposure alphabet and reserved names: %j -> %s', (id, expected) => {
+    expect(validateInterfaceId(id, 'output', undefined)).toBe(expected);
+  });
+
+  it('lets an entry keep a stored id that breaks the rules, but not move to another one', () => {
+    expect(validateInterfaceId('Total', 'input', undefined, 'Total')).toBeNull();
+    expect(validateInterfaceId('Other', 'input', undefined, 'Total')).toBe('format');
+  });
 });
 
 describe('interfaceTagModels', () => {

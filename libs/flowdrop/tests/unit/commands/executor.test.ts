@@ -3719,6 +3719,30 @@ describe('editor parity commands', () => {
       );
     });
 
+    it.each([
+      ['Total', 'lowercase letters, digits'],
+      ['my.query', 'lowercase letters, digits'],
+      ['a b', 'lowercase letters, digits'],
+      ['__interrupt_id__', 'reserved by the runtime']
+    ])('refuses add, rename and expose with the id %j', (id, reason) => {
+      const { run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      expect(errorOf(run({ type: 'interface_add', side: 'output', id })).error).toContain(reason);
+      expect(
+        errorOf(run({ type: 'interface_rename', side: 'input', id: 'q', newId: id })).error
+      ).toContain(reason);
+      const fresh = setup(wf({ interface: { inputs: [] } })).run;
+      expect(
+        errorOf(fresh({ type: 'interface_expose', nodeId: 'llm_node.1', port: 'prompt', id })).error
+      ).toContain(reason);
+    });
+
+    it('names the rule when an id is refused', () => {
+      const { run } = setup(wf({ interface: { inputs: [boundInput()] } }));
+      expect(errorOf(run({ type: 'interface_add', side: 'output', id: 'Total' })).error).toContain(
+        'R4.a'
+      );
+    });
+
     it('removes an entry; removing an input reports the id edit for the chat binding', () => {
       const { dispatch, run } = setup(wf({ interface: { inputs: [boundInput()] } }));
       expect(run({ type: 'interface_remove', side: 'input', id: 'q' }).ok).toBe(true);
@@ -4053,17 +4077,17 @@ describe('editor parity commands', () => {
       });
     });
 
-    it('refuse an id with whitespace, so every verb can address it', () => {
+    it('refuse an id with a space, so every verb can address it', () => {
       const { dispatch, run } = setup(
         wf({ interface: { inputs: [{ id: 'q', dataType: 'string', bindings: [] }] } })
       );
       expect(
         errorOf(run({ type: 'interface_add', side: 'input', id: 'my question' })).error
-      ).toContain('one word');
+      ).toContain('lowercase letters');
       expect(
         errorOf(run({ type: 'interface_rename', side: 'input', id: 'q', newId: 'my question' }))
           .error
-      ).toContain('one word');
+      ).toContain('lowercase letters');
       expect(dispatch.editInterface).not.toHaveBeenCalled();
     });
 

@@ -371,6 +371,22 @@ describe('validateWorkflowInterface', () => {
     );
   });
 
+  it.each(['Total', 'my.query', 'é', 'a b', '__interrupt_id__'])(
+    'reports a stored id that breaks the exposure rules, without dropping the entry: %j',
+    (id) => {
+      const workflow = makeWorkflow([], [], { inputs: [makeEntry({ id, bindings: [] })] });
+      const issues = validateWorkflowInterface(workflow);
+      expect(issues.some((i) => i.code === 'interface-id-format' && i.entryId === id)).toBe(true);
+    }
+  );
+
+  it('reports nothing for a valid id', () => {
+    const workflow = makeWorkflow([], [], { inputs: [makeEntry({ id: 'ok_id-2', bindings: [] })] });
+    expect(validateWorkflowInterface(workflow).some((i) => i.code === 'interface-id-format')).toBe(
+      false
+    );
+  });
+
   it('does not report a duplicate id across different directions', () => {
     const inputEntry = makeEntry({ id: 'shared', bindings: [] });
     const outputEntry = makeEntry({ id: 'shared', bindings: [] });

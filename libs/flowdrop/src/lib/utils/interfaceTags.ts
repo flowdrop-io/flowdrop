@@ -42,13 +42,41 @@ export function truncateInterfaceId(id: string, max: number = INTERFACE_TAG_MAX_
 }
 
 /** Why an id cannot be used for an entry. */
-export type InterfaceIdError = 'empty' | 'whitespace' | 'duplicate';
+export type InterfaceIdError = 'empty' | 'format' | 'reserved' | 'duplicate';
+
+/**
+ * The alphabet of a workflow exposure name (spec R4.a). An interface entry's
+ * `id` is that name on the backend, so anything else is refused there.
+ */
+export const INTERFACE_ID_PATTERN = /^[a-z0-9_-]+$/;
+
+/**
+ * Names the runtime reserves for parameters it injects into a workflow's
+ * manifest (spec R4.e).
+ */
+export const RESERVED_INTERFACE_IDS: readonly string[] = ['__interrupt_id__'];
+
+/** Whether a runtime reserves this id (R4.e). */
+export function isReservedInterfaceId(id: string): boolean {
+  return RESERVED_INTERFACE_IDS.includes(id);
+}
+
+/**
+ * Check an id by its own shape: the R4.a alphabet and the reserved names.
+ * Does not trim; the caller decides what whitespace means.
+ */
+export function interfaceIdShapeError(id: string): 'format' | 'reserved' | null {
+  if (!INTERFACE_ID_PATTERN.test(id)) return 'format';
+  if (isReservedInterfaceId(id)) return 'reserved';
+  return null;
+}
 
 /**
  * Check an id for a new or renamed entry. Ids are unique within their
- * direction (inputs and outputs are scoped separately) and contain no
- * whitespace. `ownId` is the id the entry has now, so keeping it is not a
- * duplicate.
+ * direction (inputs and outputs are scoped separately), use the R4.a alphabet
+ * (`a-z`, `0-9`, `-`, `_`) and are not reserved. `ownId` is the id the entry has
+ * now, so keeping it is never an error: a stored id that breaks the rules loads
+ * and shows (the workflow reports it as an issue) and can be renamed.
  */
 export function validateInterfaceId(
   id: string,
@@ -58,9 +86,10 @@ export function validateInterfaceId(
 ): InterfaceIdError | null {
   const trimmed = id.trim();
   if (trimmed === '') return 'empty';
-  // An id is one token: no command can address one with a space in it. (An
-  // entry that already has such an id may keep it.)
-  if (/\s/.test(trimmed) && trimmed !== ownId) return 'whitespace';
+  if (trimmed !== ownId) {
+    const shape = interfaceIdShapeError(trimmed);
+    if (shape) return shape;
+  }
   const entries =
     (direction === 'input' ? workflowInterface?.inputs : workflowInterface?.outputs) ?? [];
   if (entries.some((entry) => entry.id === trimmed && entry.id !== ownId)) return 'duplicate';

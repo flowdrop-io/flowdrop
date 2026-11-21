@@ -59,8 +59,8 @@ describe('interface edits report the chat edit in one place', () => {
     expect(next?.interface.inputs?.map((e) => e.name)).toEqual([undefined, 'second']);
   });
 
-  it('refuses an id with whitespace, but lets an existing one be kept', () => {
-    expect(validateInterfaceId('my q', 'input', undefined)).toBe('whitespace');
+  it('refuses an id outside the exposure alphabet, but lets an existing one be kept', () => {
+    expect(validateInterfaceId('my q', 'input', undefined)).toBe('format');
     expect(addInterfaceEntry(wfWith([]), 'input', entry('my q'))).toBeNull();
     expect(validateInterfaceId('my q', 'input', wfWith(['my q']).interface, 'my q')).toBeNull();
   });

@@ -85,10 +85,15 @@ function idError(
   switch (reason) {
     case 'empty':
       return fail('INVALID_ARGUMENT', 'The interface id must not be empty.');
-    case 'whitespace':
+    case 'format':
       return fail(
         'INVALID_ARGUMENT',
-        `The interface id '${id.trim()}' must be one word: no spaces, so every command can address it.`
+        `The interface id '${id.trim()}' is not allowed: it becomes the workflow's exposure name, which may use only lowercase letters, digits, - and _ (spec R4.a). Pass another one with \`as <id>\`.`
+      );
+    case 'reserved':
+      return fail(
+        'INVALID_ARGUMENT',
+        `The interface id '${id.trim()}' is reserved by the runtime (spec R4.e). Choose another one.`
       );
     case 'duplicate':
       return fail(

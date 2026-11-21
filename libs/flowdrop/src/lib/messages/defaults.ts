@@ -1160,7 +1160,8 @@ export const defaultMessages = {
     tagNameLabel: 'Interface name',
     tagNameHint: 'Enter saves · Esc cancels',
     tagIdEmpty: 'Give it a name.',
-    tagIdWhitespace: 'Use one word, without spaces.',
+    tagIdFormat: 'Use lowercase letters, digits, - and _ only.',
+    tagIdReserved: ({ id }: { id: string }) => `"${id}" is reserved for the runtime.`,
     tagIdDuplicate: ({ id, direction }: { id: string; direction: 'input' | 'output' }) =>
       `A workflow ${direction} named "${id}" already exists.`,
     exposeInputPort: ({ port }: { port: string }) => `Expose ${port} as workflow input…`,

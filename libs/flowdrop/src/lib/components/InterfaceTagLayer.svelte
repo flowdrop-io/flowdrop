@@ -107,7 +107,10 @@
       edit.entryId
     );
     if (reason === 'empty') return m().workflowInterface.tagIdEmpty;
-    if (reason === 'whitespace') return m().workflowInterface.tagIdWhitespace;
+    if (reason === 'format') return m().workflowInterface.tagIdFormat;
+    if (reason === 'reserved') {
+      return m().workflowInterface.tagIdReserved({ id: edit.value.trim() });
+    }
     if (reason === 'duplicate') {
       return m().workflowInterface.tagIdDuplicate({
         id: edit.value.trim(),

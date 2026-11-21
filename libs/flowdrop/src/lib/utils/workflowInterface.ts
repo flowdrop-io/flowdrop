@@ -35,6 +35,7 @@ import {
   WORKFLOW_INTERFACE_INPUT_TURNS,
   WORKFLOW_INTERFACE_OUTPUT_TURNS
 } from '$lib/types/index.js';
+import { interfaceIdShapeError } from '$lib/utils/interfaceTags.js';
 import { isPortExposed } from '$lib/utils/portUtils.js';
 import { LOOPBACK_PORT_NAME } from '$lib/utils/connections.js';
 import { PORTS_CONFIG_KEY } from '$lib/utils/nodeFormSchema.js';
@@ -339,6 +340,20 @@ export function validateWorkflowInterface(workflow: Workflow): InterfaceIssue[] 
     const seenCounts = new Map<string, number>();
     for (const entry of entries) {
       seenCounts.set(entry.id, (seenCounts.get(entry.id) ?? 0) + 1);
+    }
+    for (const id of seenCounts.keys()) {
+      const shape = interfaceIdShapeError(id);
+      if (!shape) continue;
+      issues.push({
+        entryId: id,
+        direction,
+        severity: 'error',
+        code: 'interface-id-format',
+        message:
+          shape === 'reserved'
+            ? `Interface ${direction} id "${id}" is reserved by the runtime; rename it.`
+            : `Interface ${direction} id "${id}" is not a valid exposure name; use lowercase letters, digits, - and _ only.`
+      });
     }
     for (const [id, count] of seenCounts) {
       if (count > 1) {
