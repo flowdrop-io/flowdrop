@@ -1623,7 +1623,9 @@ export interface WorkflowInterfaceEntry {
    * Validated by the server
    * against its vocabulary; a value this library does not know (from a newer
    * server) round-trips verbatim, which is why the type admits any string
-   * beside the known values. Narrow with `isKnownTurn` before indexing by it.
+   * beside the known values. Check it against `WORKFLOW_INTERFACE_INPUT_TURNS` or
+   * `WORKFLOW_INTERFACE_OUTPUT_TURNS` (exported from `@flowdrop/flowdrop/core`)
+   * before indexing by it.
    */
   turn?: WorkflowInterfaceTurn | (string & {});
 }

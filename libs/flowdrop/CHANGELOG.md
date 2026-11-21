@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Workflow metadata keeps the keys a host adds.** Store updates such as a node config edit or a rename
   rebuilt the metadata from a fixed list of keys. The next save then dropped keys the editor does not know,
   such as `orchestrator_settings` from the Drupal module. The legacy `version` key is still dropped. (#70)
+- **`WorkflowInterfaceEntry.turn` docs** pointed at `isKnownTurn`, which `@flowdrop/flowdrop/core` does not
+  export (#48). They now name the exported `WORKFLOW_INTERFACE_INPUT_TURNS` and
+  `WORKFLOW_INTERFACE_OUTPUT_TURNS`.
+- **`DEFAULT_STOP_POLLING_STATUSES` docs** say how to stop polling a session the server leaves `completed` or
+  `failed`: pass `shouldStopPolling` (the editor's `playground` mount option, since 2.13.0). The default
+  still stops on `idle` only, because some servers write messages after a session turns `failed` (#46).
+- **`PlaygroundConfig.isTerminalStatus`, `defaultIsTerminalStatus` and `DEFAULT_TERMINAL_STATUSES` docs** say
+  they have no effect (#50). Nothing reads them: the editor and the Playground treat a session as executing
+  exactly while its status is `running`. Leave the option out of your config.
 
 ## [2.19.0] - 2026-11-21
 
