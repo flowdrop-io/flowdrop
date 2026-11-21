@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { allowedLinkTarget, renderMarkdown } from '$lib/utils/renderMarkdown.js';
 import {
   allowedLinkTarget as targetFromDisplay,
@@ -144,6 +144,40 @@ describe('renderMarkdown', () => {
     const a = el.querySelector('a');
     expect(a?.getAttribute('title')).toBe('say "hi" <b>');
     expect(a?.getAttributeNames().sort()).toEqual(['href', 'rel', 'title']);
+  });
+
+  it('decodes character references in targets and titles once, before the link rule', () => {
+    expect(renderMarkdown('[x](https://a.test/?b=1&amp;c=2 "a &amp; b")')).toBe(
+      '<p><a href="https://a.test/?b=1&amp;c=2" title="a &amp; b" rel="noopener noreferrer">x</a></p>\n'
+    );
+    const a = parse(renderMarkdown('[x](https://a.test/&ouml;)')).querySelector('a');
+    expect(a?.getAttribute('href')).toBe('https://a.test/ö');
+    // A reference that decodes to a refused target is refused.
+    expect(renderMarkdown('[x](/&#x2f;evil.test)')).toBe('<p>x</p>\n');
+    expect(renderMarkdown('[x](&#106;avascript:alert(1))')).toBe('<p>x</p>\n');
+  });
+
+  it('shows image alt text as plain text: markers dropped, references decoded', () => {
+    expect(renderMarkdown('![a &amp; b\\_c **d**](https://i.test)')).toBe(
+      '<p><a href="https://i.test" rel="noopener noreferrer">a &amp; b_c d</a></p>\n'
+    );
+    expect(renderMarkdown('[![a\\_b <x>](https://i.test)](https://y.test)')).toBe(
+      '<p><a href="https://y.test" rel="noopener noreferrer">a_b &lt;x&gt;</a></p>\n'
+    );
+    expect(
+      parse(renderMarkdown('![</textarea><b>x</b>](https://i.test)')).textContent?.trim()
+    ).toBe('</textarea><b>x</b>');
+  });
+
+  it('decodes numeric and basic references without a DOM', () => {
+    vi.stubGlobal('document', undefined);
+    try {
+      expect(renderMarkdown('[x](https://a.test/?b=1&amp;c=&#x41;&#66; "&quot;q&quot;")')).toBe(
+        '<p><a href="https://a.test/?b=1&amp;c=AB" title="&quot;q&quot;" rel="noopener noreferrer">x</a></p>\n'
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('treats a non-numeric headingOffset as 0 and caps it at 5', () => {

@@ -14,9 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   views use. HTML in the source is shown as text, links and images keep http(s), root-relative and
   fragment targets without control characters (relative paths, `//host` and other schemes such as
   `mailto:` show their label as text), and links carry `rel="noopener noreferrer"` and keep their title.
-  An image inside a link shows its alt text within that link; an image without alt text, or a link
-  without a label, shows its target as the label. `headingOffset` moves headings down for pages that
-  already own the upper levels; it is capped at 5 and anything that is not a number counts as 0.
+  Character references in targets and titles are decoded once. Alt text shows as plain text, and an
+  image inside a link shows it within that link; an image without alt text, or a link without a label,
+  shows its target as the label when the target is kept. `headingOffset` moves headings down for pages
+  that already own the upper levels; it is capped at 5, and anything that does not convert to a finite
+  number counts as 0.
 - **`allowedLinkTarget()` in `@flowdrop/flowdrop/display`.** The link rule of `renderMarkdown()` on its own,
   for host pages that build their own links: the trimmed target when it is http(s), root-relative or a
   fragment and holds no control character (the browser drops tab, CR and LF inside a URL), otherwise `null`.

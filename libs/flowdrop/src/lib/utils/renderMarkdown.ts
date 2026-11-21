@@ -17,12 +17,12 @@
  *
  * @module utils/renderMarkdown
  */
-import { Marked, type Tokens } from 'marked';
+import { Marked, TextRenderer, type Tokens } from 'marked';
 import { sanitizeHtml } from './sanitize.js';
 
 /** Options for {@link renderMarkdown}. */
 export interface RenderMarkdownOptions {
-  /** Added to each heading level; the result is capped at 6. Non-numbers count as 0. Default: 0. */
+  /** Added to each heading level; the result is capped at 6. Anything that does not convert to a finite number counts as 0. Default: 0. */
   headingOffset?: number;
 }
 
@@ -41,6 +41,29 @@ const escapeText = (s: string): string =>
 
 const escapeAttribute = (s: string): string =>
   escapeText(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+const BASIC_ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+
+/**
+ * Decodes the character references Markdown leaves in link targets, titles and
+ * alt text (`&amp;`, `&#x2f;`, `&ouml;`), so each is escaped exactly once on
+ * output and the link rule sees the URL the browser will follow. Uses the DOM
+ * when there is one (every named reference); otherwise numeric references and
+ * the five basic names.
+ */
+function decodeEntities(s: string): string {
+  if (!s.includes('&')) return s;
+  if (typeof document !== 'undefined') {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = s;
+    return textarea.value;
+  }
+  return s.replace(/&(?:#(\d+)|#x([0-9a-f]+)|([a-z]+));/gi, (match, dec, hex, name) => {
+    if (name) return BASIC_ENTITIES[name.toLowerCase()] ?? match;
+    const code = dec ? parseInt(dec, 10) : parseInt(hex, 16);
+    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '\uFFFD';
+  });
+}
 
 /**
  * The link rule of {@link renderMarkdown}, for host pages that build their own
@@ -74,7 +97,8 @@ function createParser(headingOffset: number): Marked {
   /** Greater than 0 while the label of a link is being rendered. */
   let linkDepth = 0;
   const anchor = (target: string, label: string, title: string | null | undefined): string => {
-    const titleAttribute = title ? ` title="${escapeAttribute(title)}"` : '';
+    const titleText = title ? decodeEntities(title) : '';
+    const titleAttribute = titleText ? ` title="${escapeAttribute(titleText)}"` : '';
     const text = label === '' ? escapeText(target) : label;
     return `<a href="${escapeAttribute(target)}"${titleAttribute} rel="noopener noreferrer">${text}</a>`;
   };
@@ -95,18 +119,21 @@ function createParser(headingOffset: number): Marked {
         } finally {
           linkDepth--;
         }
-        const target = allowedLinkTarget(token.href);
+        const target = allowedLinkTarget(decodeEntities(token.href));
         if (target === null) {
           return label;
         }
         return anchor(target, label, token.title);
       },
       image(token: Tokens.Image): string {
-        const label = escapeText(token.text);
+        // The alt text as plain text: Markdown and HTML markers dropped, references decoded.
+        const label = escapeText(
+          decodeEntities(this.parser.parseInline(token.tokens ?? [], new TextRenderer()))
+        );
         if (linkDepth > 0) {
           return label;
         }
-        const target = allowedLinkTarget(token.href);
+        const target = allowedLinkTarget(decodeEntities(token.href));
         if (target === null) {
           return label;
         }
