@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  import { firstNonNullType } from '$lib/utils/schemaType.js';
+  import { editorTypeWord, firstNonNullType } from '$lib/utils/schemaType.js';
   import { setContext } from 'svelte';
   import Icon from '@iconify/svelte';
   import type {
@@ -621,7 +621,10 @@
     const prop = configSchema?.properties?.[key];
     if (
       nullToggled ||
-      (prop && (firstNonNullType(prop.type) === 'boolean' || Array.isArray(prop.enum)))
+      (prop &&
+        (editorTypeWord(prop.type) === 'boolean' ||
+          Array.isArray(prop.enum) ||
+          Array.isArray(prop.oneOf)))
     ) {
       commitEdits();
     }
