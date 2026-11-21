@@ -477,7 +477,9 @@ export function normalizeOptions(
  */
 export function getSchemaOptions(schema: FieldSchema): FieldOption[] {
   if (schema.oneOf && schema.oneOf.length > 0) {
-    return oneOfToOptions(schema.oneOf);
+    // `{ const: null }` is not an option: the null toggle stores null, and as an
+    // option it would be stored as the text "null".
+    return oneOfToOptions(schema.oneOf.filter((item) => item.const !== null));
   }
 
   return [];

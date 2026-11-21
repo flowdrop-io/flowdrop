@@ -108,14 +108,78 @@ describe('null toggle behaviour', () => {
 });
 
 describe('type: null only', () => {
-  it('shows the muted null and neither a toggle nor an editor', () => {
+  it('shows "Not set" while absent, with the toggle and no editor, and writes nothing', () => {
     for (const type of ['null', ['null']] as const) {
-      const t = render({ type } as FieldSchema, undefined);
-      expect(t.toggle()).toBeNull();
-      expect(t.target.querySelector('[data-null-value]')?.textContent).toBe('null');
+      const t = render({ type } as FieldSchema, undefined, true);
+      expect(t.toggle()!.getAttribute('aria-pressed')).toBe('false');
+      expect(t.target.querySelector('[data-not-set]')).not.toBeNull();
+      expect(t.target.querySelector('[data-null-value]')).toBeNull();
       expect(t.target.querySelector('input, textarea, select, .cm-editor')).toBeNull();
+      expect(t.onChange).not.toHaveBeenCalled();
       unmount(mounted!);
     }
+  });
+
+  it('the toggle sets null, and off leaves it unset again', () => {
+    const t = render({ type: 'null' } as FieldSchema, undefined, true);
+    t.click();
+    expect(t.onChange).toHaveBeenLastCalledWith(null);
+    expect(t.target.querySelector('[data-null-value]')?.textContent).toBe('null');
+    expect(t.target.querySelector('[data-not-set]')).toBeNull();
+    t.click();
+    expect(t.onChange).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it('shows the muted null for a stored null', () => {
+    const t = render({ type: ['null'] } as FieldSchema, null, true);
+    expect(t.target.querySelector('[data-null-value]')?.textContent).toBe('null');
+  });
+});
+
+describe('type: null only, in a form', () => {
+  const schema = {
+    type: 'object',
+    required: ['only'],
+    properties: { only: { type: 'null', title: 'Only' }, other: { type: 'string', title: 'Other' } }
+  } as never;
+  const mountIt = (values: Record<string, unknown>, sch: never = schema) => {
+    const onChange = vi.fn();
+    const target = document.createElement('div');
+    document.body.appendChild(target);
+    mounted = mount(ConfigForm, {
+      target,
+      props: { schema: sch, values, onChange, commitMode: 'blur' }
+    });
+    flushSync();
+    return { target, onChange };
+  };
+
+  it('saving without choosing leaves the key absent', () => {
+    const f = mountIt({});
+    expect(f.target.querySelector('[data-not-set]')).not.toBeNull();
+    const input = f.target.querySelector<HTMLInputElement>('#other')!;
+    input.value = 'x';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    flushSync();
+    const config = f.onChange.mock.calls.at(-1)![0] as Record<string, unknown>;
+    expect(config.other).toBe('x');
+    expect('only' in config).toBe(false);
+  });
+
+  it('a null default on the required key is written, as the required-defaults path does', () => {
+    const f = mountIt({}, {
+      type: 'object',
+      required: ['only'],
+      properties: { only: { type: 'null', default: null }, other: { type: 'string' } }
+    } as never);
+    const input = f.target.querySelector<HTMLInputElement>('#other')!;
+    input.value = 'x';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    flushSync();
+    const config = f.onChange.mock.calls.at(-1)![0] as Record<string, unknown>;
+    expect(config.only).toBeNull();
   });
 });
 

@@ -126,6 +126,8 @@ export const defaultMessages = {
       nullToggleLabel: ({ label }: { label: string }) => `Set ${label} to null`,
       nullToggleTitle: 'Store null instead of a value. Turn off to bring the value back.',
       nullValue: 'null',
+      // A field whose only value is null, while nothing is stored: the key is absent, not null.
+      notSet: 'Not set',
       // The empty option of a select whose schema has a default; the value is that default's label.
       defaultOption: ({ value }: { value: string }) => `Default (${value})`,
       // A required field marked when_missing: skip.

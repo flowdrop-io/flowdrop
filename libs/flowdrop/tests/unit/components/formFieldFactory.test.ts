@@ -70,10 +70,10 @@ describe('one field factory', () => {
     }
   );
 
-  it('a null-only type shows the muted null, with no editor and no hint', () => {
+  it('a null-only type shows "Not set", with no editor and no hint', () => {
     for (const type of ['null', ['null']] as const) {
       const schema = { type } as FieldSchema;
-      expect(html(FormFieldFull, schema)).toContain('data-null-value');
+      expect(html(FormFieldFull, schema)).toContain('data-not-set');
       expect(html(FormFieldFull, schema)).not.toContain('Editor component not registered');
       expect(html(FormFieldLight, schema)).not.toContain('Editor component not registered');
     }

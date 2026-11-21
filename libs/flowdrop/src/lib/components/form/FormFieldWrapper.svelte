@@ -40,8 +40,16 @@
      * or enum lists it). While `on`, the field shows a muted "null" in place of its input.
      */
     nullToggle?: { on: boolean; disabled?: boolean; onToggle: () => void };
-    /** The field's type is only `null`: show the muted "null" and no input, with no toggle. */
+    /**
+     * The field's type is only `null`: it has no input. It shows "Not set" until the
+     * `nullToggle` stores null, then the muted "null". Absent is not null.
+     */
     nullOnly?: boolean;
+    /**
+     * The value is `null` but the schema does not admit it (no toggle): show the muted
+     * "null" above the input so it does not look absent. Editing replaces it.
+     */
+    staleNull?: boolean;
     /** A short plain-text hint under the field (e.g. "Skipped when not set"); its id is `{id}-hint` */
     hint?: string;
     /** Slot content for the field input */
@@ -59,6 +67,7 @@
     aside,
     nullToggle,
     nullOnly = false,
+    staleNull = false,
     hint,
     children
   }: Props = $props();
@@ -116,9 +125,14 @@
 
   <!-- Field Input Container -->
   <div class="form-field__input-wrapper">
-    {#if nullToggle?.on || nullOnly}
+    {#if nullToggle?.on}
       <div class="form-field__null" data-null-value>{m().form.field.nullValue}</div>
+    {:else if nullOnly}
+      <div class="form-field__null" data-not-set>{m().form.field.notSet}</div>
     {:else}
+      {#if staleNull}
+        <div class="form-field__null" data-null-value>{m().form.field.nullValue}</div>
+      {/if}
       {@render children()}
     {/if}
   </div>

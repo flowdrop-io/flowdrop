@@ -47,7 +47,7 @@
 -->
 
 <script lang="ts">
-  import { firstNonNullType } from '$lib/utils/schemaType.js';
+  import { editorTypeWord } from '$lib/utils/schemaType.js';
   import FormFieldWrapper from './FormFieldWrapper.svelte';
   import FormTextField from './FormTextField.svelte';
   import FormTextarea from './FormTextarea.svelte';
@@ -190,11 +190,13 @@
    * What comes back, if anything, is the form's business: it remembers the value
    * from before.
    *
-   * A field whose type is only `null` has one possible value: it shows the muted
-   * "null" and has no toggle and no editor.
+   * A field whose type is only `null` has one possible value and no editor. Absent
+   * is not null (a null is a choice), so it shows "Not set" until the toggle
+   * stores `null`. A stored `null` the schema does not admit shows the muted "null"
+   * above the editor (no toggle), so it does not look absent; editing replaces it.
    */
   const nullOnly = $derived(typeIsNullOnly(schema.type));
-  const nullable = $derived(!nullOnly && schemaAdmitsNull(schema));
+  const nullable = $derived(schemaAdmitsNull(schema));
   const isNull = $derived(value === null);
   function toggleNull() {
     onChange(isNull ? undefined : null);
@@ -221,14 +223,29 @@
   );
 
   /**
-   * Get enum options as string array for select/checkbox components
+   * The enum members that are options. `null` is not one: the null toggle stores
+   * it, and as an option it would be stored as the text "null".
    */
-  const enumOptions = $derived.by((): string[] => {
-    if (!schema.enum) return [];
-    // `null` is not an option: the null toggle stores it. Mapped to a string it
-    // would be stored as the text "null".
-    return schema.enum.filter((opt) => opt !== null).map((opt) => String(opt));
-  });
+  const enumMembers = $derived((schema.enum ?? []).filter((opt) => opt !== null));
+
+  /** The enum options as strings, for the select and checkbox components. */
+  const enumOptions = $derived(enumMembers.map((opt) => String(opt)));
+
+  /** The `oneOf` constants that are options, in the order `selectOptions` lists them. */
+  const oneOfMembers = $derived(
+    (schema.oneOf ?? []).filter((item) => item.const !== null).map((item) => item.const)
+  );
+
+  /**
+   * The member of `members` an option stands for. Options are shown as strings;
+   * the config keeps the original member, so `{ type: 'integer', enum: [1, 2] }`
+   * stores `2`, not `"2"` (R6.e.2). A value that is no option (the empty option's
+   * `''`) goes through unchanged.
+   */
+  function memberFor(members: readonly unknown[], chosen: unknown): unknown {
+    const index = members.findIndex((member) => String(member) === chosen);
+    return index < 0 ? chosen : members[index];
+  }
 
   /**
    * Get select options for select-options type
@@ -239,7 +256,10 @@
   /**
    * Get current value as the appropriate type
    */
-  const stringValue = $derived(String(value ?? ''));
+  // An object or array value is shown as JSON, never as "[object Object]".
+  const stringValue = $derived(
+    typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '')
+  );
   const numberValue = $derived(value as number | string);
   const booleanValue = $derived(Boolean(value ?? schema.default ?? false));
   // A slider has no placeholder: an absent value shows at the default.
@@ -337,6 +357,7 @@
     plain={fieldType === 'ports'}
     inline={fieldType === 'toggle'}
     {nullOnly}
+    staleNull={isNull && !nullable}
     nullToggle={nullable && fieldType !== 'ports'
       ? { on: isNull, disabled: isReadOnly, onToggle: toggleNull }
       : undefined}
@@ -389,7 +410,7 @@
         options={enumOptions}
         ariaDescribedBy={describedBy}
         disabled={isReadOnly}
-        onChange={(val) => onChange(val)}
+        onChange={(val) => onChange(val.map((chosen) => memberFor(enumMembers, chosen)))}
       />
     {:else if fieldType === 'select-enum'}
       <FormSelect
@@ -400,7 +421,7 @@
         {required}
         ariaDescribedBy={describedBy}
         disabled={isReadOnly}
-        onChange={(val) => onChange(val)}
+        onChange={(val) => onChange(memberFor(enumMembers, val))}
       />
     {:else if fieldType === 'textarea'}
       <FormTextarea
@@ -464,7 +485,7 @@
         {required}
         ariaDescribedBy={describedBy}
         disabled={isReadOnly}
-        onChange={(val) => onChange(val)}
+        onChange={(val) => onChange(memberFor(oneOfMembers, val))}
       />
     {:else if fieldType === 'array' && schema.items}
       <FormArray
@@ -519,8 +540,8 @@
           ariaDescribedBy={describedBy}
           disabled={isReadOnly}
           onChange={(val) => {
-            // Try to parse as JSON for object types and for a field with no type
-            const kind = firstNonNullType(schema.type);
+            // Try to parse as JSON for object types and for a field with no single type
+            const kind = editorTypeWord(schema.type);
             if (kind === 'object' || kind === undefined || schema.format === 'json') {
               try {
                 onChange(JSON.parse(val));
