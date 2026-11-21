@@ -392,6 +392,18 @@
     return out;
   });
 
+  /** The resolved external edit URL ('' when refused, '#' without a node). */
+  const externalEditUrl = $derived(getExternalEditUrl());
+
+  /**
+   * Whether the external edit link can do anything: the host handles the click
+   * itself, or the URL resolves (a refused URL resolves to ''). Every external
+   * edit affordance reads this, so none shows up only to do nothing.
+   */
+  const externalEditUsable = $derived(
+    !!configEditOptions?.externalEditLink && (!!onExternalEdit || externalEditUrl !== '')
+  );
+
   /**
    * The row naming the workflow a node runs ("Runs Calculator ↗"). The name is
    * the link's `targetName` when the backend sends one; fddo does not (it sends
@@ -399,19 +411,9 @@
    * node's own "Run workflow: <name>" label is the fallback, and a node with
    * neither shows the link's label as a plain link.
    */
-  /**
-   * Whether the external edit link can do anything: the host handles the click
-   * itself, or the URL resolves (a refused URL resolves to ''). Every external
-   * edit affordance reads this, so none shows up only to do nothing.
-   */
-  const externalEditUsable = $derived(
-    !!configEditOptions?.externalEditLink && (!!onExternalEdit || getExternalEditUrl() !== '')
-  );
-
   const externalInfo = $derived.by<ExternalLinkInfo | null>(() => {
     const link = configEditOptions?.externalEditLink;
     if (!showExternalEditLink || !link || !node || !externalEditUsable) return null;
-    const href = getExternalEditUrl();
     const target =
       link.targetName ?? /^run workflow:\s*(.+)$/i.exec(node.data.label ?? '')?.[1]?.trim();
     return {
@@ -419,7 +421,7 @@
         ? { prefix: 'Runs', name: target }
         : { name: link.label ?? 'Configure externally' }),
       title: link.description,
-      href,
+      href: externalEditUrl,
       newTab: link.openInNewTab !== false,
       ...(onExternalEdit ? { onActivate: handleExternalEditClick } : {})
     };
