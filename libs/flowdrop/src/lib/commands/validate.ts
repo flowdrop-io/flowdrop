@@ -100,7 +100,7 @@ const RULES: Record<Command['type'], FieldRules> = {
   interface_list: {},
   interface_expose: {
     required: { ...NODE_ID, port: 'string' },
-    optional: { id: 'string', direction: SIDE }
+    optional: { id: 'string', side: SIDE }
   },
   interface_add: { required: ENTRY, optional: { dataType: 'string' } },
   interface_remove: { required: ENTRY },

@@ -57,3 +57,14 @@ describe('validateCommand — playground_chat edits', () => {
     ).toMatch(/"field" must be one of/);
   });
 });
+
+describe('validateCommand — interface_expose', () => {
+  const expose = (extra: Record<string, unknown>) =>
+    validateCommand({ type: 'interface_expose', nodeId: 'a.1', port: 'text', ...extra });
+
+  it('accepts a lower-case side and refuses any other value', () => {
+    expect(expose({ side: 'input' })).toBeNull();
+    expect(expose({ side: 'Input' })).not.toBeNull();
+    expect(expose({ side: 'sideways' })).not.toBeNull();
+  });
+});
