@@ -66,6 +66,7 @@
   import { getInstance } from '$lib/stores/getInstance.svelte.js';
   import { getResolvedTheme } from '$lib/stores/settingsStore.svelte.js';
   import type { FormFieldFactoryProps } from './types.js';
+  import { memberFor, selectableMembers } from './enumMembers.js';
   import { getSchemaOptions, normalizeOptions, type FieldOption } from './types.js';
   import {
     resolveBaseFieldType,
@@ -239,7 +240,7 @@
    * The enum members that are options. `null` is not one: the null toggle stores
    * it, and as an option it would be stored as the text "null".
    */
-  const enumMembers = $derived((schema.enum ?? []).filter((opt) => opt !== null));
+  const enumMembers = $derived(selectableMembers(schema));
 
   /** The enum options as strings, for the select and checkbox components. */
   const enumOptions = $derived(enumMembers.map((opt) => String(opt)));
@@ -248,17 +249,6 @@
   const oneOfMembers = $derived(
     (schema.oneOf ?? []).filter((item) => item.const !== null).map((item) => item.const)
   );
-
-  /**
-   * The member of `members` an option stands for. Options are shown as strings;
-   * the config keeps the original member, so `{ type: 'integer', enum: [1, 2] }`
-   * stores `2`, not `"2"` (R6.e.2). A value that is no option (the empty option's
-   * `''`) goes through unchanged.
-   */
-  function memberFor(members: readonly unknown[], chosen: unknown): unknown {
-    const index = members.findIndex((member) => String(member) === chosen);
-    return index < 0 ? chosen : members[index];
-  }
 
   /**
    * Get select options for select-options type

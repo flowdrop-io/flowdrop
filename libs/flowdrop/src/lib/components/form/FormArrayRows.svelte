@@ -20,6 +20,7 @@
   import Menu, { type MenuEntry } from '../primitives/Menu.svelte';
   import { humanizeKey } from './humanizeKey.js';
   import type { FieldSchema } from './types.js';
+  import { memberFor, selectableMembers } from './enumMembers.js';
   import { itemRefStatus, matchItemIndex, type ItemRef } from '$lib/utils/itemRef.js';
   import { m } from '$lib/messages/index.js';
   import { tick } from 'svelte';
@@ -180,10 +181,15 @@
                   aria-label={label(key, schema)}
                   data-col={col}
                   value={String(value ?? '')}
-                  onchange={(e) => onUpdate(index, key, e.currentTarget.value)}
+                  onchange={(e) =>
+                    onUpdate(
+                      index,
+                      key,
+                      memberFor(selectableMembers(schema), e.currentTarget.value)
+                    )}
                   {disabled}
                 >
-                  {#each schema.enum as option (option)}
+                  {#each selectableMembers(schema) as option (option)}
                     <option value={String(option)}>{String(option)}</option>
                   {/each}
                 </Select>

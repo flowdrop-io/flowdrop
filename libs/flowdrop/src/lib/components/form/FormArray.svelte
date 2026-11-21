@@ -21,6 +21,7 @@
   import { firstNonNullType } from '$lib/utils/schemaType.js';
   import { humanizeKey } from './humanizeKey.js';
   import type { FieldSchema } from './types.js';
+  import { memberFor, selectableMembers } from './enumMembers.js';
   import FormArrayRows from './FormArrayRows.svelte';
   import { refAfterDelete, refAfterRename, type ItemRef } from '$lib/utils/itemRef.js';
   import { m } from '$lib/messages/index.js';
@@ -472,10 +473,14 @@
                 <!-- Enum: render select -->
                 <Select
                   value={String(item ?? '')}
-                  onchange={(e) => updateItem(index, e.currentTarget.value)}
+                  onchange={(e) =>
+                    updateItem(
+                      index,
+                      memberFor(selectableMembers(itemSchema), e.currentTarget.value)
+                    )}
                   {disabled}
                 >
-                  {#each itemSchema.enum as option (option)}
+                  {#each selectableMembers(itemSchema) as option (option)}
                     <option value={String(option)}>{String(option)}</option>
                   {/each}
                 </Select>
@@ -517,10 +522,14 @@
                             id="{id}-{index}-{propKey}"
                             value={String(propValue ?? '')}
                             onchange={(e) =>
-                              updateObjectProperty(index, propKey, e.currentTarget.value)}
+                              updateObjectProperty(
+                                index,
+                                propKey,
+                                memberFor(selectableMembers(propFieldSchema), e.currentTarget.value)
+                              )}
                             {disabled}
                           >
-                            {#each propFieldSchema.enum as option (option)}
+                            {#each selectableMembers(propFieldSchema) as option (option)}
                               <option value={String(option)}>{String(option)}</option>
                             {/each}
                           </Select>
