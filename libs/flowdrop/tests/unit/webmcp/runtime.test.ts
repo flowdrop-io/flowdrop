@@ -266,6 +266,8 @@ describe('an editor mounted with a mode other than edit', () => {
     const res = await runtime.runTool('add_node', { nodeTypeId: 'text_input' });
     expect(res.isError).toBe(true);
     expect(parse(res).code).toBe('LOCKED');
+    expect(JSON.stringify(parse(res))).toMatch(/cannot be edited here/);
+    expect(JSON.stringify(parse(res))).not.toMatch(/unlock/);
     expect(parse(await runtime.runTool('save', {})).code).toBe('LOCKED');
     expect(approval).not.toHaveBeenCalled();
     expect(onSave).not.toHaveBeenCalled();

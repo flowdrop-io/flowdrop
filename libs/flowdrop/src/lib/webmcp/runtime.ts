@@ -108,10 +108,12 @@ function describeError(err: unknown): string {
 }
 
 /** The answer for a change a locked editor would refuse, given before any approval is asked. */
-function lockedResult(): ToolResult {
+function lockedResult(locked: boolean): ToolResult {
   return errorResult(
     'LOCKED',
-    'The editor is locked (read-only), so this change was not made. Ask the user to unlock it.'
+    locked
+      ? 'The editor is locked (read-only), so this change was not made. Ask the user to unlock it.'
+      : 'This editor is read-only, so this change was not made. It cannot be edited here.'
   );
 }
 
@@ -371,7 +373,7 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     if (!context) return errorResult('NO_WORKFLOW', 'No workflow is loaded in this editor');
 
     // A locked editor refuses every change: say so now, do not ask first and refuse after.
-    if (isReadOnly() && needsApproval(commands)) return lockedResult();
+    if (isReadOnly() && needsApproval(commands)) return lockedResult(instance.workflow.locked);
 
     // D3: reads and view changes run; document changes wait for the gate.
     if (needsApproval(commands)) {
@@ -467,7 +469,7 @@ export function createToolRuntime(options: ToolRuntimeOptions): ToolRuntime {
     }
 
     // The editor refuses a save while locked; do not ask for approval first.
-    if (isReadOnly()) return lockedResult();
+    if (isReadOnly()) return lockedResult(instance.workflow.locked);
 
     const refused = await askHostGate('save');
     if (refused) return refused;
