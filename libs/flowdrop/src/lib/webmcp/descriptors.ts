@@ -224,6 +224,9 @@ const INTERFACE_FIELDS = [
   'examples'
 ] as const satisfies readonly InterfaceField[];
 
+/** The interface entry fields that hold text, so `interface_set` takes a string for them. */
+const TEXT_INTERFACE_FIELDS: ReadonlySet<string> = new Set(['name', 'description', 'dataType']);
+
 const CHAT_FIELDS = ['message', 'history', 'session_id', 'message_id'] as const;
 
 /** The raw `interface_set` token for a typed argument (an empty string clears the field). */
@@ -680,13 +683,22 @@ const COMMANDS: { [K in ExposedType]: CommandRecord<K> } = {
       },
       ['side', 'id', 'field', 'value']
     ),
-    build: (a) => ({
-      type: 'interface_set',
-      side: a.side as InterfaceSide,
-      id: a.id as string,
-      field: a.field as InterfaceField,
-      value: interfaceValue(a.value)
-    }),
+    build: (a) => {
+      // The text fields take a string only: `null` would be stored as the text
+      // "null". An empty string is how an optional one is cleared.
+      if (TEXT_INTERFACE_FIELDS.has(a.field as string) && typeof a.value !== 'string') {
+        throw new ToolArgumentError(
+          `${String(a.field)} takes a string; pass "" to clear it (null or a non-string is not accepted)`
+        );
+      }
+      return {
+        type: 'interface_set',
+        side: a.side as InterfaceSide,
+        id: a.id as string,
+        field: a.field as InterfaceField,
+        value: interfaceValue(a.value)
+      };
+    },
     summarize: (c) =>
       /^(none|"")$/i.test(c.value)
         ? `Clear ${c.field} of interface ${c.side} ${c.id}`
