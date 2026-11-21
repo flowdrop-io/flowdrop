@@ -24,11 +24,19 @@ export type PlaygroundSessionStatus =
  * Only truly-dormant sessions stop polling — completed/failed/awaiting_input
  * sessions on async servers can still generate messages after the status change,
  * so polling continues until the session is explicitly idle.
+ *
+ * A server that leaves a finished session `completed` or `failed` (FlowDrop for
+ * Drupal does) and writes nothing after that should pass
+ * `PlaygroundConfig.shouldStopPolling` (in the editor: the `playground` mount
+ * option) to stop there.
  */
 export const DEFAULT_STOP_POLLING_STATUSES: PlaygroundSessionStatus[] = ['idle'];
 
 /**
- * Statuses that are considered terminal by default (clears isExecuting)
+ * Statuses that were considered terminal by default.
+ *
+ * Has no effect: nothing reads it. The editor and the Playground treat a session
+ * as executing exactly while its status is `running`.
  */
 export const DEFAULT_TERMINAL_STATUSES: PlaygroundSessionStatus[] = [
   'idle',
@@ -49,8 +57,10 @@ export function defaultShouldStopPolling(status: PlaygroundSessionStatus): boole
 }
 
 /**
- * Default implementation for determining if a status is terminal (clears isExecuting).
- * Consumers can override this via PlaygroundConfig.isTerminalStatus.
+ * Default implementation for determining if a status is terminal.
+ *
+ * Has no effect: nothing calls it. The editor and the Playground treat a session
+ * as executing exactly while its status is `running`.
  *
  * @param status - The current session status
  * @returns True if the status is terminal
@@ -599,9 +609,8 @@ export interface PlaygroundConfig {
   shouldStopPolling?: (status: PlaygroundSessionStatus) => boolean;
 
   /**
-   * Determines if a session status is terminal (clears isExecuting).
-   * Override to customize which statuses end the executing state.
-   * @default defaultIsTerminalStatus (terminal on idle, completed, failed, awaiting_input)
+   * Has no effect: nothing reads it. A session counts as executing exactly while
+   * its status is `running`, so this option can be left out.
    */
   isTerminalStatus?: (status: PlaygroundSessionStatus) => boolean;
 }

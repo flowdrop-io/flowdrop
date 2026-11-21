@@ -821,8 +821,9 @@ export class PlaygroundStore {
     // When the session reaches a terminal state, the whole run is finished —
     // including any sub-flow executions, which may sit anywhere in the list
     // (not just the tail), so mark every still-running execution terminal.
-    // 'idle' means the run finished normally (server returns 'idle' post-completion,
-    // not 'completed'), so map it to 'completed' for the execution entries.
+    // 'idle' and 'completed' both mean the run finished normally (servers differ:
+    // FlowDrop for Drupal leaves a finished session 'completed', others return to
+    // 'idle'), so both map to 'completed' for the execution entries.
     const terminalExecutionStatus =
       status === 'failed'
         ? 'failed'
