@@ -50,7 +50,7 @@
   import { decideInlineCommit } from '../utils/captionText.js';
   import FlowDropZone from './FlowDropZone.svelte';
   import EdgeRefresher from './EdgeRefresher.svelte';
-  import { tick, untrack, onMount } from 'svelte';
+  import { tick, untrack, onMount, onDestroy } from 'svelte';
   import type { EndpointConfig } from '../config/endpoints.js';
   import type { AuthProvider } from '../types/auth.js';
   import ConnectionLine from './ConnectionLine.svelte';
@@ -255,6 +255,9 @@
   // so does a lock on the instance (`fd.lock`), even when this editor is mounted
   // on its own without App.
   const hostEditable = $derived((props.mode ?? 'edit') === 'edit');
+  // The agent surfaces (WebMCP, the AI Assistant) refuse edits while the mode is
+  // not 'edit', also when this editor is mounted without App.
+  onDestroy(fd.provideReadOnly(() => !hostEditable));
   const canvasEditable = $derived(hostEditable && !fd.lock.isLocked);
 
   // Canvas grid pattern, supplied by the active theme's config.canvas.grid

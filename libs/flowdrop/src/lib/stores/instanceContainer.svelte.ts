@@ -192,25 +192,50 @@ export interface FlowDropInstance {
   skinScope: string | null;
   /**
    * The formats the host allows (the `workflowFormats` mount prop), or `null`
-   * for no restriction. Set by `App` while it is mounted and cleared when it
-   * unmounts. Reactive. Read through {@link allowedFormatOptions}.
-   * @internal
+   * for no restriction. Provided by `App` while it is mounted; read it through
+   * {@link allowedFormatOptions}. Reactive. With two `App`s on one instance the
+   * last one mounted wins, and when it unmounts the previous one's list is back
+   * (see {@link provideFormatAllowlist}). Assigning it directly sets the value
+   * used when no `App` provides one.
+   *
+   * No stripping of `@internal` members happens in this package's type output,
+   * so this member is part of the public type: treat it as read-only.
    */
   formatAllowlist: readonly string[] | null;
   /**
+   * Provide the formats allowlist for as long as the caller is mounted. The
+   * latest provider wins; the returned function withdraws only this provider,
+   * so an `App` that unmounts never clears the list another `App` set.
+   * Called by `App`; a host has no reason to call it.
+   */
+  provideFormatAllowlist(read: () => readonly string[] | null): () => void;
+  /**
    * The formats the format picker and `workflow format` offer: the registered
    * ones narrowed to {@link formatAllowlist}.
-   * @internal
    */
   allowedFormatOptions(): Array<{ const: string; title: string }>;
   /**
-   * Whether the host's `mode` is anything other than `'edit'`. Set by `App`
-   * while it is mounted and cleared when it unmounts. While true the tool
-   * runtimes (WebMCP, the AI Assistant, the command executor) refuse edits the
-   * way they do for a locked workflow. Reactive.
-   * @internal
+   * Whether the editor was mounted with a `mode` other than `'edit'`. Provided
+   * by `App` and `WorkflowEditor` while mounted, so it also holds for a
+   * `WorkflowEditor mode="readonly"` mounted on its own. While true, the agent
+   * surfaces (the WebMCP tool runtime and the AI Assistant) refuse edits the
+   * way they do for a locked workflow. The host's own `runCommand` and the
+   * Console are not agents and are not affected, so a host can still lay out a
+   * model it only displays. Reactive. The latest provider wins and withdrawing
+   * it restores the previous one's value (see {@link provideReadOnly}).
+   * Assigning it directly sets the value used when nothing provides one.
+   *
+   * This member is part of the public type (the package does not strip
+   * `@internal` members); treat it as read-only.
    */
   readOnly: boolean;
+  /**
+   * Provide {@link readOnly} for as long as the caller is mounted. The latest
+   * provider wins; the returned function withdraws only this provider, so a
+   * component that unmounts never clears what another one set. Called by
+   * `App` and `WorkflowEditor`; a host has no reason to call it.
+   */
+  provideReadOnly(read: () => boolean): () => void;
   /**
    * How the mounted canvas measured a node (size and handle centres from its
    * top-left), registered by the editor while its canvas is mounted. Node
@@ -362,6 +387,9 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
   const instanceFormats = new WorkflowFormatRegistry(getBuiltinFormatAdapters());
   let formatAllowlist = $state.raw<readonly string[] | null>(null);
   let readOnlyFlag = $state(false);
+  // Providers, oldest first: the last one answers; withdrawing one restores the one before.
+  let allowlistProviders = $state.raw<Array<() => readonly string[] | null>>([]);
+  let readOnlyProviders = $state.raw<Array<() => boolean>>([]);
 
   const cleanups: Array<() => void> = [
     () => historyBindings.cleanup(),
@@ -428,22 +456,37 @@ export function createFlowDropInstance(options: CreateInstanceOptions = {}): Flo
     approvalGate: null,
     skinScope: null,
     get formatAllowlist() {
-      return formatAllowlist;
+      const top = allowlistProviders.at(-1);
+      return top ? top() : formatAllowlist;
     },
     set formatAllowlist(list) {
       formatAllowlist = list;
     },
+    provideFormatAllowlist(read) {
+      allowlistProviders = [...allowlistProviders, read];
+      return () => {
+        allowlistProviders = allowlistProviders.filter((p) => p !== read);
+      };
+    },
     allowedFormatOptions() {
-      const allowed = formatAllowlist;
+      const top = allowlistProviders.at(-1);
+      const allowed = top ? top() : formatAllowlist;
       return instanceFormats
         .getOneOfOptions()
         .filter((option) => !allowed || allowed.includes(option.const));
     },
     get readOnly() {
-      return readOnlyFlag;
+      const top = readOnlyProviders.at(-1);
+      return top ? top() : readOnlyFlag;
     },
     set readOnly(value) {
       readOnlyFlag = value;
+    },
+    provideReadOnly(read) {
+      readOnlyProviders = [...readOnlyProviders, read];
+      return () => {
+        readOnlyProviders = readOnlyProviders.filter((p) => p !== read);
+      };
     },
     get measureNode() {
       return measureNodeFn;

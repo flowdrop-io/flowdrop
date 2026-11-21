@@ -1460,6 +1460,8 @@ export const defaultMessages = {
     learnMore: 'Learn more',
     // A person's save (a host's own Save button, app.save()) while the editor is locked.
     saveRefused: 'The editor is locked, so nothing was saved.',
+    // The editor was mounted with a `mode` other than 'edit' (readOnly).
+    saveReadOnly: 'This editor is read-only, so nothing was saved.',
     // The host's payload says this user may not save (`can.save: false`).
     saveForbidden: 'Saving this workflow is not permitted.'
   },
