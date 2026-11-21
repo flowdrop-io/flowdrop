@@ -83,7 +83,19 @@ The `type` and `format` properties control how each field renders.
 | `integer` | Integer input         |
 | `boolean` | Toggle switch         |
 | `array`   | Repeatable field list |
-| `object`  | Nested fieldset       |
+| `object`  | JSON editor           |
+
+An `object` is edited as JSON, not as a nested fieldset. Nested fieldsets come from `Group` elements of a UI schema, which group fields; they do not turn an object property into sub-fields. Any other `type` word (`mixed`, `json`, a typo) is also edited as JSON, never as a text input.
+
+### Types, null and defaults
+
+- **Type arrays.** `type: ['string', 'null']` is a text field that may also hold `null`. One non-null word plus an optional `null` keeps that word's editor.
+- **No usable type** (absent, `[]`, only `null`) accepts any JSON value and gets the JSON editor.
+- **More than one non-null word** (`['boolean', 'string']`, `['array', 'object']`, `['string', 'number', 'null']`) also gets the JSON editor: no single control fits every kind of value, and a switch or list editor would overwrite the other kind.
+- **The `null` toggle** appears when `null` is a valid value: the `type` lists `null` (or is absent) and any `enum` lists it too. It stores `null`; turning it off brings the earlier value back, or leaves the key absent if there was none. A `oneOf` member `{ "const": null }` is not an option and does not add a toggle. An absent key is not `null`: a stored `null` always shows as a muted "null", even where the schema does not admit it.
+- **A required field whose type is only `null`** shows "Not set" until the author turns the toggle on. Nothing is written for it automatically, so saving without choosing leaves the key absent and the backend reports it as required. A `default: null` is written as for any required key.
+- **Defaults are required-only.** A default is written into the config only for a key in `required` that is still absent. For any other field the default is shown as the input's placeholder (text, number) or as the select's empty option ("Default (x)"); the key stays absent and the default applies at run time. Clearing a field removes its key.
+- **`when_missing: 'skip'`** adds the note "Skipped when not set" under the field. It describes what the backend does with an empty value; it does not change what the form writes.
 
 ### Format Overrides
 
