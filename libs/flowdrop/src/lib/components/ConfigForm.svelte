@@ -340,15 +340,18 @@
   // (node prop change → metadata.configSchema reference change) — or when a
   // different node is shown (two nodes of one type share the schema object).
   // Identity comparison only — value churn in `initialConfig` preserves in-flight edits.
+  // The node TYPE's own schema is compared, not the rendered one: the rendered schema
+  // is re-derived (a new object) whenever the node object is replaced, which every
+  // committed edit does, and that must not discard the edits or the null memory.
   // capturing the initial derived reference is intentional; later changes are picked up by the effect below
   // svelte-ignore state_referenced_locally
-  let prevSchemaRef = configSchema;
+  let prevSchemaRef = typeConfigSchema;
   // svelte-ignore state_referenced_locally
   let prevNodeId = node?.id;
   $effect.pre(() => {
     const id = node?.id;
-    if (configSchema !== prevSchemaRef || id !== prevNodeId) {
-      prevSchemaRef = configSchema;
+    if (typeConfigSchema !== prevSchemaRef || id !== prevNodeId) {
+      prevSchemaRef = typeConfigSchema;
       prevNodeId = id;
       resetEdits();
     }

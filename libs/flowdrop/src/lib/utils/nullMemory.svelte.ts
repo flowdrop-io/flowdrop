@@ -1,5 +1,3 @@
-import { SvelteMap } from 'svelte/reactivity';
-
 /**
  * What a form remembers about the null toggles of its fields: the value a key
  * held before the toggle set it to `null`, so turning the toggle off brings it
@@ -14,8 +12,8 @@ import { SvelteMap } from 'svelte/reactivity';
  * bring it back.
  */
 export function createNullMemory() {
-  /** `has: false` records "the key was not set before"; `seen`: the config has held `null` since. */
-  const held = new SvelteMap<string, { has: boolean; value: unknown; seen: boolean }>();
+  /** Nothing renders from this record, so it is a plain Map. `has: false` records "the key was not set before"; `seen`: the config has held `null` since. */
+  const held = new Map<string, { has: boolean; value: unknown; seen: boolean }>();
 
   return {
     /**
