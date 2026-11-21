@@ -10,7 +10,9 @@
 <script lang="ts">
   import type { NodeMetadata } from '$lib/types/index.js';
   import { getInstance } from '../../stores/getInstance.svelte.js';
-  import { toShortId, resolveNode, CONSOLE_HELP, CONSOLE_VERBS } from '../../commands/index.js';
+  import { toShortId, resolveNode, CONSOLE_VERBS } from '../../commands/index.js';
+  import { SUBCOMMAND_MAP } from './subcommands.js';
+  import { matchMultilineCommand } from './multilinePrefix.js';
   import ConsoleAutocomplete, { type Suggestion } from './ConsoleAutocomplete.svelte';
 
   interface Props {
@@ -297,65 +299,6 @@
       .slice(0, 50);
   }
 
-  /** The sub-commands of a Console verb, from its help rows (`session send` gives `send`). */
-  function consoleSubcommands(verb: string): Array<{ value: string; detail?: string }> {
-    return CONSOLE_HELP.filter((row) => row.name.startsWith(`${verb} `)).map((row) => ({
-      value: row.name.slice(verb.length + 1),
-      detail: row.description
-    }));
-  }
-
-  /** Sub-commands for verbs that have them */
-  const SUBCOMMAND_MAP: Record<string, Array<{ value: string; detail?: string }>> = {
-    layout: [
-      { value: 'auto', detail: 'Re-arrange all nodes from scratch' },
-      { value: 'beautify', detail: 'Tidy: columns, no overlaps, straight wires' }
-    ],
-    list: [
-      { value: 'nodes', detail: 'List all workflow nodes' },
-      { value: 'edges', detail: 'List all connections' },
-      { value: 'types', detail: 'List available node types' }
-    ],
-    // The Console's own verbs: sub-commands and their text come from its one help list.
-    session: consoleSubcommands('session'),
-    mode: [
-      { value: 'edit', detail: 'Switch to Edit mode' },
-      { value: 'test', detail: 'Switch to Test mode (needs a saved workflow)' }
-    ],
-    runs: [{ value: 'list', detail: 'List the workflow’s runs' }, ...consoleSubcommands('runs')],
-    interface: [
-      { value: 'list', detail: 'List the workflow interface' },
-      { value: 'expose', detail: 'Expose a node port on the interface' },
-      { value: 'add', detail: 'Add an interface port' },
-      { value: 'remove', detail: 'Remove an interface port' },
-      { value: 'rename', detail: 'Rename an interface port' },
-      { value: 'bind', detail: 'Bind an interface port to a node port' },
-      { value: 'unbind', detail: 'Unbind an interface port' },
-      { value: 'set', detail: 'Set an interface port property' },
-      { value: 'pull', detail: 'Pull the interface from the nodes' },
-      { value: 'move', detail: 'Reorder an interface port' }
-    ],
-    ports: [
-      { value: 'hide', detail: 'Hide a node port' },
-      { value: 'show', detail: 'Show a hidden node port' },
-      { value: 'move', detail: 'Reorder a node port' }
-    ],
-    workflow: [
-      { value: 'name', detail: 'Set the workflow name' },
-      { value: 'description', detail: 'Set the workflow description' },
-      { value: 'set', detail: 'Set a workflow property' }
-    ],
-    playground: [{ value: 'chat', detail: 'Configure the Playground chat binding' }],
-    canvas: [
-      { value: 'fitview', detail: 'Fit all nodes into the viewport' },
-      { value: 'zoom in', detail: 'Zoom in on the canvas' },
-      { value: 'zoom out', detail: 'Zoom out on the canvas' },
-      { value: 'zoom', detail: 'Set zoom level (e.g. canvas zoom 1.5)' },
-      { value: 'pan', detail: 'Pan to position (e.g. canvas pan 100,200)' },
-      { value: 'reset', detail: 'Reset viewport to default' }
-    ]
-  };
-
   function computeSuggestions(value: string): Suggestion[] {
     if (!value) return [];
 
@@ -568,10 +511,10 @@
     if (!text || !text.includes('\n')) return;
 
     // If already typing a set command, treat multiline paste as the value
-    const setMatch = inputValue.match(/^(set\s+\S+?:\S+|session\s+send\b)\s*(.*)$/i);
+    const setMatch = matchMultilineCommand(inputValue);
     if (setMatch) {
       event.preventDefault();
-      enterMultilineMode(setMatch[1], (setMatch[2] ? setMatch[2] + '\n' : '') + text);
+      enterMultilineMode(setMatch.prefix, (setMatch.value ? setMatch.value + '\n' : '') + text);
       historyIndex = -1;
       savedInput = '';
       return;
@@ -638,10 +581,10 @@
 
     if (event.key === 'Enter' && event.shiftKey) {
       // Shift+Enter on a set command → expand to multiline textarea
-      const setMatch = inputValue.match(/^(set\s+\S+?:\S+|session\s+send\b)\s*(.*)$/i);
+      const setMatch = matchMultilineCommand(inputValue);
       if (setMatch) {
         event.preventDefault();
-        enterMultilineMode(setMatch[1], setMatch[2]);
+        enterMultilineMode(setMatch.prefix, setMatch.value);
         return;
       }
     }
