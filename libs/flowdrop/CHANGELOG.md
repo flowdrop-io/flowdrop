@@ -7,25 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **`renderMarkdown()` in `@flowdrop/flowdrop/display`.** Turns Markdown into HTML for pages that place it
-  with `innerHTML` outside a Svelte component, with the same `marked` and `sanitizeHtml()` the message
-  views use. HTML in the source is shown as text, links and images keep http(s), root-relative and
-  fragment targets without control characters (relative paths, `//host` and other schemes such as
-  `mailto:` show their label as text), and links carry `rel="noopener noreferrer"` and keep their title.
-  Character references in targets and titles are decoded once. Alt text shows as plain text, and an
-  image inside a link shows it within that link; an image without alt text, or a link without a label,
-  shows its target as the label when the target is kept. `headingOffset` moves headings down for pages
-  that already own the upper levels; it is capped at 5, and anything that does not convert to a finite
-  number counts as 0.
-- **`allowedLinkTarget()` in `@flowdrop/flowdrop/display`.** The link rule of `renderMarkdown()` on its own,
-  for host pages that build their own links: the trimmed target when it is http(s), root-relative or a
-  fragment and holds no control character (the browser drops tab, CR and LF inside a URL), otherwise `null`.
-
-  Both first shipped in 2.15.3.
-
-## [2.19.0] - 2026-11-18
+## [2.19.0] - 2026-11-21
 
 > **Breaking (types only).** A config property's `type` is now optional and may be an array (`BaseProperty.type`, `ConfigProperty['type']`, `FieldSchema.type`). A host with its own field matchers or code that reads `schema.type` as one string may no longer compile or match (`FieldSchema.type` still accepts a host's own type word, such as `'color'`). See the first entry under Changed. Nothing changes at runtime for a schema whose `type` is one word.
 
@@ -55,6 +37,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Console-only commands for actions that need the backend or the editor around the canvas: `mode [edit|test]` (fails with the reason when Test is not available, for example before the first save), `runs [list]`, `runs open|rerun|cancel <id>`, `runs dismiss [id]`, `save`, `export`, and `session list | select <id> | reset | delete <id>`. A non-numeric id may be shortened to a unique prefix for `runs open` and `session select`; `runs rerun`, `runs cancel` and `session delete` and any numeric id need the full id. `save` refuses what the navbar's Save refuses (a locked editor, a workflow the user may not save), `export` reports a failed export, `session reset` is refused on a backend without a reset endpoint, and lines typed while one is still running wait their turn, so output stays in order. `help` lists every command in one place (`help runs open`, `help session list`). There is no `import` command, since it needs a file. These commands answer `CONSOLE_REFUSED` or `CONSOLE_FAILED` (new `CommandErrorCode` values). `runCommand` and the AI Assistant refuse them, naming the WebMCP tool that does the same where there is one; `runCommand` answers `CONSOLE_REFUSED`, and `SESSION_REFUSED` for a `session` line as before.
 - `CommandConsole` (in `@flowdrop/flowdrop/editor`) takes an optional `editorHost` prop (type `ConsoleHost`, exported from the same entry) with the `save` and `export` the Console's `save` and `export` commands call, as `App` passes its navbar's Save and Export. Without it those two commands answer `CONSOLE_REFUSED`.
 - WebMCP tools `get_editor_mode` and `set_editor_mode`: the mode in effect, whether Test is available and why not, and a switch that fails with `UNAVAILABLE` and the reason. Switching changes the view, not the workflow, so it does not ask for approval. They are on by default; `createToolRuntime({ editorModeTools: false })` leaves them out, as the in-editor AI Assistant does (Test mode hides the Assistant). `fd.editorMode` gains the read-only `testBlocker` and `effective`, which `App` keeps current.
+- **`renderMarkdown()` in `@flowdrop/flowdrop/display`.** Turns Markdown into HTML for pages that place it
+  with `innerHTML` outside a Svelte component, with the same `marked` and `sanitizeHtml()` the message
+  views use. HTML in the source is shown as text, links and images keep http(s), root-relative and
+  fragment targets without control characters (relative paths, `//host` and other schemes such as
+  `mailto:` show their label as text), and links carry `rel="noopener noreferrer"` and keep their title.
+  Character references in targets and titles are decoded once. Alt text shows as plain text, and an
+  image inside a link shows it within that link; an image without alt text, or a link without a label,
+  shows its target as the label when the target is kept. `headingOffset` moves headings down for pages
+  that already own the upper levels; it is capped at 5, and anything that does not convert to a finite
+  number counts as 0.
+- **`allowedLinkTarget()` in `@flowdrop/flowdrop/display`.** The link rule of `renderMarkdown()` on its own,
+  for host pages that build their own links: the trimmed target when it is http(s), root-relative or a
+  fragment and holds no control character (the browser drops tab, CR and LF inside a URL), otherwise `null`.
+
+  Both first shipped in 2.15.3.
 
 ### Changed
 
