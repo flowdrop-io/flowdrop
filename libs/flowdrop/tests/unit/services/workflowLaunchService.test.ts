@@ -37,3 +37,25 @@ describe('WorkflowLaunchService: where the run started', () => {
     expect(JSON.parse(String(init.body))).toEqual({});
   });
 });
+
+describe('WorkflowLaunchService: the launch answer', () => {
+  it('reads the API-10 answer', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ data: { execution_id: '9', status: 'queued' } }), {
+            status: 202,
+            headers: { 'Content-Type': 'application/json' }
+          })
+      )
+    );
+    const result = await new WorkflowLaunchService().launch(config, 'wf', {});
+    expect(result).toMatchObject({
+      status: 'launched',
+      pipelineId: '9',
+      runStatus: 'queued',
+      queued: true
+    });
+  });
+});

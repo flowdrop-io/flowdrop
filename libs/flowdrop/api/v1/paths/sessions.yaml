@@ -196,9 +196,15 @@
             schema:
               $ref: '../components/schemas/playground.yaml#/SessionTurnResponse'
       '400':
+        description: Malformed body
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
+      '422':
         description: |
-          Malformed body, inputs the workflow does not declare, or `content`
-          sent to a workflow with no `message` port (the message names the fix).
+          Inputs the workflow does not declare, or `content` sent to a workflow
+          with no `message` port (the message names the fix).
         content:
           application/json:
             schema:

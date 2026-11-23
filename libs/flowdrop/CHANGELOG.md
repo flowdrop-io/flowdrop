@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The Runs list reads the paginated envelope.** `GET /workflow/{id}/pipelines` is answered as
+  `{success, data: [rows], pagination}` (spec rules API-5 and API-12). The Runs menu and the console `runs`
+  command use `pagination.has_more` for "load more" when the server sends it, and the full-page guess
+  otherwise. Servers that still answer `data: { pipelines: [...] }` keep working. `listRuns` now resolves to
+  `{ runs, hasMore }` instead of an array, and `parseRuns` accepts `data` as an array too.
+- **OpenAPI `PipelineListResponse`** is the API-5 envelope: `data` rows carry `id`, `status` and `createdAt`,
+  and `pagination` holds `total`, `limit`, `offset` and `has_more`.
+- **The editor reads the API-10 launch answer.** `POST /workflow/{id}/run` answers `{execution_id, status: "queued"}`
+  with `Location`. The launch service reads `execution_id` and falls back to `pipelineId`, so older servers keep
+  working; `queued` is taken from `status` when the server sends no `queued` flag.
+- **OpenAPI follows the spec's launch and refusal rules.** The `runWorkflow` 202 is the API-10 answer, with the
+  `Idempotency-Key` request header and the `Idempotent-Replayed` response header (API-11). `UpdateWorkflowRequest`
+  requires `name` (STORE-2). A refused launch input on `POST /workflows/{id}/execute` and refused turn inputs on
+  `POST /sessions/{sessionId}/turn` are 422, not 400 (API-1/2).
+
 ## [2.19.1] - 2026-11-21
 
 ### Fixed

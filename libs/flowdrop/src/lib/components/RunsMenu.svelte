@@ -95,8 +95,8 @@
     try {
       const page = await listRuns(config, workflowId, { offset: 0, limit }, fd.api.authProvider);
       if (token !== readToken) return;
-      runs = page;
-      more = hasMoreRuns(page.length, limit);
+      runs = page.runs;
+      more = hasMoreRuns(page.runs.length, limit, page.hasMore);
       failed = false;
     } catch {
       if (token !== readToken) return;
@@ -118,8 +118,8 @@
         fd.api.authProvider
       );
       if (token !== readToken) return;
-      runs = appendRuns(runs, page);
-      more = hasMoreRuns(page.length, RUNS_PAGE_SIZE);
+      runs = appendRuns(runs, page.runs);
+      more = hasMoreRuns(page.runs.length, RUNS_PAGE_SIZE, page.hasMore);
     } catch {
       actionError = msgs.loadError;
     } finally {

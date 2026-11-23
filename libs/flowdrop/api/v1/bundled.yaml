@@ -887,6 +887,15 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          description: |
+            The launch input is refused: inputs the workflow does not declare,
+            a missing required input, or a launch check that failed (the stage
+            is under `errors.stage`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /workflows/{id}/copy:
@@ -988,6 +997,18 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: |
+            A repeat launch with the same key, body and caller answers the first
+            launch's run instead of starting another (API-11). A different body
+            under the same key is refused with 422; a repeat while the first
+            launch is still being stored is refused with 409.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
       requestBody:
         required: false
         content:
@@ -1025,6 +1046,14 @@ paths:
               description: The URL of the run
               schema:
                 type: string
+            Idempotent-Replayed:
+              description: |
+                `true` when an `Idempotency-Key` matched an earlier launch and
+                this answer names that launch's run instead of a new one (API-11).
+              schema:
+                type: string
+                enum:
+                  - 'true'
           content:
             application/json:
               schema:
@@ -1034,26 +1063,23 @@ paths:
                     properties:
                       data:
                         type: object
+                        description: |
+                          The launch answer (API-10). It is the same whatever a
+                          fast worker already made of the run; read the run at
+                          `Location` for its state. Backends before API-10
+                          answered `pipelineId` instead of `execution_id`;
+                          clients should accept either.
+                        required:
+                          - execution_id
+                          - status
                         properties:
-                          pipelineId:
+                          execution_id:
                             type: string
                             description: The run id, to read its status with
-                          runId:
-                            type: string
-                            description: The same value as `pipelineId`
                           status:
                             type: string
-                          queued:
-                            type: boolean
-                            description: True when a queue worker will pick the run up
-                          runUrl:
-                            type: string
-                            description: The URL of the run
-                          run:
-                            type: object
-                            nullable: true
-                            additionalProperties: true
-                            description: The run as it stands after the optional wait
+                            enum:
+                              - queued
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -2174,9 +2200,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SessionTurnResponse'
         '400':
-          description: |
-            Malformed body, inputs the workflow does not declare, or `content`
-            sent to a workflow with no `message` port (the message names the fix).
+          description: Malformed body
           content:
             application/json:
               schema:
@@ -2185,6 +2209,14 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           description: A turn is already running, or the session has no workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: |
+            Inputs the workflow does not declare, or `content` sent to a workflow
+            with no `message` port (the message names the fix).
           content:
             application/json:
               schema:
@@ -4790,6 +4822,8 @@ components:
             author:
               type: string
               maxLength: 100
+      required:
+        - name
     WorkflowRefusedResponse:
       type: object
       description: |
@@ -5150,28 +5184,53 @@ components:
         - node_statuses
         - job_status_summary
     PipelineListResponse:
+      description: 'The paginated envelope (spec rules API-5 and API-12): `data` is the array of rows, `pagination` its fixed block. Servers that still answer `data: { pipelines: [...] }` are read by the editor too.'
       allOf:
         - $ref: '#/components/schemas/ApiResponse'
         - type: object
+          required:
+            - data
+            - pagination
           properties:
             data:
               type: array
               items:
                 type: object
+                required:
+                  - id
+                  - status
+                  - createdAt
                 properties:
                   id:
                     type: string
-                    format: uuid
-                  workflow_id:
-                    type: string
                   status:
                     type: string
-                  created:
+                  createdAt:
                     type: string
                     format: date-time
-                  updated:
-                    type: string
-                    format: date-time
+                    nullable: true
+            pagination:
+              type: object
+              description: The four fixed keys of API-5, and nothing else.
+              additionalProperties: false
+              required:
+                - total
+                - limit
+                - offset
+                - has_more
+              properties:
+                total:
+                  type: integer
+                  minimum: 0
+                limit:
+                  type: integer
+                  minimum: 1
+                offset:
+                  type: integer
+                  minimum: 0
+                has_more:
+                  type: boolean
+                  description: Page arithmetic, `(offset + limit) < total`.
     PipelineExecutionResponse:
       allOf:
         - $ref: '#/components/schemas/ApiResponse'
