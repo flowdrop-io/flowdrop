@@ -555,3 +555,5 @@ UpdateWorkflowRequest:
         author:
           type: string
           maxLength: 100
+  required:
+    - name

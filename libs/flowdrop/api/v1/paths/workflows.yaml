@@ -451,6 +451,15 @@
         $ref: '../components/responses.yaml#/BadRequest'
       '404':
         $ref: '../components/responses.yaml#/NotFound'
+      '422':
+        description: |
+          The launch input is refused: inputs the workflow does not declare,
+          a missing required input, or a launch check that failed (the stage
+          is under `errors.stage`).
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/common.yaml#/ErrorResponse'
       '500':
         $ref: '../components/responses.yaml#/InternalServerError'
 
@@ -555,6 +564,18 @@
         schema:
           type: string
           format: uuid
+      - name: Idempotency-Key
+        in: header
+        required: false
+        description: |
+          A repeat launch with the same key, body and caller answers the first
+          launch's run instead of starting another (API-11). A different body
+          under the same key is refused with 422; a repeat while the first
+          launch is still being stored is refused with 409.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 255
     requestBody:
       required: false
       content:
@@ -592,6 +613,14 @@
             description: The URL of the run
             schema:
               type: string
+          Idempotent-Replayed:
+            description: |
+              `true` when an `Idempotency-Key` matched an earlier launch and
+              this answer names that launch's run instead of a new one (API-11).
+            schema:
+              type: string
+              enum:
+                - 'true'
         content:
           application/json:
             schema:
@@ -601,26 +630,23 @@
                   properties:
                     data:
                       type: object
+                      description: |
+                        The launch answer (API-10). It is the same whatever a
+                        fast worker already made of the run; read the run at
+                        `Location` for its state. Backends before API-10
+                        answered `pipelineId` instead of `execution_id`;
+                        clients should accept either.
+                      required:
+                        - execution_id
+                        - status
                       properties:
-                        pipelineId:
+                        execution_id:
                           type: string
                           description: The run id, to read its status with
-                        runId:
-                          type: string
-                          description: The same value as `pipelineId`
                         status:
                           type: string
-                        queued:
-                          type: boolean
-                          description: True when a queue worker will pick the run up
-                        runUrl:
-                          type: string
-                          description: The URL of the run
-                        run:
-                          type: object
-                          nullable: true
-                          additionalProperties: true
-                          description: The run as it stands after the optional wait
+                          enum:
+                            - queued
       '400':
         $ref: '../components/responses.yaml#/BadRequest'
       '404':

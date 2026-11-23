@@ -118,14 +118,15 @@ class WorkflowLaunchService {
     );
 
     const payload = (await response.json().catch(() => ({}))) as {
-      data?: { pipelineId?: string; status?: string; queued?: boolean };
+      data?: { execution_id?: string; pipelineId?: string; status?: string; queued?: boolean };
       error?: string;
       message?: string;
       details?: LaunchInputError[];
     };
 
     if (response.ok) {
-      const pipelineId = payload.data?.pipelineId;
+      // API-10 answers `{execution_id, status: "queued"}`; older backends `pipelineId` and `queued`.
+      const pipelineId = payload.data?.execution_id ?? payload.data?.pipelineId;
       if (!pipelineId) {
         return { status: 'failed', message: 'Launch succeeded but returned no pipeline id' };
       }
@@ -133,7 +134,7 @@ class WorkflowLaunchService {
         status: 'launched',
         pipelineId,
         runStatus: payload.data?.status,
-        queued: payload.data?.queued
+        queued: payload.data?.queued ?? payload.data?.status === 'queued'
       };
     }
 
