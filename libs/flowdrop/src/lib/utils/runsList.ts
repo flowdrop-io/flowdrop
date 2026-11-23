@@ -102,9 +102,13 @@ export function formatRunTime(
   return `${date} ${time}`;
 }
 
-/** Read the list response's `pipelines` into rows (newest first, as sent). */
+/**
+ * Read the list response's `data` into rows (newest first, as sent). `data` is
+ * the array of the API-5 envelope; the older `{ pipelines: [...] }` shape is
+ * still read, for servers that have not moved to the envelope.
+ */
 export function parseRuns(data: unknown): RunSummary[] {
-  const list = (data as { pipelines?: unknown } | null)?.pipelines;
+  const list = Array.isArray(data) ? data : (data as { pipelines?: unknown } | null)?.pipelines;
   if (!Array.isArray(list)) return [];
   return list.flatMap((raw): RunSummary[] => {
     const p = raw as Record<string, unknown>;
@@ -133,8 +137,22 @@ export function pageQuery(offset: number, limit: number = RUNS_PAGE_SIZE): strin
   return `limit=${l}&offset=${o}`;
 }
 
-/** A full page means there may be more; a short one is the end. */
-export function hasMoreRuns(receivedCount: number, limit: number = RUNS_PAGE_SIZE): boolean {
+/** `pagination.has_more` (API-5) when the response carries it as a boolean; else `undefined`. */
+export function parseHasMore(pagination: unknown): boolean | undefined {
+  const value = (pagination as { has_more?: unknown } | null | undefined)?.has_more;
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+/**
+ * Whether more runs exist. The server's `has_more` wins when it sent one;
+ * otherwise a full page means there may be more and a short one is the end.
+ */
+export function hasMoreRuns(
+  receivedCount: number,
+  limit: number = RUNS_PAGE_SIZE,
+  hasMore?: boolean
+): boolean {
+  if (hasMore !== undefined) return hasMore;
   return receivedCount >= Math.min(RUNS_MAX_LIMIT, limit);
 }
 

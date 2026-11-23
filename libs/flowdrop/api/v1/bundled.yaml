@@ -5150,28 +5150,56 @@ components:
         - node_statuses
         - job_status_summary
     PipelineListResponse:
+      description: >-
+        The paginated envelope (spec rules API-5 and API-12): `data` is the array of
+        rows, `pagination` its fixed block. Servers that still answer
+        `data: { pipelines: [...] }` are read by the editor too.
       allOf:
         - $ref: '#/components/schemas/ApiResponse'
         - type: object
+          required:
+            - data
+            - pagination
           properties:
             data:
               type: array
               items:
                 type: object
+                required:
+                  - id
+                  - status
+                  - createdAt
                 properties:
                   id:
                     type: string
-                    format: uuid
-                  workflow_id:
-                    type: string
                   status:
                     type: string
-                  created:
+                  createdAt:
                     type: string
                     format: date-time
-                  updated:
-                    type: string
-                    format: date-time
+                    nullable: true
+            pagination:
+              type: object
+              description: The four fixed keys of API-5, and nothing else.
+              additionalProperties: false
+              required:
+                - total
+                - limit
+                - offset
+                - has_more
+              properties:
+                total:
+                  type: integer
+                  minimum: 0
+                limit:
+                  type: integer
+                  minimum: 1
+                offset:
+                  type: integer
+                  minimum: 0
+                has_more:
+                  type: boolean
+                  description: Page arithmetic, `(offset + limit) < total`.
     PipelineExecutionResponse:
       allOf:
         - $ref: '#/components/schemas/ApiResponse'

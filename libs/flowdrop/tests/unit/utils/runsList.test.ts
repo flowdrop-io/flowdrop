@@ -7,6 +7,7 @@ import {
   formatRunDuration,
   formatRunTime,
   hasMoreRuns,
+  parseHasMore,
   pageQuery,
   parseRuns,
   runDurationMs,
@@ -94,6 +95,17 @@ describe('paging', () => {
     expect(hasMoreRuns(19)).toBe(false);
     expect(hasMoreRuns(100, 500)).toBe(true);
   });
+  it('uses has_more when the server sends it, over the full-page guess', () => {
+    expect(hasMoreRuns(20, 20, false)).toBe(false);
+    expect(hasMoreRuns(3, 20, true)).toBe(true);
+    expect(hasMoreRuns(20, 20, undefined)).toBe(true);
+  });
+  it('reads has_more only when it is a boolean', () => {
+    expect(parseHasMore({ total: 5, limit: 2, offset: 0, has_more: true })).toBe(true);
+    expect(parseHasMore({ has_more: false })).toBe(false);
+    expect(parseHasMore({ has_more: 'yes' })).toBeUndefined();
+    expect(parseHasMore(undefined)).toBeUndefined();
+  });
   it('appends a page without repeating runs', () => {
     const merged = appendRuns(
       [run({ id: '3' }), run({ id: '2' })],
@@ -129,6 +141,11 @@ describe('parseRuns', () => {
       }
     ]);
     expect(parseRuns(null)).toEqual([]);
+  });
+  it('reads data as an array (API-5 envelope), same rows as the old shape', () => {
+    const row = { id: 'a', status: 'completed', createdAt: '2026-10-09T11:00:00+00:00' };
+    expect(parseRuns([row, { nope: true }])).toEqual(parseRuns({ pipelines: [row] }));
+    expect(parseRuns([row])[0]).toMatchObject({ id: 'a', status: 'completed', executionCount: 0 });
   });
 });
 

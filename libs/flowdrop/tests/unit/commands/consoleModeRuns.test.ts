@@ -182,11 +182,10 @@ describe('mode', () => {
 
 describe('runs', () => {
   beforeEach(() => {
-    vi.mocked(runsService.listRuns).mockResolvedValue([
-      runRow('101', 'completed'),
-      runRow('102', 'running'),
-      runRow('2000', 'failed')
-    ]);
+    vi.mocked(runsService.listRuns).mockResolvedValue({
+      runs: [runRow('101', 'completed'), runRow('102', 'running'), runRow('2000', 'failed')],
+      hasMore: undefined
+    });
     vi.mocked(runsService.rerunRun).mockResolvedValue({ ok: true, pipelineId: '300' });
     vi.mocked(runsService.cancelRun).mockResolvedValue({ ok: true });
   });
@@ -228,10 +227,10 @@ describe('runs', () => {
   });
 
   it('opens by unique prefix when the ids are not numeric', async () => {
-    vi.mocked(runsService.listRuns).mockResolvedValue([
-      runRow('abc-1', 'completed'),
-      runRow('abd-2', 'completed')
-    ]);
+    vi.mocked(runsService.listRuns).mockResolvedValue({
+      runs: [runRow('abc-1', 'completed'), runRow('abd-2', 'completed')],
+      hasMore: undefined
+    });
     const s = setup();
     expect((await run('runs open abd', s)).ok).toBe(true);
     expect(s.fd.runs.openRun).toHaveBeenCalledWith('abd-2', 'completed');
@@ -240,10 +239,10 @@ describe('runs', () => {
   });
 
   it('cancel and rerun take only the full id, even for a unique prefix', async () => {
-    vi.mocked(runsService.listRuns).mockResolvedValue([
-      runRow('abc-1', 'running'),
-      runRow('xyz-2', 'completed')
-    ]);
+    vi.mocked(runsService.listRuns).mockResolvedValue({
+      runs: [runRow('abc-1', 'running'), runRow('xyz-2', 'completed')],
+      hasMore: undefined
+    });
     const s = setup();
     const cancel = await run('runs cancel abc', s);
     expect(cancel).toMatchObject({ ok: false, code: 'CONSOLE_REFUSED' });

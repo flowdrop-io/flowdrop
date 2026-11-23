@@ -17,7 +17,7 @@ import type { EndpointConfig } from '../config/endpoints.js';
 import { buildEndpointUrl } from '../config/endpoints.js';
 import { authenticatedFetch } from '../utils/fetchWithAuth.js';
 import type { AuthProvider } from '../types/auth.js';
-import { pageQuery, parseRuns, type RunSummary } from '../utils/runsList.js';
+import { pageQuery, parseHasMore, parseRuns, type RunSummary } from '../utils/runsList.js';
 import { pipelineSignalService } from './pipelineSignalService.js';
 
 export type RunActionResult =
@@ -43,13 +43,19 @@ async function message(response: Response): Promise<string> {
   return payload.error ?? payload.message ?? `HTTP ${response.status}: ${response.statusText}`;
 }
 
+/** One page of runs; `hasMore` is the server's `pagination.has_more`, `undefined` when it sent none. */
+export interface RunsPage {
+  runs: RunSummary[];
+  hasMore: boolean | undefined;
+}
+
 /** One page of a workflow's runs, newest first. Throws when the read fails. */
 export async function listRuns(
   config: EndpointConfig,
   workflowId: string,
   page: { offset: number; limit?: number },
   authProvider?: AuthProvider
-): Promise<RunSummary[]> {
+): Promise<RunsPage> {
   const base = buildEndpointUrl(config, config.endpoints.pipelines.list, {
     workflow_id: workflowId
   });
@@ -60,9 +66,14 @@ export async function listRuns(
     { config, endpointKey: 'pipelines.list', urlSource: 'host-configured', authProvider }
   );
   if (!response.ok) throw new Error(await message(response));
-  const body = (await response.json()) as { success?: boolean; data?: unknown; error?: string };
+  const body = (await response.json()) as {
+    success?: boolean;
+    data?: unknown;
+    pagination?: unknown;
+    error?: string;
+  };
   if (body.success === false) throw new Error(body.error ?? 'Failed to list runs');
-  return parseRuns(body.data);
+  return { runs: parseRuns(body.data), hasMore: parseHasMore(body.pagination) };
 }
 
 /** The status of one run (`pipelines.status`), or `undefined` when it cannot be read. */

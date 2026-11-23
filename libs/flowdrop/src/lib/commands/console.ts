@@ -761,7 +761,10 @@ function describeRun(run: RunSummary, shownId: string | null): string {
 async function readRuns(
   fd: ConsoleInstance,
   limit: number
-): Promise<{ ok: true; runs: RunSummary[] } | { ok: false; result: CommandResult }> {
+): Promise<
+  | { ok: true; runs: RunSummary[]; hasMore: boolean | undefined }
+  | { ok: false; result: CommandResult }
+> {
   const config = fd.api.config;
   const workflowId = fd.workflow.current?.id;
   if (!workflowId) {
@@ -777,8 +780,8 @@ async function readRuns(
     };
   }
   try {
-    const runs = await listRuns(config, workflowId, { offset: 0, limit }, fd.api.authProvider);
-    return { ok: true, runs };
+    const page = await listRuns(config, workflowId, { offset: 0, limit }, fd.api.authProvider);
+    return { ok: true, runs: page.runs, hasMore: page.hasMore };
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err);
     return { ok: false, result: failure(`Could not read the runs: ${error}`, 'CONSOLE_FAILED') };
@@ -791,7 +794,7 @@ async function runsList(fd: ConsoleInstance): Promise<CommandResult> {
   if (read.runs.length === 0) return { ok: true, message: 'No runs yet.' };
   const shown = fd.runs.openedRunId;
   const lines = read.runs.map((run) => describeRun(run, shown));
-  const more = hasMoreRuns(read.runs.length, 20)
+  const more = hasMoreRuns(read.runs.length, 20, read.hasMore)
     ? '\n(more runs exist; showing the newest 20)'
     : '';
   return {

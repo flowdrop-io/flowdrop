@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The Runs list reads the paginated envelope.** `GET /workflow/{id}/pipelines` is answered as
+  `{success, data: [rows], pagination}` (spec rules API-5 and API-12). The Runs menu and the console `runs`
+  command use `pagination.has_more` for "load more" when the server sends it, and the full-page guess
+  otherwise. Servers that still answer `data: { pipelines: [...] }` keep working. `listRuns` now resolves to
+  `{ runs, hasMore }` instead of an array, and `parseRuns` accepts `data` as an array too.
+- **OpenAPI `PipelineListResponse`** is the API-5 envelope: `data` rows carry `id`, `status` and `createdAt`,
+  and `pagination` holds `total`, `limit`, `offset` and `has_more`.
+
 ## [2.19.1] - 2026-11-21
 
 ### Fixed
